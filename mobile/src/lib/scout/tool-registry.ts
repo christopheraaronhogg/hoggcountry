@@ -10,6 +10,7 @@ import type {
 	TownReference,
 	WaterReference
 } from './types.ts';
+import { loadBibleIndex } from '../bible/bible-index.ts';
 
 const STALE_WEATHER_HOURS = 6;
 
@@ -354,6 +355,69 @@ const sourceSearchTool: ToolHandler<SourceSearchArgs> = {
 	}
 };
 
+function scriptureReceipt(reference: string): SourceReceipt {
+	return {
+		id: `scripture:${reference}`.toLowerCase().replace(/[\s:]+/g, '-'),
+		title: reference,
+		kind: 'scripture',
+		citation: 'King James Bible, Pure Cambridge Edition'
+	};
+}
+
+interface BibleSearchArgs {
+	query: string;
+	limit?: number;
+}
+
+const bibleSearchTool: ToolHandler<BibleSearchArgs> = {
+	id: 'bible_search',
+	description:
+		'Search the King James Bible (on-device, offline) for verses relevant to a question, so the answer can quote and cite real scripture instead of paraphrasing from memory.',
+	async run(args, _ctx) {
+		const query = String(args.query ?? '').trim();
+		if (!query) {
+			return {
+				toolId: 'bible_search',
+				args: { ...args } as Record<string, unknown>,
+				summary: 'Empty query.',
+				confidence: 'draft',
+				receipts: []
+			};
+		}
+
+		try {
+			const index = await loadBibleIndex();
+			const hits = index.search(query, args.limit ?? 4);
+			if (!hits.length) {
+				return {
+					toolId: 'bible_search',
+					args: { ...args } as Record<string, unknown>,
+					summary: 'No King James Bible verses matched this query.',
+					confidence: 'low',
+					receipts: []
+				};
+			}
+			const summary = hits.map((hit) => `${hit.reference} — "${hit.text}"`).join('\n');
+			return {
+				toolId: 'bible_search',
+				args: { ...args } as Record<string, unknown>,
+				summary: `Relevant King James Bible verses (quote with their reference):\n${summary}`,
+				confidence: 'high',
+				receipts: hits.map((hit) => scriptureReceipt(hit.reference))
+			};
+		} catch {
+			// Asset not loadable (e.g. not yet packaged) — fail soft, never fabricate.
+			return {
+				toolId: 'bible_search',
+				args: { ...args } as Record<string, unknown>,
+				summary: 'The on-device Bible text is not available right now.',
+				confidence: 'low',
+				receipts: []
+			};
+		}
+	}
+};
+
 const currentMileTool: ToolHandler<{ fromMile?: number }> = {
 	id: 'current_mile',
 	description: 'Report the hiker current trail mile from the calibrated frame.',
@@ -402,7 +466,8 @@ export function defaultToolRegistry(): ToolRegistry {
 		upcomingTerrainTool,
 		weatherLookupTool,
 		loadoutCheckTool,
-		sourceSearchTool
+		sourceSearchTool,
+		bibleSearchTool
 	] as ToolHandler[]);
 }
 
@@ -423,7 +488,15 @@ export async function runToolsFor(
 		{ keywords: ['weather', 'wind', 'cold', 'rain', 'storm', 'forecast'], toolId: 'weather_lookup' },
 		{ keywords: ['miles', 'push', 'hold', 'pace', 'nero', 'zero', 'next 20'], toolId: 'upcoming_terrain' },
 		{ keywords: ['gear', 'pack', 'loadout', 'carry'], toolId: 'loadout_check' },
-		{ keywords: ['where am i', 'current mile', 'how far'], toolId: 'current_mile' }
+		{ keywords: ['where am i', 'current mile', 'how far'], toolId: 'current_mile' },
+		{
+			keywords: [
+				'bible', 'scripture', 'verse', 'psalm', 'gospel', 'jesus', 'christ',
+				'faith', 'pray', 'prayer', 'lord', 'salvation', 'scriptures', 'god',
+				'holy', 'blessing', 'blessed', 'sermon', 'proverb'
+			],
+			toolId: 'bible_search'
+		}
 	];
 
 	const fired = new Set<string>();
@@ -431,7 +504,12 @@ export async function runToolsFor(
 		if (trigger.keywords.some((k) => lower.includes(k)) && !fired.has(trigger.toolId)) {
 			const tool = registry.get(trigger.toolId);
 			if (tool) {
-				const record = await tool.run((trigger.args ?? {}) as Record<string, unknown>, ctx);
+				// bible_search and source_search need the question itself as their query.
+				const args =
+					trigger.toolId === 'bible_search'
+						? { query: prompt }
+						: (trigger.args ?? {});
+				const record = await tool.run(args as Record<string, unknown>, ctx);
 				invocations.push(record);
 				fired.add(trigger.toolId);
 			}

@@ -14,15 +14,6 @@ export interface SourceReceipt {
 	verify?: string;
 }
 
-export type TerrainKind = 'climb' | 'descent' | 'ridge' | 'gap' | 'bald' | 'creek';
-
-export interface ElevationPoint {
-	mile: number;
-	elevation: number;
-	terrain?: TerrainKind;
-	label?: string;
-}
-
 export type ServiceKind =
 	| 'water'
 	| 'shelter'
@@ -64,17 +55,6 @@ export interface PackItem {
 	weightOz: number;
 	status: PackItemStatus;
 	note?: string;
-}
-
-export interface WeatherForecastDay {
-	dayLabel: string;
-	dateLabel: string;
-	highF: number;
-	lowF: number;
-	windMph: number;
-	precipPct: number;
-	risk: 'low' | 'medium' | 'high';
-	note: string;
 }
 
 // Source receipts — every "claim" in the UI should be able to point at one.
@@ -133,23 +113,6 @@ export const sourceReceipts: Record<string, SourceReceipt> = {
 		freshness: 'Logged 2h ago'
 	}
 };
-
-// Elevation profile for the Dad pilot window near the NY/CT line. Numbers are
-// illustrative UI terrain, not surveyed or routing-grade.
-export const elevationNext20: ElevationPoint[] = [
-	{ mile: 1438.0, elevation: 1220, terrain: 'ridge', label: 'You' },
-	{ mile: 1438.4, elevation: 1180, terrain: 'creek' },
-	{ mile: 1439.2, elevation: 1320, terrain: 'climb' },
-	{ mile: 1440.0, elevation: 1080, terrain: 'gap' },
-	{ mile: 1441.5, elevation: 1360, terrain: 'creek' },
-	{ mile: 1442.6, elevation: 1610, terrain: 'ridge', label: 'Morgan St.' },
-	{ mile: 1444.1, elevation: 1420, terrain: 'creek' },
-	{ mile: 1446.8, elevation: 1700, terrain: 'ridge' },
-	{ mile: 1449.0, elevation: 1340, terrain: 'gap' },
-	{ mile: 1452.2, elevation: 1520, terrain: 'ridge' },
-	{ mile: 1454.5, elevation: 980, terrain: 'creek', label: 'Swamp River' },
-	{ mile: 1458.0, elevation: 1260, terrain: 'ridge' }
-];
 
 export const nextServices: NextServiceMarker[] = [
 	{
@@ -256,59 +219,6 @@ export const packInventory: PackItem[] = [
 		weightOz: 22,
 		status: 'shipped',
 		note: 'Shipment details need current confirmation'
-	}
-];
-
-export const weatherForecast: WeatherForecastDay[] = [
-	{
-		dayLabel: 'Today',
-		dateLabel: 'Jun 17',
-		highF: 82,
-		lowF: 63,
-		windMph: 9,
-		precipPct: 35,
-		risk: 'medium',
-		note: 'Humid. Scattered showers possible.'
-	},
-	{
-		dayLabel: 'Thu',
-		dateLabel: 'Jun 18',
-		highF: 80,
-		lowF: 61,
-		windMph: 8,
-		precipPct: 25,
-		risk: 'medium',
-		note: 'Warm. Verify water before committing.'
-	},
-	{
-		dayLabel: 'Fri',
-		dateLabel: 'Jun 19',
-		highF: 78,
-		lowF: 59,
-		windMph: 7,
-		precipPct: 20,
-		risk: 'low',
-		note: 'Lower precip risk. Still confirm sources.'
-	},
-	{
-		dayLabel: 'Sat',
-		dateLabel: 'Jun 20',
-		highF: 81,
-		lowF: 64,
-		windMph: 10,
-		precipPct: 40,
-		risk: 'medium',
-		note: 'Storm chance. Keep bailout margin.'
-	},
-	{
-		dayLabel: 'Sun',
-		dateLabel: 'Jun 21',
-		highF: 83,
-		lowF: 65,
-		windMph: 11,
-		precipPct: 55,
-		risk: 'medium',
-		note: 'Wet day. Mind footing on rocks.'
 	}
 ];
 

@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hogg Country — UX Design Bake-off · 2026-06</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Lato:wght@400;700;900&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#f4efe4; --bg-deep:#e7dcc8; --surface:#fbf7ef; --surface-strong:#fffdf8;
+    --ink:#1f241d; --muted:#5f6558; --line:#d8cfbf;
+    --forest:#2f4b35; --moss:#6a845f; --sand:#c8a77a; --clay:#aa6843; --sky:#5f8090;
+    --gold:#b88a2a; --danger:#9a3b2f; --success:#2f6a47; --warn:#b6892c;
+    --hi:#2f6a47; --hi-bg:#e6f0e8; --mid:#9a7b2c; --mid-bg:#f4ecd8; --lo:#9a574a; --lo-bg:#f3e4de;
+    --sans:'Lato',system-ui,-apple-system,'Segoe UI',sans-serif;
+    --serif:'Fraunces','Iowan Old Style',Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:
+      radial-gradient(circle at 50% -8%, rgba(198,167,122,.20), transparent 42%),
+      linear-gradient(180deg,var(--bg) 0%, #efe7d7 100%);
+    color:var(--ink); font-family:var(--sans); line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px; margin:0 auto; padding:0 22px 90px}
+  a{color:var(--forest)}
+
+  /* ---- hero ---- */
+  header.hero{padding:54px 0 26px; text-align:center}
+  .kicker{font-size:.74rem; font-weight:900; letter-spacing:.22em; text-transform:uppercase; color:var(--moss)}
+  h1{font-family:var(--serif); font-weight:600; font-size:clamp(2.1rem,5vw,3.3rem); line-height:1.04; margin:.28em 0 .14em; letter-spacing:-.01em}
+  .hero p.sub{max-width:680px; margin:6px auto 0; color:var(--muted); font-size:1.02rem}
+  .hero .meta{margin-top:14px; font-size:.8rem; color:var(--moss); font-weight:700; letter-spacing:.04em}
+
+  /* ---- winner banner ---- */
+  .winner-band{
+    margin:30px 0 8px; background:linear-gradient(135deg,#2f4b35,#3a5f43);
+    color:#f6f1e6; border-radius:24px; padding:26px 28px; box-shadow:0 18px 44px -20px rgba(31,36,29,.7);
+    display:grid; grid-template-columns:auto 1fr; gap:22px; align-items:center;
+  }
+  .medal{font-size:2.7rem; line-height:1}
+  .winner-band h2{font-family:var(--serif); font-weight:600; font-size:1.7rem; margin:0 0 4px}
+  .winner-band .score-chip{display:inline-block; background:rgba(246,241,230,.16); border:1px solid rgba(246,241,230,.3); padding:3px 11px; border-radius:999px; font-weight:900; font-size:.82rem; letter-spacing:.03em; margin-left:8px; vertical-align:middle}
+  .winner-band p{margin:6px 0 0; color:#e7e0cf; font-size:.96rem; max-width:760px}
+  .winner-band blockquote{margin:12px 0 0; padding-left:14px; border-left:3px solid var(--sand); font-style:italic; color:#efe8d8; font-size:.92rem}
+  .winner-band blockquote cite{display:block; font-style:normal; font-size:.78rem; color:#c9c0ac; margin-top:4px; letter-spacing:.03em}
+
+  section{margin-top:46px}
+  h3.sec{font-family:var(--serif); font-weight:600; font-size:1.5rem; margin:0 0 4px; display:flex; align-items:baseline; gap:10px}
+  h3.sec .num{font-size:.8rem; font-weight:900; color:var(--sand); font-family:var(--sans); letter-spacing:.14em}
+  .sec-note{color:var(--muted); font-size:.92rem; margin:0 0 18px; max-width:820px}
+
+  /* ---- scoreboard ---- */
+  .board-scroll{overflow-x:auto; border-radius:18px; border:1px solid var(--line); background:var(--surface-strong); box-shadow:0 10px 28px rgba(48,45,35,.07)}
+  table.board{border-collapse:collapse; width:100%; min-width:760px; font-size:.9rem}
+  table.board th, table.board td{padding:11px 9px; text-align:center; border-bottom:1px solid var(--line)}
+  table.board thead th{font-size:.66rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:900; background:var(--bg-deep)}
+  table.board tbody th{text-align:left; font-weight:800; white-space:nowrap; font-size:.92rem; padding-left:16px}
+  table.board tbody tr:last-child td, table.board tbody tr:last-child th{border-bottom:0}
+  .row-win{background:linear-gradient(90deg, rgba(184,138,42,.13), rgba(184,138,42,.03))}
+  .row-win th{color:var(--forest)}
+  td.cell{font-variant-numeric:tabular-nums; font-weight:700; border-radius:8px}
+  .s-hi{color:var(--hi); background:var(--hi-bg)}
+  .s-mid{color:var(--mid); background:var(--mid-bg)}
+  .s-lo{color:var(--lo); background:var(--lo-bg)}
+  .champ{position:relative; box-shadow:inset 0 0 0 2px rgba(47,75,53,.45)}
+  .champ::after{content:'★'; position:absolute; top:1px; right:3px; font-size:.55rem; color:var(--forest)}
+  td.total{font-family:var(--serif); font-weight:700; font-size:1.18rem; color:var(--ink)}
+  .row-win td.total{color:var(--gold)}
+  .legend{display:flex; gap:16px; flex-wrap:wrap; margin-top:12px; font-size:.76rem; color:var(--muted)}
+  .legend span{display:inline-flex; align-items:center; gap:6px}
+  .sw{width:13px; height:13px; border-radius:4px; display:inline-block}
+
+  /* ---- device wall ---- */
+  .wall{display:grid; grid-template-columns:repeat(auto-fill, minmax(360px,1fr)); gap:26px}
+  .card{background:var(--surface-strong); border:1px solid var(--line); border-radius:22px; padding:18px 18px 20px; box-shadow:0 12px 30px rgba(48,45,35,.08); display:flex; flex-direction:column}
+  .card.win{border:2px solid var(--gold); box-shadow:0 16px 40px -10px rgba(184,138,42,.4)}
+  .rank{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px}
+  .rank .badge{font-size:.68rem; font-weight:900; letter-spacing:.12em; text-transform:uppercase; color:#fff; background:var(--moss); padding:4px 10px; border-radius:999px}
+  .card.win .rank .badge{background:var(--gold)}
+  .rank .tot{font-family:var(--serif); font-weight:700; font-size:1.35rem}
+  .card h4{font-family:var(--serif); font-weight:600; font-size:1.28rem; margin:2px 0 2px}
+  .card .tag{color:var(--muted); font-size:.86rem; margin:0 0 12px; min-height:2.4em}
+  .frame-shell{width:100%; max-width:340px; height:680px; margin:0 auto; overflow:hidden; border-radius:20px; border:1px solid var(--line); background:#fff; box-shadow:inset 0 0 0 1px rgba(0,0,0,.02), 0 6px 18px rgba(48,45,35,.1)}
+  .frame-shell iframe{width:820px; height:1640px; border:0; transform:scale(.4146); transform-origin:top left; background:#fff}
+  .meta-rows{margin-top:14px; display:grid; gap:9px}
+  .mrow{font-size:.84rem}
+  .mrow b{display:block; font-size:.64rem; letter-spacing:.1em; text-transform:uppercase; color:var(--moss); margin-bottom:2px}
+  .open{margin-top:14px; display:inline-flex; align-items:center; gap:6px; align-self:flex-start; background:var(--forest); color:#f6f1e6; text-decoration:none; font-weight:800; font-size:.84rem; padding:9px 16px; border-radius:999px}
+  .open:hover{background:#26402d}
+
+  /* ---- borrow ---- */
+  .borrow{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:16px}
+  .bcard{background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--forest); border-radius:14px; padding:16px}
+  .bcard.d4{border-left-color:var(--sky)} .bcard.d5{border-left-color:var(--clay)} .bcard.d1{border-left-color:var(--moss)} .bcard.d2{border-left-color:var(--sand)}
+  .bcard h5{margin:0 0 6px; font-size:.74rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:900}
+  .bcard .what{font-family:var(--serif); font-weight:600; font-size:1.05rem; margin:0 0 6px}
+  .bcard p{margin:0; font-size:.86rem; color:#3c4338}
+
+  /* ---- judges ---- */
+  details.judge{background:var(--surface-strong); border:1px solid var(--line); border-radius:16px; margin-bottom:12px; overflow:hidden}
+  details.judge summary{cursor:pointer; padding:15px 18px; font-weight:800; display:flex; align-items:center; justify-content:space-between; gap:12px; list-style:none}
+  details.judge summary::-webkit-details-marker{display:none}
+  details.judge summary .who{font-family:var(--serif); font-weight:600; font-size:1.1rem}
+  details.judge summary .pick{font-size:.74rem; font-weight:900; letter-spacing:.06em; color:var(--forest); background:var(--hi-bg); padding:4px 10px; border-radius:999px; white-space:nowrap}
+  .judge-body{padding:0 18px 16px}
+  .judge-body .lens{color:var(--muted); font-size:.86rem; font-style:italic; margin:0 0 12px; padding:10px 14px; background:var(--bg); border-radius:10px}
+  .vtable{width:100%; border-collapse:collapse; font-size:.84rem}
+  .vtable td{padding:8px 6px; border-bottom:1px solid var(--line); vertical-align:top}
+  .vtable td.d{white-space:nowrap; font-weight:800; width:140px}
+  .vtable tr:last-child td{border-bottom:0}
+  .vtable .v{color:#3c4338}
+  .note{margin-top:12px; font-size:.86rem; color:var(--ink); background:var(--bg); border-radius:10px; padding:11px 14px}
+  .note b{color:var(--forest)}
+
+  footer{margin-top:54px; padding-top:22px; border-top:1px solid var(--line); color:var(--muted); font-size:.82rem; text-align:center}
+  @media (max-width:520px){ .winner-band{grid-template-columns:1fr} .frame-shell{height:600px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="kicker">Hogg Country · Trail App</div>
+    <h1>UX Design Bake-off</h1>
+    <p class="sub">Five genuinely distinct directions for the same scope — Scout · Map · Gear · Trail + KJV — judged for the best experience for a one-handed, outdoor, sometimes-offline thru-hiker. <strong>Exploration, not a rebuild.</strong></p>
+    <div class="meta">5 directions · 5 independent UX judges · 8 criteria · grounded in the real build (Day 42 · Mile 1438 · NY/CT corridor)</div>
+  </header>
+
+  <div class="winner-band">
+    <div class="medal">🥇</div>
+    <div>
+      <h2>Winner — D3 · Today (Calm) <span class="score-chip">325 / 400</span></h2>
+      <p>A paper-quiet, glanceable dashboard. It won <strong>4 of the 5 judges</strong>; the lone dissenter still ranked it second. For a tired, cold-handed hiker in sun glare on one bar of signal, it surfaces the thing that keeps you safe in a two-second glance — safety wins by <em>size</em>, not by a red alarm — while telling the plain truth about uncertain data.</p>
+      <blockquote>“The one I'd actually carry: I can read the numbers that keep me safe — water, weather, readiness — in a two-second glance, and it tells me the water's unconfirmed in plain words.”
+        <cite>— Hal (“Dad”), the end-user judge</cite></blockquote>
+    </div>
+  </div>
+
+  <!-- SCOREBOARD -->
+  <section id="scoreboard">
+    <h3 class="sec"><span class="num">01</span> Scoreboard</h3>
+    <p class="sec-note">Average score per criterion (1–10) across all five judges. <strong>★</strong> = criterion champion. D3 wins 5 of 8 criteria; the other four directions each win exactly one — and those three (Learnability, One-handed, Delight) are precisely D3's softest scores. The losers are a parts bin for the winner.</p>
+    <div class="board-scroll">
+      <table class="board">
+        <thead>
+          <tr><th style="text-align:left;padding-left:16px">Direction</th><th>Clarity</th><th>Calm</th><th>Glance</th><th>1-Hand</th><th>Hierarchy</th><th>Learn</th><th>Delight</th><th>Outdoor</th><th>Total</th></tr>
+        </thead>
+        <tbody>
+          <tr class="row-win">
+            <th>🥇 D3 · Today (Calm)</th>
+            <td class="cell s-hi champ">8.8</td><td class="cell s-hi champ">9.0</td><td class="cell s-hi champ">9.0</td><td class="cell s-mid">7.0</td><td class="cell s-hi champ">8.8</td><td class="cell s-hi">8.0</td><td class="cell s-lo">6.0</td><td class="cell s-hi champ">8.4</td><td class="total">325</td>
+          </tr>
+          <tr>
+            <th>D1 · Scout Hub <small style="color:var(--muted);font-weight:600">(baseline)</small></th>
+            <td class="cell s-mid">7.2</td><td class="cell s-lo">6.2</td><td class="cell s-lo">5.4</td><td class="cell s-mid">7.2</td><td class="cell s-lo">6.4</td><td class="cell s-hi champ">8.8</td><td class="cell s-lo">5.4</td><td class="cell s-lo">6.4</td><td class="total">265</td>
+          </tr>
+          <tr>
+            <th>D4 · One Thumb</th>
+            <td class="cell s-lo">6.0</td><td class="cell s-mid">6.8</td><td class="cell s-mid">7.2</td><td class="cell s-mid champ">7.8</td><td class="cell s-mid">6.8</td><td class="cell s-lo">3.4</td><td class="cell s-mid">7.4</td><td class="cell s-mid">7.4</td><td class="total">264</td>
+          </tr>
+          <tr>
+            <th>D5 · Field Notes</th>
+            <td class="cell s-lo">6.0</td><td class="cell s-lo">6.0</td><td class="cell s-lo">5.2</td><td class="cell s-mid">6.8</td><td class="cell s-lo">5.8</td><td class="cell s-mid">7.2</td><td class="cell s-hi champ">8.8</td><td class="cell s-lo">4.4</td><td class="total">251</td>
+          </tr>
+          <tr>
+            <th>D2 · Trailhead</th>
+            <td class="cell s-lo">5.2</td><td class="cell s-lo">4.8</td><td class="cell s-lo">5.4</td><td class="cell s-lo">4.6</td><td class="cell s-lo">6.0</td><td class="cell s-lo">4.0</td><td class="cell s-mid">7.2</td><td class="cell s-lo">4.6</td><td class="total">209</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--hi-bg);box-shadow:inset 0 0 0 1px var(--hi)"></i> 8.0–10 strong</span>
+      <span><i class="sw" style="background:var(--mid-bg);box-shadow:inset 0 0 0 1px var(--mid)"></i> 6.5–7.9 fair</span>
+      <span><i class="sw" style="background:var(--lo-bg);box-shadow:inset 0 0 0 1px var(--lo)"></i> below 6.5 weak</span>
+      <span>★ criterion champion</span>
+    </div>
+  </section>
+
+  <!-- DEVICE WALL -->
+  <section id="directions">
+    <h3 class="sec"><span class="num">02</span> The five, side by side</h3>
+    <p class="sec-note">Each is a real, self-contained mockup of all four pillars (Scout · Map · Gear · Trail), built on the live brand tokens and authentic trail data. Previews are scaled — click <strong>Open full screen</strong> to inspect any direction at true size.</p>
+    <div class="wall">
+
+      <div class="card win">
+        <div class="rank"><span class="badge">🥇 Winner · #1</span><span class="tot">325</span></div>
+        <h4>D3 · Today (Calm)</h4>
+        <p class="tag">A paper-quiet dashboard you read in a two-second cold glance — safety wins by size, not by shouting.</p>
+        <div class="frame-shell"><iframe src="mockups/d3-today-calm.html" loading="lazy" title="D3 Today (Calm) mockup"></iframe></div>
+        <div class="meta-rows">
+          <div class="mrow"><b>Boldest move</b>No red anywhere — the HOLD verdict and candidate-grade water are made dominant by enormous serif scale and quiet amber, betting a tired hiker absorbs calm hierarchy faster than alarms.</div>
+          <div class="mrow"><b>Watch-out</b>Low information density (scroll for secondary facts), and its tiny text section-switcher is its one un-thumb-friendly element.</div>
+        </div>
+        <a class="open" href="mockups/d3-today-calm.html" target="_blank" rel="noopener">Open full screen ↗</a>
+      </div>
+
+      <div class="card">
+        <div class="rank"><span class="badge">#2</span><span class="tot">265</span></div>
+        <h4>D1 · Scout Hub <small style="font-family:var(--sans);font-size:.7rem;color:var(--muted);font-weight:700">baseline</small></h4>
+        <p class="tag">The current build, rebuilt as an honest control: chat-first, a calm 4-pillar bottom tab bar, Scout as home.</p>
+        <div class="frame-shell"><iframe src="mockups/d1-scout-hub.html" loading="lazy" title="D1 Scout Hub mockup"></iframe></div>
+        <div class="meta-rows">
+          <div class="mrow"><b>Strength</b>Most learnable (8.8) and the most fully-realized source-receipt + confidence-badge machinery of any direction.</div>
+          <div class="mrow"><b>Watch-out</b>A chat log is the wrong home for a glance — the decision (84 HOLD) is the third bubble down a scrollable thread.</div>
+        </div>
+        <a class="open" href="mockups/d1-scout-hub.html" target="_blank" rel="noopener">Open full screen ↗</a>
+      </div>
+
+      <div class="card">
+        <div class="rank"><span class="badge">#3</span><span class="tot">264</span></div>
+        <h4>D4 · One Thumb</h4>
+        <p class="tag">No tab bar — swipe between four worlds, act from one thumb-zone command arc. The boldest structural bet.</p>
+        <div class="frame-shell"><iframe src="mockups/d4-one-thumb.html" loading="lazy" title="D4 One Thumb mockup"></iframe></div>
+        <div class="meta-rows">
+          <div class="mrow"><b>Strength</b>The single best action surface here — 70–78px thumb-zone arc buttons + a genuine dusk/dark mode. Best one-handed (7.8).</div>
+          <div class="mrow"><b>Watch-out</b>Bets the whole IA on an undiscoverable swipe → learnability 3.4, the lowest score in the matrix. Loved the buttons, feared the gesture.</div>
+        </div>
+        <a class="open" href="mockups/d4-one-thumb.html" target="_blank" rel="noopener">Open full screen ↗</a>
+      </div>
+
+      <div class="card">
+        <div class="rank"><span class="badge">#4</span><span class="tot">251</span></div>
+        <h4>D5 · Field Notes</h4>
+        <p class="tag">The whole app as Dad's warm analog trail journal — Scout in the margin, the Bible a pressed-in card, the family follows along.</p>
+        <div class="frame-shell"><iframe src="mockups/d5-field-notes.html" loading="lazy" title="D5 Field Notes mockup"></iframe></div>
+        <div class="meta-rows">
+          <div class="mrow"><b>Strength</b>Most delightful by a mile (8.8). The candidate-grade stream is circled and questioned in Dad's own handwriting — honesty as a person's doubt, not a badge.</div>
+          <div class="mrow"><b>Watch-out</b>Worst outdoors (4.4): handwriting + sepia-on-paper + texture wreck contrast in sun and risk burying the safety warning.</div>
+        </div>
+        <a class="open" href="mockups/d5-field-notes.html" target="_blank" rel="noopener">Open full screen ↗</a>
+      </div>
+
+      <div class="card">
+        <div class="rank"><span class="badge">#5</span><span class="tot">209</span></div>
+        <h4>D2 · Trailhead</h4>
+        <p class="tag">The map is home — location is the hub, Scout is summoned from a pin, a draggable sheet carries every answer.</p>
+        <div class="frame-shell"><iframe src="mockups/d2-trailhead.html" loading="lazy" title="D2 Trailhead mockup"></iframe></div>
+        <div class="meta-rows">
+          <div class="mrow"><b>Strength</b>The most beautiful cartography and the clearest “where am I” map of the five.</div>
+          <div class="mrow"><b>Watch-out</b>Fights every real condition: dark map washes out in glare, a 5px drag grabber is hostile to cold hands, and Scout has no global home. A great demo, a poor trail tool.</div>
+        </div>
+        <a class="open" href="mockups/d2-trailhead.html" target="_blank" rel="noopener">Open full screen ↗</a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- RECOMMENDATION / BORROW -->
+  <section id="recommendation">
+    <h3 class="sec"><span class="num">03</span> Recommendation — ship D3, then assemble</h3>
+    <p class="sec-note">D3 is the spine. Its three weakest criteria are the three the other directions each win — so this isn't a compromise, it's an assembly. Take these into the calm dashboard:</p>
+    <div class="borrow">
+      <div class="bcard d4">
+        <h5>From D4 · One Thumb</h5>
+        <p class="what">The thumb-zone targets</p>
+        <p>Replace D3's tiny text switcher with a persistent, large, bottom-anchored control — consider the command-arc fan for primary actions (Ask · Check-in · Water · Verse). Patches D3's lowest non-delight score. <em>Take the buttons; leave the swipe-only IA.</em></p>
+      </div>
+      <div class="bcard d5">
+        <h5>From D5 · Field Notes</h5>
+        <p class="what">Handwritten honesty + warmth</p>
+        <p>Keep D3's calm safety hierarchy, but borrow the human voice for the candidate-grade caveat and add a journal/keepsake surface under Trail (the family follows; Father's Day is Jun 21). Patches Delight 6.0 without hurting legibility.</p>
+      </div>
+      <div class="bcard d1">
+        <h5>From D1 · Scout Hub</h5>
+        <p class="what">Receipt machinery + real chat one layer down</p>
+        <p>D3's “glance, don't explore” makes Scout thin. Keep the calm Ask-Scout card as the entry, wire in D1's built-out source-receipts + confidence badge, and let it open into a genuine chat for follow-ups. <em>Glance by default, converse on demand.</em></p>
+      </div>
+      <div class="bcard d2">
+        <h5>From D2 · Trailhead</h5>
+        <p class="what">The idea, not the screen</p>
+        <p>Location-as-context — Scout answers anchored to a place (“about Morgan Stewart Shelter, mi 1442.6”) and a clean topo “where am I” map — is worth keeping as the <strong>Map pillar's</strong> deeper layer. Just don't make a dark map the home of the whole app.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- JUDGES -->
+  <section id="judges">
+    <h3 class="sec"><span class="num">04</span> The panel — every judge, every verdict</h3>
+    <p class="sec-note">Five independent UX-expert personas, each scoring all five directions blind to the others, then naming a winner.</p>
+
+    <details class="judge" open>
+      <summary><span class="who">Tess — Touch &amp; Ergonomics</span><span class="pick">picks D1</span></summary>
+      <div class="judge-body">
+        <p class="lens">Ex-Apple HIG: weights one-handed reach, thumb zones, Fitts's-law target sizes, and gesture cost above beauty.</p>
+        <table class="vtable">
+          <tr><td class="d">D1 · 62</td><td class="v">The textbook-correct thumb layout — full-width bottom tabs + a bottom composer put every primary action in the thumb arc. <em>Flaw: secondary pills under the 44px floor.</em></td></tr>
+          <tr><td class="d">D2 · 47</td><td class="v">Gorgeous cartography sabotaged by the thumb: a 5px drag grabber and Scout-from-a-tiny-pin hide critical actions behind cold-hands-hostile gestures.</td></tr>
+          <tr><td class="d">D3 · 58</td><td class="v">Calm and beautifully legible to read, but navigation is tiny centered text-links and 5px dots — under-engineered for a cold thumb.</td></tr>
+          <tr><td class="d">D4 · 57</td><td class="v">The biggest, best-placed action targets in the field (the arc), but gambles the whole IA on an undiscoverable swipe with no fallback.</td></tr>
+          <tr><td class="d">D5 · 49</td><td class="v">Warm, with a solid full-width tab bar — but Caveat handwriting and tiny stencil labels fail the sun-glare, tired-eyes test.</td></tr>
+        </table>
+        <p class="note"><b>Overall:</b> d1 ships — every primary action in a persistent, full-width, large-target bottom zone with no gesture to discover. “d4 has the best action surface; I'd graft it onto d1's persistent nav, but alone its gesture-only IA is too risky for a 62-year-old offline on a ridge.”</p>
+      </div>
+    </details>
+
+    <details class="judge">
+      <summary><span class="who">Rune — Calm Minimalist</span><span class="pick">picks D3</span></summary>
+      <div class="judge-body">
+        <p class="lens">Rams / Reichenstein restraint: weights signal-to-noise, cognitive load, one focus per screen — but minimalism that hides safety info is punished, not rewarded.</p>
+        <table class="vtable">
+          <tr><td class="d">D1 · 51</td><td class="v">Competent, honest, conventional — but a chat log is the wrong home for a glance; the answer that matters is buried below a question.</td></tr>
+          <tr><td class="d">D2 · 41</td><td class="v">Beautiful cartography, but a dark map + pulsing dot + draggable sheet is the opposite of calm under sun and fatigue.</td></tr>
+          <tr><td class="d">D3 · 67</td><td class="v">The one screen that respects a tired mind: one focus, huge type, safety winning by size — honest without shouting.</td></tr>
+          <tr><td class="d">D4 · 49</td><td class="v">Brilliant thumb ergonomics around a navigation model a tired hiker has to be taught — gesture-only nav is a memory tax, not a calm.</td></tr>
+          <tr><td class="d">D5 · 48</td><td class="v">The most soulful and most decorated — washi tape and rotated slips are charm that taxes the eye the brief asked me to protect.</td></tr>
+        </table>
+        <p class="note"><b>Overall:</b> d3 is the clear ship — the only direction where the safety verdict wins by size, not red or ornament, reads in two seconds, and keeps offline honesty on every screen. “Fix the switcher to large tappable zones and it's both the calmest and the safest.”</p>
+      </div>
+    </details>
+
+    <details class="judge">
+      <summary><span class="who">Mara — Field &amp; Accessibility</span><span class="pick">picks D3</span></summary>
+      <div class="judge-body">
+        <p class="lens">Outdoor-conditions + a11y: grades sun-glare contrast, cold/gloved-hand targets, motor tolerance, offline honesty, and whether the candidate-water caveat is unmissable.</p>
+        <table class="vtable">
+          <tr><td class="d">D1 · 50</td><td class="v">Honest, familiar, high-contrast — but safety lives in chat you have to scroll and ask for, in low-contrast amber-on-cream below the fold.</td></tr>
+          <tr><td class="d">D2 · 38</td><td class="v">Beautiful dark cartography that fights every real condition: drag gestures, 10px labels in glare, safety hidden in a peeked sheet.</td></tr>
+          <tr><td class="d">D3 · 67</td><td class="v">The two-second cold-glance dashboard: huge type, dark-on-cream contrast, scroll-only, candidate-grade flagged structurally on every screen.</td></tr>
+          <tr><td class="d">D4 · 51</td><td class="v">Genuinely engineered for cold hands and sun (arc, dusk mode, big numerals) — but bets the IA on swipes that fail exactly when hands are cold.</td></tr>
+          <tr><td class="d">D5 · 45</td><td class="v">The most loved object and the least safe in glare: it encodes the water caveat as a charming handwritten “?” on noisy paper.</td></tr>
+        </table>
+        <p class="note"><b>Overall:</b> d3 — the only direction where safety-critical info wins by sheer size and structure, contrast is dark-on-cream throughout, and interaction is pure scroll (most motor-tolerant). “d5, while most beloved, literally buries the water caveat in handwriting on low-contrast paper.”</p>
+      </div>
+    </details>
+
+    <details class="judge">
+      <summary><span class="who">Ivo — IA &amp; Product</span><span class="pick">picks D3</span></summary>
+      <div class="judge-body">
+        <p class="lens">Norman / Cooper: weights whether the structure maps to the five real jobs with minimal navigation and a sound mental model; punishes cleverness that costs findability.</p>
+        <table class="vtable">
+          <tr><td class="d">D1 · 49</td><td class="v">A sound, instantly learnable 4-tab structure undermined by making a chat log the home a tired hiker can't glance.</td></tr>
+          <tr><td class="d">D2 · 43</td><td class="v">Map-as-home is defensible for water/shelter, but a pin-summoned Scout and sheet-as-everything leave a real findability hole.</td></tr>
+          <tr><td class="d">D3 · 66</td><td class="v">The cleanest structure-to-job map in the set: each pillar one calm scroll, safety wins by size, the tab model keeps findability intact.</td></tr>
+          <tr><td class="d">D4 · 55</td><td class="v">Beautiful glance numerals and real dusk thinking, around a swipe-only model that taxes the memory of the user with least to spare.</td></tr>
+          <tr><td class="d">D5 · 52</td><td class="v">Emotionally truest to “stay connected / keep faith,” and wisely keeps 4 tabs — but the analog aesthetic softens the safety signal.</td></tr>
+        </table>
+        <p class="note"><b>Overall:</b> d3 is the only direction where the structure itself does the safety work. “The bolder structures pay for novelty in learnability; d5's gorgeous journal is runner-up but undercuts the candidate-grade honesty that is the actual safety feature.”</p>
+      </div>
+    </details>
+
+    <details class="judge">
+      <summary><span class="who">Hal — “Dad” (the end user)</span><span class="pick">picks D3</span></summary>
+      <div class="judge-body">
+        <p class="lens">The 62-year-old actually holding the phone — tired, cold-handed, sun in his eyes, one bar — scoring on what helps him find water, weather, and his verse in the next hour without fighting the thing.</p>
+        <table class="vtable">
+          <tr><td class="d">D1 · 53</td><td class="v">The familiar one — I always know where Map, Gear and Trail are, but the Scout chat is busy and the receipts are too small to read in the sun.</td></tr>
+          <tr><td class="d">D2 · 40</td><td class="v">A beautiful dark map that looks great on a table and disappears in bright sun, run by gestures I'd never find when I'm tired.</td></tr>
+          <tr><td class="d">D3 · 67</td><td class="v">The one I can read at arm's length in the sun — water, shelter and town are big plain numbers and readiness shouts “84 HOLD” without me hunting.</td></tr>
+          <tr><td class="d">D4 · 52</td><td class="v">Those big round thumb buttons are the kindest thing here for cold hands — but making me swipe blind between four worlds is asking a tired old man to memorize a maze.</td></tr>
+          <tr><td class="d">D5 · 57</td><td class="v">The one that feels made for me and the family — but pretty handwriting and sepia ink are harder to read fast in glare than I'd like.</td></tr>
+        </table>
+        <p class="note"><b>Overall:</b> d3 is the one I'd carry. “I'd steal d4's big round thumb buttons for its weak bottom switcher and keep d5's handwritten ‘?’ honesty in my heart — but for staying watered and out of a storm today, the calm paper dashboard wins.”</p>
+      </div>
+    </details>
+  </section>
+
+  <footer>
+    Hogg Country trail app · UX design bake-off · 2026-06 · 5 directions × 5 judges × 8 criteria.<br/>
+    Exploration only — nothing here changes the app. Full write-up: <a href="JUDGED-COMPARISON.md">JUDGED-COMPARISON.md</a> · mockups in <a href="mockups/">mockups/</a>
+  </footer>
+
+</div>
+</body>
+</html>

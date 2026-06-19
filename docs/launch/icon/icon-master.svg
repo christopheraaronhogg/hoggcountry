@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f1e8d3"/>
+      <stop offset="1" stop-color="#e9ddc2"/>
+    </linearGradient>
+    <radialGradient id="sung" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#eaa055"/>
+      <stop offset="1" stop-color="#df7a30"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1024" height="1024" fill="url(#sky)"/>
+
+  <!-- sun -->
+  <circle cx="560" cy="402" r="180" fill="url(#sung)"/>
+
+  <!-- far ridge (sage) -->
+  <path d="M0 1024 L0 560 Q 200 486 392 520 Q 560 470 712 478 Q 880 486 1024 548 L1024 1024 Z" fill="#8a9c77"/>
+
+  <!-- boar stands on the near ridge, in front of the sun -->
+  
+  <g fill="#1d2f1c">
+    <!-- tail -->
+    <path d="M380 470 C 364 462, 362 442, 378 440 C 388 439, 389 451 383 460 Z"/>
+    <!-- short sturdy legs, feet planted on the ridge -->
+    <rect x="612" y="476" width="25" height="72" rx="8"/>
+    <rect x="552" y="478" width="23" height="70" rx="8"/>
+    <rect x="452" y="478" width="23" height="70" rx="8"/>
+    <rect x="396" y="476" width="25" height="72" rx="8"/>
+    <!-- body + head + short snout -->
+    <path d="M380 452
+      C 380 412, 402 388, 448 382
+      C 492 376, 522 376, 552 382
+      C 582 388, 602 404, 620 424
+      C 634 438, 646 448, 662 454
+      C 676 459, 684 468, 686 480
+      C 687 489, 683 495, 674 496
+      L 654 496
+      C 646 496, 641 492, 636 486
+      C 620 474, 560 472, 500 476
+      C 452 479, 412 480, 398 490
+      C 388 496, 382 492, 380 480 Z"/>
+    <!-- ear on the head -->
+    <path d="M638 450 L650 421 L670 448 Z"/>
+  </g>
+
+  <!-- near ridge (forest) -->
+  <path d="M0 1024 L0 612 Q 210 540 360 566 Q 470 510 600 556 Q 792 612 1024 572 L1024 1024 Z" fill="#2f4b35"/>
+
+  <!-- a pine on the left for depth -->
+  <g fill="#1d2f1c">
+    <path d="M150 600 L188 520 L226 600 Z"/>
+    <path d="M158 648 L188 576 L218 648 Z"/>
+    <rect x="180" y="640" width="16" height="40"/>
+  </g>
+</svg>

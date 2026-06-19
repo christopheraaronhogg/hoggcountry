@@ -86,7 +86,7 @@ Optional environment:
 ## Production Distribution
 
 The Forge deployment runs this MCP server as `hoggcountry-scout-chatgpt-app` on
-`127.0.0.1:8787` and Laravel proxies the public MCP endpoint at:
+`127.0.0.1:8788` and Laravel proxies the public MCP endpoint at:
 
 ```text
 https://hoggcountry.on-forge.com/mcp

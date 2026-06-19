@@ -17,6 +17,9 @@ Thumbs.db
 .env.*
 !.env.example
 !.env.test
+# Tracked: production build policy (no secrets — only the public VITE_ model
+# policy that makes on-device builds Gemma-only). Loaded by `vite build`.
+!.env.production
 
 # Vite
 vite.config.js.timestamp-*

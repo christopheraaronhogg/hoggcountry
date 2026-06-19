@@ -4610,114 +4610,113 @@ Message a trusted person at home. They:
 
 ## Primary Emergency Exit Points (NOBO)
 
-**Always know the next exit ahead and the last exit behind. Road name + gap name matters more than mile number.**
+**Always know the next exit ahead and the last exit behind. Road name + gap name matters more than mile number.** Miles are calibrated to the official 2026 northbound frame (see `docs/trail-data-provenance.md`) and remain approximate—verify against FarOut/AWOL when conditions matter.
 
 ### GEORGIA (Mile 0 – ~78)
 
 | Mile | Exit Point |
 |------|------------|
 | 0.0 | Springer Mountain / FS 42–58 access |
-| ~8.8 | Nimblewill Gap Rd |
-| ~20.6 | Woody Gap (GA-60) |
-| ~30.7 | Jarrard Gap Rd |
+| ~20.5 | Woody Gap (GA-60) |
+| ~25.7 | Jarrard Gap Rd |
 | ~31.3 | Neels Gap (US-19 / US-129) |
-| ~42.1 | Hogpen Gap (GA-348) |
-| ~52.9 | Unicoi Gap (GA-75) |
-| ~60.6 | Indian Grave Gap Rd |
+| ~38.3 | Hogpen Gap (GA-348) |
+| ~52.8 | Unicoi Gap (GA-75) |
+| ~55.4 | Indian Grave Gap Rd |
 | ~69.4 | Dick's Creek Gap (GA-76) |
 
 ### NORTH CAROLINA / TENNESSEE (Mile ~78 – ~471)
 
 | Mile | Exit Point |
 |------|------------|
-| ~86.7 | Winding Stair Gap (US-64) |
-| ~102.7 | Nantahala Outdoor Center (US-19 / US-74) |
-| ~135.7 | Fontana Dam Road |
-| ~164.6 | Newfound Gap (US-441) |
-| ~198.6 | Davenport Gap (I-40) |
-| ~241.3 | Standing Bear / Green Corner Rd |
-| ~274.4 | Hot Springs (NC-209) |
-| ~299.1 | Allen Gap (NC-212) |
-| ~321.3 | Sam's Gap (US-19W) |
+| ~109.6 | Winding Stair Gap (US-64) |
+| ~136.9 | Nantahala Outdoor Center (US-19 / US-74) |
+| ~164.7 | Fontana Dam Road |
+| ~208.0 | Newfound Gap (US-441) |
+| ~239.4 | Davenport Gap (I-40) |
+| ~242.3 | Standing Bear / Green Corner Rd |
+| ~275.2 | Hot Springs (NC-209) |
+| ~290.3 | Allen Gap (NC-212) |
+| ~319.9 | Sam's Gap (US-19W) |
 
-### VIRGINIA (Mile ~471 – ~1,020)
-
-| Mile | Exit Point |
-|------|------------|
-| ~471 | Damascus (US-58) |
-| ~500.5 | Elk Garden (VA-600) |
-| ~534.6 | Kimberling Creek Rd |
-| ~635.3 | Pearisburg (VA-460) |
-| ~639.8 | New River Bridge (US-460) |
-| ~726.3 | VA-311 (McAfee Knob / Catawba) |
-| ~785.9 | James River (US-501) |
-| ~863.7 | Rockfish Gap (I-64 / US-250) |
-| ~909.6 | Swift Run Gap (US-33) |
-| ~934.5 | Thornton Gap (US-211) |
-| ~971.1 | Front Royal (US-522) |
-
-### WEST VIRGINIA / MARYLAND (Mile ~1,020 – ~1,100)
+### VIRGINIA (Mile ~471 – ~1,024)
 
 | Mile | Exit Point |
 |------|------------|
-| ~1,024.4 | Harpers Ferry (US-340) |
-| ~1,040.6 | Weverton Road |
-| ~1,061.0 | Gathland State Park |
-| ~1,067.3 | Pen-Mar Park (MD-550) |
+| ~471.0 | Damascus (US-58) |
+| ~495.5 | Elk Garden (VA-600) |
+| ~605.5 | Kimberling Creek Rd |
+| ~636.4 | Pearisburg (VA-460) |
+| ~638.2 | New River Bridge (US-460) |
+| ~710.6 | VA-311 (McAfee Knob / Catawba) |
+| ~787.9 | James River (US-501) |
+| ~865.1 | Rockfish Gap (I-64 / US-250) |
+| ~910.4 | Swift Run Gap (US-33) |
+| ~945.4 | Thornton Gap (US-211) |
+| ~973.3 | Front Royal (US-522) |
 
-### PENNSYLVANIA (Mile ~1,100 – ~1,350)
-
-| Mile | Exit Point |
-|------|------------|
-| ~1,136.5 | Caledonia (PA-16) |
-| ~1,166.5 | US-30 |
-| ~1,195.8 | Pine Grove Furnace (PA-233) |
-| ~1,249.3 | PA-34 |
-| ~1,309.4 | Port Clinton (PA-61) |
-| ~1,343.0 | Wind Gap (PA-33) |
-
-### NEW JERSEY / NEW YORK (Mile ~1,350 – ~1,550)
+### WEST VIRGINIA / MARYLAND (Mile ~1,024 – ~1,068)
 
 | Mile | Exit Point |
 |------|------------|
-| ~1,368.5 | Delaware Water Gap (I-80) |
-| ~1,390.7 | Culvers Gap (NJ-206) |
-| ~1,421.1 | Bear Mountain Bridge (US-202) |
-| ~1,455.7 | NY-22 |
+| ~1,026.5 | Harpers Ferry (US-340) |
+| ~1,030.8 | Weverton Road |
+| ~1,037.5 | Gathland State Park |
+| ~1,068.1 | Pen-Mar Park (MD-550) |
 
-### CONNECTICUT / MASSACHUSETTS (Mile ~1,550 – ~1,650)
-
-| Mile | Exit Point |
-|------|------------|
-| ~1,545.0 | US-7 (CT) |
-| ~1,591.6 | MA-23 |
-| ~1,640.6 | MA-2 (North Adams) |
-
-### VERMONT (Mile ~1,650 – ~1,750)
+### PENNSYLVANIA (Mile ~1,068 – ~1,298)
 
 | Mile | Exit Point |
 |------|------------|
-| ~1,651.8 | VT-9 (Bennington) |
-| ~1,706.4 | VT-4 (Killington) |
-| ~1,747.4 | VT-11 / VT-30 |
+| ~1,070.6 | Caledonia (PA-16) |
+| ~1,085.5 | US-30 |
+| ~1,105.0 | Pine Grove Furnace (PA-233) |
+| ~1,114.1 | PA-34 |
+| ~1,220.7 | Port Clinton (PA-61) |
+| ~1,281.6 | Wind Gap (PA-33) |
 
-### NEW HAMPSHIRE (Mile ~1,750 – ~1,905)
-
-| Mile | Exit Point |
-|------|------------|
-| ~1,796.6 | Glencliff (NH-25) |
-| ~1,820.7 | Kinsman Notch (NH-112) |
-| ~1,869.2 | Crawford Notch (US-302) |
-| ~1,888.1 | Pinkham Notch (NH-16) |
-| ~1,904.8 | Gorham (US-2) |
-
-### MAINE (Mile ~1,905 – {{trail.total_miles|round}})
+### NEW JERSEY / NEW YORK (Mile ~1,298 – ~1,462)
 
 | Mile | Exit Point |
 |------|------------|
-| ~1,964.5 | ME-27 (Stratton) |
-| ~2,012.3 | Kennebec River (ME-201) |
-| ~2,089.6 | Jo-Mary Road |
+| ~1,297.4 | Delaware Water Gap (I-80) |
+| ~1,326.0 | Culvers Gap (NJ-206) |
+| ~1,409.1 | Bear Mountain Bridge (US-202) |
+| ~1,455.0 | NY-22 |
+
+### CONNECTICUT / MASSACHUSETTS (Mile ~1,462 – ~1,605)
+
+| Mile | Exit Point |
+|------|------------|
+| ~1,496.8 | US-7 (CT) |
+| ~1,535.4 | MA-23 |
+| ~1,600.4 | MA-2 (North Adams) |
+
+### VERMONT (Mile ~1,605 – ~1,755)
+
+| Mile | Exit Point |
+|------|------------|
+| ~1,618.0 | VT-9 (Bennington) |
+| ~1,658.6 | VT-11 / VT-30 |
+| ~1,708.2 | VT-4 (Killington) |
+
+### NEW HAMPSHIRE (Mile ~1,755 – ~1,916)
+
+| Mile | Exit Point |
+|------|------------|
+| ~1,798.3 | Glencliff (NH-25) |
+| ~1,808.4 | Kinsman Notch (NH-112) |
+| ~1,852.0 | Crawford Notch (US-302) |
+| ~1,877.8 | Pinkham Notch (NH-16) |
+| ~1,898.9 | Gorham (US-2) |
+
+### MAINE (Mile ~1,916 – {{trail.total_miles|round}})
+
+| Mile | Exit Point |
+|------|------------|
+| ~2,009.0 | ME-27 (Stratton) |
+| ~2,046.0 | Kennebec River (ME-201) |
+| ~2,140.6 | Jo-Mary Road |
 | ~{{trail.total_miles}} | Katahdin Stream Campground Road |
 
 *Note: Some forest roads may be seasonally gated—verify with FarOut when conditions matter.*

@@ -1,21 +1,28 @@
 <script lang="ts">
-	import type { ElevationPoint } from './fieldData';
-	import { elevationNext20 } from './fieldData';
+	import { trailAssistant } from '$lib/trailState.svelte';
+	import { elevationWindow, type ElevationPoint } from '$lib/trail/trail-geometry';
 
 	let {
-		points = elevationNext20,
+		points,
 		currentMile,
-		height = 96
-	}: { points?: ElevationPoint[]; currentMile: number; height?: number } = $props();
+		height = 96,
+		miles = 20
+	}: { points?: ElevationPoint[]; currentMile?: number; height?: number; miles?: number } = $props();
 
 	const viewWidth = 600;
 	const viewHeight = $derived(height);
 	const padding = { top: 8, right: 6, bottom: 18, left: 6 };
+	const resolvedCurrentMile = $derived(currentMile ?? trailAssistant.currentMile);
+	const resolvedPoints = $derived.by(() =>
+		points ?? elevationWindow(trailAssistant.trailGeometry, resolvedCurrentMile, miles)
+	);
 
-	const minMile = $derived(points[0]?.mile ?? 0);
-	const maxMile = $derived(points[points.length - 1]?.mile ?? 1);
-	const minElev = $derived(Math.min(...points.map((p) => p.elevation)));
-	const maxElev = $derived(Math.max(...points.map((p) => p.elevation)));
+	const minMile = $derived(resolvedPoints[0]?.mile ?? resolvedCurrentMile);
+	const maxMile = $derived(resolvedPoints[resolvedPoints.length - 1]?.mile ?? resolvedCurrentMile + miles);
+	const elevations = $derived(resolvedPoints.map((p) => p.elevation));
+	const minElev = $derived(elevations.length ? Math.min(...elevations) : 0);
+	const maxElev = $derived(elevations.length ? Math.max(...elevations) : 0);
+	const hasProfile = $derived(resolvedPoints.length >= 2);
 
 	function scaleX(mile: number): number {
 		if (maxMile === minMile) return padding.left;
@@ -33,7 +40,7 @@
 	}
 
 	const linePath = $derived(
-		points
+		resolvedPoints
 			.map((point, index) => {
 				const x = scaleX(point.mile).toFixed(2);
 				const y = scaleY(point.elevation).toFixed(2);
@@ -43,29 +50,32 @@
 	);
 
 	const fillPath = $derived(
-		`${linePath} L${scaleX(maxMile).toFixed(2)},${(viewHeight - padding.bottom).toFixed(2)} L${scaleX(
-			minMile
-		).toFixed(2)},${(viewHeight - padding.bottom).toFixed(2)} Z`
+		hasProfile
+			? `${linePath} L${scaleX(maxMile).toFixed(2)},${(viewHeight - padding.bottom).toFixed(2)} L${scaleX(
+					minMile
+				).toFixed(2)},${(viewHeight - padding.bottom).toFixed(2)} Z`
+			: ''
 	);
 
 	const totalClimb = $derived(
-		points.reduce((total, point, index) => {
+		resolvedPoints.reduce((total, point, index) => {
 			if (index === 0) return total;
-			const delta = point.elevation - points[index - 1].elevation;
+			const delta = point.elevation - resolvedPoints[index - 1].elevation;
 			return delta > 0 ? total + delta : total;
 		}, 0)
 	);
 
 	const totalDrop = $derived(
-		points.reduce((total, point, index) => {
+		resolvedPoints.reduce((total, point, index) => {
 			if (index === 0) return total;
-			const delta = points[index - 1].elevation - point.elevation;
+			const delta = resolvedPoints[index - 1].elevation - point.elevation;
 			return delta > 0 ? total + delta : total;
 		}, 0)
 	);
 
-	const labeled = $derived(points.filter((point) => point.label));
-	const currentX = $derived(scaleX(currentMile));
+	const labeled = $derived(resolvedPoints.filter((point) => point.label));
+	const currentX = $derived(scaleX(resolvedCurrentMile));
+	const currentY = $derived(scaleY(resolvedPoints[0]?.elevation ?? minElev));
 </script>
 
 <div class="elevation-strip">
@@ -80,26 +90,30 @@
 		</div>
 	</div>
 
-	<svg viewBox={`0 0 ${viewWidth} ${viewHeight}`} preserveAspectRatio="none" aria-hidden="true">
-		<defs>
-			<linearGradient id="elev-fill" x1="0" x2="0" y1="0" y2="1">
-				<stop offset="0%" stop-color="rgba(106, 132, 95, 0.65)" />
-				<stop offset="100%" stop-color="rgba(106, 132, 95, 0)" />
-			</linearGradient>
-		</defs>
-		<path d={fillPath} fill="url(#elev-fill)" />
-		<path d={linePath} fill="none" stroke="var(--forest)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-		<line
-			x1={currentX}
-			x2={currentX}
-			y1={padding.top}
-			y2={viewHeight - padding.bottom}
-			stroke="var(--clay)"
-			stroke-width="2"
-			stroke-dasharray="3 3"
-		/>
-		<circle cx={currentX} cy={scaleY(points[0].elevation)} r="4.5" fill="var(--clay)" stroke="#fffdf8" stroke-width="1.6" />
-	</svg>
+	{#if hasProfile}
+		<svg viewBox={`0 0 ${viewWidth} ${viewHeight}`} preserveAspectRatio="none" aria-hidden="true">
+			<defs>
+				<linearGradient id="elev-fill" x1="0" x2="0" y1="0" y2="1">
+					<stop offset="0%" stop-color="rgba(106, 132, 95, 0.65)" />
+					<stop offset="100%" stop-color="rgba(106, 132, 95, 0)" />
+				</linearGradient>
+			</defs>
+			<path d={fillPath} fill="url(#elev-fill)" />
+			<path d={linePath} fill="none" stroke="var(--forest)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+			<line
+				x1={currentX}
+				x2={currentX}
+				y1={padding.top}
+				y2={viewHeight - padding.bottom}
+				stroke="var(--clay)"
+				stroke-width="2"
+				stroke-dasharray="3 3"
+			/>
+			<circle cx={currentX} cy={currentY} r="4.5" fill="var(--clay)" stroke="#fffdf8" stroke-width="1.6" />
+		</svg>
+	{:else}
+		<div class="empty-profile">Trail elevation pack loading</div>
+	{/if}
 
 	<div class="axis">
 		{#each labeled as point (point.mile)}
@@ -157,6 +171,18 @@
 			);
 		border-radius: 12px;
 		border: 1px solid rgba(95, 101, 88, 0.14);
+	}
+
+	.empty-profile {
+		display: grid;
+		place-items: center;
+		height: 96px;
+		border-radius: 12px;
+		border: 1px solid rgba(95, 101, 88, 0.14);
+		background: rgba(255, 253, 248, 0.62);
+		color: var(--muted);
+		font-size: 0.72rem;
+		font-weight: 800;
 	}
 
 	.axis {

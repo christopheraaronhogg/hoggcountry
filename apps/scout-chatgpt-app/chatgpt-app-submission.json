@@ -135,7 +135,7 @@
       "user_prompt": "Help me find Scout open-reference resupply context for the early Appalachian Trail.",
       "file_attachment_urls": null,
       "tools_triggered": "search",
-      "expected_output": "Returns relevant A.T. planning source leads with titles, excerpts, URLs, and source metadata.",
+      "expected_output": "Returns relevant A.T. planning source leads with stable ids, titles, and URLs so ChatGPT can fetch the full source text before answering.",
       "expected_output_url": null
     },
     {

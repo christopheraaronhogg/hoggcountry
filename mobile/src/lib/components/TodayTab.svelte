@@ -1,511 +1,697 @@
 <script lang="ts">
-	import { waterSources, weatherSnapshot } from '$lib/mockTrailData';
 	import { trailAssistant } from '$lib/trailState.svelte';
-	import TrailPulsePanel from './TrailPulsePanel.svelte';
-	import ElevationStrip from './ElevationStrip.svelte';
-	import WeatherStrip from './WeatherStrip.svelte';
-	import OfflineStatus from './OfflineStatus.svelte';
-	import ServiceStrip from './ServiceStrip.svelte';
-	import SourceChip from './SourceChip.svelte';
-	import ConfidenceBadge from './ConfidenceBadge.svelte';
-	import { sourceReceipts, packMissingCount, packTotalCarriedLb } from './fieldData';
+	import { elevationWindow, climbFeet } from '$lib/trail/trail-geometry';
+	import Icon, { type IconName } from './Icon.svelte';
 
-	function recommendationLabel() {
-		const labels = {
-			push: 'Push window',
-			steady: 'Steady day',
-			hold: 'Hold discipline',
-			nero: 'Nero recommended',
-			zero: 'Zero recommended'
-		};
+	// Today = the hiker's day, now → camp (M1 "Day Timeline"). No readiness score —
+	// we have no vitals, so the HUD anchors only on REAL data: position, the day's
+	// arc, the last cached forecast, and the next honest move. The structure
+	// answers "what do I do next?" at a 2-second glance.
 
-		return labels[trailAssistant.readiness.recommendation];
+	const TOTAL_MILES = 2197.4;
+	const from = $derived(trailAssistant.currentMile);
+	const dayNumber = $derived(trailAssistant.dayNumber);
+	const pct = $derived(Math.min(100, Math.round((from / TOTAL_MILES) * 100)));
+	const toGo = $derived(Math.max(0, TOTAL_MILES - from));
+
+	// Last cached forecast that travels with the field pack (CachedWeather | null).
+	// There is no live/offline weather source yet, so this is shown as cached, with
+	// its real timestamp — never as a live reading.
+	const wx = $derived(trailAssistant.fieldPack.weather);
+	const wxUpdated = $derived(
+		wx ? new Date(wx.generatedAt).toLocaleDateString([], { month: 'short', day: 'numeric' }) : ''
+	);
+
+	// Gear glance — derived from the SAME live loadout the Gear screen uses, so the
+	// two never disagree.
+	const loadout = $derived(trailAssistant.fieldPack.loadout);
+	const packTotalCarriedLb = $derived(
+		Math.round((loadout.filter((i) => i.carried).reduce((s, i) => s + (i.weightOz ?? 0), 0) / 16) * 10) / 10
+	);
+	const packMissingCount = $derived(loadout.filter((i) => !i.carried).length);
+
+	// --- upcoming landmarks (keep mile, derive the day to camp) ----------------
+	const watersAhead = $derived(
+		trailAssistant.fieldPack.water.filter((w) => w.mile >= from - 0.01).sort((a, b) => a.mile - b.mile)
+	);
+	const sheltersAhead = $derived(
+		trailAssistant.fieldPack.shelters.filter((s) => s.mile >= from - 0.01).sort((a, b) => a.mile - b.mile)
+	);
+	const nextWater = $derived(watersAhead[0] ?? null);
+	const camp = $derived(sheltersAhead[0] ?? null); // the day's planned end
+
+	// Ascent between here and camp, summed from the real USGS elevation profile.
+	const geo = $derived(trailAssistant.trailGeometry);
+	const climbFt = $derived.by(() => {
+		if (!camp) return 0;
+		return climbFeet(elevationWindow(geo, from, camp.mile - from));
+	});
+
+	type Node = { kind: 'done' | 'now' | 'water' | 'camp' | 'evening'; title: string; detail?: string; flag?: string };
+	const dayNodes = $derived.by<Node[]>(() => {
+		const nodes: Node[] = [];
+		nodes.push({ kind: 'done', title: 'Broke camp', detail: 'Packed up and on the trail.' });
+		nodes.push({ kind: 'now', title: `Now · Mile ${from.toFixed(1)}`, detail: 'On trail, heading north.' });
+		const dayWaters = camp ? watersAhead.filter((w) => w.mile <= camp.mile + 0.01) : watersAhead.slice(0, 2);
+		for (const w of dayWaters.slice(0, 2)) {
+			const candidate = w.reliability !== 'reliable';
+			nodes.push({
+				kind: 'water',
+				title: `Water · ${w.name}`,
+				detail: `${(w.mile - from).toFixed(1)} mi ahead${candidate ? '' : ' · reliable'}`,
+				flag: candidate ? 'candidate — confirm flow' : undefined
+			});
+		}
+		if (camp) {
+			nodes.push({
+				kind: 'camp',
+				title: `Camp · ${camp.name}`,
+				detail: `${(camp.mile - from).toFixed(1)} mi to go${climbFt > 0 ? ` · +${climbFt.toLocaleString()} ft climb` : ''}`
+			});
+		}
+		nodes.push({ kind: 'evening', title: 'Evening · verse & journal', detail: "Read tonight's scripture and log the day." });
+		return nodes;
+	});
+
+	const nodeIcon: Record<Node['kind'], IconName> = {
+		done: 'check',
+		now: 'now',
+		water: 'water',
+		camp: 'shelter',
+		evening: 'moon'
+	};
+
+	// --- ask scout (kept; reframed without readiness) --------------------------
+	const prompts = [
+		"What's the next reliable water?",
+		'Can the shelter hold us tonight?',
+		'What needs verifying before town?',
+		'Give me the safest next move.'
+	];
+	function ask(prompt: string) {
+		trailAssistant.activeTab = 'Scout';
+		trailAssistant.runQuickPrompt(prompt);
 	}
-
-	function recommendationDetail() {
-		const m = trailAssistant.readiness;
-		return `Target ${m.targetMiles.toFixed(1)} mi · ${m.targetVert.toLocaleString()} ft · ${m.reasons.length} drivers`;
-	}
-
-	const remaining = $derived(trailAssistant.milesRemainingToday.toFixed(1));
-	const progress = $derived(trailAssistant.progressPercent);
-
-	const nextWater = $derived.by(() => {
-		const fromMile = trailAssistant.currentMile;
-		return (
-			trailAssistant.fieldPack.water
-				.filter((source) => source.mile >= fromMile - 0.01)
-				.sort((a, b) => a.mile - b.mile)[0] ?? null
-		);
-	});
-	const nextShelter = $derived.by(() => {
-		const fromMile = trailAssistant.currentMile;
-		return (
-			trailAssistant.fieldPack.shelters
-				.filter((shelter) => shelter.mile >= fromMile - 0.01)
-				.sort((a, b) => a.mile - b.mile)[0] ?? null
-		);
-	});
-	const nextTown = $derived.by(() => {
-		const fromMile = trailAssistant.currentMile;
-		return (
-			trailAssistant.fieldPack.towns
-				.filter((town) => town.mile >= fromMile - 0.01)
-				.sort((a, b) => a.mile - b.mile)[0] ?? null
-		);
-	});
-	const nextWaterDistance = $derived(nextWater ? Math.max(0, nextWater.mile - trailAssistant.currentMile).toFixed(1) : null);
-	const nextShelterDistance = $derived(nextShelter ? Math.max(0, nextShelter.mile - trailAssistant.currentMile).toFixed(1) : null);
-	const nextTownDistance = $derived(nextTown ? Math.max(0, nextTown.mile - trailAssistant.currentMile).toFixed(1) : null);
+	const lastAnswer = $derived(trailAssistant.lastScoutAnswer);
 
 	const checkInDue = $derived(
 		new Date(trailAssistant.nextCheckInDueAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 	);
 </script>
 
-<div class="section-stack">
-	<!-- Field overview: the single screen that answers "what now". -->
-	<section class="field-panel card">
-		<div class="field-panel-top">
-			<div>
-				<p class="eyebrow">Today · {recommendationLabel()}</p>
-				<h2>
-					<span class="big-number tabular">{trailAssistant.currentDayMiles.toFixed(1)}</span>
-					<span class="of-target tabular">/ {trailAssistant.readiness.targetMiles.toFixed(1)} mi</span>
-				</h2>
-				<p class="field-panel-detail">{recommendationDetail()}</p>
-			</div>
-
-			<div class="readiness-dial" aria-label="Readiness score">
-				<div class="dial-ring" style:--score={trailAssistant.readiness.score}>
-					<strong>{trailAssistant.readiness.score}</strong>
-					<span>READY</span>
-				</div>
-			</div>
+<div class="today">
+	<!-- HUD: real data only, no readiness score -->
+	<section class="hud card">
+		<div class="hud-top">
+			<span class="day">Day {dayNumber}</span>
+			<span class="off">On-device AI</span>
 		</div>
-
-		<div class="progress-shell" aria-hidden="true">
-			<div class="progress-fill" style:width={`${progress}%`}></div>
-			<div class="progress-tick" style:left={`${progress}%`}>
-				<span>{remaining} mi left</span>
-			</div>
+		<div class="mile tabular">{from.toFixed(1)}<span class="of"> / {TOTAL_MILES.toLocaleString()} mi</span></div>
+		<div class="bar"><div class="fill" style="width:{pct}%"></div></div>
+		<div class="splits">
+			<div><span class="k">Done</span><b class="tabular">{from.toFixed(0)} mi</b></div>
+			<div><span class="k">To go</span><b class="tabular">{toGo.toFixed(0)} mi</b></div>
+			<div><span class="k">Progress</span><b class="tabular">{pct}%</b></div>
 		</div>
-
-		<div class="field-panel-strip">
-			<button class="field-panel-cell cell-button" type="button" data-kind="water" aria-label="Next water source">
-				<span class="cell-eyebrow">Next water</span>
-				<strong>{nextWaterDistance ? `${nextWaterDistance} mi` : '—'}</strong>
-				<span class="cell-detail">{nextWater?.name ?? waterSources[0].name}</span>
-			</button>
-			<button class="field-panel-cell cell-button" type="button" data-kind="shelter" aria-label="Next shelter">
-				<span class="cell-eyebrow">Next shelter</span>
-				<strong>{nextShelterDistance ? `${nextShelterDistance} mi` : '—'}</strong>
-				<span class="cell-detail">{nextShelter?.name ?? 'No shelter on file'}</span>
-			</button>
-			<button
-				class="field-panel-cell cell-button"
-				type="button"
-				data-kind="town"
-				onclick={() => (trailAssistant.activeTab = 'Town')}
-				aria-label="Next town"
-			>
-				<span class="cell-eyebrow">Next town</span>
-				<strong>{nextTownDistance ? `${nextTownDistance} mi` : '—'}</strong>
-				<span class="cell-detail">{nextTown?.name ?? '—'}</span>
-			</button>
-			<button
-				class="field-panel-cell cell-button"
-				type="button"
-				data-kind="safety"
-				onclick={() => (trailAssistant.activeTab = 'Safety')}
-				aria-label="Check-in due"
-			>
-				<span class="cell-eyebrow">Check-in due</span>
-				<strong>{checkInDue}</strong>
-				<span class="cell-detail risk-{trailAssistant.missedCheckInRisk}">
-					{trailAssistant.missedCheckInRisk === 'high' ? 'Send now' : trailAssistant.missedCheckInRisk === 'medium' ? 'Send soon' : 'Within window'}
-				</span>
-			</button>
-		</div>
-
-		<div class="field-panel-actions">
-			<button class="cta-button" onclick={() => (trailAssistant.activeTab = 'Coach')}>
-				Ask Scout about today
-			</button>
-			<button
-				class="secondary-button"
-				onclick={() => trailAssistant.performCheckIn('safe', 'Quick safe check-in from Today.')}
-			>
+		<div class="checkin">
+			<span class="ci-due">Check-in due {checkInDue}</span>
+			<button class="safe-btn" onclick={() => trailAssistant.performCheckIn('safe', 'Quick safe check-in from Today.')}>
 				I'm safe ✓
 			</button>
 		</div>
 	</section>
 
-	<!-- Elevation + weather: glanceable terrain + condition picture. -->
-	<section class="card terrain-card">
-		<ElevationStrip currentMile={trailAssistant.currentMile} />
-		<div class="terrain-meta">
-			<p>{weatherSnapshot.summary}. {weatherSnapshot.riskNote}</p>
-			<SourceChip source={sourceReceipts.awol2026} />
-		</div>
-	</section>
+	<!-- NEXT: glance-first next action -->
+	{#if nextWater || camp}
+		<section class="next card">
+			<span class="eyebrow">Now → next</span>
+			{#if nextWater}
+				<p class="next-main">
+					Top off water · <b>{(nextWater.mile - from).toFixed(1)} mi</b>
+					{#if nextWater.reliability !== 'reliable'}<span class="cand">candidate — confirm flow</span>{/if}
+				</p>
+			{/if}
+			{#if camp}
+				<p class="next-sub">
+					then <b>{(camp.mile - from).toFixed(1)} mi</b> to {camp.name}{#if climbFt > 0} · +{climbFt.toLocaleString()} ft{/if}
+				</p>
+			{/if}
+		</section>
+	{/if}
 
-	<section class="card weather-card">
-		<div class="card-header">
-			<div>
-				<p class="eyebrow">Forecast</p>
-				<h3>5-day outlook</h3>
+	<!-- Weather: first-class, with what-it-means + daylight -->
+	<section class="wx card">
+		<div class="wx-head">
+			<span class="eyebrow">Weather</span>
+			<span class="wx-src">{wx ? `Cached ${wxUpdated}` : 'No cache'}</span>
+		</div>
+		{#if wx}
+			<div class="wx-now">
+				<div class="temp tabular">{wx.highF}°</div>
+				<div class="wx-meta">
+					<p class="sum">{wx.summary}</p>
+					<p class="hilo">High {wx.highF}° · Low {wx.lowF}° · wind {wx.windMph} mph</p>
+				</div>
 			</div>
-			<SourceChip source={sourceReceipts.nws} />
-		</div>
-		<WeatherStrip />
-	</section>
-
-	<!-- Next-20 mile service strip. -->
-	<section class="card section-card">
-		<ServiceStrip />
-	</section>
-
-	<!-- Pack + offline status, side-by-side compact summary. -->
-	<section class="card pack-summary">
-		<div class="summary-row">
-			<div>
-				<p class="eyebrow">Pack</p>
-				<strong>{packTotalCarriedLb} lb</strong>
-				<span>{packMissingCount > 0 ? `${packMissingCount} item missing` : 'Complete loadout'}</span>
+			<p class="means">
+				<span class="meanslab">Verify before exposed terrain</span>
+				{wx.riskNote ?? 'This is cached field-pack weather. Refresh before relying on it.'}
+			</p>
+			<div class="daylight">
+				<div class="dl-track"><div class="dl-fill" style="width:100%"></div></div>
+				<span class="dl-lab">Cached near mile {wx.mile.toFixed(1)} · updated {wxUpdated}</span>
 			</div>
-			<button class="outline-button compact" onclick={() => (trailAssistant.activeTab = 'Account')}>
-				Review pack →
-			</button>
-		</div>
+		{:else}
+			<p class="means">
+				<span class="meanslab">No cached forecast</span>
+				Download or refresh the field pack before relying on weather.
+			</p>
+		{/if}
 	</section>
 
-	<section class="card offline-card">
-		<OfflineStatus />
-	</section>
-
-	<TrailPulsePanel />
-
-	<!-- Why this day looks the way it does. -->
-	<section class="card section-card">
-		<div class="card-header">
-			<div>
-				<p class="eyebrow">Readiness drivers</p>
-				<h3>Why we're holding</h3>
-			</div>
-			<ConfidenceBadge confidence="medium" />
-		</div>
-
-		<ul class="reason-list">
-			{#each trailAssistant.readiness.reasons as reason (reason)}
-				<li>{reason}</li>
+	<!-- Day spine: the day, now → camp -->
+	<section class="spine card">
+		<span class="eyebrow">Your day · now → camp</span>
+		<ol class="timeline">
+			{#each dayNodes as n, i (n.kind + i)}
+				<li class="node {n.kind}">
+					<span class="dot"><Icon name={nodeIcon[n.kind]} size={15} stroke={1.9} /></span>
+					<div class="ncontent">
+						<p class="ntitle">{n.title}</p>
+						{#if n.detail}<p class="ndetail">{n.detail}</p>{/if}
+						{#if n.flag}<p class="nflag">{n.flag}</p>{/if}
+					</div>
+				</li>
 			{/each}
-		</ul>
-
-		<div class="receipts">
-			<p class="receipt-label">Sources used</p>
-			<div class="receipt-row">
-				<SourceChip source={sourceReceipts.hikerProfile} />
-				<SourceChip source={sourceReceipts.nws} />
-				<SourceChip source={sourceReceipts.farout} />
-			</div>
-		</div>
+		</ol>
 	</section>
+
+	<!-- Ask Scout — calm, opens the real chat -->
+	<section class="ask card">
+		<div class="eyebrow">Ask Scout</div>
+		<p class="greet">Cited, on-device answers — for the trail or the Word.</p>
+		{#each prompts as prompt (prompt)}
+			<button class="prompt-row" onclick={() => ask(prompt)}>
+				<span class="q">›</span><span class="qtext">{prompt}</span><span class="arrow">+</span>
+			</button>
+		{/each}
+		{#if lastAnswer}
+			<div class="exchange">
+				<p class="ans">{lastAnswer.answer}</p>
+				<div class="receipts">
+					{#each lastAnswer.receipts.slice(0, 3) as r (r.id)}
+						<span class="receipt">{r.title}</span>
+					{/each}
+					<span class="badge">{lastAnswer.confidence}</span>
+				</div>
+			</div>
+		{/if}
+	</section>
+
+	<!-- Gear: a morning packing glance -->
+	<button class="packing card" onclick={() => trailAssistant.openTrailSection('gear')}>
+		<div class="pk-left">
+			<div class="eyebrow">Packing up?</div>
+			<p class="pk-line">{packTotalCarriedLb} lb on your back</p>
+			<p class="pk-sub">
+				{packMissingCount > 0
+					? `${packMissingCount} item${packMissingCount === 1 ? '' : 's'} not packed — check before you go`
+					: 'Full loadout — nothing left at camp'}
+			</p>
+		</div>
+		<span class="pk-arrow" aria-hidden="true">›</span>
+	</button>
 </div>
 
 <style>
-	.field-panel {
-		padding: 14px 14px 16px;
+	.today {
 		display: grid;
-		gap: 12px;
-		background:
-			radial-gradient(circle at top right, rgba(95, 128, 144, 0.14), transparent 38%),
-			linear-gradient(180deg, rgba(255, 253, 248, 0.98), rgba(247, 240, 228, 0.96));
+		gap: 14px;
 	}
 
-	.field-panel-top {
-		display: grid;
-		grid-template-columns: 1fr auto;
-		gap: 12px;
-		align-items: start;
+	.card {
+		background: var(--surface-strong);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-md);
+		box-shadow: var(--shadow-soft);
 	}
 
-	.field-panel-top h2 {
-		display: flex;
-		align-items: baseline;
-		gap: 8px;
-		margin: 2px 0 4px;
-		font-family: var(--font-display);
-	}
-
-	.big-number {
-		font-size: 2.8rem;
+	.eyebrow {
+		font-size: 0.64rem;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		color: var(--moss);
 		font-weight: 800;
-		color: var(--forest);
-		line-height: 0.95;
+		margin-bottom: 10px;
+		display: block;
 	}
 
-	.of-target {
-		font-size: 1rem;
+	/* HUD */
+	.hud {
+		padding: 16px 18px 14px;
+	}
+	.hud-top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+	.hud-top .day {
+		font-size: 0.7rem;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		color: var(--moss);
+		font-weight: 800;
+	}
+	.hud-top .off {
+		font-size: 0.6rem;
+		letter-spacing: 0.04em;
+		font-weight: 800;
+		text-transform: uppercase;
+		color: var(--clay);
+		background: rgba(170, 104, 67, 0.12);
+		border-radius: 999px;
+		padding: 3px 9px;
+	}
+	.mile {
+		font-family: var(--font-display);
+		font-weight: 800;
+		font-size: 3.4rem;
+		line-height: 1;
+		letter-spacing: -0.01em;
+		color: var(--ink);
+		margin: 6px 0 10px;
+	}
+	.mile .of {
+		font-size: 1.05rem;
 		font-weight: 700;
 		color: var(--muted);
 	}
+	.bar {
+		height: 7px;
+		border-radius: 999px;
+		background: rgba(47, 75, 53, 0.1);
+		overflow: hidden;
+	}
+	.fill {
+		height: 100%;
+		border-radius: 999px;
+		background: var(--forest);
+	}
+	.splits {
+		display: flex;
+		justify-content: space-between;
+		gap: 8px;
+		margin-top: 12px;
+	}
+	.splits div {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	.splits .k {
+		font-size: 0.6rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--muted);
+		font-weight: 800;
+	}
+	.splits b {
+		font-family: var(--font-display);
+		font-size: 1.1rem;
+		color: var(--ink);
+		font-weight: 800;
+	}
+	.checkin {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px;
+		margin-top: 13px;
+		padding-top: 12px;
+		border-top: 1px solid var(--line);
+	}
+	.ci-due {
+		font-size: 0.78rem;
+		color: var(--muted);
+		font-weight: 700;
+	}
+	.safe-btn {
+		min-height: 44px;
+		padding: 9px 16px;
+		border-radius: 999px;
+		background: rgba(47, 75, 53, 0.1);
+		color: var(--forest);
+		font-weight: 800;
+		font-size: 0.85rem;
+	}
 
-	.field-panel-detail {
-		font-size: 0.84rem;
+	/* NEXT line */
+	.next {
+		padding: 14px 18px 15px;
+		border-left: 3px solid var(--forest);
+	}
+	.next-main {
+		font-family: var(--font-display);
+		font-size: 1.2rem;
+		font-weight: 700;
+		color: var(--ink);
+		line-height: 1.3;
+	}
+	.next-main b {
+		color: var(--forest);
+	}
+	.cand {
+		display: inline-block;
+		font-family: var(--font-sans);
+		font-size: 0.64rem;
+		font-weight: 800;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--clay);
+		background: rgba(170, 104, 67, 0.12);
+		border-radius: 999px;
+		padding: 2px 8px;
+		margin-left: 4px;
+		vertical-align: middle;
+	}
+	.next-sub {
+		font-size: 0.86rem;
+		color: var(--muted);
+		margin-top: 5px;
+	}
+	.next-sub b {
+		color: var(--ink);
+		font-weight: 800;
+	}
+
+	/* Weather */
+	.wx {
+		padding: 15px 18px 16px;
+	}
+	.wx-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+	}
+	.wx-head .eyebrow {
+		margin-bottom: 0;
+	}
+	.wx-src {
+		font-size: 0.62rem;
+		font-weight: 800;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
 		color: var(--muted);
 	}
-
-	.readiness-dial {
-		width: 76px;
-		height: 76px;
-		display: grid;
-		place-items: center;
+	.wx-now {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		margin: 10px 0 4px;
 	}
-
-	.dial-ring {
-		--score: 0;
-		width: 100%;
-		height: 100%;
-		border-radius: 50%;
-		display: grid;
-		place-items: center;
-		text-align: center;
-		background:
-			conic-gradient(
-				var(--forest) calc(var(--score) * 1%),
-				rgba(47, 75, 53, 0.12) 0
-			);
-		position: relative;
-	}
-
-	.dial-ring::before {
-		content: '';
-		position: absolute;
-		inset: 6px;
-		border-radius: 50%;
-		background: var(--surface-strong);
-		z-index: 0;
-	}
-
-	.dial-ring strong,
-	.dial-ring span {
-		position: relative;
-		z-index: 1;
-	}
-
-	.dial-ring strong {
+	.temp {
 		font-family: var(--font-display);
-		font-size: 1.3rem;
 		font-weight: 800;
-		color: var(--forest);
+		font-size: 3rem;
 		line-height: 1;
+		color: var(--sky);
 	}
-
-	.dial-ring span {
-		font-size: 0.58rem;
-		font-weight: 800;
-		letter-spacing: 0.18em;
+	.wx-meta .sum {
+		font-family: var(--font-display);
+		font-size: 1.05rem;
+		font-weight: 700;
+		color: var(--ink);
+	}
+	.wx-meta .hilo {
+		font-size: 0.8rem;
 		color: var(--muted);
 		margin-top: 2px;
 	}
-
-	.progress-shell {
-		position: relative;
-		height: 10px;
-		border-radius: 999px;
-		background: rgba(47, 75, 53, 0.12);
-		overflow: visible;
-	}
-
-	.progress-fill {
-		height: 100%;
-		border-radius: inherit;
-		background: linear-gradient(90deg, var(--forest), var(--moss));
-	}
-
-	.progress-tick {
-		position: absolute;
-		top: 12px;
-		transform: translateX(-50%);
-		font-size: 0.7rem;
-		font-weight: 800;
-		color: var(--forest);
-		white-space: nowrap;
-	}
-
-	.field-panel-strip {
-		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		gap: 6px;
-		margin-top: 6px;
-	}
-
-	.field-panel-cell {
-		display: grid;
-		gap: 2px;
-		padding: 9px 6px 10px;
-		border-radius: 12px;
-		background: rgba(47, 75, 53, 0.06);
-		border: 1px solid rgba(95, 101, 88, 0.1);
-		text-decoration: none;
+	.means {
+		font-size: 0.86rem;
+		line-height: 1.5;
 		color: var(--ink);
-		text-align: left;
+		background: rgba(95, 128, 144, 0.08);
+		border-radius: 10px;
+		padding: 10px 12px;
+		margin: 10px 0;
 	}
-
-	.field-panel-cell.cell-button {
-		font: inherit;
-	}
-
-	.field-panel-cell[data-kind='water'] {
-		background: rgba(95, 128, 144, 0.1);
-	}
-	.field-panel-cell[data-kind='shelter'] {
-		background: rgba(170, 104, 67, 0.1);
-	}
-	.field-panel-cell[data-kind='town'] {
-		background: rgba(106, 132, 95, 0.12);
-	}
-	.field-panel-cell[data-kind='safety'] {
-		background: rgba(200, 167, 122, 0.18);
-	}
-
-	.cell-eyebrow {
+	.meanslab {
+		display: block;
 		font-size: 0.58rem;
 		font-weight: 800;
+		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		color: var(--muted);
+		color: var(--sky);
+		margin-bottom: 3px;
 	}
-
-	.field-panel-cell strong {
-		font-size: 1rem;
-		font-weight: 800;
-		color: var(--ink);
-		font-variant-numeric: tabular-nums;
-	}
-
-	.cell-detail {
-		font-size: 0.7rem;
-		color: var(--muted);
-		font-weight: 700;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
-	.field-panel-actions {
-		display: grid;
-		grid-template-columns: 1.4fr 1fr;
-		gap: 8px;
-	}
-
-	.field-panel-actions .secondary-button {
-		min-height: 44px;
-	}
-
-	.terrain-card {
-		padding: 14px;
-		display: grid;
-		gap: 10px;
-	}
-
-	.terrain-meta {
-		display: grid;
-		gap: 8px;
-	}
-
-	.terrain-meta p {
-		font-size: 0.84rem;
-		color: var(--muted);
-	}
-
-	.weather-card,
-	.section-card,
-	.offline-card {
-		padding: 14px;
-		display: grid;
-		gap: 10px;
-	}
-
-	.card-header {
+	.hourly {
 		display: flex;
 		align-items: flex-end;
 		justify-content: space-between;
-		gap: 12px;
+		gap: 6px;
+		height: 64px;
+		margin: 6px 0 4px;
+	}
+	.hcol {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 3px;
+		height: 100%;
+		justify-content: flex-end;
+	}
+	.htrack {
+		width: 100%;
+		max-width: 22px;
+		height: 38px;
+		display: flex;
+		align-items: flex-end;
+		background: rgba(95, 128, 144, 0.1);
+		border-radius: 5px;
+		overflow: hidden;
+	}
+	.hfill {
+		width: 100%;
+		background: var(--sky);
+		opacity: 0.55;
+		border-radius: 5px 5px 0 0;
+	}
+	.hfill.peak {
+		background: var(--clay);
+		opacity: 0.85;
+	}
+	.hpct {
+		font-size: 0.56rem;
+		font-weight: 800;
+		color: var(--muted);
+		font-variant-numeric: tabular-nums;
+	}
+	.hpct.peak {
+		color: var(--clay);
+	}
+	.hlab {
+		font-size: 0.56rem;
+		color: var(--muted);
+		font-weight: 700;
+	}
+	.daylight {
+		margin-top: 8px;
+	}
+	.dl-track {
+		height: 6px;
+		border-radius: 999px;
+		background: rgba(198, 154, 62, 0.18);
+		overflow: hidden;
+	}
+	.dl-fill {
+		height: 100%;
+		border-radius: 999px;
+		background: var(--gold, #c69a3e);
+	}
+	.dl-lab {
+		display: block;
+		font-size: 0.7rem;
+		font-weight: 700;
+		color: var(--muted);
+		margin-top: 5px;
 	}
 
-	.card-header h3 {
+	/* Day spine */
+	.spine {
+		padding: 16px 18px 14px;
+	}
+	.timeline {
+		list-style: none;
+		display: grid;
+		gap: 0;
+	}
+	.node {
+		display: grid;
+		grid-template-columns: 26px 1fr;
+		gap: 10px;
+		padding-bottom: 16px;
+		position: relative;
+	}
+	.node:not(:last-child)::before {
+		content: '';
+		position: absolute;
+		left: 12px;
+		top: 24px;
+		bottom: 0;
+		width: 2px;
+		background: var(--line);
+	}
+	.dot {
+		width: 26px;
+		height: 26px;
+		border-radius: 999px;
+		display: grid;
+		place-items: center;
+		font-size: 0.8rem;
+		background: rgba(47, 75, 53, 0.08);
+		color: var(--moss);
+		z-index: 1;
+	}
+	.node.now .dot {
+		background: var(--forest);
+		color: #f4efe4;
+	}
+	.node.camp .dot {
+		background: rgba(170, 104, 67, 0.14);
+		color: var(--clay);
+	}
+	.ntitle {
 		font-family: var(--font-display);
-		font-size: 1.15rem;
+		font-size: 1rem;
+		font-weight: 700;
+		color: var(--ink);
+		line-height: 1.2;
+	}
+	.node.now .ntitle {
+		color: var(--forest);
+	}
+	.ndetail {
+		font-size: 0.8rem;
+		color: var(--muted);
+		margin-top: 2px;
+		line-height: 1.4;
+	}
+	.nflag {
+		font-size: 0.74rem;
+		font-weight: 800;
+		color: var(--clay);
+		margin-top: 3px;
 	}
 
-	.pack-summary {
-		padding: 12px 14px;
+	/* Ask Scout */
+	.ask {
+		padding: 18px 18px 16px;
+	}
+	.greet {
+		font-family: var(--font-display);
+		font-size: 1.05rem;
+		line-height: 1.34;
+		font-weight: 700;
+		color: var(--ink);
+		margin-bottom: 12px;
+	}
+	.prompt-row {
+		display: flex;
+		align-items: center;
+		gap: 11px;
+		width: 100%;
+		min-height: 44px;
+		padding: 11px 2px;
+		border-top: 1px solid var(--line);
+		font-size: 0.9rem;
+		color: var(--ink);
+		text-align: left;
+	}
+	.prompt-row .q {
+		font-size: 0.85rem;
+		color: var(--moss);
+	}
+	.prompt-row .qtext {
+		flex: 1;
+	}
+	.prompt-row .arrow {
+		color: var(--muted);
+		font-size: 1rem;
+	}
+	.exchange {
+		background: var(--bg, #fffdf8);
+		border: 1px solid var(--line);
+		border-left: 3px solid var(--forest);
+		border-radius: 10px;
+		padding: 14px 15px;
+		margin-top: 10px;
+	}
+	.exchange .ans {
+		font-size: 0.9rem;
+		line-height: 1.5;
+		color: var(--ink);
+		display: -webkit-box;
+		-webkit-line-clamp: 4;
+		line-clamp: 4;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+	.receipts {
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		flex-wrap: wrap;
+		margin-top: 12px;
+		padding-top: 11px;
+		border-top: 1px solid var(--line);
+	}
+	.receipt {
+		font-size: 0.66rem;
+		color: var(--muted);
+		background: var(--bg, #fffdf8);
+		border: 1px solid var(--line);
+		border-radius: 999px;
+		padding: 3px 9px;
+	}
+	.badge {
+		margin-left: auto;
+		font-size: 0.64rem;
+		letter-spacing: 0.06em;
+		font-weight: 800;
+		text-transform: uppercase;
+		color: var(--warn, #9a7320);
+		background: rgba(182, 137, 44, 0.13);
+		border: 1px solid rgba(182, 137, 44, 0.34);
+		border-radius: 999px;
+		padding: 3px 10px;
 	}
 
-	.summary-row {
+	/* Packing glance */
+	.packing {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: 12px;
+		padding: 14px 16px;
+		text-align: left;
+		width: 100%;
 	}
-
-	.summary-row div {
-		display: grid;
-		gap: 2px;
-	}
-
-	.summary-row strong {
+	.pk-line {
 		font-family: var(--font-display);
-		font-size: 1.4rem;
 		font-weight: 800;
+		font-size: 1.15rem;
 		color: var(--forest);
 	}
-
-	.summary-row span {
-		font-size: 0.74rem;
+	.pk-sub {
+		font-size: 0.78rem;
 		color: var(--muted);
+		margin-top: 2px;
 	}
-
-	.outline-button.compact {
-		width: auto;
-		min-height: 38px;
-		padding: 6px 12px;
-		font-size: 0.82rem;
-	}
-
-	.reason-list {
-		margin: 0;
-		padding-left: 18px;
-		display: grid;
-		gap: 8px;
-		color: var(--ink);
-	}
-
-	.reason-list li {
-		color: var(--ink);
-		font-size: 0.88rem;
-	}
-
-	.receipts {
-		display: grid;
-		gap: 6px;
-		padding-top: 8px;
-		border-top: 1px dashed rgba(95, 101, 88, 0.18);
-	}
-
-	.receipt-label {
-		font-size: 0.64rem;
-		font-weight: 800;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
+	.pk-arrow {
+		font-size: 1.4rem;
 		color: var(--muted);
-	}
-
-	.receipt-row {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 6px;
+		flex: none;
 	}
 </style>

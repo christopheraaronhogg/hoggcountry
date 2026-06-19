@@ -33,9 +33,14 @@ export class DefaultModelRouter implements ModelRouter {
 		}
 
 		if (input.preferredMode === 'on-device' && this.onDevice) {
-			if (await safeAvailable(this.onDevice)) {
-				return { provider: this.onDevice, reason: 'caller forced on-device mode' };
-			}
+			// Forced on-device (Gemma-only policy): ALWAYS route here, even when the
+			// availability probe is currently false. If the engine genuinely can't
+			// generate it throws OnDeviceModelUnavailableError, which the runtime
+			// surfaces (rethrows) under preferredMode 'on-device'. The router must
+			// NEVER fall through to the deterministic "offline" answer in this mode —
+			// that masquerade (entered via router selection rather than a throw) is
+			// exactly the "acted offline despite a working model" bug.
+			return { provider: this.onDevice, reason: 'caller forced on-device mode' };
 		}
 
 		if (input.batterySaver) {

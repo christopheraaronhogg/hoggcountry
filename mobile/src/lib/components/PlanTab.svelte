@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { itinerary } from '$lib/mockTrailData';
+	import { trailAssistant } from '$lib/trailState.svelte';
 	import TrailPulsePanel from './TrailPulsePanel.svelte';
 	import ElevationStrip from './ElevationStrip.svelte';
 	import WeatherStrip from './WeatherStrip.svelte';
@@ -60,7 +61,7 @@
 	</section>
 
 	<section class="card terrain-card">
-		<ElevationStrip currentMile={1438} />
+		<ElevationStrip currentMile={trailAssistant.currentMile} />
 		<p class="terrain-note">
 			This is a candidate NY/CT trail-ahead slice. Treat water and service points as prompts to
 			verify, not confirmed logistics.

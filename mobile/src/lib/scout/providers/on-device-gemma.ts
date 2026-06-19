@@ -17,6 +17,12 @@ export interface GemmaModelDescriptor {
 export interface OnDeviceGemmaBridge {
 	isAvailable(): Promise<boolean>;
 	describeModel(): Promise<GemmaModelDescriptor | null>;
+	/**
+	 * Optional: eagerly initialize the native engine so the FIRST real chat turn
+	 * doesn't pay (or risk) the heavy, sometimes-flaky lazy LiteRT init. Best-effort
+	 * and safe to call repeatedly; resolves whether or not warm-up succeeded.
+	 */
+	warmUp?(): Promise<void>;
 	generate(
 		input: {
 			prompt: string;
@@ -68,6 +74,19 @@ export class OnDeviceGemmaProvider implements ScoutProvider {
 	 */
 	invalidateAvailability(): void {
 		this.availability = null;
+	}
+
+	/**
+	 * Best-effort: ask the native bridge to initialize the engine ahead of the
+	 * first chat turn. Never throws — warm-up failure just means the first turn
+	 * pays the cost as before.
+	 */
+	async warmUp(): Promise<void> {
+		try {
+			await this.bridge?.warmUp?.();
+		} catch {
+			// Ignore — warming is an optimization, not a requirement.
+		}
 	}
 
 	async available(): Promise<boolean> {

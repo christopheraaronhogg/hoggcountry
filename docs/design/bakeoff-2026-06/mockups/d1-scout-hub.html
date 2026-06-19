@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Scout Hub — Hogg Country Bake-off D1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Lato:wght@400;700;900&display=swap" rel="stylesheet" />
+<style>
+  /* ── Real app tokens (mobile/src/app.css) ───────────────────────────── */
+  :root{
+    --bg:#f4efe4; --bg-deep:#e7dcc8; --surface:#fbf7ef; --surface-strong:#fffdf8;
+    --ink:#1f241d; --muted:#5f6558; --line:#d8cfbf;
+    --forest:#2f4b35; --moss:#6a845f; --sand:#c8a77a; --clay:#aa6843; --sky:#5f8090;
+    --danger:#9a3b2f; --success:#2f6a47; --warn:#b6892c;
+    --radius-lg:22px; --radius-md:16px; --radius-sm:12px;
+    --shadow-soft:0 2px 8px rgba(48,45,35,.07);
+    --shadow:0 10px 28px rgba(48,45,35,.10);
+    --shadow-ridge:0 18px 38px -22px rgba(31,36,29,.55);
+    /* Fraunces is the legible web stand-in for Iowan Old Style; Lato for Avenir Next */
+    --font-sans:'Lato','Avenir Next','Segoe UI',-apple-system,sans-serif;
+    --font-display:'Fraunces','Iowan Old Style','Georgia',serif;
+    --font-mono:ui-monospace,'SF Mono',Menlo,monospace;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;}
+  body{
+    font-family:var(--font-sans);
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 18% 8%, rgba(198,167,122,.20), transparent 42%),
+      radial-gradient(circle at 86% 92%, rgba(106,132,95,.16), transparent 46%),
+      linear-gradient(180deg,#ece3d2 0%, #e2d6bf 100%);
+    -webkit-font-smoothing:antialiased;
+    padding:28px 18px 48px;
+  }
+
+  /* ── Title band ─────────────────────────────────────────────────────── */
+  .title-band{
+    max-width:1180px; margin:0 auto 30px; padding:22px 26px;
+    background:linear-gradient(135deg,var(--forest),#26412c);
+    color:#f4efe4; border-radius:var(--radius-lg);
+    box-shadow:var(--shadow-ridge);
+    position:relative; overflow:hidden;
+  }
+  .title-band::after{
+    content:""; position:absolute; inset:0; opacity:.10; pointer-events:none;
+    background:
+      repeating-linear-gradient(115deg, transparent 0 26px, rgba(244,239,228,.6) 26px 27px),
+      repeating-linear-gradient(115deg, transparent 0 52px, rgba(244,239,228,.4) 52px 53px);
+    -webkit-mask:radial-gradient(circle at 80% 30%, #000 0%, transparent 62%);
+            mask:radial-gradient(circle at 80% 30%, #000 0%, transparent 62%);
+  }
+  .title-band .tb-top{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; position:relative;}
+  .tb-kicker{
+    font-size:.66rem; font-weight:900; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--sand); background:rgba(244,239,228,.10); padding:5px 11px; border-radius:999px;
+  }
+  .title-band h1{
+    font-family:var(--font-display); font-weight:600; font-size:2.15rem; line-height:1;
+    margin:0; letter-spacing:-.01em;
+  }
+  .title-band .concept{
+    position:relative; margin-top:11px; font-size:1.02rem; color:#e9e0cf; max-width:760px; line-height:1.5;
+  }
+  .title-band .concept b{color:#fff; font-weight:700;}
+  .lang-row{position:relative; margin-top:16px; display:flex; gap:8px; flex-wrap:wrap;}
+  .lang{
+    font-size:.72rem; font-weight:800; letter-spacing:.02em;
+    background:rgba(244,239,228,.12); color:#f0e8d7;
+    border:1px solid rgba(244,239,228,.22); padding:6px 12px; border-radius:999px;
+  }
+  .lang b{color:var(--sand);}
+
+  /* ── Phone grid ─────────────────────────────────────────────────────── */
+  .deck{display:flex; flex-wrap:wrap; gap:24px; justify-content:center; align-items:flex-start; max-width:760px; margin:0 auto;}
+  .frame-wrap{display:flex; flex-direction:column; align-items:center; gap:10px;}
+  .frame-chip{
+    display:inline-flex; align-items:center; gap:7px;
+    font-size:.72rem; font-weight:900; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--forest); background:var(--surface-strong);
+    border:1px solid var(--line); padding:6px 14px; border-radius:999px;
+    box-shadow:var(--shadow-soft);
+  }
+  .frame-chip .g{font-size:.95rem; line-height:1; color:var(--moss);}
+
+  .phone{
+    width:320px; height:660px;
+    background:linear-gradient(180deg, rgba(255,253,248,.99), rgba(249,244,235,.99));
+    border-radius:34px;
+    box-shadow:var(--shadow-ridge), 0 0 0 1px rgba(139,108,61,.10), 0 0 0 8px rgba(35,45,34,.92);
+    position:relative; overflow:hidden;
+    display:grid; grid-template-rows:auto minmax(0,1fr) auto;
+  }
+
+  /* ── Slim status header (real AppHeader) ───────────────────────────── */
+  .hdr{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:13px 13px 10px;
+    background:linear-gradient(180deg, rgba(255,252,246,.98), rgba(248,242,230,.95));
+    border-bottom:1px solid rgba(95,101,88,.14);
+    box-shadow:0 8px 16px -16px rgba(64,53,38,.4);
+    z-index:5;
+  }
+  .hdr .brand{display:flex; align-items:center; gap:9px; min-width:0;}
+  .logo-mark{
+    width:29px; height:29px; border-radius:9px; flex:none;
+    background:linear-gradient(135deg,var(--forest),#3a5f43); color:#f7f2e8;
+    display:grid; place-items:center; font-family:var(--font-display); font-weight:700; font-size:.72rem;
+    box-shadow:var(--shadow-soft);
+  }
+  .status-strip{
+    display:inline-flex; align-items:baseline; gap:6px; padding:4px 10px; border-radius:999px;
+    background:rgba(47,75,53,.07);
+  }
+  .status-strip .day{color:var(--muted); font-weight:900; font-size:.66rem; text-transform:uppercase; letter-spacing:.05em;}
+  .status-strip .mile{color:var(--forest); font-family:var(--font-display); font-weight:700; font-size:.92rem;}
+  .status-strip .pct{color:var(--muted); font-size:.68rem; font-weight:800;}
+  .status-strip .dot{color:var(--muted);}
+  .hdr .right{display:flex; align-items:center; gap:7px; flex:none;}
+  .conn{
+    display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:999px;
+    font-size:.64rem; font-weight:900; letter-spacing:.03em; color:var(--ink);
+    background:rgba(47,75,53,.08);
+  }
+  .conn .conn-dot{width:7px; height:7px; border-radius:50%; background:var(--success);}
+  .conn.off{background:rgba(170,104,67,.16); color:var(--clay);}
+  .conn.off .conn-dot{background:var(--warn);}
+  .gear-btn{width:32px; height:32px; border-radius:10px; display:grid; place-items:center; font-size:1rem; color:var(--muted);}
+
+  /* ── Bottom tab bar (real TabNavigation) ───────────────────────────── */
+  .nav{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:4px;
+    padding:7px 8px 12px;
+    background:rgba(252,248,240,.97);
+    border-top:1px solid rgba(95,101,88,.14);
+    z-index:5;
+  }
+  .nav-item{
+    display:grid; place-items:center; align-content:center; gap:3px;
+    border-radius:12px; padding:6px 0; color:var(--muted);
+  }
+  .nav-item .ng{font-size:1.12rem; line-height:1; font-weight:700;}
+  .nav-item .nl{font-size:.62rem; font-weight:900; letter-spacing:.05em;}
+  .nav-item.active{background:rgba(47,75,53,.11); color:var(--forest);}
+  .nav-item.active .ng{transform:translateY(-1px);}
+
+  /* ── Scroll body ───────────────────────────────────────────────────── */
+  .body{min-height:0; overflow:hidden; position:relative;}
+  .pad{padding:13px 13px 16px;}
+  .tabular{font-variant-numeric:tabular-nums; font-feature-settings:"tnum";}
+
+  /* ====== SCOUT — pure chat ====== */
+  .chat{display:flex; flex-direction:column; height:100%;}
+  .quick{padding:11px 13px 4px;}
+  .quick .qlabel{font-size:.6rem; font-weight:900; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin-bottom:7px;}
+  .qrow{display:flex; gap:6px; flex-wrap:wrap;}
+  .qpill{
+    padding:7px 11px; border-radius:999px; background:rgba(47,75,53,.08);
+    color:var(--forest); font-size:.72rem; font-weight:800; border:1px solid rgba(47,75,53,.12);
+  }
+  .log{flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column; gap:11px; padding:8px 13px 6px;}
+  .msg{max-width:88%; padding:11px 13px; border-radius:16px; box-shadow:var(--shadow-soft); display:grid; gap:6px;}
+  .msg.bot{background:var(--surface); border:1px solid var(--line);}
+  .msg.user{background:#2f4b35; color:#f4efe4; margin-left:auto; max-width:78%;}
+  .msg.user p{font-size:.9rem; line-height:1.4;}
+  .msg.bot p{font-size:.9rem; line-height:1.45; color:var(--ink);}
+  .mhead{display:flex; align-items:center; gap:6px;}
+  .bot-mark{
+    width:20px; height:20px; border-radius:999px; background:linear-gradient(135deg,var(--forest),var(--moss));
+    color:#f7f2e8; display:grid; place-items:center; font-family:var(--font-display); font-size:.7rem; font-weight:700;
+  }
+  .mhead strong{font-size:.8rem; color:var(--forest);}
+  .conf{
+    display:inline-flex; align-items:center; gap:2px; margin-left:auto;
+    padding:4px 8px; border-radius:999px; font-size:.62rem; font-weight:900;
+    text-transform:uppercase; letter-spacing:.07em;
+    background:rgba(200,167,122,.20); color:#8c5d1f;
+  }
+  .conf .bar{width:3px; height:9px; border-radius:2px; background:rgba(182,137,44,.28);}
+  .conf .bar.on{background:#b6892c;}
+  .receipts{display:flex; gap:5px; flex-wrap:wrap; margin-top:1px;}
+  .schip{
+    display:inline-flex; align-items:center; gap:7px; padding:5px 9px; border-radius:999px;
+    background:rgba(95,128,144,.10); border:1px solid rgba(95,128,144,.18);
+  }
+  .schip .sd{width:7px; height:7px; border-radius:50%; background:var(--sky); flex:none;}
+  .schip.warn{background:rgba(200,167,122,.18); border-color:rgba(200,167,122,.34);}
+  .schip.warn .sd{background:#b6892c;}
+  .schip .smeta{display:grid; gap:0;}
+  .schip .slabel{font-size:.7rem; font-weight:800; color:var(--ink); line-height:1.1;}
+  .schip .sdetail{font-size:.6rem; font-weight:700; color:var(--muted); line-height:1.2;}
+  .caveat{
+    display:block; padding:8px 10px; border-radius:11px; line-height:1.3;
+    background:rgba(200,167,122,.20); color:#8c5d1f; font-size:.72rem; font-weight:800; margin-top:2px;
+  }
+  .ts{font-size:.62rem; color:var(--muted); justify-self:end;}
+  .composer{padding:9px 11px calc(env(safe-area-inset-bottom) + 9px); border-top:1px solid var(--line); background:var(--surface);}
+  .input-bar{
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface-strong); border:1px solid var(--line); border-radius:18px; padding:7px 8px 7px 12px;
+  }
+  .input-bar .ph{flex:1; font-size:.84rem; color:var(--muted);}
+  .icon-btn{
+    width:38px; height:38px; border-radius:13px; flex:none; display:grid; place-items:center; font-size:1.05rem;
+  }
+  .icon-btn.loc{background:rgba(95,128,144,.13); color:var(--sky);}
+  .icon-btn.send{background:linear-gradient(135deg,var(--forest),var(--moss)); color:#f4efe4; font-size:1rem;}
+  .composer .cmeta{display:flex; align-items:center; gap:6px; margin-top:7px; padding:0 2px;}
+  .mode-tag{
+    font-size:.6rem; font-weight:900; text-transform:uppercase; letter-spacing:.07em; color:var(--forest);
+    padding:3px 8px; border-radius:999px; background:rgba(47,75,53,.10);
+  }
+  .composer .hint{font-size:.64rem; color:var(--muted);}
+
+  /* ====== MAP ====== */
+  .map-canvas{position:absolute; inset:0; background:
+      radial-gradient(circle at 30% 16%, rgba(106,132,95,.10), transparent 40%),
+      linear-gradient(180deg,#e9efe0 0%, #e3e9d6 48%, #dde7cf 100%);
+  }
+  /* topo contour lines */
+  .topo{position:absolute; inset:0; opacity:.42; pointer-events:none;}
+  .topo path{fill:none; stroke:#8a9b6f; stroke-width:1;}
+  .topo .faint{stroke:rgba(138,155,111,.5); stroke-width:.8;}
+  .river{fill:none; stroke:var(--sky); stroke-width:3; opacity:.55; stroke-linecap:round;}
+  /* AT trail line */
+  .at-line{fill:none; stroke:#a85f3b; stroke-width:4.5; stroke-linecap:round; stroke-dasharray:0;}
+  .at-line.shadow{stroke:rgba(40,30,20,.18); stroke-width:7; transform:translateY(1.5px);}
+  .pin{position:absolute; transform:translate(-50%,-100%);}
+  .pin .dot{width:13px; height:13px; border-radius:50%; border:2px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,.3);}
+  .pin .lbl{
+    position:absolute; left:50%; bottom:calc(100% + 3px); transform:translateX(-50%); white-space:nowrap;
+    font-size:.58rem; font-weight:900; letter-spacing:.02em; padding:2px 6px; border-radius:6px;
+    background:rgba(255,253,248,.92); color:var(--ink); box-shadow:var(--shadow-soft);
+  }
+  .pin.water .dot{background:var(--sky);}
+  .pin.shelter .dot{background:var(--moss);}
+  .pin.town .dot{background:var(--clay);}
+  /* Dad — big you-are-here */
+  .you{position:absolute; transform:translate(-50%,-50%);}
+  .you .ring{width:34px; height:34px; border-radius:50%; background:rgba(47,75,53,.18); display:grid; place-items:center;}
+  .you .core{width:18px; height:18px; border-radius:50%; background:var(--forest); border:3px solid #f4efe4; box-shadow:0 2px 6px rgba(0,0,0,.35);}
+  .you .youlbl{
+    position:absolute; left:calc(100% + 7px); top:50%; transform:translateY(-50%); white-space:nowrap;
+    font-size:.62rem; font-weight:900; padding:3px 8px; border-radius:8px; background:var(--forest); color:#f4efe4;
+    box-shadow:var(--shadow-soft);
+  }
+  .map-top-chip{
+    position:absolute; top:10px; left:11px; right:11px; display:flex; gap:7px; align-items:center;
+  }
+  .next-water-chip{
+    display:inline-flex; align-items:center; gap:7px; padding:7px 11px; border-radius:13px;
+    background:rgba(255,253,248,.95); border:1px solid var(--line); box-shadow:var(--shadow-soft);
+    font-size:.72rem; font-weight:800; color:var(--ink);
+  }
+  .next-water-chip .wglyph{color:var(--sky); font-size:.9rem;}
+  .cand-tag{font-size:.58rem; font-weight:900; text-transform:uppercase; letter-spacing:.04em; color:var(--clay); background:rgba(170,104,67,.15); padding:2px 6px; border-radius:6px;}
+  /* elevation strip */
+  .elev{
+    position:absolute; left:11px; right:11px; bottom:11px;
+    background:rgba(255,253,248,.95); border:1px solid var(--line); border-radius:14px;
+    box-shadow:var(--shadow); padding:9px 11px 8px;
+  }
+  .elev .etop{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:5px;}
+  .elev .etitle{font-size:.6rem; font-weight:900; text-transform:uppercase; letter-spacing:.09em; color:var(--muted);}
+  .elev .erange{font-size:.62rem; font-weight:800; color:var(--forest);}
+  .elev svg{display:block; width:100%; height:46px;}
+  .elev .epath{fill:url(#elevfill); stroke:var(--forest); stroke-width:1.6;}
+  .elev .here{stroke:var(--clay); stroke-width:1.4; stroke-dasharray:3 3;}
+  .elev .heredot{fill:var(--clay); stroke:#fff; stroke-width:1.5;}
+  .elev .elabels{display:flex; justify-content:space-between; margin-top:3px; font-size:.56rem; font-weight:800; color:var(--muted);}
+
+  /* ====== GEAR ====== */
+  .gear-head h1{font-family:var(--font-display); font-weight:600; font-size:1.5rem;}
+  .gear-head p{font-size:.78rem; color:var(--muted); margin-top:3px; line-height:1.4;}
+  .gear-summary{
+    display:flex; align-items:stretch; gap:10px; margin-top:13px;
+    background:var(--surface-strong); border:1px solid var(--line); border-radius:var(--radius-md); padding:12px 13px;
+    box-shadow:var(--shadow-soft);
+  }
+  .gear-summary .col{display:grid; gap:2px;}
+  .gear-summary .col + .col{border-left:1px solid var(--line); padding-left:12px;}
+  .gear-summary .lbl{font-size:.58rem; font-weight:900; text-transform:uppercase; letter-spacing:.06em; color:var(--muted);}
+  .gear-summary .big{font-family:var(--font-display); font-weight:700; font-size:1.42rem; color:var(--forest); line-height:1;}
+  .gear-summary .col.count{margin-left:auto; text-align:right; justify-items:end;}
+  .gear-summary .count .big{font-size:1.1rem; color:var(--ink);}
+  .gear-summary .sub{font-size:.62rem; color:var(--muted); font-weight:700;}
+  .cat-head{
+    display:flex; align-items:center; gap:8px; margin:15px 0 6px; padding:0 2px;
+  }
+  .cat-head .cname{font-size:.64rem; font-weight:900; text-transform:uppercase; letter-spacing:.1em; color:var(--moss);}
+  .cat-head .cline{flex:1; height:1px; background:var(--line);}
+  .cat-head .cw{font-size:.64rem; font-weight:800; color:var(--muted);}
+  .gear-list{display:grid; gap:1px; border-radius:12px; overflow:hidden; background:rgba(95,101,88,.12);}
+  .grow{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 12px; background:var(--surface-strong);}
+  .grow .gname{display:flex; flex-direction:column; gap:1px; min-width:0;}
+  .grow .gname strong{font-size:.84rem; font-weight:700;}
+  .grow .gnote{font-size:.62rem; color:var(--muted);}
+  .grow .gw{font-family:var(--font-display); font-weight:600; font-size:.92rem; color:var(--ink); flex:none;}
+  .grow.dropped{opacity:.45;}
+  .grow.dropped .gw{text-decoration:line-through;}
+
+  /* ====== TRAIL — Bible ====== */
+  .trail-head h1{font-family:var(--font-display); font-weight:600; font-size:1.5rem;}
+  .trail-head p{font-size:.78rem; color:var(--muted); margin-top:3px;}
+  .segmented{display:grid; grid-template-columns:repeat(3,1fr); gap:4px; padding:4px; border-radius:12px; background:rgba(47,75,53,.07); margin-top:12px;}
+  .seg{min-height:36px; border-radius:9px; font-size:.8rem; font-weight:800; color:var(--muted); display:grid; place-items:center;}
+  .seg.active{background:var(--surface-strong); color:var(--forest); box-shadow:var(--shadow-soft);}
+  .bible-search{
+    display:flex; align-items:center; gap:8px; margin-top:12px;
+    background:var(--surface-strong); border:1px solid var(--line); border-radius:13px; padding:9px 12px;
+  }
+  .bible-search .si{font-size:.8rem; color:var(--muted); flex:1;}
+  .bible-search .mag{color:var(--muted);}
+  .ref-head{display:flex; align-items:baseline; gap:9px; margin:15px 2px 8px;}
+  .ref-head h2{font-family:var(--font-display); font-weight:600; font-size:1.34rem; color:var(--forest);}
+  .ref-head .kjv{font-size:.58rem; font-weight:900; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); background:rgba(47,75,53,.07); padding:3px 7px; border-radius:6px;}
+  .verses{font-family:var(--font-display); font-size:1rem; line-height:1.62; color:var(--ink);}
+  .verses .v{display:inline;}
+  .verses sup{font-family:var(--font-sans); font-size:.62rem; font-weight:900; color:var(--clay); margin-right:3px; vertical-align:super; line-height:0;}
+  .verses .lord{font-variant:small-caps; letter-spacing:.02em;}
+  .ref-foot{margin-top:14px; padding-top:10px; border-top:1px solid var(--line); display:flex; align-items:center; gap:7px;}
+  .ref-foot .offline-dot{width:7px; height:7px; border-radius:50%; background:var(--success);}
+  .ref-foot span{font-size:.66rem; font-weight:800; color:var(--muted);}
+
+  .legend{max-width:760px; margin:26px auto 0; text-align:center; font-size:.72rem; color:#6a6253; line-height:1.5;}
+  .legend b{color:var(--forest);}
+</style>
+</head>
+<body>
+
+  <!-- ── TITLE BAND ──────────────────────────────────────────────────── -->
+  <div class="title-band">
+    <div class="tb-top">
+      <span class="tb-kicker">Direction D1 · Baseline</span>
+      <h1>Scout Hub</h1>
+    </div>
+    <p class="concept">
+      The shipping app, done right: a <b>chat-first trail companion</b> where Scout is the home you talk to,
+      and Map · Gear · Trail are one thumb-reach away. Calm topographic surfaces, honest about candidate-grade data.
+    </p>
+    <div class="lang-row">
+      <span class="lang"><b>Visual:</b> warm cream + deep forest green</span>
+      <span class="lang"><b>Type:</b> serif display numerals (Fraunces / Iowan Old Style)</span>
+      <span class="lang"><b>Feel:</b> topographic calm · soft shadows · 22px radii</span>
+      <span class="lang"><b>Interaction:</b> sticky status strip + 4-pillar bottom tabs</span>
+    </div>
+  </div>
+
+  <!-- ── PHONE DECK ──────────────────────────────────────────────────── -->
+  <div class="deck">
+
+    <!-- ============ SCOUT ============ -->
+    <div class="frame-wrap">
+      <span class="frame-chip"><span class="g">✦</span> Scout</span>
+      <div class="phone">
+        <!-- header -->
+        <div class="hdr">
+          <div class="brand">
+            <span class="logo-mark">HC</span>
+            <span class="status-strip">
+              <span class="day">Day 42</span><span class="dot">·</span>
+              <span class="mile tabular">Mi 1438.0</span>
+              <span class="pct">65%</span>
+            </span>
+          </div>
+          <div class="right">
+            <span class="conn"><span class="conn-dot"></span>Online</span>
+            <span class="gear-btn">⚙</span>
+          </div>
+        </div>
+
+        <!-- chat body -->
+        <div class="body">
+          <div class="chat">
+            <div class="quick">
+              <div class="qlabel">Quick prompts</div>
+              <div class="qrow">
+                <span class="qpill">Can I push mileage today?</span>
+                <span class="qpill">Next reliable water?</span>
+                <span class="qpill">Safest next move?</span>
+              </div>
+            </div>
+
+            <div class="log">
+              <!-- assistant greeting -->
+              <div class="msg bot">
+                <div class="mhead">
+                  <span class="bot-mark">S</span><strong>Scout</strong>
+                </div>
+                <p>Good morning. Trail readiness is holding steady today. Keep mapped water marked low-confidence until it's confirmed from a current source or in the field.</p>
+                <span class="ts">7:14 AM</span>
+              </div>
+
+              <!-- user question -->
+              <div class="msg user">
+                <p>Can I push mileage today?</p>
+              </div>
+
+              <!-- assistant answer with receipts + confidence -->
+              <div class="msg bot">
+                <div class="mhead">
+                  <span class="bot-mark">S</span><strong>Scout</strong>
+                  <span class="conf"><span class="bar on"></span><span class="bar on"></span><span class="bar"></span>Medium</span>
+                </div>
+                <p>Readiness is <b>84 — HOLD</b>. Last two days ran above plan and recovery is lagging, so keep miles conservative. Target <b>8.2 mi</b> to Morgan Stewart Memorial Shelter (+1,700 ft).</p>
+                <span class="caveat">⚠ Mapped water ahead is candidate-grade — confirm flow before you rely on it.</span>
+                <div class="receipts">
+                  <span class="schip"><span class="sd"></span><span class="smeta"><span class="slabel">AWOL 2026</span><span class="sdetail">Field guide · Mi 1438–1458</span></span></span>
+                  <span class="schip warn"><span class="sd"></span><span class="smeta"><span class="slabel">NWS</span><span class="sdetail">Cached weather · 6:50 AM</span></span></span>
+                  <span class="schip"><span class="sd"></span><span class="smeta"><span class="slabel">FarOut</span><span class="sdetail">Recent reports · 2 d ago</span></span></span>
+                </div>
+                <span class="ts">7:15 AM</span>
+              </div>
+            </div>
+
+            <!-- sticky composer -->
+            <div class="composer">
+              <div class="input-bar">
+                <span class="icon-btn loc" title="Use my location">⌖</span>
+                <span class="ph">Ask about water, miles, town, safety…</span>
+                <span class="icon-btn send" title="Send">➤</span>
+              </div>
+              <div class="cmeta">
+                <span class="mode-tag">Gemma Scout</span>
+                <span class="hint">Sources cited per answer</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- bottom nav -->
+        <div class="nav">
+          <div class="nav-item active"><span class="ng">✦</span><span class="nl">Scout</span></div>
+          <div class="nav-item"><span class="ng">◎</span><span class="nl">Map</span></div>
+          <div class="nav-item"><span class="ng">▣</span><span class="nl">Gear</span></div>
+          <div class="nav-item"><span class="ng">☷</span><span class="nl">Trail</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ MAP ============ -->
+    <div class="frame-wrap">
+      <span class="frame-chip"><span class="g">◎</span> Map</span>
+      <div class="phone">
+        <div class="hdr">
+          <div class="brand">
+            <span class="logo-mark">HC</span>
+            <span class="status-strip">
+              <span class="day">Day 42</span><span class="dot">·</span>
+              <span class="mile tabular">Mi 1438.0</span>
+              <span class="pct">65%</span>
+            </span>
+          </div>
+          <div class="right">
+            <span class="conn"><span class="conn-dot"></span>Online</span>
+            <span class="gear-btn">⚙</span>
+          </div>
+        </div>
+
+        <div class="body">
+          <div class="map-canvas">
+            <!-- topo contours -->
+            <svg class="topo" viewBox="0 0 320 540" preserveAspectRatio="none" aria-hidden="true">
+              <path class="faint" d="M-10,70 C60,40 120,90 180,60 C240,30 300,80 340,55"/>
+              <path d="M-10,110 C60,80 120,130 180,100 C240,70 300,120 340,95"/>
+              <path class="faint" d="M-10,158 C70,130 130,180 200,150 C260,124 310,168 340,150"/>
+              <path d="M-10,210 C80,184 140,236 210,206 C270,180 320,222 340,206"/>
+              <path class="faint" d="M-10,270 C70,250 150,296 220,266 C280,242 320,280 340,268"/>
+              <path d="M-10,330 C80,314 150,352 230,326 C290,306 320,338 340,330"/>
+              <path class="faint" d="M-10,392 C90,378 160,408 240,388 C300,374 330,398 340,392"/>
+              <path d="M-10,452 C90,442 170,468 250,450 C300,440 330,456 340,452"/>
+              <!-- candidate stream -->
+              <path class="river" d="M70,540 C84,470 60,420 96,372 C120,338 100,300 130,260"/>
+            </svg>
+
+            <!-- AT line down the ridge -->
+            <svg viewBox="0 0 320 540" preserveAspectRatio="none" style="position:absolute; inset:0;" aria-hidden="true">
+              <path class="at-line shadow" d="M150,540 C140,470 178,440 168,386 C158,330 196,300 186,250 C178,206 150,180 168,128 C182,86 162,56 176,8"/>
+              <path class="at-line" d="M150,540 C140,470 178,440 168,386 C158,330 196,300 186,250 C178,206 150,180 168,128 C182,86 162,56 176,8"/>
+            </svg>
+
+            <!-- next-water + candidate chip -->
+            <div class="map-top-chip">
+              <span class="next-water-chip">
+                <span class="wglyph">💧</span> Next water 0.4 mi
+                <span class="cand-tag">candidate</span>
+              </span>
+            </div>
+
+            <!-- Dad's position -->
+            <div class="you" style="left:35%; top:62%;">
+              <div class="ring"><div class="core"></div></div>
+              <span class="youlbl">Dad · Mi 1438.0</span>
+            </div>
+
+            <!-- pins -->
+            <div class="pin water" style="left:42%; top:50%;"><span class="lbl">Stream · thin</span><span class="dot"></span></div>
+            <div class="pin shelter" style="left:54%; top:33%;"><span class="lbl">Morgan Stewart 4.6mi</span><span class="dot"></span></div>
+            <div class="pin town" style="left:55%; top:13%;"><span class="lbl">Pawling · unverified</span><span class="dot"></span></div>
+
+            <!-- elevation strip -->
+            <div class="elev">
+              <div class="etop">
+                <span class="etitle">Elevation ahead · 30 mi</span>
+                <span class="erange">+1,700 ft to shelter</span>
+              </div>
+              <svg viewBox="0 0 280 46" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="elevfill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="rgba(47,75,53,.30)"/>
+                    <stop offset="1" stop-color="rgba(47,75,53,.04)"/>
+                  </linearGradient>
+                </defs>
+                <path class="epath" d="M0,38 L18,30 L40,34 L66,18 L92,24 L120,10 L150,20 L180,8 L210,22 L240,14 L280,30 L280,46 L0,46 Z"/>
+                <line class="here" x1="40" y1="2" x2="40" y2="46"/>
+                <circle class="heredot" cx="40" cy="34" r="3.4"/>
+              </svg>
+              <div class="elabels"><span>Mi 1438</span><span>Morgan Stewart 1442.6</span><span>Mi 1468</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav">
+          <div class="nav-item"><span class="ng">✦</span><span class="nl">Scout</span></div>
+          <div class="nav-item active"><span class="ng">◎</span><span class="nl">Map</span></div>
+          <div class="nav-item"><span class="ng">▣</span><span class="nl">Gear</span></div>
+          <div class="nav-item"><span class="ng">☷</span><span class="nl">Trail</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ GEAR ============ -->
+    <div class="frame-wrap">
+      <span class="frame-chip"><span class="g">▣</span> Gear</span>
+      <div class="phone">
+        <div class="hdr">
+          <div class="brand">
+            <span class="logo-mark">HC</span>
+            <span class="status-strip">
+              <span class="day">Day 42</span><span class="dot">·</span>
+              <span class="mile tabular">Mi 1438.0</span>
+              <span class="pct">65%</span>
+            </span>
+          </div>
+          <div class="right">
+            <span class="conn"><span class="conn-dot"></span>Online</span>
+            <span class="gear-btn">⚙</span>
+          </div>
+        </div>
+
+        <div class="body">
+          <div class="pad">
+            <div class="gear-head">
+              <h1>Gear</h1>
+              <p>What's on your back. Ask Scout to add, drop, or swap — it confirms first.</p>
+            </div>
+
+            <div class="gear-summary">
+              <div class="col">
+                <span class="lbl">Base</span>
+                <span class="big tabular">14.8 <span style="font-size:.7rem;font-weight:800;">lb</span></span>
+              </div>
+              <div class="col">
+                <span class="lbl">Total carried</span>
+                <span class="big tabular">22.3 <span style="font-size:.7rem;font-weight:800;">lb</span></span>
+              </div>
+              <div class="col count">
+                <span class="lbl">Packed</span>
+                <span class="big tabular">31<span class="sub" style="font-size:.7rem;">/38</span></span>
+                <span class="sub">items</span>
+              </div>
+            </div>
+
+            <div class="cat-head"><span class="cname">Shelter</span><span class="cline"></span><span class="cw">2.1 lb</span></div>
+            <div class="gear-list">
+              <div class="grow"><div class="gname"><strong>Trekking-pole tent</strong><span class="gnote">single-wall</span></div><span class="gw tabular">2.1 lb</span></div>
+            </div>
+
+            <div class="cat-head"><span class="cname">Sleep</span><span class="cline"></span><span class="cw">2.3 lb</span></div>
+            <div class="gear-list">
+              <div class="grow"><div class="gname"><strong>Down quilt</strong><span class="gnote">20°F</span></div><span class="gw tabular">1.4 lb</span></div>
+              <div class="grow"><div class="gname"><strong>Sleeping pad</strong><span class="gnote">inflatable</span></div><span class="gw tabular">0.9 lb</span></div>
+            </div>
+
+            <div class="cat-head"><span class="cname">Pack</span><span class="cline"></span><span class="cw">1.9 lb</span></div>
+            <div class="gear-list">
+              <div class="grow"><div class="gname"><strong>Backpack</strong><span class="gnote">50 L</span></div><span class="gw tabular">1.9 lb</span></div>
+            </div>
+
+            <div class="cat-head"><span class="cname">Cook · Water</span><span class="cline"></span><span class="cw">0.9 lb</span></div>
+            <div class="gear-list">
+              <div class="grow"><div class="gname"><strong>Stove + pot</strong><span class="gnote">canister</span></div><span class="gw tabular">0.7 lb</span></div>
+              <div class="grow"><div class="gname"><strong>Water filter</strong><span class="gnote">squeeze</span></div><span class="gw tabular">0.2 lb</span></div>
+            </div>
+
+            <div class="cat-head"><span class="cname">Consumables</span><span class="cline"></span><span class="cw">7.5 lb</span></div>
+            <div class="gear-list">
+              <div class="grow"><div class="gname"><strong>Food</strong><span class="gnote">5 days</span></div><span class="gw tabular">6.9 lb</span></div>
+              <div class="grow"><div class="gname"><strong>Fuel</strong><span class="gnote">canister</span></div><span class="gw tabular">0.6 lb</span></div>
+              <div class="grow dropped"><div class="gname"><strong>Bear canister</strong><span class="gnote">not required here</span></div><span class="gw tabular">2.1 lb</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav">
+          <div class="nav-item"><span class="ng">✦</span><span class="nl">Scout</span></div>
+          <div class="nav-item"><span class="ng">◎</span><span class="nl">Map</span></div>
+          <div class="nav-item active"><span class="ng">▣</span><span class="nl">Gear</span></div>
+          <div class="nav-item"><span class="ng">☷</span><span class="nl">Trail</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ TRAIL (Bible / Psalm 23) ============ -->
+    <div class="frame-wrap">
+      <span class="frame-chip"><span class="g">☷</span> Trail</span>
+      <div class="phone">
+        <!-- OFFLINE state shown here -->
+        <div class="hdr">
+          <div class="brand">
+            <span class="logo-mark">HC</span>
+            <span class="status-strip">
+              <span class="day">Day 42</span><span class="dot">·</span>
+              <span class="mile tabular">Mi 1438.0</span>
+              <span class="pct">65%</span>
+            </span>
+          </div>
+          <div class="right">
+            <span class="conn off"><span class="conn-dot"></span>Offline</span>
+            <span class="gear-btn">⚙</span>
+          </div>
+        </div>
+
+        <div class="body">
+          <div class="pad">
+            <div class="trail-head">
+              <h1>Trail</h1>
+              <p>Your offline library: field guide, scripture, and journal.</p>
+            </div>
+
+            <div class="segmented">
+              <span class="seg">Guide</span>
+              <span class="seg active">Bible</span>
+              <span class="seg">Journal</span>
+            </div>
+
+            <div class="bible-search">
+              <span class="mag">⌕</span>
+              <span class="si">Search the King James Bible…</span>
+            </div>
+
+            <div class="ref-head">
+              <h2>Psalm 23</h2>
+              <span class="kjv">KJV</span>
+            </div>
+
+            <div class="verses">
+              <span class="v"><sup>1</sup>The <span class="lord">Lord</span> is my shepherd; I shall not want. </span>
+              <span class="v"><sup>2</sup>He maketh me to lie down in green pastures: he leadeth me beside the still waters. </span>
+              <span class="v"><sup>3</sup>He restoreth my soul: he leadeth me in the paths of righteousness for his name's sake. </span>
+              <span class="v"><sup>4</sup>Yea, though I walk through the valley of the shadow of death, I will fear no evil: for thou art with me; thy rod and thy staff they comfort me. </span>
+              <span class="v"><sup>5</sup>Thou preparest a table before me in the presence of mine enemies: thou anointest my head with oil; my cup runneth over. </span>
+            </div>
+
+            <div class="ref-foot">
+              <span class="offline-dot"></span>
+              <span>Stored on device · readable with no signal</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav">
+          <div class="nav-item"><span class="ng">✦</span><span class="nl">Scout</span></div>
+          <div class="nav-item"><span class="ng">◎</span><span class="nl">Map</span></div>
+          <div class="nav-item"><span class="ng">▣</span><span class="nl">Gear</span></div>
+          <div class="nav-item active"><span class="ng">☷</span><span class="nl">Trail</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="legend">
+    <b>Scout Hub</b> — the faithful baseline. Status strip + 4-pillar bottom tabs on every screen · Scout is pure chat with
+    source receipts (AWOL 2026 · NWS · FarOut) and a <b>Medium</b> confidence badge · candidate-grade water is flagged honestly across Scout, Map, and Trail (shown offline).
+  </p>
+
+</body>
+</html>

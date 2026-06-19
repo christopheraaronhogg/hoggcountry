@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "scout-mobile",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "mobile", "run", "dev", "--", "--port", "5199", "--strictPort"],
+      "port": 5199,
+      "autoPort": false
+    },
+    {
+      "name": "bakeoff-static",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "http-server", "docs/design", "-p", "5210", "-c-1"],
+      "port": 5210,
+      "autoPort": false
+    }
+  ]
+}

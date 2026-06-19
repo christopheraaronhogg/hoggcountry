@@ -1,14 +1,16 @@
 <script lang="ts">
 	import type { Tab } from '$lib/types';
 	import { trailAssistant } from '$lib/trailState.svelte';
+	import Icon, { type IconName } from './Icon.svelte';
 
-	const tabs: Array<{ key: Tab; label: string; glyph: string }> = [
-		{ key: 'Today', label: 'Today', glyph: '☀' },
-		{ key: 'Plan', label: 'Plan', glyph: '◷' },
-		{ key: 'Coach', label: 'Scout', glyph: '✦' },
-		{ key: 'Town', label: 'Town', glyph: '⌂' },
-		{ key: 'Safety', label: 'Safety', glyph: '⚐' },
-		{ key: 'Account', label: 'You', glyph: '◉' }
+	// Four pillars. Today (calm glance dashboard) is home; Settings lives behind the
+	// header gear, and Gear behind Today's "packing up?" glance (a morning ritual,
+	// not an all-day tab) — neither is a nav tab. Town folded into Map; Plan into Today.
+	const tabs: Array<{ key: Tab; label: string; icon: IconName }> = [
+		{ key: 'Today', label: 'Today', icon: 'today' },
+		{ key: 'Scout', label: 'Scout', icon: 'scout' },
+		{ key: 'Map', label: 'Map', icon: 'map' },
+		{ key: 'Trail', label: 'Trail', icon: 'trail' }
 	];
 </script>
 
@@ -21,7 +23,7 @@
 			aria-current={trailAssistant.activeTab === tab.key ? 'page' : undefined}
 			aria-label={tab.label}
 		>
-			<span class="nav-glyph" aria-hidden="true">{tab.glyph}</span>
+			<span class="nav-glyph" aria-hidden="true"><Icon name={tab.icon} size={23} stroke={1.7} /></span>
 			<span class="nav-label">{tab.label}</span>
 		</button>
 	{/each}
@@ -32,7 +34,7 @@
 		height: var(--nav-height);
 		padding: 6px 8px calc(env(safe-area-inset-bottom) + 8px);
 		display: grid;
-		grid-template-columns: repeat(6, minmax(0, 1fr));
+		grid-template-columns: repeat(4, minmax(0, 1fr));
 		gap: 4px;
 		background: rgba(252, 248, 240, 0.96);
 		backdrop-filter: blur(14px);

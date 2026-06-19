@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hogg Country — UX Design Bake-off · 2026-06-2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Lato:wght@400;700;900&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#f4efe4; --bg-deep:#e7dcc8; --surface:#fbf7ef; --surface-strong:#fffdf8;
+    --ink:#1f241d; --muted:#5f6558; --line:#d8cfbf;
+    --forest:#2f4b35; --moss:#6a845f; --sand:#c8a77a; --clay:#aa6843; --sky:#5f8090;
+    --gold:#b88a2a; --danger:#9a3b2f; --success:#2f6a47; --warn:#b6892c;
+    --hi:#2f6a47; --hi-bg:#e6f0e8; --mid:#9a7b2c; --mid-bg:#f4ecd8; --lo:#9a574a; --lo-bg:#f3e4de;
+    --sans:'Lato',system-ui,-apple-system,'Segoe UI',sans-serif;
+    --serif:'Fraunces','Iowan Old Style',Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:
+      radial-gradient(circle at 50% -8%, rgba(198,167,122,.20), transparent 42%),
+      linear-gradient(180deg,var(--bg) 0%, #efe7d7 100%);
+    color:var(--ink); font-family:var(--sans); line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1200px; margin:0 auto; padding:0 22px 90px}
+  a{color:var(--forest)}
+
+  /* ---- hero ---- */
+  header.hero{padding:54px 0 26px; text-align:center}
+  .kicker{font-size:.74rem; font-weight:900; letter-spacing:.22em; text-transform:uppercase; color:var(--moss)}
+  h1{font-family:var(--serif); font-weight:600; font-size:clamp(2.1rem,5vw,3.3rem); line-height:1.04; margin:.28em 0 .14em; letter-spacing:-.01em}
+  .hero p.sub{max-width:720px; margin:6px auto 0; color:var(--muted); font-size:1.02rem}
+  .hero .meta{margin-top:14px; font-size:.8rem; color:var(--moss); font-weight:700; letter-spacing:.04em}
+
+  /* ---- winner banner ---- */
+  .winner-band{
+    margin:30px 0 8px; background:linear-gradient(135deg,#2f4b35,#3a5f43);
+    color:#f6f1e6; border-radius:24px; padding:26px 28px; box-shadow:0 18px 44px -20px rgba(31,36,29,.7);
+    display:grid; grid-template-columns:auto 1fr; gap:22px; align-items:center;
+  }
+  .medal{font-size:2.7rem; line-height:1}
+  .winner-band h2{font-family:var(--serif); font-weight:600; font-size:1.7rem; margin:0 0 4px}
+  .winner-band .score-chip{display:inline-block; background:rgba(246,241,230,.16); border:1px solid rgba(246,241,230,.3); padding:3px 11px; border-radius:999px; font-weight:900; font-size:.82rem; letter-spacing:.03em; margin-left:8px; vertical-align:middle}
+  .winner-band p{margin:6px 0 0; color:#e7e0cf; font-size:.96rem; max-width:820px}
+  .winner-band p.assemble{margin-top:12px; font-size:.9rem; color:#d7e0cc}
+  .winner-band p.assemble b{color:#fff}
+
+  section{margin-top:46px}
+  h3.sec{font-family:var(--serif); font-weight:600; font-size:1.5rem; margin:0 0 4px; display:flex; align-items:baseline; gap:10px}
+  h3.sec .num{font-size:.8rem; font-weight:900; color:var(--sand); font-family:var(--sans); letter-spacing:.14em}
+  .sec-note{color:var(--muted); font-size:.92rem; margin:0 0 18px; max-width:860px}
+
+  /* ---- scoreboard ---- */
+  .board-scroll{overflow-x:auto; border-radius:18px; border:1px solid var(--line); background:var(--surface-strong); box-shadow:0 10px 28px rgba(48,45,35,.07)}
+  table.board{border-collapse:collapse; width:100%; min-width:880px; font-size:.9rem}
+  table.board th, table.board td{padding:11px 8px; text-align:center; border-bottom:1px solid var(--line)}
+  table.board thead th{font-size:.62rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:900; background:var(--bg-deep)}
+  table.board tbody th{text-align:left; font-weight:800; white-space:nowrap; font-size:.92rem; padding-left:16px}
+  table.board tbody tr:last-child td, table.board tbody tr:last-child th{border-bottom:0}
+  .row-win{background:linear-gradient(90deg, rgba(184,138,42,.13), rgba(184,138,42,.03))}
+  .row-win th{color:var(--forest)}
+  td.cell{font-variant-numeric:tabular-nums; font-weight:700; border-radius:8px}
+  .s-hi{color:var(--hi); background:var(--hi-bg)}
+  .s-mid{color:var(--mid); background:var(--mid-bg)}
+  .s-lo{color:var(--lo); background:var(--lo-bg)}
+  td.total{font-family:var(--serif); font-weight:700; font-size:1.18rem; color:var(--ink)}
+  .row-win td.total{color:var(--gold)}
+  .legend{display:flex; gap:16px; flex-wrap:wrap; margin-top:12px; font-size:.76rem; color:var(--muted)}
+  .legend span{display:inline-flex; align-items:center; gap:6px}
+  .sw{width:13px; height:13px; border-radius:4px; display:inline-block}
+
+  /* ---- device wall ---- */
+  .wall{display:grid; grid-template-columns:repeat(auto-fill, minmax(380px,1fr)); gap:26px}
+  .card{background:var(--surface-strong); border:1px solid var(--line); border-radius:22px; padding:18px 18px 20px; box-shadow:0 12px 30px rgba(48,45,35,.08); display:flex; flex-direction:column}
+  .card.win{border:2px solid var(--gold); box-shadow:0 16px 40px -10px rgba(184,138,42,.4)}
+  .rank{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px}
+  .rank .badge{font-size:.68rem; font-weight:900; letter-spacing:.12em; text-transform:uppercase; color:#fff; background:var(--moss); padding:4px 10px; border-radius:999px}
+  .card.win .rank .badge{background:var(--gold)}
+  .rank .tot{font-family:var(--serif); font-weight:700; font-size:1.35rem}
+  .card h4{font-family:var(--serif); font-weight:600; font-size:1.28rem; margin:2px 0 2px}
+  .card .tag{color:var(--muted); font-size:.86rem; margin:0 0 12px; min-height:2.4em}
+  .card .verdict{font-size:.88rem; color:#3c4338; margin:0 0 14px; border-left:3px solid var(--sand); padding:6px 0 6px 12px}
+  .card .verdict b{color:var(--forest)}
+  .frame-shell{width:100%; height:560px; margin:0 auto; overflow:hidden; border-radius:20px; border:1px solid var(--line); background:#fff; box-shadow:inset 0 0 0 1px rgba(0,0,0,.02), 0 6px 18px rgba(48,45,35,.1)}
+  .frame-shell iframe{width:1750px; height:1400px; border:0; transform:scale(.32); transform-origin:top left; background:#ded3bd}
+  .open{margin-top:14px; display:inline-flex; align-items:center; gap:6px; align-self:flex-start; background:var(--forest); color:#f6f1e6; text-decoration:none; font-weight:800; font-size:.84rem; padding:9px 16px; border-radius:999px}
+  .open:hover{background:#26402d}
+
+  /* ---- borrow ---- */
+  .borrow{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:16px}
+  .bcard{background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--forest); border-radius:14px; padding:16px}
+  .bcard.m3{border-left-color:var(--moss)} .bcard.m5{border-left-color:var(--clay)} .bcard.m2{border-left-color:var(--sky)} .bcard.m4{border-left-color:var(--sand)}
+  .bcard h5{margin:0 0 6px; font-size:.74rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:900}
+  .bcard .what{font-family:var(--serif); font-weight:600; font-size:1.05rem; margin:0 0 6px}
+  .bcard p{margin:0; font-size:.86rem; color:#3c4338}
+
+  footer{margin-top:54px; padding-top:22px; border-top:1px solid var(--line); color:var(--muted); font-size:.82rem; text-align:center}
+  @media (max-width:520px){ .winner-band{grid-template-columns:1fr} .frame-shell{height:480px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="kicker">Hogg Country · Trail App · Bake-off 2026-06-2</div>
+    <h1>UX Design Bake-off — Round 2</h1>
+    <p class="sub">Five fresh directions for the same scope — Today · Scout · Map · Gear · KJV Bible · Journal — judged for one user in the moment: Hal, 62, Day 42 of a NOBO thru-hike, sun glare, cold hands, one bar, often offline. <strong>Exploration, not a rebuild.</strong></p>
+    <div class="meta">5 directions · 1 in-the-moment judge · 10 criteria · grounded in real data (Day 42 · Mile 1438.0 · NY/CT corridor)</div>
+  </header>
+
+  <div class="winner-band">
+    <div class="medal">🥇</div>
+    <div>
+      <h2>Winner — M1 · Day Timeline <span class="score-chip">88 / 100</span></h2>
+      <p>The day as a vertical timeline of beads, under a persistent forest-green HUD and a first-class weather card. It wins the two highest-stakes criteria outright: weather + navigation clarity (a plain-language "what it means" line plus a daylight-left bar) and prepares-for-the-day (it is the only direction that puts the actual <em>sequence</em> of the day on screen). Honest throughout — candidate-grade water in calm words, cited Scout, and <strong>no fabricated readiness score in any of the five.</strong></p>
+      <p class="assemble"><b>Then assemble:</b> graft M3's scroll-only calm + solid weather block, M5's journal-as-spine, M2's hourly precip strip + receipt machinery, and M4's place-anchored Scout as the Map layer.</p>
+    </div>
+  </div>
+
+  <!-- SCOREBOARD -->
+  <section id="scoreboard">
+    <h3 class="sec"><span class="num">01</span> Scoreboard</h3>
+    <p class="sec-note">Ten criteria, each out of 10, summed to a total out of 100. The penalty clause — any fabricated readiness or vitals score — does not fire: all five show honest, candidate-grade-flagged data with a weather-forward HUD. The contest is decided on usefulness in the moment, glanceability, and cold-hands tolerance.</p>
+    <div class="board-scroll">
+      <table class="board">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding-left:16px">Direction</th>
+            <th>In-moment</th><th>Glance 2s</th><th>Wx + Nav</th><th>Cited Scout</th><th>Prepares</th><th>Documents</th><th>Gear edit</th><th>Bible</th><th>Outdoor</th><th>One-hand</th><th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="row-win">
+            <th>🥇 M1 · Day Timeline</th>
+            <td class="cell s-hi">9</td><td class="cell s-hi">9</td><td class="cell s-hi">10</td><td class="cell s-hi">9</td><td class="cell s-hi">10</td><td class="cell s-hi">8</td><td class="cell s-hi">8</td><td class="cell s-hi">8</td><td class="cell s-hi">9</td><td class="cell s-hi">8</td><td class="total">88</td>
+          </tr>
+          <tr>
+            <th>🥈 M3 · One Calm Scroll</th>
+            <td class="cell s-hi">9</td><td class="cell s-hi">9</td><td class="cell s-hi">9</td><td class="cell s-hi">8</td><td class="cell s-hi">8</td><td class="cell s-mid">7</td><td class="cell s-mid">7</td><td class="cell s-hi">8</td><td class="cell s-hi">9</td><td class="cell s-hi">9</td><td class="total">83</td>
+          </tr>
+          <tr>
+            <th>🥉 M5 · Trail Logbook</th>
+            <td class="cell s-hi">8</td><td class="cell s-hi">8</td><td class="cell s-hi">8</td><td class="cell s-hi">8</td><td class="cell s-hi">8</td><td class="cell s-hi">10</td><td class="cell s-hi">8</td><td class="cell s-hi">8</td><td class="cell s-hi">8</td><td class="cell s-mid">7</td><td class="total">78</td>
+          </tr>
+          <tr>
+            <th>M2 · Scout-First Cards</th>
+            <td class="cell s-hi">8</td><td class="cell s-mid">7</td><td class="cell s-mid">7</td><td class="cell s-hi">9</td><td class="cell s-mid">7</td><td class="cell s-mid">7</td><td class="cell s-hi">8</td><td class="cell s-mid">7</td><td class="cell s-hi">8</td><td class="cell s-lo">6</td><td class="total">74</td>
+          </tr>
+          <tr>
+            <th>M4 · Living Map</th>
+            <td class="cell s-mid">7</td><td class="cell s-mid">7</td><td class="cell s-mid">7</td><td class="cell s-hi">8</td><td class="cell s-mid">7</td><td class="cell s-hi">8</td><td class="cell s-mid">7</td><td class="cell s-mid">7</td><td class="cell s-lo">6</td><td class="cell s-lo">6</td><td class="total">70</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--hi-bg);box-shadow:inset 0 0 0 1px var(--hi)"></i> 8–10 strong</span>
+      <span><i class="sw" style="background:var(--mid-bg);box-shadow:inset 0 0 0 1px var(--mid)"></i> 7 fair</span>
+      <span><i class="sw" style="background:var(--lo-bg);box-shadow:inset 0 0 0 1px var(--lo)"></i> 6 or below weak</span>
+      <span>No fabricated-score penalty fired — all five are honest.</span>
+    </div>
+  </section>
+
+  <!-- DEVICE WALL -->
+  <section id="directions">
+    <h3 class="sec"><span class="num">02</span> The five, side by side</h3>
+    <p class="sec-note">Each is a self-contained mockup of all six surfaces (Today · Scout · Map · Gear · Bible · Journal), built on the live cream/forest brand tokens and authentic Day-42 trail data. Previews are scaled — click <strong>Open full screen</strong> to inspect any direction at true size.</p>
+    <div class="wall">
+
+      <div class="card win">
+        <div class="rank"><span class="badge">🥇 Winner · #1</span><span class="tot">88</span></div>
+        <h4>M1 · Day Timeline</h4>
+        <p class="tag">The day as a vertical timeline of beads under a persistent HUD; weather is a first-class card.</p>
+        <p class="verdict"><b>Best weather + navigation and best prepares-for-the-day.</b> The "what it means" line and daylight-left bar are the single strongest safety surface here, and it's the only one that puts the day's sequence on screen.</p>
+        <div class="frame-shell"><iframe src="mockups/m1-day-timeline.html" loading="lazy" title="M1 Day Timeline mockup"></iframe></div>
+        <a class="open" href="mockups/m1-day-timeline.html" target="_blank" rel="noopener">Open full screen ↗</a>
+      </div>
+
+      <div class="card">
+        <div class="rank"><span class="badge">🥈 #2</span><span class="tot">83</span></div>
+        <h4>M3 · One Calm Scroll</h4>
+        <p class="tag">One calm vertical scroll is the app; Bible, gear and journal live one tap deeper.</p>
+        <p class="verdict"><b>Best one-handed/cold-hands and tied-best glance.</b> Pure scroll, no swipe or drag; a solid dark-green weather block leads with "treat all water." Doesn't model the day's order the way M1 does.</p>
+        <div class="frame-shell"><iframe src="mockups/m3-one-scroll.html" loading="lazy" title="M3 One Calm Scroll mockup"></iframe></div>
+        <a class="open" href="mockups/m3-one-scroll.html" target="_blank" rel="noopener">Open full screen ↗</a>
+      </div>
+
+      <div class="card">
+        <div class="rank"><span class="badge">🥉 #3</span><span class="tot">78</span></div>
+        <h4>M5 · Trail Logbook</h4>
+        <p class="tag">The day as a warm almanac page; turning the page-corner moves between days.</p>
+        <p class="verdict"><b>Best documents-the-journey by far.</b> The journal is the architecture, not an afterthought — and it solves the warmth-vs-legibility trap (warmth from layout + one clay accent, never sepia). Glance is a touch slower; dense page.</p>
+        <div class="frame-shell"><iframe src="mockups/m5-trail-logbook.html" loading="lazy" title="M5 Trail Logbook mockup"></iframe></div>
+        <a class="open" href="mockups/m5-trail-logbook.html" target="_blank" rel="noopener">Open full screen ↗</a>
+      </div>
+
+      <div class="card">
+        <div class="rank"><span class="badge">#4</span><span class="tot">74</span></div>
+        <h4>M2 · Scout-First Cards</h4>
+        <p class="tag">Scout is the spine; a swipeable deck of live glance cards sits above the conversation.</p>
+        <p class="verdict"><b>Best cited Scout</b> — receipt chips, grade badge, and a dedicated weather screen with an hourly precip chart. But the deck is a <b>horizontal swipe</b> (cold-hands risk) and home weather shrinks to a small tile.</p>
+        <div class="frame-shell"><iframe src="mockups/m2-scout-cards.html" loading="lazy" title="M2 Scout-First Cards mockup"></iframe></div>
+        <a class="open" href="mockups/m2-scout-cards.html" target="_blank" rel="noopener">Open full screen ↗</a>
+      </div>
+
+      <div class="card">
+        <div class="rank"><span class="badge">#5</span><span class="tot">70</span></div>
+        <h4>M4 · Living Map</h4>
+        <p class="tag">The light, paper-bright trail ribbon is home; tap a pin to ask Scout about that spot.</p>
+        <p class="verdict"><b>Best "where am I" model, and it fixes the old dark-map glare problem.</b> But weather floats in a translucent blurred overlay (lower contrast) and the whole model leans on drag-handle sheets — the most gesture-dependent, cold-hands-hostile direction.</p>
+        <div class="frame-shell"><iframe src="mockups/m4-living-map.html" loading="lazy" title="M4 Living Map mockup"></iframe></div>
+        <a class="open" href="mockups/m4-living-map.html" target="_blank" rel="noopener">Open full screen ↗</a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- RECOMMENDATION / BORROW -->
+  <section id="recommendation">
+    <h3 class="sec"><span class="num">03</span> Recommendation — ship M1, then assemble</h3>
+    <p class="sec-note">M1 is the spine: its timeline + HUD is the chassis. Its softest areas — one-handed feel, documents-the-journey — are precisely what the other four do best, so this is an assembly, not a compromise.</p>
+    <div class="borrow">
+      <div class="bcard m3">
+        <h5>From M3 · One Calm Scroll</h5>
+        <p class="what">Scroll-only calm + solid weather block</p>
+        <p>Adopt M3's no-horizontal-swipe, no-drag discipline within each timeline screen, and keep a <em>solid</em> dark-green weather card as the brightest-sun fallback. A solid card beats M4's translucent overlay every time. Patches M1's softest area.</p>
+      </div>
+      <div class="bcard m5">
+        <h5>From M5 · Trail Logbook</h5>
+        <p class="what">The journal as a real spine</p>
+        <p>Make the evening journal a page-as-keepsake: logged miles/ascent/camp, the photo, the family-follows line, Father's Day Jun 21. Take M5's discipline too — warmth from layout and one clay accent, never sepia or handwriting in body text.</p>
+      </div>
+      <div class="bcard m2">
+        <h5>From M2 · Scout-First Cards</h5>
+        <p class="what">Hourly precip strip + receipt machinery</p>
+        <p>Graft M2's hourly rain bar-chart (10%→60%→20% across the afternoon) into M1's weather card so "showers build after 2p" is <em>shown</em>, and keep M2's source-receipt + grade chips as the standard for every Scout answer.</p>
+      </div>
+      <div class="bcard m4">
+        <h5>From M4 · Living Map</h5>
+        <p class="what">The idea, not the home</p>
+        <p>Keep place-anchored Scout ("ask about <em>this</em> pin") and the light, high-contrast ribbon as M1's <strong>Map pillar's</strong> deeper layer. Don't make the map the app's home, and don't adopt its drag-handle sheets.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Hogg Country trail app · UX design bake-off · 2026-06-2 · 5 directions × 10 criteria, judged for the in-the-moment hiker.<br/>
+    Exploration only — nothing here changes the app. Full write-up: <a href="JUDGED-COMPARISON.md">JUDGED-COMPARISON.md</a> · mockups in <a href="mockups/">mockups/</a>
+  </footer>
+
+</div>
+</body>
+</html>

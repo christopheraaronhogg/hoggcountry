@@ -1,5 +1,6 @@
 import { browser } from '$app/environment';
 
+import { migrateTab } from './types';
 import type {
 	ChatMessage,
 	CheckInRecord,
@@ -16,12 +17,15 @@ import type {
 	TrailState
 } from './types';
 import { publishTrailPulseReport } from './trailPulseSpacetime';
+import { resolveModelPolicy } from './scout/model-policy.ts';
+import { loadTrailGeometry, snapToMile, type TrailGeoPoint } from './trail/trail-geometry';
 import { createCapacitorPreferencesAdapter, createScoutRuntime, InMemoryContextPackStore } from './scout';
 import type { OnDeviceGemmaProvider } from './scout';
 import {
 	createCapacitorGemmaBridge,
 	createCapacitorModelManager,
 	type ModelDownloadProgress,
+	type NetworkStatus,
 	type ScoutGemmaModelStatus,
 	type ScoutModelManager
 } from './scout/capacitor-gemma-bridge.ts';
@@ -35,8 +39,22 @@ const TRAIL_ID = 'appalachian-trail';
 const FIELD_PACK_ENDPOINT =
 	(import.meta.env.VITE_SCOUT_FIELD_PACK_URL as string | undefined) ??
 	'https://hoggcountry.com/scout/field-pack';
-const MODEL_POLICY = (import.meta.env.VITE_SCOUT_MODEL_POLICY as string | undefined) ?? 'offline-tools';
+const MODEL_POLICY = resolveModelPolicy(
+	import.meta.env.VITE_SCOUT_MODEL_POLICY as string | undefined,
+	Boolean(import.meta.env.DEV)
+);
 const REQUIRE_GEMMA = MODEL_POLICY === 'gemma4-only';
+
+// Dad's NOBO start date (src/data/gear.json startDate). The day number is derived
+// from this, not stored — so it's always the real "day N of the hike", never a
+// frozen placeholder.
+const HIKE_START_DATE = '2026-02-01';
+
+function deriveDayNumber(startDate: string, now: Date): number {
+	const start = new Date(`${startDate}T00:00:00`);
+	const days = Math.floor((now.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+	return Math.max(1, days);
+}
 
 function isoHoursFromNow(hours: number): string {
 	return new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
@@ -137,7 +155,7 @@ const defaultState: TrailState = {
 	coachMessages: [
 		makeMessage(
 			'assistant',
-			'Good morning. Trail readiness is holding steady today. Keep mapped water marked low-confidence until it is confirmed from a current source or in the field.'
+			"I'm Scout — your on-device trail assistant. Ask me about water, shelters, town, or safety and I'll answer from your saved field pack. Mapped water stays low-confidence until you confirm it from a current source or in the field."
 		)
 	],
 	lastCheckIn: {
@@ -149,23 +167,10 @@ const defaultState: TrailState = {
 		note: 'Using the bundled Dad trail-ahead fallback until a refreshed field pack is saved on this phone.'
 	},
 	checkInHistory: [],
-	trailPulseReports: [
-		makeTrailPulseReport({
-			source: 'chip',
-			chipText: 'Rocks',
-			noteText: 'Rocks',
-			reporterTrailName: 'Backtrack',
-			snappedMile: 1438.4,
-			observedAt: new Date(Date.now() - 34 * 60 * 1000).toISOString()
-		}),
-		makeTrailPulseReport({
-			source: 'text',
-			chipText: 'Water',
-			noteText: 'mapped stream candidate needs field confirmation',
-			snappedMile: 1441.5,
-			observedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-		})
-	],
+	// Trail Pulse starts empty — reports are crowd-sourced from real hikers, so the
+	// panel shows its honest "no one has reported nearby" empty state until one
+	// arrives. (No seeded/fabricated reports.)
+	trailPulseReports: [],
 	seenTrailPulseReportIds: [],
 	privacySettings: {
 		stealthMode: true,
@@ -237,6 +242,10 @@ class TrailAssistantStore {
 	#modelStatus = $state<ScoutGemmaModelStatus | null>(null);
 	#modelDownload = $state<{ bytesDownloaded: number; totalBytes: number } | null>(null);
 	#modelError = $state<string | null>(null);
+	// Set when a download was requested on a metered (cellular/hotspot) connection
+	// and the user has not yet okayed the data cost. The UI shows a confirm; calling
+	// downloadModel({ allowMetered: true }) clears it and proceeds.
+	#meteredDownloadPrompt = $state<NetworkStatus | null>(null);
 	// True while a Scout reply is being generated (on-device inference can take
 	// many seconds), so the chat can show a "thinking" indicator instead of
 	// looking frozen.
@@ -246,6 +255,10 @@ class TrailAssistantStore {
 	// the confirm-before-apply gate for "Do" tools.
 	#pendingAction = $state<ProposedAction | null>(null);
 	#pendingApply: (() => void) | null = null;
+	// Real AT route geometry + USGS elevation (1-mi NOBO samples), fetched once
+	// from static/. Powers the elevation profile and GPS→mile snapping. Empty
+	// until loaded, so UI renders an honest empty state in the meantime.
+	#trailGeo = $state.raw<TrailGeoPoint[]>([]);
 
 	constructor() {
 		if (!browser) return;
@@ -260,7 +273,16 @@ class TrailAssistantStore {
 			this.#fieldPackStatus = status;
 		});
 		void this.#loadFieldPack();
-		void this.refreshModelStatus();
+		void loadTrailGeometry()
+			.then((points) => {
+				this.#trailGeo = points;
+			})
+			.catch((error) => {
+				console.error('Failed to load trail geometry', error);
+			});
+		// Re-observe any model download that kept running in the background service
+		// while the app was closed (also refreshes status, which may now be ready).
+		void this.reconcileDownload();
 
 		window.addEventListener('online', () => {
 			this.#state.onlineStatus = true;
@@ -298,6 +320,9 @@ class TrailAssistantStore {
 		try {
 			const parsed = JSON.parse(raw) as PersistedState;
 			this.#state = { ...defaultState, ...parsed };
+			// Persisted activeTab may reference a tab that no longer exists after the
+			// IA change (Plan/Town/Safety/You) — map it onto the new pillars.
+			this.#state.activeTab = migrateTab(this.#state.activeTab);
 		} catch (error) {
 			console.error('Failed to restore Trail Assistant state', error);
 		}
@@ -364,65 +389,69 @@ class TrailAssistantStore {
 		}, nextState === 'syncing' ? 1300 : 0);
 	}
 
-	#coachReplyFor(text: string): string {
-		if (REQUIRE_GEMMA) {
-			return 'Gemma 4 is required for this Play build, but the on-device model runtime is not available yet. Scout can still show the cached field pack, but chat answers are blocked until the native Gemma 4 bridge is installed.';
-		}
+	/**
+	 * Re-resolve the native Capacitor wiring if it wasn't ready when this store was
+	 * first constructed. The store is a module-level singleton built at import time,
+	 * which can race Capacitor's plugin injection — if it lost that race the bridge
+	 * was null for the whole session and on-device Scout never engaged. Calling this
+	 * before chat/model work lets a late-registered plugin self-heal: once the
+	 * bridge resolves we rebuild the Scout runtime around it.
+	 */
+	#ensureNativeWiring(): void {
+		if (!browser) return;
+		if (!this.#modelManager) this.#modelManager = createCapacitorModelManager();
+		if (this.#gemmaBridge) return;
+		const bridge = createCapacitorGemmaBridge();
+		if (!bridge) return;
+		this.#gemmaBridge = bridge;
+		this.#scout = createScoutRuntime({
+			store: this.#fieldPackStore,
+			onDeviceBridge: bridge,
+			onDeviceTier: 'balanced'
+		});
+	}
 
-		const lower = text.toLowerCase();
-		const recommendation = this.#state.readiness.recommendation;
-
-		if (lower.includes('water')) {
-			return 'The bundled pack has mapped water candidates ahead, but they are not confirmed reliable or potable. Treat them as low-confidence until refreshed or checked in the field.';
-		}
-
-		if (lower.includes('town') || lower.includes('shuttle') || lower.includes('hostel')) {
-			return 'The bundled pack has open-data town candidates ahead. Verify services, hours, and access before planning around a stop.';
-		}
-
-		if (lower.includes('miles') || lower.includes('push') || lower.includes('hold') || lower.includes('nero')) {
-			return `Today is a ${recommendation} day. I would cap this at ${this.#state.readiness.targetMiles.toFixed(1)} miles and avoid turning it into a make-up push.`;
-		}
-
-		if (lower.includes('safety') || lower.includes('check-in') || lower.includes('risk')) {
-			return 'Your missed check-in risk is still manageable, but the safe window closes in about four hours. Send a quick check-in before the next long ridge section.';
-		}
-
-		if (lower.includes('gear') || lower.includes('feet') || lower.includes('blister')) {
-			return 'Because your recovery is a little soft today, I would treat foot care like a hard requirement at the next water stop instead of waiting for camp.';
-		}
-
-		return 'I can help with mileage, water, town timing, resupply, gear triage, or safety. Give me the hard constraint and I will turn it into the next best move.';
+	/**
+	 * Eagerly initialize the on-device engine so the FIRST chat turn doesn't carry
+	 * (or risk) the heavy, sometimes-flaky lazy LiteRT init — the root of the
+	 * "asked a question, it answered offline" intermittency. Best-effort and silent.
+	 */
+	#warmUpModel(): void {
+		this.#ensureNativeWiring();
+		void this.#gemmaBridge?.warmUp?.();
 	}
 
 	async #gemmaReady(): Promise<boolean> {
 		if (!REQUIRE_GEMMA) return true;
+		this.#ensureNativeWiring();
 		if (!this.#gemmaBridge) return false;
 		return this.#gemmaBridge.isAvailable().catch(() => false);
 	}
 
 	#gemmaUnavailableAnswer(): ScoutAnswer {
+		// Tailor the message: not-installed → guide to the download; otherwise the
+		// model is present but the runtime hasn't warmed up yet.
+		const notInstalled = !this.#modelStatus || this.#modelStatus.state !== 'ready';
+		const answer = notInstalled
+			? "Scout's on-device model isn't installed yet. Open Settings → On-device AI and download it once on Wi-Fi, then I can answer fully offline."
+			: 'My on-device model is still warming up. Give it a few seconds and ask again.';
 		return {
-			answer: this.#coachReplyFor('gemma unavailable'),
+			answer,
 			confidence: 'draft',
 			mode: 'on-device',
 			provider: 'on-device-gemma',
 			receipts: this.#fieldPack.sourceReceipts ?? [],
 			toolInvocations: [],
-			requiredConfirmations: [
-				{
-					id: 'gemma4-runtime-required',
-					prompt: 'Install and verify the native Gemma 4 LiteRT-LM runtime before submitting this build.',
-					reason: 'low-confidence'
-				}
-			],
-			safetyFlags: [
-				{
-					id: 'chat-blocked-no-local-model',
-					severity: 'warn',
-					message: 'Scout chat is blocked because this build is configured for Gemma 4 only and no on-device model is available.'
-				}
-			],
+			requiredConfirmations: [],
+			safetyFlags: notInstalled
+				? [
+					{
+						id: 'on-device-model-not-installed',
+						severity: 'warn',
+						message: 'Scout answers run on a Gemma model stored on your phone — download it in Settings to chat offline.'
+					}
+				]
+				: [],
 			contextUsed: ['gemma4-only-policy'],
 			generatedAt: new Date().toISOString()
 		};
@@ -430,6 +459,10 @@ class TrailAssistantStore {
 
 	#getCurrentPosition(): Promise<GeolocationPosition | null> {
 		if (!browser || !navigator.geolocation) return Promise.resolve(null);
+		// Enforce the privacy toggle: location is only read when the hiker has opted
+		// in (default off). This is also why the OS permission prompt only appears
+		// after they enable "Precise location" — we never read it silently.
+		if (!this.#state.privacySettings.sharePreciseLocation) return Promise.resolve(null);
 
 		return new Promise((resolve) => {
 			navigator.geolocation.getCurrentPosition(
@@ -440,8 +473,12 @@ class TrailAssistantStore {
 		});
 	}
 
-	#snapPositionToTrailMile(_position: GeolocationPosition | null): number {
-		return this.#state.currentMile;
+	/** Snap a GPS fix to the nearest real AT mile (USGS route geometry). Falls back
+	 * to the last known mile when there's no fix or geometry isn't loaded yet. */
+	#snapPositionToTrailMile(position: GeolocationPosition | null): number {
+		if (!position) return this.#state.currentMile;
+		const mile = snapToMile(this.#trailGeo, position.coords.latitude, position.coords.longitude);
+		return mile ?? this.#state.currentMile;
 	}
 
 	async #syncTrailPulseReport(report: TrailConditionReport) {
@@ -465,6 +502,23 @@ class TrailAssistantStore {
 
 	set activeTab(tab: Tab) {
 		this.#state.activeTab = tab;
+	}
+
+	// Which section the Trail pillar opens to (Guide · Bible · Journal · Gear).
+	// Shared so the Today "packing up?" glance can deep-link straight to Gear.
+	#trailSection = $state<'guide' | 'bible' | 'journal' | 'gear'>('guide');
+	get trailSection() {
+		return this.#trailSection;
+	}
+	set trailSection(section: 'guide' | 'bible' | 'journal' | 'gear') {
+		this.#trailSection = section;
+	}
+
+	/** Open the Trail pillar to a specific section (used by deep links like the
+	 *  Today packing glance jumping to Gear). */
+	openTrailSection(section: 'guide' | 'bible' | 'journal' | 'gear') {
+		this.#trailSection = section;
+		this.#state.activeTab = 'Trail';
 	}
 
 	get coachMessages() {
@@ -549,6 +603,16 @@ class TrailAssistantStore {
 		return this.#modelError;
 	}
 
+	/**
+	 * Non-null when a download was requested over a metered (cellular/hotspot)
+	 * connection and is awaiting the user's okay on the data cost. The UI shows a
+	 * "download over cellular?" confirm; downloadModel({ allowMetered: true })
+	 * proceeds, dismissMeteredPrompt() backs out.
+	 */
+	get meteredDownloadPrompt() {
+		return this.#meteredDownloadPrompt;
+	}
+
 	/** True when on-device model management is available (native build w/ plugin). */
 	get supportsOnDeviceModel() {
 		return this.#modelManager !== null;
@@ -567,7 +631,12 @@ class TrailAssistantStore {
 	}
 
 	get dayNumber() {
-		return this.#state.dayNumber;
+		return deriveDayNumber(HIKE_START_DATE, new Date());
+	}
+
+	/** Real AT route geometry + elevation (1-mi samples), or [] before it loads. */
+	get trailGeometry() {
+		return this.#trailGeo;
 	}
 
 	get nextCheckInDueAt() {
@@ -706,7 +775,9 @@ class TrailAssistantStore {
 	}
 
 	async #dispatchScoutReply(prompt: string) {
-		const fallbackText = this.#coachReplyFor(prompt);
+		// Self-heal the native wiring in case Capacitor wasn't ready at construction.
+		this.#ensureNativeWiring();
+		if (REQUIRE_GEMMA) await this.refreshModelStatus();
 		this.#scoutThinking = true;
 
 		// Stream tokens into a live-updating assistant bubble. The bubble is only
@@ -764,8 +835,31 @@ class TrailAssistantStore {
 				this.#scoutAnswersByMessage.set(message.id, answer);
 				this.#state.coachMessages = [...this.#state.coachMessages, message];
 			}
-		} catch {
-			this.#state.coachMessages = [...this.#state.coachMessages, makeMessage('assistant', fallbackText)];
+		} catch (error) {
+			// On-device generation failed this turn. Under the Gemma-only policy the
+			// runtime rethrows rather than silently faking an offline answer (the
+			// "acted offline" bug), so handle it honestly: reset the availability
+			// probe, warm the engine for next time, and tell the hiker plainly with
+			// a retry nudge — never a canned offline answer that hides the failure.
+			// Log the real error so a genuine bug (store/tool failure) is debuggable
+			// from device logs rather than silently swallowed.
+			console.error('Scout reply failed', error);
+			this.#scout.onDeviceProvider?.invalidateAvailability();
+			this.#warmUpModel();
+			// Keep the wording accurate for any failure here (on-device generation is
+			// the dominant case under the Gemma-only policy, but a store/tool error
+			// could also land here) while still nudging a retry — the warm-up above
+			// means the next attempt usually succeeds.
+			const snag =
+				'Scout hit a snag answering that just now — give it a few seconds and ask again.';
+			if (streamingId !== null) {
+				const id = streamingId;
+				this.#state.coachMessages = this.#state.coachMessages.map((m) =>
+					m.id === id ? { ...m, content: snag } : m
+				);
+			} else {
+				this.#state.coachMessages = [...this.#state.coachMessages, makeMessage('assistant', snag)];
+			}
 		} finally {
 			this.#scoutThinking = false;
 		}
@@ -810,14 +904,36 @@ class TrailAssistantStore {
 	}
 
 	/**
-	 * Download + verify the on-device Gemma model, tracking live progress. Safe
-	 * to call only on native builds where a download endpoint is configured; the
-	 * UI gates the button on {@link modelStatus} state. Re-probes status on
-	 * completion so the engine shows as ready.
+	 * Download + verify the on-device Gemma model, tracking live progress. The
+	 * native side runs the transfer in a foreground service so it survives the app
+	 * being backgrounded; this method tracks it while the UI is open and reconciles
+	 * on completion.
+	 *
+	 * Wi-Fi-aware: on a metered (cellular/hotspot) connection it stops and sets
+	 * {@link meteredDownloadPrompt} so the UI can warn about the ~2.5GB cost; pass
+	 * {@code allowMetered: true} to proceed anyway.
 	 */
-	async downloadModel(): Promise<void> {
+	async downloadModel(options: { allowMetered?: boolean } = {}): Promise<void> {
 		if (!this.#modelManager || this.#modelDownload) return;
 		this.#modelError = null;
+
+		// Best-effort: ask for notification permission so the OS shows background
+		// progress. Denial is non-fatal — the foreground service still runs.
+		await this.#modelManager.requestNotificationsPermission().catch(() => false);
+
+		// Wi-Fi-aware gate. Skip the download (don't burn cellular data) until the
+		// user explicitly okays a metered connection.
+		const network = await this.#modelManager.getNetworkStatus().catch(() => null);
+		if (network && !network.connected) {
+			this.#modelError = 'No internet connection. Connect to Wi-Fi to download the model.';
+			return;
+		}
+		if (network?.metered && !options.allowMetered) {
+			this.#meteredDownloadPrompt = network;
+			return;
+		}
+		this.#meteredDownloadPrompt = null;
+
 		this.#modelDownload = { bytesDownloaded: 0, totalBytes: this.#modelStatus?.expectedBytes ?? -1 };
 		try {
 			const status = await this.#modelManager.startDownload((progress: ModelDownloadProgress) => {
@@ -829,9 +945,65 @@ class TrailAssistantStore {
 			this.#modelStatus = status;
 			// When the model is now ready, invalidate the cached availability so
 			// the router re-probes the native engine on the next Scout turn —
-			// without this the on-device path stays dead until the app restarts.
+			// without this the on-device path stays dead until the app restarts —
+			// and warm the engine so the first chat turn isn't a cold (flaky) init.
 			if (status.state === 'ready') {
 				this.#scout.onDeviceProvider?.invalidateAvailability();
+				this.#warmUpModel();
+			}
+		} catch (error) {
+			this.#modelError = error instanceof Error ? error.message : 'Model download failed.';
+			await this.refreshModelStatus();
+		} finally {
+			this.#modelDownload = null;
+		}
+	}
+
+	/** Back out of the metered-connection download confirm without downloading. */
+	dismissMeteredPrompt(): void {
+		this.#meteredDownloadPrompt = null;
+	}
+
+	/**
+	 * Re-observe a download that may have kept running in the background service
+	 * while the app was closed/backgrounded. Call on app resume / when the model UI
+	 * mounts: it re-attaches progress + terminal handling if a transfer is still in
+	 * flight, and refreshes status (which may now be ready). No-op otherwise.
+	 */
+	async reconcileDownload(): Promise<void> {
+		// Heal native wiring first — this runs on cold start and app resume, the
+		// exact moments a Capacitor injection race might have left the bridge null.
+		this.#ensureNativeWiring();
+		if (!this.#modelManager) return;
+		await this.refreshModelStatus();
+		if (this.#modelStatus?.state === 'ready') {
+			this.#scout.onDeviceProvider?.invalidateAvailability();
+			this.#warmUpModel();
+			return;
+		}
+		if (this.#modelDownload) return; // Already tracking in this session.
+
+		const state = await this.#modelManager.getDownloadState().catch(() => null);
+		if (!state?.active) return; // No background download to re-observe.
+
+		// Seed the progress bar from the last known bytes before awaiting terminal.
+		this.#modelDownload = { bytesDownloaded: state.bytesDownloaded, totalBytes: state.totalBytes };
+		try {
+			const status = await this.#modelManager.reattachDownload((progress: ModelDownloadProgress) => {
+				this.#modelDownload = {
+					bytesDownloaded: progress.bytesDownloaded,
+					totalBytes: progress.totalBytes
+				};
+			});
+			if (status) {
+				this.#modelStatus = status;
+				if (status.state === 'ready') {
+					this.#scout.onDeviceProvider?.invalidateAvailability();
+					this.#warmUpModel();
+				}
+			} else {
+				// Finished between the state check and the re-attach — reconcile.
+				await this.refreshModelStatus();
 			}
 		} catch (error) {
 			this.#modelError = error instanceof Error ? error.message : 'Model download failed.';
@@ -844,6 +1016,7 @@ class TrailAssistantStore {
 	/** Cancel an in-flight model download; the partial file is kept for resume. */
 	async cancelModelDownload(): Promise<void> {
 		if (!this.#modelManager) return;
+		this.#meteredDownloadPrompt = null;
 		await this.#modelManager.cancelDownload();
 	}
 

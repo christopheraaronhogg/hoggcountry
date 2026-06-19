@@ -47,7 +47,7 @@
 		<div class="hero-head">
 			<div>
 				<p class="eyebrow">Safety · Check-in window</p>
-				<h2>Visible to your circle</h2>
+				<h2>Logged on this phone</h2>
 				<p class="hero-detail">Last check-in {lastCheckInAge} at {trailAssistant.lastCheckIn.location}</p>
 			</div>
 			<div class="risk-dial" data-risk={trailAssistant.missedCheckInRisk}>
@@ -91,16 +91,16 @@
 		<ul class="signal-list">
 			<li><span>Local Scout answers</span><strong>Available</strong></li>
 			<li><span>Field guide + mileposts</span><strong>Available</strong></li>
-			<li><span>Queued check-ins</span><strong>{trailAssistant.onlineStatus ? 'Real-time' : 'Will sync on signal'}</strong></li>
-			<li><span>Weather refresh</span><strong>{trailAssistant.onlineStatus ? 'Fresh' : 'Cached only'}</strong></li>
+			<li><span>Check-in log</span><strong>Stored locally</strong></li>
+			<li><span>Weather context</span><strong>{trailAssistant.fieldPack.weather ? 'Cached field pack' : 'Needs refresh'}</strong></li>
 		</ul>
 	</section>
 
 	<section class="card">
 		<div class="section-heading">
 			<p class="eyebrow">Privacy</p>
-			<h2>Sharing controls</h2>
-			<p>Keep your support circle informed without exposing more than necessary.</p>
+			<h2>On-device controls</h2>
+			<p>Nothing here publishes a live location or sends a check-in automatically.</p>
 		</div>
 
 		<div class="toggle-row">
@@ -118,13 +118,13 @@
 
 		<div class="toggle-row">
 			<div class="toggle-copy">
-				<strong>Precise location</strong>
-				<span>Share exact position with approved contacts only.</span>
+				<strong>Trail-mile reports</strong>
+				<span>Attach an approximate trail mile only when you choose to report conditions.</span>
 			</div>
 			<button
 				class:on={trailAssistant.privacySettings.sharePreciseLocation}
 				class="toggle"
-				aria-label="Toggle precise location sharing"
+				aria-label="Toggle trail-mile reports"
 				onclick={() =>
 					trailAssistant.updatePrivacy({
 						sharePreciseLocation: !trailAssistant.privacySettings.sharePreciseLocation
@@ -150,13 +150,13 @@
 
 		<div class="toggle-row">
 			<div class="toggle-copy">
-				<strong>Visible to support circle</strong>
-				<span>Real-time location share for trusted contacts.</span>
+				<strong>Support notes</strong>
+				<span>Keep support contacts in the app as a local reference.</span>
 			</div>
 			<button
 				class:on={trailAssistant.privacySettings.visibleToSupportCircle}
 				class="toggle"
-				aria-label="Toggle visible to support circle"
+				aria-label="Toggle support notes"
 				onclick={() =>
 					trailAssistant.updatePrivacy({
 						visibleToSupportCircle: !trailAssistant.privacySettings.visibleToSupportCircle
@@ -168,8 +168,8 @@
 	<section class="card">
 		<div class="section-heading">
 			<p class="eyebrow">Support circle</p>
-			<h2>Who gets the signal</h2>
-			<p>This is the first group contacted if a check-in window is missed.</p>
+			<h2>Who to contact</h2>
+			<p>Reference list only. The app does not contact anyone automatically yet.</p>
 		</div>
 
 		<div class="stack-tight">

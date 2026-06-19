@@ -1,4 +1,38 @@
-export type Tab = 'Today' | 'Plan' | 'Coach' | 'Town' | 'Safety' | 'Account';
+// Bottom-nav pillars: Today (calm glance dashboard, home) · Scout (chat) · Map ·
+// Trail. Settings is a reachable view but NOT a bottom-nav tab (header gear). Gear
+// lives as the 4th section inside Trail (Guide · Bible · Journal · Gear) and is
+// deep-linked from the Today "packing up?" glance. Old tabs (Plan/Town/Safety/You)
+// folded in — see migrateTab().
+export type Tab = 'Today' | 'Scout' | 'Map' | 'Trail' | 'Settings';
+
+/** The four bottom-nav pillars, in order. Settings is intentionally absent. */
+export const NAV_TABS: readonly Tab[] = ['Today', 'Scout', 'Map', 'Trail'];
+
+/** Maps any previously-persisted tab id onto the new IA so a returning user
+ *  doesn't land on a tab that no longer exists. */
+export function migrateTab(value: unknown): Tab {
+	switch (value) {
+		case 'Scout':
+		case 'Today':
+		case 'Map':
+		case 'Trail':
+		case 'Settings':
+			return value;
+		case 'Gear':
+			return 'Trail'; // Gear is now a section inside Trail, not its own tab
+		case 'Coach':
+			return 'Scout';
+		case 'Plan':
+			return 'Today'; // forward-looking content folded into Today's look-ahead
+		case 'Town':
+			return 'Map'; // town logistics now live on the map
+		case 'Safety':
+		case 'Account':
+			return 'Settings';
+		default:
+			return 'Today';
+	}
+}
 
 export type ReadinessRecommendation = 'push' | 'steady' | 'hold' | 'nero' | 'zero';
 export type SyncState = 'synced' | 'syncing' | 'queued-offline';

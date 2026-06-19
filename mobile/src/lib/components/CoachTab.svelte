@@ -7,7 +7,6 @@
 		ScoutConfidence,
 		SourceReceipt as RuntimeSourceReceipt
 	} from '$lib/scout';
-	import { offlineModel, sourceReceipts } from './fieldData';
 	import type { SourceReceipt as UiSourceReceipt } from './fieldData';
 	import SourceChip from './SourceChip.svelte';
 	import ConfidenceBadge from './ConfidenceBadge.svelte';
@@ -15,29 +14,68 @@
 	let draft = $state('');
 	let logRef = $state<HTMLDivElement | null>(null);
 
-	function scrollToBottom() {
+	// Auto-scroll only when the hiker is following the bottom. If they've scrolled
+	// up to read, we must NOT yank them back down on every streamed token (the
+	// "it fights me" complaint). Intent is inferred purely from scroll geometry:
+	// near the bottom = pinned (auto-stick); scrolled up = unpinned (leave them be).
+	let pinned = $state(true);
+	let hasUnseen = $state(false); // new content arrived while unpinned
+	const STICK_THRESHOLD = 56; // px of slack that still counts as "at bottom"
+
+	const prefersReduced =
+		typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+	function distanceFromBottom(): number {
+		if (!logRef) return 0;
+		return logRef.scrollHeight - logRef.scrollTop - logRef.clientHeight;
+	}
+
+	function scrollToBottom(smooth = false) {
 		queueMicrotask(() => {
-			logRef?.scrollTo({ top: logRef.scrollHeight, behavior: 'smooth' });
+			if (!logRef) return;
+			logRef.scrollTo({
+				top: logRef.scrollHeight,
+				behavior: smooth && !prefersReduced ? 'smooth' : 'auto'
+			});
+			pinned = true;
+			hasUnseen = false;
 		});
+	}
+
+	// Geometry-only intent detection. A programmatic scroll-to-bottom lands within
+	// the threshold (stays pinned); a user dragging up measures far-from-bottom and
+	// unpins — no programmatic-scroll flag needed.
+	function onLogScroll() {
+		const atBottom = distanceFromBottom() <= STICK_THRESHOLD;
+		pinned = atBottom;
+		if (atBottom) hasUnseen = false;
 	}
 
 	function submit() {
 		if (!draft.trim()) return;
 		trailAssistant.sendCoachMessage(draft);
 		draft = '';
-		scrollToBottom();
+		scrollToBottom(true); // deliberate send → follow, smoothly
 	}
 
 	function usePrompt(prompt: string) {
 		trailAssistant.runQuickPrompt(prompt);
-		scrollToBottom();
+		scrollToBottom(true);
 	}
 
+	// Re-runs on every message/token/state change. Only auto-sticks when pinned;
+	// otherwise just flags that there's new content below the fold (for the pill).
+	// Instant ('auto') while streaming so the view tracks growing text without a
+	// perpetual smooth-scroll animation.
 	$effect(() => {
 		trailAssistant.coachMessages.length;
 		trailAssistant.scoutThinking;
 		trailAssistant.pendingAction;
-		scrollToBottom();
+		if (pinned) {
+			scrollToBottom(false);
+		} else {
+			hasUnseen = true;
+		}
 	});
 
 	// Convert a runtime SourceReceipt → the UI SourceChip shape. The runtime
@@ -69,35 +107,10 @@
 		};
 	}
 
-	// Fallback heuristics for messages that pre-date the runtime (e.g. the
-	// hydrated seed message). Real runtime answers always override these.
-	function fallbackReceipts(text: string): UiSourceReceipt[] {
-		const lower = text.toLowerCase();
-		const keys: Array<keyof typeof sourceReceipts> = [];
-		if (lower.includes('water') || lower.includes('shelter') || lower.includes('town') || lower.includes('mile')) keys.push('awol2026');
-		if (lower.includes('weather') || lower.includes('wind') || lower.includes('rain') || lower.includes('cold')) keys.push('nws');
-		if (lower.includes('reports') || lower.includes('recent')) keys.push('farout');
-		if (!keys.length) keys.push('scoutLocal');
-		return keys.map((key) => sourceReceipts[key]);
-	}
-
-	function fallbackTools(text: string): string[] {
-		const tools: string[] = [];
-		const lower = text.toLowerCase();
-		if (lower.includes('water') || lower.includes('spring') || lower.includes('creek')) tools.push('water-lookup');
-		if (lower.includes('weather') || lower.includes('wind') || lower.includes('rain')) tools.push('weather-cache');
-		if (lower.includes('shelter') || lower.includes('camp')) tools.push('next-shelter');
-		if (lower.includes('town') || lower.includes('resupply') || lower.includes('motel')) tools.push('town-snapshot');
-		if (lower.includes('mile') || lower.includes('push') || lower.includes('pace')) tools.push('pace-model');
-		if (lower.includes('safe') || lower.includes('risk') || lower.includes('check-in')) tools.push('safety-window');
-		if (!tools.length) tools.push('field-pack');
-		return tools;
-	}
-
-	function receiptsFor(messageId: string, content: string): {
+	function receiptsFor(messageId: string): {
 		receipts: UiSourceReceipt[];
 		tools: string[];
-		confidence: ScoutConfidence;
+		confidence: ScoutConfidence | null;
 		confirmations: RequiredConfirmation[];
 		safetyFlags: SafetyFlag[];
 	} {
@@ -111,54 +124,40 @@
 				safetyFlags: answer.safetyFlags
 			};
 		}
-		return {
-			receipts: fallbackReceipts(content),
-			tools: fallbackTools(content),
-			confidence: trailAssistant.onlineStatus ? 'high' : 'medium',
-			confirmations: [],
-			safetyFlags: []
-		};
+		// Messages without a real runtime answer (the seed/welcome message) get NO
+		// fabricated citations, tools, or confidence — they render as plain text, so
+		// source chips never appear on anything Scout's model didn't actually produce.
+		return { receipts: [], tools: [], confidence: null, confirmations: [], safetyFlags: [] };
 	}
 </script>
 
 <div class="section-stack coach-shell">
-	<section class="coach-hero card">
-		<div class="hero-head">
-			<div>
-				<p class="eyebrow">Scout</p>
-				<h2>Field assistant</h2>
-				<p class="hero-detail">
-					Mile {trailAssistant.currentMile.toFixed(1)} · Day {trailAssistant.dayNumber} · {trailAssistant.onlineStatus
-						? 'Online field pack'
-						: 'Local only'}
-				</p>
-			</div>
-			<div class="mode-pill" data-online={trailAssistant.onlineStatus}>
-				<span class="status-dot" class:status-online={trailAssistant.onlineStatus} class:status-offline={!trailAssistant.onlineStatus}></span>
-				{trailAssistant.onlineStatus ? 'Online · Gemma-only Scout' : `Offline · ${offlineModel.tier}`}
-			</div>
-		</div>
-
-		<div class="hero-quick">
+	<!-- Chat stays pure: status (Day/Mile/online) lives in the app header, not
+	     repeated here. Only the starter prompts sit above the conversation, and
+	     only until the hiker has started talking. -->
+	{#if trailAssistant.coachMessages.length <= 1}
+		<section class="hero-quick">
 			<p class="quick-label">Quick prompts</p>
 			<div class="prompt-row">
 				{#each quickPrompts as prompt (prompt)}
 					<button class="prompt-pill" onclick={() => usePrompt(prompt)}>{prompt}</button>
 				{/each}
 			</div>
-		</div>
-	</section>
+		</section>
+	{/if}
 
 	<section class="chat-card card">
-		<div class="chat-log" bind:this={logRef}>
+		<div class="chat-log" bind:this={logRef} onscroll={onLogScroll}>
 			{#each trailAssistant.coachMessages as message (message.id)}
-				{@const meta = message.role === 'assistant' ? receiptsFor(message.id, message.content) : null}
+				{@const meta = message.role === 'assistant' ? receiptsFor(message.id) : null}
 				<div class:assistant={message.role === 'assistant'} class:user={message.role === 'user'} class="message">
 					{#if message.role === 'assistant' && meta}
 						<div class="message-head">
 							<span class="bot-mark" aria-hidden="true">S</span>
 							<strong>Scout</strong>
-							<ConfidenceBadge confidence={meta.confidence} short />
+							{#if meta.confidence}
+								<ConfidenceBadge confidence={meta.confidence} short />
+							{/if}
 						</div>
 					{/if}
 
@@ -209,6 +208,16 @@
 			{/if}
 		</div>
 
+		{#if !pinned && (hasUnseen || trailAssistant.scoutThinking)}
+			<button
+				class="jump-latest"
+				aria-label="Jump to latest messages"
+				onclick={() => scrollToBottom(true)}
+			>
+				↓ {trailAssistant.scoutThinking ? 'Scout is replying' : 'New messages'}
+			</button>
+		{/if}
+
 		{#if trailAssistant.pendingAction}
 			<div class="action-card" role="group" aria-label="Confirm Scout action">
 				<div class="action-info">
@@ -256,53 +265,10 @@
 		min-height: calc(100vh - 220px);
 	}
 
-	.coach-hero {
-		padding: 14px;
-		display: grid;
-		gap: 12px;
-		background:
-			radial-gradient(circle at top right, rgba(95, 128, 144, 0.16), transparent 38%),
-			linear-gradient(180deg, rgba(255, 253, 248, 0.98), rgba(244, 238, 224, 0.96));
-	}
-
-	.hero-head {
-		display: flex;
-		gap: 12px;
-		justify-content: space-between;
-		align-items: flex-start;
-	}
-
-	.hero-head h2 {
-		font-family: var(--font-display);
-		font-size: 1.4rem;
-		margin: 2px 0;
-	}
-
-	.hero-detail {
-		font-size: 0.8rem;
-		color: var(--muted);
-	}
-
-	.mode-pill {
-		display: inline-flex;
-		gap: 6px;
-		align-items: center;
-		padding: 6px 10px;
-		border-radius: 999px;
-		font-size: 0.7rem;
-		font-weight: 800;
-		background: rgba(47, 75, 53, 0.1);
-		color: var(--forest);
-	}
-
-	.mode-pill[data-online='false'] {
-		background: rgba(200, 167, 122, 0.22);
-		color: #8c5d1f;
-	}
-
 	.hero-quick {
 		display: grid;
 		gap: 6px;
+		padding-top: 4px;
 	}
 
 	.quick-label {
@@ -341,6 +307,7 @@
 		display: grid;
 		gap: 12px;
 		padding: 14px;
+		position: relative; /* anchor for the floating jump-to-latest pill */
 	}
 
 	.chat-log {
@@ -349,6 +316,28 @@
 		max-height: 50vh;
 		overflow: auto;
 		padding-right: 4px;
+		overflow-anchor: none; /* we manage stickiness ourselves */
+	}
+
+	/* Floats over the bottom of the conversation only when the hiker has scrolled
+	   up and there's newer content below. Tapping re-pins to the latest. */
+	.jump-latest {
+		position: absolute;
+		left: 50%;
+		transform: translateX(-50%);
+		bottom: calc(50vh - 28px);
+		z-index: 4;
+		min-height: 40px;
+		padding: 8px 16px;
+		border-radius: 999px;
+		font-size: 0.78rem;
+		font-weight: 800;
+		color: #f7f2e8;
+		background: linear-gradient(135deg, var(--forest), var(--moss));
+		box-shadow: var(--shadow-soft);
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
 	}
 
 	.message {

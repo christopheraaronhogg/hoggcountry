@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Today (Calm) — Hogg Country Bake-off</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,400&family=Lato:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#f4efe4; --bg-deep:#e7dcc8; --surface:#fbf7ef; --surface-strong:#fffdf8;
+    --ink:#1f241d; --muted:#5f6558; --faint:#8a8c7c; --line:#e3dccd; --line-soft:#ece5d8;
+    --forest:#2f4b35; --moss:#6a845f; --sand:#c8a77a; --clay:#aa6843; --sky:#5f8090;
+    --danger:#9a3b2f; --success:#2f6a47; --warn:#b6892c;
+    --radius-lg:26px; --radius-md:18px; --radius-sm:13px;
+    --serif:'Fraunces', 'Iowan Old Style', Georgia, serif;
+    --sans:'Lato', 'Avenir Next', system-ui, sans-serif;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  html,body{ background:#ded3bd; }
+  body{
+    font-family:var(--sans);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    padding:38px 20px 60px;
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #e9dfca, #ded3bd 60%);
+    min-height:100vh;
+  }
+
+  /* ---------- Title band ---------- */
+  .band{
+    max-width:760px;
+    margin:0 auto 40px;
+    padding:30px 36px 32px;
+    background:var(--surface-strong);
+    border:1px solid var(--line);
+    border-radius:var(--radius-lg);
+    box-shadow:0 1px 0 #fff inset, 0 22px 46px -34px rgba(31,36,29,.4);
+  }
+  .band .kicker{
+    font-size:11px; letter-spacing:.28em; text-transform:uppercase;
+    color:var(--moss); font-weight:700; margin-bottom:14px;
+  }
+  .band h1{
+    font-family:var(--serif); font-weight:400; font-size:46px; line-height:1.0;
+    letter-spacing:-.015em; color:var(--ink); margin-bottom:14px;
+  }
+  .band h1 em{ font-style:italic; color:var(--forest); }
+  .band .concept{
+    font-size:16.5px; line-height:1.55; color:var(--ink); max-width:60ch; margin-bottom:18px;
+  }
+  .band .lang{ display:flex; flex-wrap:wrap; gap:8px; }
+  .band .lang span{
+    font-size:11.5px; letter-spacing:.04em; color:var(--muted);
+    background:var(--bg); border:1px solid var(--line);
+    border-radius:999px; padding:6px 13px;
+  }
+
+  /* ---------- Phone grid ---------- */
+  .stage{
+    display:flex; flex-wrap:wrap; gap:24px; justify-content:center;
+    max-width:760px; margin:0 auto;
+  }
+  .slot{ width:320px; }
+  .chip{
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:12px; letter-spacing:.16em; text-transform:uppercase;
+    font-weight:700; color:var(--forest);
+    margin:0 0 11px 8px;
+  }
+  .chip .dot{ width:7px; height:7px; border-radius:50%; background:var(--moss); }
+
+  .phone{
+    width:320px; height:660px;
+    background:var(--bg);
+    border-radius:38px;
+    border:1px solid #ccc0a6;
+    box-shadow:0 30px 60px -30px rgba(31,36,29,.55), 0 2px 0 #fff inset;
+    overflow:hidden;
+    position:relative;
+    display:flex; flex-direction:column;
+  }
+
+  /* phone status bar */
+  .osbar{
+    height:34px; flex:none;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 20px;
+    font-size:12px; font-weight:700; color:var(--ink);
+    letter-spacing:.02em;
+  }
+  .osbar .right{ display:flex; gap:6px; align-items:center; color:var(--muted); }
+  .offline-pill{
+    font-size:9.5px; letter-spacing:.1em; font-weight:700; text-transform:uppercase;
+    color:var(--clay); background:rgba(170,104,67,.12);
+    border:1px solid rgba(170,104,67,.3);
+    border-radius:999px; padding:2px 8px;
+  }
+
+  .screen{
+    flex:1; overflow:hidden; position:relative;
+    padding:4px 16px 0;
+  }
+  /* faux-scroll: content longer than frame, top of scroll shown */
+  .scroll{ height:100%; overflow:hidden; }
+
+  /* trail status strip (top of every screen) */
+  .statusline{
+    display:flex; align-items:baseline; gap:0;
+    padding:6px 6px 14px;
+    border-bottom:1px solid var(--line-soft);
+    margin-bottom:18px;
+  }
+  .statusline .seg{ display:flex; align-items:baseline; gap:5px; }
+  .statusline .div{ color:var(--line); margin:0 11px; font-size:13px; }
+  .statusline .lab{ font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); }
+  .statusline .val{ font-family:var(--serif); font-size:17px; font-weight:400; color:var(--ink); }
+  .statusline .pct{ margin-left:auto; font-size:11px; color:var(--moss); font-weight:700; letter-spacing:.04em; }
+
+  /* generic calm card */
+  .card{
+    background:var(--surface-strong);
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    padding:20px 20px 22px;
+    margin-bottom:16px;
+    box-shadow:0 1px 0 #fff inset;
+  }
+  .card.flat{ background:transparent; border:none; box-shadow:none; padding:6px 6px 4px; margin-bottom:14px; }
+  .card .eyebrow{
+    font-size:10.5px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--moss); font-weight:700; margin-bottom:12px;
+  }
+
+  /* ============ SCREEN 1 · SCOUT / TODAY readiness ============ */
+  .readiness{
+    background:var(--surface-strong);
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    padding:22px 22px 20px;
+    margin-bottom:16px;
+    box-shadow:0 1px 0 #fff inset;
+  }
+  .readiness .top{
+    display:flex; align-items:flex-start; justify-content:space-between;
+  }
+  .readiness .lab{
+    font-size:10.5px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--moss); font-weight:700;
+  }
+  .readiness .hold{
+    font-family:var(--serif); font-weight:400; font-size:15px; letter-spacing:.04em;
+    color:var(--warn);
+    border:1px solid rgba(182,137,44,.4); border-radius:999px;
+    padding:4px 13px 5px; line-height:1; margin-top:2px;
+  }
+  .readiness .num{
+    font-family:var(--serif); font-weight:400; font-size:88px; line-height:.92;
+    letter-spacing:-.03em; color:var(--ink); margin:6px 0 2px -3px;
+  }
+  .readiness .reason{
+    font-size:13.5px; line-height:1.5; color:var(--muted); margin-top:8px;
+  }
+  .readiness .reason b{ color:var(--clay); font-weight:700; }
+
+  /* today target */
+  .target .big{
+    font-family:var(--serif); font-weight:400; font-size:46px; line-height:1;
+    letter-spacing:-.02em; color:var(--ink);
+  }
+  .target .big .unit{ font-size:21px; color:var(--muted); letter-spacing:0; }
+  .target .dest{ font-size:14px; color:var(--ink); margin-top:9px; font-weight:700; }
+  .target .meta{ font-size:12.5px; color:var(--muted); margin-top:3px; }
+
+  /* ask scout card */
+  .ask .greet{
+    font-family:var(--serif); font-size:18px; line-height:1.42; font-weight:400;
+    color:var(--ink); letter-spacing:-.005em; margin-bottom:16px;
+  }
+  .prompt-row{
+    display:flex; align-items:center; gap:11px;
+    padding:13px 4px; border-top:1px solid var(--line-soft);
+    font-size:14.5px; color:var(--ink);
+  }
+  .prompt-row:first-of-type{ border-top:none; }
+  .prompt-row .q{ font-size:13px; color:var(--moss); }
+  .prompt-row .arrow{ margin-left:auto; color:var(--faint); font-size:16px; }
+
+  /* expanded exchange */
+  .exchange{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-left:3px solid var(--forest);
+    border-radius:var(--radius-sm);
+    padding:16px 17px;
+    margin-top:6px;
+  }
+  .exchange .you{
+    font-size:13px; color:var(--muted); font-weight:700; margin-bottom:9px;
+  }
+  .exchange .ans{
+    font-size:14.5px; line-height:1.55; color:var(--ink);
+  }
+  .exchange .ans b{ font-weight:700; }
+  .receipts{
+    display:flex; align-items:center; gap:7px; flex-wrap:wrap;
+    margin-top:14px; padding-top:13px; border-top:1px solid var(--line-soft);
+  }
+  .receipt{
+    font-size:10.5px; letter-spacing:.02em; color:var(--muted);
+    background:var(--bg); border:1px solid var(--line);
+    border-radius:999px; padding:4px 9px;
+  }
+  .badge{
+    margin-left:auto;
+    font-size:10.5px; letter-spacing:.08em; font-weight:700; text-transform:uppercase;
+    color:var(--warn); background:rgba(182,137,44,.13);
+    border:1px solid rgba(182,137,44,.34);
+    border-radius:999px; padding:4px 11px;
+  }
+
+  /* ============ SCREEN 2 · MAP ============ */
+  .mapcard{
+    background:var(--surface-strong);
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    padding:18px 18px 6px;
+    margin-bottom:16px;
+    box-shadow:0 1px 0 #fff inset;
+  }
+  .mapcard .where{
+    font-family:var(--serif); font-size:21px; font-weight:400; color:var(--ink);
+    letter-spacing:-.01em;
+  }
+  .mapcard .sub{ font-size:12.5px; color:var(--muted); margin-top:2px; margin-bottom:8px; }
+  .elev{ display:block; width:100%; height:118px; margin:4px 0 2px; }
+
+  .factrow{
+    display:flex; align-items:baseline; gap:0;
+    padding:16px 4px; border-top:1px solid var(--line-soft);
+  }
+  .factrow:first-child{ border-top:none; }
+  .factrow .icon{
+    width:30px; flex:none;
+    font-family:var(--serif); font-size:13px; color:var(--moss); font-weight:700;
+  }
+  .factrow .name{ font-size:14.5px; color:var(--ink); }
+  .factrow .name .flag{ font-size:11.5px; color:var(--clay); display:block; margin-top:2px; }
+  .factrow .name .flag.unv{ color:var(--muted); }
+  .factrow .dist{
+    margin-left:auto; text-align:right;
+    font-family:var(--serif); font-size:30px; font-weight:400; color:var(--ink);
+    line-height:.9; letter-spacing:-.02em;
+  }
+  .factrow .dist .mi{ font-size:13px; color:var(--muted); font-family:var(--sans); }
+
+  .pulse{
+    font-size:12.5px; color:var(--muted); line-height:1.5;
+    display:flex; gap:10px; align-items:flex-start;
+    padding:11px 4px; border-top:1px solid var(--line-soft);
+  }
+  .pulse:first-of-type{ border-top:none; }
+  .pulse .tag{ font-weight:700; color:var(--clay); flex:none; }
+
+  /* ============ SCREEN 3 · GEAR ============ */
+  .weights{
+    display:flex; gap:14px; margin-bottom:18px;
+  }
+  .weightcard{
+    flex:1;
+    background:var(--surface-strong);
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    padding:18px 18px 16px;
+    box-shadow:0 1px 0 #fff inset;
+  }
+  .weightcard .lab{
+    font-size:10px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--moss); font-weight:700; margin-bottom:6px;
+  }
+  .weightcard .n{
+    font-family:var(--serif); font-size:54px; font-weight:400; line-height:.9;
+    letter-spacing:-.03em; color:var(--ink);
+  }
+  .weightcard .u{ font-size:15px; color:var(--muted); margin-left:3px; }
+  .weightcard.total{ background:var(--forest); border-color:var(--forest); }
+  .weightcard.total .lab{ color:#b9caa9; }
+  .weightcard.total .n{ color:var(--surface-strong); }
+  .weightcard.total .u{ color:#c2d2b3; }
+
+  .carried{
+    font-size:13px; color:var(--muted); text-align:center;
+    margin:-2px 0 18px;
+  }
+  .carried b{ font-family:var(--serif); font-size:16px; color:var(--ink); font-weight:400; }
+
+  .catrow{
+    display:flex; align-items:center; gap:12px;
+    padding:11px 4px; border-top:1px solid var(--line-soft);
+    font-size:14px;
+  }
+  .catrow:first-of-type{ border-top:none; }
+  .catrow .cn{ color:var(--ink); width:88px; flex:none; }
+  .catrow .bar{ flex:1; height:5px; border-radius:99px; background:var(--line); overflow:hidden; }
+  .catrow .bar span{ display:block; height:100%; background:var(--moss); border-radius:99px; }
+  .catrow .cw{ font-family:var(--serif); font-size:14px; color:var(--muted); width:46px; text-align:right; flex:none; }
+
+  /* ============ SCREEN 4 · TRAIL ============ */
+  .verse{
+    background:var(--surface-strong);
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    padding:26px 24px 24px;
+    margin-bottom:16px;
+    box-shadow:0 1px 0 #fff inset;
+  }
+  .verse .ref{
+    font-size:11px; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--moss); font-weight:700; margin-bottom:16px;
+  }
+  .verse .scripture{
+    font-family:var(--serif); font-size:23px; line-height:1.5; font-weight:300;
+    color:var(--ink); letter-spacing:-.005em;
+  }
+  .verse .scripture .drop{
+    font-size:25px; color:var(--forest);
+  }
+  .verse .src{ font-size:11.5px; color:var(--faint); margin-top:18px; letter-spacing:.02em; }
+
+  .libline{
+    display:flex; align-items:center; gap:13px;
+    padding:16px 6px;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .libline:first-of-type{ border-top:1px solid var(--line-soft); }
+  .libline .lt{ flex:1; }
+  .libline .lt .h{ font-size:15px; color:var(--ink); font-weight:700; }
+  .libline .lt .s{ font-size:12.5px; color:var(--muted); margin-top:3px; }
+  .libline .arrow{ color:var(--faint); font-size:17px; }
+  .libline .mk{
+    font-family:var(--serif); font-size:13px; color:var(--moss);
+    width:24px; text-align:center; flex:none;
+  }
+
+  /* ---------- bottom switcher (minimal, not a heavy tab bar) ---------- */
+  .switcher{
+    flex:none; height:62px;
+    display:flex; align-items:center; justify-content:center; gap:30px;
+    border-top:1px solid var(--line);
+    background:linear-gradient(to top, var(--bg), rgba(244,239,228,0));
+    padding-bottom:6px;
+  }
+  .switcher a{
+    font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--faint); font-weight:700; position:relative; padding:6px 2px;
+    text-decoration:none;
+  }
+  .switcher a.on{ color:var(--forest); }
+  .switcher a.on::after{
+    content:''; position:absolute; bottom:-1px; left:50%; transform:translateX(-50%);
+    width:5px; height:5px; border-radius:50%; background:var(--forest);
+  }
+
+  /* soft fade at the bottom of the scroll area to imply more content */
+  .fade{
+    position:absolute; left:0; right:0; bottom:62px; height:34px; z-index:3;
+    background:linear-gradient(to top, var(--bg), rgba(244,239,228,0));
+    pointer-events:none;
+  }
+</style>
+</head>
+<body>
+
+  <!-- ===================== TITLE BAND ===================== -->
+  <section class="band">
+    <div class="kicker">Hogg Country · Bake-off 2026-06 · Direction D3</div>
+    <h1>Today <em>(Calm)</em></h1>
+    <p class="concept">
+      A glanceable paper dashboard you can read in a two-second cold glance. Each pillar is one
+      unhurried vertical scroll of large, well-spaced cards — almost no interaction beyond scroll
+      and tap-to-expand. Safety wins by size and weight, not by shouting in red.
+    </p>
+    <div class="lang">
+      <span>Airy paper · enormous whitespace</span>
+      <span>Big Fraunces serif numerals</span>
+      <span>One accent: forest green</span>
+      <span>Glance, don't explore</span>
+      <span>Honest about candidate-grade data</span>
+    </div>
+  </section>
+
+  <!-- ===================== PHONES ===================== -->
+  <div class="stage">
+
+    <!-- ============ 1 · SCOUT ============ -->
+    <div class="slot">
+      <div class="chip"><span class="dot"></span>Scout</div>
+      <div class="phone">
+        <div class="osbar">
+          <span>7:14</span>
+          <span class="right"><span class="offline-pill">Offline · on-device</span></span>
+        </div>
+        <div class="screen">
+          <div class="scroll">
+            <div class="statusline">
+              <div class="seg"><span class="lab">Day</span><span class="val">42</span></div>
+              <span class="div">·</span>
+              <div class="seg"><span class="lab">Mile</span><span class="val">1438.0</span></div>
+              <span class="pct">65%</span>
+            </div>
+
+            <!-- readiness wins the page -->
+            <div class="readiness">
+              <div class="top">
+                <span class="lab">Readiness</span>
+                <span class="hold">Hold</span>
+              </div>
+              <div class="num">84</div>
+              <p class="reason">
+                Last two days above plan, recovery lagging. Mapped water is
+                <b>candidate-grade</b> — keep miles conservative.
+              </p>
+            </div>
+
+            <!-- ask scout, calm, not chat-first -->
+            <div class="card ask">
+              <div class="eyebrow">Ask Scout</div>
+              <p class="greet">Good morning. Trail readiness is holding steady today. Keep mapped water marked low-confidence until it's confirmed.</p>
+
+              <div class="prompt-row"><span class="q">›</span> Can I push mileage today? <span class="arrow">+</span></div>
+              <div class="prompt-row"><span class="q">›</span> What's the next reliable water? <span class="arrow">+</span></div>
+              <div class="prompt-row"><span class="q">›</span> What needs verifying before town? <span class="arrow">+</span></div>
+              <div class="prompt-row"><span class="q">›</span> Give me the safest next move. <span class="arrow">+</span></div>
+
+              <!-- one already-expanded exchange -->
+              <div class="exchange">
+                <div class="you">Can I push mileage today?</div>
+                <p class="ans">
+                  Hold near your <b>8.2 mi</b> plan to Morgan Stewart. You're above plan two days
+                  running and the next water is candidate-grade — confirm flow before committing
+                  to a longer day.
+                </p>
+                <div class="receipts">
+                  <span class="receipt">AWOL 2026</span>
+                  <span class="receipt">NWS · cached</span>
+                  <span class="receipt">FarOut</span>
+                  <span class="badge">Medium</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <div class="fade"></div>
+        </div>
+        <nav class="switcher">
+          <a class="on">Scout</a><a>Map</a><a>Gear</a><a>Trail</a>
+        </nav>
+      </div>
+    </div>
+
+    <!-- ============ 2 · MAP ============ -->
+    <div class="slot">
+      <div class="chip"><span class="dot"></span>Map</div>
+      <div class="phone">
+        <div class="osbar">
+          <span>7:14</span>
+          <span class="right"><span class="offline-pill">Offline · on-device</span></span>
+        </div>
+        <div class="screen">
+          <div class="scroll">
+            <div class="statusline">
+              <div class="seg"><span class="lab">Day</span><span class="val">42</span></div>
+              <span class="div">·</span>
+              <div class="seg"><span class="lab">Mile</span><span class="val">1438.0</span></div>
+              <span class="pct">65%</span>
+            </div>
+
+            <div class="mapcard">
+              <div class="where">NY / CT corridor</div>
+              <div class="sub">Next 4.6 mi · +1,700 ft to Morgan Stewart</div>
+              <!-- simplified elevation strip -->
+              <svg class="elev" viewBox="0 0 280 118" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#6a845f" stop-opacity=".22"/>
+                    <stop offset="1" stop-color="#6a845f" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0,86 L26,80 L52,90 L80,66 L108,72 L140,44 L170,52 L200,30 L232,40 L280,18 L280,118 L0,118 Z" fill="url(#g)"/>
+                <path d="M0,86 L26,80 L52,90 L80,66 L108,72 L140,44 L170,52 L200,30 L232,40 L280,18" fill="none" stroke="#6a845f" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+                <!-- you-are-here -->
+                <circle cx="0" cy="86" r="5" fill="#2f4b35" stroke="#fffdf8" stroke-width="2.5"/>
+                <!-- water candidate marker -->
+                <circle cx="26" cy="80" r="4" fill="#fbf7ef" stroke="#aa6843" stroke-width="2" stroke-dasharray="2 1.6"/>
+                <!-- shelter marker -->
+                <circle cx="280" cy="18" r="5" fill="#2f4b35" stroke="#fffdf8" stroke-width="2.5"/>
+              </svg>
+            </div>
+
+            <div class="card flat" style="padding-top:0;">
+              <div class="factrow">
+                <span class="icon">≈</span>
+                <span class="name">Water
+                  <span class="flag">Candidate-grade — confirm flow</span>
+                </span>
+                <span class="dist">0.4<span class="mi"> mi</span></span>
+              </div>
+              <div class="factrow">
+                <span class="icon">⌂</span>
+                <span class="name">Shelter
+                  <span class="flag unv">Morgan Stewart Memorial · mile 1442.6</span>
+                </span>
+                <span class="dist">4.6<span class="mi"> mi</span></span>
+              </div>
+              <div class="factrow">
+                <span class="icon">◊</span>
+                <span class="name">Town
+                  <span class="flag unv">Pawling · services unverified</span>
+                </span>
+                <span class="dist">19.9<span class="mi"> mi</span></span>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="eyebrow">Trail pulse</div>
+              <div class="pulse"><span class="tag">Rocks</span><span>Backtrack · 34 min ago · mile 1438.4</span></div>
+              <div class="pulse"><span class="tag">Water</span><span>Mapped stream candidate needs field confirmation · 2 days ago · mile 1441.5</span></div>
+            </div>
+
+          </div>
+          <div class="fade"></div>
+        </div>
+        <nav class="switcher">
+          <a>Scout</a><a class="on">Map</a><a>Gear</a><a>Trail</a>
+        </nav>
+      </div>
+    </div>
+
+    <!-- ============ 3 · GEAR ============ -->
+    <div class="slot">
+      <div class="chip"><span class="dot"></span>Gear</div>
+      <div class="phone">
+        <div class="osbar">
+          <span>7:14</span>
+          <span class="right"><span class="offline-pill">Offline · on-device</span></span>
+        </div>
+        <div class="screen">
+          <div class="scroll">
+            <div class="statusline">
+              <div class="seg"><span class="lab">Day</span><span class="val">42</span></div>
+              <span class="div">·</span>
+              <div class="seg"><span class="lab">Mile</span><span class="val">1438.0</span></div>
+              <span class="pct">65%</span>
+            </div>
+
+            <div class="weights">
+              <div class="weightcard">
+                <div class="lab">Base</div>
+                <div class="n">14.8<span class="u">lb</span></div>
+              </div>
+              <div class="weightcard total">
+                <div class="lab">Total carried</div>
+                <div class="n">22.3<span class="u">lb</span></div>
+              </div>
+            </div>
+
+            <p class="carried"><b>31</b> of 38 items carried today</p>
+
+            <div class="card">
+              <div class="eyebrow">By category</div>
+              <div class="catrow"><span class="cn">Shelter</span><span class="bar"><span style="width:42%"></span></span><span class="cw">2.1</span></div>
+              <div class="catrow"><span class="cn">Sleep</span><span class="bar"><span style="width:46%"></span></span><span class="cw">2.3</span></div>
+              <div class="catrow"><span class="cn">Pack</span><span class="bar"><span style="width:38%"></span></span><span class="cw">1.9</span></div>
+              <div class="catrow"><span class="cn">Cook</span><span class="bar"><span style="width:14%"></span></span><span class="cw">0.7</span></div>
+              <div class="catrow"><span class="cn">Water</span><span class="bar"><span style="width:5%"></span></span><span class="cw">0.2</span></div>
+              <div class="catrow"><span class="cn">Consumables</span><span class="bar"><span style="width:100%"></span></span><span class="cw">7.1</span></div>
+            </div>
+
+            <div class="card">
+              <div class="eyebrow">Worn · not carried</div>
+              <div class="catrow" style="border-top:none;"><span class="cn" style="width:auto;flex:1;">Trail shoes · sun hoody</span><span class="cw" style="color:var(--moss);">on body</span></div>
+            </div>
+
+          </div>
+          <div class="fade"></div>
+        </div>
+        <nav class="switcher">
+          <a>Scout</a><a>Map</a><a class="on">Gear</a><a>Trail</a>
+        </nav>
+      </div>
+    </div>
+
+    <!-- ============ 4 · TRAIL ============ -->
+    <div class="slot">
+      <div class="chip"><span class="dot"></span>Trail</div>
+      <div class="phone">
+        <div class="osbar">
+          <span>7:14</span>
+          <span class="right"><span class="offline-pill">Offline · on-device</span></span>
+        </div>
+        <div class="screen">
+          <div class="scroll">
+            <div class="statusline">
+              <div class="seg"><span class="lab">Day</span><span class="val">42</span></div>
+              <span class="div">·</span>
+              <div class="seg"><span class="lab">Mile</span><span class="val">1438.0</span></div>
+              <span class="pct">65%</span>
+            </div>
+
+            <!-- today's verse -->
+            <div class="verse">
+              <div class="ref">Today's verse · Psalm 23</div>
+              <p class="scripture">
+                <span class="drop">The</span> LORD is my shepherd; I shall not want.
+                He maketh me to lie down in green pastures: he leadeth me beside the still waters.
+              </p>
+              <p class="src">King James Version · stored offline · tap to read the full psalm</p>
+            </div>
+
+            <div class="card flat" style="padding:0;">
+              <div class="libline">
+                <span class="mk">§</span>
+                <span class="lt">
+                  <span class="h">Field Guide</span>
+                  <span class="s">NY/CT — water, rocks, Pawling resupply</span>
+                </span>
+                <span class="arrow">›</span>
+              </div>
+              <div class="libline">
+                <span class="mk">✦</span>
+                <span class="lt">
+                  <span class="h">KJV Bible</span>
+                  <span class="s">Full-text search · opens to Psalm 23</span>
+                </span>
+                <span class="arrow">›</span>
+              </div>
+              <div class="libline">
+                <span class="mk">✎</span>
+                <span class="lt">
+                  <span class="h">Journal</span>
+                  <span class="s">Last check-in: “safe, NY/CT pilot corridor” · 2h ago</span>
+                </span>
+                <span class="arrow">›</span>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="eyebrow">Coming up</div>
+              <div class="catrow" style="border-top:none;">
+                <span class="cn" style="width:auto;flex:1;">Father's Day target</span>
+                <span class="cw" style="font-family:var(--serif);color:var(--ink);width:auto;">Jun 21</span>
+              </div>
+            </div>
+
+          </div>
+          <div class="fade"></div>
+        </div>
+        <nav class="switcher">
+          <a>Scout</a><a>Map</a><a>Gear</a><a class="on">Trail</a>
+        </nav>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

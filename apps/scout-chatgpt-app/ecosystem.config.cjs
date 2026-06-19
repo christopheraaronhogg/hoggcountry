@@ -59,7 +59,7 @@ module.exports = {
       max_memory_restart: '300M',
       env: {
         NODE_ENV: envValue('NODE_ENV', 'production'),
-        PORT: envValue('SCOUT_CHATGPT_APP_PORT', '8787'),
+        PORT: envValue('SCOUT_CHATGPT_APP_PORT', '8788'),
         PUBLIC_SITE_ORIGIN: envValue('PUBLIC_SITE_ORIGIN', 'https://hoggcountry.com'),
         SCOUT_APP_DOMAIN: envValue(
           ['SCOUT_CHATGPT_APP_DOMAIN', 'SCOUT_APP_DOMAIN'],

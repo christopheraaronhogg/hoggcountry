@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Field Notes — Hogg Country Bake-off D5</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    /* shared brand DNA, pushed toward warm aged paper */
+    --bg:#f4efe4; --bg-deep:#e7dcc8;
+    --paper:#f3ead6; --paper-warm:#efe3c9; --paper-strong:#f7efdd;
+    --ink:#2a2418;            /* sepia-black ink */
+    --ink-soft:#5a4f3a;       /* faded ink */
+    --muted:#7c6f54;          /* pencil grey-brown */
+    --rule:#cdb98f;           /* faint ruled line */
+    --rule-soft:#dccaa1;
+    --forest:#2f4b35; --moss:#6a845f; --sand:#c8a77a;
+    --clay:#aa6843; --sky:#5f8090;
+    --danger:#9a3b2f; --success:#2f6a47; --warn:#b6892c;
+    --washi-blue:#7fa0a8; --washi-clay:#cf9a6f; --washi-moss:#9aa878;
+    --stamp:#9a3b2f; --stamp-green:#356046;
+    --thread:#b88a4a;
+    --serif:'Fraunces', Georgia, 'Times New Roman', serif;
+    --hand:'Caveat', 'Segoe Script', cursive;
+    --stencil:'Oswald', 'Arial Narrow', sans-serif;
+  }
+
+  * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+  html, body { margin:0; padding:0; }
+  body {
+    /* neutral backdrop — like the phones are laid on a desk */
+    background:
+      radial-gradient(120% 120% at 50% -10%, #efe7d6 0%, #ddd0b6 60%, #cdbf9f 100%);
+    color: var(--ink);
+    font-family: var(--serif);
+    padding: 32px 20px 56px;
+    min-height: 100vh;
+  }
+
+  /* ============ TITLE BAND ============ */
+  .title-band {
+    max-width: 760px;
+    margin: 0 auto 36px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,0) 40%),
+      var(--paper-strong);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 22px 26px 24px;
+    box-shadow: 0 10px 26px rgba(60,46,20,.18), inset 0 0 0 1px rgba(255,255,255,.4);
+    position: relative;
+  }
+  .title-band::before {
+    /* washi tape pinning the title card down */
+    content:"";
+    position:absolute; top:-13px; left:50%; transform:translateX(-50%) rotate(-2.5deg);
+    width:128px; height:30px;
+    background: repeating-linear-gradient(45deg, rgba(127,160,168,.85) 0 9px, rgba(127,160,168,.62) 9px 18px);
+    box-shadow: 0 2px 5px rgba(40,30,10,.22);
+    opacity:.92;
+  }
+  .title-kicker {
+    font-family: var(--stencil);
+    text-transform: uppercase;
+    letter-spacing: .28em;
+    font-size: 12px;
+    color: var(--clay);
+    font-weight: 700;
+    margin: 6px 0 2px;
+  }
+  .title-name {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 40px;
+    line-height: 1.02;
+    margin: 2px 0 4px;
+    color: var(--ink);
+    letter-spacing: -.01em;
+  }
+  .title-name .hand {
+    font-family: var(--hand);
+    font-weight: 700;
+    color: var(--clay);
+    font-size: 46px;
+  }
+  .title-concept {
+    font-size: 16px;
+    line-height: 1.4;
+    color: var(--ink-soft);
+    max-width: 58ch;
+    margin: 4px 0 12px;
+  }
+  .title-langs { display:flex; flex-wrap:wrap; gap:8px; }
+  .lang-chip {
+    font-family: var(--stencil);
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    background: var(--paper-warm);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 5px 9px;
+  }
+
+  /* ============ PHONE GRID ============ */
+  .phones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    justify-content: center;
+    align-items: flex-start;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .phone-wrap { display:flex; flex-direction:column; align-items:center; width:320px; }
+
+  .tab-chip {
+    align-self: flex-start;
+    margin-left: 14px;
+    margin-bottom: -9px;
+    z-index: 5;
+    font-family: var(--stencil);
+    text-transform: uppercase;
+    letter-spacing: .16em;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--paper-strong);
+    background: var(--forest);
+    padding: 7px 16px 9px;
+    border-radius: 7px 7px 0 0;
+    box-shadow: 0 -1px 0 rgba(255,255,255,.18) inset, 0 4px 8px rgba(30,40,25,.22);
+    border: 1px solid #243a29;
+    border-bottom: none;
+  }
+  .tab-chip .dot { color: var(--sand); }
+
+  .phone {
+    width: 320px;
+    height: 660px;
+    border-radius: 30px;
+    background: #1d1a14;
+    padding: 8px;
+    box-shadow:
+      0 18px 40px rgba(40,30,12,.34),
+      0 3px 0 rgba(0,0,0,.3),
+      inset 0 0 0 2px #2c281f;
+    position: relative;
+  }
+  .screen {
+    width: 100%;
+    height: 100%;
+    border-radius: 23px;
+    overflow: hidden;
+    position: relative;
+    background: var(--paper);
+    display: flex;
+    flex-direction: column;
+    /* aged paper grain + faint ruled lines */
+    background-image:
+      radial-gradient(80% 50% at 30% 0%, rgba(255,250,235,.5), transparent 60%),
+      radial-gradient(60% 40% at 90% 100%, rgba(120,90,40,.10), transparent 70%),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='90' height='90' filter='url(%23n)' opacity='0.05'/></svg>");
+  }
+  .ruled {
+    background-image:
+      repeating-linear-gradient(180deg, transparent 0 27px, var(--rule-soft) 27px 28px);
+    background-position: 0 0;
+  }
+
+  /* status bar (phone OS) */
+  .os-bar {
+    height: 24px;
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 0 16px;
+    font-family: var(--stencil);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    flex: 0 0 auto;
+    letter-spacing: .02em;
+  }
+  .os-bar .right { display:flex; gap:5px; align-items:center; }
+
+  /* page scroll body */
+  .page {
+    flex: 1 1 auto;
+    overflow: hidden;
+    padding: 8px 16px 0;
+    position: relative;
+  }
+
+  /* shared: date header (the spine) */
+  .date-head {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 7px;
+    margin-bottom: 9px;
+  }
+  .date-head .day {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 27px;
+    line-height: 1;
+    color: var(--ink);
+    letter-spacing: -.01em;
+  }
+  .date-head .sub {
+    font-family: var(--stencil);
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    font-size: 11.5px;
+    color: var(--clay);
+    font-weight: 600;
+    margin-top: 4px;
+    display:flex; gap:8px; flex-wrap:wrap; align-items:baseline;
+  }
+  .date-head .sub b { color: var(--forest); }
+
+  /* progress thread */
+  .thread {
+    display:flex; align-items:center; gap:7px;
+    margin: 8px 0 2px;
+    font-family: var(--stencil);
+    font-size: 10.5px; letter-spacing:.1em; text-transform:uppercase;
+    color: var(--muted);
+  }
+  .thread .bar {
+    flex:1; height:5px; border-radius:3px;
+    background: var(--rule);
+    position:relative; overflow:hidden;
+    box-shadow: inset 0 0 0 1px rgba(120,90,40,.18);
+  }
+  .thread .bar i {
+    position:absolute; inset:0 35% 0 0;
+    background: repeating-linear-gradient(90deg, var(--thread) 0 5px, #a87e3e 5px 7px);
+    border-radius:3px;
+  }
+
+  /* offline pill */
+  .offline {
+    display:inline-flex; align-items:center; gap:5px;
+    font-family: var(--stencil); font-weight:700; font-size:10px;
+    letter-spacing:.14em; text-transform:uppercase;
+    color: var(--clay);
+    border:1.5px dashed var(--clay);
+    border-radius:20px; padding:3px 9px;
+    background: rgba(170,104,67,.07);
+  }
+  .online {
+    display:inline-flex; align-items:center; gap:5px;
+    font-family: var(--stencil); font-weight:700; font-size:10px;
+    letter-spacing:.14em; text-transform:uppercase;
+    color: var(--success);
+  }
+  .online .led { width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 0 2px rgba(47,106,71,.18); }
+
+  /* ---- generic notebook bits ---- */
+  .hand { font-family: var(--hand); }
+  .stamp {
+    display:inline-flex; align-items:center; gap:4px;
+    font-family: var(--stencil); font-weight:700;
+    text-transform:uppercase; letter-spacing:.12em;
+    font-size:10px;
+    color: var(--stamp);
+    border:2px solid var(--stamp);
+    border-radius:5px; padding:2px 6px;
+    transform: rotate(-3deg);
+    opacity:.86;
+  }
+  .stamp.green { color: var(--stamp-green); border-color: var(--stamp-green); }
+  .stamp.warn { color: var(--warn); border-color: var(--warn); }
+
+  .qmark {
+    font-family: var(--hand); font-weight:700;
+    color: var(--danger); font-size:19px;
+    line-height:0;
+  }
+
+  /* receipt chips */
+  .receipts { display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; }
+  .receipt {
+    display:inline-flex; align-items:center; gap:4px;
+    font-family: var(--stencil); font-size:9.5px; font-weight:600;
+    letter-spacing:.06em; text-transform:uppercase;
+    color: var(--ink-soft);
+    background: var(--paper-strong);
+    border:1px solid var(--rule);
+    border-radius:3px; padding:3px 6px;
+  }
+  .receipt .tick { color: var(--success); font-weight:800; }
+
+  /* bottom edge-divider tabs */
+  .edge-tabs {
+    flex: 0 0 auto;
+    display:flex;
+    border-top: 1px solid var(--rule);
+    background: linear-gradient(180deg, rgba(255,253,247,.6), var(--paper-warm));
+    padding: 6px 8px 10px;
+    gap: 5px;
+  }
+  .etab {
+    flex:1; text-align:center;
+    font-family: var(--stencil);
+    text-transform:uppercase; letter-spacing:.08em;
+    font-size:10px; font-weight:600;
+    color: var(--muted);
+    padding: 7px 2px 6px;
+    border-radius: 8px;
+    position: relative;
+  }
+  .etab .ic { display:block; font-size:15px; line-height:1; margin-bottom:3px; }
+  .etab.active {
+    color: var(--paper-strong);
+    background: var(--forest);
+    box-shadow: 0 3px 7px rgba(30,45,28,.28);
+  }
+  .etab.active .ic { color: var(--sand); }
+
+  /* ============ SCOUT SCREEN ============ */
+  .greet {
+    font-family: var(--hand);
+    font-size: 21px;
+    line-height: 1.18;
+    color: var(--ink);
+    margin: 4px 0 2px;
+  }
+  .typed-slip {
+    position: relative;
+    background: var(--paper-strong);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 11px 12px 12px;
+    margin: 14px 2px 8px;
+    box-shadow: 0 4px 10px rgba(60,46,20,.14);
+    font-size: 12.5px;
+    line-height: 1.42;
+    color: var(--ink);
+    transform: rotate(-.5deg);
+  }
+  .typed-slip::before {
+    /* paper clip */
+    content:"";
+    position:absolute; top:-9px; right:18px;
+    width:13px; height:34px;
+    border:2.5px solid #9b9482;
+    border-radius:8px;
+    border-bottom:none;
+    transform: rotate(7deg);
+    box-shadow: 1px 1px 1px rgba(0,0,0,.18);
+  }
+  .typed-slip .ans-label {
+    font-family: var(--stencil);
+    font-size: 9.5px; letter-spacing:.16em; text-transform:uppercase;
+    color: var(--clay); font-weight:700; margin-bottom:5px;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .conf {
+    font-family: var(--stencil); font-weight:700; font-size:9px;
+    letter-spacing:.1em; text-transform:uppercase;
+    padding:2px 6px; border-radius:3px;
+  }
+  .conf.candidate { color:#7a4a18; background:rgba(182,137,44,.2); border:1px solid var(--warn); }
+  .margin-tick {
+    font-family: var(--hand);
+    color: var(--clay);
+    font-size: 15px;
+    margin-top: 8px;
+    display:flex; align-items:center; gap:5px;
+  }
+  .prompts { display:flex; flex-direction:column; gap:7px; margin-top:6px; }
+  .prompt-pill {
+    font-family: var(--serif);
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--paper-warm);
+    border: 1px solid var(--rule);
+    border-left: 4px solid var(--moss);
+    border-radius: 4px;
+    padding: 10px 12px;
+    box-shadow: 0 2px 4px rgba(60,46,20,.08);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .prompt-pill .arr { color: var(--moss); font-weight:700; }
+
+  /* ============ MAP SCREEN ============ */
+  .strip-map {
+    position: relative;
+    margin: 4px 0 6px;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background:
+      linear-gradient(180deg, rgba(255,250,235,.5), rgba(200,167,122,.12)),
+      var(--paper-strong);
+    height: 360px;
+    overflow: hidden;
+    box-shadow: inset 0 0 30px rgba(120,90,40,.1);
+  }
+  .strip-map::after {
+    content:"insert · pencil & ink";
+    position:absolute; bottom:6px; right:8px;
+    font-family: var(--hand); font-size:13px; color:var(--muted);
+    opacity:.8;
+  }
+  .legend {
+    display:flex; flex-wrap:wrap; gap:9px 14px; margin-top:7px;
+    font-family: var(--serif); font-size:11.5px; color:var(--ink-soft);
+  }
+  .legend span { display:inline-flex; align-items:center; gap:5px; }
+  .lg-dot { width:10px;height:10px;border-radius:50%; }
+
+  /* ============ GEAR SCREEN ============ */
+  .gear-cat {
+    font-family: var(--stencil);
+    text-transform:uppercase; letter-spacing:.14em;
+    font-size:11px; font-weight:700; color:var(--clay);
+    margin: 11px 0 3px;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 2px;
+    display:flex; justify-content:space-between; align-items:baseline;
+  }
+  .gear-row {
+    display:flex; align-items:center; gap:9px;
+    padding: 4px 0;
+    font-family: var(--serif); font-size:13.5px; color:var(--ink);
+    line-height:1.1;
+  }
+  .gear-row .box {
+    width:16px; height:16px; flex:0 0 16px;
+    border:1.8px solid var(--ink-soft); border-radius:3px;
+    position:relative; background:var(--paper-strong);
+  }
+  .gear-row.done .box::after {
+    content:"✓"; position:absolute; inset:-5px 0 0 1px;
+    font-family:var(--hand); font-weight:700; font-size:18px; color:var(--forest);
+  }
+  .gear-row .name { flex:1 1 auto; }
+  .gear-row.todo .name { color: var(--muted); }
+  .gear-row .wt {
+    font-family: var(--hand); font-size:15px; color:var(--ink-soft);
+  }
+  .gear-total {
+    margin-top: 12px;
+    border-top: 2px solid var(--ink);
+    padding-top: 8px;
+    display:flex; justify-content:space-between; align-items:flex-end;
+  }
+  .gear-total .lbl { font-family:var(--stencil); text-transform:uppercase; letter-spacing:.12em; font-size:11px; color:var(--muted); font-weight:600; }
+  .gear-total .big {
+    font-family: var(--serif); font-weight:700; font-size:30px; color:var(--ink);
+    line-height:1; position:relative;
+  }
+  .gear-total .big::after {
+    content:""; position:absolute; left:-2px; right:-2px; bottom:-4px; height:3px;
+    background: var(--clay); border-radius:2px;
+    transform: rotate(-.6deg);
+  }
+  .gear-total .big small { font-size:14px; font-weight:600; color:var(--muted); }
+
+  /* ============ TRAIL / BIBLE SCREEN ============ */
+  .scripture-card {
+    margin: 8px 2px 0;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.4), rgba(255,255,255,0) 30%),
+      var(--surface, var(--paper-strong));
+    background-color: var(--paper-strong);
+    border: 1px solid var(--rule);
+    border-radius: 5px;
+    padding: 16px 16px 18px;
+    box-shadow: 0 6px 16px rgba(60,46,20,.16);
+    position: relative;
+  }
+  .scripture-card::before {
+    /* pressed-in corner photo-mount */
+    content:""; position:absolute; top:-6px; left:-6px;
+    width:30px; height:30px;
+    background: repeating-linear-gradient(135deg, rgba(207,154,111,.85) 0 7px, rgba(207,154,111,.55) 7px 14px);
+    transform: rotate(-4deg);
+    box-shadow: 0 1px 3px rgba(40,30,10,.25);
+  }
+  .ref-head {
+    font-family: var(--stencil);
+    text-transform:uppercase; letter-spacing:.18em;
+    font-size:11px; color:var(--clay); font-weight:700;
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:8px;
+  }
+  .verse {
+    font-family: var(--serif);
+    font-size: 14px; line-height:1.55; color:var(--ink);
+    text-indent: 0;
+  }
+  .verse .vn { font-size:9px; vertical-align:super; color:var(--clay); font-weight:600; margin-right:2px; }
+  .verse .underline {
+    font-family: var(--hand); font-size:17px;
+    color: var(--ink); font-style: normal;
+    border-bottom: 2px solid var(--clay);
+    padding-bottom:1px;
+  }
+  .search-box {
+    margin: 12px 2px 2px;
+    display:flex; align-items:center; gap:8px;
+    border: 1.5px solid var(--rule);
+    border-radius: 22px;
+    padding: 9px 14px;
+    background: var(--paper-strong);
+    font-family: var(--serif); font-size:13px; color:var(--muted);
+  }
+  .inserts { margin: 11px 2px 0; display:flex; flex-direction:column; gap:7px; }
+  .insert-row {
+    display:flex; align-items:center; gap:9px;
+    font-family: var(--serif); font-size:13px; color:var(--ink);
+    padding:8px 10px;
+    background: var(--paper-warm);
+    border:1px solid var(--rule);
+    border-radius:5px;
+  }
+  .insert-row .ic { font-size:16px; }
+  .insert-row .meta { margin-left:auto; font-family:var(--hand); font-size:14px; color:var(--muted); }
+
+  .micro { font-family: var(--serif); font-size:11px; color:var(--muted); line-height:1.35; }
+  .row-between { display:flex; justify-content:space-between; align-items:center; }
+</style>
+</head>
+<body>
+
+  <!-- ===================== TITLE BAND ===================== -->
+  <div class="title-band">
+    <div class="title-kicker">Direction 5 · Hogg Country Bake-off</div>
+    <div class="title-name">Field <span class="hand">Notes</span></div>
+    <div class="title-concept">
+      The whole app is Dad's trail <em>journal</em> — a keepsake the family follows. The daily page is
+      the spine; Scout writes in the margin; Map, Gear &amp; Bible are inserts tucked into the notebook.
+      Warm, handmade, personal — and still dead-honest about candidate-grade data, noted in his own hand with a “?”.
+    </div>
+    <div class="title-langs">
+      <span class="lang-chip">Aged paper · sepia ink</span>
+      <span class="lang-chip">Fraunces serif · Caveat hand</span>
+      <span class="lang-chip">Washi · rubber-stamp receipts</span>
+      <span class="lang-chip">Edge-divider tabs</span>
+      <span class="lang-chip">Glanceable · sun-legible · honest</span>
+    </div>
+  </div>
+
+  <!-- ===================== PHONES ===================== -->
+  <div class="phones">
+
+    <!-- ============ SCOUT ============ -->
+    <div class="phone-wrap">
+      <div class="tab-chip">Scout <span class="dot">·</span> margin notes</div>
+      <div class="phone">
+        <div class="screen ruled">
+          <div class="os-bar">
+            <span>9:14</span>
+            <span class="right"><span class="offline">⚡ Offline · on-device</span></span>
+          </div>
+          <div class="page">
+            <div class="date-head">
+              <div class="day">Day 42 · Scout</div>
+              <div class="sub"><span>Tue Jun 18</span><span>·</span><span><b>Mile 1438.0</b></span></div>
+            </div>
+
+            <div class="greet">“Good morning. Trail readiness is holding steady today. Keep mapped water marked low-confidence until it’s confirmed from a current source or in the field.”</div>
+
+            <div class="typed-slip">
+              <div class="ans-label">
+                <span>Scout · answered offline</span>
+                <span class="conf candidate">Candidate</span>
+              </div>
+              <em>Can I push miles today?</em> — Hold to 8.2&nbsp;mi. Last two days ran above plan and recovery’s lagging; the only mapped water ahead is candidate-grade. Stay conservative, confirm flow in the field.
+              <div class="receipts">
+                <span class="receipt"><span class="tick">✓</span> AWOL 2026</span>
+                <span class="receipt"><span class="tick">✓</span> NWS · cached</span>
+                <span class="receipt">FarOut · 2d old</span>
+                <span class="receipt">On-device pack</span>
+              </div>
+              <div class="margin-tick">↳ verify water before counting on it <span class="qmark">?</span></div>
+            </div>
+
+            <div class="prompts">
+              <div class="prompt-pill">What’s the next reliable water? <span class="arr">↘</span></div>
+              <div class="prompt-pill">What needs verifying before town? <span class="arr">↘</span></div>
+              <div class="prompt-pill">Give me the safest next move. <span class="arr">↘</span></div>
+            </div>
+          </div>
+
+          <div class="edge-tabs">
+            <div class="etab active"><span class="ic">✒︎</span>Scout</div>
+            <div class="etab"><span class="ic">⌖</span>Map</div>
+            <div class="etab"><span class="ic">▣</span>Gear</div>
+            <div class="etab"><span class="ic">❦</span>Trail</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ MAP ============ -->
+    <div class="phone-wrap">
+      <div class="tab-chip">Map <span class="dot">·</span> strip insert</div>
+      <div class="phone">
+        <div class="screen">
+          <div class="os-bar">
+            <span>9:14</span>
+            <span class="right"><span class="online"><span class="led"></span>1 bar · NY/CT</span></span>
+          </div>
+          <div class="page">
+            <div class="date-head">
+              <div class="day">Today’s leg</div>
+              <div class="sub"><span><b>8.2 mi</b> to Morgan Stewart</span><span>·</span><span>+1,700 ft</span></div>
+            </div>
+
+            <div class="strip-map">
+              <svg viewBox="0 0 280 360" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+                <!-- elevation shading hills -->
+                <path d="M0,300 C40,250 70,270 110,210 C150,150 190,200 230,150 C255,120 280,140 280,140 L280,360 L0,360 Z"
+                      fill="#cbb486" opacity="0.30"/>
+                <!-- faint pencil ridge ticks -->
+                <g stroke="#8a754c" stroke-width="0.8" opacity="0.35">
+                  <line x1="20" y1="305" x2="26" y2="298"/><line x1="60" y1="282" x2="66" y2="275"/>
+                  <line x1="120" y1="220" x2="126" y2="213"/><line x1="180" y1="190" x2="186" y2="183"/>
+                  <line x1="232" y1="150" x2="238" y2="143"/>
+                </g>
+
+                <!-- the pencil AT route line -->
+                <path d="M40,330 C70,300 55,270 90,250 C130,228 110,190 150,168 C188,148 175,110 215,88"
+                      fill="none" stroke="#5a4f3a" stroke-width="2.6" stroke-linecap="round"
+                      stroke-dasharray="1 0" opacity="0.85"/>
+                <!-- planned-ahead dashed -->
+                <path d="M215,88 C232,78 240,60 248,46"
+                      fill="none" stroke="#aa6843" stroke-width="2.2" stroke-linecap="round"
+                      stroke-dasharray="5 5"/>
+
+                <!-- YOU ARE HERE -->
+                <circle cx="40" cy="330" r="7" fill="#2f4b35" stroke="#f3ead6" stroke-width="2.5"/>
+                <text x="52" y="334" font-family="Caveat, cursive" font-size="17" fill="#2a2418">you · mi 1438.0</text>
+
+                <!-- water, circled with ? -->
+                <ellipse cx="64" cy="300" rx="13" ry="10" fill="none" stroke="#9a3b2f" stroke-width="2" opacity="0.9"/>
+                <circle cx="64" cy="300" r="3.5" fill="#5f8090"/>
+                <text x="80" y="296" font-family="Caveat, cursive" font-size="15" fill="#9a3b2f">stream 1438.4 ?</text>
+                <text x="80" y="310" font-family="Caveat, cursive" font-size="13" fill="#7c6f54">confirm flow</text>
+
+                <!-- field report: rocks -->
+                <text x="96" y="244" font-family="Caveat, cursive" font-size="14" fill="#7c6f54">⚠ rocks · backtrack 34m</text>
+
+                <!-- little shelter sketch -->
+                <g transform="translate(206,78)">
+                  <path d="M0,8 L9,0 L18,8 Z" fill="none" stroke="#2f4b35" stroke-width="2"/>
+                  <rect x="2" y="8" width="14" height="9" fill="none" stroke="#2f4b35" stroke-width="2"/>
+                  <text x="-4" y="-6" font-family="Caveat, cursive" font-size="15" fill="#2f4b35">Morgan Stewart</text>
+                  <text x="-4" y="32" font-family="Caveat, cursive" font-size="13" fill="#7c6f54">mi 1442.6</text>
+                </g>
+
+                <!-- mile ticks down the side -->
+                <g font-family="Oswald, sans-serif" font-size="9" fill="#7c6f54" opacity="0.8">
+                  <line x1="262" y1="60" x2="270" y2="60" stroke="#7c6f54" stroke-width="1"/>
+                  <text x="248" y="63">1442</text>
+                  <line x1="262" y1="160" x2="270" y2="160" stroke="#7c6f54" stroke-width="1"/>
+                  <text x="248" y="163">1440</text>
+                  <line x1="262" y1="300" x2="270" y2="300" stroke="#7c6f54" stroke-width="1"/>
+                  <text x="248" y="303">1438</text>
+                </g>
+              </svg>
+            </div>
+
+            <div class="legend">
+              <span><span class="lg-dot" style="background:#2f4b35"></span>You</span>
+              <span><span class="lg-dot" style="background:#5f8090;box-shadow:0 0 0 2px #9a3b2f"></span>Water — candidate <span class="qmark" style="font-size:15px">?</span></span>
+              <span><span class="lg-dot" style="background:var(--clay)"></span>Pawling town · <em>unverified</em></span>
+            </div>
+          </div>
+
+          <div class="edge-tabs">
+            <div class="etab"><span class="ic">✒︎</span>Scout</div>
+            <div class="etab active"><span class="ic">⌖</span>Map</div>
+            <div class="etab"><span class="ic">▣</span>Gear</div>
+            <div class="etab"><span class="ic">❦</span>Trail</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ GEAR ============ -->
+    <div class="phone-wrap">
+      <div class="tab-chip">Gear <span class="dot">·</span> packing list</div>
+      <div class="phone">
+        <div class="screen ruled">
+          <div class="os-bar">
+            <span>9:14</span>
+            <span class="right"><span class="online"><span class="led"></span>Synced 2h ago</span></span>
+          </div>
+          <div class="page">
+            <div class="date-head">
+              <div class="day">Pack-out list</div>
+              <div class="sub"><span><b>31 of 38</b> packed</span><span>·</span><span>base 14.8 lb</span></div>
+            </div>
+
+            <div class="gear-cat"><span>Shelter</span><span class="hand" style="color:var(--ink-soft);font-size:14px">2.1</span></div>
+            <div class="gear-row done"><span class="box"></span><span class="name">Tent</span><span class="wt">2.1 lb</span></div>
+
+            <div class="gear-cat"><span>Sleep</span><span class="hand" style="color:var(--ink-soft);font-size:14px">2.3</span></div>
+            <div class="gear-row done"><span class="box"></span><span class="name">Quilt</span><span class="wt">1.4 lb</span></div>
+            <div class="gear-row done"><span class="box"></span><span class="name">Sleeping pad</span><span class="wt">0.9 lb</span></div>
+
+            <div class="gear-cat"><span>Pack · Cook · Water</span><span class="hand" style="color:var(--ink-soft);font-size:14px">2.8</span></div>
+            <div class="gear-row done"><span class="box"></span><span class="name">Pack</span><span class="wt">1.9 lb</span></div>
+            <div class="gear-row done"><span class="box"></span><span class="name">Stove + pot</span><span class="wt">0.7 lb</span></div>
+            <div class="gear-row todo"><span class="box"></span><span class="name">Water filter <span class="qmark">?</span> backflush</span><span class="wt">0.2 lb</span></div>
+
+            <div class="gear-cat"><span>Consumables</span><span class="hand" style="color:var(--ink-soft);font-size:14px">7.5</span></div>
+            <div class="gear-row done"><span class="box"></span><span class="name">Food · 5 days</span><span class="wt">5.4 lb</span></div>
+            <div class="gear-row todo"><span class="box"></span><span class="name">Fuel canister</span><span class="wt">2.1 lb</span></div>
+
+            <div class="gear-total">
+              <div>
+                <div class="lbl">Worn: shoes · sun hoody</div>
+                <div class="lbl">On back, total</div>
+              </div>
+              <div class="big">22.3<small> lb</small></div>
+            </div>
+          </div>
+
+          <div class="edge-tabs">
+            <div class="etab"><span class="ic">✒︎</span>Scout</div>
+            <div class="etab"><span class="ic">⌖</span>Map</div>
+            <div class="etab active"><span class="ic">▣</span>Gear</div>
+            <div class="etab"><span class="ic">❦</span>Trail</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ TRAIL / BIBLE ============ -->
+    <div class="phone-wrap">
+      <div class="tab-chip">Trail <span class="dot">·</span> library</div>
+      <div class="phone">
+        <div class="screen">
+          <div class="os-bar">
+            <span>9:14</span>
+            <span class="right"><span class="offline">⚡ Offline · saved</span></span>
+          </div>
+          <div class="page">
+            <div class="date-head">
+              <div class="day">The Library</div>
+              <div class="sub"><span>Guide</span><span>·</span><span><b>Bible</b></span><span>·</span><span>Journal</span></div>
+            </div>
+
+            <div class="scripture-card">
+              <div class="ref-head"><span>KJV · Psalm 23</span><span class="stamp green">Pressed in</span></div>
+              <div class="verse">
+                <span class="vn">1</span>The <span style="font-variant:small-caps;letter-spacing:.02em">Lord</span> is my shepherd; I shall not want.
+                <span class="vn">2</span>He maketh me to lie down in green pastures: he leadeth me beside the still waters.
+                <span class="vn">4</span>Yea, though I walk through <span class="underline">the valley of the shadow of death,</span> I will fear no evil: for thou art with me.
+              </div>
+            </div>
+
+            <div class="search-box">
+              <span>🔍</span><span>Search the KJV — full text, offline…</span>
+            </div>
+
+            <div class="inserts">
+              <div class="insert-row">
+                <span class="ic">❦</span><span>Field Guide — Pawling corridor</span><span class="meta">mi 1457.9</span>
+              </div>
+              <div class="insert-row">
+                <span class="ic">✎</span><span>Journal — “safe, NY/CT pilot”</span><span class="meta">2h ago</span>
+              </div>
+            </div>
+
+            <div class="row-between" style="margin-top:11px;">
+              <span class="micro">Next check-in to Sarah · SMS</span>
+              <span class="stamp warn">Father’s Day · Jun 21</span>
+            </div>
+          </div>
+
+          <div class="edge-tabs">
+            <div class="etab"><span class="ic">✒︎</span>Scout</div>
+            <div class="etab"><span class="ic">⌖</span>Map</div>
+            <div class="etab"><span class="ic">▣</span>Gear</div>
+            <div class="etab active"><span class="ic">❦</span>Trail</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

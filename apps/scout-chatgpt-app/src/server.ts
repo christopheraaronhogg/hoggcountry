@@ -48,6 +48,53 @@ const documentSlotSchema = z.enum(
   STANDARD_DOCUMENT_SLOTS.map((slot) => slot.key) as [StandardDocumentSlotKey, ...StandardDocumentSlotKey[]],
 );
 
+const searchOutputSchema = {
+  results: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      url: z.string().url(),
+    }),
+  ),
+};
+
+const fetchOutputSchema = {
+  id: z.string(),
+  title: z.string(),
+  text: z.string(),
+  url: z.string().url(),
+  metadata: z.record(z.string(), z.string()).optional(),
+};
+
+const snapshotOutputSchema = {
+  snapshot: z.unknown(),
+};
+
+const nearbyOutputSchema = {
+  nearby: z.unknown(),
+};
+
+const briefOutputSchema = {
+  brief: z.unknown(),
+  referenceContext: z.unknown(),
+};
+
+const planOutputSchema = {
+  plan: z.unknown(),
+};
+
+const resupplyOutputSchema = {
+  resupply: z.unknown(),
+};
+
+const sectionPlanOutputSchema = {
+  sectionPlan: z.unknown(),
+};
+
+const documentOutputSchema = {
+  document: z.unknown(),
+};
+
 const trailContextInput = {
   currentMile: z.number().min(0).max(TRAIL_FACTS.totalMiles).default(0),
   direction: directionSchema.default('NOBO'),
@@ -340,8 +387,14 @@ function toSearchResult(entry: ReturnType<typeof searchPublicCorpus>[number]) {
   return {
     id: entry.id,
     title: entry.title,
-    text: entry.excerpt,
     url: absoluteUrl(entry.href ?? '/'),
+  };
+}
+
+function toCorpusLead(entry: ReturnType<typeof searchPublicCorpus>[number]) {
+  return {
+    ...toSearchResult(entry),
+    text: entry.excerpt,
     metadata: {
       source: entry.sourceLabel,
       sourceType: entry.sourceType,
@@ -429,6 +482,7 @@ async function createScoutServer(): Promise<McpServer> {
       inputSchema: {
         query: z.string().min(1).describe('Search query for Scout AT planning, resupply, gear, safety, or trail context.'),
       },
+      outputSchema: searchOutputSchema,
       annotations: READ_ONLY_LOCAL_ANNOTATIONS,
     },
     async ({ query }: { query: string }) => {
@@ -453,6 +507,7 @@ async function createScoutServer(): Promise<McpServer> {
       inputSchema: {
         id: z.string().min(1).describe('Document id returned by search.'),
       },
+      outputSchema: fetchOutputSchema,
       annotations: READ_ONLY_LOCAL_ANNOTATIONS,
     },
     async ({ id }: { id: string }) => {
@@ -482,6 +537,7 @@ async function createScoutServer(): Promise<McpServer> {
       inputSchema: {
         focus: z.enum(['inventory', 'route-caveats', 'live-sources', 'all']).default('all'),
       },
+      outputSchema: snapshotOutputSchema,
       annotations: READ_ONLY_LOCAL_ANNOTATIONS,
     },
     async ({ focus }: { focus: 'inventory' | 'route-caveats' | 'live-sources' | 'all' }) => {
@@ -511,6 +567,7 @@ async function createScoutServer(): Promise<McpServer> {
         forwardOnly: z.boolean().default(false).describe('When true, only return candidates ahead of the hiker in their walking direction.'),
         state: z.string().min(2).max(2).optional().describe('Optional two-letter state code for permit, fee, and camping rule summaries.'),
       },
+      outputSchema: nearbyOutputSchema,
       annotations: READ_ONLY_LOCAL_ANNOTATIONS,
       _meta: {
         ui: {
@@ -545,6 +602,7 @@ async function createScoutServer(): Promise<McpServer> {
       description:
         'Use this when the user wants a compact trail companion heads-up display for the current AT context. Shows deterministic planning cues, not live conditions.',
       inputSchema: trailContextInput,
+      outputSchema: briefOutputSchema,
       annotations: READ_ONLY_LOCAL_ANNOTATIONS,
       _meta: {
         ui: {
@@ -583,6 +641,7 @@ async function createScoutServer(): Promise<McpServer> {
         ...trailContextInput,
         effort: z.enum(['conservative', 'standard', 'push']).default('standard'),
       },
+      outputSchema: planOutputSchema,
       annotations: READ_ONLY_LOCAL_ANNOTATIONS,
       _meta: {
         ui: {
@@ -649,6 +708,7 @@ async function createScoutServer(): Promise<McpServer> {
       description:
         'Use this when the user wants a 7-day rolling AT plan scaffold with mileage targets, zero/nero pressure, and source checks. Does not confirm live conditions.',
       inputSchema: trailContextInput,
+      outputSchema: planOutputSchema,
       annotations: READ_ONLY_LOCAL_ANNOTATIONS,
       _meta: {
         ui: {
@@ -732,6 +792,7 @@ async function createScoutServer(): Promise<McpServer> {
         ...trailContextInput,
         query: z.string().min(1).default('resupply').describe('Optional resupply search query.'),
       },
+      outputSchema: resupplyOutputSchema,
       annotations: READ_ONLY_LOCAL_ANNOTATIONS,
       _meta: {
         ui: {
@@ -763,7 +824,7 @@ async function createScoutServer(): Promise<McpServer> {
           routeLabel: routeLabel(profile.direction),
           currentMile: profile.currentMile,
           query,
-          candidates: fallbackHits.slice(0, 5).map(toSearchResult),
+          candidates: fallbackHits.slice(0, 5).map(toCorpusLead),
           openReferenceCandidates: referenceContext.categories.resupply ?? [],
           trailheadCandidates: referenceContext.categories.trailheads ?? [],
           waterCandidates: referenceContext.categories.water ?? [],
@@ -806,6 +867,7 @@ async function createScoutServer(): Promise<McpServer> {
         shelterPreference: shelterPreferenceSchema.default('mixed'),
         state: z.string().min(2).max(2).optional().describe('Optional two-letter state code for rule summaries.'),
       },
+      outputSchema: sectionPlanOutputSchema,
       annotations: READ_ONLY_LOCAL_ANNOTATIONS,
       _meta: {
         ui: {
@@ -884,6 +946,7 @@ async function createScoutServer(): Promise<McpServer> {
         notes: z.string().max(1200).default(''),
         state: z.string().min(2).max(2).optional().describe('Optional two-letter state code for rule summaries.'),
       },
+      outputSchema: documentOutputSchema,
       annotations: READ_ONLY_LOCAL_ANNOTATIONS,
       _meta: {
         ui: {
