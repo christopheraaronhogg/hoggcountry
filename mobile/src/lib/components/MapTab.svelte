@@ -184,15 +184,18 @@
 			/>
 		</svg>
 
-		<!-- next-water + candidate chip -->
-		{#if nextWater}
-			<div class="map-top-chip">
+		<!-- next-water chip + honest framing: this is a linear schematic of what's
+		     ahead by mile, NOT a geographic/GPS tile map. Says so plainly so it isn't
+		     read as (and judged against) FarOut. -->
+		<div class="map-top-chip">
+			{#if nextWater}
 				<span class="next-water-chip">
 					<span class="wglyph"><Icon name="water" size={13} stroke={2} /></span> Next water {nextWater.dist.toFixed(1)} mi
 					{#if nextWater.candidate}<span class="cand-tag">candidate</span>{/if}
 				</span>
-			</div>
-		{/if}
+			{/if}
+			<span class="schematic-tag" title="A linear schematic of what's ahead by mile — not a GPS/tile map.">Schematic · not a GPS map</span>
+		</div>
 
 		<!-- upcoming landmark pins, placed along the line by mile -->
 		{#each placed as p (p.kind + p.label + p.mile)}
@@ -377,8 +380,21 @@
 		left: 12px;
 		right: 12px;
 		display: flex;
-		gap: 7px;
+		flex-direction: column;
+		gap: 6px;
+		align-items: flex-start;
+		z-index: 4;
+	}
+	.schematic-tag {
+		display: inline-flex;
 		align-items: center;
+		padding: 4px 9px;
+		border-radius: 999px;
+		background: rgba(31, 36, 29, 0.7);
+		color: #f4efe4;
+		font-size: 0.64rem;
+		font-weight: 800;
+		letter-spacing: 0.02em;
 	}
 	.next-water-chip {
 		display: inline-flex;
@@ -398,7 +414,7 @@
 		font-size: 0.9rem;
 	}
 	.cand-tag {
-		font-size: 0.58rem;
+		font-size: 0.72rem;
 		font-weight: 900;
 		text-transform: uppercase;
 		letter-spacing: 0.04em;

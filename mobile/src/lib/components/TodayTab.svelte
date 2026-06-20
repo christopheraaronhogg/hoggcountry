@@ -66,8 +66,13 @@
 	type Node = { kind: 'done' | 'now' | 'water' | 'camp' | 'evening'; title: string; detail?: string; flag?: string };
 	const dayNodes = $derived.by<Node[]>(() => {
 		const nodes: Node[] = [];
-		nodes.push({ kind: 'done', title: 'Broke camp', detail: 'Packed up and on the trail.' });
-		nodes.push({ kind: 'now', title: `Now · Mile ${from.toFixed(1)}`, detail: 'On trail, heading north.' });
+		// Spine starts at NOW (real position) — no fabricated "Broke camp" the app
+		// can't observe. Everything below is forward-looking from the field pack.
+		nodes.push({
+			kind: 'now',
+			title: `Now · Mile ${from.toFixed(1)}`,
+			detail: trailAssistant.hikeProfile.direction === 'SOBO' ? 'On trail, heading south.' : 'On trail, heading north.'
+		});
 		const dayWaters = camp ? watersAhead.filter((w) => w.mile <= camp.mile + 0.01) : watersAhead.slice(0, 2);
 		for (const w of dayWaters.slice(0, 2)) {
 			const candidate = w.reliability !== 'reliable';
@@ -85,7 +90,7 @@
 				detail: `${(camp.mile - from).toFixed(1)} mi to go${climbFt > 0 ? ` · +${climbFt.toLocaleString()} ft climb` : ''}`
 			});
 		}
-		nodes.push({ kind: 'evening', title: 'Evening · verse & journal', detail: "Read tonight's scripture and log the day." });
+		nodes.push({ kind: 'evening', title: 'Tonight · verse & journal', detail: 'When you reach camp: read and log the day.' });
 		return nodes;
 	});
 
@@ -170,13 +175,10 @@
 				</div>
 			</div>
 			<p class="means">
-				<span class="meanslab">Verify before exposed terrain</span>
+				<span class="meanslab">Cached forecast — not live · verify before exposed terrain</span>
 				{wx.riskNote ?? 'This is cached field-pack weather. Refresh before relying on it.'}
 			</p>
-			<div class="daylight">
-				<div class="dl-track"><div class="dl-fill" style="width:100%"></div></div>
-				<span class="dl-lab">Cached near mile {wx.mile.toFixed(1)} · updated {wxUpdated}</span>
-			</div>
+			<span class="wx-foot">Cached near mile {wx.mile.toFixed(1)} · generated {wxUpdated} · no live forecast on this device yet</span>
 		{:else}
 			<p class="means">
 				<span class="meanslab">No cached forecast</span>
@@ -379,7 +381,7 @@
 	.cand {
 		display: inline-block;
 		font-family: var(--font-sans);
-		font-size: 0.64rem;
+		font-size: 0.78rem;
 		font-weight: 800;
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
@@ -512,26 +514,13 @@
 		color: var(--muted);
 		font-weight: 700;
 	}
-	.daylight {
-		margin-top: 8px;
-	}
-	.dl-track {
-		height: 6px;
-		border-radius: 999px;
-		background: rgba(198, 154, 62, 0.18);
-		overflow: hidden;
-	}
-	.dl-fill {
-		height: 100%;
-		border-radius: 999px;
-		background: var(--gold, #c69a3e);
-	}
-	.dl-lab {
+	.wx-foot {
 		display: block;
-		font-size: 0.7rem;
+		font-size: 0.72rem;
 		font-weight: 700;
 		color: var(--muted);
-		margin-top: 5px;
+		margin-top: 4px;
+		line-height: 1.35;
 	}
 
 	/* Day spine */
@@ -595,7 +584,7 @@
 		line-height: 1.4;
 	}
 	.nflag {
-		font-size: 0.74rem;
+		font-size: 0.8rem;
 		font-weight: 800;
 		color: var(--clay);
 		margin-top: 3px;

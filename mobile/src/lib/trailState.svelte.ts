@@ -7,6 +7,7 @@ import type {
 	CheckInStatus,
 	HikeProfile,
 	PrivacySettings,
+	SupportContact,
 	SyncState,
 	Tab,
 	TrailConditionReport,
@@ -565,6 +566,21 @@ class TrailAssistantStore {
 
 	set activeTab(tab: Tab) {
 		this.#state.activeTab = tab;
+	}
+
+	// Which tab to return to when leaving Settings — the gear can be opened from any
+	// pillar, so "back" should land where you were, not hardcode Scout.
+	#settingsReturnTab: Tab = 'Today';
+
+	/** Open Settings, remembering the tab to return to. */
+	openSettings() {
+		if (this.#state.activeTab !== 'Settings') this.#settingsReturnTab = this.#state.activeTab;
+		this.#state.activeTab = 'Settings';
+	}
+
+	/** Leave Settings, returning to whichever pillar opened it. */
+	closeSettings() {
+		this.#state.activeTab = this.#settingsReturnTab;
 	}
 
 	// Which section the Trail pillar opens to (Guide · Bible · Journal · Gear).
@@ -1244,6 +1260,52 @@ class TrailAssistantStore {
 
 	runQuickPrompt(prompt: string) {
 		this.sendCoachMessage(prompt);
+	}
+
+	/** True once at least one real check-in has been logged on this device. */
+	get hasCheckedIn() {
+		return this.#state.checkInHistory.length > 0;
+	}
+
+	/** Support contacts that can actually be reached (have a phone number). */
+	get reachableSupportContacts() {
+		return this.#state.supportCircle.filter((c) => !!c.phone);
+	}
+
+	addSupportContact(contact: SupportContact): void {
+		const name = contact.name.trim();
+		if (!name) return;
+		this.#state.supportCircle = [
+			...this.#state.supportCircle,
+			{
+				name,
+				role: contact.role.trim() || 'Emergency contact',
+				method: contact.method.trim() || (contact.phone?.trim() ? 'Text / call' : 'Reference'),
+				phone: contact.phone?.trim() || undefined,
+				email: contact.email?.trim() || undefined
+			}
+		];
+	}
+
+	removeSupportContact(name: string): void {
+		this.#state.supportCircle = this.#state.supportCircle.filter((c) => c.name !== name);
+	}
+
+	/**
+	 * Build a signal-gated "need help" SMS deep link to the support circle. This is
+	 * NOT an SOS/PLB service — it opens the phone's Messages app pre-filled, which
+	 * only sends when the hiker has a bar. Returns null when no contact has a phone,
+	 * so the UI can prompt to add one instead of pretending help is wired.
+	 */
+	buildHelpSms(): { href: string; recipients: SupportContact[] } | null {
+		const recipients = this.reachableSupportContacts;
+		if (!recipients.length) return null;
+		const mile = this.#state.currentMile.toFixed(1);
+		const name = this.#state.hikeProfile.trailName?.trim() || this.#fieldPack.hiker.trailName || 'Hiker';
+		const body = `${name} needs help on the AT. Near mile ${mile}. Sent from Hogg Country Trail Assistant.`;
+		const numbers = recipients.map((c) => (c.phone ?? '').replace(/[^+\d]/g, '')).filter(Boolean);
+		const href = `sms:${numbers.join(',')}?&body=${encodeURIComponent(body)}`;
+		return { href, recipients };
 	}
 
 	performCheckIn(status: CheckInStatus, note: string) {

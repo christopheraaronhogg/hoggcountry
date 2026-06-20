@@ -103,6 +103,10 @@ export interface SupportContact {
 	name: string;
 	role: string;
 	method: string;
+	/** Phone number used to build the signal-gated "need help" SMS/call deep links.
+	 *  Optional so legacy reference-only contacts still validate. */
+	phone?: string;
+	email?: string;
 }
 
 export interface WaterSource {

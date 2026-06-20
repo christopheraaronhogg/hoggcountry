@@ -3,14 +3,49 @@
 	import SourceChip from './SourceChip.svelte';
 	import { sourceReceipts } from './fieldData';
 
-	function send(status: 'safe' | 'delayed' | 'need-help') {
+	function send(status: 'safe' | 'delayed') {
 		const notes = {
 			safe: 'Safe and still inside the current plan.',
-			delayed: 'Delaying pace and protecting recovery.',
-			'need-help': 'Please flag for human review.'
+			delayed: 'Delaying pace and protecting recovery.'
 		};
 
 		trailAssistant.performCheckIn(status, notes[status]);
+	}
+
+	// "Need help": ALWAYS log locally, then — if a reachable contact exists — open
+	// the phone's Messages app pre-filled to the circle. This only sends when there
+	// is signal; it is NOT a 911/PLB/SOS service. When no contact has a number we
+	// say so instead of pretending help is wired.
+	let helpNote = $state('');
+	function needHelp() {
+		trailAssistant.performCheckIn('need-help', 'Need help — flagged from Safety.');
+		const sms = trailAssistant.buildHelpSms();
+		if (!sms) {
+			helpNote = 'Logged on this phone. Add a contact with a phone number below so this can text someone.';
+			return;
+		}
+		const names = sms.recipients.map((c) => c.name).join(', ');
+		helpNote = trailAssistant.onlineStatus
+			? `Opening a text to ${names}…`
+			: `No signal — a text to ${names} is ready to send the moment you get a bar.`;
+		window.location.href = sms.href;
+	}
+
+	// Add-contact form (the missing editor — Support Circle was read-only and empty).
+	let newName = $state('');
+	let newPhone = $state('');
+	let newRole = $state('');
+	function addContact() {
+		if (!newName.trim()) return;
+		trailAssistant.addSupportContact({
+			name: newName,
+			role: newRole,
+			method: newPhone.trim() ? 'Text / call' : 'Reference',
+			phone: newPhone
+		});
+		newName = '';
+		newPhone = '';
+		newRole = '';
 	}
 
 	const riskLabel = $derived(
@@ -63,7 +98,13 @@
 			<div>
 				<p class="eyebrow">Safety · Check-in window</p>
 				<h2>Logged on this phone</h2>
-				<p class="hero-detail">Last check-in {lastCheckInAge} at {trailAssistant.lastCheckIn.location}</p>
+				<p class="hero-detail">
+					{#if trailAssistant.hasCheckedIn}
+						Last check-in {lastCheckInAge} at {trailAssistant.lastCheckIn.location}
+					{:else}
+						No check-in logged yet — tap "I am safe" to start your log
+					{/if}
+				</p>
 			</div>
 			<div class="risk-dial" data-risk={trailAssistant.missedCheckInRisk}>
 				<strong>{riskLabel}</strong>
@@ -89,8 +130,17 @@
 		<div class="checkin-actions">
 			<button class="cta-button" onclick={() => send('safe')}>I am safe ✓</button>
 			<button class="outline-button" onclick={() => send('delayed')}>Running late</button>
-			<button class="danger-button" onclick={() => send('need-help')}>Need help</button>
+			<button class="danger-button" onclick={needHelp}>
+				{trailAssistant.reachableSupportContacts.length ? 'Need help — text my circle' : 'Need help'}
+			</button>
 		</div>
+		<p class="help-fineprint">
+			“Need help” logs to this phone and {trailAssistant.reachableSupportContacts.length
+				? 'opens a text to your circle'
+				: 'prompts you to add a contact'} — it sends only when you have signal. This is not a 911 or
+			satellite SOS. For a true emergency use your PLB / inReach.
+		</p>
+		{#if helpNote}<p class="help-note">{helpNote}</p>{/if}
 	</section>
 
 	<section class="card low-signal-card">
@@ -126,7 +176,9 @@
 			<button
 				class:on={trailAssistant.privacySettings.stealthMode}
 				class="toggle"
-				aria-label="Toggle stealth mode"
+				role="switch"
+				aria-checked={trailAssistant.privacySettings.stealthMode}
+				aria-label="Stealth mode"
 				onclick={() => trailAssistant.updatePrivacy({ stealthMode: !trailAssistant.privacySettings.stealthMode })}
 			></button>
 		</div>
@@ -139,7 +191,9 @@
 			<button
 				class:on={trailAssistant.privacySettings.sharePreciseLocation}
 				class="toggle"
-				aria-label="Toggle trail-mile reports"
+				role="switch"
+				aria-checked={trailAssistant.privacySettings.sharePreciseLocation}
+				aria-label="Trail-mile reports"
 				onclick={() =>
 					trailAssistant.updatePrivacy({
 						sharePreciseLocation: !trailAssistant.privacySettings.sharePreciseLocation
@@ -155,7 +209,9 @@
 			<button
 				class:on={trailAssistant.privacySettings.allowCoachInsights}
 				class="toggle"
-				aria-label="Toggle Scout route context"
+				role="switch"
+				aria-checked={trailAssistant.privacySettings.allowCoachInsights}
+				aria-label="Scout route context"
 				onclick={() =>
 					trailAssistant.updatePrivacy({
 						allowCoachInsights: !trailAssistant.privacySettings.allowCoachInsights
@@ -171,7 +227,9 @@
 			<button
 				class:on={trailAssistant.privacySettings.visibleToSupportCircle}
 				class="toggle"
-				aria-label="Toggle support notes"
+				role="switch"
+				aria-checked={trailAssistant.privacySettings.visibleToSupportCircle}
+				aria-label="Support notes"
 				onclick={() =>
 					trailAssistant.updatePrivacy({
 						visibleToSupportCircle: !trailAssistant.privacySettings.visibleToSupportCircle
@@ -184,7 +242,7 @@
 		<div class="section-heading">
 			<p class="eyebrow">Support circle</p>
 			<h2>Who to contact</h2>
-			<p>Reference list only. The app does not contact anyone automatically yet.</p>
+			<p>Add the people “Need help” should text. A contact needs a phone number to be reachable.</p>
 		</div>
 
 		<div class="stack-tight">
@@ -192,13 +250,32 @@
 				<div class="support-row">
 					<div>
 						<strong>{contact.name}</strong>
-						<span>{contact.role}</span>
+						<span>{contact.role}{contact.phone ? ` · ${contact.phone}` : ' · no number'}</span>
 					</div>
-					<span class="method-pill">{contact.method}</span>
+					<div class="support-actions">
+						{#if contact.phone}
+							<a class="method-pill link" href={`sms:${contact.phone.replace(/[^+\d]/g, '')}`}>Text</a>
+						{:else}
+							<span class="method-pill muted-pill">Reference</span>
+						{/if}
+						<button
+							class="remove-btn"
+							type="button"
+							aria-label={`Remove ${contact.name}`}
+							onclick={() => trailAssistant.removeSupportContact(contact.name)}>×</button
+						>
+					</div>
 				</div>
 			{:else}
 				<p class="support-empty">No contacts yet. Add the people who should be alerted if you miss a check-in window.</p>
 			{/each}
+		</div>
+
+		<div class="add-contact">
+			<input type="text" bind:value={newName} placeholder="Name" autocomplete="off" aria-label="Contact name" />
+			<input type="tel" bind:value={newPhone} placeholder="Phone (for texting)" autocomplete="off" aria-label="Contact phone" />
+			<input type="text" bind:value={newRole} placeholder="Role (e.g. Wife, Brother)" autocomplete="off" aria-label="Contact role" />
+			<button class="secondary-button" type="button" onclick={addContact} disabled={!newName.trim()}>Add contact</button>
 		</div>
 	</section>
 
@@ -427,6 +504,60 @@
 		padding: 5px 10px;
 		border-radius: 999px;
 		background: rgba(95, 128, 144, 0.16);
+	}
+	.method-pill.link {
+		color: #2f6a47;
+		background: rgba(47, 106, 71, 0.16);
+		text-decoration: none;
+	}
+	.method-pill.muted-pill {
+		color: var(--muted);
+		background: rgba(95, 101, 88, 0.12);
+	}
+	.support-actions {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+	.remove-btn {
+		width: 30px;
+		height: 30px;
+		border-radius: 8px;
+		display: grid;
+		place-items: center;
+		font-size: 1.1rem;
+		line-height: 1;
+		color: var(--danger);
+		background: rgba(154, 59, 47, 0.1);
+	}
+	.add-contact {
+		display: grid;
+		gap: 8px;
+		margin-top: 12px;
+		padding-top: 12px;
+		border-top: 1px solid rgba(95, 101, 88, 0.12);
+	}
+	.add-contact input {
+		width: 100%;
+		min-height: 44px;
+		padding: 10px 12px;
+		border-radius: var(--radius-sm);
+		border: 1px solid var(--line);
+		background: var(--surface-strong);
+		color: var(--ink);
+		font-size: 0.95rem;
+	}
+	.help-fineprint {
+		font-size: 0.74rem;
+		line-height: 1.4;
+		color: var(--muted);
+		margin-top: 8px;
+	}
+	.help-note {
+		font-size: 0.82rem;
+		font-weight: 700;
+		color: var(--forest);
+		margin-top: 6px;
 	}
 
 	.bailout-card {

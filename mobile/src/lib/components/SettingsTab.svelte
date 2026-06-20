@@ -15,8 +15,8 @@
 		<button
 			class="back"
 			type="button"
-			onclick={() => (trailAssistant.activeTab = 'Scout')}
-			aria-label="Back to Scout"
+			onclick={() => trailAssistant.closeSettings()}
+			aria-label="Back"
 		>
 			‹
 		</button>
