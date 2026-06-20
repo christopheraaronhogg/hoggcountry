@@ -13,6 +13,25 @@ The default command prints the current proof ledger and exits `0`, even when
 manual evidence is still missing. `--strict` exits non-zero until every lane is
 proven.
 
+The manual evidence ledger lives at `docs/launch/release-evidence.json`.
+Pending rows are only reminders; they do not satisfy a gate. To clear a manual
+row, change that row to `verified` and include:
+
+```json
+{
+  "status": "verified",
+  "verifiedAt": "2026-06-20T18:46:11Z",
+  "verifiedBy": "Chris Hogg",
+  "summary": "What was proven for this exact build.",
+  "files": ["docs/launch/proof/example.txt"],
+  "urls": ["https://example.com/account-proof"],
+  "commands": ["the command and result used as proof"]
+}
+```
+
+At least one `files`, `urls`, or `commands` reference is required. Referenced
+files must exist or the gate becomes a blocker.
+
 ## What the ledger separates
 
 - `code-build`: local scripts and contract tests that can be verified from the repo.

@@ -6,22 +6,27 @@
 // device proof that must exist before we call a build submission-grade.
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const mobileDir = resolve(__dirname, '..');
 const repoRoot = resolve(mobileDir, '..');
 
-const args = new Set(process.argv.slice(2));
-const json = args.has('--json');
-const strict = args.has('--strict');
-const help = args.has('--help') || args.has('-h');
+const rawArgs = process.argv.slice(2);
+const json = hasFlag(rawArgs, '--json');
+const strict = hasFlag(rawArgs, '--strict');
+const help = hasFlag(rawArgs, '--help') || hasFlag(rawArgs, '-h');
+const evidenceArg = readFlag(rawArgs, '--evidence');
 
-const validArgs = new Set(['--json', '--strict', '--help', '-h']);
-const unknownArgs = [...args].filter((arg) => !validArgs.has(arg));
+const validArgs = new Set(['--json', '--strict', '--help', '-h', '--evidence']);
+const unknownArgs = unknownFlags(rawArgs, validArgs);
 if (unknownArgs.length) {
 	console.error(`Unknown option(s): ${unknownArgs.join(', ')}`);
+	process.exit(2);
+}
+if (hasEvidenceFlag(rawArgs) && !evidenceArg) {
+	console.error('--evidence requires a path.');
 	process.exit(2);
 }
 
@@ -32,6 +37,7 @@ Usage:
   node scripts/release-proof.mjs          Print the current submission proof ledger
   node scripts/release-proof.mjs --json   Print machine-readable JSON
   node scripts/release-proof.mjs --strict Exit non-zero until every lane is proven
+  node scripts/release-proof.mjs --evidence ../docs/launch/release-evidence.json
 
 Statuses:
   pass    Code or repo evidence exists now
@@ -42,6 +48,8 @@ Statuses:
 	process.exit(0);
 }
 
+const evidencePath = evidenceArg ? resolve(process.cwd(), evidenceArg) : join(repoRoot, 'docs', 'launch', 'release-evidence.json');
+const evidence = loadEvidence(evidencePath);
 const iosProject = read('mobile/ios/App/App.xcodeproj/project.pbxproj');
 const iosInfo = read('mobile/ios/App/App/Info.plist');
 const iosPrivacy = read('mobile/ios/App/App/PrivacyInfo.xcprivacy');
@@ -174,6 +182,11 @@ const report = {
 	title: 'Trail Assistant release proof',
 	generatedAt: new Date().toISOString(),
 	readyForSubmission: summary.blocker === 0 && summary.manual === 0 && summary.warn === 0,
+	evidence: {
+		path: relativePath(evidence.path),
+		loaded: evidence.loaded,
+		warnings: evidence.warnings
+	},
 	summary,
 	items
 };
@@ -189,6 +202,10 @@ if (strict && !report.readyForSubmission) {
 }
 
 function item(lane, id, status, detail) {
+	const override = evidenceOverride(id);
+	if ((status === 'manual' || status === 'blocker') && override) {
+		return { lane, id, status: override.status, detail: override.detail };
+	}
 	return { lane, id, status, detail };
 }
 
@@ -210,6 +227,10 @@ function summarize(proofItems) {
 function printReport(proof) {
 	console.log(proof.title);
 	console.log(`Generated: ${proof.generatedAt}`);
+	console.log(`Evidence: ${proof.evidence.loaded ? proof.evidence.path : `${proof.evidence.path} (not found)`}`);
+	for (const warning of proof.evidence.warnings) {
+		console.log(`Evidence warning: ${warning}`);
+	}
 	console.log('');
 	if (proof.readyForSubmission) {
 		console.log('Status: READY FOR SUBMISSION PROOF PACKAGE');
@@ -262,4 +283,99 @@ function hasAndroidKeystoreEnv() {
 
 function unique(values) {
 	return [...new Set(values)];
+}
+
+function hasFlag(argv, name) {
+	return argv.includes(name);
+}
+
+function hasEvidenceFlag(argv) {
+	return argv.includes('--evidence') || argv.some((arg) => arg.startsWith('--evidence='));
+}
+
+function readFlag(argv, name) {
+	const eq = argv.find((arg) => arg.startsWith(`${name}=`));
+	if (eq) return eq.slice(name.length + 1);
+	const index = argv.indexOf(name);
+	if (index !== -1 && argv[index + 1] && !argv[index + 1].startsWith('--')) return argv[index + 1];
+	return null;
+}
+
+function unknownFlags(argv, validNames) {
+	const unknown = [];
+	for (let index = 0; index < argv.length; index += 1) {
+		const arg = argv[index];
+		if (!arg.startsWith('--') && arg !== '-h') {
+			unknown.push(arg);
+			continue;
+		}
+		const name = arg.includes('=') ? arg.slice(0, arg.indexOf('=')) : arg;
+		if (!validNames.has(name)) {
+			unknown.push(arg);
+			continue;
+		}
+		if (name === '--evidence' && !arg.includes('=')) {
+			index += 1;
+		}
+	}
+	return unknown;
+}
+
+function loadEvidence(path) {
+	if (!existsSync(path)) {
+		return { path, loaded: false, items: {}, warnings: [] };
+	}
+	try {
+		const parsed = JSON.parse(readFileSync(path, 'utf8'));
+		const items = parsed && typeof parsed === 'object' && parsed.items && typeof parsed.items === 'object' ? parsed.items : {};
+		const warnings = [];
+		if (!parsed || typeof parsed !== 'object') warnings.push('evidence file is not a JSON object');
+		if (!parsed.schemaVersion) warnings.push('schemaVersion is missing');
+		if (!parsed.items || typeof parsed.items !== 'object') warnings.push('items object is missing');
+		return { path, loaded: true, items, warnings };
+	} catch (error) {
+		return { path, loaded: true, items: {}, warnings: [`could not parse evidence JSON: ${error.message}`] };
+	}
+}
+
+function evidenceOverride(id) {
+	const record = evidence.items[id];
+	if (!record) return null;
+	if (record.status === 'pending') return null;
+	if (record.status === 'blocked') {
+		return { status: 'blocker', detail: record.summary || `Evidence ledger marks ${id} blocked.` };
+	}
+	if (record.status !== 'verified') {
+		return { status: 'blocker', detail: `Evidence ledger item ${id} has unsupported status "${record.status}". Use pending, verified, or blocked.` };
+	}
+
+	const problems = [];
+	if (!record.verifiedAt) problems.push('verifiedAt is missing');
+	if (!record.verifiedBy) problems.push('verifiedBy is missing');
+	const references = [
+		...(Array.isArray(record.files) ? record.files : []),
+		...(Array.isArray(record.urls) ? record.urls : []),
+		...(Array.isArray(record.commands) ? record.commands : [])
+	];
+	if (references.length === 0) problems.push('at least one file, URL, or command reference is required');
+
+	const missingFiles = (Array.isArray(record.files) ? record.files : []).filter((file) => !existsEvidenceFile(file));
+	for (const file of missingFiles) problems.push(`referenced file not found: ${file}`);
+
+	if (problems.length) {
+		return { status: 'blocker', detail: `Evidence ledger item ${id} is invalid: ${problems.join('; ')}.` };
+	}
+
+	const summary = record.summary || 'manual proof recorded';
+	return { status: 'pass', detail: `Evidence verified ${record.verifiedAt} by ${record.verifiedBy}: ${summary}` };
+}
+
+function existsEvidenceFile(file) {
+	const absolute = isAbsolute(file) ? file : join(repoRoot, file);
+	return existsSync(absolute);
+}
+
+function relativePath(path) {
+	const repoRelative = relative(repoRoot, path);
+	return repoRelative.startsWith('..') ? path : repoRelative;
 }

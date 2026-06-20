@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-06-20",
+  "items": {
+    "privacy-contact-and-deletion": {
+      "status": "pending",
+      "summary": "Send a test email to privacy@hoggcountry.com, confirm it is received by the monitored inbox, and attach dated proof."
+    },
+    "privacy-and-support-routes": {
+      "status": "pending",
+      "summary": "Verify https://hoggcountry.com/privacy and https://hoggcountry.com/support live after deploy and attach the command output or screenshots."
+    },
+    "ios-development-team": {
+      "status": "pending",
+      "summary": "Set the Apple Developer Team for the iOS App target in Xcode and attach an Xcode/build-settings proof artifact."
+    },
+    "app-store-connect-record": {
+      "status": "pending",
+      "summary": "Create or verify the App Store Connect app record, metadata, screenshots, App Privacy answers, support URL, and review notes."
+    },
+    "apple-archive-upload": {
+      "status": "pending",
+      "summary": "Archive and upload the signed iOS build, then attach the Xcode organizer or App Store Connect upload proof."
+    },
+    "android-upload-keystore": {
+      "status": "pending",
+      "summary": "Create the Play upload keystore, configure the HC_ANDROID_KEYSTORE_* environment contract, and attach non-secret build proof."
+    },
+    "play-console-record": {
+      "status": "pending",
+      "summary": "Create or verify the Play Console app record, Data Safety form, IARC rating, foreground-service declaration, assets, and internal testing track."
+    },
+    "ios-physical-scout-answer": {
+      "status": "pending",
+      "summary": "On a physical iPhone or TestFlight build, download the model and capture one real on-device Scout answer."
+    },
+    "android-physical-scout-answer": {
+      "status": "pending",
+      "summary": "On a physical Android or internal-test build, download the model and capture one real on-device Scout answer."
+    },
+    "physical-gps-permission": {
+      "status": "pending",
+      "summary": "On physical hardware, verify GPS allowed, denied, and off-trail states without a fake fix."
+    },
+    "offline-kill-relaunch": {
+      "status": "pending",
+      "summary": "Install, enable airplane mode, kill and relaunch, then verify Preferences-backed state, offline Scout status, Bible, Today, Map, and Gear."
+    },
+    "battery-thermal-latency": {
+      "status": "pending",
+      "summary": "Run a real-phone pass for model download and inference latency, battery draw, thermal behavior, and low-signal failure states."
+    },
+    "accessibility-field-pass": {
+      "status": "pending",
+      "summary": "Run VoiceOver, Dynamic Type, dark-mode, glare, and cold-hands checks before real-hiker reliance claims."
+    }
+  }
+}
