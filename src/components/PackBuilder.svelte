@@ -1,4 +1,5 @@
 <script>
+  import { resolve } from '$app/paths';
   import { slide } from 'svelte/transition';
   import gearData from '../data/gear.json';
   import gearRecommendations from '../data/gearRecommendations.json';
@@ -200,6 +201,17 @@
   }
 
   let recommendedItems = $derived(buildRecommendation(recBudget, recMode, recSeason, recShelterPref));
+
+  function safeExternalHref(value) {
+    const href = String(value || '').trim();
+    if (!href) return '';
+    try {
+      const url = new URL(href);
+      return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : '';
+    } catch {
+      return '';
+    }
+  }
 
   function mappedPackCategory(recCategory) {
     return REC_TO_PACK_CAT[recCategory] || null;
@@ -607,7 +619,7 @@
           </div>
 
           <div class="recs-groups">
-            {#each Object.entries(recommendedByPackCategory) as [packCatId, items]}
+            {#each Object.entries(recommendedByPackCategory) as [packCatId, items] (packCatId)}
               {@const catMeta = categories?.[packCatId]}
               <div class="recs-group">
                 <div class="recs-group-title">
@@ -619,7 +631,8 @@
                 </div>
 
                 <div class="recs-list">
-                  {#each items as rec}
+                  {#each items as rec (rec.id || rec.name)}
+                    {@const recHref = safeExternalHref(rec.url)}
                     <div class="rec-item">
                       <div class="rec-main">
                         <div class="rec-name">{rec.name}</div>
@@ -629,8 +642,8 @@
                         </div>
                       </div>
                       <div class="rec-actions">
-                        {#if rec.url}
-                          <a class="btn link" href={rec.url} target="_blank" rel="noreferrer">Link</a>
+                        {#if recHref}
+                          <a class="btn link" href={recHref} target="_blank" rel="noreferrer">Link</a>
                         {/if}
                         <button class="btn secondary" type="button" onclick={() => addRecItem(rec)}>
                           Add this item
@@ -656,7 +669,7 @@
         <span class="big3-badge">{big3Percent.toFixed(0)}% of base</span>
       </h3>
       <div class="big3-grid">
-        {#each big3Breakdown as cat}
+        {#each big3Breakdown as cat (cat.id)}
           <div class="big3-card">
             <span class="big3-icon">{cat.icon}</span>
             <span class="big3-name">{cat.name}</span>
@@ -672,7 +685,7 @@
 
       {#if weightTips.length > 0}
         <div class="tips-grid">
-          {#each weightTips as tip}
+          {#each weightTips as tip (tip.text)}
             <div class="tip-card">
               <span class="tip-icon">{tip.icon}</span>
               <span class="tip-text">{tip.text}</span>
@@ -689,7 +702,7 @@
         GEAR BREAKDOWN
       </h3>
       <div class="category-list">
-        {#each categoryWeights as cat}
+        {#each categoryWeights as cat (cat.id)}
           <div class="category-card" class:expanded={expandedCategory === cat.id}>
             <button class="cat-header" onclick={() => toggleCategory(cat.id)}>
               <span class="cat-icon">{cat.icon}</span>
@@ -706,7 +719,8 @@
             </button>
             {#if expandedCategory === cat.id}
               <div class="cat-items" transition:slide>
-                {#each cat.items as item}
+                {#each cat.items as item (item.id)}
+                  {@const itemHref = safeExternalHref(item.url)}
                   <div class="gear-item">
                     <div class="item-main">
                       <div class="item-top">
@@ -720,7 +734,7 @@
                           }}
                           aria-label="Gear category"
                         >
-                          {#each Object.entries(categories) as [cid, info]}
+                          {#each Object.entries(categories) as [cid, info] (cid)}
                             <option value={cid}>{info.icon} {info.name}</option>
                           {/each}
                         </select>
@@ -759,8 +773,8 @@
                           aria-label="Item link"
                         />
 
-                        {#if item.url}
-                          <a class="item-open" href={item.url} target="_blank" rel="noreferrer">Open</a>
+                        {#if itemHref}
+                          <a class="item-open" href={itemHref} target="_blank" rel="noreferrer">Open</a>
                         {/if}
                       </div>
                     </div>
@@ -820,12 +834,12 @@
   <!-- Guide Links -->
   <div class="guide-links">
 
-    <a href="/guide/06-gear-system" class="guide-link chapter-link">
+    <a href={resolve('/guide/06-gear-system')} class="guide-link chapter-link">
       <span class="link-icon">📚</span>
       <span class="link-text">Full Gear System Guide</span>
       <span class="link-arrow">→</span>
     </a>
-    <a href="/guide#06-gear-system" class="guide-link field-guide-link">
+    <a href={resolve('/guide#06-gear-system')} class="guide-link field-guide-link">
       <span class="link-icon">📖</span>
       <span class="link-text">Field Guide</span>
       <span class="link-arrow">→</span>
@@ -1735,185 +1749,6 @@
     border-bottom: none;
   }
 
-  /* Consumables Section */
-  .consumables-section {
-    padding: 1.5rem;
-    background: #fff;
-    border-bottom: 2px solid var(--border);
-  }
-
-  .consumables-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-  }
-
-  .consumable-card label {
-    display: block;
-    font-family: Oswald, sans-serif;
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: var(--muted);
-    letter-spacing: 0.08em;
-    margin-bottom: 0.5rem;
-  }
-
-  .stepper {
-    display: flex;
-    align-items: center;
-    background: var(--bg);
-    border: 2px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-  }
-
-  .stepper button {
-    width: 44px;
-    height: 44px;
-    border: none;
-    background: transparent;
-    font-size: 1.25rem;
-    color: var(--pine);
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .stepper button:hover {
-    background: var(--alpine);
-    color: #fff;
-  }
-
-  .stepper-val {
-    flex: 1;
-    text-align: center;
-    font-family: Oswald, sans-serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--ink);
-  }
-
-  .consumable-hint {
-    display: block;
-    margin-top: 0.35rem;
-    font-size: 0.7rem;
-    color: var(--muted);
-  }
-
-  /* Stress Section */
-  .stress-section {
-    padding: 1.5rem;
-    background: var(--bg);
-    border-bottom: 2px solid var(--border);
-  }
-
-  .stress-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
-
-  .stress-header h4 {
-    margin: 0;
-    font-family: Oswald, sans-serif;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: var(--ink);
-    letter-spacing: 0.05em;
-  }
-
-  .stress-badge {
-    font-family: Oswald, sans-serif;
-    font-size: 0.7rem;
-    font-weight: 700;
-    padding: 0.25rem 0.6rem;
-    border-radius: 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .stress-badge.low {
-    background: #dcfce7;
-    color: #166534;
-  }
-
-  .stress-badge.moderate {
-    background: #fef3c7;
-    color: #92400e;
-  }
-
-  .stress-badge.high {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-
-  .stress-gauge {
-    margin-bottom: 0.75rem;
-  }
-
-  .gauge-track {
-    height: 12px;
-    background: linear-gradient(90deg, #22c55e, #eab308, #ef4444);
-    border-radius: 6px;
-    border: 2px solid var(--border);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .gauge-fill {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    background: rgba(0,0,0,0.2);
-    transition: width 0.4s ease;
-  }
-
-  .gauge-labels {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.65rem;
-    color: var(--muted);
-    margin-top: 0.35rem;
-  }
-
-  .stress-note {
-    margin: 0;
-    font-size: 0.8rem;
-    color: var(--muted);
-  }
-
-  /* Tips Section */
-  .tips-section {
-    padding: 1.5rem;
-    background: #fff;
-    border-bottom: 2px solid var(--border);
-  }
-
-  .tips-section h4 {
-    margin: 0 0 1rem;
-    font-family: Oswald, sans-serif;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: var(--pine);
-    letter-spacing: 0.05em;
-  }
-
-  .tips-list {
-    margin: 0;
-    padding-left: 1.25rem;
-    font-size: 0.85rem;
-    color: var(--ink);
-  }
-
-  .tips-list li {
-    margin-bottom: 0.5rem;
-  }
-
-  .tips-list strong {
-    color: var(--pine);
-  }
-
   /* Guide Link */
   /* Guide Links */
   .guide-links {
@@ -1981,10 +1816,6 @@
 
     .big3-grid {
       grid-template-columns: repeat(2, 1fr);
-    }
-
-    .consumables-grid {
-      grid-template-columns: 1fr;
     }
   }
 </style>
