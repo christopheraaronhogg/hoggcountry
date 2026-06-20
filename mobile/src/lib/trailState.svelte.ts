@@ -30,9 +30,13 @@ import {
 	updateTrailDocument
 } from './local-documents';
 import {
+	nextAutoGpsAdoption,
+	resolveManualGpsMile,
+	shouldAutoGpsWatch as shouldStartAutoGpsWatch
+} from './gps-mileage';
+import {
 	buildFieldPackUrl,
 	calibrateHikeProfile,
-	clampMile,
 	deriveDayNumber,
 	DEFAULT_HIKE_PROFILE,
 	isDadPilotContextPack,
@@ -78,9 +82,6 @@ import {
 } from './safety';
 
 const STORAGE_KEY = 'hoggcountry:trail-assistant:mobile-prototype:v1';
-const AUTO_GPS_MIN_INTERVAL_MS = 10 * 60 * 1000;
-const AUTO_GPS_MIN_DELTA_MILES = 0.2;
-const AUTO_GPS_FORCE_DELTA_MILES = 1;
 const FIELD_PACK_ENDPOINT =
 	(import.meta.env.VITE_SCOUT_FIELD_PACK_URL as string | undefined) ??
 	'https://hoggcountry.com/scout/field-pack';
@@ -350,13 +351,13 @@ class TrailAssistantStore {
 	}
 
 	#shouldAutoGpsWatch(): boolean {
-		return Boolean(
-			browser &&
-				navigator.geolocation &&
-				this.#trailGeo.length > 0 &&
-				this.#state.privacySettings.sharePreciseLocation &&
-				this.#state.trailSettings.autoLogMileage
-		);
+		return shouldStartAutoGpsWatch({
+			browserAvailable: browser,
+			hasGeolocation: Boolean(browser && navigator.geolocation),
+			trailPointCount: this.#trailGeo.length,
+			privacySettings: this.#state.privacySettings,
+			trailSettings: this.#state.trailSettings
+		});
 	}
 
 	#reconcileAutoGpsWatch() {
@@ -387,15 +388,14 @@ class TrailAssistantStore {
 
 	async #adoptAutoGpsPosition(position: GeolocationPosition) {
 		if (!this.#shouldAutoGpsWatch()) return;
-		const mile = snapToMile(this.#trailGeo, position.coords.latitude, position.coords.longitude);
-		if (mile === null) return;
-		const clamped = clampMile(mile);
-		const delta = Math.abs(clamped - this.#state.currentMile);
-		if (delta < AUTO_GPS_MIN_DELTA_MILES) return;
-		const now = Date.now();
-		if (now - this.#lastAutoGpsAt < AUTO_GPS_MIN_INTERVAL_MS && delta < AUTO_GPS_FORCE_DELTA_MILES) return;
-		this.#lastAutoGpsAt = now;
-		await this.updateCurrentMile(clamped, 'gps');
+		const adoption = nextAutoGpsAdoption({
+			snappedMile: snapToMile(this.#trailGeo, position.coords.latitude, position.coords.longitude),
+			currentMile: this.#state.currentMile,
+			lastAutoGpsAt: this.#lastAutoGpsAt
+		});
+		if (!adoption) return;
+		this.#lastAutoGpsAt = adoption.recordedAt;
+		await this.updateCurrentMile(adoption.mile, 'gps');
 	}
 
 	#snapshot(): PersistedState {
@@ -1094,24 +1094,20 @@ class TrailAssistantStore {
 	 * reason the UI can show, rather than fabricating a mile.
 	 */
 	async useGpsForMile(): Promise<{ ok: boolean; mile?: number; reason?: string }> {
-		if (!this.#state.privacySettings.sharePreciseLocation) {
-			return { ok: false, reason: 'Turn on Precise location first, then I can snap your GPS fix to a trail mile.' };
-		}
-		const position = await this.#getCurrentPosition();
-		if (!position) {
-			return { ok: false, reason: "Couldn't get a GPS fix. Try again with a clearer view of the sky." };
-		}
-		const mile = snapToMile(this.#trailGeo, position.coords.latitude, position.coords.longitude);
-		if (mile === null) {
-			return {
-				ok: false,
-				reason: this.#trailGeo.length
-					? "Your GPS fix is more than 2 miles from the AT route, so I won't guess a trail mile."
-					: 'The trail map is still loading — try again in a moment.'
-			};
-		}
-		await this.updateCurrentMile(mile, 'gps');
-		return { ok: true, mile };
+		const sharePreciseLocation = this.#state.privacySettings.sharePreciseLocation;
+		const position = sharePreciseLocation ? await this.#getCurrentPosition() : null;
+		const snappedMile = position
+			? snapToMile(this.#trailGeo, position.coords.latitude, position.coords.longitude)
+			: null;
+		const result = resolveManualGpsMile({
+			sharePreciseLocation,
+			hasPosition: position !== null,
+			snappedMile,
+			trailGeometryLoaded: this.#trailGeo.length > 0
+		});
+		if (!result.ok) return result;
+		await this.updateCurrentMile(result.mile, 'gps');
+		return result;
 	}
 
 	/** Refresh the on-device model file status (cheap; no network). */
