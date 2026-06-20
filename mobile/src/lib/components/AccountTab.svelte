@@ -13,6 +13,7 @@
 
 	const model = $derived(trailAssistant.modelStatus);
 	const dl = $derived(trailAssistant.modelDownload);
+	const runtimeUnavailable = $derived(model?.runtimeConfigured === false);
 	const pct = $derived(
 		dl && dl.totalBytes > 0
 			? Math.min(100, Math.round((dl.bytesDownloaded / dl.totalBytes) * 100))
@@ -92,6 +93,11 @@
 						Cancel download
 					</button>
 				</div>
+			{:else if runtimeUnavailable}
+				<p class="model-note">
+					This iOS build can manage the model file, but the LiteRT-LM runtime is not linked yet.
+					Install a runtime-enabled build before testing on-device Scout answers.
+				</p>
 			{:else if model?.state === 'ready'}
 				<p class="model-ready">✓ Installed and verified — Scout works fully offline.</p>
 			{:else if trailAssistant.meteredDownloadPrompt}

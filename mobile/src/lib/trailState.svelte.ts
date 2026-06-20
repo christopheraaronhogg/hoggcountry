@@ -206,7 +206,14 @@ type PersistedState = TrailState;
 
 /** A write-action Scout proposes from chat, rendered as a confirm card. */
 type ProposedAction = { id: string; title: string; detail: string; confirmLabel: string };
-type ModelDownloadAutoStart = 'none' | 'started' | 'downloading' | 'metered' | 'offline' | 'unavailable';
+type ModelDownloadAutoStart =
+	| 'none'
+	| 'started'
+	| 'downloading'
+	| 'metered'
+	| 'offline'
+	| 'runtime-unavailable'
+	| 'unavailable';
 
 function formatModelSize(bytes: number | undefined): string {
 	if (!bytes || bytes < 0) return 'about 2.6 GB';
@@ -419,6 +426,7 @@ class TrailAssistantStore {
 
 		const status = this.#modelStatus ?? (await this.refreshModelStatus());
 		if (!status || status.state === 'ready') return 'none';
+		if (status.runtimeConfigured === false) return 'runtime-unavailable';
 		if (
 			!status.downloadConfigured ||
 			(status.state !== 'needs_download' && status.state !== 'present_unverified')
@@ -451,6 +459,9 @@ class TrailAssistantStore {
 				answer = `I'm starting the on-device model download now (${modelSize}). Once it verifies, Scout can answer fully offline. You can watch progress in Settings > On-device AI.`;
 			} else if (autoStart === 'downloading' || this.#modelDownload) {
 				answer = `Scout's on-device model is downloading now. Once it verifies, ask again and I'll answer from the local model.`;
+			} else if (autoStart === 'runtime-unavailable' || this.#modelStatus?.runtimeConfigured === false) {
+				answer =
+					"This iOS build can see Scout's model store, but the LiteRT-LM runtime is not linked yet. Install a build with the iOS runtime before testing on-device answers.";
 			} else if (autoStart === 'metered' || this.#meteredDownloadPrompt) {
 				answer = `Scout's on-device model is ${modelSize}, and this connection looks metered. I paused before using mobile data. Open Settings > On-device AI if you want to approve the download anyway.`;
 			} else if (autoStart === 'offline') {

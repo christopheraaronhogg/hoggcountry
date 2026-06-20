@@ -196,7 +196,7 @@
 
 		<!-- hiker position -->
 		<div class="you" style="left:{youPos.leftPct}%; top:{youPos.topPct}%;">
-			<div class="ring"><div class="core"></div></div>
+			<div class="you-mark"><Icon name="now" size={31} stroke={2} /></div>
 			<span class="youlbl">Dad · Mi {from.toFixed(1)}</span>
 		</div>
 
@@ -338,21 +338,15 @@
 		position: absolute;
 		transform: translate(-50%, -50%);
 	}
-	.you .ring {
+	.you .you-mark {
 		width: 34px;
 		height: 34px;
 		border-radius: 50%;
-		background: rgba(47, 75, 53, 0.18);
+		background: rgba(244, 239, 228, 0.95);
+		color: var(--forest);
 		display: grid;
 		place-items: center;
-	}
-	.you .core {
-		width: 18px;
-		height: 18px;
-		border-radius: 50%;
-		background: var(--forest);
-		border: 3px solid #f4efe4;
-		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
 	}
 	.you .youlbl {
 		position: absolute;

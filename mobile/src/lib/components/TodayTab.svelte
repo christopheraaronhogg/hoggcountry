@@ -13,6 +13,13 @@
 	const dayNumber = $derived(trailAssistant.dayNumber);
 	const pct = $derived(Math.min(100, Math.round((from / TOTAL_MILES) * 100)));
 	const toGo = $derived(Math.max(0, TOTAL_MILES - from));
+	const scoutAiLabel = $derived(
+		trailAssistant.modelStatus?.runtimeConfigured === false
+			? 'Runtime missing'
+			: trailAssistant.modelStatus?.state === 'ready'
+				? 'On-device AI'
+				: 'AI not installed'
+	);
 
 	// Last cached forecast that travels with the field pack (CachedWeather | null).
 	// There is no live/offline weather source yet, so this is shown as cached, with
@@ -104,7 +111,7 @@
 	<section class="hud card">
 		<div class="hud-top">
 			<span class="day">Day {dayNumber}</span>
-			<span class="off">{trailAssistant.modelStatus?.state === 'ready' ? 'On-device AI' : 'AI not installed'}</span>
+			<span class="off">{scoutAiLabel}</span>
 		</div>
 		<div class="mile tabular">{from.toFixed(1)}<span class="of"> / {TOTAL_MILES.toLocaleString()} mi</span></div>
 		<div class="bar"><div class="fill" style="width:{pct}%"></div></div>

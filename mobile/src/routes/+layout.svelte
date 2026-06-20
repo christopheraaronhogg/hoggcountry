@@ -18,6 +18,7 @@
 
 			if (Capacitor.isNativePlatform()) {
 				await StatusBar.setOverlaysWebView({ overlay: false });
+				void trailAssistant.reconcileDownload();
 				// When the app returns to the foreground, re-observe any model
 				// download that kept running in the background service so the
 				// progress UI catches up (or shows the now-ready model).

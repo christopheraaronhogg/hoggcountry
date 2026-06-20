@@ -3,6 +3,8 @@ import type { GemmaModelDescriptor, OnDeviceGemmaBridge } from './providers/on-d
 type ScoutGemmaAvailability = {
 	available: boolean;
 	modelId?: string;
+	modelState?: ScoutGemmaModelStatus['state'];
+	runtimeConfigured?: boolean;
 	reason?: string;
 };
 
@@ -24,6 +26,8 @@ export type ScoutGemmaModelStatus = {
 	/** True when a download URL endpoint exists (hasDownloadUrl). NOT "url OR checksum". */
 	downloadConfigured: boolean;
 	canDownload: boolean;
+	/** False when the native app can manage model files but the runtime is not linked. */
+	runtimeConfigured?: boolean;
 	// Optional fields — present only when the relevant feature is configured.
 	/** Only emitted when checksumConfigured is true. */
 	expectedChecksum?: string;

@@ -72,8 +72,17 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
         let available = engine.isAvailable
         var result: [String: Any] = ["available": available]
         if !available {
-            result["modelId"] = "gemma-4-not-installed"
-            result["reason"] = "Gemma 4 LiteRT-LM runtime is not installed in this iOS build."
+            let status = store.status()
+            result["modelId"] = status.modelId
+            result["modelState"] = status.state
+            result["runtimeConfigured"] = runtimeConfigured()
+            if !runtimeConfigured() {
+                result["reason"] = "Gemma 4 LiteRT-LM runtime is not linked in this iOS build."
+            } else if status.state != ScoutModelStatus.ready {
+                result["reason"] = "Gemma 4 model file is not downloaded and verified on this device."
+            } else {
+                result["reason"] = "Gemma 4 runtime could not load the verified model."
+            }
         }
         call.resolve(result)
     }
@@ -114,12 +123,12 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func getModelStatus(_ call: CAPPluginCall) {
-        call.resolve(store.status().toDict())
+        call.resolve(modelStatusPayload(store.status()))
     }
 
     @objc func prepareModelDownload(_ call: CAPPluginCall) {
         store.ensureModelDir()
-        call.resolve(store.status().toDict())
+        call.resolve(modelStatusPayload(store.status()))
     }
 
     @objc func startModelDownload(_ call: CAPPluginCall) {
@@ -128,7 +137,7 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
         // Resolve IMMEDIATELY with { started: true } — the JS bridge then waits on
         // the terminal listener events below (exactly like Android), instead of on
         // this call. (Resolving here and *also* on completion would hang JS.)
-        var startResult = store.status().toDict()
+        var startResult = modelStatusPayload(store.status())
         startResult["started"] = true
         call.resolve(startResult)
 
@@ -146,7 +155,7 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
                 // isAvailable()/generate() picks it up, then emit the terminal event.
                 self.engine = ScoutGemmaEngineFactory.create(store: self.store)
                 self.clearDownload()
-                self.notifyListeners("scoutModelDownloadComplete", data: status.toDict())
+                self.notifyListeners("scoutModelDownloadComplete", data: self.modelStatusPayload(status))
             } catch {
                 self.clearDownload()
                 let nsError = error as NSError
@@ -223,6 +232,23 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
             _downloader = nil
             _lastProgress = nil
         }
+    }
+
+    private func runtimeConfigured() -> Bool {
+        #if canImport(LiteRTLM)
+        return true
+        #else
+        return false
+        #endif
+    }
+
+    private func modelStatusPayload(_ status: ScoutModelStatus) -> [String: Any] {
+        var payload = status.toDict()
+        payload["runtimeConfigured"] = runtimeConfigured()
+        if !runtimeConfigured() {
+            payload["reason"] = "Gemma 4 LiteRT-LM runtime is not linked in this iOS build."
+        }
+        return payload
     }
 
     private func networkStatusPayload(for path: NWPath) -> [String: Any] {
