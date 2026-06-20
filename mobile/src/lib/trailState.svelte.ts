@@ -30,6 +30,10 @@ import {
 	updateTrailDocument
 } from './local-documents';
 import {
+	createDefaultTrailState,
+	resetToUncalibratedStarterState
+} from './trail-state-defaults';
+import {
 	nextAutoGpsAdoption,
 	resolveManualGpsMile,
 	shouldAutoGpsWatch as shouldStartAutoGpsWatch
@@ -38,7 +42,6 @@ import {
 	buildFieldPackUrl,
 	calibrateHikeProfile,
 	deriveDayNumber,
-	DEFAULT_HIKE_PROFILE,
 	isDadPilotContextPack,
 	isSelfTracked,
 	resolvePosition,
@@ -147,68 +150,13 @@ function browserStorageAdapter(): PersistenceAdapter {
 	};
 }
 
-const defaultState: TrailState = {
-	activeTab: 'Today',
-	hikeProfile: { ...DEFAULT_HIKE_PROFILE },
-	coachMessages: [
-		makeMessage(
-			'assistant',
-			"I'm Scout — your on-device trail assistant. Ask me about water, shelters, town, or safety and I'll answer from your saved field pack. Mapped water stays low-confidence until you confirm it from a current source or in the field."
-		)
-	],
-	lastCheckIn: {
-		id: crypto.randomUUID(),
-		timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-		location: 'Mile 0.0',
-		mile: 0,
-		status: 'safe',
-		note: 'Starter position only. Set your AT mile before relying on trail-ahead context.'
-	},
-	checkInHistory: [],
-	documents: [],
-	// Trail Pulse starts empty — reports are crowd-sourced from real hikers, so the
-	// panel shows its honest "no one has reported nearby" empty state until one
-	// arrives. (No seeded/fabricated reports.)
-	trailPulseReports: [],
-	seenTrailPulseReportIds: [],
-	privacySettings: {
-		stealthMode: true,
-		sharePreciseLocation: false,
-		allowCoachInsights: false,
-		visibleToSupportCircle: true
-	},
-	trailSettings: {
-		autoLogMileage: true,
-		waterAlerts: true,
-		batterySaver: false,
-		lowSignalMode: true,
-		offlineRegion: 'Starter pack - set your AT mile'
-	},
-	trailLogSettings: {
-		autoPublish: false,
-		footCareLogged: true,
-		caloriesLogged: true,
-		waterCarryChecked: true,
-		stretchingDone: false
-	},
-	onlineStatus: true,
-	syncState: 'synced',
-	currentMile: 0,
-	dayNumber: 1,
-	nextCheckInDueAt: isoHoursFromNow(4),
-	// Support circle starts empty — these are the hiker's own emergency contacts,
-	// added on-device. No seeded/fabricated names.
-	supportCircle: [],
-	lastSyncAt: new Date(Date.now() - 12 * 60 * 1000).toISOString()
-};
-
 type PersistedState = TrailState;
 
 /** A write-action Scout proposes from chat, rendered as a confirm card. */
 type ProposedAction = { id: string; title: string; detail: string; confirmLabel: string };
 
 class TrailAssistantStore {
-	#state = $state<TrailState>(defaultState);
+	#state = $state<TrailState>(createDefaultTrailState());
 	#syncTimer: ReturnType<typeof setTimeout> | null = null;
 	#stateStorage: PersistenceAdapter | null = browser ? browserStorageAdapter() : null;
 	#stateHydrated = $state(false);
@@ -322,14 +270,14 @@ class TrailAssistantStore {
 
 		try {
 			const parsed = JSON.parse(raw) as PersistedState;
-			this.#state = { ...defaultState, ...parsed };
+			this.#state = { ...createDefaultTrailState(), ...parsed };
 			// Persisted activeTab may reference a tab that no longer exists after the
 			// IA change (Plan/Town/Safety/You) — map it onto the new pillars.
 			this.#state.activeTab = migrateTab(this.#state.activeTab);
 			// State persisted before "My hike" calibration existed has no profile —
 			// fall back to the uncalibrated default so first-run setup still appears.
 			if (!this.#state.hikeProfile?.mode) {
-				this.#state.hikeProfile = { ...DEFAULT_HIKE_PROFILE };
+				this.#state = resetToUncalibratedStarterState(this.#state);
 			}
 			if (!Array.isArray(this.#state.documents)) {
 				this.#state.documents = [];
@@ -424,8 +372,7 @@ class TrailAssistantStore {
 	async #loadFieldPack() {
 		let pack = await this.#fieldPackStore.load();
 		if (!this.#state.hikeProfile.calibrated) {
-			this.#state.hikeProfile = { ...DEFAULT_HIKE_PROFILE };
-			this.#resetUncalibratedStarterState();
+			this.#state = resetToUncalibratedStarterState(this.#state);
 			pack = cloneDefaultContextPack();
 			await this.#fieldPackStore.replace(pack, 'bundled');
 		}
@@ -458,24 +405,6 @@ class TrailAssistantStore {
 		await this.#fieldPackStore.updateDocuments(toContextDocuments(this.#state.documents));
 		this.#fieldPack = this.#fieldPackStore.get();
 		this.#fieldPackStatus = this.#fieldPackStore.getStatus();
-	}
-
-	#resetUncalibratedStarterState() {
-		this.#state.currentMile = 0;
-		this.#state.dayNumber = 1;
-		this.#state.trailSettings = {
-			...this.#state.trailSettings,
-			offlineRegion: 'Starter pack - set your AT mile'
-		};
-		this.#state.lastCheckIn = {
-			id: crypto.randomUUID(),
-			timestamp: new Date().toISOString(),
-			location: 'Mile 0.0',
-			mile: 0,
-			status: 'safe',
-			note: 'Starter position only. Set your AT mile before relying on trail-ahead context.'
-		};
-		this.#state.checkInHistory = [];
 	}
 
 	#finishSync(nextState: SyncState) {
