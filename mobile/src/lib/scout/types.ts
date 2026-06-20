@@ -103,6 +103,11 @@ export interface CachedWeather {
 	windMph: number;
 	riskNote?: string;
 	generatedAt: string;
+	source?: 'nws' | 'cached-pilot';
+	sourceLabel?: string;
+	sourceUrl?: string;
+	alertsUrl?: string;
+	forecastUpdatedAt?: string | null;
 }
 
 export interface LoadoutItem {

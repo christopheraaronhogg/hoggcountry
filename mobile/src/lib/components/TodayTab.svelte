@@ -21,12 +21,19 @@
 				: 'AI not installed'
 	);
 
-	// Last cached forecast that travels with the field pack (CachedWeather | null).
-	// There is no live/offline weather source yet, so this is shown as cached, with
-	// its real timestamp — never as a live reading.
+	// Forecast that travels with the field pack (CachedWeather | null). When the
+	// server can reach NWS it is an official point forecast; otherwise the UI stays
+	// honest about cache/missing state.
 	const wx = $derived(trailAssistant.fieldPack.weather);
 	const wxUpdated = $derived(
 		wx ? new Date(wx.generatedAt).toLocaleDateString([], { month: 'short', day: 'numeric' }) : ''
+	);
+	const wxIsNws = $derived(wx?.source === 'nws');
+	const wxSourceLabel = $derived(wx ? (wxIsNws ? `NWS ${wxUpdated}` : `Cached ${wxUpdated}`) : 'No forecast');
+	const wxCaveat = $derived(
+		wxIsNws
+			? 'Official NWS point forecast · refresh before exposed terrain'
+			: 'Cached forecast — not live · verify before exposed terrain'
 	);
 
 	// Gear glance — derived from the SAME live loadout the Gear screen uses, so the
@@ -164,7 +171,7 @@
 	<section class="wx card">
 		<div class="wx-head">
 			<span class="eyebrow">Weather</span>
-			<span class="wx-src">{wx ? `Cached ${wxUpdated}` : 'No cache'}</span>
+			<span class="wx-src">{wxSourceLabel}</span>
 		</div>
 		{#if wx}
 			<div class="wx-now">
@@ -175,14 +182,16 @@
 				</div>
 			</div>
 			<p class="means">
-				<span class="meanslab">Cached forecast — not live · verify before exposed terrain</span>
+				<span class="meanslab">{wxCaveat}</span>
 				{wx.riskNote ?? 'This is cached field-pack weather. Refresh before relying on it.'}
 			</p>
-			<span class="wx-foot">Cached near mile {wx.mile.toFixed(1)} · generated {wxUpdated} · no live forecast on this device yet</span>
+			<span class="wx-foot">
+				{wx.sourceLabel ?? (wxIsNws ? 'NWS point forecast' : 'Cached field-pack weather')} · mile {wx.mile.toFixed(1)} · generated {wxUpdated}
+			</span>
 		{:else}
 			<p class="means">
-				<span class="meanslab">No cached forecast</span>
-				Download or refresh the field pack before relying on weather.
+				<span class="meanslab">No forecast in this pack</span>
+				Refresh the field pack or check an official weather source before relying on weather.
 			</p>
 		{/if}
 	</section>

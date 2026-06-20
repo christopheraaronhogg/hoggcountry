@@ -200,7 +200,9 @@ export const DEFAULT_CONTEXT_PACK: ContextPack = {
 		lowF: 28,
 		windMph: 17,
 		riskNote: 'Weather in this pack is cached pilot context; refresh before exposed terrain.',
-		generatedAt: '2026-06-16T00:00:00.000Z'
+		generatedAt: '2026-06-16T00:00:00.000Z',
+		source: 'cached-pilot',
+		sourceLabel: 'Cached pilot weather'
 	},
 	downloadedRegions: ['Dad trail-ahead 1438.0-1474.0', 'AT open-reference candidates (NY/CT)'],
 	generatedAt: DEFAULT_GENERATED_AT,

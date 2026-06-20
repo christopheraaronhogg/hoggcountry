@@ -48,6 +48,9 @@ import type { OnDeviceGemmaBridge } from './scout/providers/on-device-gemma.ts';
 
 const STORAGE_KEY = 'hoggcountry:trail-assistant:mobile-prototype:v1';
 const TRAIL_PULSE_RANGE_MILES = 0.1;
+const AUTO_GPS_MIN_INTERVAL_MS = 10 * 60 * 1000;
+const AUTO_GPS_MIN_DELTA_MILES = 0.2;
+const AUTO_GPS_FORCE_DELTA_MILES = 1;
 const TRAIL_ID = 'appalachian-trail';
 const FIELD_PACK_ENDPOINT =
 	(import.meta.env.VITE_SCOUT_FIELD_PACK_URL as string | undefined) ??
@@ -139,12 +142,21 @@ function browserStorageAdapter(): PersistenceAdapter {
 	return {
 		async get(key: string) {
 			const nativeAdapter = await nativePreferencesAdapter();
-			if (nativeAdapter) return nativeAdapter.get(key);
+			if (nativeAdapter) {
+				const value = await nativeAdapter.get(key);
+				if (value !== null) return value;
+			}
 			return localStorage.getItem(key);
 		},
 		async set(key: string, value: string) {
 			const nativeAdapter = await nativePreferencesAdapter();
-			if (nativeAdapter) return nativeAdapter.set(key, value);
+			if (nativeAdapter) {
+				try {
+					await nativeAdapter.set(key, value);
+				} catch (error) {
+					console.warn('Capacitor Preferences write failed; keeping localStorage mirror only.', error);
+				}
+			}
 			localStorage.setItem(key, value);
 		}
 	};
@@ -233,6 +245,8 @@ function formatModelSize(bytes: number | undefined): string {
 class TrailAssistantStore {
 	#state = $state<TrailState>(defaultState);
 	#syncTimer: ReturnType<typeof setTimeout> | null = null;
+	#stateStorage: PersistenceAdapter | null = browser ? browserStorageAdapter() : null;
+	#stateHydrated = $state(false);
 	#fieldPackStore = new InMemoryContextPackStore({
 		adapter: browser ? browserStorageAdapter() : undefined
 	});
@@ -267,6 +281,8 @@ class TrailAssistantStore {
 	// from static/. Powers the elevation profile and GPS→mile snapping. Empty
 	// until loaded, so UI renders an honest empty state in the meantime.
 	#trailGeo = $state.raw<TrailGeoPoint[]>([]);
+	#gpsWatchId: number | null = null;
+	#lastAutoGpsAt = 0;
 	// True while the "My hike" calibration sheet is showing. Opened on first run
 	// (when the profile isn't calibrated yet) or from Settings to re-edit.
 	#hikeSetupOpen = $state(false);
@@ -274,7 +290,6 @@ class TrailAssistantStore {
 	constructor() {
 		if (!browser) return;
 
-		this.#hydrate();
 		this.#state.onlineStatus = navigator.onLine;
 		this.#fieldPackStore.subscribe((pack) => {
 			this.#fieldPack = pack;
@@ -283,10 +298,11 @@ class TrailAssistantStore {
 		this.#fieldPackStore.subscribeStatus((status) => {
 			this.#fieldPackStatus = status;
 		});
-		void this.#loadFieldPack();
+		void this.#bootstrap();
 		void loadTrailGeometry()
 			.then((points) => {
 				this.#trailGeo = points;
+				this.#reconcileAutoGpsWatch();
 			})
 			.catch((error) => {
 				console.error('Failed to load trail geometry', error);
@@ -319,14 +335,24 @@ class TrailAssistantStore {
 
 		$effect.root(() => {
 			$effect(() => {
-				localStorage.setItem(STORAGE_KEY, JSON.stringify(this.#snapshot()));
+				const snapshot = this.#snapshot();
+				if (!this.#stateHydrated) return;
+				void this.#persistState(snapshot);
 			});
 		});
 	}
 
-	#hydrate() {
-		const raw = localStorage.getItem(STORAGE_KEY);
-		if (!raw) return;
+	async #bootstrap() {
+		await this.#hydrate();
+		await this.#loadFieldPack();
+	}
+
+	async #hydrate() {
+		const raw = await this.#stateStorage?.get(STORAGE_KEY).catch(() => null);
+		if (!raw) {
+			this.#stateHydrated = true;
+			return;
+		}
 
 		try {
 			const parsed = JSON.parse(raw) as PersistedState;
@@ -341,7 +367,67 @@ class TrailAssistantStore {
 			}
 		} catch (error) {
 			console.error('Failed to restore Trail Assistant state', error);
+		} finally {
+			this.#stateHydrated = true;
 		}
+	}
+
+	async #persistState(snapshot: PersistedState) {
+		if (!this.#stateStorage) return;
+		try {
+			await this.#stateStorage.set(STORAGE_KEY, JSON.stringify(snapshot));
+		} catch (error) {
+			console.error('Failed to persist Trail Assistant state', error);
+		}
+	}
+
+	#shouldAutoGpsWatch(): boolean {
+		return Boolean(
+			browser &&
+				navigator.geolocation &&
+				this.#trailGeo.length > 0 &&
+				this.#state.privacySettings.sharePreciseLocation &&
+				this.#state.trailSettings.autoLogMileage
+		);
+	}
+
+	#reconcileAutoGpsWatch() {
+		if (!browser || !navigator.geolocation) return;
+		if (!this.#shouldAutoGpsWatch()) {
+			this.#stopAutoGpsWatch();
+			return;
+		}
+		if (this.#gpsWatchId !== null) return;
+
+		this.#gpsWatchId = navigator.geolocation.watchPosition(
+			(position) => {
+				void this.#adoptAutoGpsPosition(position);
+			},
+			() => {
+				// Manual "Use GPS" still reports a human-facing reason. The background
+				// watcher stays quiet because losing a fix on trail is normal.
+			},
+			{ enableHighAccuracy: false, maximumAge: 15 * 60_000, timeout: 10_000 }
+		);
+	}
+
+	#stopAutoGpsWatch() {
+		if (!browser || !navigator.geolocation || this.#gpsWatchId === null) return;
+		navigator.geolocation.clearWatch(this.#gpsWatchId);
+		this.#gpsWatchId = null;
+	}
+
+	async #adoptAutoGpsPosition(position: GeolocationPosition) {
+		if (!this.#shouldAutoGpsWatch()) return;
+		const mile = snapToMile(this.#trailGeo, position.coords.latitude, position.coords.longitude);
+		if (mile === null) return;
+		const clamped = clampMile(mile);
+		const delta = Math.abs(clamped - this.#state.currentMile);
+		if (delta < AUTO_GPS_MIN_DELTA_MILES) return;
+		const now = Date.now();
+		if (now - this.#lastAutoGpsAt < AUTO_GPS_MIN_INTERVAL_MS && delta < AUTO_GPS_FORCE_DELTA_MILES) return;
+		this.#lastAutoGpsAt = now;
+		await this.updateCurrentMile(clamped, 'gps');
 	}
 
 	#snapshot(): PersistedState {
@@ -649,6 +735,10 @@ class TrailAssistantStore {
 
 	get trailSettings() {
 		return this.#state.trailSettings;
+	}
+
+	get autoGpsActive() {
+		return this.#gpsWatchId !== null;
 	}
 
 	get trailLogSettings() {
@@ -1372,10 +1462,12 @@ class TrailAssistantStore {
 
 	updatePrivacy(patch: Partial<PrivacySettings>) {
 		this.#state.privacySettings = { ...this.#state.privacySettings, ...patch };
+		this.#reconcileAutoGpsWatch();
 	}
 
 	updateTrailSetting<K extends keyof TrailSettings>(key: K, value: TrailSettings[K]) {
 		this.#state.trailSettings = { ...this.#state.trailSettings, [key]: value };
+		if (key === 'autoLogMileage') this.#reconcileAutoGpsWatch();
 	}
 
 	updateTrailLogSetting<K extends keyof TrailLogSettings>(key: K, value: TrailLogSettings[K]) {

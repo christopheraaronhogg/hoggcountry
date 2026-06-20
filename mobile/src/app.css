@@ -1,4 +1,5 @@
 :root {
+	color-scheme: light;
 	--bg: #f4efe4;
 	--bg-deep: #e7dcc8;
 	--surface: #fbf7ef;
@@ -33,6 +34,34 @@
 	--font-mono: 'SF Mono', ui-monospace, 'JetBrains Mono', Menlo, monospace;
 }
 
+@media (prefers-color-scheme: dark) {
+	:root {
+		color-scheme: dark;
+		--bg: #111610;
+		--bg-deep: #1b2117;
+		--surface: #1b2119;
+		--surface-strong: #22291f;
+		--ink: #f2eadb;
+		--muted: #b7bda9;
+		--line: #3c4536;
+		--forest: #98c48e;
+		--moss: #b3cf8f;
+		--sand: #d7b77f;
+		--clay: #e5a174;
+		--sky: #9cc8d8;
+		--danger: #f09a88;
+		--danger-soft: rgba(154, 59, 47, 0.24);
+		--success: #9ed3a4;
+		--success-soft: rgba(47, 106, 71, 0.28);
+		--warn: #e3bd62;
+		--warn-soft: rgba(227, 189, 98, 0.18);
+		--focus-ring: rgba(179, 207, 143, 0.75);
+		--shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
+		--shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.2);
+		--shadow-ridge: 0 18px 44px -20px rgba(0, 0, 0, 0.75);
+	}
+}
+
 * {
 	box-sizing: border-box;
 	-webkit-tap-highlight-color: transparent;
@@ -57,6 +86,15 @@ body {
 	font-family: var(--font-sans);
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-color-scheme: dark) {
+	html,
+	body {
+		background:
+			radial-gradient(circle at top, rgba(156, 200, 216, 0.1), transparent 35%),
+			linear-gradient(180deg, var(--bg) 0%, #171d14 100%);
+	}
 }
 
 body {
@@ -99,6 +137,13 @@ p {
 	display: grid;
 	grid-template-rows: auto minmax(0, 1fr) auto;
 	overflow: hidden;
+}
+
+@media (prefers-color-scheme: dark) {
+	.phone-frame {
+		background: linear-gradient(180deg, rgba(29, 36, 27, 0.98), rgba(20, 25, 18, 0.99));
+		box-shadow: 0 0 0 1px rgba(242, 234, 219, 0.08), var(--shadow-ridge);
+	}
 }
 
 .screen-scroll {
@@ -183,6 +228,12 @@ p {
 	color: #8c5d1f;
 }
 
+@media (prefers-color-scheme: dark) {
+	.pill-warn {
+		color: var(--warn);
+	}
+}
+
 .metric-grid {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -258,6 +309,27 @@ p {
 	color: #fff7f3;
 }
 
+@media (prefers-color-scheme: dark) {
+	.cta-button {
+		background: linear-gradient(135deg, #b3cf8f, #7fad78);
+		color: #10160f;
+	}
+
+	.secondary-button {
+		background: rgba(215, 183, 127, 0.18);
+		color: var(--sand);
+	}
+
+	.outline-button {
+		background: rgba(255, 255, 255, 0.03);
+	}
+
+	.danger-button {
+		background: linear-gradient(135deg, #c95543, #ef9a88);
+		color: #1d0d09;
+	}
+}
+
 .button-row {
 	display: grid;
 	gap: 8px;
@@ -300,6 +372,20 @@ p {
 	border-radius: 999px;
 	background: #d7d2c6;
 	flex-shrink: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+	.toggle {
+		background: #46503f;
+	}
+
+	.toggle::after {
+		background: #f2eadb;
+	}
+
+	.toggle.on {
+		background: var(--forest);
+	}
 }
 
 .toggle::after {
@@ -359,6 +445,12 @@ p {
 
 .risk-medium {
 	color: #8c5d1f;
+}
+
+@media (prefers-color-scheme: dark) {
+	.risk-medium {
+		color: var(--warn);
+	}
 }
 
 .risk-high {

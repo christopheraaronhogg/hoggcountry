@@ -484,7 +484,7 @@ function normalizeNwsAlert(feature: NonNullable<NwsAlertsResponse['features']>[n
   };
 }
 
-async function fetchNwsWeather(latitude: number, longitude: number): Promise<NwsWeatherResult> {
+export async function fetchNwsWeather(latitude: number, longitude: number): Promise<NwsWeatherResult> {
   const cacheKey = `${latitude.toFixed(3)},${longitude.toFixed(3)}`;
   const cached = cachedNws.get(cacheKey);
   if (cached && Date.now() - cached.ts < NWS_CACHE_MS) return cached.weather;

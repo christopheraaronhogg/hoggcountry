@@ -261,7 +261,11 @@
 		<div class="toggle-row">
 			<div class="toggle-copy">
 				<strong>Auto-log mileage</strong>
-				<span>Update your day summary from check-ins and route state.</span>
+				<span>
+					{trailAssistant.autoGpsActive
+						? 'Precise location is watching for trail-mile changes.'
+						: 'Updates from check-ins; turns on GPS only when Precise location is enabled.'}
+				</span>
 			</div>
 			<button
 				class:on={trailAssistant.trailSettings.autoLogMileage}

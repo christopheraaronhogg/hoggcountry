@@ -1,7 +1,8 @@
 import { loadScoutAtOpenReferenceOfflineSummary } from '$lib/server/at-open-reference';
 import { loadDadPilotSummary, type DadPilotSummary } from '$lib/server/dad';
 import { loadReferencePack } from '$lib/server/map-pack';
-import type { TrailMapWaypoint } from '$lib/map-pack-types';
+import { fetchNwsWeather, type NwsWeatherResult } from '$lib/server/scout-official-sources';
+import type { TrailMapElevationPoint, TrailMapWaypoint } from '$lib/map-pack-types';
 
 const TOTAL_AT_MILES = 2197.4;
 const PACK_VALID_MS = 6 * 60 * 60 * 1000;
@@ -110,6 +111,11 @@ interface MobileContextPack {
     readonly windMph: number;
     readonly riskNote?: string;
     readonly generatedAt: string;
+    readonly source?: 'nws' | 'cached-pilot';
+    readonly sourceLabel?: string;
+    readonly sourceUrl?: string;
+    readonly alertsUrl?: string;
+    readonly forecastUpdatedAt?: string | null;
   } | null;
   readonly downloadedRegions: readonly string[];
   readonly generatedAt: string;
@@ -118,6 +124,13 @@ interface MobileContextPack {
 type MobileWaterReference = MobileContextPack['water'][number];
 type MobileShelterReference = MobileContextPack['shelters'][number];
 type MobileTownReference = MobileContextPack['towns'][number];
+type MobileWeatherSnapshot = NonNullable<MobileContextPack['weather']>;
+
+interface WeatherPack {
+  readonly weather: MobileWeatherSnapshot | null;
+  readonly receipt: MobileSourceReceipt | null;
+  readonly error: string | null;
+}
 
 interface TrailAheadSlice {
   readonly startMile: number;
@@ -139,6 +152,98 @@ function finiteNumber(value: unknown): number | null {
 
 function roundMile(value: number): number {
   return Math.round(value * 10) / 10;
+}
+
+function nearestElevationPoint(points: readonly TrailMapElevationPoint[], mile: number): TrailMapElevationPoint | null {
+  if (!points.length || !Number.isFinite(mile)) return null;
+  let best: TrailMapElevationPoint | null = null;
+  let bestDelta = Infinity;
+  for (const point of points) {
+    const delta = Math.abs(point.mile - mile);
+    if (delta < bestDelta) {
+      best = point;
+      bestDelta = delta;
+    }
+  }
+  return best;
+}
+
+function numberFromNwsTemperature(value: string): number | null {
+  const match = value.match(/-?\d+(?:\.\d+)?/u);
+  if (!match) return null;
+  const parsed = Number(match[0]);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function maxWindMph(value: string): number {
+  const values = Array.from(value.matchAll(/\d+(?:\.\d+)?/gu))
+    .map((match) => Number(match[0]))
+    .filter(Number.isFinite);
+  return values.length ? Math.round(Math.max(...values)) : 0;
+}
+
+function summarizeNwsWeather(nws: NwsWeatherResult, mile: number, generatedAt: string): MobileWeatherSnapshot | null {
+  const periods = nws.periods.slice(0, 4);
+  if (!periods.length) return null;
+  const temperatures = periods
+    .map((period) => numberFromNwsTemperature(period.temperature))
+    .filter((value): value is number => value !== null);
+  const first = periods[0];
+  const alertHeadline = nws.alerts[0]?.headline;
+  const sourceUrl = nws.forecastUrl ?? nws.pointUrl;
+
+  return {
+    mile: roundMile(mile),
+    summary: `NWS ${first.name}: ${first.shortForecast}`,
+    highF: temperatures.length ? Math.round(Math.max(...temperatures)) : 0,
+    lowF: temperatures.length ? Math.round(Math.min(...temperatures)) : 0,
+    windMph: Math.max(...periods.map((period) => maxWindMph(period.wind)), 0),
+    riskNote: alertHeadline
+      ? `Active NWS alert: ${alertHeadline}`
+      : 'Official NWS point forecast for the nearest trail coordinate; refresh before exposed terrain or severe-weather decisions.',
+    generatedAt,
+    source: 'nws',
+    sourceLabel: `NWS point forecast near ${nws.label}`,
+    sourceUrl,
+    alertsUrl: nws.alertsUrl,
+    forecastUpdatedAt: nws.forecastUpdatedAt
+  };
+}
+
+async function buildWeatherPack(currentMile: number, generatedAt: string): Promise<WeatherPack> {
+  try {
+    const reference = await loadReferencePack();
+    const point = nearestElevationPoint(reference.terrain.elevation, currentMile);
+    if (!point) {
+      return { weather: null, receipt: null, error: 'No calibrated trail coordinate for this mile.' };
+    }
+
+    const nws = await fetchNwsWeather(point.lat, point.lon);
+    const weather = summarizeNwsWeather(nws, currentMile, generatedAt);
+    if (!weather) {
+      return { weather: null, receipt: null, error: 'NWS returned no forecast periods for this mile.' };
+    }
+
+    return {
+      weather,
+      receipt: {
+        id: 'official:nws-point-forecast',
+        title: 'NWS point forecast',
+        kind: 'official',
+        citation: `National Weather Service point forecast near mile ${roundMile(currentMile).toFixed(1)}, fetched ${generatedAt}`,
+        url: weather.sourceUrl,
+        generatedAt,
+        miles: { from: roundMile(currentMile) }
+      },
+      error: null
+    };
+  } catch (error) {
+    return {
+      weather: null,
+      receipt: null,
+      error: error instanceof Error ? error.message : 'NWS forecast fetch failed.'
+    };
+  }
 }
 
 function currentMileFromDad(dad: DadPilotSummary | null): number {
@@ -304,6 +409,7 @@ function buildContextPack(
   now: Date,
   dad: DadPilotSummary | null,
   trailAhead: TrailAheadSlice | null,
+  weatherPack: WeatherPack,
   personalCtx: { personal: boolean; mile: number | null; direction: 'NOBO' | 'SOBO' }
 ): MobileContextPack {
   const generatedAt = now.toISOString();
@@ -404,20 +510,21 @@ function buildContextPack(
       { name: 'InReach Mini 2', category: 'safety', weightOz: 3.5, carried: true },
       { name: 'Anker 10k power bank', category: 'electronics', weightOz: 6.9, carried: true }
     ],
-    // Personal packs ship no weather: the cached figures below are Dad's pilot
-    // context, which would be misleading at the user's own mile. The app shows an
-    // honest "no cached forecast" state until a real source is wired up.
-    weather: personal
-      ? null
-      : {
-          mile: currentMile,
-          summary: 'Cached pilot weather: cold ridge wind with dry afternoon skies',
-          highF: 46,
-          lowF: 28,
-          windMph: 17,
-          riskNote: 'Weather in this pack is cached pilot context; refresh before exposed terrain.',
-          generatedAt: PILOT_GENERATED_AT
-        },
+    weather: weatherPack.weather ?? (
+      personal
+        ? null
+        : {
+            mile: currentMile,
+            summary: 'Cached pilot weather: cold ridge wind with dry afternoon skies',
+            highF: 46,
+            lowF: 28,
+            windMph: 17,
+            riskNote: 'Weather in this pack is cached pilot context; refresh before exposed terrain.',
+            generatedAt: PILOT_GENERATED_AT,
+            source: 'cached-pilot',
+            sourceLabel: 'Cached pilot weather'
+          }
+    ),
     downloadedRegions: trailAhead?.downloadedRegions.length
       ? trailAhead.downloadedRegions
       : personal
@@ -431,6 +538,7 @@ function sourceReceipts(
   now: Date,
   contextPack: MobileContextPack,
   trailAhead: TrailAheadSlice | null,
+  weatherPack: WeatherPack,
   personal: boolean
 ): MobileSourceReceipt[] {
   return [
@@ -452,6 +560,7 @@ function sourceReceipts(
           miles: { from: contextPack.hiker.currentMile, to: trailAhead?.endMile ?? 606.0 }
         },
     ...(trailAhead?.sourceReceipts ?? []),
+    ...(weatherPack.receipt ? [weatherPack.receipt] : []),
     {
       id: 'field-guide:water-discipline',
       title: 'Water discipline field-guide excerpt',
@@ -482,9 +591,19 @@ export async function buildPublicMobileFieldPack(now = new Date(), options: Fiel
     loadScoutAtOpenReferenceOfflineSummary(now).catch(() => null)
   ]);
   const centerMile = personal ? (mile as number) : currentMileFromDad(dad);
-  const trailAhead = await buildTrailAheadSlice(centerMile, now, personal).catch(() => null);
-  const contextPack = buildContextPack(now, dad, trailAhead, { personal, mile, direction });
-  const receipts = sourceReceipts(now, contextPack, trailAhead, personal);
+  const generatedAt = now.toISOString();
+  const [trailAhead, weatherPack] = await Promise.all([
+    buildTrailAheadSlice(centerMile, now, personal).catch(() => null),
+    buildWeatherPack(centerMile, generatedAt)
+  ]);
+  const contextPack = buildContextPack(now, dad, trailAhead, weatherPack, { personal, mile, direction });
+  const receipts = sourceReceipts(now, contextPack, trailAhead, weatherPack, personal);
+  const notice = [
+    personal ? personalNotice(trailAhead) : pilotNotice(dad, trailAhead),
+    weatherPack.error
+      ? `NWS weather was not available for this pack (${weatherPack.error}); verify weather from an official source before exposed terrain.`
+      : 'Weather comes from an official NWS point forecast near the current trail mile; refresh before safety-critical decisions.'
+  ].join(' ');
 
   return {
     data: {
@@ -492,11 +611,11 @@ export async function buildPublicMobileFieldPack(now = new Date(), options: Fiel
       // A personal pack never carries Dad's Garmin location into a stranger's pack.
       dad: personal ? null : dad,
       at_reference: atReference,
-      pilot_notice: personal ? personalNotice(trailAhead) : pilotNotice(dad, trailAhead)
+      pilot_notice: notice
     },
     meta: {
       pack_version: 1,
-      generated_at: now.toISOString(),
+      generated_at: generatedAt,
       valid_until: validUntil(now),
       source_receipts: receipts,
       fallback_reason: personal ? null : dad ? null : 'dad-pilot-unavailable',
