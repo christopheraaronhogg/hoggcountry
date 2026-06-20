@@ -48,7 +48,7 @@
 
     <h2>Corrections</h2>
     <p>
-      If something looks wrong, email <a href="mailto:privacy@hoggcountry.com">privacy@hoggcountry.com</a> with the
+      If something looks wrong, email <a href="mailto:chris.stitchscreen@gmail.com">chris.stitchscreen@gmail.com</a> with the
       route, mile, source you checked, and the correction you recommend.
     </p>
   </article>

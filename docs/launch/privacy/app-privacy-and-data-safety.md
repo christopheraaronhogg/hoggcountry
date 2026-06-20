@@ -180,7 +180,7 @@ shared**, because raw lat/long is never transmitted and (on Android) never even 
 the per-actual-behavior, no-over-declaration choice the brief requires.
 
 **DECISION (Play deletion route):** users have no account; deletion is an **email request**.
-Publish a deletion contact (e.g. `privacy@hoggcountry.com`) in the Play "Data deletion" URL/field
+Publish a deletion contact (e.g. `chris.stitchscreen@gmail.com`) in the Play "Data deletion" URL/field
 and in the privacy policy. Answer "Can users request deletion?" = **Yes**.
 
 **Play summary line:** *Shares only an optional, user-initiated trail-condition report (a coarse

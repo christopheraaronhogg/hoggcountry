@@ -283,7 +283,7 @@ authoritative doc governs; this is the must-match digest):
 - **Encrypted in transit: YES** (the report goes over a secure WebSocket/HTTPS connection;
   the one-time model download is over HTTPS from Hugging Face).
 - **Deletion:** no account, so no account-level deletion; deletion is an **email request**
-  (publish a contact, e.g. `privacy@hoggcountry.com`, in the Play "Data deletion" field and
+  (publish a contact, e.g. `chris.stitchscreen@gmail.com`, in the Play "Data deletion" field and
   the privacy policy). Answer "Can users request deletion?" = **Yes**.
 
 > **DECISION (Chris) — Android location, resolved direction (FLAG kept for sign-off):**

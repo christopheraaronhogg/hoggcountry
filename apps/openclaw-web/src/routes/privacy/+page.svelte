@@ -64,13 +64,13 @@
     <h2>Deletion Requests</h2>
     <p>
       There are no user accounts to delete. To request deletion of a trail-condition report you submitted, email
-      <a href="mailto:privacy@hoggcountry.com">privacy@hoggcountry.com</a> with enough detail for us to locate it,
+      <a href="mailto:chris.stitchscreen@gmail.com">chris.stitchscreen@gmail.com</a> with enough detail for us to locate it,
       such as the approximate date, optional trail name, note text, or trail mile.
     </p>
 
     <h2>Contact</h2>
     <p>
-      For privacy questions or app support, email <a href="mailto:privacy@hoggcountry.com">privacy@hoggcountry.com</a>
+      For privacy questions or app support, email <a href="mailto:chris.stitchscreen@gmail.com">chris.stitchscreen@gmail.com</a>
       or visit <a href={resolve('/support')}>hoggcountry.com/support</a>.
     </p>
   </article>

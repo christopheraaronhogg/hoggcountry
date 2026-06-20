@@ -3,37 +3,23 @@
   "updatedAt": "2026-06-20",
   "items": {
     "privacy-contact-and-deletion": {
-      "status": "blocked",
-      "summary": "privacy@hoggcountry.com bounced a live Gmail test with 554 5.7.1 Relay access denied. Fix the mailbox/forwarder, then re-test receipt before submission.",
+      "status": "verified",
+      "verifiedAt": "2026-06-20T19:25:54Z",
+      "verifiedBy": "Codex on Chris Hogg's local checkout",
+      "summary": "Changed the published privacy/deletion contact to chris.stitchscreen@gmail.com after privacy@hoggcountry.com bounced, then confirmed the monitored Gmail mailbox received a fresh test message with the INBOX label.",
       "files": [
+        "docs/launch/proof/privacy-contact-gmail-2026-06-20.md",
         "docs/launch/proof/privacy-mailbox-blocked-2026-06-20.md"
       ],
       "commands": [
-        "dig +short MX hoggcountry.com",
-        "dig +short TXT hoggcountry.com",
-        "Gmail search: subject:\"Hogg Country privacy mailbox release proof 20260620T190538Z\" -in:sent -in:trash -in:spam",
-        "Gmail search: (from:mailer-daemon OR from:postmaster OR subject:(undelivered OR delivery OR failure OR returned)) \"privacy@hoggcountry.com\" newer_than:1d -in:trash -in:spam"
+        "Gmail send: to chris.stitchscreen@gmail.com subject \"Hogg Country privacy mailbox release proof 20260620T1924Z\"",
+        "Gmail read: message id 19ee67ea26693099 labels UNREAD,SENT,INBOX",
+        "Gmail search: subject:\"Hogg Country privacy mailbox release proof 20260620T1924Z\" in:inbox -in:trash -in:spam"
       ]
     },
     "privacy-and-support-routes": {
-      "status": "verified",
-      "verifiedAt": "2026-06-20T18:58:29Z",
-      "verifiedBy": "Codex on Chris Hogg's local checkout",
-      "summary": "Verified https://hoggcountry.com/privacy and https://hoggcountry.com/support return 200 text/html on production SHA 7d988c78e1cc77154755d0f5adb95e6cf38c3eff and render privacy, deletion, support, and emergency-notice copy.",
-      "files": [
-        "docs/launch/proof/privacy-support-routes-2026-06-20.md"
-      ],
-      "urls": [
-        "https://hoggcountry.com/privacy",
-        "https://hoggcountry.com/support"
-      ],
-      "commands": [
-        "curl -fsS https://hoggcountry.com/api/v1/health",
-        "curl -sS -o /dev/null -w 'privacy http=%{http_code} content_type=%{content_type} url=%{url_effective}\\n' https://hoggcountry.com/privacy",
-        "curl -sS -o /dev/null -w 'support http=%{http_code} content_type=%{content_type} url=%{url_effective}\\n' https://hoggcountry.com/support",
-        "curl -fsSL https://hoggcountry.com/privacy | rg -n \"Trail Assistant|privacy@hoggcountry\\.com|deletion|support\"",
-        "curl -fsSL https://hoggcountry.com/support | rg -n \"Trail Assistant|privacy@hoggcountry\\.com|deletion|emergency|Support\""
-      ]
+      "status": "pending",
+      "summary": "Re-verify live privacy/support/terms/data routes after changing the published privacy contact to chris.stitchscreen@gmail.com."
     },
     "ios-development-team": {
       "status": "pending",

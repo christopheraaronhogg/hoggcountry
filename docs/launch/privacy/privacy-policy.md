@@ -29,7 +29,7 @@ If you only read this far, you've got the gist. The rest is detail.
 Trail Assistant is published by **Hogg Country**, an independent project centered on the 2026 Appalachian Trail thru-hike. We are responsible for the small amount of data described below.
 
 - **Website:** hoggcountry.com
-- **Privacy contact:** privacy@hoggcountry.com
+- **Privacy contact:** chris.stitchscreen@gmail.com
 
 If you have a question about your privacy that this policy doesn't answer, email the address above and a real person will read it.
 
@@ -115,7 +115,7 @@ The app uses **local notifications only** — generated on your device, for exam
 
 ## 6. Children's privacy
 
-Trail Assistant is a general-audience hiking and scripture companion. It is **not directed at children under 13**, and we do not knowingly collect personal information from children under 13. Because the app has no accounts and collects no personal data except the optional, user-initiated trail-condition report described above, there is effectively no profile of any user to collect. If you believe a child has submitted a trail report and you'd like it removed, contact us at privacy@hoggcountry.com and we'll delete it.
+Trail Assistant is a general-audience hiking and scripture companion. It is **not directed at children under 13**, and we do not knowingly collect personal information from children under 13. Because the app has no accounts and collects no personal data except the optional, user-initiated trail-condition report described above, there is effectively no profile of any user to collect. If you believe a child has submitted a trail report and you'd like it removed, contact us at chris.stitchscreen@gmail.com and we'll delete it.
 
 ---
 
@@ -123,7 +123,7 @@ Trail Assistant is a general-audience hiking and scripture companion. It is **no
 
 **On-device data** (journal, gear, settings, AI activity, Bible data, your on-phone check-in log) is retained on **your** device for as long as you keep the app. You can clear it at any time by deleting your entries within the app or by uninstalling the app — uninstalling removes this data from your phone. We never had a copy, so there is nothing for us to delete on our side.
 
-**Trail-condition reports** (the chip, note, optional trail name, approximate trail-mile, and timestamp you chose to send) are stored on our real-time trail service so that current conditions can be shared with other hikers. These reports are intended to be timely and are aged out as they become stale. To request access to, correction of, or **deletion** of reports you have submitted, email **privacy@hoggcountry.com**. Because there are no accounts, please include enough detail for us to locate the relevant entries (for example, the approximate dates, the trail name you used, and the approximate mile). We will act on verified deletion requests promptly.
+**Trail-condition reports** (the chip, note, optional trail name, approximate trail-mile, and timestamp you chose to send) are stored on our real-time trail service so that current conditions can be shared with other hikers. These reports are intended to be timely and are aged out as they become stale. To request access to, correction of, or **deletion** of reports you have submitted, email **chris.stitchscreen@gmail.com**. Because there are no accounts, please include enough detail for us to locate the relevant entries (for example, the approximate dates, the trail name you used, and the approximate mile). We will act on verified deletion requests promptly.
 
 ---
 
@@ -152,7 +152,7 @@ If we change how the app handles data, we'll update this policy and revise the *
 ## 11. Contact
 
 **Hogg Country**
-Privacy: **privacy@hoggcountry.com**
+Privacy: **chris.stitchscreen@gmail.com**
 Web: hoggcountry.com
 
 *Made with love for Dad, and for everyone walking north.*

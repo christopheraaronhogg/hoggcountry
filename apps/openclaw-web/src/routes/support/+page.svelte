@@ -15,7 +15,7 @@
 
     <p>
       Need help with Trail Assistant, Scout, the Hogg Country site, or the Scout ChatGPT app? Email
-      <a href="mailto:privacy@hoggcountry.com">privacy@hoggcountry.com</a>. Include your device type, app version if
+      <a href="mailto:chris.stitchscreen@gmail.com">chris.stitchscreen@gmail.com</a>. Include your device type, app version if
       available, and the route or screen where the issue happened.
     </p>
 

@@ -60,7 +60,7 @@
 
     <h2>Contact</h2>
     <p>
-      For support or questions about these terms, email <a href="mailto:privacy@hoggcountry.com">privacy@hoggcountry.com</a>
+      For support or questions about these terms, email <a href="mailto:chris.stitchscreen@gmail.com">chris.stitchscreen@gmail.com</a>
       or visit <a href={resolve('/support')}>hoggcountry.com/support</a>.
     </p>
   </article>

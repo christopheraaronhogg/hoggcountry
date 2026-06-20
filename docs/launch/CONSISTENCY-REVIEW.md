@@ -105,10 +105,10 @@ submission *as an inconsistency*, but several gate the build/marketing.
      and updatable, so low risk — but if iOS stubs AI at launch, soften to "a private
      on-device AI (one-time download)."
 
-2. **[HIGH] Publish & confirm the privacy email** `privacy@hoggcountry.com`.
+2. **[FIXED] Publish & confirm the privacy email** `chris.stitchscreen@gmail.com`.
    Flagged 5× in the policy (md lines 32, 118, 126, 155 + HTML) and required by the Play
    **Data deletion** route — the data-safety "users can request deletion = Yes" depends on a
-   real, monitored address. Confirm and monitor it.
+   real, monitored address. Gmail inbox receipt was verified on 2026-06-20.
 
 3. **[HIGH] Support & Privacy URLs must be live before submission.**
    `apple-app-store.md` lines 162–166: `https://hoggcountry.com/support` (Apple checks it)
@@ -160,7 +160,7 @@ submission *as an inconsistency*, but several gate the build/marketing.
 | Identifiers / accounts | none | none collected | none collected | **PASS** |
 | Recipient of the outbound flow | SpacetimeDB, "our own backend," encrypted | (own service) | "our own trail service," encrypted | **PASS** — consistently named, not the Forge/Laravel API |
 | Model download (Hugging Face) | disclosed, "no personal data sent" | excluded from data tables (correct) | excluded from data tables (correct) | **PASS** |
-| Deletion route | email `privacy@hoggcountry.com` | n/a | "Yes," email request | **PASS** (pending email confirm — DECISION 2) |
+| Deletion route | email `chris.stitchscreen@gmail.com` | n/a | "Yes," email request | **PASS** (mailbox receipt verified 2026-06-20) |
 
 **Net:** the four documents are mutually consistent across the declared data types.
 
@@ -231,7 +231,7 @@ permission-free manifest. This is the honest handling the brief asked for.
       `privacy-policy.html` before hosting.
 - [ ] DECISION 1: confirm iOS AI live-vs-stub; adjust the optional iOS-only AI line / AI
       keywords / promo qualifier accordingly.
-- [ ] DECISION 2: confirm + monitor `privacy@hoggcountry.com`; wire it as the Play data-
+- [x] DECISION 2: confirm + monitor `chris.stitchscreen@gmail.com`; wire it as the Play data-
       deletion contact.
 - [ ] DECISION 3: stand up `hoggcountry.com/support` and `hoggcountry.com/privacy`.
 - [ ] DECISION 5: reconcile Apple secondary category (Health & Fitness → Travel) for cross-

@@ -123,8 +123,8 @@ const items = [
 		pass: 'Privacy policy has a concrete effective date.',
 		fail: 'Privacy policy effective date is missing or placeholder.'
 	}),
-	check('store-metadata', 'privacy-contact-and-deletion', 'manual', privacyPolicy.includes('privacy@hoggcountry.com') && privacyAnswers.includes('deletion is an **email request**'), {
-		pass: 'privacy@hoggcountry.com is documented; verify the mailbox receives mail before submission.',
+	check('store-metadata', 'privacy-contact-and-deletion', 'manual', privacyPolicy.includes('chris.stitchscreen@gmail.com') && privacyAnswers.includes('deletion is an **email request**'), {
+		pass: 'chris.stitchscreen@gmail.com is documented; verify the mailbox receives mail before submission.',
 		fail: 'Privacy contact or deletion route is missing from launch docs.'
 	}),
 	check('store-metadata', 'privacy-and-support-routes', 'manual', exists('apps/openclaw-web/src/routes/privacy/+page.svelte') && exists('apps/openclaw-web/src/routes/support/+page.svelte'), {

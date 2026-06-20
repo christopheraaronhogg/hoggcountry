@@ -35,7 +35,7 @@ Everything that does **not** require your Apple/Google accounts, payment, or sig
 **Calls I made (reasonable defaults — override anytime):**
 - **iPhone-only** (dropped iPad) — avoids owing iPad screenshots + iPad layout testing. Reversible (`TARGETED_DEVICE_FAMILY`).
 - Privacy policy **effective date = June 18, 2026**.
-- Privacy/support email published in launch docs and public pages: **privacy@hoggcountry.com**. Confirm the inbox forwards before final store submission.
+- Privacy/support email published in launch docs and public pages: **chris.stitchscreen@gmail.com**. Gmail inbox receipt was verified on 2026-06-20.
 - **App icon** = the boar-ridge-sunset emblem (a clean v1 mark; the boar is stylized — say the word and I'll refine or swap in a pro icon).
 
 **Open decisions that need you (details in the docs, tagged `DECISION:`):**

@@ -21,7 +21,7 @@ the iOS AI state, and the foreground service. Paste into:
 >
 > **Data & privacy:** no accounts, no ads, no analytics/tracking SDKs, nothing sold. The King James Bible text is public domain (Pure Cambridge Edition), bundled offline. Full details: https://hoggcountry.com/privacy.
 >
-> Built by a small family team for the developer's father's 2026 thru-hike. Questions: privacy@hoggcountry.com.
+> Built by a small family team for the developer's father's 2026 thru-hike. Questions: chris.stitchscreen@gmail.com.
 
 ---
 
