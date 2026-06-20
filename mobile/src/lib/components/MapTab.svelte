@@ -3,6 +3,7 @@
 	import { isDadPilot, isSelfTracked } from '$lib/scout/hike-profile';
 	import { elevationWindow } from '$lib/trail/trail-geometry';
 	import Icon, { type IconName } from './Icon.svelte';
+	import TrailPulseReportAction from './TrailPulseReportAction.svelte';
 
 	// Trail-ribbon map (matches the d1 "Scout Hub" bake-off mockup): a stylized
 	// winding AT line over a soft contour field, with the hiker's position and the
@@ -196,6 +197,7 @@
 			{/if}
 			<span class="schematic-tag" title="A linear schematic of what's ahead by mile — not a GPS/tile map.">Schematic · not a GPS map</span>
 			<span class="limit-tag" title="No offline basemap, turn-by-turn routing, or emergency navigation.">No basemap · no routing</span>
+			<TrailPulseReportAction variant="map" label="Report conditions" />
 		</div>
 
 		<!-- upcoming landmark pins, placed along the line by mile -->
