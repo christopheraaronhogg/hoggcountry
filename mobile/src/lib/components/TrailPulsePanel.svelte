@@ -33,6 +33,17 @@
 
 	const nearbyReports = $derived(trailAssistant.nearbyTrailPulseReports);
 	const submitDisabled = $derived(submitState === 'saving' || (!selectedChip && !noteText.trim()));
+	const rangeLabel = $derived(trailAssistant.trailPulseRangeMiles.toFixed(1));
+	const locationNote = $derived(
+		trailAssistant.privacySettings.sharePreciseLocation
+			? 'GPS can snap this to an approximate trail mile. Raw coordinates are not stored or sent.'
+			: 'GPS snapping is off, so this uses your current app mile. Raw coordinates are not stored or sent.'
+	);
+	const actionLabel = $derived.by(() => {
+		if (submitState === 'saving') return trailAssistant.onlineStatus ? 'Publishing...' : 'Saving offline...';
+		if (submitState === 'saved') return trailAssistant.onlineStatus ? 'Published' : 'Saved offline';
+		return trailAssistant.onlineStatus ? 'Publish now' : 'Save offline';
+	});
 
 	function formatAge(iso: string): string {
 		const deltaSeconds = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
@@ -191,15 +202,15 @@
 		<div>
 			<p class="eyebrow">Trail Pulse</p>
 			<h2>Nearby trail notes</h2>
-			<p>{nearbyReports.length} active in this 0.1 mi window</p>
+			<p>{nearbyReports.length} active within {rangeLabel} mi · approximate trail mile only</p>
 		</div>
 
-		<button class="report-button" onclick={openSheet}>Report trail</button>
+		<button class="report-button" onclick={openSheet}>Report conditions</button>
 	</div>
 
 	{#if nearbyReports.length}
 		<div class="pulse-list">
-			{#each nearbyReports as report}
+			{#each nearbyReports as report (report.id)}
 				<article class="pulse-row">
 					<div class="mile-chip">Mile {report.snappedMile.toFixed(1)}</div>
 					<div class="pulse-copy">
@@ -210,22 +221,27 @@
 			{/each}
 		</div>
 	{:else}
-		<p class="empty-pulse">No one has reported this 0.1-mile window yet.</p>
+		<p class="empty-pulse">No nearby Trail Pulse reports yet.</p>
 	{/if}
 </section>
 
 {#if sheetOpen}
 	<div class="sheet-backdrop" role="presentation" onclick={closeSheet}></div>
-	<section class="report-sheet card" aria-label="Report trail condition">
+	<div class="report-sheet card" role="dialog" aria-modal="true" aria-label="Report trail condition">
 		<div class="sheet-grip" aria-hidden="true"></div>
 		<div class="section-heading">
 			<p class="eyebrow">Report trail</p>
 			<h2>Mile {trailAssistant.currentMile.toFixed(1)}</h2>
-			<p>Public trail note</p>
+			<p>Public condition report</p>
 		</div>
+		<p class="report-privacy">
+			Shares your chip or note, optional trail name, timestamp, and approximate trail mile.
+			{locationNote}
+			{trailAssistant.onlineStatus ? '' : ' This stays queued on this phone until service returns.'}
+		</p>
 
 		<div class="chip-grid">
-			{#each chips as chip}
+			{#each chips as chip (chip)}
 				<button class:active={selectedChip === chip} class="condition-chip" onclick={() => chooseChip(chip)}>
 					{chip}
 				</button>
@@ -265,10 +281,10 @@
 		<div class="sheet-actions">
 			<button class="secondary-button" onclick={closeSheet}>Cancel</button>
 			<button class="cta-button" disabled={submitDisabled} onclick={submit}>
-				{submitState === 'saving' ? 'Publishing...' : submitState === 'saved' ? 'Published' : 'Publish now'}
+				{actionLabel}
 			</button>
 		</div>
-	</section>
+	</div>
 {/if}
 
 <style>
@@ -304,7 +320,7 @@
 
 	.dismiss-alert {
 		min-width: 44px;
-		height: 38px;
+		min-height: 44px;
 		border-radius: 12px;
 		background: rgba(255, 248, 232, 0.14);
 		font-weight: 800;
@@ -332,7 +348,7 @@
 
 	.report-button {
 		flex: 0 0 auto;
-		min-height: 42px;
+		min-height: 44px;
 		padding: 0 13px;
 		border-radius: 14px;
 		background: var(--forest);
@@ -418,7 +434,7 @@
 
 	.condition-chip,
 	.voice-button {
-		min-height: 40px;
+		min-height: 44px;
 		border-radius: 13px;
 		background: rgba(47, 75, 53, 0.08);
 		color: var(--forest);
@@ -447,6 +463,16 @@
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
 		color: var(--muted);
+	}
+
+	.report-privacy {
+		margin-top: -3px;
+		padding: 10px 11px;
+		border-radius: 12px;
+		background: rgba(47, 75, 53, 0.08);
+		color: var(--ink);
+		font-size: 0.82rem;
+		line-height: 1.45;
 	}
 
 	textarea,

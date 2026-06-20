@@ -2,6 +2,7 @@
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import { elevationWindow, climbFeet } from '$lib/trail/trail-geometry';
 	import Icon, { type IconName } from './Icon.svelte';
+	import TrailPulsePanel from './TrailPulsePanel.svelte';
 
 	// Today = the hiker's day, now → camp (M1 "Day Timeline"). No readiness score —
 	// we have no vitals, so the HUD anchors only on REAL data: position, the day's
@@ -196,6 +197,8 @@
 			</p>
 		{/if}
 	</section>
+
+	<TrailPulsePanel />
 
 	<!-- Day spine: the day, now → camp -->
 	<section class="spine card">

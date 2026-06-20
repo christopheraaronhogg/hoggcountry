@@ -1462,6 +1462,7 @@ class TrailAssistantStore {
 		});
 
 		this.#state.trailPulseReports = [report, ...this.#state.trailPulseReports];
+		this.markTrailPulseAlertSeen(report.id);
 
 		if (this.#state.onlineStatus) {
 			void this.#syncTrailPulseReport(report);
