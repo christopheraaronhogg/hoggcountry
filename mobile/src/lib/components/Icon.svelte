@@ -48,8 +48,10 @@
 		<path d="M3 15h18" />
 		<path d="M6 18.5h12" />
 	{:else if name === 'scout'}
-		<!-- compass / north-star spark: the guide -->
-		<path d="M12 2.5 14 9.8 21.5 12 14 14.2 12 21.5 10 14.2 2.5 12 10 9.8Z" />
+		<!-- compass needle: Scout as guide, not generic AI sparkle -->
+		<circle cx="12" cy="12" r="8.2" />
+		<path d="M15.9 6.8 13.4 13.4 6.8 15.9 10.6 10.6Z" />
+		<circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none" />
 	{:else if name === 'map'}
 		<!-- folded map -->
 		<path d="M3 6 9 4 15 6 21 4V18l-6 2-6-2-6 2Z" />

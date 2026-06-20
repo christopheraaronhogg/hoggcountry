@@ -10,6 +10,7 @@
 	import type { SourceReceipt as UiSourceReceipt } from './fieldData';
 	import SourceChip from './SourceChip.svelte';
 	import ConfidenceBadge from './ConfidenceBadge.svelte';
+	import Icon from './Icon.svelte';
 
 	let draft = $state('');
 	let logRef = $state<HTMLDivElement | null>(null);
@@ -153,7 +154,7 @@
 				<div class:assistant={message.role === 'assistant'} class:user={message.role === 'user'} class="message">
 					{#if message.role === 'assistant' && meta}
 						<div class="message-head">
-							<span class="bot-mark" aria-hidden="true">S</span>
+							<span class="bot-mark" aria-hidden="true"><Icon name="scout" size={14} stroke={2} /></span>
 							<strong>Scout</strong>
 							{#if meta.confidence}
 								<ConfidenceBadge confidence={meta.confidence} short />
@@ -197,7 +198,7 @@
 			{#if trailAssistant.scoutThinking}
 				<div class="message assistant thinking">
 					<div class="message-head">
-						<span class="bot-mark" aria-hidden="true">S</span>
+						<span class="bot-mark" aria-hidden="true"><Icon name="scout" size={14} stroke={2} /></span>
 						<strong>Scout</strong>
 					</div>
 					<p class="thinking-dots" role="status" aria-label="Scout is thinking">
@@ -470,9 +471,6 @@
 		color: #f7f2e8;
 		display: grid;
 		place-items: center;
-		font-family: var(--font-display);
-		font-size: 0.74rem;
-		font-weight: 800;
 	}
 
 	.message-head strong {
