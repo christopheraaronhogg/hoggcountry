@@ -60,7 +60,7 @@ Last updated: 2026-03-05 07:05 CT
 ### Mobile core (shipped)
 - [x] Intake endpoint + routing labels (`POST /api/v1/trail-assistant/intake`)
 - [x] Public intake page + confirmation route
-- [x] Intake form API submit wiring with graceful Netlify fallback
+- [x] Intake form API submit wiring through the Forge API; no Netlify form fallback remains
 - [x] Intake idempotency + duplicate guard (`Idempotency-Key` + fingerprint window)
 - [x] Authenticated chat-message API lane (`POST/GET /api/v1/trail-assistant/chat/messages`)
 - [x] Authenticated location check-in + progress APIs (`/checkins`, `/progress`)

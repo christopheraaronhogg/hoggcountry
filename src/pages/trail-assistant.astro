@@ -231,8 +231,7 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
           Fill this out and we’ll route your request into the Trail Assistant queue.
         </p>
 
-        <form id="trail-assistant-intake-form" name="trail-assistant-intake" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/trail-assistant-thanks">
-          <input type="hidden" name="form-name" value="trail-assistant-intake" />
+        <form id="trail-assistant-intake-form" name="trail-assistant-intake" method="POST" action="/trail-assistant-thanks">
           <input type="hidden" name="service" value="trail-assistant" />
           <p style="display:none;">
             <label>Don’t fill this out: <input name="bot-field" /></label>
@@ -341,16 +340,6 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
           if (!(profileStatusEl instanceof HTMLElement)) return;
           profileStatusEl.textContent = message;
           profileStatusEl.style.color = tone === 'error' ? '#fca5a5' : tone === 'success' ? '#86efac' : '#94a3b8';
-        }
-
-        function formDataToUrlEncoded(formData) {
-          const params = new URLSearchParams();
-          formData.forEach((value, key) => {
-            if (typeof value === 'string') {
-              params.append(key, value);
-            }
-          });
-          return params.toString();
         }
 
         function normalizeText(value, max = 12000) {
@@ -557,20 +546,6 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
           }
         }
 
-        async function submitToNetlify(formData) {
-          const response = await fetch('/', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: formDataToUrlEncoded(formData),
-          });
-
-          if (!response.ok) {
-            throw new Error(`Netlify fallback failed (${response.status}).`);
-          }
-        }
-
         profileSaveButton?.addEventListener('click', () => {
           const profile = collectProfileFromFields();
           if (!profile.profile_name || !profile.profile_email) {
@@ -623,16 +598,8 @@ const apiBase = (import.meta.env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-
             window.location.assign('/trail-assistant-thanks');
             return;
           } catch (apiError) {
-            try {
-              await submitToNetlify(formData);
-              setStatus('Request queued via fallback. Redirecting…', 'success');
-              window.location.assign('/trail-assistant-thanks');
-              return;
-            } catch (fallbackError) {
-              const apiMessage = apiError instanceof Error ? apiError.message : 'API intake failed.';
-              const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : 'Fallback submission failed.';
-              setStatus(`${apiMessage} ${fallbackMessage} Please email support directly.`, 'error');
-            }
+            const apiMessage = apiError instanceof Error ? apiError.message : 'API intake failed.';
+            setStatus(`${apiMessage} Request was not queued. Please email support directly.`, 'error');
           } finally {
             submitButton.disabled = false;
           }

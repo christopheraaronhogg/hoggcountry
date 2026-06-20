@@ -1,8 +1,10 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
   import { env } from '$env/dynamic/public';
 
   const API_BASE = (env.PUBLIC_API_BASE_URL || 'https://hoggcountry.on-forge.com/api/v1').replace(/\/+$/, '');
+  const THANKS_PATH = resolve('/trail-assistant-thanks');
 
   // Profile state
   let profileName = $state('');
@@ -207,16 +209,6 @@
     return payload;
   }
 
-  function formDataToUrlEncoded(formData: FormData): string {
-    const params = new URLSearchParams();
-    formData.forEach((value, key) => {
-      if (typeof value === 'string') {
-        params.append(key, value);
-      }
-    });
-    return params.toString();
-  }
-
   async function submitToApi(formDataValues: {
     trail_stage: string;
     urgency: string;
@@ -278,20 +270,6 @@
     }
   }
 
-  async function submitToNetlify(formData: FormData) {
-    const response = await fetch('/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formDataToUrlEncoded(formData),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Netlify fallback failed (${response.status}).`);
-    }
-  }
-
   function handleProfileSave() {
     const profile = collectProfileFromFields();
     if (!profile.profile_name || !profile.profile_email) {
@@ -323,10 +301,6 @@
     submitDisabled = true;
     setIntakeStatus('Submitting request…');
 
-    // Build a FormData for the Netlify fallback
-    const form = event.target as HTMLFormElement;
-    const formData = new FormData(form);
-
     try {
       await submitToApi({
         trail_stage: intakeTrailStage,
@@ -337,19 +311,11 @@
         email: intakeEmail,
       });
       setIntakeStatus('Request sent. Redirecting…', 'success');
-      window.location.assign('/trail-assistant-thanks');
+      window.location.assign(THANKS_PATH);
       return;
     } catch (apiError) {
-      try {
-        await submitToNetlify(formData);
-        setIntakeStatus('Request queued via fallback. Redirecting…', 'success');
-        window.location.assign('/trail-assistant-thanks');
-        return;
-      } catch (fallbackError) {
-        const apiMessage = apiError instanceof Error ? apiError.message : 'API intake failed.';
-        const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : 'Fallback submission failed.';
-        setIntakeStatus(`${apiMessage} ${fallbackMessage} Please email support directly.`, 'error');
-      }
+      const apiMessage = apiError instanceof Error ? apiError.message : 'API intake failed.';
+      setIntakeStatus(`${apiMessage} Request was not queued. Please email support directly.`, 'error');
     } finally {
       submitDisabled = false;
     }
@@ -454,7 +420,7 @@
         No saved profile yet.
       {:else}
         <ul>
-          {#each profilePreviewLines as [label, value]}
+          {#each profilePreviewLines as [label, value] (label)}
             <li><strong>{label}:</strong> {value}</li>
           {/each}
         </ul>
@@ -462,8 +428,8 @@
     </div>
 
     <p class="small" style="margin-top: 12px;">
-      Need the dedicated profile path? <a href="/trail-assistant-profile">Open Trail Assistant Profile →</a><br />
-      Need BYOS proof for demo? <a href="/trail-assistant-byos">Run BYOS readiness check →</a>
+      Need the dedicated profile path? <a href={resolve('/trail-assistant-profile')}>Open Trail Assistant Profile →</a><br />
+      Need BYOS proof for demo? <a href={resolve('/trail-assistant-byos')}>Run BYOS readiness check →</a>
     </p>
   </section>
 
@@ -474,8 +440,7 @@
       Fill this out and we'll route your request into the Trail Assistant queue.
     </p>
 
-    <form id="trail-assistant-intake-form" name="trail-assistant-intake" method="POST" data-netlify="true" {...{ 'netlify-honeypot': 'bot-field' }} action="/trail-assistant-thanks" onsubmit={handleIntakeSubmit}>
-      <input type="hidden" name="form-name" value="trail-assistant-intake" />
+    <form id="trail-assistant-intake-form" name="trail-assistant-intake" method="POST" action={THANKS_PATH} onsubmit={handleIntakeSubmit}>
       <input type="hidden" name="service" value="trail-assistant" />
       <p style="display:none;">
         <label>Don't fill this out: <input name="bot-field" bind:value={intakeBotField} /></label>

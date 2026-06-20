@@ -8,7 +8,7 @@ Owner priority pivot: mobile-first app direction with auth/account, location tra
 
 ## Implementation Summary
 1. Added intake resilience:
-   - API-first public form submit with Netlify fallback (`src/pages/trail-assistant.astro`).
+   - API-first public form submit (`src/pages/trail-assistant.astro`); the old Netlify form fallback was removed after the Forge cutover.
    - backend idempotency + duplicate guard (`TrailAssistantIntakeController`, migration for dedupe fields).
 2. Added mobile support backend lanes:
    - authenticated chat queue endpoints (`/trail-assistant/chat/messages`).
