@@ -1,6 +1,16 @@
 <script>
   import { resolve } from '$app/paths';
   import { fade } from 'svelte/transition';
+  import {
+    CHILL_ROWS,
+    calculateSunTimes,
+    calculateWindChill,
+    dayQualityColorFor,
+    dayQualityFor,
+    getTempColor,
+    latitudeForMile,
+    terrainMultiplierFor
+  } from '../lib/weather-assessor';
   import StormWarningFieldStation from './StormWarningFieldStation.svelte';
 
 
@@ -19,27 +29,8 @@
   let tempDrop = $derived((elevationGain / 1000) * 5.5);
   let summitTemp = $derived(townTemp - tempDrop);
 
-  // Wind chill calculation
-  let windChill = $derived.by(() => {
-    if (windSpeed < 5) return 0;
-    const temp = summitTemp;
-    if (windSpeed <= 5) return Math.round(temp - 4);
-    if (windSpeed <= 10) return Math.round(temp - 8);
-    if (windSpeed <= 15) return Math.round(temp - 12);
-    if (windSpeed <= 20) return Math.round(temp - 18);
-    return Math.round(temp - 25);
-  });
-
+  let windChill = $derived(calculateWindChill(summitTemp, windSpeed));
   let feelsLike = $derived(windSpeed >= 5 ? windChill : summitTemp);
-
-
-  function getTempColor(temp) {
-    if (temp <= 10) return '#ef4444';
-    if (temp <= 25) return '#f97316';
-    if (temp <= 40) return '#fbbf24';
-    if (temp <= 55) return '#22c55e';
-    return '#059669';
-  }
 
   // Daylight calculator
   let dlDate = $state(new Date().toISOString().split('T')[0]);
@@ -47,48 +38,13 @@
   let contextMile = $derived(Number(trailContext?.currentMile) || 500);
   let dlMile = $derived(dlMileOverride ?? contextMile);
 
-
-
-  const GEORGIA_LAT = 34.6;
-  const MAINE_LAT = 45.9;
-  const TOTAL_MILES = 2198;
-
-  let dlLatitude = $derived(GEORGIA_LAT + (dlMile / TOTAL_MILES) * (MAINE_LAT - GEORGIA_LAT));
-
-  function calculateSunTimes(dateStr, lat) {
-    const d = new Date(dateStr);
-    const dayOfYear = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86400000);
-    const declination = 23.45 * Math.sin((360 / 365) * (dayOfYear - 81) * Math.PI / 180);
-    const latRad = lat * Math.PI / 180;
-    const decRad = declination * Math.PI / 180;
-    const cosHourAngle = -Math.tan(latRad) * Math.tan(decRad);
-
-    if (cosHourAngle > 1) return { sunrise: null, sunset: null, daylightHours: 0 };
-    if (cosHourAngle < -1) return { sunrise: null, sunset: null, daylightHours: 24 };
-
-    const hourAngle = Math.acos(cosHourAngle) * 180 / Math.PI;
-    const daylightHours = 2 * hourAngle / 15;
-    const solarNoon = 12;
-    const sunriseHours = solarNoon - (daylightHours / 2);
-    const sunsetHours = solarNoon + (daylightHours / 2);
-
-    return { sunrise: hoursToTime(sunriseHours), sunset: hoursToTime(sunsetHours), sunriseHours, sunsetHours, daylightHours };
-  }
-
-  function hoursToTime(hours) {
-    const h = Math.floor(hours);
-    const m = Math.round((hours - h) * 60);
-    const period = h >= 12 ? 'PM' : 'AM';
-    const displayH = h > 12 ? h - 12 : (h === 0 ? 12 : h);
-    return `${displayH}:${m.toString().padStart(2, '0')} ${period}`;
-  }
-
+  let dlLatitude = $derived(latitudeForMile(dlMile));
   let sunTimes = $derived(calculateSunTimes(dlDate, dlLatitude));
   let hikingHours = $derived(sunTimes.daylightHours ? (sunTimes.daylightHours - 1).toFixed(1) : 0);
-  let dayQuality = $derived(sunTimes.daylightHours >= 14 ? 'Long Day' : sunTimes.daylightHours >= 12 ? 'Solid Day' : sunTimes.daylightHours >= 10 ? 'Short Day' : 'Winter Day');
-  let dayQualityColor = $derived(sunTimes.daylightHours >= 14 ? '#22c55e' : sunTimes.daylightHours >= 12 ? '#059669' : sunTimes.daylightHours >= 10 ? '#ef4444' : '#6b8cae');
+  let dayQuality = $derived(dayQualityFor(sunTimes.daylightHours));
+  let dayQualityColor = $derived(dayQualityColorFor(sunTimes.daylightHours));
 
-  let terrainMultiplier = $derived((dlMile > 1750 && dlMile < 1912) ? 0.6 : 1.0);
+  let terrainMultiplier = $derived(terrainMultiplierFor(dlMile));
   let maxMilesNormal = $derived(hikingHours * 2.5 * terrainMultiplier);
 
   let startPct = $derived((sunTimes.sunriseHours / 24) * 100);
@@ -200,7 +156,7 @@
       <div class="chill-table">
         <div class="table-header">Wind Chill at {summitTemp.toFixed(0)}°F Summit</div>
         <div class="chill-grid">
-          {#each [[5, 4], [10, 8], [15, 12], [20, 18], [25, 25]] as [wind, penalty] (wind)}
+          {#each CHILL_ROWS as [wind, penalty] (wind)}
             <div class="chill-cell" class:active={windSpeed >= wind && windSpeed < wind + 5}>
               <span class="chill-wind">{wind} mph</span>
               <span class="chill-result">{Math.round(summitTemp - penalty)}°F</span>
