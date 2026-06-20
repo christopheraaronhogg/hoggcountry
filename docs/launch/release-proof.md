@@ -6,12 +6,14 @@ Play Console, TestFlight, or a real-hiker reliance claim.
 ```bash
 cd mobile
 npm run release:proof
+npm run release:proof -- --next
 npm run release:proof -- --strict
 ```
 
 The default command prints the current proof ledger and exits `0`, even when
-manual evidence is still missing. `--strict` exits non-zero until every lane is
-proven.
+manual evidence is still missing. `--next` prints only unresolved manual,
+blocked, or warning rows with a copyable evidence JSON stub for each one.
+`--strict` exits non-zero until every lane is proven.
 
 The manual evidence ledger lives at `docs/launch/release-evidence.json`.
 Pending rows are only reminders; they do not satisfy a gate. If a manual proof

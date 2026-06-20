@@ -16,10 +16,11 @@ const repoRoot = resolve(mobileDir, '..');
 const rawArgs = process.argv.slice(2);
 const json = hasFlag(rawArgs, '--json');
 const strict = hasFlag(rawArgs, '--strict');
+const nextOnly = hasFlag(rawArgs, '--next');
 const help = hasFlag(rawArgs, '--help') || hasFlag(rawArgs, '-h');
 const evidenceArg = readFlag(rawArgs, '--evidence');
 
-const validArgs = new Set(['--json', '--strict', '--help', '-h', '--evidence']);
+const validArgs = new Set(['--json', '--strict', '--next', '--help', '-h', '--evidence']);
 const unknownArgs = unknownFlags(rawArgs, validArgs);
 if (unknownArgs.length) {
 	console.error(`Unknown option(s): ${unknownArgs.join(', ')}`);
@@ -35,6 +36,7 @@ if (help) {
 
 Usage:
   node scripts/release-proof.mjs          Print the current submission proof ledger
+  node scripts/release-proof.mjs --next   Print only unresolved gates with evidence stubs
   node scripts/release-proof.mjs --json   Print machine-readable JSON
   node scripts/release-proof.mjs --strict Exit non-zero until every lane is proven
   node scripts/release-proof.mjs --evidence ../docs/launch/release-evidence.json
@@ -63,6 +65,74 @@ const reviewNotes = read('docs/launch/store-copy/review-notes.md');
 const appleCopy = read('docs/launch/store-copy/apple-app-store.md');
 const playCopy = read('docs/launch/store-copy/google-play.md');
 const morningBrief = read('docs/launch/MORNING-BRIEF.md');
+
+const evidenceGuidance = {
+	'ios-development-team': {
+		file: 'docs/launch/proof/ios-development-team-YYYY-MM-DD.md',
+		summary: 'Xcode App target is signed with Chris-owned Apple Developer Team and a valid local signing identity.',
+		proofTarget: 'After Apple Developer access is configured, record the selected team id, signing identity, provisioning profile, and Xcode build settings without committing secrets.',
+		commands: [
+			'security find-identity -v -p codesigning',
+			'xcodebuild -workspace mobile/ios/App/App.xcworkspace -scheme App -showBuildSettings | rg -n "DEVELOPMENT_TEAM|CODE_SIGN_STYLE|PROVISIONING_PROFILE|PRODUCT_BUNDLE_IDENTIFIER"'
+		]
+	},
+	'app-store-connect-record': {
+		file: 'docs/launch/proof/app-store-connect-record-YYYY-MM-DD.md',
+		summary: 'App Store Connect record exists with bundle id, metadata, screenshots, privacy answers, support URL, and review notes entered.',
+		proofTarget: 'Capture the App Store Connect app id/status plus a field checklist for listing, screenshots, privacy, age rating, support URL, and review notes.',
+		urls: ['https://appstoreconnect.apple.com/apps']
+	},
+	'apple-archive-upload': {
+		file: 'docs/launch/proof/apple-archive-upload-YYYY-MM-DD.md',
+		summary: 'Signed iOS archive was created and uploaded to App Store Connect/TestFlight for this repo SHA.',
+		proofTarget: 'Record archive timestamp, bundle/version/build, upload result, and App Store Connect processing status.',
+		commands: [
+			'xcodebuild -workspace mobile/ios/App/App.xcworkspace -scheme App -configuration Release -archivePath build/App.xcarchive archive'
+		]
+	},
+	'play-console-record': {
+		file: 'docs/launch/proof/play-console-record-YYYY-MM-DD.md',
+		summary: 'Play Console record exists with listing, screenshots, Data Safety, IARC rating, foreground-service declaration, and internal testing track.',
+		proofTarget: 'Capture Play Console app id/status plus a field checklist for listing, Data Safety, IARC, foreground service, privacy URL, assets, and internal testing.',
+		urls: ['https://play.google.com/console']
+	},
+	'ios-physical-scout-answer': {
+		file: 'docs/launch/proof/ios-physical-scout-answer-YYYY-MM-DD.md',
+		summary: 'Physical iPhone/TestFlight build downloaded the model and produced one real on-device Scout answer.',
+		proofTarget: 'Capture device model/iOS version, install source, model status, prompt, answer, latency, and logs showing runtimeConfigured/downloadConfigured.',
+		commands: ['xcrun devicectl list devices']
+	},
+	'android-physical-scout-answer': {
+		file: 'docs/launch/proof/android-physical-scout-answer-YYYY-MM-DD.md',
+		summary: 'Physical Android/internal-test build downloaded the model and produced one real on-device Scout answer.',
+		proofTarget: 'Capture device model/Android version, install source, model status, prompt, answer, latency, and relevant logcat lines.',
+		commands: ['adb devices -l', 'adb logcat -d | rg -i "Scout|model|Gemma|LiteRT"']
+	},
+	'physical-gps-permission': {
+		file: 'docs/launch/proof/physical-gps-permission-YYYY-MM-DD.md',
+		summary: 'Physical device GPS allowed, denied, and off-trail states were tested without fake fixes.',
+		proofTarget: 'Record device, permission path, allowed/denied/off-trail UI states, and whether the trail mile updates only after a real fix.',
+		commands: ['xcrun devicectl list devices', 'adb devices -l']
+	},
+	'offline-kill-relaunch': {
+		file: 'docs/launch/proof/offline-kill-relaunch-YYYY-MM-DD.md',
+		summary: 'Installed app survives airplane-mode kill/relaunch with Preferences-backed state and honest offline Scout status.',
+		proofTarget: 'Record install source, airplane-mode state, kill/relaunch steps, persisted profile/loadout, Bible availability, Today/Map/Gear behavior, and Scout offline copy.',
+		commands: ['xcrun devicectl list devices', 'adb devices -l']
+	},
+	'battery-thermal-latency': {
+		file: 'docs/launch/proof/battery-thermal-latency-YYYY-MM-DD.md',
+		summary: 'Physical model download/inference latency, battery, thermal, and low-signal behavior were tested.',
+		proofTarget: 'Record device, battery before/after, thermal observations, network state, model download duration, answer latency, and failure copy.',
+		commands: ['xcrun devicectl list devices', 'adb devices -l']
+	},
+	'accessibility-field-pass': {
+		file: 'docs/launch/proof/accessibility-field-pass-YYYY-MM-DD.md',
+		summary: 'VoiceOver/Dynamic Type/dark-mode/glare/cold-hands checks passed or produced tracked fixes.',
+		proofTarget: 'Record device, text-size setting, VoiceOver pass/fail, dark-mode pass, high-contrast/glare notes, and tap-target/cold-hands observations.',
+		commands: ['xcrun devicectl list devices', 'adb devices -l']
+	}
+};
 
 const items = [
 	check('code-build', 'mobile-check-script', 'pass', mobilePackage.includes('"check"'), {
@@ -188,11 +258,14 @@ const report = {
 		warnings: evidence.warnings
 	},
 	summary,
-	items
+	items,
+	nextActions: unresolvedActions(items)
 };
 
 if (json) {
 	console.log(JSON.stringify(report, null, 2));
+} else if (nextOnly) {
+	printNextActions(report);
 } else {
 	printReport(report);
 }
@@ -252,6 +325,74 @@ function printReport(proof) {
 	if (!proof.readyForSubmission) {
 		console.log('Next: resolve every manual/blocker item, rerun this command, then rerun with --strict before archive/upload.');
 	}
+}
+
+function printNextActions(proof) {
+	console.log('Trail Assistant remaining release proof');
+	console.log(`Generated: ${proof.generatedAt}`);
+	console.log(`Evidence: ${proof.evidence.loaded ? proof.evidence.path : `${proof.evidence.path} (not found)`}`);
+	console.log(`Summary: ${proof.summary.pass} pass, ${proof.summary.warn} warn, ${proof.summary.manual} manual, ${proof.summary.blocker} blocker`);
+	console.log('');
+
+	if (proof.nextActions.length === 0) {
+		console.log('No unresolved release-proof gates remain. Run npm run release:proof -- --strict before archive/upload.');
+		return;
+	}
+
+	for (const action of proof.nextActions) {
+		console.log(`${action.status.padEnd(7)} ${action.id} (${action.lane})`);
+		console.log(`  Need: ${action.detail}`);
+		if (action.proofTarget) console.log(`  Proof target: ${action.proofTarget}`);
+		if (action.commands.length) {
+			console.log('  Suggested proof commands:');
+			for (const command of action.commands) console.log(`    - ${command}`);
+		}
+		if (action.urls.length) {
+			console.log('  Account URLs:');
+			for (const url of action.urls) console.log(`    - ${url}`);
+		}
+		console.log('  Evidence JSON stub:');
+		console.log(indent(JSON.stringify({ [action.id]: action.evidenceStub }, null, 2), 4));
+		console.log('');
+	}
+}
+
+function unresolvedActions(proofItems) {
+	return proofItems
+		.filter((proofItem) => proofItem.status === 'manual' || proofItem.status === 'blocker' || proofItem.status === 'warn')
+		.map((proofItem) => {
+			const guidance = evidenceGuidance[proofItem.id] || {};
+			return {
+				lane: proofItem.lane,
+				id: proofItem.id,
+				status: proofItem.status,
+				detail: proofItem.detail,
+				proofTarget: guidance.proofTarget || 'Capture a dated proof artifact under docs/launch/proof/ and reference it in docs/launch/release-evidence.json.',
+				commands: guidance.commands || [],
+				urls: guidance.urls || [],
+				evidenceStub: evidenceStubFor(proofItem, guidance)
+			};
+		});
+}
+
+function evidenceStubFor(proofItem, guidance) {
+	return {
+		status: 'verified',
+		verifiedAt: '<UTC timestamp from date -u +%Y-%m-%dT%H:%M:%SZ>',
+		verifiedBy: 'Chris Hogg',
+		summary: guidance.summary || proofItem.detail,
+		files: [guidance.file || `docs/launch/proof/${proofItem.id}-YYYY-MM-DD.md`],
+		...(guidance.urls && guidance.urls.length ? { urls: guidance.urls } : {}),
+		...(guidance.commands && guidance.commands.length ? { commands: guidance.commands } : {})
+	};
+}
+
+function indent(text, spaces) {
+	const prefix = ' '.repeat(spaces);
+	return text
+		.split('\n')
+		.map((line) => `${prefix}${line}`)
+		.join('\n');
 }
 
 function exists(path) {

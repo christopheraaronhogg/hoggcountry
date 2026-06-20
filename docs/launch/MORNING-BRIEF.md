@@ -1,11 +1,11 @@
 # ☀️ Morning Brief — App Store + Google Play launch prep
 
-**Date:** 2026-06-19 update  ·  **Branch:** `submission-hardening-claude`
+**Date:** 2026-06-20 update  ·  **Branch:** `main`
 
 ## TL;DR
-Everything that does **not** require your Apple/Google accounts, payment, or signature is **done and committed**: icons, launch screens, store screenshots (both stores, real build), full listing copy, privacy policy + both data-disclosure forms, and the native build/version config. The consistency review passed after I fixed the last 2 issues.
+Everything that does **not** require your Apple/Google accounts, payment, a physical phone, or signature is **done and committed**: icons, launch screens, store screenshots (both stores, real build), full listing copy, privacy policy + both data-disclosure forms, native build/version config, Android upload signing proof, verified privacy/deletion mailbox, and live privacy/support/terms/data route proof.
 
-**The long pole is Apple Developer Program enrollment.** If you are **not already enrolled**, start it the moment you wake up — Apple can take **a day or more** to approve, and *nothing* reaches an iPhone or TestFlight until it clears. Google Play Console ($25) is same-day. **If "submit today" matters, enrollment is the gate — do it first.**
+**The long pole is Apple Developer signing.** This Mac currently has **0 valid code-signing identities**, no provisioning profiles, and no `DEVELOPMENT_TEAM` on the iOS `App` target. If you are **not already enrolled**, start Apple Developer Program enrollment first — Apple can take **a day or more** to approve, and nothing reaches an iPhone or TestFlight until it clears. Google Play Console ($25) is same-day. **If "submit today" matters, Apple signing/enrollment is the gate — do it first.**
 
 ---
 
@@ -72,6 +72,8 @@ Everything that does **not** require your Apple/Google accounts, payment, or sig
 
 ## D2) Repeatable release proof
 Run `cd mobile && npm run release:proof` to print the current proof ledger. Run
+`npm run release:proof -- --next` to print unresolved gates with copyable
+evidence stubs. Run
 `npm run release:proof -- --strict` before archive/upload; strict mode stays red
 until account, device, privacy/contact, and store-console proof exists. Details:
 `docs/launch/release-proof.md`.
@@ -84,4 +86,4 @@ until account, device, privacy/contact, and store-console proof exists. Details:
 - **Model hosted on Hugging Face** (third-party) — fine for v1; consider your own host before scaling.
 
 ## Boundaries (respected)
-Nothing submitted · no accounts created · no payment entered · public `/support`, `/data`, and the Scout ChatGPT MCP proxy still require a deploy to `main` before they are live on hoggcountry.com.
+Nothing submitted · no accounts created · no payment entered · no App Store Connect / Play Console record verified · no physical-device Scout/GPS/offline/accessibility proof captured yet.

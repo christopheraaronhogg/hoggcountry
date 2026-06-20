@@ -165,6 +165,17 @@ test('mobile release proof strict mode fails until manual/device/account proof i
 	assert.match(result.stdout, /manual\/device\/account evidence remains/u);
 });
 
+test('mobile release proof next mode prints unresolved gates and evidence stubs', () => {
+	const result = runProof(['--next']);
+
+	assert.equal(result.status, 0, result.stderr);
+	assert.match(result.stdout, /Trail Assistant remaining release proof/u);
+	assert.match(result.stdout, /ios-development-team/u);
+	assert.match(result.stdout, /app-store-connect-record/u);
+	assert.match(result.stdout, /Evidence JSON stub/u);
+	assert.doesNotMatch(result.stdout, /code-build:/u);
+});
+
 test('root test suite runs the mobile release proof contract', () => {
 	const rootPackage = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
 
