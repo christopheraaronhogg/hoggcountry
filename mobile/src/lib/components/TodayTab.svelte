@@ -38,11 +38,20 @@
 	const packMissingCount = $derived(loadout.filter((i) => !i.carried).length);
 
 	// --- upcoming landmarks (keep mile, derive the day to camp) ----------------
+	// Cap the look-ahead so a pack that doesn't bracket the hiker's mile (e.g. an
+	// offline self user still holding the bundled Dad-pilot NY pack) can't render
+	// absurd "815 mi to water" distances. Real trail-ahead data sits within ~80 mi;
+	// anything past LOOKAHEAD is stale-for-this-mile and shown as an honest empty.
+	const LOOKAHEAD = 120;
 	const watersAhead = $derived(
-		trailAssistant.fieldPack.water.filter((w) => w.mile >= from - 0.01).sort((a, b) => a.mile - b.mile)
+		trailAssistant.fieldPack.water
+			.filter((w) => w.mile >= from - 0.01 && w.mile <= from + LOOKAHEAD)
+			.sort((a, b) => a.mile - b.mile)
 	);
 	const sheltersAhead = $derived(
-		trailAssistant.fieldPack.shelters.filter((s) => s.mile >= from - 0.01).sort((a, b) => a.mile - b.mile)
+		trailAssistant.fieldPack.shelters
+			.filter((s) => s.mile >= from - 0.01 && s.mile <= from + LOOKAHEAD)
+			.sort((a, b) => a.mile - b.mile)
 	);
 	const nextWater = $derived(watersAhead[0] ?? null);
 	const camp = $derived(sheltersAhead[0] ?? null); // the day's planned end

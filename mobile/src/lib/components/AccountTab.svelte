@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { trailAssistant } from '$lib/trailState.svelte';
+	import { isSelfTracked, TOTAL_AT_MILES } from '$lib/scout/hike-profile';
+	import type { MileSource } from '$lib/scout/hike-profile';
 	import PackStatus from './PackStatus.svelte';
 	import OfflineStatus from './OfflineStatus.svelte';
 	import SourceChip from './SourceChip.svelte';
@@ -9,6 +11,58 @@
 		if (!n || n < 0) return '—';
 		const gb = n / 1e9;
 		return gb >= 1 ? `${gb.toFixed(1)} GB` : `${Math.round(n / 1e6)} MB`;
+	}
+
+	// --- "My hike" identity + position --------------------------------------
+	// Once the user calibrates, the profile is the source of truth — never Dad's
+	// pilot pack. Following Dad is its own honest mode, labeled as such.
+	const profile = $derived(trailAssistant.hikeProfile);
+	const selfTracked = $derived(isSelfTracked(profile));
+	const displayName = $derived(
+		selfTracked ? profile.trailName?.trim() || 'My hike' : trailAssistant.fieldPack.hiker.trailName ?? 'Hogg'
+	);
+	const avatarInitials = $derived(
+		displayName
+			.split(/\s+/)
+			.map((part) => part[0])
+			.join('')
+			.slice(0, 2)
+			.toUpperCase() || 'HC'
+	);
+	const startYear = $derived(profile.startDate ? profile.startDate.slice(0, 4) : '2026');
+	const profileEyebrow = $derived(
+		selfTracked ? `Hiker · ${profile.direction} ${startYear}` : `Following Dad · ${trailAssistant.fieldPack.hiker.direction} 2026`
+	);
+	const mileSourceLabel: Record<MileSource, string> = {
+		onboarding: 'set when you started',
+		'check-in': 'from your last check-in',
+		gps: 'snapped from GPS',
+		pilot: "following Dad's pilot pack"
+	};
+
+	let gpsBusy = $state(false);
+	let gpsMessage = $state<string | null>(null);
+	let gpsOk = $state(false);
+	async function snapGps() {
+		gpsBusy = true;
+		gpsMessage = null;
+		const result = await trailAssistant.useGpsForMile();
+		gpsOk = result.ok;
+		gpsMessage = result.ok ? `Updated to mile ${result.mile?.toFixed(1)}.` : result.reason ?? 'Could not update from GPS.';
+		gpsBusy = false;
+	}
+
+	// number|null: `bind:value` on a number input yields a number (or null when
+	// empty), so keep the draft numeric rather than a string.
+	let mileDraft = $state<number | null>(null);
+	const mileDraftValid = $derived(
+		mileDraft !== null && Number.isFinite(mileDraft) && mileDraft >= 0 && mileDraft <= TOTAL_AT_MILES
+	);
+	async function setMileFromInput() {
+		if (!mileDraftValid) return;
+		await trailAssistant.updateCurrentMile(mileDraft as number, 'check-in');
+		mileDraft = null;
+		gpsMessage = null;
 	}
 
 	const model = $derived(trailAssistant.modelStatus);
@@ -38,10 +92,10 @@
 <div class="section-stack">
 	<section class="card profile-card">
 		<div class="profile-top">
-			<div class="avatar">HC</div>
+			<div class="avatar">{avatarInitials}</div>
 			<div class="profile-copy">
-				<p class="eyebrow">Hiker · {fieldPack.hiker.direction} 2026</p>
-				<h2>{fieldPack.hiker.trailName}</h2>
+				<p class="eyebrow">{profileEyebrow}</p>
+				<h2>{displayName}</h2>
 				<p>Day {trailAssistant.dayNumber} · Mile {trailAssistant.currentMile.toFixed(1)}</p>
 			</div>
 		</div>
@@ -60,6 +114,60 @@
 				<small>to Katahdin</small>
 			</div>
 		</div>
+	</section>
+
+	<section class="card hike-card">
+		<div class="section-heading">
+			<p class="eyebrow">My hike</p>
+			<h2>Where you are</h2>
+			<p>
+				Scout keys everything — water, shelters, towns, the day — off this mile. It stays yours; a
+				field-pack refresh never moves it. Keep it honest with a check-in or a GPS snap.
+			</p>
+		</div>
+
+		<div class="mile-now">
+			<div class="mile-figure tabular">{trailAssistant.currentMile.toFixed(1)}<span>mi</span></div>
+			<div class="mile-meta">
+				<span class="mile-src">{mileSourceLabel[profile.mileSource]}</span>
+				<span class="mile-dir">{profile.direction} · {(TOTAL_AT_MILES - trailAssistant.currentMile).toFixed(0)} mi to go</span>
+			</div>
+		</div>
+
+		<div class="mile-set">
+			<input
+				type="number"
+				inputmode="decimal"
+				bind:value={mileDraft}
+				placeholder="I'm at mile…"
+				min="0"
+				max={TOTAL_AT_MILES}
+				step="0.1"
+				onkeydown={(event) => {
+					if (event.key === 'Enter') {
+						event.preventDefault();
+						setMileFromInput();
+					}
+				}}
+			/>
+			<button class="cta-button compact" onclick={setMileFromInput} disabled={!mileDraftValid}>Set mile</button>
+		</div>
+
+		<div class="mile-actions">
+			<button class="outline-button compact" onclick={snapGps} disabled={gpsBusy}>
+				{gpsBusy ? 'Locating…' : '📍 Update from GPS'}
+			</button>
+			<button class="outline-button compact" onclick={() => trailAssistant.openHikeSetup()}>Edit hike details</button>
+		</div>
+
+		{#if gpsMessage}
+			<p class="mile-feedback" class:ok={gpsOk} class:warn={!gpsOk}>{gpsMessage}</p>
+		{/if}
+		{#if !selfTracked}
+			<p class="mile-feedback note">
+				You're following Dad's 2026 hike. Setting a mile or GPS snap switches Scout to your own hike.
+			</p>
+		{/if}
 	</section>
 
 	<section class="card pack-card">
@@ -415,6 +523,115 @@
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
 		color: var(--muted);
+	}
+
+	.hike-card {
+		display: grid;
+		gap: 12px;
+	}
+
+	.mile-now {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		padding: 12px 14px;
+		border-radius: 13px;
+		background: rgba(47, 75, 53, 0.07);
+	}
+
+	.mile-figure {
+		font-family: var(--font-display);
+		font-weight: 800;
+		font-size: 2.4rem;
+		line-height: 1;
+		color: var(--forest);
+		display: flex;
+		align-items: baseline;
+		gap: 4px;
+	}
+
+	.mile-figure span {
+		font-size: 0.9rem;
+		font-weight: 700;
+		color: var(--muted);
+	}
+
+	.mile-meta {
+		display: grid;
+		gap: 3px;
+	}
+
+	.mile-src {
+		font-size: 0.82rem;
+		font-weight: 800;
+		color: var(--ink);
+	}
+
+	.mile-dir {
+		font-size: 0.74rem;
+		color: var(--muted);
+		font-weight: 700;
+	}
+
+	.mile-set {
+		display: flex;
+		gap: 8px;
+		align-items: stretch;
+	}
+
+	.mile-set input {
+		flex: 1;
+		min-width: 0;
+		border: 1px solid var(--line);
+		border-radius: 12px;
+		padding: 10px 12px;
+		background: var(--surface-strong);
+		color: var(--ink);
+	}
+
+	.mile-set input:focus {
+		outline: none;
+		border-color: var(--forest);
+		box-shadow: 0 0 0 3px rgba(47, 75, 53, 0.12);
+	}
+
+	.mile-set .cta-button.compact {
+		flex: none;
+	}
+
+	.mile-set .cta-button.compact:disabled {
+		opacity: 0.5;
+	}
+
+	.mile-actions {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 8px;
+	}
+
+	.mile-actions .outline-button.compact {
+		width: 100%;
+		justify-content: center;
+	}
+
+	.mile-feedback {
+		font-size: 0.8rem;
+		font-weight: 700;
+		margin: 0;
+	}
+
+	.mile-feedback.ok {
+		color: var(--success, #2f6a47);
+	}
+
+	.mile-feedback.warn {
+		color: var(--clay);
+	}
+
+	.mile-feedback.note {
+		color: var(--muted);
+		font-weight: 600;
+		line-height: 1.4;
 	}
 
 	.offline-section {

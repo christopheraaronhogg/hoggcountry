@@ -34,8 +34,11 @@ function response(status, body) {
 
 function remoteEnvelope() {
 	const pack = cloneDefaultContextPack();
-	const generatedAt = new Date('2026-06-17T05:00:00.000Z').toISOString();
-	const validUntil = new Date('2026-06-18T05:00:00.000Z').toISOString();
+	// Relative to "now" so the smoke isn't a calendar time bomb: a freshly fetched
+	// pack is recent and not yet expired, which is what "ready" (not "stale") means.
+	const now = Date.now();
+	const generatedAt = new Date(now - 5 * 60 * 60 * 1000).toISOString();
+	const validUntil = new Date(now + 24 * 60 * 60 * 1000).toISOString();
 
 	return {
 		ok: true,

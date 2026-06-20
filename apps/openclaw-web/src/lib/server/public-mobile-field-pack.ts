@@ -15,6 +15,37 @@ const MAX_TOWNS = 6;
 
 type SourceKind = 'trail-pack' | 'field-guide' | 'official' | 'hiker-input' | 'cached-weather' | 'derived';
 
+/**
+ * Personalization for a user tracking their OWN hike (the mobile app passes
+ * `?mile=&direction=&personal=1`). When personal, the pack is centered on the
+ * user's mile and stripped of Dad/pilot-specific framing — position is theirs,
+ * not the family pilot's. Absent these options the endpoint returns the default
+ * Dad pilot pack exactly as before.
+ */
+export interface FieldPackOptions {
+  readonly mile?: number;
+  readonly direction?: 'NOBO' | 'SOBO';
+  readonly personal?: boolean;
+}
+
+function clampServerMile(value: number): number {
+  const bounded = Math.min(TOTAL_AT_MILES, Math.max(0, value));
+  return Math.round(bounded * 10) / 10;
+}
+
+function resolvePersonal(options: FieldPackOptions): { personal: boolean; mile: number | null; direction: 'NOBO' | 'SOBO' } {
+  const mile = finiteNumber(options.mile);
+  // Defense-in-depth: once a caller signals personal intent with any finite mile,
+  // serve a personal pack (clamping an out-of-range mile into the trail) — never
+  // fall back to the Dad pack, which would leak Dad's location to that request.
+  const personal = options.personal === true && mile !== null;
+  return {
+    personal,
+    mile: personal ? clampServerMile(mile as number) : null,
+    direction: options.direction === 'SOBO' ? 'SOBO' : 'NOBO'
+  };
+}
+
 interface MobileSourceReceipt {
   readonly id: string;
   readonly title: string;
@@ -122,6 +153,12 @@ function currentMileFromDad(dad: DadPilotSummary | null): number {
   return PILOT_CURRENT_MILE;
 }
 
+function personalNotice(trailAhead: TrailAheadSlice | null): string {
+  return trailAhead
+    ? 'Trail-ahead water, shelter, and town entries are generated from open-reference candidates centered on your current mile; confirm current water, services, rules, and access before relying on them.'
+    : 'Trail-ahead open-reference slice was not reachable; app is using a compact cached pack. Confirm current water, services, and access before relying on it.';
+}
+
 function pilotNotice(dad: DadPilotSummary | null, trailAhead: TrailAheadSlice | null): string {
   const locationNote = dad
     ? dad.latestFixIsPreview
@@ -195,7 +232,7 @@ function mapTown(point: TrailMapWaypoint): MobileTownReference {
   };
 }
 
-async function buildTrailAheadSlice(currentMile: number, now: Date): Promise<TrailAheadSlice | null> {
+async function buildTrailAheadSlice(currentMile: number, now: Date, personal = false): Promise<TrailAheadSlice | null> {
   const reference = await loadReferencePack();
   const endMile = Math.min(TOTAL_AT_MILES, roundMile(currentMile + TRAIL_AHEAD_MILES));
   const townEndMile = Math.min(TOTAL_AT_MILES, roundMile(currentMile + TOWN_LOOKAHEAD_MILES));
@@ -231,7 +268,9 @@ async function buildTrailAheadSlice(currentMile: number, now: Date): Promise<Tra
     shelters: uniqueByName(shelterPoints.map(mapShelter)),
     towns: uniqueByName(townPoints.map(mapTown)),
     downloadedRegions: [
-      `Dad trail-ahead ${roundMile(currentMile).toFixed(1)}-${endMile.toFixed(1)}`,
+      personal
+        ? `Trail ahead ${roundMile(currentMile).toFixed(1)}-${endMile.toFixed(1)}`
+        : `Dad trail-ahead ${roundMile(currentMile).toFixed(1)}-${endMile.toFixed(1)}`,
       `AT open-reference candidates (${states})`
     ],
     sourceReceipts: [
@@ -261,25 +300,37 @@ async function buildTrailAheadSlice(currentMile: number, now: Date): Promise<Tra
   };
 }
 
-function buildContextPack(now: Date, dad: DadPilotSummary | null, trailAhead: TrailAheadSlice | null): MobileContextPack {
+function buildContextPack(
+  now: Date,
+  dad: DadPilotSummary | null,
+  trailAhead: TrailAheadSlice | null,
+  personalCtx: { personal: boolean; mile: number | null; direction: 'NOBO' | 'SOBO' }
+): MobileContextPack {
   const generatedAt = now.toISOString();
-  const currentMile = currentMileFromDad(dad);
+  const personal = personalCtx.personal;
+  const currentMile = personal ? (personalCtx.mile as number) : currentMileFromDad(dad);
 
   return {
     frame: {
       totalMiles: TOTAL_AT_MILES,
       startMile: 0,
       endMile: TOTAL_AT_MILES,
-      source: 'AWOL 2026 reference length + Hogg Country Dad pilot pack + Scout AT open-reference slice'
+      source: personal
+        ? 'AWOL 2026 reference length + Scout AT open-reference slice'
+        : 'AWOL 2026 reference length + Hogg Country Dad pilot pack + Scout AT open-reference slice'
     },
     hiker: {
-      trailName: 'Hogg',
+      // Personal packs carry the user's own position and no Dad identity; the app
+      // owns the trail name and day number locally.
+      trailName: personal ? undefined : 'Hogg',
       currentMile,
-      direction: 'NOBO',
-      dayNumber: 42,
-      targetMilesToday: 13.8
+      direction: personal ? personalCtx.direction : 'NOBO',
+      dayNumber: personal ? 0 : 42,
+      targetMilesToday: personal ? undefined : 13.8
     },
-    water: trailAhead?.water.length ? trailAhead.water : [
+    // Pilot fallbacks below are Southern-VA-specific. A personal pack must never
+    // substitute them at an arbitrary user mile, so it degrades to honest empties.
+    water: trailAhead?.water.length ? trailAhead.water : personal ? [] : [
       {
         name: 'Lick Creek',
         mile: 586.6,
@@ -293,7 +344,7 @@ function buildContextPack(now: Date, dad: DadPilotSummary | null, trailAhead: Tr
         note: 'Seasonal; use only as a bonus source after filling at Lick Creek.'
       }
     ],
-    shelters: trailAhead?.shelters.length ? trailAhead.shelters : [
+    shelters: trailAhead?.shelters.length ? trailAhead.shelters : personal ? [] : [
       {
         name: 'Chestnut Knob Shelter',
         mile: 589.7,
@@ -307,7 +358,7 @@ function buildContextPack(now: Date, dad: DadPilotSummary | null, trailAhead: Tr
         note: 'Backup shelter farther north; confirm crowding from recent hiker reports.'
       }
     ],
-    towns: trailAhead?.towns.length ? trailAhead.towns : [
+    towns: trailAhead?.towns.length ? trailAhead.towns : personal ? [] : [
       {
         name: 'Bland, VA',
         mile: 596.0,
@@ -353,30 +404,53 @@ function buildContextPack(now: Date, dad: DadPilotSummary | null, trailAhead: Tr
       { name: 'InReach Mini 2', category: 'safety', weightOz: 3.5, carried: true },
       { name: 'Anker 10k power bank', category: 'electronics', weightOz: 6.9, carried: true }
     ],
-    weather: {
-      mile: currentMile,
-      summary: 'Cached pilot weather: cold ridge wind with dry afternoon skies',
-      highF: 46,
-      lowF: 28,
-      windMph: 17,
-      riskNote: 'Weather in this pack is cached pilot context; refresh before exposed terrain.',
-      generatedAt: PILOT_GENERATED_AT
-    },
-    downloadedRegions: trailAhead?.downloadedRegions.length ? trailAhead.downloadedRegions : ['Dad pilot - Southern VA', 'AT open reference summary'],
+    // Personal packs ship no weather: the cached figures below are Dad's pilot
+    // context, which would be misleading at the user's own mile. The app shows an
+    // honest "no cached forecast" state until a real source is wired up.
+    weather: personal
+      ? null
+      : {
+          mile: currentMile,
+          summary: 'Cached pilot weather: cold ridge wind with dry afternoon skies',
+          highF: 46,
+          lowF: 28,
+          windMph: 17,
+          riskNote: 'Weather in this pack is cached pilot context; refresh before exposed terrain.',
+          generatedAt: PILOT_GENERATED_AT
+        },
+    downloadedRegions: trailAhead?.downloadedRegions.length
+      ? trailAhead.downloadedRegions
+      : personal
+        ? [`Trail ahead near mile ${currentMile.toFixed(1)}`, 'AT open reference summary']
+        : ['Dad pilot - Southern VA', 'AT open reference summary'],
     generatedAt
   };
 }
 
-function sourceReceipts(now: Date, contextPack: MobileContextPack, trailAhead: TrailAheadSlice | null): MobileSourceReceipt[] {
+function sourceReceipts(
+  now: Date,
+  contextPack: MobileContextPack,
+  trailAhead: TrailAheadSlice | null,
+  personal: boolean
+): MobileSourceReceipt[] {
   return [
-    {
-      id: 'field-pack:dad-pilot',
-      title: 'Dad pilot mobile field pack',
-      kind: 'trail-pack',
-      citation: 'Hogg Country public Scout mobile bootstrap',
-      generatedAt: now.toISOString(),
-      miles: { from: contextPack.hiker.currentMile, to: trailAhead?.endMile ?? 606.0 }
-    },
+    personal
+      ? {
+          id: 'field-pack:mobile',
+          title: 'Scout mobile field pack',
+          kind: 'trail-pack',
+          citation: 'Hogg Country public Scout mobile bootstrap, centered on your current mile',
+          generatedAt: now.toISOString(),
+          miles: { from: contextPack.hiker.currentMile, to: trailAhead?.endMile ?? contextPack.hiker.currentMile }
+        }
+      : {
+          id: 'field-pack:dad-pilot',
+          title: 'Dad pilot mobile field pack',
+          kind: 'trail-pack',
+          citation: 'Hogg Country public Scout mobile bootstrap',
+          generatedAt: now.toISOString(),
+          miles: { from: contextPack.hiker.currentMile, to: trailAhead?.endMile ?? 606.0 }
+        },
     ...(trailAhead?.sourceReceipts ?? []),
     {
       id: 'field-guide:water-discipline',
@@ -400,28 +474,32 @@ function sourceReceipts(now: Date, contextPack: MobileContextPack, trailAhead: T
   ];
 }
 
-export async function buildPublicMobileFieldPack(now = new Date()) {
+export async function buildPublicMobileFieldPack(now = new Date(), options: FieldPackOptions = {}) {
+  const { personal, mile, direction } = resolvePersonal(options);
   const [dad, atReference] = await Promise.all([
-    loadDadPilotSummary().catch(() => null),
+    // Personal packs never use the Dad summary, so skip the upstream Garmin fetch.
+    personal ? Promise.resolve(null) : loadDadPilotSummary().catch(() => null),
     loadScoutAtOpenReferenceOfflineSummary(now).catch(() => null)
   ]);
-  const trailAhead = await buildTrailAheadSlice(currentMileFromDad(dad), now).catch(() => null);
-  const contextPack = buildContextPack(now, dad, trailAhead);
-  const receipts = sourceReceipts(now, contextPack, trailAhead);
+  const centerMile = personal ? (mile as number) : currentMileFromDad(dad);
+  const trailAhead = await buildTrailAheadSlice(centerMile, now, personal).catch(() => null);
+  const contextPack = buildContextPack(now, dad, trailAhead, { personal, mile, direction });
+  const receipts = sourceReceipts(now, contextPack, trailAhead, personal);
 
   return {
     data: {
       context_pack: contextPack,
-      dad,
+      // A personal pack never carries Dad's Garmin location into a stranger's pack.
+      dad: personal ? null : dad,
       at_reference: atReference,
-      pilot_notice: pilotNotice(dad, trailAhead)
+      pilot_notice: personal ? personalNotice(trailAhead) : pilotNotice(dad, trailAhead)
     },
     meta: {
       pack_version: 1,
       generated_at: now.toISOString(),
       valid_until: validUntil(now),
       source_receipts: receipts,
-      fallback_reason: dad ? null : 'dad-pilot-unavailable',
+      fallback_reason: personal ? null : dad ? null : 'dad-pilot-unavailable',
       request_id: crypto.randomUUID()
     },
     error: null

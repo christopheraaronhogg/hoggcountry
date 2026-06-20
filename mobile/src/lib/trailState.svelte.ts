@@ -5,6 +5,7 @@ import type {
 	ChatMessage,
 	CheckInRecord,
 	CheckInStatus,
+	HikeProfile,
 	PrivacySettings,
 	SyncState,
 	Tab,
@@ -17,6 +18,18 @@ import type {
 } from './types';
 import { publishTrailPulseReport } from './trailPulseSpacetime';
 import { resolveModelPolicy } from './scout/model-policy.ts';
+import {
+	buildFieldPackUrl,
+	clampMile,
+	deriveDayNumber,
+	DEFAULT_HIKE_PROFILE,
+	isSelfTracked,
+	parseMileFromCheckIn,
+	parseMileFromText,
+	todayISODate,
+	type HikeMode,
+	type MileSource
+} from './scout/hike-profile.ts';
 import { loadTrailGeometry, snapToMile, type TrailGeoPoint } from './trail/trail-geometry';
 import { createCapacitorPreferencesAdapter, createScoutRuntime, InMemoryContextPackStore } from './scout';
 import type { OnDeviceGemmaProvider } from './scout';
@@ -44,16 +57,10 @@ const MODEL_POLICY = resolveModelPolicy(
 );
 const REQUIRE_GEMMA = MODEL_POLICY === 'gemma4-only';
 
-// Dad's NOBO start date (src/data/gear.json startDate). The day number is derived
-// from this, not stored — so it's always the real "day N of the hike", never a
-// frozen placeholder.
+// Dad's NOBO start date (src/data/gear.json startDate). Used as the day-number
+// basis when following the Dad pilot hike; a self-tracked hiker's own start date
+// (HikeProfile.startDate) takes over once they calibrate.
 const HIKE_START_DATE = '2026-02-01';
-
-function deriveDayNumber(startDate: string, now: Date): number {
-	const start = new Date(`${startDate}T00:00:00`);
-	const days = Math.floor((now.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1;
-	return Math.max(1, days);
-}
 
 function isoHoursFromNow(hours: number): string {
 	return new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
@@ -151,6 +158,7 @@ function trailPulseDisplayText(report: TrailConditionReport): string {
 
 const defaultState: TrailState = {
 	activeTab: 'Today',
+	hikeProfile: { ...DEFAULT_HIKE_PROFILE },
 	coachMessages: [
 		makeMessage(
 			'assistant',
@@ -163,7 +171,7 @@ const defaultState: TrailState = {
 		location: 'Mile 1438.0',
 		mile: 1438,
 		status: 'safe',
-		note: 'Using the bundled Dad trail-ahead fallback until a refreshed field pack is saved on this phone.'
+		note: 'Using the bundled trail-ahead fallback until a fresh field pack is saved on this phone.'
 	},
 	checkInHistory: [],
 	// Trail Pulse starts empty — reports are crowd-sourced from real hikers, so the
@@ -258,6 +266,9 @@ class TrailAssistantStore {
 	// from static/. Powers the elevation profile and GPS→mile snapping. Empty
 	// until loaded, so UI renders an honest empty state in the meantime.
 	#trailGeo = $state.raw<TrailGeoPoint[]>([]);
+	// True while the "My hike" calibration sheet is showing. Opened on first run
+	// (when the profile isn't calibrated yet) or from Settings to re-edit.
+	#hikeSetupOpen = $state(false);
 
 	constructor() {
 		if (!browser) return;
@@ -322,6 +333,11 @@ class TrailAssistantStore {
 			// Persisted activeTab may reference a tab that no longer exists after the
 			// IA change (Plan/Town/Safety/You) — map it onto the new pillars.
 			this.#state.activeTab = migrateTab(this.#state.activeTab);
+			// State persisted before "My hike" calibration existed has no profile —
+			// fall back to the uncalibrated default so first-run setup still appears.
+			if (!this.#state.hikeProfile?.mode) {
+				this.#state.hikeProfile = { ...DEFAULT_HIKE_PROFILE };
+			}
 		} catch (error) {
 			console.error('Failed to restore Trail Assistant state', error);
 		}
@@ -330,6 +346,7 @@ class TrailAssistantStore {
 	#snapshot(): PersistedState {
 		return {
 			activeTab: this.#state.activeTab,
+			hikeProfile: { ...this.#state.hikeProfile },
 			coachMessages: [...this.#state.coachMessages],
 			lastCheckIn: { ...this.#state.lastCheckIn },
 			checkInHistory: [...this.#state.checkInHistory],
@@ -359,8 +376,13 @@ class TrailAssistantStore {
 	}
 
 	#applyPackToTrailState(pack: ContextPack) {
-		this.#state.currentMile = pack.hiker.currentMile;
-		this.#state.dayNumber = pack.hiker.dayNumber;
+		// A self-tracked hiker OWNS their position — the pack only supplies reference
+		// data (water/shelters/towns), so a remote refresh must NOT pull them back to
+		// the pack's centered mile. Following the Dad pilot pack still reads position
+		// from the pack as before.
+		if (!isSelfTracked(this.#state.hikeProfile)) {
+			this.#state.currentMile = pack.hiker.currentMile;
+		}
 		this.#state.trailSettings = {
 			...this.#state.trailSettings,
 			offlineRegion: pack.downloadedRegions[0] ?? this.#state.trailSettings.offlineRegion
@@ -668,7 +690,32 @@ class TrailAssistantStore {
 	}
 
 	get dayNumber() {
-		return deriveDayNumber(HIKE_START_DATE, new Date());
+		const profile = this.#state.hikeProfile;
+		const start = isSelfTracked(profile) && profile.startDate ? profile.startDate : HIKE_START_DATE;
+		return deriveDayNumber(start, new Date());
+	}
+
+	/** The user's own hike identity + position ("My hike"). */
+	get hikeProfile(): HikeProfile {
+		return this.#state.hikeProfile;
+	}
+
+	/** True until the user has completed (or skipped) first-run calibration. */
+	get needsCalibration(): boolean {
+		return browser && !this.#state.hikeProfile.calibrated;
+	}
+
+	/** True while the "My hike" setup sheet should be shown (first run or re-edit). */
+	get hikeSetupOpen(): boolean {
+		return this.#hikeSetupOpen || this.needsCalibration;
+	}
+
+	openHikeSetup(): void {
+		this.#hikeSetupOpen = true;
+	}
+
+	closeHikeSetup(): void {
+		this.#hikeSetupOpen = false;
 	}
 
 	/** Real AT route geometry + elevation (1-mi samples), or [] before it loads. */
@@ -726,8 +773,9 @@ class TrailAssistantStore {
 	/**
 	 * Detects a write-action intent in a chat message and returns a proposed
 	 * action (display + apply closure + a prompt line), or null for plain chat.
-	 * The first "Do" tool is logging a check-in; loadout edits follow the same
-	 * shape. Apply is never run here — only on explicit confirm.
+	 * The "Do" tools are logging a check-in and updating the current mile (e.g.
+	 * "I'm at mile 623.4"); the two can combine ("I'm safe at mile 700"). Apply is
+	 * never run here — only on explicit confirm.
 	 */
 	#detectActionIntent(
 		text: string
@@ -741,15 +789,38 @@ class TrailAssistantStore {
 		} else if (/\b(check ?in|checking in|i'?m safe|im safe|log me safe|all good|made camp|safe and sound)\b/.test(lower)) {
 			status = 'safe';
 		}
-		if (!status) return null;
+
+		// Pure position updates use the strict parser (strong false-positive guard);
+		// a check-in additionally accepts a bare "at mile N" locator, so a stated
+		// mile in "I'm safe at mile 700" / "need help at mile 1442" isn't lost.
+		const parsedMile = status ? parseMileFromCheckIn(text) : parseMileFromText(text);
+		if (!status && parsedMile === null) return null;
+
+		// Pure position update ("I'm at mile 623.4") — no check-in status present.
+		if (!status && parsedMile !== null) {
+			const from = this.#state.currentMile;
+			return {
+				display: {
+					id: crypto.randomUUID(),
+					title: 'Update your position',
+					detail: `Move to mile ${parsedMile.toFixed(1)} (from mile ${from.toFixed(1)})`,
+					confirmLabel: 'Update mile'
+				},
+				apply: () => void this.updateCurrentMile(parsedMile, 'check-in'),
+				prompt: `Want me to set your position to mile ${parsedMile.toFixed(1)}? I won't change anything until you confirm below.`
+			};
+		}
 
 		const labels: Record<CheckInStatus, string> = {
 			safe: 'Safe',
 			delayed: 'Delayed',
 			'need-help': 'Need help'
 		};
-		const confirmed = status;
-		const mile = this.#state.currentMile;
+		const confirmed = status as CheckInStatus;
+		// A mile in the message moves the hiker first, so the check-in records at the
+		// stated mile rather than the stale one.
+		const mile = parsedMile ?? this.#state.currentMile;
+		const movesPosition = parsedMile !== null && Math.abs(parsedMile - this.#state.currentMile) >= 0.05;
 		return {
 			display: {
 				id: crypto.randomUUID(),
@@ -757,8 +828,13 @@ class TrailAssistantStore {
 				detail: `Mile ${mile.toFixed(1)} · "${text}"`,
 				confirmLabel: 'Log check-in'
 			},
-			apply: () => this.performCheckIn(confirmed, text),
-			prompt: `Want me to log a "${labels[confirmed]}" check-in at mile ${mile.toFixed(1)}? I won't record anything until you confirm below.`
+			apply: () => {
+				if (movesPosition) void this.updateCurrentMile(mile, 'check-in');
+				this.performCheckIn(confirmed, text);
+			},
+			prompt: movesPosition
+				? `Want me to mark you at mile ${mile.toFixed(1)} and log a "${labels[confirmed]}" check-in? I won't record anything until you confirm below.`
+				: `Want me to log a "${labels[confirmed]}" check-in at mile ${mile.toFixed(1)}? I won't record anything until you confirm below.`
 		};
 	}
 
@@ -900,12 +976,134 @@ class TrailAssistantStore {
 	}
 
 	async refreshFieldPack(): Promise<ContextPack> {
-		const pack = await this.#fieldPackStore.refreshFromEndpoint(FIELD_PACK_ENDPOINT);
+		// Self-tracked hikers fetch a pack centered on THEIR mile (?mile=&personal=1);
+		// Dad-pilot / uncalibrated fetch the default pilot pack at the bare endpoint.
+		const endpoint = buildFieldPackUrl(FIELD_PACK_ENDPOINT, this.#state.hikeProfile);
+		const pack = await this.#fieldPackStore.refreshFromEndpoint(endpoint);
 		this.#fieldPack = pack;
 		this.#fieldPackStatus = this.#fieldPackStore.getStatus();
 		this.#applyPackToTrailState(pack);
 		this.#state.lastSyncAt = new Date().toISOString();
 		return pack;
+	}
+
+	/**
+	 * First-run (or re-edit) calibration. `self` mode makes position the user's own
+	 * — owned by the profile, centered field pack, real day number from their start
+	 * date. `dad-pilot` mode follows the Hogg family's public 2026 thru-hike.
+	 */
+	async calibrateHike(input: {
+		mode: HikeMode;
+		trailName?: string;
+		direction?: 'NOBO' | 'SOBO';
+		startDate?: string;
+		currentMile?: number;
+	}): Promise<void> {
+		const now = new Date().toISOString();
+
+		if (input.mode === 'dad-pilot') {
+			this.#state.hikeProfile = {
+				calibrated: true,
+				mode: 'dad-pilot',
+				direction: 'NOBO',
+				currentMile: this.#fieldPack.hiker.currentMile,
+				mileSource: 'pilot',
+				updatedAt: now
+			};
+		} else {
+			const mile = clampMile(input.currentMile ?? 0);
+			this.#state.hikeProfile = {
+				calibrated: true,
+				mode: 'self',
+				trailName: input.trailName?.trim() || undefined,
+				direction: input.direction ?? 'NOBO',
+				startDate: input.startDate || todayISODate(),
+				currentMile: mile,
+				mileSource: 'onboarding',
+				updatedAt: now
+			};
+			this.#state.currentMile = mile;
+			this.#anchorCheckInToSelf(mile);
+		}
+
+		this.#hikeSetupOpen = false;
+		if (this.#state.onlineStatus) {
+			await this.refreshFieldPack();
+		} else {
+			this.#applyPackToTrailState(this.#fieldPack);
+		}
+	}
+
+	/**
+	 * Re-anchor the seeded check-in to the user's own starting mile when a personal
+	 * hike begins. The bundled default carries a Dad-pilot check-in at mile 1438; a
+	 * self-tracked hiker must never see that as their last logged position.
+	 */
+	#anchorCheckInToSelf(mile: number) {
+		this.#state.lastCheckIn = {
+			id: crypto.randomUUID(),
+			timestamp: new Date().toISOString(),
+			location: `Mile ${mile.toFixed(1)}`,
+			mile,
+			status: 'safe',
+			note: 'Starting position set — log a check-in when you reach camp.'
+		};
+		this.#state.checkInHistory = [];
+	}
+
+	/**
+	 * Move the hiker to a new current mile (from a chat check-in, a GPS snap, or a
+	 * manual edit). Always flips the profile into self-tracking — once someone tells
+	 * Scout where THEY are, position is theirs, not Dad's — and re-centers the field
+	 * pack around the new mile when online.
+	 */
+	async updateCurrentMile(mile: number, source: MileSource): Promise<void> {
+		const clamped = clampMile(mile);
+		const previous = this.#state.hikeProfile;
+		const becomingSelf = !previous.calibrated || previous.mode !== 'self';
+		this.#state.hikeProfile = {
+			...previous,
+			calibrated: true,
+			mode: 'self',
+			direction: previous.direction ?? 'NOBO',
+			startDate: previous.startDate ?? todayISODate(),
+			currentMile: clamped,
+			mileSource: source,
+			updatedAt: new Date().toISOString()
+		};
+		this.#state.currentMile = clamped;
+		// First transition into a personal hike: drop the bundled Dad-pilot check-in.
+		if (becomingSelf) this.#anchorCheckInToSelf(clamped);
+		if (this.#state.onlineStatus) {
+			await this.refreshFieldPack();
+		}
+	}
+
+	/**
+	 * Snap the device GPS fix to the nearest real AT mile and adopt it as the
+	 * current position. Honors the "precise location" privacy toggle and refuses to
+	 * guess when the fix is far off-trail or geometry hasn't loaded — returning a
+	 * reason the UI can show, rather than fabricating a mile.
+	 */
+	async useGpsForMile(): Promise<{ ok: boolean; mile?: number; reason?: string }> {
+		if (!this.#state.privacySettings.sharePreciseLocation) {
+			return { ok: false, reason: 'Turn on Precise location first, then I can snap your GPS fix to a trail mile.' };
+		}
+		const position = await this.#getCurrentPosition();
+		if (!position) {
+			return { ok: false, reason: "Couldn't get a GPS fix. Try again with a clearer view of the sky." };
+		}
+		const mile = snapToMile(this.#trailGeo, position.coords.latitude, position.coords.longitude);
+		if (mile === null) {
+			return {
+				ok: false,
+				reason: this.#trailGeo.length
+					? "Your GPS fix is more than 2 miles from the AT route, so I won't guess a trail mile."
+					: 'The trail map is still loading — try again in a moment.'
+			};
+		}
+		await this.updateCurrentMile(mile, 'gps');
+		return { ok: true, mile };
 	}
 
 	/** Refresh the on-device model file status (cheap; no network). */
