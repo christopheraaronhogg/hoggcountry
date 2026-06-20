@@ -18,8 +18,25 @@
       ]
     },
     "privacy-and-support-routes": {
-      "status": "pending",
-      "summary": "Re-verify live privacy/support/terms/data routes after changing the published privacy contact to chris.stitchscreen@gmail.com."
+      "status": "verified",
+      "verifiedAt": "2026-06-20T19:33:41Z",
+      "verifiedBy": "Codex on Chris Hogg's local checkout",
+      "summary": "Verified live privacy, support, terms, and data routes on Forge production SHA 9e01ea2395d03f3a9021aa0ec8b569aa88cb0741 after changing the published contact to chris.stitchscreen@gmail.com; the old privacy@hoggcountry.com contact is absent from live route HTML.",
+      "files": [
+        "docs/launch/proof/privacy-routes-contact-2026-06-20.md"
+      ],
+      "urls": [
+        "https://hoggcountry.com/privacy",
+        "https://hoggcountry.com/support",
+        "https://hoggcountry.com/terms",
+        "https://hoggcountry.com/data"
+      ],
+      "commands": [
+        "/usr/bin/curl -fsS https://hoggcountry.com/api/v1/health",
+        "/usr/bin/curl -sS -o /dev/null -w '<route> http=%{http_code} content_type=%{content_type}\\n' https://hoggcountry.com/<route>",
+        "/opt/homebrew/bin/rg -n \"chris\\.stitchscreen@gmail\\.com\" /tmp/hoggcountry-live-routes-2026-06-20",
+        "/opt/homebrew/bin/rg -n \"privacy@hoggcountry\\.com\" /tmp/hoggcountry-live-routes-2026-06-20"
+      ]
     },
     "ios-development-team": {
       "status": "pending",
