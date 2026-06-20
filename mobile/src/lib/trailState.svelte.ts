@@ -34,6 +34,14 @@ import {
 	resetToUncalibratedStarterState
 } from './trail-state-defaults';
 import {
+	prepareQueuedReportsForSync,
+	settledSyncState,
+	settleSyncingReports,
+	syncLabel as formatSyncLabel,
+	syncStateAfterOffline,
+	syncStateForLocalWrite
+} from './sync-state';
+import {
 	nextAutoGpsAdoption,
 	resolveManualGpsMile,
 	shouldAutoGpsWatch as shouldStartAutoGpsWatch
@@ -228,11 +236,9 @@ class TrailAssistantStore {
 		window.addEventListener('online', () => {
 			this.#state.onlineStatus = true;
 			if (this.#state.syncState === 'queued-offline') {
-				const queuedReports = this.#state.trailPulseReports.filter((report) => report.syncState === 'queued-offline');
-				this.#state.trailPulseReports = this.#state.trailPulseReports.map((report) =>
-					report.syncState === 'queued-offline' ? { ...report, syncState: 'syncing' } : report
-				);
-				for (const report of queuedReports) {
+				const queuedSync = prepareQueuedReportsForSync(this.#state.trailPulseReports);
+				this.#state.trailPulseReports = queuedSync.reports;
+				for (const report of queuedSync.queuedReports) {
 					void this.#syncTrailPulseReport(report);
 				}
 				this.#finishSync('syncing');
@@ -242,9 +248,7 @@ class TrailAssistantStore {
 
 		window.addEventListener('offline', () => {
 			this.#state.onlineStatus = false;
-			if (this.#state.syncState === 'syncing') {
-				this.#state.syncState = 'queued-offline';
-			}
+			this.#state.syncState = syncStateAfterOffline(this.#state.syncState);
 		});
 
 		$effect.root(() => {
@@ -412,9 +416,10 @@ class TrailAssistantStore {
 		this.#state.syncState = nextState;
 
 		this.#syncTimer = setTimeout(() => {
-			this.#state.syncState = this.#state.onlineStatus ? 'synced' : 'queued-offline';
-			this.#state.trailPulseReports = this.#state.trailPulseReports.map((report) =>
-				report.syncState === 'syncing' ? { ...report, syncState: this.#state.syncState } : report
+			this.#state.syncState = settledSyncState(this.#state.onlineStatus);
+			this.#state.trailPulseReports = settleSyncingReports(
+				this.#state.trailPulseReports,
+				this.#state.syncState
 			);
 			this.#state.lastSyncAt = new Date().toISOString();
 		}, nextState === 'syncing' ? 1300 : 0);
@@ -720,9 +725,7 @@ class TrailAssistantStore {
 	}
 
 	get syncLabel() {
-		if (this.#state.syncState === 'queued-offline') return 'Queued offline';
-		if (this.#state.syncState === 'syncing') return 'Syncing now';
-		return 'Synced';
+		return formatSyncLabel(this.#state.syncState);
 	}
 
 	sendCoachMessage(content: string) {
@@ -1138,7 +1141,7 @@ class TrailAssistantStore {
 		if (this.#state.onlineStatus) {
 			this.#finishSync('syncing');
 		} else {
-			this.#state.syncState = 'queued-offline';
+			this.#state.syncState = syncStateForLocalWrite(false);
 		}
 	}
 
@@ -1159,7 +1162,7 @@ class TrailAssistantStore {
 			noteText,
 			reporterTrailName: input.reporterTrailName,
 			snappedMile: this.#snapPositionToTrailMile(position),
-			syncState: this.#state.onlineStatus ? 'syncing' : 'queued-offline'
+			syncState: syncStateForLocalWrite(this.#state.onlineStatus)
 		});
 
 		this.#state.trailPulseReports = [report, ...this.#state.trailPulseReports];
@@ -1169,7 +1172,7 @@ class TrailAssistantStore {
 			void this.#syncTrailPulseReport(report);
 			this.#finishSync('syncing');
 		} else {
-			this.#state.syncState = 'queued-offline';
+			this.#state.syncState = syncStateForLocalWrite(false);
 		}
 
 		return report;
