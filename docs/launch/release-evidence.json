@@ -7,8 +7,24 @@
       "summary": "Send a test email to privacy@hoggcountry.com, confirm it is received by the monitored inbox, and attach dated proof."
     },
     "privacy-and-support-routes": {
-      "status": "pending",
-      "summary": "Verify https://hoggcountry.com/privacy and https://hoggcountry.com/support live after deploy and attach the command output or screenshots."
+      "status": "verified",
+      "verifiedAt": "2026-06-20T18:58:29Z",
+      "verifiedBy": "Codex on Chris Hogg's local checkout",
+      "summary": "Verified https://hoggcountry.com/privacy and https://hoggcountry.com/support return 200 text/html on production SHA 7d988c78e1cc77154755d0f5adb95e6cf38c3eff and render privacy, deletion, support, and emergency-notice copy.",
+      "files": [
+        "docs/launch/proof/privacy-support-routes-2026-06-20.md"
+      ],
+      "urls": [
+        "https://hoggcountry.com/privacy",
+        "https://hoggcountry.com/support"
+      ],
+      "commands": [
+        "curl -fsS https://hoggcountry.com/api/v1/health",
+        "curl -sS -o /dev/null -w 'privacy http=%{http_code} content_type=%{content_type} url=%{url_effective}\\n' https://hoggcountry.com/privacy",
+        "curl -sS -o /dev/null -w 'support http=%{http_code} content_type=%{content_type} url=%{url_effective}\\n' https://hoggcountry.com/support",
+        "curl -fsSL https://hoggcountry.com/privacy | rg -n \"Trail Assistant|privacy@hoggcountry\\.com|deletion|support\"",
+        "curl -fsSL https://hoggcountry.com/support | rg -n \"Trail Assistant|privacy@hoggcountry\\.com|deletion|emergency|Support\""
+      ]
     },
     "ios-development-team": {
       "status": "pending",
