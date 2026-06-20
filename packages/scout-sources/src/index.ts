@@ -156,6 +156,10 @@ const WEB_RESEARCH_LICENSE: ScoutSourceLicense = {
   notes: 'Use short cited excerpts only. Respect source pages, timestamps, and domain-specific terms. Do not treat general web results as official unless the result is itself an official source.'
 };
 
+function internalRouteQaCitation(name: string, generatedAt: string): string {
+  return `Hogg Country ${name} internal QA fixture, generated ${generatedAt}. Route-order guardrail only; not bundled official or live source data.`;
+}
+
 export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
   {
     id: 'private-workspace',
@@ -314,7 +318,7 @@ export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
       mileEnd: 1150.8,
       topics: ['route validator', 'pine grove furnace', 'halfway', 'boiling springs', 'darlington', 'duncannon', 'mileage']
     },
-    citationTemplate: 'Hogg Country Pine Grove route-order QA fixture, generated 2026-05-04.',
+    citationTemplate: internalRouteQaCitation('Pine Grove route-order', '2026-05-04'),
     allowedActions: ['catalog', 'route-validate'],
     caveats: ['Use as a guardrail for route order and impossible legs; exact camping, water, service, and guidebook facts still require current verification.'],
     keywords: ['pine grove furnace', 'halfway', 'nobo', 'northbound', 'boiling springs', 'darlington', 'duncannon', 'james fry', 'alec kennedy', 'mileage', 'itinerary']
@@ -337,7 +341,7 @@ export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
       mileEnd: 208.1,
       topics: ['route validator', 'gsmnp', 'smokies', 'fontana dam', 'newfound gap', 'permits', 'shelters', 'camping', 'mileage']
     },
-    citationTemplate: 'Hogg Country GSMNP AT corridor and permit-rule QA fixture, generated 2026-05-05 from dogfood QA and official NPS/Recreation.gov rule checks.',
+    citationTemplate: internalRouteQaCitation('GSMNP AT corridor and permit-rule', '2026-05-05'),
     allowedActions: ['catalog', 'route-validate'],
     caveats: ['Use as a guardrail for route order and official-rule wording; exact shelter availability, water, closures, and current mileages still require current NPS/Recreation.gov/user-owned guide verification.'],
     keywords: ['gsmnp', 'smokies', 'great smoky mountains', 'fontana', 'fontana dam', 'newfound gap', 'mollies ridge', 'derrick knob', 'silers bald', 'mount collins', 'permit', 'reservation', 'shelter', 'camping', 'nobo', 'itinerary']
@@ -360,7 +364,7 @@ export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
       mileEnd: 909.6,
       topics: ['route validator', 'shenandoah', 'snp', 'rockfish gap', 'swift run gap', 'permits', 'recreation.gov', 'camping', 'setbacks', 'water', 'mileage']
     },
-    citationTemplate: 'Hogg Country Shenandoah AT south/central corridor and regulation QA fixture, generated 2026-05-05 from dogfood QA and official NPS/Recreation.gov rule checks.',
+    citationTemplate: internalRouteQaCitation('Shenandoah AT south/central corridor and regulation', '2026-05-05'),
     allowedActions: ['catalog', 'route-validate'],
     caveats: ['Use as a guardrail for route order and official-rule wording; exact campsite legality, hut use, water, closures, permit availability, and current mileages still require current NPS/Recreation.gov/user-owned guide verification.'],
     keywords: ['shenandoah', 'snp', 'rockfish gap', 'swift run gap', 'calf mountain', 'blackrock hut', 'pinefield hut', 'hightop hut', 'big meadows', 'byrds nest', 'permit', 'recreation.gov', 'camping', 'setbacks', 'water', 'nobo', 'itinerary']
@@ -383,7 +387,7 @@ export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
       mileEnd: 1061.0,
       topics: ['route validator', 'harpers ferry', 'atc hq', 'mental halfway', 'keys gap', 'weverton', 'ed garvey', 'dahlgren', 'gathland', 'camping', 'water', 'shuttle', 'mileage']
     },
-    citationTemplate: 'Hogg Country Harpers Ferry mental-halfway route/logistics QA fixture, generated 2026-05-06 from dogfood QA and deterministic AT corridor anchors.',
+    citationTemplate: internalRouteQaCitation('Harpers Ferry mental-halfway route/logistics', '2026-05-06'),
     allowedActions: ['catalog', 'route-validate'],
     caveats: ['Use as a guardrail for route order, prompt interpretation, and Pine Grove confusion prevention; exact mileages, parking, shuttle availability, legal overnight status, water, closures, and facilities still require current NPS/Maryland DNR/ATC/user-owned guide/FarOut verification.'],
     keywords: ['harpers ferry', "harper's ferry", 'harper ferry', 'atc hq', 'appalachian trail conservancy hq', 'mental halfway', 'psychological halfway', 'keys gap', 'va-wv 9', 'weverton', 'weverton cliffs', 'shenandoah river', 'loudoun heights', 'ed garvey', 'ed garvey memorial shelter', 'dahlgren', 'dahlgren backpack campground', 'gathland', 'crampton gap', 'maryland', 'dad', 'family', 'overnight', 'shuttle', 'parking', 'water', 'nobo', 'sobo', 'itinerary']
@@ -406,7 +410,7 @@ export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
       mileEnd: 2177.7,
       topics: ['route validator', '100-mile wilderness', 'hundred mile wilderness', 'monson', 'abol bridge', 'food carry', 'food drops', 'bailouts', 'fords', 'water', 'campsites', 'shelters', 'mileage']
     },
-    citationTemplate: 'Hogg Country 100-Mile Wilderness Monson ↔ Abol Bridge route/logistics QA fixture, generated 2026-05-06 from dogfood QA plus MATC/ATC/AMC/local logistics source checks.',
+    citationTemplate: internalRouteQaCitation('100-Mile Wilderness Monson to Abol Bridge route/logistics', '2026-05-06'),
     allowedActions: ['catalog', 'route-validate'],
     caveats: ['Use as a guardrail for route order and fail-closed logistics wording; exact mileages, legal lean-tos/campsites, water, ford safety, food drops, logging-road access, closures, and shuttles still require current MATC/AMC/A.T. Guide/FarOut/local-provider verification.'],
     keywords: ['100 mile wilderness', '100-mile wilderness', 'hundred mile wilderness', 'monson', 'abol bridge', 'wilson valley', 'long pond stream', 'chairback', 'chairback gap', 'carl newhall', 'logan brook', 'white cap', 'east branch', 'cooper brook falls', 'antlers', 'jo-mary', 'jo mary', 'wadleigh', 'rainbow stream', 'food carry', 'food drop', 'resupply', 'bailout', 'logging road', 'ford', 'fords', 'water', 'nobo', 'sobo', 'itinerary']
@@ -429,7 +433,7 @@ export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
       mileEnd: 2197.7,
       topics: ['route validator', 'baxter', 'katahdin', 'abol bridge', 'katahdin stream', 'the birches', 'permits', 'camping', 'closures', 'weather', 'water', 'mileage']
     },
-    citationTemplate: 'Hogg Country Baxter/Katahdin AT finish corridor and regulation QA fixture, generated 2026-05-05 from Hogg Country guide data plus official Baxter State Park AT/hiking/camping pages and ATC permit checks.',
+    citationTemplate: internalRouteQaCitation('Baxter/Katahdin AT finish corridor and regulation', '2026-05-05'),
     allowedActions: ['catalog', 'route-validate'],
     caveats: ['Use as a guardrail for route order and official-rule wording; exact mileages, The Birches/campsite availability, Long-Distance Hiker Permit status, trail closures, water, weather, and road/parking access still require current Baxter State Park/user-owned guide verification.'],
     keywords: ['baxter', 'katahdin', 'baxter peak', 'mount katahdin', 'mt katahdin', 'abol bridge', 'katahdin stream', 'hurd brook', 'rainbow spring', 'the birches', 'birches', 'monson', '100 mile wilderness', 'hundred mile wilderness', 'long distance hiker permit', 'ld permit', 'ktp', 'katahdin trailhead pass', 'parking', 'camping', 'closure', 'weather', 'water', 'nobo', 'sobo', 'itinerary']
@@ -452,7 +456,7 @@ export const SCOUT_SOURCE_MANIFESTS: readonly ScoutSourceManifest[] = [
       mileEnd: 1863.9,
       topics: ['route validator', 'white mountains', 'whites', 'franconia notch', 'crawford notch', 'amc', 'wmnf', 'huts', 'tentsites', 'camping', 'weather', 'water', 'mileage']
     },
-    citationTemplate: 'Hogg Country White Mountains Franconia Notch ↔ Crawford Notch route/regulation QA fixture, generated 2026-05-06 from dogfood QA and official WMNF/AMC/ATC/NH State Parks rule checks.',
+    citationTemplate: internalRouteQaCitation('White Mountains Franconia Notch to Crawford Notch route/regulation', '2026-05-06'),
     allowedActions: ['catalog', 'route-validate'],
     caveats: ['Use as a guardrail for route order and official-rule wording; exact mileages, hut/tentsite availability, fees, water, weather, road access, parking, and shuttle logistics still require current AMC/WMNF/NH State Parks/user-owned guide verification.'],
     keywords: ['white mountains', 'whites', 'franconia', 'franconia notch', 'crawford', 'crawford notch', 'i-93', 'us 302', 'liberty spring', 'garfield ridge', 'galehead', 'zealand', 'ethan pond', 'amc', 'wmnf', 'hut', 'huts', 'tentsite', 'camping', 'above treeline', 'alpine', 'weather', 'lightning', 'water', 'nobo', 'sobo', 'itinerary']

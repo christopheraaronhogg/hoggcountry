@@ -249,7 +249,7 @@ const usdaPlantsReceipt = buildScoutSourceReceipt('usda-plants-poison-invasive-e
 assert.ok(usdaPlantsReceipt?.citation.includes('USDA PLANTS'), 'USDA PLANTS receipt should name the database');
 
 const routeReceipt = buildScoutSourceReceipt('hoggcountry-pine-grove-route-qa-2026-05-04');
-assert.ok(routeReceipt?.citation.includes('Pine Grove route-order QA fixture'), 'Route receipt should expose the validator citation');
+assert.ok(routeReceipt?.citation.includes('Pine Grove route-order internal QA fixture'), 'Route receipt should expose the validator citation');
 const gsmnpReceipt = buildScoutSourceReceipt('hoggcountry-gsmnp-at-corridor-qa-2026-05-05');
 assert.ok(gsmnpReceipt?.citation.includes('GSMNP AT corridor'), 'GSMNP receipt should expose the validator citation');
 const shenandoahReceipt = buildScoutSourceReceipt('hoggcountry-shenandoah-at-corridor-qa-2026-05-05');
@@ -284,5 +284,28 @@ assert.equal(baxterOfficialReceipt?.trust, 'official', 'Baxter official receipt 
 assert.equal(baxterOfficialReceipt?.accessMode, 'live-fetch', 'Baxter official receipt should identify live-fetch official access');
 const nwsReceipt = buildScoutSourceReceipt('nws-weather', { fetchedAt: '2026-05-04T00:00:00.000Z', url: 'https://api.weather.gov/gridpoints/example' });
 assert.ok(nwsReceipt?.citation.includes('2026-05-04T00:00:00.000Z'), 'Live receipts should render fetched timestamp');
+
+const routeValidatorManifests = SCOUT_SOURCE_MANIFESTS.filter(
+  (source) => source.lane === 'hogg-owned' && source.accessMode === 'route-validator'
+);
+assert.ok(routeValidatorManifests.length >= 6, 'Route validators should be present as reviewed internal QA fixtures');
+for (const source of routeValidatorManifests) {
+  assert.ok(
+    source.citationTemplate.includes('internal QA fixture'),
+    `${source.id} should identify as an internal QA fixture`
+  );
+  assert.ok(
+    source.citationTemplate.includes('not bundled official or live source data'),
+    `${source.id} should not imply bundled official/live source data`
+  );
+  assert.ok(
+    !/official .*checks|source checks|guide data plus official/i.test(source.citationTemplate),
+    `${source.id} citation should not overstate source-check provenance`
+  );
+  assert.ok(
+    source.caveats.some((caveat) => /require current|requires current|still require current/i.test(caveat)),
+    `${source.id} should require current verification in caveats`
+  );
+}
 
 console.log('Scout source catalog eval passed: manifests, selection, and receipts are wired.');
