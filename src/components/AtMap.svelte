@@ -1750,8 +1750,8 @@
   {/if}
 
   {#if toolsOpen}
-    <div class="overlay" onclick={() => toolsOpen = false}></div>
-    <div class="sheet" role="dialog" aria-label="Trail tools">
+    <button class="overlay" type="button" onclick={() => toolsOpen = false} aria-label="Close trail tools"></button>
+    <div class="sheet" role="dialog" aria-modal="true" aria-label="Trail tools" tabindex="-1">
       <div class="sheetHandle"></div>
       <div class="sheetHeader">
         <div class="sheetTitle">Trail Tools</div>
@@ -1825,8 +1825,8 @@
   {/if}
 
   {#if searchOpen}
-    <div class="overlay" onclick={() => searchOpen = false}></div>
-    <div class="sheet" role="dialog" aria-label="Search">
+    <button class="overlay" type="button" onclick={() => searchOpen = false} aria-label="Close search"></button>
+    <div class="sheet" role="dialog" aria-modal="true" aria-label="Search" tabindex="-1">
       <div class="sheetHandle"></div>
       <div class="sheetHeader">
         <div class="sheetTitle">Search / Jump</div>
@@ -1875,8 +1875,8 @@
 
   <!-- LAYERS MODAL -->
   {#if layersOpen}
-    <div class="overlay" onclick={() => layersOpen = false}></div>
-    <div class="modal">
+    <button class="overlay" type="button" onclick={() => layersOpen = false} aria-label="Close HUD settings"></button>
+    <div class="modal" role="dialog" aria-modal="true" aria-label="HUD settings" tabindex="-1">
       <div class="modalTitle">HUD Settings</div>
       <div class="modalRow">
         {#if gpsWatching}
@@ -2216,14 +2216,6 @@
     text-overflow: ellipsis;
   }
 
-  .statusMeta {
-    margin-top: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-  }
-
   .miniTabs {
     display: flex;
     padding: 2px;
@@ -2383,27 +2375,6 @@
     opacity: 0.8;
   }
 
-  .hoggChip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.08);
-    font-size: 0.8rem;
-    font-weight: 700;
-    cursor: pointer;
-    color: var(--hud-text);
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .hoggChip.muted {
-    cursor: default;
-    color: rgba(255, 255, 255, 0.7);
-    background: rgba(255, 255, 255, 0.06);
-  }
-
   .hudActions {
     pointer-events: auto;
     display: flex;
@@ -2431,12 +2402,6 @@
 
   .hudBtn:active {
     transform: translateY(1px) scale(0.98);
-  }
-
-  .hudBtn.active {
-    border-color: rgba(240, 224, 0, 0.45);
-    background: var(--hud-bg-strong);
-    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.55);
   }
 
   .hudBtnIcon {
@@ -2626,9 +2591,12 @@
   .overlay {
     position: fixed;
     inset: 0;
+    border: 0;
+    padding: 0;
     background: rgba(0, 0, 0, 0.45);
     z-index: 2000;
     backdrop-filter: blur(4px);
+    cursor: pointer;
   }
 
   .modal {

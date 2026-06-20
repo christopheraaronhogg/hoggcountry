@@ -43,6 +43,8 @@
     readonly latestDispatchPublished: string | null;
   }
 
+  type DocTab = 'plans' | 'locker';
+
   const { variant } = $props<{ variant: ScoutLabVariant }>();
 
   let profile = $state<ManualProfile | null>(null);
@@ -71,9 +73,15 @@
   let pendingPrompt = $state('');
   let selectedDocId = $state('');
   let selectedPlanId = $state('');
-  let docTab = $state<'plans' | 'locker'>(variant.id === 'docs-radar' ? 'locker' : 'plans');
+  let docTabOverrides = $state<Record<string, DocTab>>({});
+  const defaultDocTab = $derived<DocTab>(variant.id === 'docs-radar' ? 'locker' : 'plans');
+  const docTab = $derived<DocTab>(docTabOverrides[variant.id] ?? defaultDocTab);
   let threadCard: HTMLElement | null = null;
   let threadMessages: HTMLDivElement | null = null;
+
+  function setDocTab(tab: DocTab): void {
+    docTabOverrides = { ...docTabOverrides, [variant.id]: tab };
+  }
 
   async function jsonOrThrow(response: Response) {
     if (!response.ok) {
@@ -432,7 +440,7 @@
         selectedPlanId = document.id;
         savedDocumentHref = `/app/docs#doc-${document.id}`;
         saveNotice = `Saved “${document.title}” to Docs.`;
-        docTab = 'plans';
+        setDocTab('plans');
       }
     } catch (caught) {
       console.error(caught);
@@ -445,12 +453,12 @@
   function choosePlan(documentId: string) {
     selectedPlanId = selectedPlanId === documentId ? '' : documentId;
     selectedDocId = documentId;
-    docTab = 'plans';
+    setDocTab('plans');
   }
 
   function chooseLockerDocument(documentId: string) {
     selectedDocId = documentId;
-    docTab = 'locker';
+    setDocTab('locker');
   }
 
   onMount(() => {
@@ -739,10 +747,10 @@
       <p class="muted">Keep saved plans and the private locker close to the conversation instead of bouncing between pages.</p>
 
       <div class="docs-tabs" style="margin-top:1rem;">
-        <button type="button" class:active={docTab === 'plans'} onclick={() => docTab = 'plans'}>
+        <button type="button" class:active={docTab === 'plans'} onclick={() => setDocTab('plans')}>
           Saved plans ({savedPlans(documents).length})
         </button>
-        <button type="button" class:active={docTab === 'locker'} onclick={() => docTab = 'locker'}>
+        <button type="button" class:active={docTab === 'locker'} onclick={() => setDocTab('locker')}>
           Locker ({lockerDocs(documents).length})
         </button>
       </div>

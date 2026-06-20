@@ -230,7 +230,7 @@
             value={entry.note}
             placeholder={entry.kind === 'note' ? 'Write your own page here…' : 'Add your own trail note…'}
             oninput={(event) => handleNoteInput(entry.id, (event.currentTarget as HTMLTextAreaElement).value)}
-          />
+          ></textarea>
         </article>
       {/each}
     </div>

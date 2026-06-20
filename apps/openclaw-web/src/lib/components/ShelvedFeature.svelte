@@ -17,7 +17,7 @@
 
   const { feature, kicker = 'Shelved', heading, body, primary, secondary }: Props = $props();
 
-  const flag = getFlag(feature);
+  const flag = $derived(getFlag(feature));
 </script>
 
 <section class="shelf">

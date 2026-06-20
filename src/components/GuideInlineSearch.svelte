@@ -292,9 +292,14 @@
           <div
             class="result-item"
             class:selected={i === selectedIndex}
-            onmouseenter={() => selectedIndex = i}
           >
-            <button class="result-open" type="button" onclick={() => scrollToResult(result)}>
+            <button
+              class="result-open"
+              type="button"
+              onfocus={() => selectedIndex = i}
+              onmouseenter={() => selectedIndex = i}
+              onclick={() => scrollToResult(result)}
+            >
               <div class="result-header">
                 <span class="result-title">{@html highlightMatch(result.title, result.matchedTerms)}</span>
                 {#if result.quickRef}

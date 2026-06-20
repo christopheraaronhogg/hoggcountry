@@ -159,7 +159,7 @@
 
 {#if toolId}
   <div class="tool-overlay" onclick={handleBackdropClick} role="presentation">
-    <section class="tool-sheet" role="dialog" aria-modal="true" aria-label="Trail tool panel">
+    <div class="tool-sheet" role="dialog" aria-modal="true" aria-label="Trail tool panel" tabindex="-1">
       <div class="sheet-handle" aria-hidden="true"></div>
 
       <header class="tool-head">
@@ -190,7 +190,7 @@
         {#if toolId === 'notes'}
           <TrailNotesPanel />
         {:else if ToolComponent}
-          <svelte:component this={ToolComponent} {trailContext} />
+          <ToolComponent {trailContext} />
         {:else if loadError}
           <div class="error-card">
             <strong>Tool failed to load.</strong>
@@ -200,7 +200,7 @@
           <div class="loading">Loading {activeMeta?.label || 'tool'}...</div>
         {/if}
       </div>
-    </section>
+    </div>
   </div>
 {/if}
 

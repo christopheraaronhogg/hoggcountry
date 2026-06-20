@@ -297,6 +297,7 @@
         <button 
           class="color-btn color-btn--{color}"
           onclick={() => createHighlight(color)}
+          aria-label="Highlight {color}"
           title="Highlight {color}"
         ></button>
       {/each}
@@ -312,9 +313,10 @@
           class="color-btn color-btn--{color}"
           class:active={highlights.find(h => h.id === activeId)?.color === color}
           onclick={() => changeColor(color)}
+          aria-label="Change highlight to {color}"
         ></button>
       {/each}
-      <button class="delete-btn" onclick={deleteHighlight}>×</button>
+      <button class="delete-btn" onclick={deleteHighlight} aria-label="Delete highlight">×</button>
     </div>
     <textarea 
       class="note-input" 

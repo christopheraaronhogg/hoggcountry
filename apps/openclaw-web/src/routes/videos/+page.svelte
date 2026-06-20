@@ -113,25 +113,26 @@
         <h2>Quick hits from the trail.</h2>
       </div>
 
-      <div class="shorts-strip" role="list">
+      <ul class="shorts-strip">
         {#each shortVideos as video (video.id)}
-          <a
-            role="listitem"
-            class="short-card"
-            href={video.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Watch ${video.title} on YouTube`}
-          >
-            <span class="short-card__media">
-              <YouTubeThumbnail id={video.id} alt={video.title} provided={video.thumbnail} portrait />
-              <span class="short-card__badge">Short</span>
-            </span>
-            <span class="short-card__title">{video.title}</span>
-            <span class="short-card__date">{formatDate(video.published)}</span>
-          </a>
+          <li class="short-card-item">
+            <a
+              class="short-card"
+              href={video.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Watch ${video.title} on YouTube`}
+            >
+              <span class="short-card__media">
+                <YouTubeThumbnail id={video.id} alt={video.title} provided={video.thumbnail} portrait />
+                <span class="short-card__badge">Short</span>
+              </span>
+              <span class="short-card__title">{video.title}</span>
+              <span class="short-card__date">{formatDate(video.published)}</span>
+            </a>
+          </li>
         {/each}
-      </div>
+      </ul>
     </div>
   </section>
 {/if}
@@ -291,17 +292,22 @@
   .shorts-strip {
     display: flex;
     gap: 0.85rem;
+    margin: 0;
     overflow-x: auto;
     padding-bottom: 0.75rem;
+    list-style: none;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
   }
 
-  .short-card {
+  .short-card-item {
     flex: 0 0 168px;
+    scroll-snap-align: start;
+  }
+
+  .short-card {
     display: grid;
     gap: 0.4rem;
-    scroll-snap-align: start;
     text-decoration: none;
   }
 
@@ -351,8 +357,7 @@
     font-weight: 700;
   }
 
-  .video-card__play,
-  .video-card__index {
+  .video-card__play {
     position: absolute;
     border-radius: 999px;
     background: rgba(17, 24, 39, 0.72);
@@ -364,18 +369,6 @@
     right: 0.75rem;
     bottom: 0.75rem;
     padding: 0.45rem 0.7rem;
-  }
-
-  .video-card__index {
-    top: 0.75rem;
-    left: 0.75rem;
-    padding: 0.35rem 0.55rem;
-  }
-
-  .video-card__link {
-    color: var(--pine);
-    font-weight: 900;
-    text-decoration: none;
   }
 
   @media (min-width: 820px) {

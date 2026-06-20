@@ -3,16 +3,8 @@
 
   let { isOpen = false, onClose = () => {}, markdownContent = '' } = $props();
 
-  let modalRef = $state(null);
-
   function handleKeydown(e) {
     if (e.key === 'Escape' && isOpen) {
-      onClose();
-    }
-  }
-
-  function handleBackdropClick(e) {
-    if (e.target === e.currentTarget) {
       onClose();
     }
   }
@@ -58,8 +50,9 @@
 </script>
 
 {#if isOpen}
-  <div class="modal-backdrop" onclick={handleBackdropClick} role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <div class="modal" bind:this={modalRef}>
+  <div class="modal-layer">
+    <button class="modal-backdrop" type="button" onclick={onClose} aria-label="Close download modal"></button>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1">
       <!-- Close button -->
       <button class="close-btn" onclick={onClose} aria-label="Close modal">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -127,7 +120,7 @@
 {/if}
 
 <style>
-  .modal-backdrop {
+  .modal-layer {
     position: fixed;
     inset: 0;
     z-index: 9999;
@@ -135,10 +128,25 @@
     align-items: center;
     justify-content: center;
     padding: 1rem;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .modal-backdrop {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    padding: 0;
     background: rgba(43, 47, 38, 0.6);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
-    animation: fadeIn 0.2s ease;
+    cursor: pointer;
+  }
+
+  .modal-backdrop:focus-visible {
+    outline: 3px solid var(--marker, #f0e000);
+    outline-offset: -8px;
   }
 
   @keyframes fadeIn {
@@ -148,6 +156,7 @@
 
   .modal {
     position: relative;
+    z-index: 1;
     width: 100%;
     max-width: 480px;
     background: linear-gradient(165deg, #fdfcf9 0%, var(--bg, #f5f2e8) 100%);
