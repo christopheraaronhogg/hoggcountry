@@ -61,6 +61,11 @@ export function isSelfTracked(profile: HikeProfile): boolean {
 	return profile.calibrated && profile.mode === 'self';
 }
 
+/** True only after the hiker explicitly chooses to follow the public Dad pilot. */
+export function isDadPilot(profile: HikeProfile): boolean {
+	return profile.calibrated && profile.mode === 'dad-pilot';
+}
+
 export function isValidMile(value: unknown): value is number {
 	return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= TOTAL_AT_MILES;
 }

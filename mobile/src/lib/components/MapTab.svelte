@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { trailAssistant } from '$lib/trailState.svelte';
-	import { isSelfTracked } from '$lib/scout/hike-profile';
+	import { isDadPilot, isSelfTracked } from '$lib/scout/hike-profile';
 	import { elevationWindow } from '$lib/trail/trail-geometry';
 	import Icon, { type IconName } from './Icon.svelte';
 
@@ -17,13 +17,13 @@
 
 	const from = $derived(trailAssistant.currentMile);
 	const geo = $derived(trailAssistant.trailGeometry);
-	// The hiker's own pin: their trail name (or "You") when self-tracked, "Dad" when
-	// following the Hogg family pilot — never hard-coded to Dad for a personal hike.
-	const youLabel = $derived(
-		isSelfTracked(trailAssistant.hikeProfile)
-			? trailAssistant.hikeProfile.trailName?.trim() || 'You'
-			: 'Dad'
-	);
+	// The pin label follows the explicit mode boundary. Uncalibrated starter state
+	// is not Dad; Dad appears only after the hiker chooses the public pilot.
+	const youLabel = $derived.by(() => {
+		const profile = trailAssistant.hikeProfile;
+		if (isSelfTracked(profile)) return profile.trailName?.trim() || 'You';
+		return isDadPilot(profile) ? 'Dad' : 'Set mile';
+	});
 
 	type Landmark = { kind: 'water' | 'shelter' | 'town'; mile: number; label: string };
 
@@ -195,6 +195,7 @@
 				</span>
 			{/if}
 			<span class="schematic-tag" title="A linear schematic of what's ahead by mile — not a GPS/tile map.">Schematic · not a GPS map</span>
+			<span class="limit-tag" title="No offline basemap, turn-by-turn routing, or emergency navigation.">No basemap · no routing</span>
 		</div>
 
 		<!-- upcoming landmark pins, placed along the line by mile -->
@@ -326,7 +327,7 @@
 		bottom: calc(100% + 3px);
 		transform: translateX(-50%);
 		white-space: nowrap;
-		font-size: 0.58rem;
+		font-size: 0.7rem;
 		font-weight: 900;
 		letter-spacing: 0.02em;
 		padding: 2px 6px;
@@ -392,8 +393,19 @@
 		border-radius: 999px;
 		background: rgba(31, 36, 29, 0.7);
 		color: #f4efe4;
-		font-size: 0.64rem;
+		font-size: 0.72rem;
 		font-weight: 800;
+		letter-spacing: 0.02em;
+	}
+	.limit-tag {
+		display: inline-flex;
+		align-items: center;
+		padding: 4px 9px;
+		border-radius: 999px;
+		background: rgba(154, 59, 47, 0.12);
+		color: var(--danger);
+		font-size: 0.72rem;
+		font-weight: 900;
 		letter-spacing: 0.02em;
 	}
 	.next-water-chip {
@@ -442,7 +454,7 @@
 		margin-bottom: 6px;
 	}
 	.elev .etitle {
-		font-size: 0.6rem;
+		font-size: 0.72rem;
 		font-weight: 900;
 		text-transform: uppercase;
 		letter-spacing: 0.09em;
@@ -473,7 +485,7 @@
 		box-shadow: var(--shadow-soft);
 	}
 	.zunit {
-		font-size: 0.56rem;
+		font-size: 0.66rem;
 		font-weight: 800;
 		color: var(--muted);
 		padding: 0 3px 0 2px;
@@ -506,7 +518,7 @@
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
-		font-size: 0.54rem;
+		font-size: 0.66rem;
 		font-weight: 800;
 		color: var(--muted);
 		text-align: right;
@@ -529,7 +541,7 @@
 		display: flex;
 		justify-content: space-between;
 		margin-top: 4px;
-		font-size: 0.56rem;
+		font-size: 0.66rem;
 		font-weight: 800;
 		color: var(--muted);
 	}

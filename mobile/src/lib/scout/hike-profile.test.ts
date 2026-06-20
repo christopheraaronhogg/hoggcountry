@@ -7,6 +7,7 @@ import {
 	clampMile,
 	deriveDayNumber,
 	DEFAULT_HIKE_PROFILE,
+	isDadPilot,
 	isSelfTracked,
 	isValidMile,
 	parseMileFromCheckIn,
@@ -60,6 +61,13 @@ test('isSelfTracked only when calibrated AND self mode', () => {
 	assert.equal(isSelfTracked(selfProfile({ calibrated: false })), false);
 	assert.equal(isSelfTracked(selfProfile({ mode: 'dad-pilot' })), false);
 	assert.equal(isSelfTracked(DEFAULT_HIKE_PROFILE), false);
+});
+
+test('isDadPilot only after explicit Dad-following calibration', () => {
+	assert.equal(isDadPilot(DEFAULT_HIKE_PROFILE), false);
+	assert.equal(isDadPilot(selfProfile()), false);
+	assert.equal(isDadPilot(selfProfile({ calibrated: false, mode: 'dad-pilot' })), false);
+	assert.equal(isDadPilot(selfProfile({ mode: 'dad-pilot' })), true);
 });
 
 test('default hike profile starts neutral until calibration', () => {
