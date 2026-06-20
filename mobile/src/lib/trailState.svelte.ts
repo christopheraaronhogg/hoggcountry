@@ -62,7 +62,7 @@ import {
 import { detectTrailActionIntent } from './scout/action-intents.ts';
 import { cloneDefaultContextPack } from './scout/default-pack.ts';
 import { loadTrailGeometry, snapToMile, type TrailGeoPoint } from './trail/trail-geometry';
-import { createCapacitorPreferencesAdapter, createScoutRuntime, InMemoryContextPackStore } from './scout';
+import { createScoutRuntime, InMemoryContextPackStore } from './scout';
 import type { OnDeviceGemmaProvider } from './scout';
 import {
 	createCapacitorGemmaBridge,
@@ -70,8 +70,11 @@ import {
 	type ScoutModelManager
 } from './scout/capacitor-gemma-bridge.ts';
 import type { ContextPack, ContextPackStatus, ScoutAnswer, ScoutRuntime } from './scout';
-import type { PersistenceAdapter } from './scout/context-pack-store.ts';
 import type { OnDeviceGemmaBridge } from './scout/providers/on-device-gemma.ts';
+import {
+	createMobilePersistenceAdapter,
+	type PersistenceAdapter
+} from './mobile-persistence';
 import {
 	createTrailPulseReport,
 	formatTrailPulseDisplayText,
@@ -116,47 +119,7 @@ function makeMessage(role: ChatMessage['role'], content: string): ChatMessage {
 	};
 }
 
-let nativePreferencesAdapterPromise: Promise<PersistenceAdapter | null> | null = null;
-
-function isNativeCapacitor(): boolean {
-	const capacitorWindow = window as Window & {
-		Capacitor?: { isNativePlatform?: () => boolean };
-	};
-
-	return capacitorWindow.Capacitor?.isNativePlatform?.() ?? false;
-}
-
-async function nativePreferencesAdapter(): Promise<PersistenceAdapter | null> {
-	if (!isNativeCapacitor()) return null;
-	nativePreferencesAdapterPromise ??= import('@capacitor/preferences')
-		.then(({ Preferences }) => createCapacitorPreferencesAdapter(Preferences))
-		.catch(() => null);
-	return nativePreferencesAdapterPromise;
-}
-
-function browserStorageAdapter(): PersistenceAdapter {
-	return {
-		async get(key: string) {
-			const nativeAdapter = await nativePreferencesAdapter();
-			if (nativeAdapter) {
-				const value = await nativeAdapter.get(key);
-				if (value !== null) return value;
-			}
-			return localStorage.getItem(key);
-		},
-		async set(key: string, value: string) {
-			const nativeAdapter = await nativePreferencesAdapter();
-			if (nativeAdapter) {
-				try {
-					await nativeAdapter.set(key, value);
-				} catch (error) {
-					console.warn('Capacitor Preferences write failed; keeping localStorage mirror only.', error);
-				}
-			}
-			localStorage.setItem(key, value);
-		}
-	};
-}
+const mobilePersistence = browser ? createMobilePersistenceAdapter() : null;
 
 type PersistedState = TrailState;
 
@@ -166,10 +129,10 @@ type ProposedAction = { id: string; title: string; detail: string; confirmLabel:
 class TrailAssistantStore {
 	#state = $state<TrailState>(createDefaultTrailState());
 	#syncTimer: ReturnType<typeof setTimeout> | null = null;
-	#stateStorage: PersistenceAdapter | null = browser ? browserStorageAdapter() : null;
+	#stateStorage: PersistenceAdapter | null = mobilePersistence;
 	#stateHydrated = $state(false);
 	#fieldPackStore = new InMemoryContextPackStore({
-		adapter: browser ? browserStorageAdapter() : undefined
+		adapter: mobilePersistence ?? undefined
 	});
 	#gemmaBridge: OnDeviceGemmaBridge | null = browser ? createCapacitorGemmaBridge() : null;
 	#modelManager: ScoutModelManager | null = browser ? createCapacitorModelManager() : null;
