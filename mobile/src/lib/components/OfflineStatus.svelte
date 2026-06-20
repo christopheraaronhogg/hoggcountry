@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { offlineModel } from './fieldData';
 	import { trailAssistant } from '$lib/trailState.svelte';
+
+	const scoutTier = 'Scout Gemma 4 (compact)';
 
 	const statusLabel = {
 		ready: 'Offline ready',
@@ -33,7 +34,7 @@
 	<header>
 		<div>
 			<p class="eyebrow">On-device Scout</p>
-			<strong>{offlineModel.tier}</strong>
+			<strong>{scoutTier}</strong>
 		</div>
 		<span class="status-pill" data-status={status.state}>
 			<span class="dot" aria-hidden="true"></span>

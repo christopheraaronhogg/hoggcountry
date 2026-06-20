@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { quickPrompts } from '$lib/mockTrailData';
+	import { quickPrompts } from '$lib/scout/quick-prompts';
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import type {
 		RequiredConfirmation,
