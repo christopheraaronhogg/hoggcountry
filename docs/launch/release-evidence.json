@@ -39,8 +39,17 @@
       ]
     },
     "ios-development-team": {
-      "status": "pending",
-      "summary": "Set the Apple Developer Team for the iOS App target in Xcode and attach an Xcode/build-settings proof artifact."
+      "status": "blocked",
+      "summary": "Local Apple signing is not configured: no valid code-signing identities, no provisioning profiles, and no DEVELOPMENT_TEAM in the App target build settings. Set Chris's Apple Developer Team/signing identity in Xcode before archive/upload.",
+      "files": [
+        "docs/launch/proof/ios-signing-blocked-2026-06-20.md"
+      ],
+      "commands": [
+        "security find-identity -v -p codesigning",
+        "ls -la \"$HOME/Library/MobileDevice/Provisioning Profiles\"",
+        "xcrun devicectl list devices",
+        "xcodebuild -workspace mobile/ios/App/App.xcworkspace -scheme App -showBuildSettings | rg -n \"DEVELOPMENT_TEAM|CODE_SIGN_STYLE|PRODUCT_BUNDLE_IDENTIFIER|MARKETING_VERSION|CURRENT_PROJECT_VERSION\""
+      ]
     },
     "app-store-connect-record": {
       "status": "pending",
