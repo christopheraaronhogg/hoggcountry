@@ -3,6 +3,7 @@
   // WPA poster aesthetic inspired by 1930s-40s national park posters
   // OFFICIAL TRAIL GUIDE prepared by C. Hogg for J. "HoggCountry" Hogg
 
+  import { resolve } from "$app/paths";
   import { onMount } from "svelte";
   import WaitlistSignup from "../../../apps/openclaw-web/src/lib/components/WaitlistSignup.svelte";
 
@@ -13,7 +14,8 @@
   function miFmt(n) {
     return typeof n === 'number' ? n.toLocaleString('en-US', { maximumFractionDigits: 1 }) : n;
   }
-  let videos = $state(initialVideos);
+  let fetchedVideos = $state(null);
+  let videos = $derived(fetchedVideos ?? initialVideos);
   let _liveLoadError = $state("");
   let trailUpdates = $state([]);
   let trailUpdatesLoading = $state(true);
@@ -309,7 +311,7 @@
         // Avoid pointless updates (keeps DOM stable).
         if (videos?.[0]?.id && items?.[0]?.id && videos[0].id === items[0].id) return;
 
-        videos = items;
+        fetchedVideos = items;
       } catch (e) {
         _liveLoadError = e?.message || String(e);
         // Intentionally silent: we fall back to build-time videos.
@@ -469,7 +471,7 @@
       </div>
 
       {#if journey}
-        <a class="hero-progress" href="/journey" aria-label="Follow Dad's live trail progress">
+        <a class="hero-progress" href={resolve("/journey")} aria-label="Follow Dad's live trail progress">
           <div class="hp-top">
             <span class="hp-label">{journey.isPreview ? 'Expedition staging' : 'Live progress'}</span>
             <span class="hp-pct">{journey.isPreview ? 'Mile 0' : `${journey.percentComplete}%`}</span>
@@ -491,7 +493,7 @@
       {/if}
 
       <div class="hero-cta">
-        <a href="/guide" class="cta-primary">
+        <a href={resolve("/guide")} class="cta-primary">
           <span class="cta-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
@@ -501,7 +503,7 @@
           Read the Field Guide
         </a>
         {#if !cutoverSafe}
-          <a href="/tools" class="cta-secondary">
+          <a href={resolve("/tools")} class="cta-secondary">
             <span class="cta-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="3" />
@@ -530,7 +532,9 @@
                 {#if heroOpensModal(heroStoryUpdate)}
                   <button class="hero-story-media" type="button" onclick={() => openStoryModal(heroStoryIndex)} aria-label={isYouTubeUpdate(heroStoryUpdate) ? 'Play trail update video' : 'Open trail update image full screen'}>
                     {#if String(heroStoryUpdate.mediaType || '').startsWith('video/')}
-                      <video src={storyMediaUrl(heroStoryUpdate)} playsinline preload="metadata"></video>
+                      <video src={storyMediaUrl(heroStoryUpdate)} playsinline preload="metadata">
+                        <track kind="captions" />
+                      </video>
                     {:else}
                       <img src={storyThumbnailUrl(heroStoryUpdate)} alt={heroStoryUpdate.title || 'Trail update'} loading="lazy" onerror={(e) => handleStoryImageError(e, heroStoryUpdate)} />
                     {/if}
@@ -582,15 +586,16 @@
         {:else}
           <p class="hero-story-empty">Story feed is live. New updates will appear here as soon as they are posted.</p>
         {/if}
-        <a href="/updates/" class="hero-story-link">View all</a>
+        <a href={resolve("/updates")} class="hero-story-link">View all</a>
       </aside>
     </div>
 
   </section>
 
   {#if storyModalUpdate}
-    <div class="story-modal" role="dialog" aria-modal="true" aria-label="Trail update gallery" onclick={closeStoryModal}>
-      <div class="story-modal-panel" onclick={(event) => event.stopPropagation()}>
+    <div class="story-modal">
+      <button class="story-modal-scrim" type="button" onclick={closeStoryModal} aria-label="Close trail update gallery"></button>
+      <div class="story-modal-panel" role="dialog" aria-modal="true" aria-label="Trail update gallery" tabindex="-1">
         <button class="story-modal-close" type="button" onclick={closeStoryModal} aria-label="Close full screen trail update">×</button>
         <div class={`story-modal-media ${isYouTubeUpdate(storyModalUpdate) ? 'is-youtube' : ''} ${isYouTubeShortUpdate(storyModalUpdate) ? 'is-short' : ''}`}>
           {#if isYouTubeUpdate(storyModalUpdate) && getYouTubeEmbedUrl(storyModalUpdate)}
@@ -601,7 +606,9 @@
               allowfullscreen
             ></iframe>
           {:else if String(storyModalUpdate.mediaType || '').startsWith('video/')}
-            <video src={storyMediaUrl(storyModalUpdate)} controls playsinline autoplay></video>
+            <video src={storyMediaUrl(storyModalUpdate)} controls playsinline autoplay>
+              <track kind="captions" />
+            </video>
           {:else}
             <img src={storyMediaUrl(storyModalUpdate)} alt={storyModalUpdate.title || 'Trail update'} onerror={(e) => handleStoryImageError(e, storyModalUpdate)} />
           {/if}
@@ -673,7 +680,7 @@
           <!-- Secondary videos -->
           {#if secondaryVideoTiles.length > 0}
             <div class={`dispatch-secondary-grid is-${dispatchLayout.mode}`} style={`--secondary-template: ${dispatchLayout.template};`}>
-              {#each secondaryVideoTiles as tile}
+              {#each secondaryVideoTiles as tile (tile.video.id || tile.video.link || tile.video.title)}
                 <a href={tile.video.link} target="_blank" rel="noopener" class={`dispatch-card dispatch-tile-${tile.shape} ${isShort(tile.video) ? 'is-short' : 'is-landscape'}`}>
                   <div class={`dispatch-media ${tile.shape === 'tall' ? 'is-short' : 'small'}`}>
                     <img
@@ -718,7 +725,7 @@
       </div>
 
       <div class="dispatches-footer">
-        <a href="/videos" class="dispatches-cta">
+        <a href={resolve("/videos")} class="dispatches-cta">
           <span>View All Videos</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M5 12h14M12 5l7 7-7 7"/>
@@ -918,7 +925,7 @@
       </div>
 
       <div class="tools-grid">
-        <a href="/tools#milestone" class="tool-card">
+        <a href={resolve("/tools/milestone")} class="tool-card">
           <div class="tool-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="10" r="3"/>
@@ -929,7 +936,7 @@
           <span class="tool-desc">Track daily progress</span>
         </a>
 
-        <a href="/tools#gearbudget" class="tool-card">
+        <a href={resolve("/tools/pack")} class="tool-card">
           <div class="tool-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 18h6"/>
@@ -942,7 +949,7 @@
           <span class="tool-desc">Build by budget</span>
         </a>
 
-        <a href="/tools#weather" class="tool-card">
+        <a href={resolve("/tools/weather")} class="tool-card">
           <div class="tool-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2"/>
@@ -953,7 +960,7 @@
           <span class="tool-desc">Evaluate conditions</span>
         </a>
 
-        <a href="/tools#budget" class="tool-card">
+        <a href={resolve("/tools/budget")} class="tool-card">
           <div class="tool-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="12" y1="1" x2="12" y2="23"/>
@@ -964,7 +971,7 @@
           <span class="tool-desc">Estimate total cost</span>
         </a>
 
-        <a href="/tools#pack" class="tool-card">
+        <a href={resolve("/tools/pack")} class="tool-card">
           <div class="tool-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="4" y="4" width="16" height="18" rx="2"/>
@@ -976,7 +983,7 @@
           <span class="tool-desc">Optimize base weight</span>
         </a>
 
-        <a href="/tools#water" class="tool-card">
+        <a href={resolve("/tools/water")} class="tool-card">
           <div class="tool-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
@@ -986,7 +993,7 @@
           <span class="tool-desc">Source management</span>
         </a>
 
-        <a href="/tools#layers" class="tool-card">
+        <a href={resolve("/tools/layers")} class="tool-card">
           <div class="tool-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 2L2 7l10 5 10-5-10-5z"/>
@@ -998,7 +1005,7 @@
           <span class="tool-desc">Dial in clothing</span>
         </a>
 
-        <a href="/tools#shelter" class="tool-card">
+        <a href={resolve("/tools/shelter")} class="tool-card">
           <div class="tool-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 18l9-9 9 9"/>
@@ -1009,7 +1016,7 @@
           <span class="tool-desc">Tent vs hammock</span>
         </a>
 
-        <a href="/tools#power" class="tool-card">
+        <a href={resolve("/tools/power")} class="tool-card">
           <div class="tool-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
@@ -1019,7 +1026,7 @@
           <span class="tool-desc">Electronics strategy</span>
         </a>
 
-        <a href="/tools#mail" class="tool-card">
+        <a href={resolve("/tools/mail")} class="tool-card">
           <div class="tool-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 12h-6l-2 3h-4l-2-3H2"/>
@@ -1030,7 +1037,7 @@
           <span class="tool-desc">Ship-ahead logistics</span>
         </a>
 
-        <a href="/tools#training" class="tool-card">
+        <a href={resolve("/tools/training")} class="tool-card">
           <div class="tool-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
@@ -1040,7 +1047,7 @@
           <span class="tool-desc">Build fitness</span>
         </a>
 
-        <a href="/tools#emergency" class="tool-card">
+        <a href={resolve("/tools/emergency")} class="tool-card">
           <div class="tool-icon emergency">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
@@ -1054,7 +1061,7 @@
       </div>
 
       <div class="tools-footer">
-        <a href="/tools" class="tools-cta">
+        <a href={resolve("/tools")} class="tools-cta">
           <span>Open All Instruments</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M5 12h14M12 5l7 7-7 7"/>
@@ -1090,7 +1097,7 @@
 
     <div class="panels-grid">
       <!-- Panel 1: The Guide -->
-      <a href="/guide" class="panel panel-guide">
+      <a href={resolve("/guide")} class="panel panel-guide">
         <div class="panel-frame">
           <div class="panel-number">I</div>
           <div class="panel-icon">
@@ -1128,7 +1135,7 @@
 
       {#if !cutoverSafe}
         <!-- Panel 2: The Tools -->
-        <a href="/tools" class="panel panel-tools">
+        <a href={resolve("/tools")} class="panel panel-tools">
           <div class="panel-frame">
             <div class="panel-number">II</div>
             <div class="panel-icon">
@@ -1165,7 +1172,7 @@
       {/if}
 
       <!-- Panel 3: The Journey -->
-      <a href="/videos" class="panel panel-journey">
+      <a href={resolve("/videos")} class="panel panel-journey">
         <div class="panel-frame">
           <div class="panel-number">III</div>
           <div class="panel-icon">
@@ -1333,7 +1340,7 @@
               Trail credentials, completed thru-hikes, and the 840+ miles of experience that prepare
               a hiker for 2,197.4 miles of the Appalachian Trail.
             </p>
-            <a href="/guide#01-hiker-profile-and-experience" class="featured-link">
+            <a href={resolve("/guide#01-hiker-profile-and-experience")} class="featured-link">
               Read Chapter
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M5 12h14M12 5l7 7-7 7" />
@@ -1344,7 +1351,7 @@
 
         <!-- Quick Links -->
         <div class="bulletin-notes">
-          <a href="/guide#06-gear-system" class="note note-1">
+          <a href={resolve("/guide#06-gear-system")} class="note note-1">
             <div class="note-pin"></div>
             <span class="note-icon">
               <svg viewBox="0 0 24 24" fill="currentColor">
@@ -1355,7 +1362,7 @@
             <span class="note-text">Gear System</span>
             <span class="note-chapter">Part VI</span>
           </a>
-          <a href="/guide#15-resupply-logistics" class="note note-2">
+          <a href={resolve("/guide#15-resupply-logistics")} class="note note-2">
             <div class="note-pin"></div>
             <span class="note-icon">
               <svg viewBox="0 0 24 24" fill="currentColor">
@@ -1365,7 +1372,7 @@
             <span class="note-text">Resupply Logistics</span>
             <span class="note-chapter">Part XV</span>
           </a>
-          <a href="/guide#12-weather-strategy" class="note note-3">
+          <a href={resolve("/guide#12-weather-strategy")} class="note note-3">
             <div class="note-pin"></div>
             <span class="note-icon">
               <svg viewBox="0 0 24 24" fill="currentColor">
@@ -1412,13 +1419,13 @@
         </div>
 
         <div class="footer-nav">
-          <a href="/guide">Field Guide</a>
+          <a href={resolve("/guide")}>Field Guide</a>
           <span class="footer-dot"></span>
-          <a href="/tools">Trail Tools</a>
+          <a href={resolve("/tools")}>Trail Tools</a>
           <span class="footer-dot"></span>
-          <a href="/updates">Trail Updates</a>
+          <a href={resolve("/updates")}>Trail Updates</a>
           <span class="footer-dot"></span>
-          <a href="/videos">Videos</a>
+          <a href={resolve("/videos")}>Videos</a>
         </div>
 
         <div class="footer-tagline">
@@ -1897,11 +1904,19 @@
     display: grid;
     place-items: center;
     padding: clamp(0.35rem, 1vw, 0.8rem);
+  }
+
+  .story-modal-scrim {
+    position: absolute;
+    inset: 0;
+    border: 0;
     background: rgba(6, 10, 8, 0.96);
+    cursor: pointer;
   }
 
   .story-modal-panel {
     position: relative;
+    z-index: 1;
     display: grid;
     grid-template-rows: minmax(0, 1fr);
     gap: 0.55rem;
@@ -3122,10 +3137,6 @@
     padding: 1.25rem;
     color: var(--muted);
     line-height: 1.6;
-  }
-
-  .story-empty strong {
-    color: var(--ink);
   }
 
   .story-actions {
