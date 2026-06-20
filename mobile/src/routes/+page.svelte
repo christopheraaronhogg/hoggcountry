@@ -6,6 +6,7 @@
 	import TrailTab from '$lib/components/TrailTab.svelte';
 	import SettingsTab from '$lib/components/SettingsTab.svelte';
 	import TabNavigation from '$lib/components/TabNavigation.svelte';
+	import HikeSetupSheet from '$lib/components/HikeSetupSheet.svelte';
 	import { trailAssistant } from '$lib/trailState.svelte';
 
 	// Scout chat stays pure: no shared header chrome, no surrounding cards — just
@@ -33,6 +34,10 @@
 	</main>
 
 	<TabNavigation />
+
+	{#if trailAssistant.hikeSetupOpen}
+		<HikeSetupSheet />
+	{/if}
 </div>
 
 <style>

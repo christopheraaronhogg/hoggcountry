@@ -34,6 +34,9 @@ export function migrateTab(value: unknown): Tab {
 	}
 }
 
+import type { HikeProfile } from './scout/hike-profile';
+export type { HikeProfile } from './scout/hike-profile';
+
 export type SyncState = 'synced' | 'syncing' | 'queued-offline';
 export type CheckInStatus = 'safe' | 'delayed' | 'need-help';
 export type ServiceCategory = 'hostel' | 'shuttle' | 'resupply' | 'gear' | 'food' | 'laundry';
@@ -154,6 +157,8 @@ export interface WeatherSnapshot {
 
 export interface TrailState {
 	activeTab: Tab;
+	/** The user's own identity + position ("My hike"); never clobbered by a refresh. */
+	hikeProfile: HikeProfile;
 	coachMessages: ChatMessage[];
 	lastCheckIn: CheckInRecord;
 	checkInHistory: CheckInRecord[];

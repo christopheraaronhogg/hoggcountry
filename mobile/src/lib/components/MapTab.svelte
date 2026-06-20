@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { trailAssistant } from '$lib/trailState.svelte';
+	import { isSelfTracked } from '$lib/scout/hike-profile';
 	import { elevationWindow } from '$lib/trail/trail-geometry';
 	import Icon, { type IconName } from './Icon.svelte';
 
@@ -16,6 +17,13 @@
 
 	const from = $derived(trailAssistant.currentMile);
 	const geo = $derived(trailAssistant.trailGeometry);
+	// The hiker's own pin: their trail name (or "You") when self-tracked, "Dad" when
+	// following the Hogg family pilot — never hard-coded to Dad for a personal hike.
+	const youLabel = $derived(
+		isSelfTracked(trailAssistant.hikeProfile)
+			? trailAssistant.hikeProfile.trailName?.trim() || 'You'
+			: 'Dad'
+	);
 
 	type Landmark = { kind: 'water' | 'shelter' | 'town'; mile: number; label: string };
 
@@ -197,7 +205,7 @@
 		<!-- hiker position -->
 		<div class="you" style="left:{youPos.leftPct}%; top:{youPos.topPct}%;">
 			<div class="you-mark"><Icon name="now" size={31} stroke={2} /></div>
-			<span class="youlbl">Dad · Mi {from.toFixed(1)}</span>
+			<span class="youlbl">{youLabel} · Mi {from.toFixed(1)}</span>
 		</div>
 
 		<!-- elevation ahead -->

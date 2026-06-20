@@ -29,7 +29,7 @@ export class InMemoryContextPackStore implements ContextPackStore {
 	private storageKey: string;
 	private status: ContextPackStatus = {
 		state: 'fallback',
-		label: 'Bundled pilot pack',
+		label: 'Bundled field pack',
 		detail: 'Using the baked Scout field pack until a fresh pack is saved on this phone.',
 		lastLoadedAt: null,
 		validUntil: null,
@@ -72,7 +72,7 @@ export class InMemoryContextPackStore implements ContextPackStore {
 			...this.status,
 			state: 'refreshing',
 			label: 'Refreshing field pack',
-			detail: 'Checking Hogg Country for the latest Dad pilot pack.',
+			detail: 'Checking Hogg Country for the latest field pack.',
 			error: undefined
 		});
 
