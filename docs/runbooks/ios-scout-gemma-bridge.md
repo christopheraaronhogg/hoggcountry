@@ -15,39 +15,42 @@ Native Swift, in the App target (`mobile/ios/App/App/scout/`):
 | `ScoutGemmaEngine.swift` | The `ScoutGemmaEngine` protocol + `UnavailableScoutGemmaEngine` fail-closed stub + value types. |
 | `ScoutModelStore.swift` | `ScoutModelSpec` (HF model defaults, same file/size/SHA-256 as Android) + `ScoutModelStatus` + app-private store with streaming CryptoKit SHA-256 `verify()`. |
 | `ScoutModelDownloader.swift` | Resumable `URLSessionDownloadTask` download → progress → `verify()`. Free-space precheck; resume data on interruption; fail-closed. |
-| `LiteRtScoutGemmaEngine.swift` | The real engine, gated behind `#if canImport(LiteRTLM)`, plus `ScoutGemmaEngineFactory`. Compiles ONLY when the LiteRT-LM Swift package is present, so the app builds green before it is added. |
+| `LiteRtScoutGemmaEngine.swift` | The real engine, gated behind `#if canImport(LiteRTLM)`, plus `ScoutGemmaEngineFactory`. The local `LiteRTLMVendor` package now makes this branch compile into the iOS app. |
 
 The **JS contract is identical to Android** — `capacitor-gemma-bridge.ts`,
 `ScoutModelManager`, the AccountTab download card, and `ModelRouter` are
 cross-platform and need **no iOS-specific changes**.
 
-Current behavior (no SPM package yet): `ScoutGemmaEngineFactory.create()` returns
-`UnavailableScoutGemmaEngine`, so `isAvailable` is false and Gemma-only builds
-block chat — fail-closed, nothing fabricated. The app compiles and runs on the
-simulator without the package or an Apple account.
+Current first-load behavior: the LiteRT-LM runtime is linked, and
+`ScoutGemma.getModelStatus()` reports `runtimeConfigured: true`,
+`downloadConfigured: true`, and `exists: false` until the user downloads the
+verified model. Gemma-only chat still blocks until the model file passes the
+SHA-256 check — fail-closed, nothing fabricated.
 
-## Activating the engine — exact steps
+## Engine activation
 
-These need Xcode (the SPM + linker steps are GUI-shaped) and, for a device build,
-an Apple Developer Program enrollment.
+The engine is wired through a local SwiftPM wrapper at
+`mobile/ios/LiteRTLMVendor`. The wrapper vendors Google's LiteRT-LM 0.13.1 Swift
+source files, keeps Google's binary artifact URLs/checksums unchanged, and removes
+the package-level unsafe linker flag that Xcode refuses to consume from the
+Capacitor app target. The App target owns the mandatory `-all_load` linker flag
+instead.
 
-1. **Add the Swift package.** Xcode → File → Add Package Dependencies →
-   `https://github.com/google-ai-edge/LiteRT-LM`, rule **from 0.13.1**. Add the
-   `LiteRTLM` product to the **App** target. (SPM coexists fine with the
-   CocoaPods-managed Capacitor pods.) Min iOS is **15** (the package declares
-   `.iOS(.v15)`), so the App target's deployment target must be ≥ 15.
-   **Do this in the Xcode GUI, not headless `xcodebuild`** — verified 2026-06-17
-   that adding the ref via the `xcodeproj` gem and resolving on the command line
-   *hangs* on the `CLiteRTLM.xcframework` (~80 MB) binary target (process idle,
-   `SourcePackages` stays empty). Xcode's GUI resolves the binary target reliably.
+For a device build, an Apple Developer Program enrollment is still required.
+
+1. **Swift package.** The Xcode project references the local
+   `../LiteRTLMVendor` package and links the `LiteRTLM` product into the **App**
+   target. Do not switch back to the upstream remote package unless upstream drops
+   its unsafe package linker setting; headless `xcodebuild` fails with
+   `The package product 'LiteRTLM' cannot be used as a dependency of this target
+   because it uses unsafe build flags.`
 2. **Linker flag (mandatory).** LiteRT-LM's static lib registers backends via C++
    static initializers that the linker will strip without it. Add `-all_load`
    (or a `-force_load` of the LiteRT-LM static lib) to the App target's
    **Other Linker Flags** (`OTHER_LDFLAGS`). Symptom if missing: a runtime
    backend-registration crash on first inference.
-3. **Deployment target.** Bump `IPHONEOS_DEPLOYMENT_TARGET` / Podfile `platform`
-   to whatever the installed LiteRT-LM version requires (SPM will refuse to
-   resolve otherwise). Our Swift uses only iOS 14-era APIs.
+3. **Deployment target.** `IPHONEOS_DEPLOYMENT_TARGET` and the Podfile platform
+   are both iOS 15.0 because LiteRT-LM Swift requires iOS 15.
 4. **API status — compile-verified 2026-06-17** against LiteRT-LM 0.13.x via a
    throwaway SwiftPM target (`swift build`, macOS), so the gated
    `#if canImport(LiteRTLM)` block does not have to wait for the in-app Xcode
@@ -58,11 +61,9 @@ an Apple Developer Program enrollment.
    `try await engine.createConversation()`;
    `try await conversation.sendMessage(Message("..."))`; `response.toString`.
    The app's `LiteRtScoutGemmaEngine.swift` already uses the verified forms.
-   - CLI gotcha: the LiteRT-LM package's target carries an **unsafe `-force_load`
-     build flag**, so SwiftPM refuses it as a *version*-pinned dependency on the
-     command line (`contains unsafe build flags`). Use a `branch:`/`path:` dep for
-     CLI compile-checks; Xcode permits the unsafe flag for an app (root) target,
-     which is the real integration path.
+   - CLI gotcha: the upstream LiteRT-LM package target carries an unsafe
+     `-all_load` build flag, so keep using the local wrapper package unless this
+     changes upstream.
 
 ## Model
 
@@ -82,11 +83,11 @@ independent of the engine code.
 
 ## Validation
 
-Engine wired, no package (today):
-- `xcodebuild -workspace App.xcworkspace -scheme App -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` → BUILD SUCCEEDED (the `#if canImport` engine block is excluded).
-- App runs on a simulator; `ScoutGemma.isAvailable()` returns `{ available: false, reason: ... }` (Safari → Develop → Simulator → JS console).
+Engine wired:
+- `xcodebuild -workspace App.xcworkspace -scheme App -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` should build the app with the `LiteRTLM` module imported into the `#if canImport` branch.
+- App runs on a simulator; before the model is downloaded, `ScoutGemma.getModelStatus()` should report the model as missing or unverified rather than the runtime as unlinked.
 
-After adding the package + a verified model:
+After a verified model is present:
 - `isAvailable()` is true, `describeModel()` returns the real descriptor, and a
   Scout answer is produced on-device with the network disabled.
 - Run the Scout reliability harness in API mode against the on-device engine

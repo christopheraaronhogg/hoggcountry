@@ -13,7 +13,7 @@ account-bound signing/upload). Branch: `submission-hardening-claude`.
 |---|---|---|
 | MARKETING_VERSION | `1.0` | ✓ ready |
 | CURRENT_PROJECT_VERSION (build) | `1` | ✓ ready |
-| Deployment target | iOS 14.0 | ✓ |
+| Deployment target | iOS 15.0 | ✓ required by LiteRT-LM Swift |
 | TARGETED_DEVICE_FAMILY | `1` (iPhone-only) | ✓ set tonight (was `1,2`; reversible decision) |
 | NSLocationWhenInUseUsageDescription | present | ✓ |
 | ITSAppUsesNonExemptEncryption | `false` | ✓ set tonight |
@@ -23,8 +23,8 @@ account-bound signing/upload). Branch: `submission-hardening-claude`.
 | CODE_SIGN_STYLE | Automatic | — needs DEVELOPMENT_TEAM (Chris's account) |
 | DEVELOPMENT_TEAM | unset | ⛔ **Chris** (Apple Developer account) |
 | Shared scheme for archiving | `xcshareddata/xcschemes/App.xcscheme` | ✓ `xcodebuild -list` shows the App scheme |
-| LiteRT-LM Swift package (so Scout AI runs on iOS) | not added | ⛔ **needs Xcode GUI** on Chris's Mac (see runbook `docs/runbooks/ios-scout-gemma-bridge.md`) |
-| Local Xcode platform | iOS 26.2 not installed on this Mac | ⛔ install from Xcode → Settings → Components before simulator/device builds |
+| LiteRT-LM Swift package (so Scout AI runs on iOS) | local `LiteRTLMVendor` wrapper linked into App | ✓ simulator build required before release |
+| Local Xcode platform | iOS Simulator 26.2 available | ✓ simulator build/run verified |
 
 ## Android (`mobile/android`)
 | Setting | Value | Status |
@@ -42,5 +42,5 @@ account-bound signing/upload). Branch: `submission-hardening-claude`.
 | Location permission | absent | known gap — geolocation no-ops on Android; not a blocker (app works without it) |
 
 ## What this means
-- **iOS** project-file blockers are cleared for the privacy manifest and shared scheme. It archives once Chris sets the Apple Developer team and this Mac has the needed iOS platform installed. Scout AI ships as a graceful stub on iOS until the LiteRT Swift package is wired.
+- **iOS** project-file blockers are cleared for the privacy manifest, shared scheme, and LiteRT-LM package wiring. It archives once Chris sets the Apple Developer team. Scout AI still needs model-download/runtime smoke proof on a real device before submission claims.
 - **Android** should build an upload-ready release AAB as soon as an upload keystore exists. Gemma is wired in the native Android lane, but still needs physical-device smoke proof before submission.

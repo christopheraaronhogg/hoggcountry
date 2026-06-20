@@ -40,7 +40,7 @@ Everything that does **not** require your Apple/Google accounts, payment, or sig
 
 **Open decisions that need you (details in the docs, tagged `DECISION:`):**
 1. **Store display name** — recommend **"Hogg Country: Trail"** (3 options in the Apple copy).
-2. **iOS Scout AI at launch:** ship iOS **offline-first now** with on-device AI as a fast-follow (recommended — the iOS LiteRT wiring needs your Mac), **or** wait and wire it first. If you ship before it's wired: keep the iOS description's "rolling out by platform" line and **drop the on-device-AI keywords from the *iOS* listing** (Apple 2.3.1 metadata accuracy). *Android AI already works.*
+2. **iOS Scout AI at launch:** LiteRT-LM wiring is in progress through the local Swift package wrapper. Before claiming iOS AI in store metadata, prove model download + a real on-device Scout answer on a physical iPhone. *Android AI already works, pending the same physical smoke proof.*
 3. **Check-ins:** v1 has **no network check-in** (logged on-phone only); copy reflects this. OK for launch?
 4. **Categories:** Apple Navigation (+ Health & Fitness secondary) vs Play Maps & Navigation — reconcile if you want parity.
 
@@ -51,7 +51,7 @@ Everything that does **not** require your Apple/Google accounts, payment, or sig
 ### 🍎 Apple — *start #1 immediately*
 1. **Enroll in the Apple Developer Program** ($99/yr) → developer.apple.com. ⛔ **Long pole — approval can take 24–48h+.** *(If you already have a team, skip — just confirm you can sign in to App Store Connect.)*
 2. **App Store Connect:** create the app (bundle `com.hoggcountry.trailassistant`); paste name/subtitle/keywords/description from the Apple copy doc; upload the 6 iOS screenshots (raw or framed); set category + age rating; add the **privacy policy URL** + **support URL**; fill **App Privacy** from the disclosures doc; set **Sign-in required = No** and paste the **App Review notes** (`review-notes.md`).
-3. **On your Mac (with me, ~30 min):** install the missing iOS platform in Xcode Settings → Components, open `mobile/ios` in Xcode, set **Signing Team**, optionally wire the **LiteRT Swift package** for live iOS AI, then **Product ▸ Archive ▸ upload**. `PrivacyInfo.xcprivacy` is already in the App target and the App scheme is already shared.
+3. **On your Mac (with me, ~30 min):** open `mobile/ios` in Xcode, set **Signing Team**, verify the linked LiteRT Swift runtime on device, then **Product ▸ Archive ▸ upload**. `PrivacyInfo.xcprivacy` is already in the App target and the App scheme is already shared.
 4. **TestFlight → Dad:** add him as an **internal tester** = instant install on his iPhone, no review. (Submit for App Review only when you want public release.)
 
 ### 🤖 Google Play
@@ -65,13 +65,13 @@ Everything that does **not** require your Apple/Google accounts, payment, or sig
 ---
 
 ## D) Things I can finish *with* your Mac/account (just ping me)
-- iOS: signing config, install the missing local iOS platform, archive + upload.
-- **Wire the LiteRT Swift package so iOS Scout AI runs** (per `docs/runbooks/ios-scout-gemma-bridge.md`) — needs the Xcode GUI.
+- iOS: signing config, device smoke, archive + upload.
+- Verify the linked LiteRT Swift runtime and model download on iOS (per `docs/runbooks/ios-scout-gemma-bridge.md`).
 - Generate the Android upload keystore + signed AAB.
 - On-device verification that Scout produces a real answer (Android now; iOS after wiring).
 
 ## E) Honest gaps / risks
-- **iOS AI is a stub until the Swift package is wired** (Android AI works). → Decision B-2.
+- **iOS AI must be runtime-smoked on device before store metadata claims** (Android AI works, pending physical smoke proof). → Decision B-2.
 - **Android can't read GPS** (no location permission) → location features no-op on Android; the disclosures are honest about this. Add the permission later if you want it live.
 - **Screenshots are clean raw captures** (no marketing captions/device frames) — valid to submit; can be prettied later.
 - **App icon** is a solid v1; refine the boar if you want more polish.
