@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import BibleReader from './BibleReader.svelte';
+	import type { TrailDocument } from '$lib/types';
 
-	type Section = 'guide' | 'bible' | 'journal' | 'gear';
+	type Section = 'guide' | 'bible' | 'docs' | 'gear';
 	// Section is shared in trailState so deep links (e.g. Today's "packing up?"
 	// glance → Gear) can open Trail straight to the right tab.
 	const section = $derived(trailAssistant.trailSection);
@@ -10,17 +11,23 @@
 	const sections: Array<{ key: Section; label: string }> = [
 		{ key: 'guide', label: 'Guide' },
 		{ key: 'bible', label: 'Bible' },
-		{ key: 'journal', label: 'Journal' },
+		{ key: 'docs', label: 'Docs' },
 		{ key: 'gear', label: 'Gear' }
 	];
 
 	const guide = $derived(trailAssistant.fieldPack.guideExcerpts);
-	const journal = $derived(trailAssistant.checkInHistory);
+	const documents = $derived(trailAssistant.documents);
+	const checkIns = $derived(trailAssistant.checkInHistory);
 	const loadout = $derived(trailAssistant.fieldPack.loadout);
 	const carried = $derived(loadout.filter((item) => item.carried));
 	const totalLb = $derived(
 		(carried.reduce((sum, item) => sum + (item.weightOz ?? 0), 0) / 16).toFixed(1)
 	);
+	let editingId = $state<string | null>(null);
+	let draftTitle = $state('');
+	let draftBody = $state('');
+	let scoutDraftTopic = $state('');
+	let docsNotice = $state('');
 
 	function fmtTime(iso: string): string {
 		const d = new Date(iso);
@@ -28,12 +35,67 @@
 			? iso
 			: d.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 	}
+
+	function newDocument() {
+		editingId = null;
+		draftTitle = '';
+		draftBody = '';
+		docsNotice = '';
+	}
+
+	function editDocument(document: TrailDocument) {
+		editingId = document.id;
+		draftTitle = document.title;
+		draftBody = document.body;
+		docsNotice = '';
+	}
+
+	function cancelEdit() {
+		editingId = null;
+		draftTitle = '';
+		draftBody = '';
+	}
+
+	function saveDocument() {
+		if (!draftBody.trim()) return;
+		if (editingId) {
+			trailAssistant.updateDocument(editingId, { title: draftTitle, body: draftBody });
+			docsNotice = 'Saved offline.';
+		} else {
+			const document = trailAssistant.createDocument({ title: draftTitle, body: draftBody });
+			if (!document) return;
+			editingId = document.id;
+			docsNotice = 'Saved offline.';
+		}
+	}
+
+	function removeDocument(id: string) {
+		trailAssistant.deleteDocument(id);
+		if (editingId === id) cancelEdit();
+		docsNotice = 'Deleted from this phone.';
+	}
+
+	function saveScoutAnswer() {
+		const document = trailAssistant.saveLastScoutAnswerAsDocument(draftTitle.trim() || 'Scout field draft');
+		if (!document) {
+			docsNotice = 'Ask Scout for a draft first, then save the answer here.';
+			return;
+		}
+		editDocument(document);
+		docsNotice = 'Saved Scout answer as an offline doc.';
+	}
+
+	function askScoutToDraft() {
+		const topic = scoutDraftTopic.trim();
+		if (!topic) return;
+		trailAssistant.draftDocumentWithScout(topic);
+	}
 </script>
 
 <div class="trail">
 	<header class="trail-head">
 		<h1>Trail</h1>
-		<p>Your offline library: field guide, scripture, journal, and your pack.</p>
+		<p>Your offline library: field guide, scripture, docs, and your pack.</p>
 	</header>
 
 	<div class="segmented" role="tablist" aria-label="Trail sections">
@@ -72,21 +134,93 @@
 		</div>
 	{:else if section === 'bible'}
 		<BibleReader />
-	{:else if section === 'journal'}
+	{:else if section === 'docs'}
 		<div class="stack">
-			{#if journal.length}
-				{#each journal as entry (entry.id)}
+			<section class="card docs-editor" aria-label="Offline document editor">
+				<div class="doc-editor-head">
+					<div>
+						<p class="section-kicker">Offline docs</p>
+						<h2>{editingId ? 'Edit field doc' : 'New field doc'}</h2>
+					</div>
+					<button class="small-action" type="button" onclick={newDocument}>New</button>
+				</div>
+
+				<label class="doc-label" for="trail-doc-title">Title</label>
+				<input
+					id="trail-doc-title"
+					class="doc-title-input"
+					bind:value={draftTitle}
+					placeholder="Foot care, resupply plan, sermon notes..."
+				/>
+
+				<label class="doc-label" for="trail-doc-body">Body</label>
+				<textarea
+					id="trail-doc-body"
+					class="doc-body-input"
+					bind:value={draftBody}
+					rows="8"
+					placeholder="Write anything you want Scout to remember and search offline."
+				></textarea>
+
+				<div class="doc-actions">
+					<button class="doc-button primary" type="button" onclick={saveDocument} disabled={!draftBody.trim()}>
+						Save offline
+					</button>
+					<button class="doc-button" type="button" onclick={cancelEdit}>Clear</button>
+					<button class="doc-button" type="button" onclick={saveScoutAnswer}>Save last Scout answer</button>
+				</div>
+
+				<div class="scout-draft-row">
+					<input
+						class="doc-title-input"
+						bind:value={scoutDraftTopic}
+						placeholder="Ask Scout to draft a doc about..."
+						aria-label="Scout draft topic"
+					/>
+					<button class="doc-button" type="button" onclick={askScoutToDraft} disabled={!scoutDraftTopic.trim()}>
+						Ask Scout
+					</button>
+				</div>
+
+				<p class="doc-hint">
+					Local field notes. Scout drafts are saved only when you choose.
+				</p>
+				{#if docsNotice}<p class="doc-notice" role="status">{docsNotice}</p>{/if}
+			</section>
+
+			{#if documents.length}
+				{#each documents as document (document.id)}
+					<article class="card entry doc-card">
+						<div class="entry-top">
+							<strong>{document.title}</strong>
+							<span class="status">{document.source === 'scout-draft' ? 'Scout draft' : 'Manual'}</span>
+						</div>
+						<p class="entry-meta">Updated {fmtTime(document.updatedAt)}</p>
+						<p class="body">{document.body}</p>
+						<div class="doc-row-actions">
+							<button type="button" onclick={() => editDocument(document)}>Edit</button>
+							<button type="button" onclick={() => removeDocument(document.id)}>Delete</button>
+						</div>
+					</article>
+				{/each}
+			{:else}
+				<p class="empty">No offline docs yet. Save a note here, then ask Scout about it with no signal.</p>
+			{/if}
+
+			{#if checkIns.length}
+				<div class="section-divider">
+					<p class="section-kicker">Recent check-ins</p>
+				</div>
+				{#each checkIns as entry (entry.id)}
 					<article class="card entry">
 						<div class="entry-top">
 							<strong>{entry.location || `Mile ${entry.mile.toFixed(1)}`}</strong>
-							<span class="status status-{entry.status}">{entry.status}</span>
+							<span class="status">{entry.status}</span>
 						</div>
 						<p class="entry-meta">{fmtTime(entry.timestamp)} · Mile {entry.mile.toFixed(1)}</p>
 						{#if entry.note}<p class="body">{entry.note}</p>{/if}
 					</article>
 				{/each}
-			{:else}
-				<p class="empty">No check-ins logged yet. They'll appear here as you check in.</p>
 			{/if}
 		</div>
 	{:else}
@@ -217,12 +351,12 @@
 	}
 
 	.entry-meta {
-		font-size: 0.74rem;
+		font-size: 0.82rem;
 		color: var(--muted);
 	}
 
 	.status {
-		font-size: 0.66rem;
+		font-size: 0.78rem;
 		font-weight: 800;
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
@@ -232,14 +366,113 @@
 		color: var(--forest);
 	}
 
-	.status-delayed {
-		background: rgba(200, 154, 74, 0.18);
-		color: #8c5d1f;
+	/* Docs section */
+	.docs-editor {
+		display: grid;
+		gap: 8px;
+		padding: 12px 14px;
 	}
 
-	.status-need-help {
-		background: rgba(177, 74, 61, 0.16);
-		color: var(--clay, #b14a3d);
+	.doc-editor-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px;
+	}
+
+	.section-kicker {
+		font-size: 0.82rem;
+		font-weight: 800;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--muted);
+	}
+
+	.section-divider {
+		padding: 8px 2px 0;
+	}
+
+	.doc-editor-head h2 {
+		font-family: var(--font-display);
+		font-size: 1.05rem;
+		color: var(--ink);
+	}
+
+	.small-action,
+	.doc-button,
+	.doc-row-actions button {
+		min-height: 44px;
+		border-radius: 10px;
+		padding: 8px 12px;
+		font-size: 0.82rem;
+		font-weight: 800;
+		background: rgba(47, 75, 53, 0.08);
+		color: var(--forest);
+	}
+
+	.doc-button.primary {
+		background: var(--forest);
+		color: var(--bg, #fffdf8);
+	}
+
+	.doc-button:disabled {
+		opacity: 0.45;
+	}
+
+	.doc-label {
+		font-size: 0.82rem;
+		font-weight: 800;
+		color: var(--muted);
+	}
+
+	.doc-title-input,
+	.doc-body-input {
+		width: 100%;
+		border: 1px solid var(--line);
+		border-radius: 12px;
+		background: var(--surface-strong, #fffdf8);
+		color: var(--ink);
+		font: inherit;
+		font-size: 0.9rem;
+		padding: 10px 12px;
+	}
+
+	.doc-body-input {
+		resize: vertical;
+		min-height: 150px;
+		line-height: 1.45;
+	}
+
+	.doc-actions,
+	.scout-draft-row,
+	.doc-row-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+
+	.scout-draft-row {
+		padding-top: 4px;
+	}
+
+	.scout-draft-row .doc-title-input {
+		flex: 1 1 180px;
+	}
+
+	.doc-hint,
+	.doc-notice {
+		font-size: 0.86rem;
+		line-height: 1.45;
+		color: var(--muted);
+	}
+
+	.doc-notice {
+		color: var(--forest);
+		font-weight: 800;
+	}
+
+	.doc-card .body {
+		white-space: pre-wrap;
 	}
 
 	/* Gear section */

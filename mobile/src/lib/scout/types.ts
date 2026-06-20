@@ -95,6 +95,17 @@ export interface FieldGuideExcerpt {
 	citation?: string;
 }
 
+export type LocalDocumentSource = 'manual' | 'scout-draft';
+
+export interface LocalDocumentReference {
+	id: string;
+	title: string;
+	body: string;
+	source: LocalDocumentSource;
+	createdAt: string;
+	updatedAt: string;
+}
+
 export interface CachedWeather {
 	mile: number;
 	summary: string;
@@ -132,6 +143,7 @@ export interface ContextPack {
 	shelters: ShelterReference[];
 	towns: TownReference[];
 	guideExcerpts: FieldGuideExcerpt[];
+	documents?: LocalDocumentReference[];
 	loadout: LoadoutItem[];
 	weather: CachedWeather | null;
 	downloadedRegions: string[];
@@ -149,6 +161,7 @@ export interface ContextPackStore {
 	updateHiker(patch: Partial<HikerProfile>): Promise<void>;
 	updateWeather(weather: CachedWeather | null): Promise<void>;
 	updateLoadout(items: LoadoutItem[]): Promise<void>;
+	updateDocuments(documents: LocalDocumentReference[]): Promise<void>;
 	subscribe(listener: (pack: ContextPack) => void): () => void;
 	subscribeStatus(listener: (status: ContextPackStatus) => void): () => void;
 }

@@ -11,6 +11,7 @@ import type {
 	SyncState,
 	Tab,
 	TrailConditionReport,
+	TrailDocument,
 	TrailPulseChip,
 	TrailPulseSource,
 	TrailLogSettings,
@@ -46,6 +47,7 @@ import {
 	type ScoutModelManager
 } from './scout/capacitor-gemma-bridge.ts';
 import type { ContextPack, ContextPackStatus, ScoutAnswer, ScoutRuntime } from './scout';
+import type { LocalDocumentReference } from './scout';
 import type { PersistenceAdapter } from './scout/context-pack-store.ts';
 import type { OnDeviceGemmaBridge } from './scout/providers/on-device-gemma.ts';
 
@@ -55,6 +57,8 @@ const AUTO_GPS_MIN_INTERVAL_MS = 10 * 60 * 1000;
 const AUTO_GPS_MIN_DELTA_MILES = 0.2;
 const AUTO_GPS_FORCE_DELTA_MILES = 1;
 const TRAIL_ID = 'appalachian-trail';
+const MAX_LOCAL_DOCUMENTS = 50;
+const MAX_LOCAL_DOCUMENT_BODY_CHARS = 12_000;
 const FIELD_PACK_ENDPOINT =
 	(import.meta.env.VITE_SCOUT_FIELD_PACK_URL as string | undefined) ??
 	'https://hoggcountry.com/scout/field-pack';
@@ -91,6 +95,43 @@ function makeCheckIn(status: CheckInStatus, note: string, mile: number): CheckIn
 		status,
 		note
 	};
+}
+
+function cleanDocumentText(value: string, fallback = ''): string {
+	const trimmed = value.replace(/\s+/g, ' ').trim();
+	return trimmed || fallback;
+}
+
+function clampDocumentBody(value: string): string {
+	return value.trim().slice(0, MAX_LOCAL_DOCUMENT_BODY_CHARS);
+}
+
+function makeDocument(input: {
+	title: string;
+	body: string;
+	source?: TrailDocument['source'];
+	now?: string;
+}): TrailDocument {
+	const now = input.now ?? new Date().toISOString();
+	return {
+		id: crypto.randomUUID(),
+		title: cleanDocumentText(input.title, 'Untitled field note'),
+		body: clampDocumentBody(input.body),
+		source: input.source ?? 'manual',
+		createdAt: now,
+		updatedAt: now
+	};
+}
+
+function toContextDocuments(documents: TrailDocument[]): LocalDocumentReference[] {
+	return documents.map((document) => ({
+		id: document.id,
+		title: document.title,
+		body: document.body,
+		source: document.source,
+		createdAt: document.createdAt,
+		updatedAt: document.updatedAt
+	}));
 }
 
 function makeTrailPulseReport(input: {
@@ -186,6 +227,7 @@ const defaultState: TrailState = {
 		note: 'Starter position only. Set your AT mile before relying on trail-ahead context.'
 	},
 	checkInHistory: [],
+	documents: [],
 	// Trail Pulse starts empty — reports are crowd-sourced from real hikers, so the
 	// panel shows its honest "no one has reported nearby" empty state until one
 	// arrives. (No seeded/fabricated reports.)
@@ -364,6 +406,9 @@ class TrailAssistantStore {
 			if (!this.#state.hikeProfile?.mode) {
 				this.#state.hikeProfile = { ...DEFAULT_HIKE_PROFILE };
 			}
+			if (!Array.isArray(this.#state.documents)) {
+				this.#state.documents = [];
+			}
 		} catch (error) {
 			console.error('Failed to restore Trail Assistant state', error);
 		} finally {
@@ -436,6 +481,7 @@ class TrailAssistantStore {
 			coachMessages: [...this.#state.coachMessages],
 			lastCheckIn: { ...this.#state.lastCheckIn },
 			checkInHistory: [...this.#state.checkInHistory],
+			documents: this.#state.documents.map((document) => ({ ...document })),
 			trailPulseReports: [...this.#state.trailPulseReports],
 			seenTrailPulseReportIds: [...this.#state.seenTrailPulseReportIds],
 			privacySettings: { ...this.#state.privacySettings },
@@ -461,6 +507,7 @@ class TrailAssistantStore {
 		}
 		this.#fieldPack = pack;
 		this.#fieldPackStatus = this.#fieldPackStore.getStatus();
+		await this.#syncDocumentsToFieldPack();
 		this.#applyPackToTrailState(pack);
 		if (this.#state.onlineStatus && this.#state.hikeProfile.calibrated) {
 			await this.refreshFieldPack();
@@ -481,6 +528,12 @@ class TrailAssistantStore {
 			...this.#state.trailSettings,
 			offlineRegion: pack.downloadedRegions[0] ?? this.#state.trailSettings.offlineRegion
 		};
+	}
+
+	async #syncDocumentsToFieldPack() {
+		await this.#fieldPackStore.updateDocuments(toContextDocuments(this.#state.documents));
+		this.#fieldPack = this.#fieldPackStore.get();
+		this.#fieldPackStatus = this.#fieldPackStore.getStatus();
 	}
 
 	#resetUncalibratedStarterState() {
@@ -694,19 +747,19 @@ class TrailAssistantStore {
 		this.#state.activeTab = this.#settingsReturnTab;
 	}
 
-	// Which section the Trail pillar opens to (Guide · Bible · Journal · Gear).
+	// Which section the Trail pillar opens to (Guide · Bible · Docs · Gear).
 	// Shared so the Today "packing up?" glance can deep-link straight to Gear.
-	#trailSection = $state<'guide' | 'bible' | 'journal' | 'gear'>('guide');
+	#trailSection = $state<'guide' | 'bible' | 'docs' | 'gear'>('guide');
 	get trailSection() {
 		return this.#trailSection;
 	}
-	set trailSection(section: 'guide' | 'bible' | 'journal' | 'gear') {
+	set trailSection(section: 'guide' | 'bible' | 'docs' | 'gear') {
 		this.#trailSection = section;
 	}
 
 	/** Open the Trail pillar to a specific section (used by deep links like the
 	 *  Today packing glance jumping to Gear). */
-	openTrailSection(section: 'guide' | 'bible' | 'journal' | 'gear') {
+	openTrailSection(section: 'guide' | 'bible' | 'docs' | 'gear') {
 		this.#trailSection = section;
 		this.#state.activeTab = 'Trail';
 	}
@@ -731,6 +784,10 @@ class TrailAssistantStore {
 
 	get checkInHistory() {
 		return this.#state.checkInHistory;
+	}
+
+	get documents() {
+		return this.#state.documents;
 	}
 
 	get trailPulseReports() {
@@ -1119,12 +1176,58 @@ class TrailAssistantStore {
 		// Self-tracked hikers fetch a pack centered on THEIR mile (?mile=&personal=1);
 		// explicit Dad-pilot mode fetches the public pilot pack at the bare endpoint.
 		const endpoint = buildFieldPackUrl(FIELD_PACK_ENDPOINT, this.#state.hikeProfile);
-		const pack = await this.#fieldPackStore.refreshFromEndpoint(endpoint);
+		await this.#fieldPackStore.refreshFromEndpoint(endpoint);
+		await this.#syncDocumentsToFieldPack();
+		const pack = this.#fieldPackStore.get();
 		this.#fieldPack = pack;
 		this.#fieldPackStatus = this.#fieldPackStore.getStatus();
 		this.#applyPackToTrailState(pack);
 		this.#state.lastSyncAt = new Date().toISOString();
 		return pack;
+	}
+
+	createDocument(input: { title: string; body: string; source?: TrailDocument['source'] }): TrailDocument | null {
+		const body = clampDocumentBody(input.body);
+		if (!body) return null;
+		const document = makeDocument({ ...input, body });
+		this.#state.documents = [document, ...this.#state.documents].slice(0, MAX_LOCAL_DOCUMENTS);
+		void this.#syncDocumentsToFieldPack();
+		return document;
+	}
+
+	updateDocument(id: string, input: { title: string; body: string }): void {
+		const title = cleanDocumentText(input.title, 'Untitled field note');
+		const body = clampDocumentBody(input.body);
+		this.#state.documents = this.#state.documents.map((document) =>
+			document.id === id
+				? { ...document, title, body, updatedAt: new Date().toISOString() }
+				: document
+		);
+		void this.#syncDocumentsToFieldPack();
+	}
+
+	deleteDocument(id: string): void {
+		this.#state.documents = this.#state.documents.filter((document) => document.id !== id);
+		void this.#syncDocumentsToFieldPack();
+	}
+
+	saveLastScoutAnswerAsDocument(title = 'Scout field draft'): TrailDocument | null {
+		const answer = this.#lastScoutAnswer;
+		if (!answer?.answer.trim()) return null;
+		return this.createDocument({
+			title,
+			body: answer.answer,
+			source: 'scout-draft'
+		});
+	}
+
+	draftDocumentWithScout(topic: string): void {
+		const trimmed = topic.trim();
+		if (!trimmed) return;
+		this.#state.activeTab = 'Scout';
+		this.sendCoachMessage(
+			`Draft an offline field document about "${trimmed}". Use my saved field pack, Bible/source tools when relevant, and any saved docs that match. Structure it with: what I know, what to do next, source-backed details, assumptions to verify later, and a short trail-ready checklist.`
+		);
 	}
 
 	/**

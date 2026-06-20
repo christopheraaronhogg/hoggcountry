@@ -1,6 +1,6 @@
 // Bottom-nav pillars: Today (calm glance dashboard, home) · Scout (chat) · Map ·
 // Trail. Settings is a reachable view but NOT a bottom-nav tab (header gear). Gear
-// lives as the 4th section inside Trail (Guide · Bible · Journal · Gear) and is
+// lives as the 4th section inside Trail (Guide · Bible · Docs · Gear) and is
 // deep-linked from the Today "packing up?" glance. Old tabs (Plan/Town/Safety/You)
 // folded in — see migrateTab().
 export type Tab = 'Today' | 'Scout' | 'Map' | 'Trail' | 'Settings';
@@ -49,6 +49,15 @@ export interface ChatMessage {
 	role: 'user' | 'assistant';
 	content: string;
 	timestamp: string;
+}
+
+export interface TrailDocument {
+	id: string;
+	title: string;
+	body: string;
+	source: 'manual' | 'scout-draft';
+	createdAt: string;
+	updatedAt: string;
 }
 
 export interface CheckInRecord {
@@ -164,6 +173,7 @@ export interface TrailState {
 	coachMessages: ChatMessage[];
 	lastCheckIn: CheckInRecord;
 	checkInHistory: CheckInRecord[];
+	documents: TrailDocument[];
 	trailPulseReports: TrailConditionReport[];
 	seenTrailPulseReportIds: string[];
 	privacySettings: PrivacySettings;

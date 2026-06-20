@@ -4,6 +4,7 @@ import type {
 	ContextPackStatus,
 	ContextPackStore,
 	HikerProfile,
+	LocalDocumentReference,
 	LoadoutItem
 } from './types.ts';
 import { cloneDefaultContextPack } from './default-pack.ts';
@@ -126,6 +127,12 @@ export class InMemoryContextPackStore implements ContextPackStore {
 
 	async updateLoadout(items: LoadoutItem[]): Promise<void> {
 		this.pack = { ...this.pack, loadout: items };
+		await this.persist();
+		this.emit();
+	}
+
+	async updateDocuments(documents: LocalDocumentReference[]): Promise<void> {
+		this.pack = { ...this.pack, documents: documents.map((document) => ({ ...document })) };
 		await this.persist();
 		this.emit();
 	}

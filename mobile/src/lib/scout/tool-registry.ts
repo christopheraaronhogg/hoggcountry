@@ -2,6 +2,7 @@ import type {
 	CachedWeather,
 	ContextPack,
 	ShelterReference,
+	LocalDocumentReference,
 	SourceReceipt,
 	ToolContext,
 	ToolHandler,
@@ -56,6 +57,21 @@ function fieldGuideReceipt(excerptId: string, title: string, citation?: string):
 		kind: 'field-guide',
 		citation
 	};
+}
+
+function hikerDocumentReceipt(document: LocalDocumentReference): SourceReceipt {
+	return {
+		id: `hiker-doc:${document.id}`,
+		title: document.title,
+		kind: 'hiker-input',
+		citation: document.source === 'scout-draft' ? 'Saved Scout document on this phone' : 'Saved hiker document on this phone',
+		generatedAt: document.updatedAt
+	};
+}
+
+function excerptText(text: string, max = 420): string {
+	const normalized = text.replace(/\s+/g, ' ').trim();
+	return normalized.length > max ? `${normalized.slice(0, max - 1)}...` : normalized;
 }
 
 function weatherReceipt(weather: CachedWeather): SourceReceipt {
@@ -316,7 +332,7 @@ const loadoutCheckTool: ToolHandler<LoadoutArgs> = {
 
 const sourceSearchTool: ToolHandler<SourceSearchArgs> = {
 	id: 'source_search',
-	description: 'Search the loaded field guide excerpts for relevant guidance.',
+	description: 'Search the loaded field guide excerpts and saved hiker documents for relevant guidance.',
 	run(args, ctx) {
 		const query = String(args.query ?? '').trim().toLowerCase();
 		if (!query) {
@@ -329,28 +345,38 @@ const sourceSearchTool: ToolHandler<SourceSearchArgs> = {
 			};
 		}
 
+		const tokens = query.split(/\s+/).filter((token) => token.length > 2);
 		const matches = ctx.pack.guideExcerpts.filter((excerpt) => {
 			const haystack = `${excerpt.title} ${excerpt.body} ${excerpt.tags.join(' ')}`.toLowerCase();
-			return query.split(/\s+/).some((token) => token.length > 2 && haystack.includes(token));
+			return tokens.some((token) => haystack.includes(token));
+		});
+		const documentMatches = (ctx.pack.documents ?? []).filter((document) => {
+			const haystack = `${document.title} ${document.body}`.toLowerCase();
+			return tokens.some((token) => haystack.includes(token));
 		});
 
-		if (!matches.length) {
+		if (!matches.length && !documentMatches.length) {
 			return {
 				toolId: 'source_search',
 				args: { ...args } as Record<string, unknown>,
-				summary: 'No field guide excerpts match this query in the loaded pack.',
+				summary: 'No field guide excerpts or saved hiker documents match this query in the loaded pack.',
 				confidence: 'low',
 				receipts: []
 			};
 		}
 
-		const summary = matches.map((m) => `${m.title}: ${m.body}`).join('\n\n');
+		const guideSummary = matches.map((m) => `${m.title}: ${m.body}`);
+		const documentSummary = documentMatches.map((document) => `Saved doc - ${document.title}: ${excerptText(document.body)}`);
+		const summary = [...guideSummary, ...documentSummary].join('\n\n');
 		return {
 			toolId: 'source_search',
 			args: { ...args } as Record<string, unknown>,
 			summary,
 			confidence: 'medium',
-			receipts: matches.map((m) => fieldGuideReceipt(m.id, m.title, m.citation))
+			receipts: [
+				...matches.map((m) => fieldGuideReceipt(m.id, m.title, m.citation)),
+				...documentMatches.map((document) => hikerDocumentReceipt(document))
+			]
 		};
 	}
 };

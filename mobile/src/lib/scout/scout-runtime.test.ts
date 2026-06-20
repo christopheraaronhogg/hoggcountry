@@ -87,3 +87,27 @@ test('a volatile prompt (weather) attaches a verify-from-current-source confirma
 		'volatile facts must carry a verify-live confirmation'
 	);
 });
+
+test('offline source search includes saved hiker documents with receipts', async () => {
+	const pack = cloneDefaultContextPack();
+	pack.documents = [
+		{
+			id: 'doc-shoes',
+			title: 'Foot care note',
+			body: 'Lace the left shoe looser near the top eyelet and stop after 6 miles to check the hot spot.',
+			source: 'manual',
+			createdAt: '2026-06-20T12:00:00.000Z',
+			updatedAt: '2026-06-20T12:00:00.000Z'
+		}
+	];
+
+	const { runtime } = createScoutRuntime({ initialPack: pack });
+	const ans = await runtime.ask({ prompt: 'what did I write about the left shoe laces?', onlineStatus: false });
+
+	assert.equal(ans.provider, 'deterministic-fallback');
+	assert.match(ans.answer, /left shoe looser/i);
+	assert.ok(
+		ans.receipts.some((receipt) => receipt.kind === 'hiker-input' && receipt.title === 'Foot care note'),
+		'saved docs should be cited as hiker-input'
+	);
+});
