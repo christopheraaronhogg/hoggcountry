@@ -118,6 +118,38 @@ test('mobile release proof turns broken verified evidence into a blocker', () =>
 	assert.match(item.detail, /referenced file not found/u);
 });
 
+test('mobile release proof can record a failed proof attempt as blocked evidence', () => {
+	const proofDir = mkdtempSync(join(tmpdir(), 'hogg-release-proof-'));
+	const artifactPath = join(proofDir, 'mailbox-blocked.txt');
+	const evidencePath = join(proofDir, 'release-evidence.json');
+	writeFileSync(artifactPath, 'privacy mailbox bounced: relay access denied\n');
+	writeFileSync(
+		evidencePath,
+		JSON.stringify(
+			{
+				schemaVersion: 1,
+				items: {
+					'privacy-contact-and-deletion': {
+						status: 'blocked',
+						summary: 'privacy mailbox bounced during release proof.',
+						files: [artifactPath]
+					}
+				}
+			},
+			null,
+			2
+		)
+	);
+
+	const result = runProof(['--json', '--evidence', evidencePath]);
+	const proof = JSON.parse(result.stdout);
+	const item = proof.items.find((candidate) => candidate.id === 'privacy-contact-and-deletion');
+
+	assert.equal(result.status, 0, result.stderr);
+	assert.equal(item.status, 'blocker');
+	assert.equal(item.detail, 'privacy mailbox bounced during release proof.');
+});
+
 test('mobile release proof rejects an evidence flag without a path', () => {
 	const result = runProof(['--evidence']);
 

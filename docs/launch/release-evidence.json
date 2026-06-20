@@ -3,8 +3,17 @@
   "updatedAt": "2026-06-20",
   "items": {
     "privacy-contact-and-deletion": {
-      "status": "pending",
-      "summary": "Send a test email to privacy@hoggcountry.com, confirm it is received by the monitored inbox, and attach dated proof."
+      "status": "blocked",
+      "summary": "privacy@hoggcountry.com bounced a live Gmail test with 554 5.7.1 Relay access denied. Fix the mailbox/forwarder, then re-test receipt before submission.",
+      "files": [
+        "docs/launch/proof/privacy-mailbox-blocked-2026-06-20.md"
+      ],
+      "commands": [
+        "dig +short MX hoggcountry.com",
+        "dig +short TXT hoggcountry.com",
+        "Gmail search: subject:\"Hogg Country privacy mailbox release proof 20260620T190538Z\" -in:sent -in:trash -in:spam",
+        "Gmail search: (from:mailer-daemon OR from:postmaster OR subject:(undelivered OR delivery OR failure OR returned)) \"privacy@hoggcountry.com\" newer_than:1d -in:trash -in:spam"
+      ]
     },
     "privacy-and-support-routes": {
       "status": "verified",

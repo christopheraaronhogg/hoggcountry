@@ -14,8 +14,11 @@ manual evidence is still missing. `--strict` exits non-zero until every lane is
 proven.
 
 The manual evidence ledger lives at `docs/launch/release-evidence.json`.
-Pending rows are only reminders; they do not satisfy a gate. To clear a manual
-row, change that row to `verified` and include:
+Pending rows are only reminders; they do not satisfy a gate. If a manual proof
+attempt finds a real issue, change that row to `blocked` with a dated artifact
+so the release ledger shows a blocker instead of a vague manual reminder.
+
+To clear a manual row, change that row to `verified` and include:
 
 ```json
 {
@@ -29,8 +32,16 @@ row, change that row to `verified` and include:
 }
 ```
 
-At least one `files`, `urls`, or `commands` reference is required. Referenced
-files must exist or the gate becomes a blocker.
+At least one `files`, `urls`, or `commands` reference is required for
+`verified` rows. Referenced files must exist or the gate becomes a blocker.
+
+Supported evidence statuses:
+
+- `pending`: reminder only; the release proof row keeps its default status.
+- `blocked`: a proof attempt found a real release blocker; the row reports as
+  `blocker` until fixed.
+- `verified`: the proof exists and references at least one file, URL, or
+  command; the row reports as `pass`.
 
 ## What the ledger separates
 
