@@ -111,14 +111,14 @@
 	}
 
 	.unit {
-		font-size: 0.74rem;
+		font-size: var(--text-floor);
 		color: var(--muted);
 		margin-left: 2px;
 	}
 
 	.pack-totals small {
 		display: block;
-		font-size: 0.72rem;
+		font-size: var(--text-floor);
 		font-weight: 700;
 		color: var(--muted);
 		letter-spacing: 0.06em;
@@ -142,7 +142,7 @@
 	.list-label {
 		grid-column: 1 / -1;
 		margin: 0 0 2px;
-		font-size: 0.72rem;
+		font-size: var(--text-floor);
 		font-weight: 800;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
@@ -171,7 +171,7 @@
 	}
 
 	.carried-list li strong {
-		font-size: 0.74rem;
+		font-size: var(--text-floor);
 		color: var(--muted);
 		font-weight: 700;
 		font-variant-numeric: tabular-nums;
@@ -198,7 +198,7 @@
 	}
 
 	.flag-pill {
-		font-size: 0.66rem;
+		font-size: var(--text-floor);
 		font-weight: 800;
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
@@ -210,7 +210,7 @@
 
 	.flagged-list li p {
 		margin: 0;
-		font-size: 0.8rem;
+		font-size: var(--text-floor);
 		color: var(--muted);
 	}
 </style>

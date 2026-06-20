@@ -384,7 +384,7 @@
 	}
 
 	.risk-dial span {
-		font-size: 0.72rem;
+		font-size: var(--text-floor);
 		font-weight: 800;
 		text-transform: uppercase;
 		letter-spacing: 0.12em;
@@ -408,7 +408,7 @@
 	}
 
 	.strip-eyebrow {
-		font-size: 0.72rem;
+		font-size: var(--text-floor);
 		font-weight: 800;
 		text-transform: uppercase;
 		letter-spacing: 0.1em;
@@ -449,7 +449,7 @@
 	.status-pill {
 		padding: 5px 10px;
 		border-radius: 999px;
-		font-size: 0.7rem;
+		font-size: var(--text-floor);
 		font-weight: 800;
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
@@ -482,7 +482,7 @@
 	}
 
 	.signal-list strong {
-		font-size: 0.74rem;
+		font-size: var(--text-floor);
 		font-weight: 800;
 		color: var(--forest);
 	}
@@ -513,12 +513,12 @@
 	}
 
 	.support-row div span {
-		font-size: 0.78rem;
+		font-size: var(--text-floor);
 		color: var(--muted);
 	}
 
 	.method-pill {
-		font-size: 0.7rem;
+		font-size: var(--text-floor);
 		font-weight: 800;
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
@@ -542,8 +542,8 @@
 		gap: 8px;
 	}
 	.remove-btn {
-		width: 30px;
-		height: 30px;
+		width: 44px;
+		height: 44px;
 		border-radius: 8px;
 		display: grid;
 		place-items: center;

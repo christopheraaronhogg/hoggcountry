@@ -25,7 +25,7 @@
 		padding: 4px 8px;
 		border-radius: 999px;
 		background: rgba(47, 75, 53, 0.08);
-		font-size: 0.66rem;
+		font-size: var(--text-floor);
 		font-weight: 800;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;

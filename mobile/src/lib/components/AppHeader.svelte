@@ -80,7 +80,7 @@
 		place-items: center;
 		font-family: var(--font-display);
 		font-weight: 800;
-		font-size: 0.74rem;
+		font-size: var(--text-floor);
 		box-shadow: var(--shadow-soft);
 		flex: none;
 	}
@@ -90,6 +90,7 @@
 		align-items: baseline;
 		gap: 6px;
 		padding: 4px 10px;
+		min-height: 44px;
 		border-radius: 999px;
 		background: rgba(47, 75, 53, 0.07);
 		color: var(--ink);
@@ -101,7 +102,7 @@
 	.status-strip .day {
 		color: var(--muted);
 		font-weight: 800;
-		font-size: 0.72rem;
+		font-size: var(--text-floor);
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
 	}
@@ -114,7 +115,7 @@
 
 	.status-strip .pct {
 		color: var(--muted);
-		font-size: 0.72rem;
+		font-size: var(--text-floor);
 		font-weight: 700;
 	}
 
@@ -136,7 +137,7 @@
 		padding: 4px 8px;
 		border-radius: 999px;
 		background: rgba(47, 75, 53, 0.08);
-		font-size: 0.68rem;
+		font-size: var(--text-floor);
 		font-weight: 800;
 		letter-spacing: 0.03em;
 		color: var(--ink);
@@ -159,8 +160,8 @@
 	}
 
 	.gear {
-		width: 34px;
-		height: 34px;
+		width: 44px;
+		height: 44px;
 		border-radius: 10px;
 		display: grid;
 		place-items: center;

@@ -7,32 +7,19 @@
 	// demo of Dad's pilot pack. Two honest paths: set up your own hike, or follow the
 	// Hogg family's real 2026 thru-hike.
 
-	const profile = $derived(trailAssistant.hikeProfile);
-	const calibrated = $derived(profile.calibrated);
+	const initialProfile = trailAssistant.hikeProfile;
+	const initialStartDate = todayISODate();
+	const initialSelfProfile = initialProfile.mode === 'self';
+	const calibrated = $derived(trailAssistant.hikeProfile.calibrated);
 
 	// Prefill from the existing profile when re-editing from Settings. mileText is a
 	// number|null because `bind:value` on a number input yields a number (or null
 	// when empty) — keeping it numeric avoids string/number coercion bugs.
-	let trailName = $state('');
-	let direction = $state<'NOBO' | 'SOBO'>('NOBO');
-	let startDate = $state(todayISODate());
-	let mileText = $state<number | null>(null);
+	let trailName = $state(initialSelfProfile ? (initialProfile.trailName ?? '') : '');
+	let direction = $state<'NOBO' | 'SOBO'>(initialSelfProfile ? initialProfile.direction : 'NOBO');
+	let startDate = $state(initialSelfProfile ? (initialProfile.startDate ?? initialStartDate) : initialStartDate);
+	let mileText = $state<number | null>(initialSelfProfile ? (initialProfile.currentMile || null) : null);
 	let touched = $state(false);
-
-	// Seed the form once when the sheet opens (existing profile → prefilled).
-	let seeded = $state(false);
-	$effect(() => {
-		if (trailAssistant.hikeSetupOpen && !seeded) {
-			if (profile.mode === 'self') {
-				trailName = profile.trailName ?? '';
-				direction = profile.direction;
-				startDate = profile.startDate ?? todayISODate();
-				mileText = profile.currentMile || null;
-			}
-			seeded = true;
-		}
-		if (!trailAssistant.hikeSetupOpen) seeded = false;
-	});
 
 	const mileValid = $derived(
 		mileText !== null && Number.isFinite(mileText) && mileText >= 0 && mileText <= TOTAL_AT_MILES
@@ -180,10 +167,10 @@
 
 	.close {
 		position: absolute;
-		top: 12px;
-		right: 14px;
-		width: 32px;
-		height: 32px;
+		top: 8px;
+		right: 10px;
+		width: 44px;
+		height: 44px;
 		border-radius: 999px;
 		font-size: 1.3rem;
 		line-height: 1;
@@ -213,7 +200,7 @@
 	}
 
 	.eyebrow {
-		font-size: 0.62rem;
+		font-size: var(--text-floor);
 		letter-spacing: 0.16em;
 		text-transform: uppercase;
 		color: var(--moss);
@@ -244,7 +231,7 @@
 	}
 
 	.flabel {
-		font-size: 0.72rem;
+		font-size: var(--text-floor);
 		font-weight: 800;
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
@@ -281,7 +268,7 @@
 	}
 
 	.hint {
-		font-size: 0.72rem;
+		font-size: var(--text-floor);
 		color: var(--muted);
 	}
 
@@ -317,7 +304,7 @@
 		align-items: center;
 		gap: 10px;
 		color: var(--muted);
-		font-size: 0.72rem;
+		font-size: var(--text-floor);
 		font-weight: 800;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
@@ -347,7 +334,7 @@
 	}
 
 	.follow span {
-		font-size: 0.78rem;
+		font-size: var(--text-floor);
 		color: var(--muted);
 		line-height: 1.4;
 	}

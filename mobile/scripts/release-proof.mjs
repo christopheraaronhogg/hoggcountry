@@ -65,6 +65,19 @@ const reviewNotes = read('docs/launch/store-copy/review-notes.md');
 const appleCopy = read('docs/launch/store-copy/apple-app-store.md');
 const playCopy = read('docs/launch/store-copy/google-play.md');
 const morningBrief = read('docs/launch/MORNING-BRIEF.md');
+const mobileReadableStyleFiles = [
+	'mobile/src/app.css',
+	'mobile/src/lib/components/AppHeader.svelte',
+	'mobile/src/lib/components/TabNavigation.svelte',
+	'mobile/src/lib/components/TodayTab.svelte',
+	'mobile/src/lib/components/TrailPulsePanel.svelte',
+	'mobile/src/lib/components/SafetyTab.svelte',
+	'mobile/src/lib/components/HikeSetupSheet.svelte',
+	'mobile/src/lib/components/OfflineStatus.svelte',
+	'mobile/src/lib/components/PackStatus.svelte',
+	'mobile/src/lib/components/SourceChip.svelte',
+	'mobile/src/lib/components/ConfidenceBadge.svelte'
+].map((path) => ({ path, source: read(path) }));
 
 const evidenceGuidance = {
 	'ios-development-team': {
@@ -147,9 +160,13 @@ const items = [
 		pass: 'Capacitor preflight script exists.',
 		fail: 'mobile/scripts/preflight.mjs is missing.'
 	}),
-	check('code-build', 'root-mobile-contract-tests', 'pass', rootPackage.includes('mobile-privacy-contract.test.mjs') && rootPackage.includes('mobile-trail-pulse-contract.test.mjs') && rootPackage.includes('mobile-release-proof-contract.test.mjs'), {
-		pass: 'Root test suite includes mobile privacy, Trail Pulse, and release-proof contracts.',
+	check('code-build', 'root-mobile-contract-tests', 'pass', rootPackage.includes('mobile-privacy-contract.test.mjs') && rootPackage.includes('mobile-trail-pulse-contract.test.mjs') && rootPackage.includes('mobile-accessibility-contract.test.mjs') && rootPackage.includes('mobile-release-proof-contract.test.mjs'), {
+		pass: 'Root test suite includes mobile privacy, Trail Pulse, accessibility, and release-proof contracts.',
 		fail: 'Root test suite is missing mobile release/privacy contracts.'
+	}),
+	check('code-build', 'mobile-readable-type-floor', 'pass', hasReadableTypeFloor(mobileReadableStyleFiles), {
+		pass: 'Release-critical mobile surfaces use a 13px text floor and preserve 44px touch-target guards.',
+		fail: 'Release-critical mobile surfaces have sub-13px text, negative tracking, or missing touch-target guards.'
 	}),
 
 	check('native-config', 'ios-project', 'pass', exists('mobile/ios/App/App.xcodeproj/project.pbxproj'), {
@@ -424,6 +441,31 @@ function hasIosDevelopmentTeam(project) {
 
 function hasAndroidKeystoreEnv() {
 	return ['HC_ANDROID_KEYSTORE_FILE', 'HC_ANDROID_KEYSTORE_PASSWORD', 'HC_ANDROID_KEY_ALIAS', 'HC_ANDROID_KEY_PASSWORD'].every((key) => Boolean(process.env[key]));
+}
+
+function hasReadableTypeFloor(files) {
+	const appCss = files.find((file) => file.path === 'mobile/src/app.css')?.source || '';
+	const header = files.find((file) => file.path.endsWith('/AppHeader.svelte'))?.source || '';
+	const setup = files.find((file) => file.path.endsWith('/HikeSetupSheet.svelte'))?.source || '';
+	const safety = files.find((file) => file.path.endsWith('/SafetyTab.svelte'))?.source || '';
+	const nav = files.find((file) => file.path.endsWith('/TabNavigation.svelte'))?.source || '';
+
+	if (!/--text-floor:\s*0\.8125rem/u.test(appCss)) return false;
+	for (const { source } of files) {
+		const smallFontSizes = [...source.matchAll(/font-size:\s*(0\.\d+)rem/gu)]
+			.map((match) => Number(match[1]))
+			.filter((size) => size < 0.8125);
+		if (smallFontSizes.length) return false;
+		if (/letter-spacing:\s*-\d/u.test(source)) return false;
+	}
+
+	return (
+		/\.status-strip\s*\{[\s\S]*?min-height:\s*44px;/u.test(header) &&
+		/\.gear\s*\{[\s\S]*?width:\s*44px;[\s\S]*?height:\s*44px;/u.test(header) &&
+		/\.close\s*\{[\s\S]*?width:\s*44px;[\s\S]*?height:\s*44px;/u.test(setup) &&
+		/\.remove-btn\s*\{[\s\S]*?width:\s*44px;[\s\S]*?height:\s*44px;/u.test(safety) &&
+		/\.nav\s*\{[\s\S]*?height:\s*var\(--nav-height\);/u.test(nav)
+	);
 }
 
 function unique(values) {

@@ -109,6 +109,14 @@
 			radial-gradient(circle at top left, rgba(170, 104, 67, 0.12), transparent 38%);
 	}
 
+	@media (prefers-color-scheme: dark) {
+		.trail-pulse {
+			background:
+				linear-gradient(180deg, rgba(31, 39, 29, 0.98), rgba(24, 31, 23, 0.98)),
+				radial-gradient(circle at top left, rgba(179, 207, 143, 0.12), transparent 38%);
+		}
+	}
+
 	.pulse-alert {
 		display: flex;
 		align-items: center;
@@ -178,9 +186,20 @@
 		border-radius: 999px;
 		background: rgba(255, 253, 248, 0.86);
 		color: var(--forest);
-		font-size: 0.72rem;
+		font-size: var(--text-floor);
 		font-weight: 800;
 		white-space: nowrap;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.pulse-row {
+			background: rgba(179, 207, 143, 0.09);
+		}
+
+		.mile-chip {
+			background: rgba(242, 234, 219, 0.1);
+			color: var(--moss);
+		}
 	}
 
 	.pulse-copy {
@@ -194,7 +213,7 @@
 	}
 
 	.pulse-copy span {
-		font-size: 0.76rem;
+		font-size: var(--text-floor);
 		color: var(--muted);
 	}
 

@@ -272,7 +272,7 @@
 	}
 
 	.eyebrow {
-		font-size: 0.72rem;
+		font-size: var(--text-floor);
 		letter-spacing: 0.16em;
 		text-transform: uppercase;
 		color: var(--moss);
@@ -291,14 +291,14 @@
 		justify-content: space-between;
 	}
 	.hud-top .day {
-		font-size: 0.76rem;
+		font-size: var(--text-floor);
 		letter-spacing: 0.16em;
 		text-transform: uppercase;
 		color: var(--moss);
 		font-weight: 800;
 	}
 	.hud-top .off {
-		font-size: 0.72rem;
+		font-size: var(--text-floor);
 		letter-spacing: 0.04em;
 		font-weight: 800;
 		text-transform: uppercase;
@@ -312,7 +312,7 @@
 		font-weight: 800;
 		font-size: 3.4rem;
 		line-height: 1;
-		letter-spacing: -0.01em;
+		letter-spacing: 0;
 		color: var(--ink);
 		margin: 6px 0 10px;
 	}
@@ -344,7 +344,7 @@
 		gap: 2px;
 	}
 	.splits .k {
-		font-size: 0.72rem;
+		font-size: var(--text-floor);
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: var(--muted);
@@ -366,7 +366,7 @@
 		border-top: 1px solid var(--line);
 	}
 	.ci-due {
-		font-size: 0.78rem;
+		font-size: var(--text-floor);
 		color: var(--muted);
 		font-weight: 700;
 	}
@@ -398,7 +398,7 @@
 	.cand {
 		display: inline-block;
 		font-family: var(--font-sans);
-		font-size: 0.78rem;
+		font-size: var(--text-floor);
 		font-weight: 800;
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
@@ -432,7 +432,7 @@
 		margin-bottom: 0;
 	}
 	.wx-src {
-		font-size: 0.72rem;
+		font-size: var(--text-floor);
 		font-weight: 800;
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
@@ -458,7 +458,7 @@
 		color: var(--ink);
 	}
 	.wx-meta .hilo {
-		font-size: 0.8rem;
+		font-size: var(--text-floor);
 		color: var(--muted);
 		margin-top: 2px;
 	}
@@ -473,7 +473,7 @@
 	}
 	.meanslab {
 		display: block;
-		font-size: 0.72rem;
+		font-size: var(--text-floor);
 		font-weight: 800;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
@@ -518,7 +518,7 @@
 		opacity: 0.85;
 	}
 	.hpct {
-		font-size: 0.72rem;
+		font-size: var(--text-floor);
 		font-weight: 800;
 		color: var(--muted);
 		font-variant-numeric: tabular-nums;
@@ -527,13 +527,13 @@
 		color: var(--clay);
 	}
 	.hlab {
-		font-size: 0.72rem;
+		font-size: var(--text-floor);
 		color: var(--muted);
 		font-weight: 700;
 	}
 	.wx-foot {
 		display: block;
-		font-size: 0.72rem;
+		font-size: var(--text-floor);
 		font-weight: 700;
 		color: var(--muted);
 		margin-top: 4px;
@@ -571,7 +571,7 @@
 		border-radius: 999px;
 		display: grid;
 		place-items: center;
-		font-size: 0.8rem;
+		font-size: var(--text-floor);
 		background: rgba(47, 75, 53, 0.08);
 		color: var(--moss);
 		z-index: 1;
@@ -595,13 +595,13 @@
 		color: var(--forest);
 	}
 	.ndetail {
-		font-size: 0.8rem;
+		font-size: var(--text-floor);
 		color: var(--muted);
 		margin-top: 2px;
 		line-height: 1.4;
 	}
 	.nflag {
-		font-size: 0.8rem;
+		font-size: var(--text-floor);
 		font-weight: 800;
 		color: var(--clay);
 		margin-top: 3px;
@@ -670,7 +670,7 @@
 		border-top: 1px solid var(--line);
 	}
 	.receipt {
-		font-size: 0.72rem;
+		font-size: var(--text-floor);
 		color: var(--muted);
 		background: var(--bg, #fffdf8);
 		border: 1px solid var(--line);
@@ -679,7 +679,7 @@
 	}
 	.badge {
 		margin-left: auto;
-		font-size: 0.72rem;
+		font-size: var(--text-floor);
 		letter-spacing: 0.06em;
 		font-weight: 800;
 		text-transform: uppercase;
@@ -707,7 +707,7 @@
 		color: var(--forest);
 	}
 	.pk-sub {
-		font-size: 0.78rem;
+		font-size: var(--text-floor);
 		color: var(--muted);
 		margin-top: 2px;
 	}

@@ -105,7 +105,7 @@
 		gap: 6px;
 		padding: 6px 10px;
 		border-radius: 999px;
-		font-size: 0.72rem;
+		font-size: var(--text-floor);
 		font-weight: 800;
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
@@ -185,7 +185,7 @@
 	}
 
 	.offline-grid dt {
-		font-size: 0.62rem;
+		font-size: var(--text-floor);
 		font-weight: 800;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
@@ -202,13 +202,13 @@
 	}
 
 	.regions {
-		font-size: 0.78rem;
+		font-size: var(--text-floor);
 		color: var(--muted);
 		margin: 0;
 	}
 
 	.note {
-		font-size: 0.8rem;
+		font-size: var(--text-floor);
 		color: var(--ink);
 		margin: 0;
 	}

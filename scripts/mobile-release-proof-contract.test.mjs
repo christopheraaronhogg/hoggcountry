@@ -46,6 +46,7 @@ test('mobile release proof tracks account, device, privacy, and accessibility ga
 		'accessibility-field-pass',
 		'privacy-contact-and-deletion',
 		'privacy-and-support-routes',
+		'mobile-readable-type-floor',
 		'android-foreground-location-permission'
 	]) {
 		assert.ok(ids.has(requiredId), `missing release proof item: ${requiredId}`);
@@ -181,4 +182,5 @@ test('root test suite runs the mobile release proof contract', () => {
 	const rootPackage = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
 
 	assert.match(rootPackage, /scripts\/mobile-release-proof-contract\.test\.mjs/u);
+	assert.match(rootPackage, /scripts\/mobile-accessibility-contract\.test\.mjs/u);
 });
