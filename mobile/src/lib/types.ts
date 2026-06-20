@@ -67,8 +67,6 @@ export interface TrailConditionReport {
 	chipText?: TrailPulseChip;
 	noteText: string;
 	reporterTrailName?: string;
-	rawLatitude?: number;
-	rawLongitude?: number;
 	snappedMile: number;
 	observedAt: string;
 	status: TrailPulseStatus;

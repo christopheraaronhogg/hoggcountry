@@ -97,8 +97,6 @@ function makeTrailPulseReport(input: {
 	noteText: string;
 	reporterTrailName?: string;
 	snappedMile: number;
-	rawLatitude?: number;
-	rawLongitude?: number;
 	observedAt?: string;
 	syncState?: SyncState;
 }): TrailConditionReport {
@@ -111,8 +109,6 @@ function makeTrailPulseReport(input: {
 		chipText: input.chipText,
 		noteText: input.noteText,
 		reporterTrailName: input.reporterTrailName?.trim() || undefined,
-		rawLatitude: input.rawLatitude,
-		rawLongitude: input.rawLongitude,
 		snappedMile: Number(input.snappedMile.toFixed(1)),
 		observedAt,
 		status: 'active',
@@ -1461,8 +1457,6 @@ class TrailAssistantStore {
 			chipText,
 			noteText,
 			reporterTrailName: input.reporterTrailName,
-			rawLatitude: position?.coords.latitude,
-			rawLongitude: position?.coords.longitude,
 			snappedMile: this.#snapPositionToTrailMile(position),
 			syncState: this.#state.onlineStatus ? 'syncing' : 'queued-offline'
 		});

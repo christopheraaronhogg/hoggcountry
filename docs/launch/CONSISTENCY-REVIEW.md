@@ -8,8 +8,9 @@
 - `docs/launch/privacy/privacy-policy.md` (+ `privacy-policy.html`)
 - `docs/launch/privacy/app-privacy-and-data-safety.md` (declared single source of truth)
 
-**Verdict:** Close to submit-ready. **2 must-fix** issues block submission; everything else
-PASSES or is a DECISION already correctly flagged for Chris.
+**Verdict:** Submit-facing privacy/store-copy artifacts are internally consistent after the
+current fixes. No document-only must-fix remains; the remaining items are account/manual
+decisions already flagged for Chris.
 
 > **Note on the prior version of this file:** an earlier CONSISTENCY-REVIEW described the
 > drafts as still saying "we send your precise lat/long," "Hogg Country backend," a network
@@ -21,17 +22,18 @@ PASSES or is a DECISION already correctly flagged for Chris.
 
 ---
 
-## MUST-FIX (blocks submission)
+## FIXED ITEMS
 
-### MF-1 — Apple **Precise Location**: the two Apple-facing docs say opposite things. **[FIX]**
+### MF-1 — Apple **Precise Location**: the two Apple-facing docs said opposite things. **[FIXED]**
 
-This is the one real internal contradiction in the set, and it sits on the Apple privacy
-label — the highest-scrutiny field.
+This was the one real internal contradiction in the set, and it sat on the Apple privacy
+label — the highest-scrutiny field. It is now resolved to **Precise Location = Not
+Collected**, with Coarse Location covering the transmitted snapped trail-mile.
 
-- `app-privacy-and-data-safety.md` (the declared source of truth) line 101 + DECISION
-  lines 125–129: **Precise Location = COLLECTED (YES)**, Not Linked, Not Tracking, App
-  Functionality. Justification: *"because iOS accesses device GPS, Apple requires declaring
-  it as collected"* — i.e. on-device access = "collect."
+- `app-privacy-and-data-safety.md` (the declared source of truth) now says
+  **Precise Location = NOT collected**. It also explains that GPS may be accessed
+  transiently on-device to compute a snapped trail-mile, while raw lat/long is not
+  transmitted or persisted in Trail Pulse reports.
 - `apple-app-store.md` line 178 (App Privacy fill-in guidance) + line 183: **Precise
   Location = NOT collected.** Justification: *"On-device-only GPS access is not 'collection'
   under Apple's definition, so declare Precise = not collected."*
@@ -49,7 +51,7 @@ keeps Apple aligned with Play (Precise = not collected) and the policy ("raw GPS
 the device"). The source-of-truth doc's line-101 reasoning is the error: it conflates "the
 app reads a sensor" with "the app collects data."
 
-**Exact fix — edit `app-privacy-and-data-safety.md` so Precise = Not Collected:**
+**Applied fix — `app-privacy-and-data-safety.md` now says Precise = Not Collected:**
 - **Line 101** — set Precise Location row to **Collected = No**; cell text: *"Accessed
   on-device only (iOS) to place the hiker on the trail map and compute the trail-mile. Raw
   lat/long is never transmitted or stored off-device, so under Apple's definition
@@ -77,15 +79,10 @@ After this fix, all four artifacts agree: **Coarse/Approximate location = collec
 
 ---
 
-### MF-2 — Privacy policy **Effective date is still a placeholder** `[EFFECTIVE DATE]`. **[FIX]**
+### MF-2 — Privacy policy effective date placeholder. **[FIXED]**
 
-`privacy-policy.md` line 3 and `privacy-policy.html` line 167 both read `[EFFECTIVE DATE]`.
-Apple (5.1.1 / App Privacy) and Play both require a live, dated privacy policy at the
-submitted URL. A policy hosted with a literal `[EFFECTIVE DATE]` token is a guaranteed
-"privacy policy not valid" / metadata-accuracy rejection.
-
-**Exact fix:** set both to the real publication date (e.g. `2026-06-18` or the submission
-date) before hosting at `https://hoggcountry.com/privacy`. Mechanical, but a hard blocker.
+`privacy-policy.md` line 3 and `privacy-policy.html` line 167 now both carry a real effective
+date: **June 18, 2026**. No literal `[EFFECTIVE DATE]` placeholder remains in the policy files.
 
 ---
 
@@ -154,7 +151,7 @@ submission *as an inconsistency*, but several gate the build/marketing.
 | Data point | Policy | Apple label | Play Data Safety | Verdict |
 |---|---|---|---|---|
 | Approximate/coarse location (trail-mile) | sent on report, "approximate position along the trail" | Coarse = **Collected**, shared, App Functionality | Approximate = **Collected & Shared**, optional | **PASS** |
-| **Precise location / raw GPS** | "raw GPS never leaves the device" (not collected) | **Collected = YES** (label) vs **NOT collected** (store-copy guidance) | **NOT collected / NOT shared** | **FIX — MF-1.** Policy & Play say not-transmitted; the Apple *label* file alone says Collected and contradicts the Apple *store-copy* file. |
+| **Precise location / raw GPS** | "raw GPS never leaves the device" (not collected) | **NOT collected** | **NOT collected / NOT shared** | **PASS** |
 | User content (note + optional trail name) | sent on report | User Content = Collected, shared | UGC = Collected & Shared, optional | **PASS** |
 | On-device AI inputs/outputs | "never leaves your phone" | **Not Collected** | **Not Collected** | **PASS** |
 | Check-in / "I'm safe" | on-device only, does not transmit | not declared (no upload) | no network check-in declared | **PASS** — consistently local-only across all four |
@@ -165,9 +162,7 @@ submission *as an inconsistency*, but several gate the build/marketing.
 | Model download (Hugging Face) | disclosed, "no personal data sent" | excluded from data tables (correct) | excluded from data tables (correct) | **PASS** |
 | Deletion route | email `privacy@hoggcountry.com` | n/a | "Yes," email request | **PASS** (pending email confirm — DECISION 2) |
 
-**Net:** the four documents are mutually consistent on **every data type except Precise
-Location**, where the two Apple-facing files disagree with each other (MF-1). Fix MF-1 and
-section (a) is fully PASS.
+**Net:** the four documents are mutually consistent across the declared data types.
 
 ### (b) Over-claim audit
 
@@ -220,8 +215,8 @@ permission-free manifest. This is the honest handling the brief asked for.
 
 - **Privacy-policy HTML vs MD:** **PASS** — the hosted HTML (`privacy-policy.html`) faithfully
   mirrors the markdown section-for-section (local-only check-in row, trail-mile-not-GPS
-  language, Android note, iOS-AI-availability note). Both carry the same `[EFFECTIVE DATE]`
-  placeholder (MF-2) and the same email DECISION flags.
+  language, Android note, iOS-AI-availability note). Both carry the same real effective date
+  and the same email DECISION flags.
 - **Firebase / google-services.json absent:** consistently asserted across all four docs. PASS.
 - **"~2.6 GB" model size:** consistent across Apple description, Play description, policy. PASS.
 
@@ -229,10 +224,10 @@ permission-free manifest. This is the honest handling the brief asked for.
 
 ## BEFORE-SUBMIT CHECKLIST
 
-- [ ] **MF-1:** Edit `app-privacy-and-data-safety.md` so Apple **Precise Location = Not
+- [x] **MF-1:** Edit `app-privacy-and-data-safety.md` so Apple **Precise Location = Not
       Collected** (align to the store-copy file, the Play form, and the policy). Update lines
       86, 101, 116, 118, 125–129, and consistency-warning item 1.
-- [ ] **MF-2:** Replace `[EFFECTIVE DATE]` with the real date in both `privacy-policy.md` and
+- [x] **MF-2:** Replace `[EFFECTIVE DATE]` with the real date in both `privacy-policy.md` and
       `privacy-policy.html` before hosting.
 - [ ] DECISION 1: confirm iOS AI live-vs-stub; adjust the optional iOS-only AI line / AI
       keywords / promo qualifier accordingly.
@@ -249,10 +244,11 @@ permission-free manifest. This is the honest handling the brief asked for.
 
 | Check | Result |
 |---|---|
-| (a) Policy ⇄ Apple ⇄ Play mutually consistent | **FIX** — one contradiction: Apple Precise Location (label says Collected; store-copy says Not Collected). All other data types consistent. |
+| (a) Policy ⇄ Apple ⇄ Play mutually consistent | **PASS** — Coarse/Approximate trail-mile is collected/shared; Precise/raw GPS is not collected/shared; User Content is collected/shared. |
 | (b) No over-claiming (iOS AI 2.3.1 / medical / privacy-vs-form) | **PASS** — iOS-AI capability framing is 2.3.1-safe; medical/emergency explicitly disclaimed; privacy claims backed by labels. |
 | (c) Char limits actually met | **PASS** — every claimed count verified exact by literal recount. |
 | (d) Android location gap handled honestly | **PASS** — disclosed across policy/listing/label; Play declares Precise = not collected, matching the build. |
 
-**Must-fix count: 2** — MF-1 (Apple Precise-Location contradiction between the two Apple-facing
-docs) and MF-2 (`[EFFECTIVE DATE]` placeholder in the hosted privacy policy).
+**Must-fix count: 0** — the prior MF-1 and MF-2 document blockers are fixed. Remaining items are
+manual/account decisions: iOS AI live-vs-stub, monitored privacy mailbox, live support/privacy
+URLs, and final App Store / Play Console form entry.

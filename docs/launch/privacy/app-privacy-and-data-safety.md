@@ -14,7 +14,7 @@ public privacy policy, **and with the shipped build**. The build was inspected t
 
 ---
 
-## What the shipped code actually does (verified against source, 2026-06-18)
+## What the shipped code actually does (verified against source, 2026-06-20)
 
 This drove every answer below. **Read this before filling either store form** — several
 of the brief's working assumptions did not match the shipped build, and over-declaring is
@@ -26,10 +26,11 @@ itself an App Store 2.3.1 / Play Data-Safety accuracy violation.
      (`mobile/src/lib/trailPulseSpacetime.ts`).
    - **The transmitted payload is: note text, an optional self-chosen trail name, a snapped
      trail-mile number (`snappedMile`), trail id, and a timestamp.**
-   - **Raw GPS latitude/longitude are NOT transmitted.** The code captures `rawLatitude` /
-     `rawLongitude` into the *local* record (`makeTrailPulseReport`, `TrailConditionReport`),
-     but the network reducer call sends only `snappedMile` — a position *along the trail*
-     (a single distance number), not a lat/long coordinate. (`trailPulseSpacetime.ts` lines 57–65.)
+   - **Raw GPS latitude/longitude are NOT transmitted or persisted in Trail Pulse reports.**
+     The app may read GPS transiently on-device to compute `snappedMile`, then the local
+     `TrailConditionReport` stores only that rounded trail-mile. The network reducer call sends
+     only `snappedMile` — a position *along the trail* (a single distance number), not a lat/long
+     coordinate. (`trailState.svelte.ts`, `types.ts`, `trailPulseSpacetime.ts`.)
    - **DECISION:** Because precise lat/long does **not** leave the device in this build,
      **precise location is declared as Data NOT Collected / NOT Shared on BOTH stores.**
      What is shared is a coarse trail-mile position, which we declare as **Approximate location**
@@ -83,8 +84,7 @@ itself an App Store 2.3.1 / Play Data-Safety accuracy violation.
 
 Overall app-level answers first, then per-data-type.
 
-- **Does this app collect data?** → **YES** (because of the optional trail-condition report,
-  and because iOS accesses device location on-device).
+- **Does this app collect data?** → **YES** (because of the optional trail-condition report).
 - **Do you or your third-party partners use data for tracking?** → **NO.**
   Overall **Tracking = NO.** No data is linked to third-party data for advertising, no
   advertising identifiers, no data shared with data brokers. (App Tracking Transparency prompt
