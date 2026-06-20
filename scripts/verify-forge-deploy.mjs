@@ -16,7 +16,7 @@ for (let i = 0; i < args.length; i += 1) {
     continue;
   }
 
-  if (arg === '--expected-sha' && args[i + 1]) {
+  if ((arg === '--expected-sha' || arg === '--sha') && args[i + 1]) {
     options.expectedSha = args[i + 1];
     i += 1;
     continue;
