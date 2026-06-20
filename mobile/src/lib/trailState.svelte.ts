@@ -206,6 +206,13 @@ type PersistedState = TrailState;
 
 /** A write-action Scout proposes from chat, rendered as a confirm card. */
 type ProposedAction = { id: string; title: string; detail: string; confirmLabel: string };
+type ModelDownloadAutoStart = 'none' | 'started' | 'downloading' | 'metered' | 'offline' | 'unavailable';
+
+function formatModelSize(bytes: number | undefined): string {
+	if (!bytes || bytes < 0) return 'about 2.6 GB';
+	const gb = bytes / 1e9;
+	return gb >= 1 ? `${gb.toFixed(1)} GB` : `${Math.round(bytes / 1e6)} MB`;
+}
 
 class TrailAssistantStore {
 	#state = $state<TrailState>(defaultState);
@@ -405,13 +412,56 @@ class TrailAssistantStore {
 		return this.#gemmaBridge.isAvailable().catch(() => false);
 	}
 
-	#gemmaUnavailableAnswer(): ScoutAnswer {
+	async #startModelDownloadIfUseful(): Promise<ModelDownloadAutoStart> {
+		this.#ensureNativeWiring();
+		if (!this.#modelManager) return 'unavailable';
+		if (this.#modelDownload) return 'downloading';
+
+		const status = this.#modelStatus ?? (await this.refreshModelStatus());
+		if (!status || status.state === 'ready') return 'none';
+		if (
+			!status.downloadConfigured ||
+			(status.state !== 'needs_download' && status.state !== 'present_unverified')
+		) {
+			return 'unavailable';
+		}
+
+		const network = await this.#modelManager.getNetworkStatus().catch(() => null);
+		if (network && !network.connected) {
+			this.#modelError = 'No internet connection. Connect to Wi-Fi to download the model.';
+			return 'offline';
+		}
+		if (network?.metered) {
+			this.#meteredDownloadPrompt = network;
+			return 'metered';
+		}
+
+		void this.downloadModel();
+		return 'started';
+	}
+
+	#gemmaUnavailableAnswer(autoStart: ModelDownloadAutoStart = 'none'): ScoutAnswer {
 		// Tailor the message: not-installed → guide to the download; otherwise the
 		// model is present but the runtime hasn't warmed up yet.
 		const notInstalled = !this.#modelStatus || this.#modelStatus.state !== 'ready';
-		const answer = notInstalled
-			? "Scout's on-device model isn't installed yet. Open Settings → On-device AI and download it once on Wi-Fi, then I can answer fully offline."
-			: 'My on-device model is still warming up. Give it a few seconds and ask again.';
+		const modelSize = formatModelSize(this.#modelStatus?.expectedBytes);
+		let answer = 'My on-device model is still warming up. Give it a few seconds and ask again.';
+		if (notInstalled) {
+			if (autoStart === 'started') {
+				answer = `I'm starting the on-device model download now (${modelSize}). Once it verifies, Scout can answer fully offline. You can watch progress in Settings > On-device AI.`;
+			} else if (autoStart === 'downloading' || this.#modelDownload) {
+				answer = `Scout's on-device model is downloading now. Once it verifies, ask again and I'll answer from the local model.`;
+			} else if (autoStart === 'metered' || this.#meteredDownloadPrompt) {
+				answer = `Scout's on-device model is ${modelSize}, and this connection looks metered. I paused before using mobile data. Open Settings > On-device AI if you want to approve the download anyway.`;
+			} else if (autoStart === 'offline') {
+				answer = this.#modelError ?? "Connect to Wi-Fi to download Scout's on-device model.";
+			} else if (autoStart === 'unavailable') {
+				answer =
+					"The on-device model download isn't available in this build yet. Scout will answer after the verified model/runtime is installed.";
+			} else {
+				answer = `Scout's on-device model isn't installed yet. Download it once on Wi-Fi in Settings > On-device AI, then I can answer fully offline.`;
+			}
+		}
 		return {
 			answer,
 			confidence: 'draft',
@@ -756,7 +806,8 @@ class TrailAssistantStore {
 				// Model unavailable: append a PLAIN status message. Deliberately do
 				// NOT register it as a ScoutAnswer or set lastScoutAnswer — it isn't a
 				// model answer, so the chat shows no confidence badge or source chips.
-				const answer = this.#gemmaUnavailableAnswer();
+				const autoStart = await this.#startModelDownloadIfUseful();
+				const answer = this.#gemmaUnavailableAnswer(autoStart);
 				this.#state.coachMessages = [...this.#state.coachMessages, makeMessage('assistant', answer.answer)];
 				return;
 			}
@@ -822,7 +873,8 @@ class TrailAssistantStore {
 			// Return the unavailable STATUS to the caller, but do NOT record it as
 			// lastScoutAnswer — otherwise Today's "last answer" recap would show a
 			// status message with a confidence badge, as if it were a real answer.
-			return this.#gemmaUnavailableAnswer();
+			const autoStart = await this.#startModelDownloadIfUseful();
+			return this.#gemmaUnavailableAnswer(autoStart);
 		}
 
 		const answer = await this.#scout.runtime.ask({

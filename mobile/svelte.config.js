@@ -7,9 +7,7 @@ const config = {
 			spacetimedb: './node_modules/spacetimedb',
 			'spacetimedb/*': './node_modules/spacetimedb/*'
 		},
-		adapter: adapter({
-			fallback: 'index.html'
-		})
+		adapter: adapter()
 	}
 };
 

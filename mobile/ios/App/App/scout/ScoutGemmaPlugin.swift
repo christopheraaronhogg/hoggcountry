@@ -1,4 +1,5 @@
 import Foundation
+import Network
 import Capacitor
 
 /// iOS `ScoutGemma` Capacitor plugin — the Swift mirror of Android's
@@ -27,7 +28,8 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "prepareModelDownload", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "startModelDownload", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "cancelModelDownload", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "getDownloadState", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "getDownloadState", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getNetworkStatus", returnType: CAPPluginReturnPromise)
     ]
 
     private let store = ScoutModelStore()
@@ -188,11 +190,60 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 
+    @objc func getNetworkStatus(_ call: CAPPluginCall) {
+        let monitor = NWPathMonitor()
+        let queue = DispatchQueue(label: "com.hoggcountry.scoutgemma.network")
+        var resolved = false
+
+        func resolveOnce(_ path: NWPath) {
+            guard !resolved else { return }
+            resolved = true
+            monitor.cancel()
+            let payload = self.networkStatusPayload(for: path)
+            DispatchQueue.main.async {
+                call.resolve(payload)
+            }
+        }
+
+        monitor.pathUpdateHandler = { path in
+            queue.async {
+                resolveOnce(path)
+            }
+        }
+        monitor.start(queue: queue)
+
+        queue.asyncAfter(deadline: .now() + 1.0) {
+            resolveOnce(monitor.currentPath)
+        }
+    }
+
     /// Clears the active downloader + progress under the state queue.
     private func clearDownload() {
         stateQueue.sync {
             _downloader = nil
             _lastProgress = nil
         }
+    }
+
+    private func networkStatusPayload(for path: NWPath) -> [String: Any] {
+        let connected = path.status == .satisfied
+        let type: String
+        if !connected {
+            type = "none"
+        } else if path.usesInterfaceType(.wifi) {
+            type = "wifi"
+        } else if path.usesInterfaceType(.cellular) {
+            type = "cellular"
+        } else if path.usesInterfaceType(.wiredEthernet) {
+            type = "ethernet"
+        } else {
+            type = "other"
+        }
+
+        return [
+            "connected": connected,
+            "metered": path.isExpensive,
+            "type": type
+        ]
     }
 }
