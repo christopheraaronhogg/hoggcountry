@@ -20,9 +20,9 @@ import type {
 import { publishTrailPulseReport } from './trailPulseSpacetime';
 import { resolveModelPolicy } from './scout/model-policy.ts';
 import {
-	ScoutModelDownloadSession,
+	NativeScoutRuntime,
 	type ModelDownloadAutoStart
-} from './scout/model-download-session.svelte.ts';
+} from './scout/native-scout-runtime.ts';
 import {
 	createTrailDocument,
 	limitTrailDocuments,
@@ -62,15 +62,8 @@ import {
 import { detectTrailActionIntent } from './scout/action-intents.ts';
 import { cloneDefaultContextPack } from './scout/default-pack.ts';
 import { loadTrailGeometry, snapToMile, type TrailGeoPoint } from './trail/trail-geometry';
-import { createScoutRuntime, InMemoryContextPackStore } from './scout';
-import type { OnDeviceGemmaProvider } from './scout';
-import {
-	createCapacitorGemmaBridge,
-	createCapacitorModelManager,
-	type ScoutModelManager
-} from './scout/capacitor-gemma-bridge.ts';
-import type { ContextPack, ContextPackStatus, ScoutAnswer, ScoutRuntime } from './scout';
-import type { OnDeviceGemmaBridge } from './scout/providers/on-device-gemma.ts';
+import { InMemoryContextPackStore } from './scout';
+import type { ContextPack, ContextPackStatus, ScoutAnswer } from './scout';
 import {
 	createMobilePersistenceAdapter,
 	type PersistenceAdapter
@@ -134,25 +127,15 @@ class TrailAssistantStore {
 	#fieldPackStore = new InMemoryContextPackStore({
 		adapter: mobilePersistence ?? undefined
 	});
-	#gemmaBridge: OnDeviceGemmaBridge | null = browser ? createCapacitorGemmaBridge() : null;
-	#modelManager: ScoutModelManager | null = browser ? createCapacitorModelManager() : null;
-	#scout: { runtime: ScoutRuntime; onDeviceProvider: OnDeviceGemmaProvider | undefined } = createScoutRuntime({
+	#nativeScout = new NativeScoutRuntime({
+		browserAvailable: browser,
 		store: this.#fieldPackStore,
-		onDeviceBridge: this.#gemmaBridge ?? undefined,
-		onDeviceTier: 'balanced'
 	});
 	#fieldPack = $state.raw<ContextPack>(this.#fieldPackStore.get());
 	#fieldPackStatus = $state<ContextPackStatus>(this.#fieldPackStore.getStatus());
 	#lastScoutAnswer = $state<ScoutAnswer | null>(null);
 	#scoutAnswersByMessage = new Map<string, ScoutAnswer>();
-	#modelDownloads = new ScoutModelDownloadSession({
-		getManager: () => this.#modelManager,
-		ensureNativeWiring: () => this.#ensureNativeWiring(),
-		onModelReady: () => {
-			this.#scout.onDeviceProvider?.invalidateAvailability();
-			this.#warmUpModel();
-		}
-	});
+	#modelDownloads = this.#nativeScout.downloads;
 	// True while a Scout reply is being generated (on-device inference can take
 	// many seconds), so the chat can show a "thinking" indicator instead of
 	// looking frozen.
@@ -388,51 +371,16 @@ class TrailAssistantStore {
 		}, nextState === 'syncing' ? 1300 : 0);
 	}
 
-	/**
-	 * Re-resolve the native Capacitor wiring if it wasn't ready when this store was
-	 * first constructed. The store is a module-level singleton built at import time,
-	 * which can race Capacitor's plugin injection — if it lost that race the bridge
-	 * was null for the whole session and on-device Scout never engaged. Calling this
-	 * before chat/model work lets a late-registered plugin self-heal: once the
-	 * bridge resolves we rebuild the Scout runtime around it.
-	 */
-	#ensureNativeWiring(): void {
-		if (!browser) return;
-		if (!this.#modelManager) this.#modelManager = createCapacitorModelManager();
-		if (this.#gemmaBridge) return;
-		const bridge = createCapacitorGemmaBridge();
-		if (!bridge) return;
-		this.#gemmaBridge = bridge;
-		this.#scout = createScoutRuntime({
-			store: this.#fieldPackStore,
-			onDeviceBridge: bridge,
-			onDeviceTier: 'balanced'
-		});
-	}
-
-	/**
-	 * Eagerly initialize the on-device engine so the FIRST chat turn doesn't carry
-	 * (or risk) the heavy, sometimes-flaky lazy LiteRT init — the root of the
-	 * "asked a question, it answered offline" intermittency. Best-effort and silent.
-	 */
-	#warmUpModel(): void {
-		this.#ensureNativeWiring();
-		void this.#gemmaBridge?.warmUp?.();
-	}
-
 	async #gemmaReady(): Promise<boolean> {
-		if (!REQUIRE_GEMMA) return true;
-		this.#ensureNativeWiring();
-		if (!this.#gemmaBridge) return false;
-		return this.#gemmaBridge.isAvailable().catch(() => false);
+		return this.#nativeScout.gemmaReady(REQUIRE_GEMMA);
 	}
 
 	async #startModelDownloadIfUseful(): Promise<ModelDownloadAutoStart> {
-		return this.#modelDownloads.startIfUseful();
+		return this.#nativeScout.startModelDownloadIfUseful();
 	}
 
 	#gemmaUnavailableAnswer(autoStart: ModelDownloadAutoStart = 'none'): ScoutAnswer {
-		return this.#modelDownloads.unavailableAnswer(autoStart);
+		return this.#nativeScout.gemmaUnavailableAnswer(autoStart);
 	}
 
 	#getCurrentPosition(): Promise<GeolocationPosition | null> {
@@ -776,7 +724,7 @@ class TrailAssistantStore {
 
 	async #dispatchScoutReply(prompt: string) {
 		// Self-heal the native wiring in case Capacitor wasn't ready at construction.
-		this.#ensureNativeWiring();
+		this.#nativeScout.ensureNativeWiring();
 		if (REQUIRE_GEMMA) await this.refreshModelStatus();
 		this.#scoutThinking = true;
 
@@ -810,7 +758,7 @@ class TrailAssistantStore {
 				return;
 			}
 
-			const answer = await this.#scout.runtime.ask(
+			const answer = await this.#nativeScout.runtime.ask(
 				{
 					prompt,
 					onlineStatus: this.#state.onlineStatus,
@@ -845,8 +793,8 @@ class TrailAssistantStore {
 			// Log the real error so a genuine bug (store/tool failure) is debuggable
 			// from device logs rather than silently swallowed.
 			console.error('Scout reply failed', error);
-			this.#scout.onDeviceProvider?.invalidateAvailability();
-			this.#warmUpModel();
+			this.#nativeScout.invalidateAvailability();
+			this.#nativeScout.warmUpModel();
 			// Keep the wording accurate for any failure here (on-device generation is
 			// the dominant case under the Gemma-only policy, but a store/tool error
 			// could also land here) while still nudging a retry — the warm-up above
@@ -875,7 +823,7 @@ class TrailAssistantStore {
 			return this.#gemmaUnavailableAnswer(autoStart);
 		}
 
-		const answer = await this.#scout.runtime.ask({
+		const answer = await this.#nativeScout.runtime.ask({
 			prompt,
 			onlineStatus: this.#state.onlineStatus,
 			batterySaver: this.#state.trailSettings.batterySaver,
