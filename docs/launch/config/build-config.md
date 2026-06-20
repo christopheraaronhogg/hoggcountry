@@ -1,7 +1,8 @@
 # Build & version config — submission readiness
 
-Snapshot of the native build config as of 2026-06-19 (everything short of the
-account-bound signing/upload). Branch: `submission-hardening-claude`.
+Snapshot of the native build config as of 2026-06-20. Account-bound store
+records, iOS signing/upload, and physical-device smoke proof are still separate.
+Branch: `main`.
 
 ## Shared identity
 - **Bundle ID:** `com.hoggcountry.trailassistant` (identical iOS + Android) ✓
@@ -38,9 +39,9 @@ account-bound signing/upload). Branch: `submission-hardening-claude`.
 | 16 KB native-lib alignment (LiteRT .so) | `p_align 0x4000` on all arm64 libs | ✓ **verified — passes Play's requirement** |
 | foregroundServiceType=dataSync (model download) | declared in manifest | ✓ build-side; ⚠ needs a Play Console FGS declaration |
 | LiteRT-LM Android runtime | wired Gradle dep `com.google.ai.edge.litertlm:litertlm-android` | ✓ AI runs on Android (pending on-device verification) |
-| Release signing | env-gated (`HC_ANDROID_KEYSTORE_*`) | ⛔ **needs an upload keystore** (Chris owns the secret) |
-| Location permission | absent | known gap — geolocation no-ops on Android; not a blocker (app works without it) |
+| Release signing | env-gated (`HC_ANDROID_KEYSTORE_*`) | ✓ upload keystore generated outside git; signed AAB proof recorded |
+| Location permission | `ACCESS_COARSE_LOCATION` + `ACCESS_FINE_LOCATION`, no background location | ✓ foreground, user-initiated GPS-to-mile snapping; raw GPS stays on-device |
 
 ## What this means
 - **iOS** project-file blockers are cleared for the privacy manifest, shared scheme, and LiteRT-LM package wiring. It archives once Chris sets the Apple Developer team. Scout AI still needs model-download/runtime smoke proof on a real device before submission claims.
-- **Android** should build an upload-ready release AAB as soon as an upload keystore exists. Gemma is wired in the native Android lane, but still needs physical-device smoke proof before submission.
+- **Android** can build a signed release AAB with the local upload keystore proof already recorded. Gemma and foreground GPS are wired in the native Android lane, but still need physical-device smoke proof before submission.

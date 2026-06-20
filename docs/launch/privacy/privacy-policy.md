@@ -72,7 +72,7 @@ There is exactly **one** path by which data goes from your phone to us, and it n
 
 > **A note on how your position is shared:** Your phone *may* read precise GPS **on the device** in order to place you on the map and calculate the trail-mile. But only that derived **trail-mile** — an approximate point along a one-dimensional trail — is ever included in a report. Your exact coordinates stay on the phone.
 
-> **Android build note (honest disclosure):** The current **Android** build does not request location permission, so on Android the trail-mile is derived **without** a live GPS fix. Precise GPS is not captured on Android in this build. We're flagging this openly and will keep the policy accurate as the build evolves.
+> **Android foreground location note:** The current **Android** build requests foreground location permission for the same on-device trail-mile snapping path. It does **not** request background location. If you deny location permission or a fix is unavailable, the app falls back to your current app mile instead of guessing.
 
 ---
 

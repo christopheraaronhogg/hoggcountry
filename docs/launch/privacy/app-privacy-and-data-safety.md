@@ -53,19 +53,21 @@ itself an App Store 2.3.1 / Play Data-Safety accuracy violation.
      report is a real transmission. Marketing/store copy that promises live family-visible
      check-ins should be softened until a network check-in path ships (flagged below).
 
-4. **Location capture is platform-asymmetric — and now moot for the network label, but still
-   a metadata-accuracy item:**
+4. **Location capture is foreground/user-controlled on both mobile platforms — and still
+   distinct from the network privacy label:**
    - **iOS:** captures GPS. `navigator.geolocation.getCurrentPosition` runs and
      `NSLocationWhenInUseUsageDescription` is present in `Info.plist`. So iOS *reads* precise
      location on-device (to compute the trail-mile and to show you on the map), even though it
      does not transmit lat/long.
-   - **Android:** does **not** capture GPS. `AndroidManifest.xml` declares **no**
-     `ACCESS_FINE_LOCATION` / `ACCESS_COARSE_LOCATION`; without it `navigator.geolocation`
-     returns null. So on Android the trail-mile is derived without a live fix.
-   - **DECISION:** Because iOS *accesses* device location on-device (even without transmitting
-     it), the Apple label still answers the location question truthfully per Apple's rule that
-     "collect" = access on the device. See Apple section. Android's Data-Safety location answer
-     is scoped to what Android actually does.
+   - **Android:** now declares foreground `ACCESS_FINE_LOCATION` / `ACCESS_COARSE_LOCATION`
+     and no background location permission. The WebView `navigator.geolocation` path can read
+     a user-granted fix for manual GPS snap, Trail Pulse trail-mile calculation, and opt-in
+     auto-log mileage. If the hiker denies permission or the fix is unavailable, the app falls
+     back to the current app mile rather than fabricating a GPS-derived mile.
+   - **DECISION:** Both platforms may read GPS on-device after user action/permission, but
+     raw latitude/longitude still do **not** leave the device. Store labels below therefore
+     continue to declare the transmitted **approximate trail-mile** and user content, not raw
+     precise coordinates.
 
 5. **On-device AI collects nothing.** Gemma/LiteRT inference is fully local; the model is
    downloaded **once**, user-initiated, Wi-Fi-by-default, checksum-verified, from
@@ -161,7 +163,7 @@ App-level answers first.
 | Play data type | Collected? | Shared (off-device)? | Optional or Required? | Ephemeral? | Purpose | For ads? |
 |---|---|---|---|---|---|---|
 | **Location → Approximate location** | **YES** | **YES** | **Optional** (user-initiated report) | No | **App functionality** — the report carries a snapped trail-mile (a position *along a public trail*, not the device's geographic coordinates) so family/hikers see where on the trail a condition was reported. | **No** |
-| **Location → Precise location** | **No** | **No** | — | — | Raw GPS lat/long is **not transmitted**; on Android it is **not even captured** (no location permission in the shipped manifest). | — |
+| **Location → Precise location** | **No** | **No** | — | — | Raw GPS lat/long is **not transmitted or persisted off-device**. Android may read a user-granted foreground fix on-device for trail-mile snapping, just as iOS does, but only the derived trail-mile can be sent in a report. | — |
 | **App activity / App info & performance** | **No** | **No** | — | — | No analytics, no crash SDK. | — |
 | **Messages / other in-app content → User-generated content** (the free-text trail-condition note + optional self-chosen trail name) | **YES** | **YES** | **Optional** (user-initiated) | No | **App functionality** — shown to others as the trail report. | **No** |
 | Personal info (name, email, user IDs, address, phone) | **No** | **No** | — | — | No account. | — |
@@ -176,7 +178,7 @@ App-level answers first.
 **DECISION (Play location):** declare **Approximate location: collected + shared, optional,
 app-functionality, not for ads** — because the transmitted value is a snapped trail-mile (a coarse
 along-trail position), not device coordinates. Declare **Precise location: NOT collected / NOT
-shared**, because raw lat/long is never transmitted and (on Android) never even captured. This is
+shared**, because raw lat/long is never transmitted or persisted off-device. This is
 the per-actual-behavior, no-over-declaration choice the brief requires.
 
 **DECISION (Play deletion route):** users have no account; deletion is an **email request**.
@@ -203,16 +205,16 @@ All four must agree. Open items that **must** be reconciled before submission:
      position along the trail (a trail-mile) plus any note you type,"** matching both store forms.
    - Apple declares **Coarse Location = Collected** (the transmitted trail-mile) — the counterpart
      of Play's **Approximate location = Shared** — so both stores agree on what leaves the device.
-   - Apple **Precise Location = NOT collected** (iOS may access GPS on-device, but the coordinate is
+   - Apple **Precise Location = NOT collected** (iOS/Android may access GPS on-device after permission, but the coordinate is
      used on-device and **never transmitted**, so it is not "collected" under Apple's transmission
-     test; not captured at all on Android). This matches Play (Precise = not collected) and the policy.
+     test). This matches Play (Precise = not collected) and the policy.
 
-2. **Android cannot read GPS — do not over-declare for Android.** `AndroidManifest.xml` ships
-   **no** location permission, so Android captures no fix. Keep Play's **Precise location =
-   Not collected** (already done above). **Build-vs-disclosure gap to fix:** either (a) wire the
-   Android location permission + capture so behavior matches any "we use your location" marketing,
-   or (b) keep marketing/policy honest that Android derives trail position without a live GPS fix.
-   Until (a) ships, **Play must not declare precise-location collection for Android.**
+2. **Android foreground GPS is now wired — do not over-declare raw GPS.**
+   `AndroidManifest.xml` declares `ACCESS_FINE_LOCATION` and `ACCESS_COARSE_LOCATION`, and
+   does **not** declare `ACCESS_BACKGROUND_LOCATION`. This lets Android use the same
+   foreground, user-granted GPS-to-trail-mile behavior as iOS. Keep Play's **Precise location =
+   Not collected / Not shared** because raw coordinates still never leave the phone; Play's
+   **Approximate location** row covers the derived trail-mile that can be shared in a report.
 
 3. **Destination is SpacetimeDB, not the Laravel/Forge API.** The privacy policy's "where your
    data goes" section must name the real recipient (our SpacetimeDB-backed Trail Pulse service),
@@ -243,7 +245,7 @@ All four must agree. Open items that **must** be reconciled before submission:
       email deletion route, model-download note, no ads/analytics/tracking, on-device AI sends nothing.
 - [ ] Apple label entered exactly as Section 1.
 - [ ] Play Data Safety entered exactly as Section 2 (Approximate location shared / Precise not).
-- [ ] Android location-permission gap resolved or marketing kept honest (item 2).
+- [x] Android foreground location permission wired without background tracking (item 2).
 - [ ] iOS marketing copy reviewed for 2.3.1 (item 5).
 - [ ] Check-in claims softened or network path shipped (item 4).
 
@@ -251,7 +253,6 @@ All four must agree. Open items that **must** be reconciled before submission:
 
 **One-line summary:** Trail Assistant shares only an optional, user-initiated trail-condition
 report — a coarse along-trail mile plus the note you type — encrypted to our own backing service,
-never sold, never for ads, deletable by email; precise GPS is never transmitted (and isn't even
-captured on Android), all on-device AI sends nothing, and the only build-vs-disclosure items to
-fix are the Android location-permission gap, the local-only check-ins, and not promising live
-on-device AI on day-one iOS.
+never sold, never for ads, deletable by email; precise GPS is never transmitted, Android/iOS
+foreground GPS is on-device only, all on-device AI sends nothing, and the only build-vs-disclosure
+items to fix are the local-only check-ins and not promising live on-device AI on day-one iOS.

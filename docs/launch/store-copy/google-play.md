@@ -209,7 +209,7 @@ Run via Play Console's IARC questionnaire. Answer honestly; the entries that mat
 - **Personal information / location shared with other users:** **Approximate location
   only.** When the user chooses to report, a **coarse along-trail position (a trail-mile,
   not GPS coordinates)** and the note are shared. **Precise location is not shared and is
-  not even captured on Android.** (Must match the Data Safety doc — see cross-reference.)
+  not transmitted.** (Must match the Data Safety doc — see cross-reference.)
 - **Digital purchases / in-app purchases:** None.
 
 Expected outcome: a low rating (Everyone / PEGI 3 / equivalent), with UGC and
@@ -270,9 +270,9 @@ authoritative doc governs; this is the must-match digest):
   **trail-mile** (a position *along a public trail*, not the device's geographic
   coordinates). Purpose: App functionality. **Not for ads.**
 - **Location → Precise location:** **NOT collected / NOT shared.** Raw GPS lat/long is
-  never transmitted, and on Android it is **not even captured** (no location permission in
-  the shipped `AndroidManifest.xml`). iOS *accesses* precise GPS on-device to compute the
-  trail-mile, but that is on-device use, not collection-for-the-Play-form.
+  never transmitted or persisted off-device. Android and iOS may read a foreground,
+  user-granted GPS fix on-device to compute the trail-mile, but that is on-device use,
+  not collection-for-the-Play-form.
 - **Messages / other in-app content → User-generated content** (the free-text report note
   + optional self-chosen trail name): **Collected and Shared**, **Optional**, App
   functionality. Scout chat text is processed **on device** and is **not** collected.
@@ -286,16 +286,14 @@ authoritative doc governs; this is the must-match digest):
   (publish a contact, e.g. `chris.stitchscreen@gmail.com`, in the Play "Data deletion" field and
   the privacy policy). Answer "Can users request deletion?" = **Yes**.
 
-> **DECISION (Chris) — Android location, resolved direction (FLAG kept for sign-off):**
-> The shipped report transmits only a snapped trail-mile, and the **current Android build
-> declares no location permission**, so Android never captures precise GPS. The
-> authoritative doc therefore declares **Precise location = NOT collected** and only
-> **Approximate location (trail-mile) = collected & shared** — which matches the build.
-> **Do not** declare "Precise location collected/shared" on the Play form. The only open
-> choice is product-side: leave Android deriving the trail-mile without a live fix (current
-> behavior, disclosure already honest), or later wire `ACCESS_COARSE/FINE_LOCATION`. Either
-> way the v1.0 Play form above stays correct. (This corrects an earlier draft of this block
-> that wrongly read "Location (precise): Collected and shared.")
+> **DECISION (Chris) — Android location direction resolved):**
+> The Android build now declares foreground `ACCESS_FINE_LOCATION` and
+> `ACCESS_COARSE_LOCATION`, with no background location permission. Android can use a
+> user-granted GPS fix on-device for trail-mile snapping, matching the product behavior.
+> The shipped report still transmits only a snapped trail-mile, so the authoritative doc
+> declares **Precise location = NOT collected / NOT shared** and
+> **Approximate location (trail-mile) = collected & shared**. **Do not** declare "Precise
+> location collected/shared" on the Play form.
 
 ---
 

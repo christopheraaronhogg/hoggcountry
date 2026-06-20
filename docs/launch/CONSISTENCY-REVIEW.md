@@ -73,7 +73,7 @@ After this fix, all four artifacts agree: **Coarse/Approximate location = collec
 
 > The opposite resolution (declare Precise = Collected everywhere, incl. on the Play form)
 > would also be internally consistent but it **over-declares** on Play/policy and contradicts
-> the build (Android captures nothing; iOS transmits nothing) — exactly the over-declaration
+> the build (Android/iOS can read GPS on-device, but neither transmits raw coordinates) — exactly the over-declaration
 > the source-of-truth doc itself warns against. So the fix direction is not a coin-flip:
 > align to **Precise = Not Collected.**
 
@@ -115,13 +115,13 @@ submission *as an inconsistency*, but several gate the build/marketing.
    and `https://hoggcountry.com/privacy` (the hosted policy) must both resolve. Dead URLs =
    rejection.
 
-4. **[MED] Android location-permission gap — resolved honestly; confirm the direction.**
-   Handled correctly in all four docs: Android ships **no** location permission, captures no
-   fix, derives the trail-mile without a live fix; Play declares **Precise = not collected**
-   and the policy + Play description disclose it openly (`privacy-policy.md` line 75;
-   `google-play.md` lines 274–275, 289–298). **PASS — disclosed, not hidden.** Your only open
-   choice is product-side: leave Android as-is, or later wire `ACCESS_COARSE/FINE_LOCATION`.
-   No copy change needed either way.
+4. **[FIXED] Android foreground location permission is wired.**
+   Android now declares `ACCESS_FINE_LOCATION` and `ACCESS_COARSE_LOCATION`, with **no**
+   `ACCESS_BACKGROUND_LOCATION`. This matches the product's GPS-to-trail-mile behavior:
+   the hiker can grant foreground location for manual GPS snap, Trail Pulse trail-mile
+   calculation, and opt-in auto-log mileage. Play still declares **Precise = not collected /
+   not shared** because raw coordinates are never transmitted or stored off-device; the
+   **Approximate location** row covers the derived trail-mile that can leave the phone.
 
 5. **[MED] Cross-store category parity.** Apple uses **Health & Fitness** as secondary
    (`apple-app-store.md` lines 132–138); Play **rejects** Health & Fitness and warns it
@@ -205,11 +205,13 @@ submission *as an inconsistency*, but several gate the build/marketing.
 
 Watch item: Play short description is **exactly 80/80** — any edit busts the limit.
 
-### (d) Android location-permission gap handled honestly
+### (d) Android foreground location permission handled honestly
 
-**PASS.** See DECISION 4. The gap is disclosed (not hidden) in the policy, the Play
-description, and the source-of-truth doc; Play declares Precise = not collected, matching the
-permission-free manifest. This is the honest handling the brief asked for.
+**PASS.** See DECISION 4. Android now has foreground location permission and no background
+location permission. The policy, Play description, and source-of-truth doc all keep the key
+privacy boundary intact: raw GPS may be read on-device after user permission, but only the
+derived approximate trail-mile can be transmitted in a report. Play declares Precise = not
+collected/shared and Approximate = collected/shared.
 
 ### Bonus consistency checks
 

@@ -263,8 +263,8 @@
   </div>
 
   <div class="note">
-    <span class="tag">Android build note — honest disclosure</span>
-    <p>The current <strong>Android</strong> build does not request location permission, so on Android the trail-mile is derived <strong>without</strong> a live GPS fix. Precise GPS is not captured on Android in this build. We're flagging this openly and will keep the policy accurate as the build evolves.</p>
+    <span class="tag">Android foreground location note</span>
+    <p>The current <strong>Android</strong> build requests foreground location permission for the same on-device trail-mile snapping path. It does <strong>not</strong> request background location. If you deny location permission or a fix is unavailable, the app falls back to your current app mile instead of guessing.</p>
   </div>
 
   <h2>3. The one-time model download (Hugging Face)</h2>

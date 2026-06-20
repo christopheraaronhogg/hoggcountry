@@ -56,8 +56,8 @@ Everything that does **not** require your Apple/Google accounts, payment, a phys
 
 ### 🤖 Google Play
 1. **Create a Play Console account** ($25 one-time) → play.google.com/console. Same-day.
-2. **With me (~15 min):** generate the **upload keystore** (you keep the password), set `HC_ANDROID_*` env, build the signed AAB (`npm run android:release-bundle`).
-3. **Play Console:** create the app; fill listing from the Play copy doc; upload screenshots + **feature graphic** + 512 icon; complete **Data Safety** from the disclosures doc; complete **IARC content rating**; file the **foreground-service (dataSync) declaration**; add the privacy policy URL.
+2. **With me (~15 min):** use the already-created local upload keystore/env proof, rebuild the signed AAB if needed (`npm run android:release-bundle`), and capture the exact file/hash for the Play upload.
+3. **Play Console:** create the app; fill listing from the Play copy doc; upload screenshots + **feature graphic** + 512 icon; complete **Data Safety** from the disclosures doc; complete **IARC content rating**; file the **foreground-service (dataSync)** and foreground-location disclosures; add the privacy policy URL.
 4. **Internal testing → Dad:** upload the AAB, add Dad = instant install. Promote to Production when ready.
 
 > **Fastest to Dad's phone:** TestFlight internal (Apple) / Internal testing (Play) — both skip full review. Apple needs enrollment first; that's the only thing standing between now and Dad having it.
@@ -67,7 +67,7 @@ Everything that does **not** require your Apple/Google accounts, payment, a phys
 ## D) Things I can finish *with* your Mac/account (just ping me)
 - iOS: signing config, device smoke, archive + upload.
 - Verify the linked LiteRT Swift runtime and model download on iOS (per `docs/runbooks/ios-scout-gemma-bridge.md`).
-- Generate the Android upload keystore + signed AAB.
+- Rebuild/verify the Android signed AAB from the existing local upload-keystore proof.
 - On-device verification that Scout produces a real answer (Android now; iOS after wiring).
 
 ## D2) Repeatable release proof
@@ -80,7 +80,7 @@ until account, device, privacy/contact, and store-console proof exists. Details:
 
 ## E) Honest gaps / risks
 - **iOS AI must be runtime-smoked on device before store metadata claims** (Android AI works, pending physical smoke proof). → Decision B-2.
-- **Android can't read GPS** (no location permission) → location features no-op on Android; the disclosures are honest about this. Add the permission later if you want it live.
+- **Android GPS now has foreground permission** → still needs physical-device smoke for allowed/denied/off-trail states before real-hiker reliance.
 - **Screenshots are clean raw captures** (no marketing captions/device frames) — valid to submit; can be prettied later.
 - **App icon** is a solid v1; refine the boar if you want more polish.
 - **Model hosted on Hugging Face** (third-party) — fine for v1; consider your own host before scaling.

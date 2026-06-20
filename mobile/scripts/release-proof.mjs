@@ -188,6 +188,10 @@ const items = [
 		pass: 'Android model-download foreground service is declared.',
 		fail: 'Android model-download service declaration is missing.'
 	}),
+	check('native-config', 'android-foreground-location-permission', 'pass', androidManifest.includes('android.permission.ACCESS_FINE_LOCATION') && androidManifest.includes('android.permission.ACCESS_COARSE_LOCATION') && !androidManifest.includes('android.permission.ACCESS_BACKGROUND_LOCATION'), {
+		pass: 'Android foreground location permission is declared for user-initiated GPS-to-mile snapping; no background location permission is declared.',
+		fail: 'Android foreground location permissions are missing or background location was added.'
+	}),
 
 	check('store-metadata', 'privacy-policy-effective-date', 'pass', /Effective date:\*\*\s+June 18, 2026/u.test(privacyPolicy), {
 		pass: 'Privacy policy has a concrete effective date.',

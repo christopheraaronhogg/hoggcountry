@@ -45,7 +45,8 @@ test('mobile release proof tracks account, device, privacy, and accessibility ga
 		'battery-thermal-latency',
 		'accessibility-field-pass',
 		'privacy-contact-and-deletion',
-		'privacy-and-support-routes'
+		'privacy-and-support-routes',
+		'android-foreground-location-permission'
 	]) {
 		assert.ok(ids.has(requiredId), `missing release proof item: ${requiredId}`);
 	}

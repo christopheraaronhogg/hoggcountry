@@ -25,3 +25,11 @@ test('iOS privacy manifest declares coarse location only, not precise location',
 	assert.match(manifest, /NSPrivacyCollectedDataTypeCoarseLocation/u);
 	assert.doesNotMatch(manifest, /NSPrivacyCollectedDataTypePreciseLocation/u);
 });
+
+test('Android requests foreground location for GPS snapping, not background tracking', () => {
+	const manifest = read('mobile/android/app/src/main/AndroidManifest.xml');
+
+	assert.match(manifest, /android\.permission\.ACCESS_COARSE_LOCATION/u);
+	assert.match(manifest, /android\.permission\.ACCESS_FINE_LOCATION/u);
+	assert.doesNotMatch(manifest, /android\.permission\.ACCESS_BACKGROUND_LOCATION/u);
+});
