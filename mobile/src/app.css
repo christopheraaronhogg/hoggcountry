@@ -25,14 +25,25 @@
 	--radius-sm: 12px;
 	--nav-height: 78px;
 	--app-width: 430px;
-	--font-sans: 'Avenir Next', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-	--font-display: 'Iowan Old Style', 'Georgia', serif;
+	--font-sans: 'Avenir Next', 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+	/* Display serif: Apple ships Iowan Old Style; the longer fallback chain keeps a
+	   real book serif on Android (Charter/Noto Serif) instead of collapsing to a
+	   sans. (Bundling a woff2 of a libre serif is the full fix — tracked follow-up.) */
+	--font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, Charter, 'Noto Serif', Georgia, 'Times New Roman', serif;
 	--font-mono: 'SF Mono', ui-monospace, 'JetBrains Mono', Menlo, monospace;
 }
 
 * {
 	box-sizing: border-box;
 	-webkit-tap-highlight-color: transparent;
+}
+
+/* Visible focus for keyboard / switch-control users — there was none app-wide,
+   so assistive-tech users were navigating blind. */
+:focus-visible {
+	outline: 3px solid var(--focus-ring, rgba(47, 75, 53, 0.6));
+	outline-offset: 2px;
+	border-radius: 4px;
 }
 
 html,
@@ -110,7 +121,7 @@ p {
 }
 
 .eyebrow {
-	font-size: 0.66rem;
+	font-size: 0.7rem;
 	font-weight: 800;
 	text-transform: uppercase;
 	letter-spacing: 0.14em;
@@ -189,7 +200,7 @@ p {
 }
 
 .metric-label {
-	font-size: 0.62rem;
+	font-size: 0.7rem;
 	font-weight: 800;
 	letter-spacing: 0.1em;
 	text-transform: uppercase;

@@ -266,7 +266,9 @@
 			<button
 				class:on={trailAssistant.trailSettings.autoLogMileage}
 				class="toggle"
-				aria-label="Toggle auto-log mileage"
+				role="switch"
+				aria-checked={trailAssistant.trailSettings.autoLogMileage}
+				aria-label="Auto-log mileage"
 				onclick={() =>
 					trailAssistant.updateTrailSetting(
 						'autoLogMileage',
@@ -283,7 +285,9 @@
 			<button
 				class:on={trailAssistant.trailSettings.waterAlerts}
 				class="toggle"
-				aria-label="Toggle water alerts"
+				role="switch"
+				aria-checked={trailAssistant.trailSettings.waterAlerts}
+				aria-label="Water alerts"
 				onclick={() =>
 					trailAssistant.updateTrailSetting(
 						'waterAlerts',
@@ -300,7 +304,9 @@
 			<button
 				class:on={trailAssistant.trailSettings.batterySaver}
 				class="toggle"
-				aria-label="Toggle battery saver"
+				role="switch"
+				aria-checked={trailAssistant.trailSettings.batterySaver}
+				aria-label="Battery saver"
 				onclick={() =>
 					trailAssistant.updateTrailSetting(
 						'batterySaver',
@@ -317,7 +323,9 @@
 			<button
 				class:on={trailAssistant.trailSettings.lowSignalMode}
 				class="toggle"
-				aria-label="Toggle low-signal mode"
+				role="switch"
+				aria-checked={trailAssistant.trailSettings.lowSignalMode}
+				aria-label="Low-signal mode"
 				onclick={() =>
 					trailAssistant.updateTrailSetting(
 						'lowSignalMode',
@@ -343,7 +351,9 @@
 				<button
 					class:on={trailAssistant.trailLogSettings.footCareLogged}
 					class="toggle"
-					aria-label="Toggle foot care logged"
+					role="switch"
+					aria-checked={trailAssistant.trailLogSettings.footCareLogged}
+					aria-label="Foot care logged"
 					onclick={() =>
 						trailAssistant.updateTrailLogSetting(
 							'footCareLogged',
@@ -360,7 +370,9 @@
 				<button
 					class:on={trailAssistant.trailLogSettings.caloriesLogged}
 					class="toggle"
-					aria-label="Toggle calories logged"
+					role="switch"
+					aria-checked={trailAssistant.trailLogSettings.caloriesLogged}
+					aria-label="Calories logged"
 					onclick={() =>
 						trailAssistant.updateTrailLogSetting(
 							'caloriesLogged',
@@ -377,7 +389,9 @@
 				<button
 					class:on={trailAssistant.trailLogSettings.waterCarryChecked}
 					class="toggle"
-					aria-label="Toggle water carry checked"
+					role="switch"
+					aria-checked={trailAssistant.trailLogSettings.waterCarryChecked}
+					aria-label="Water carry checked"
 					onclick={() =>
 						trailAssistant.updateTrailLogSetting(
 							'waterCarryChecked',
@@ -394,7 +408,9 @@
 				<button
 					class:on={trailAssistant.trailLogSettings.stretchingDone}
 					class="toggle"
-					aria-label="Toggle stretching done"
+					role="switch"
+					aria-checked={trailAssistant.trailLogSettings.stretchingDone}
+					aria-label="Stretching done"
 					onclick={() =>
 						trailAssistant.updateTrailLogSetting(
 							'stretchingDone',

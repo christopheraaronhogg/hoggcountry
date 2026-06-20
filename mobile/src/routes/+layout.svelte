@@ -42,7 +42,7 @@
 	<title>Trail Assistant</title>
 	<meta
 		name="description"
-		content="On-device trail assistant for the Appalachian Trail — offline maps, gear, scripture, and Scout, your private AI hiking companion."
+		content="On-device Appalachian Trail companion — offline field guide, elevation profile, gear, scripture, and Scout, a private AI assistant that cites its sources."
 	/>
 </svelte:head>
 

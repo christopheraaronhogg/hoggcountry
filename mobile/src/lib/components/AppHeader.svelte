@@ -39,7 +39,7 @@
 		<button
 			class="gear"
 			type="button"
-			onclick={() => (trailAssistant.activeTab = 'Settings')}
+			onclick={() => trailAssistant.openSettings()}
 			aria-label="Settings"
 			aria-current={trailAssistant.activeTab === 'Settings' ? 'page' : undefined}
 		>
