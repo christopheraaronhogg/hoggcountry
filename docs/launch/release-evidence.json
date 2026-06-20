@@ -48,8 +48,19 @@
       "summary": "Archive and upload the signed iOS build, then attach the Xcode organizer or App Store Connect upload proof."
     },
     "android-upload-keystore": {
-      "status": "pending",
-      "summary": "Create the Play upload keystore, configure the HC_ANDROID_KEYSTORE_* environment contract, and attach non-secret build proof."
+      "status": "verified",
+      "verifiedAt": "2026-06-20T19:17:24Z",
+      "verifiedBy": "Codex on Chris Hogg's local checkout",
+      "summary": "Created the local Google Play upload keystore outside git, configured the HC_ANDROID_KEYSTORE_* env contract, built a signed release AAB, and verified the AAB signature with jarsigner.",
+      "files": [
+        "docs/launch/proof/android-upload-keystore-2026-06-20.md"
+      ],
+      "commands": [
+        "keytool -list -v -keystore \"$HC_ANDROID_KEYSTORE_FILE\" -alias \"$HC_ANDROID_KEY_ALIAS\"",
+        "cd mobile && npm run android:release-bundle",
+        "shasum -a 256 mobile/android/app/build/outputs/bundle/release/app-release.aab",
+        "jarsigner -verify -verbose -certs mobile/android/app/build/outputs/bundle/release/app-release.aab"
+      ]
     },
     "play-console-record": {
       "status": "pending",
