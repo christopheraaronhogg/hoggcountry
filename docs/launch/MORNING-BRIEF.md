@@ -70,6 +70,12 @@ Everything that does **not** require your Apple/Google accounts, payment, or sig
 - Generate the Android upload keystore + signed AAB.
 - On-device verification that Scout produces a real answer (Android now; iOS after wiring).
 
+## D2) Repeatable release proof
+Run `cd mobile && npm run release:proof` to print the current proof ledger. Run
+`npm run release:proof -- --strict` before archive/upload; strict mode stays red
+until account, device, privacy/contact, and store-console proof exists. Details:
+`docs/launch/release-proof.md`.
+
 ## E) Honest gaps / risks
 - **iOS AI must be runtime-smoked on device before store metadata claims** (Android AI works, pending physical smoke proof). → Decision B-2.
 - **Android can't read GPS** (no location permission) → location features no-op on Android; the disclosures are honest about this. Add the permission later if you want it live.

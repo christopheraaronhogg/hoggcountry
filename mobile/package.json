@@ -12,6 +12,7 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"test": "node --experimental-strip-types --experimental-transform-types --test src/lib/scout/*.test.ts src/lib/bible/*.test.ts",
 		"preflight": "node scripts/preflight.mjs",
+		"release:proof": "node scripts/release-proof.mjs",
 		"cap:doctor": "node scripts/preflight.mjs",
 		"smoke:field-pack": "node --experimental-strip-types --experimental-transform-types scripts/smoke-field-pack-cache.mjs",
 		"cap:sync": "npm run build && node scripts/preflight.mjs && npx cap sync && node scripts/register-ios-scout-plugin.mjs",

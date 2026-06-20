@@ -1,0 +1,265 @@
+#!/usr/bin/env node
+// Submission proof ledger for Trail Assistant.
+//
+// This is not a replacement for App Store Connect, Play Console, or physical
+// phone testing. It separates code/config evidence from the manual/account and
+// device proof that must exist before we call a build submission-grade.
+
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const mobileDir = resolve(__dirname, '..');
+const repoRoot = resolve(mobileDir, '..');
+
+const args = new Set(process.argv.slice(2));
+const json = args.has('--json');
+const strict = args.has('--strict');
+const help = args.has('--help') || args.has('-h');
+
+const validArgs = new Set(['--json', '--strict', '--help', '-h']);
+const unknownArgs = [...args].filter((arg) => !validArgs.has(arg));
+if (unknownArgs.length) {
+	console.error(`Unknown option(s): ${unknownArgs.join(', ')}`);
+	process.exit(2);
+}
+
+if (help) {
+	console.log(`Trail Assistant release proof
+
+Usage:
+  node scripts/release-proof.mjs          Print the current submission proof ledger
+  node scripts/release-proof.mjs --json   Print machine-readable JSON
+  node scripts/release-proof.mjs --strict Exit non-zero until every lane is proven
+
+Statuses:
+  pass    Code or repo evidence exists now
+  warn    Evidence exists, but the release owner still needs to review it
+  manual  Human/account/device evidence is required
+  blocker Missing repo evidence blocks a submission attempt
+`);
+	process.exit(0);
+}
+
+const iosProject = read('mobile/ios/App/App.xcodeproj/project.pbxproj');
+const iosInfo = read('mobile/ios/App/App/Info.plist');
+const iosPrivacy = read('mobile/ios/App/App/PrivacyInfo.xcprivacy');
+const androidGradle = read('mobile/android/app/build.gradle');
+const androidManifest = read('mobile/android/app/src/main/AndroidManifest.xml');
+const mobilePackage = read('mobile/package.json');
+const rootPackage = read('package.json');
+const privacyPolicy = read('docs/launch/privacy/privacy-policy.md');
+const privacyAnswers = read('docs/launch/privacy/app-privacy-and-data-safety.md');
+const reviewNotes = read('docs/launch/store-copy/review-notes.md');
+const appleCopy = read('docs/launch/store-copy/apple-app-store.md');
+const playCopy = read('docs/launch/store-copy/google-play.md');
+const morningBrief = read('docs/launch/MORNING-BRIEF.md');
+
+const items = [
+	check('code-build', 'mobile-check-script', 'pass', mobilePackage.includes('"check"'), {
+		pass: 'mobile/package.json exposes npm run check.',
+		fail: 'mobile/package.json is missing npm run check.'
+	}),
+	check('code-build', 'mobile-build-script', 'pass', mobilePackage.includes('"build"'), {
+		pass: 'mobile/package.json exposes npm run build.',
+		fail: 'mobile/package.json is missing npm run build.'
+	}),
+	check('code-build', 'mobile-preflight-script', 'pass', exists('mobile/scripts/preflight.mjs'), {
+		pass: 'Capacitor preflight script exists.',
+		fail: 'mobile/scripts/preflight.mjs is missing.'
+	}),
+	check('code-build', 'root-mobile-contract-tests', 'pass', rootPackage.includes('mobile-privacy-contract.test.mjs') && rootPackage.includes('mobile-trail-pulse-contract.test.mjs') && rootPackage.includes('mobile-release-proof-contract.test.mjs'), {
+		pass: 'Root test suite includes mobile privacy, Trail Pulse, and release-proof contracts.',
+		fail: 'Root test suite is missing mobile release/privacy contracts.'
+	}),
+
+	check('native-config', 'ios-project', 'pass', exists('mobile/ios/App/App.xcodeproj/project.pbxproj'), {
+		pass: 'iOS Xcode project is committed.',
+		fail: 'iOS Xcode project is missing.'
+	}),
+	check('native-config', 'ios-bundle-id', 'pass', iosProject.includes('PRODUCT_BUNDLE_IDENTIFIER = com.hoggcountry.trailassistant;'), {
+		pass: 'iOS bundle id is com.hoggcountry.trailassistant.',
+		fail: 'iOS bundle id is missing or drifted.'
+	}),
+	check('native-config', 'ios-version-build', 'pass', iosProject.includes('MARKETING_VERSION = 1.0;') && iosProject.includes('CURRENT_PROJECT_VERSION = 1;'), {
+		pass: 'iOS marketing version/build are 1.0/1.',
+		fail: 'iOS marketing version/build are not the expected 1.0/1.'
+	}),
+	check('native-config', 'ios-privacy-manifest-bundled', 'pass', iosPrivacy.includes('NSPrivacyCollectedDataTypeCoarseLocation') && iosProject.includes('PrivacyInfo.xcprivacy in Resources'), {
+		pass: 'iOS privacy manifest exists and is in Copy Bundle Resources.',
+		fail: 'iOS privacy manifest is missing or not bundled.'
+	}),
+	check('native-config', 'ios-location-copy', 'pass', iosInfo.includes('NSLocationWhenInUseUsageDescription') && iosInfo.includes('never tracked in the background'), {
+		pass: 'iOS location usage copy is present and scoped to user action.',
+		fail: 'iOS location usage copy is missing or too vague.'
+	}),
+	check('native-config', 'ios-shared-scheme', 'pass', exists('mobile/ios/App/App.xcodeproj/xcshareddata/xcschemes/App.xcscheme'), {
+		pass: 'App scheme is shared for archive/build automation.',
+		fail: 'Shared iOS App scheme is missing.'
+	}),
+	check('native-config', 'android-project', 'pass', exists('mobile/android/app/build.gradle') && exists('mobile/android/app/src/main/AndroidManifest.xml'), {
+		pass: 'Android native project is committed.',
+		fail: 'Android native project is missing.'
+	}),
+	check('native-config', 'android-identity-version', 'pass', androidGradle.includes('applicationId "com.hoggcountry.trailassistant"') && androidGradle.includes('versionCode 1') && androidGradle.includes('versionName "1.0.0"'), {
+		pass: 'Android app id/version are com.hoggcountry.trailassistant / 1.0.0 (1).',
+		fail: 'Android app id/version are missing or drifted.'
+	}),
+	check('native-config', 'android-model-download-service', 'pass', androidManifest.includes('ScoutModelDownloadService') && androidManifest.includes('foregroundServiceType="dataSync"'), {
+		pass: 'Android model-download foreground service is declared.',
+		fail: 'Android model-download service declaration is missing.'
+	}),
+
+	check('store-metadata', 'privacy-policy-effective-date', 'pass', /Effective date:\*\*\s+June 18, 2026/u.test(privacyPolicy), {
+		pass: 'Privacy policy has a concrete effective date.',
+		fail: 'Privacy policy effective date is missing or placeholder.'
+	}),
+	check('store-metadata', 'privacy-contact-and-deletion', 'manual', privacyPolicy.includes('privacy@hoggcountry.com') && privacyAnswers.includes('deletion is an **email request**'), {
+		pass: 'privacy@hoggcountry.com is documented; verify the mailbox receives mail before submission.',
+		fail: 'Privacy contact or deletion route is missing from launch docs.'
+	}),
+	check('store-metadata', 'privacy-and-support-routes', 'manual', exists('apps/openclaw-web/src/routes/privacy/+page.svelte') && exists('apps/openclaw-web/src/routes/support/+page.svelte'), {
+		pass: 'Public privacy and support routes exist; verify them live after deploy.',
+		fail: 'Public privacy/support routes are missing.'
+	}),
+	check('store-metadata', 'store-review-notes', 'pass', reviewNotes.includes('no account') && reviewNotes.includes('on-device'), {
+		pass: 'Store review notes exist and call out no-account/on-device behavior.',
+		fail: 'Store review notes are missing key reviewer context.'
+	}),
+	check('store-metadata', 'apple-listing-copy', 'pass', appleCopy.includes('Support URL') && appleCopy.includes('Privacy Policy URL'), {
+		pass: 'Apple listing copy includes support/privacy URL fields.',
+		fail: 'Apple listing copy is missing support/privacy URL guidance.'
+	}),
+	check('store-metadata', 'play-listing-copy', 'pass', playCopy.includes('Data Safety') && playCopy.includes('privacy policy'), {
+		pass: 'Google Play listing copy includes Data Safety/privacy guidance.',
+		fail: 'Google Play listing copy is missing Data Safety/privacy guidance.'
+	}),
+	check('store-metadata', 'ios-screenshots', 'pass', countFiles('docs/launch/screenshots/ios', '.png') >= 6, {
+		pass: 'At least six iOS screenshots are present.',
+		fail: 'iOS screenshots are missing.'
+	}),
+	check('store-metadata', 'play-assets', 'pass', countFiles('docs/launch/screenshots/play', '.png') >= 8 && exists('docs/launch/screenshots/play/feature-graphic-1024x500.png') && exists('docs/launch/screenshots/play/play-icon-512.png'), {
+		pass: 'Play screenshots, feature graphic, and icon are present.',
+		fail: 'Google Play screenshots/feature graphic/icon are incomplete.'
+	}),
+
+	check('manual-account', 'ios-development-team', 'manual', hasIosDevelopmentTeam(iosProject), {
+		pass: 'DEVELOPMENT_TEAM is set in the iOS project; still verify the selected Apple team in Xcode.',
+		fail: 'Set Chris-owned Apple Developer Team in Xcode before archive/upload.'
+	}),
+	item('manual-account', 'app-store-connect-record', 'manual', 'Create/verify the App Store Connect record, bundle id, category, age rating, screenshots, App Privacy answers, support URL, and review notes.'),
+	item('manual-account', 'apple-archive-upload', 'manual', 'Archive and upload from Xcode after signing is set; capture the archive/upload result.'),
+	check('manual-account', 'android-upload-keystore', 'manual', hasAndroidKeystoreEnv(), {
+		pass: 'Android upload-key env vars are present in this shell; keep the secret outside git.',
+		fail: 'Create the Play upload keystore and set HC_ANDROID_KEYSTORE_FILE, HC_ANDROID_KEYSTORE_PASSWORD, HC_ANDROID_KEY_ALIAS, and HC_ANDROID_KEY_PASSWORD.'
+	}),
+	item('manual-account', 'play-console-record', 'manual', 'Create/verify the Play Console app, Data Safety form, IARC rating, foreground-service declaration, screenshots, and internal testing track.'),
+
+	item('device-smoke', 'ios-physical-scout-answer', 'manual', 'On a physical iPhone/TestFlight build, download the model and capture one real Scout answer before store copy claims live on-device AI.'),
+	item('device-smoke', 'android-physical-scout-answer', 'manual', 'On a physical Android/internal-test build, download the model and capture one real Scout answer before public release.'),
+	item('device-smoke', 'physical-gps-permission', 'manual', 'On physical hardware, smoke GPS allowed/denied/off-trail states and confirm the UI never fakes a fix.'),
+	item('device-smoke', 'offline-kill-relaunch', 'manual', 'Install, enable airplane mode, kill/relaunch, and verify Preferences-backed state, offline Scout status, Bible, Today, Map, and Gear.'),
+	item('device-smoke', 'battery-thermal-latency', 'manual', 'Run a real-phone pass for model download/inference latency, battery draw, thermal behavior, and low-signal failure states.'),
+	item('device-smoke', 'accessibility-field-pass', 'manual', 'Run VoiceOver/Dynamic Type/dark-mode/glare/cold-hands checks before telling real hikers to rely on it.'),
+
+	check('release-honesty', 'launch-brief-boundaries', 'pass', morningBrief.includes('Nothing submitted') && morningBrief.includes('iOS AI must be runtime-smoked on device'), {
+		pass: 'Morning brief keeps account/device gaps separate from committed repo work.',
+		fail: 'Morning brief no longer states the account/device boundaries clearly.'
+	})
+];
+
+const summary = summarize(items);
+const report = {
+	title: 'Trail Assistant release proof',
+	generatedAt: new Date().toISOString(),
+	readyForSubmission: summary.blocker === 0 && summary.manual === 0 && summary.warn === 0,
+	summary,
+	items
+};
+
+if (json) {
+	console.log(JSON.stringify(report, null, 2));
+} else {
+	printReport(report);
+}
+
+if (strict && !report.readyForSubmission) {
+	process.exit(1);
+}
+
+function item(lane, id, status, detail) {
+	return { lane, id, status, detail };
+}
+
+function check(lane, id, statusWhenTrue, condition, messages) {
+	if (condition) {
+		return item(lane, id, statusWhenTrue, messages.pass);
+	}
+	return item(lane, id, 'blocker', messages.fail);
+}
+
+function summarize(proofItems) {
+	const counts = { pass: 0, warn: 0, manual: 0, blocker: 0 };
+	for (const proof of proofItems) {
+		counts[proof.status] += 1;
+	}
+	return counts;
+}
+
+function printReport(proof) {
+	console.log(proof.title);
+	console.log(`Generated: ${proof.generatedAt}`);
+	console.log('');
+	if (proof.readyForSubmission) {
+		console.log('Status: READY FOR SUBMISSION PROOF PACKAGE');
+	} else {
+		console.log('Status: NOT READY for store submission');
+		console.log('Reason: manual/device/account evidence remains outside the green build/test lane.');
+	}
+	console.log(`Summary: ${proof.summary.pass} pass, ${proof.summary.warn} warn, ${proof.summary.manual} manual, ${proof.summary.blocker} blocker`);
+	console.log('');
+
+	for (const lane of unique(proof.items.map((proofItem) => proofItem.lane))) {
+		console.log(`${lane}:`);
+		for (const proofItem of proof.items.filter((candidate) => candidate.lane === lane)) {
+			console.log(`  ${proofItem.status.padEnd(7)} ${proofItem.id} - ${proofItem.detail}`);
+		}
+		console.log('');
+	}
+
+	if (!proof.readyForSubmission) {
+		console.log('Next: resolve every manual/blocker item, rerun this command, then rerun with --strict before archive/upload.');
+	}
+}
+
+function exists(path) {
+	return existsSync(join(repoRoot, path));
+}
+
+function read(path) {
+	const absolute = join(repoRoot, path);
+	return existsSync(absolute) ? readFileSync(absolute, 'utf8') : '';
+}
+
+function countFiles(path, suffix) {
+	const absolute = join(repoRoot, path);
+	if (!existsSync(absolute)) return 0;
+	return readdirSync(absolute).filter((entry) => {
+		const entryPath = join(absolute, entry);
+		return statSync(entryPath).isFile() && entry.endsWith(suffix);
+	}).length;
+}
+
+function hasIosDevelopmentTeam(project) {
+	const teams = [...project.matchAll(/DEVELOPMENT_TEAM = ([^;]+);/gu)].map((match) => match[1].trim());
+	return teams.some((team) => team && team !== '""');
+}
+
+function hasAndroidKeystoreEnv() {
+	return ['HC_ANDROID_KEYSTORE_FILE', 'HC_ANDROID_KEYSTORE_PASSWORD', 'HC_ANDROID_KEY_ALIAS', 'HC_ANDROID_KEY_PASSWORD'].every((key) => Boolean(process.env[key]));
+}
+
+function unique(values) {
+	return [...new Set(values)];
+}
