@@ -252,16 +252,16 @@
   <div class="input-section">
     <div class="input-row">
       <div class="input-group">
-        <label>Actual Elevation</label>
+        <label for="storm-actual-elevation">Actual Elevation</label>
         <div class="input-wrapper">
-          <input type="number" bind:value={actualElevation} placeholder="3450" onkeydown={(e) => e.key === 'Enter' && recordReading()} />
+          <input id="storm-actual-elevation" type="number" bind:value={actualElevation} placeholder="3450" onkeydown={(e) => e.key === 'Enter' && recordReading()} />
           <span class="unit">ft</span>
         </div>
       </div>
       <div class="input-group">
-        <label>Watch Shows</label>
+        <label for="storm-watch-elevation">Watch Shows</label>
         <div class="input-wrapper">
-          <input type="number" bind:value={watchElevation} placeholder="3475" onkeydown={(e) => e.key === 'Enter' && recordReading()} />
+          <input id="storm-watch-elevation" type="number" bind:value={watchElevation} placeholder="3475" onkeydown={(e) => e.key === 'Enter' && recordReading()} />
           <span class="unit">ft</span>
         </div>
       </div>

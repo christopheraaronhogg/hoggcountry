@@ -815,8 +815,8 @@ Thanks! 🥾`;
           Hiker Info
         </h3>
         <div class="field-group">
-          <label class="field-label">Your Legal Name (for pickup ID)</label>
-          <input type="text" class="field-input" bind:value={hikerName} placeholder="As shown on your ID" />
+          <label class="field-label" for="maildrop-hiker-name">Your Legal Name (for pickup ID)</label>
+          <input id="maildrop-hiker-name" type="text" class="field-input" bind:value={hikerName} placeholder="As shown on your ID" />
         </div>
       </div>
 
@@ -827,12 +827,12 @@ Thanks! 🥾`;
         </h3>
         <p class="card-desc">Who will ship your boxes from home?</p>
         <div class="field-group">
-          <label class="field-label">Name</label>
-          <input type="text" class="field-input" bind:value={supportName} placeholder="Mom, spouse, friend..." />
+          <label class="field-label" for="maildrop-support-name">Name</label>
+          <input id="maildrop-support-name" type="text" class="field-input" bind:value={supportName} placeholder="Mom, spouse, friend..." />
         </div>
         <div class="field-group">
-          <label class="field-label">Phone</label>
-          <input type="tel" class="field-input" bind:value={supportPhone} placeholder="For the copy/paste message" />
+          <label class="field-label" for="maildrop-support-phone">Phone</label>
+          <input id="maildrop-support-phone" type="tel" class="field-input" bind:value={supportPhone} placeholder="For the copy/paste message" />
         </div>
       </div>
 
@@ -855,12 +855,12 @@ Thanks! 🥾`;
         <p class="card-desc">These apply to all locations unless you override them per drop.</p>
         <div class="field-row">
           <div class="field-group">
-            <label class="field-label">Ship lead (miles)</label>
-            <input type="number" class="field-input" bind:value={triggerLeadMiles} min="25" max="250" />
+            <label class="field-label" for="maildrop-trigger-lead">Ship lead (miles)</label>
+            <input id="maildrop-trigger-lead" type="number" class="field-input" bind:value={triggerLeadMiles} min="25" max="250" />
           </div>
           <div class="field-group">
-            <label class="field-label">Default hold time (days)</label>
-            <input type="number" class="field-input" bind:value={defaultHoldTimeDays} min="7" max="60" />
+            <label class="field-label" for="maildrop-default-hold">Default hold time (days)</label>
+            <input id="maildrop-default-hold" type="number" class="field-input" bind:value={defaultHoldTimeDays} min="7" max="60" />
           </div>
         </div>
       </div>
@@ -962,8 +962,9 @@ Thanks! 🥾`;
 
             <!-- Contents -->
             <div class="contents-section">
-              <label class="contents-label">Box Contents:</label>
+              <label class="contents-label" for={`maildrop-contents-${drop.id}`}>Box Contents:</label>
               <textarea
+                id={`maildrop-contents-${drop.id}`}
                 class="contents-input"
                 placeholder="Food, gear, meds..."
                 value={data.contents || ''}
@@ -975,8 +976,9 @@ Thanks! 🥾`;
             <!-- Costs -->
             <div class="costs-row">
               <div class="cost-field">
-                <label class="cost-label">Shipping ($)</label>
+                <label class="cost-label" for={`maildrop-shipping-${drop.id}`}>Shipping ($)</label>
                 <input
+                  id={`maildrop-shipping-${drop.id}`}
                   type="number"
                   class="cost-input"
                   placeholder="0"
@@ -987,8 +989,9 @@ Thanks! 🥾`;
                 />
               </div>
               <div class="cost-field">
-                <label class="cost-label">Pickup fee ($)</label>
+                <label class="cost-label" for={`maildrop-pickup-${drop.id}`}>Pickup fee ($)</label>
                 <input
+                  id={`maildrop-pickup-${drop.id}`}
                   type="number"
                   class="cost-input"
                   placeholder="0"
@@ -1093,8 +1096,9 @@ Thanks! 🥾`;
 
                 <div class="override-grid">
                   <div class="override-field">
-                    <label class="override-label">Lead miles override</label>
+                    <label class="override-label" for={`maildrop-lead-${drop.id}`}>Lead miles override</label>
                     <input
+                      id={`maildrop-lead-${drop.id}`}
                       type="number"
                       class="override-input"
                       placeholder={String(triggerLeadMiles)}
@@ -1105,8 +1109,9 @@ Thanks! 🥾`;
                     />
                   </div>
                   <div class="override-field">
-                    <label class="override-label">Hold time override (days)</label>
+                    <label class="override-label" for={`maildrop-hold-${drop.id}`}>Hold time override (days)</label>
                     <input
+                      id={`maildrop-hold-${drop.id}`}
                       type="number"
                       class="override-input"
                       placeholder={String(getHoldTimeDays(drop))}
@@ -1117,8 +1122,9 @@ Thanks! 🥾`;
                     />
                   </div>
                   <div class="override-field">
-                    <label class="override-label">ZIP (for General Delivery)</label>
+                    <label class="override-label" for={`maildrop-zip-${drop.id}`}>ZIP (for General Delivery)</label>
                     <input
+                      id={`maildrop-zip-${drop.id}`}
                       type="text"
                       class="override-input"
                       placeholder={drop.zip || ''}
@@ -1127,8 +1133,9 @@ Thanks! 🥾`;
                     />
                   </div>
                   <div class="override-field">
-                    <label class="override-label">Address</label>
+                    <label class="override-label" for={`maildrop-address-${drop.id}`}>Address</label>
                     <input
+                      id={`maildrop-address-${drop.id}`}
                       type="text"
                       class="override-input"
                       placeholder={drop.address || ''}
@@ -1137,8 +1144,9 @@ Thanks! 🥾`;
                     />
                   </div>
                   <div class="override-field">
-                    <label class="override-label">Hours</label>
+                    <label class="override-label" for={`maildrop-hours-${drop.id}`}>Hours</label>
                     <input
+                      id={`maildrop-hours-${drop.id}`}
                       type="text"
                       class="override-input"
                       placeholder={drop.hours || ''}
@@ -1147,8 +1155,9 @@ Thanks! 🥾`;
                     />
                   </div>
                   <div class="override-field">
-                    <label class="override-label">Phone</label>
+                    <label class="override-label" for={`maildrop-phone-${drop.id}`}>Phone</label>
                     <input
+                      id={`maildrop-phone-${drop.id}`}
                       type="text"
                       class="override-input"
                       placeholder={drop.phone || ''}

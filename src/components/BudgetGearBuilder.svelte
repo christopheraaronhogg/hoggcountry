@@ -313,10 +313,11 @@
   <section class="input-section">
     <div class="budget-control">
       <div class="budget-header">
-        <label class="section-label">Total Budget</label>
+        <label class="section-label" for="budget-gear-total-budget">Total Budget</label>
         <span class="budget-display">{formatPrice(budget)}</span>
       </div>
       <input
+        id="budget-gear-total-budget"
         type="range"
         min="300"
         max="5000"
@@ -338,7 +339,7 @@
 
     <!-- Mode Selector -->
     <div class="mode-control">
-      <label class="section-label">Optimization Mode</label>
+      <div class="section-label">Optimization Mode</div>
       <div class="mode-buttons">
         {#each Object.entries(MODE_LABELS) as [key, info]}
           <button
@@ -357,16 +358,16 @@
     <!-- Options Row -->
     <div class="options-row">
       <div class="option">
-        <label>Season</label>
-        <select bind:value={season}>
+        <label for="budget-gear-season">Season</label>
+        <select id="budget-gear-season" bind:value={season}>
           <option value="3-season">3-Season</option>
           <option value="4-season">4-Season</option>
           <option value="both">Year-Round</option>
         </select>
       </div>
       <div class="option">
-        <label>Shelter Type</label>
-        <select bind:value={shelterPref}>
+        <label for="budget-gear-shelter">Shelter Type</label>
+        <select id="budget-gear-shelter" bind:value={shelterPref}>
           <option value="tent">Tent</option>
           <option value="tarp">Tarp</option>
           <option value="hammock">Hammock</option>
@@ -606,8 +607,9 @@
   <!-- Item Selection Modal -->
   {#if selectingCategory}
     {@const catInfo = gearData.categories[selectingCategory]}
-    <div class="modal-backdrop" onclick={() => selectingCategory = null}>
-      <div class="modal-content" onclick={(e) => e.stopPropagation()}>
+    <div class="modal-layer">
+      <button class="modal-backdrop" type="button" onclick={() => selectingCategory = null} aria-label="Close gear item chooser"></button>
+      <div class="modal-content" role="dialog" aria-modal="true" aria-label={`Choose ${catInfo.name}`} tabindex="-1">
         <header class="modal-header">
           <div class="modal-title">
             <span class="modal-icon">{catInfo.icon}</span>
@@ -629,7 +631,7 @@
               class:selected={isSelected}
               class:recommended={isRecommended && !isSelected}
             >
-              <div class="alt-main" onclick={() => selectItem(selectingCategory, alt.id)}>
+              <button class="alt-main" type="button" onclick={() => selectItem(selectingCategory, alt.id)}>
                 <div class="alt-header">
                   <span class="alt-brand">{alt.brand}</span>
                   <span class="alt-name">{alt.name}</span>
@@ -648,7 +650,7 @@
                   <span title="Weight Score">⚖️ {alt.weightScore}</span>
                   <span title="Durability Score">🛡️ {alt.durabilityScore}</span>
                 </div>
-              </div>
+              </button>
               {#if alt.link}
                 <a href={alt.link} target="_blank" rel="noopener noreferrer" class="alt-buy" onclick={(e) => e.stopPropagation()}>
                   <span>{altRetailer.icon}</span>
@@ -1503,10 +1505,9 @@
   }
 
   /* Modal Styles */
-  .modal-backdrop {
+  .modal-layer {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.7);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1516,12 +1517,25 @@
     overflow: hidden;
   }
 
+  .modal-backdrop {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.7);
+    cursor: pointer;
+  }
+
   @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
   }
 
   .modal-content {
+    position: relative;
+    z-index: 1;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 16px;
@@ -1626,8 +1640,14 @@
   }
 
   .alt-main {
+    width: 100%;
+    border: 0;
     padding: 0.875rem 1rem;
+    background: transparent;
+    color: inherit;
     cursor: pointer;
+    font: inherit;
+    text-align: left;
   }
 
   .alt-header {
@@ -1760,7 +1780,7 @@
       margin-bottom: 0;
     }
 
-    .modal-backdrop {
+    .modal-layer {
       align-items: flex-end;
       padding: 0;
       padding-top: 1rem;

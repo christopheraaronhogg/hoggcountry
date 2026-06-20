@@ -477,8 +477,9 @@
         <div class="panel-header">
           <h3 class="panel-title">Tonight's Charging Plan</h3>
           <div class="day-counter">
-            <label class="day-label">Day</label>
+            <label class="day-label" for="power-days-since-town">Day</label>
             <input
+              id="power-days-since-town"
               type="number"
               bind:value={daysSinceTown}
               min="0"

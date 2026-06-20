@@ -280,7 +280,7 @@
   <div class="condition-panel">
     <!-- Temperature -->
     <div class="cond-section">
-      <label class="cond-label">
+      <label class="cond-label" for="layering-temperature">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
           <path d="M15,13V5c0-1.66-1.34-3-3-3S9,3.34,9,5v8c-1.21,0.91-2,2.37-2,4c0,2.76,2.24,5,5,5s5-2.24,5-5 C17,15.37,16.21,13.91,15,13z"/>
         </svg>
@@ -289,7 +289,7 @@
       <div class="temp-control">
         <div class="temp-track">
           <div class="track-fill" style="width: {(temperature / 80) * 100}%; background: {tempZone.color}"></div>
-          <input type="range" bind:value={temperature} min="0" max="80" step="5" class="temp-range" />
+          <input id="layering-temperature" type="range" bind:value={temperature} min="0" max="80" step="5" class="temp-range" />
         </div>
         <div class="temp-readout" style="color: {tempZone.color}">{temperature}°F</div>
       </div>
@@ -304,12 +304,12 @@
 
     <!-- Activity -->
     <div class="cond-section">
-      <label class="cond-label">
+      <div class="cond-label">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
           <path d="M13.5,5.5c1.1,0 2,-0.9 2,-2s-0.9,-2 -2,-2 -2,0.9 -2,2 0.9,2 2,2zM9.8,8.9L7,23h2.1l1.8,-8 2.1,2v6h2v-7.5l-2.1,-2 0.6,-3c1.3,1.5 3.3,2.5 5.5,2.5v-2c-1.9,0 -3.5,-1 -4.3,-2.4l-1,-1.6c-0.4,-0.6 -1,-1 -1.7,-1 -0.3,0 -0.5,0.1 -0.8,0.1L6,7.5V12h2V9.3L9.8,8.9z"/>
         </svg>
         Activity
-      </label>
+      </div>
       <div class="activity-btns">
         {#each ['moving', 'stopped', 'sleeping'] as act}
           <button class="act-btn" class:active={activity === act} onclick={() => activity = act}>
@@ -323,7 +323,7 @@
     <!-- Weather Row -->
     <div class="weather-row">
       <div class="weather-col">
-        <label class="cond-label mini">Precipitation</label>
+        <div class="cond-label mini">Precipitation</div>
         <div class="weather-btns">
           {#each ['none', 'light_rain', 'heavy_rain', 'snow'] as p}
             <button class="wx-btn" class:active={precipitation === p} onclick={() => precipitation = p}>
@@ -334,7 +334,7 @@
         </div>
       </div>
       <div class="weather-col">
-        <label class="cond-label mini">Wind</label>
+        <div class="cond-label mini">Wind</div>
         <div class="weather-btns">
           {#each ['none', 'light', 'moderate', 'strong'] as w}
             <button class="wx-btn" class:active={wind === w} onclick={() => wind = w}>

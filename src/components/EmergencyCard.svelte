@@ -420,8 +420,8 @@
     {#if editMode}
       <div class="edit-medical">
         <div class="med-field">
-          <label>Blood Type</label>
-          <select bind:value={personal.bloodType}>
+          <label for="emergency-blood-type">Blood Type</label>
+          <select id="emergency-blood-type" bind:value={personal.bloodType}>
             <option value="">Select...</option>
             <option value="A+">A+</option>
             <option value="A-">A-</option>
@@ -434,24 +434,24 @@
           </select>
         </div>
         <div class="med-field">
-          <label>Allergies</label>
-          <input type="text" bind:value={personal.allergies} placeholder="e.g., Penicillin, bee stings" />
+          <label for="emergency-allergies">Allergies</label>
+          <input id="emergency-allergies" type="text" bind:value={personal.allergies} placeholder="e.g., Penicillin, bee stings" />
         </div>
         <div class="med-field">
-          <label>Medical Conditions</label>
-          <input type="text" bind:value={personal.conditions} placeholder="e.g., Diabetes, asthma" />
+          <label for="emergency-conditions">Medical Conditions</label>
+          <input id="emergency-conditions" type="text" bind:value={personal.conditions} placeholder="e.g., Diabetes, asthma" />
         </div>
         <div class="med-field">
-          <label>Current Medications</label>
-          <input type="text" bind:value={personal.medications} placeholder="e.g., Metformin 500mg" />
+          <label for="emergency-medications">Current Medications</label>
+          <input id="emergency-medications" type="text" bind:value={personal.medications} placeholder="e.g., Metformin 500mg" />
         </div>
         <div class="med-field">
-          <label>Insurance Info</label>
-          <input type="text" bind:value={personal.insurance} placeholder="Provider + Policy #" />
+          <label for="emergency-insurance">Insurance Info</label>
+          <input id="emergency-insurance" type="text" bind:value={personal.insurance} placeholder="Provider + Policy #" />
         </div>
         <div class="med-field">
-          <label>Doctor's Phone</label>
-          <input type="tel" bind:value={personal.doctorPhone} placeholder="555-123-4567" />
+          <label for="emergency-doctor-phone">Doctor's Phone</label>
+          <input id="emergency-doctor-phone" type="tel" bind:value={personal.doctorPhone} placeholder="555-123-4567" />
         </div>
       </div>
     {:else if hasPersonalInfo}
