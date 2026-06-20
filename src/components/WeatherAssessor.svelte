@@ -1,4 +1,5 @@
 <script>
+  import { resolve } from '$app/paths';
   import { fade } from 'svelte/transition';
   import StormWarningFieldStation from './StormWarningFieldStation.svelte';
 
@@ -32,82 +33,6 @@
   let feelsLike = $derived(windSpeed >= 5 ? windChill : summitTemp);
 
 
-  // Wind action based on speed AND temperature
-  let windAction = $derived.by(() => {
-    const isCold = summitTemp <= 25;
-    const isWindy = windSpeed >= 15;
-
-    if (isCold && isWindy) {
-      return {
-        level: 'shelter-trigger',
-        action: 'SHELTER',
-        color: '#ef4444',
-        tips: ['Wind + Cold trigger activated', 'Tent setup dangerous — hands fail fast', 'Shelter reduces complexity', 'Walk in, drop pack, done'],
-
-        trigger: true,
-      };
-    }
-
-    if (windSpeed < 10) {
-      return {
-        level: 'light',
-        action: 'Shelter or Tent OK',
-        color: '#22c55e',
-        tips: ['Normal camping conditions', 'Either option fine'],
-      };
-    }
-
-    if (windSpeed < 20) {
-      if (summitTemp <= 35) {
-        return {
-          level: 'moderate',
-          action: 'Tent OK (watch temp)',
-          color: '#fbbf24',
-          tips: ['Find wind-protected site', 'If temp drops below 25°F → shelter trigger', 'Have shelter backup plan'],
-        };
-      }
-      return {
-        level: 'moderate',
-        action: 'Tent OK',
-        color: '#fbbf24',
-        tips: ['Wind is cooling in warm temps', 'Choose protected terrain', 'Tent gives control'],
-      };
-    }
-
-    if (windSpeed < 30) {
-      if (summitTemp <= 35) {
-        return {
-          level: 'strong',
-          action: 'Lean SHELTER',
-          color: '#f97316',
-          tips: ['Near cold+wind trigger threshold', 'Setup will be very difficult', 'Shelter strongly recommended'],
-
-        };
-      }
-      return {
-        level: 'strong',
-        action: 'TENT — Protected terrain',
-        color: '#f97316',
-        tips: ['Below ridges', 'Dense trees', 'Use all stakes', 'Low pitch'],
-      };
-    }
-
-    return {
-      level: 'severe',
-      action: 'SEEK COVER',
-      color: '#dc2626',
-      tips: ['Do not camp exposed', 'Shelter or bail to lower elevation', 'Emergency conditions'],
-
-    };
-  });
-
-  const pressurePatterns = [
-    { drift: '±3-5 ft', time: 'settles quickly', status: 'stable', desc: 'Normal — Weather stable', color: '#22c55e' },
-    { drift: '10-20 ft drop', time: '3-6 hours', status: 'caution', desc: 'Caution — Weather in 12-24 hrs', color: '#fbbf24' },
-    { drift: '20-30+ ft drop', time: '1-3 hours', status: 'danger', desc: 'Danger — Weather imminent', color: '#ef4444' },
-  ];
-
-
   function getTempColor(temp) {
     if (temp <= 10) return '#ef4444';
     if (temp <= 25) return '#f97316';
@@ -116,109 +41,11 @@
     return '#059669';
   }
 
-  // Pressure tracking via elevation drift
-  // When stopped: if watch reads HIGHER than actual elevation, pressure is DROPPING
-  let actualElevation = $state(3200);  // From map/GPS at known point
-  let watchElevation = $state(3200);   // What your watch/phone shows
-  let previousDrift = $state(0);       // Previous reading's drift (ft)
-  let hoursElapsed = $state(3);
-
-  // Calculate elevation drift (phantom gain = pressure drop)
-  let elevationDrift = $derived(watchElevation - actualElevation);
-  let driftChange = $derived(elevationDrift - previousDrift);
-  let driftRatePerHour = $derived(hoursElapsed > 0 ? driftChange / hoursElapsed : 0);
-
-  let pressureAssessment = $derived.by(() => {
-    const drift = elevationDrift;
-    const ratePerHour = driftRatePerHour;
-
-    // Determine trend based on drift change
-    let trend, trendIcon;
-    if (ratePerHour < -20) {
-      trend = 'rising';
-      trendIcon = '📈';
-    } else if (ratePerHour > 20) {
-      trend = 'falling';
-      trendIcon = '📉';
-    } else {
-      trend = 'steady';
-      trendIcon = '➡️';
-    }
-
-    // Assess severity based on rate of phantom climb (positive = pressure dropping)
-    if (ratePerHour <= 0) {
-      return {
-        trend,
-        trendIcon,
-        level: 'good',
-        color: '#22c55e',
-        headline: trend === 'rising' ? 'Improving Weather' : 'Stable Conditions',
-        message: 'Pressure steady or rising. Fair weather ahead.',
-        action: 'Continue as planned',
-        urgency: 'none',
-        driftDesc: drift === 0 ? 'Calibrated' : drift < 0 ? `${Math.abs(drift)} ft low` : `${drift} ft high`,
-      };
-    }
-
-    // Positive drift rate = pressure dropping = storm approaching
-    if (ratePerHour < 50) {
-      return {
-        trend,
-        trendIcon,
-        level: 'watch',
-        color: '#fbbf24',
-        headline: 'Slow Pressure Drop',
-        message: 'Weather may change in 12-24 hours.',
-        action: 'Monitor conditions, have backup plan',
-        urgency: 'low',
-        driftDesc: `+${Math.round(ratePerHour)} ft/hr drift`,
-      };
-    }
-
-    if (ratePerHour < 150) {
-      return {
-        trend,
-        trendIcon,
-        level: 'caution',
-        color: '#f97316',
-        headline: 'Moderate Pressure Drop',
-        message: 'Weather change likely in 6-12 hours.',
-        action: 'Plan for shelter, reduce exposed time',
-        urgency: 'moderate',
-        driftDesc: `+${Math.round(ratePerHour)} ft/hr drift`,
-      };
-    }
-
-    if (ratePerHour < 300) {
-      return {
-        trend,
-        trendIcon,
-
-        color: '#ef4444',
-        headline: 'Rapid Pressure Drop',
-        message: 'Storm approaching in 2-6 hours.',
-        action: 'Seek shelter soon, avoid exposed ridges',
-        urgency: 'high',
-        driftDesc: `+${Math.round(ratePerHour)} ft/hr drift`,
-      };
-    }
-
-    return {
-      trend,
-      trendIcon,
-      level: 'emergency',
-      color: '#dc2626',
-      headline: 'PRESSURE CRASH',
-      message: 'Severe weather imminent. Act now.',
-      action: 'SHELTER IMMEDIATELY',
-      urgency: 'critical',
-      driftDesc: `+${Math.round(ratePerHour)} ft/hr drift`,
-    };
-  });
-
   // Daylight calculator
   let dlDate = $state(new Date().toISOString().split('T')[0]);
-  let dlMile = $state(trailContext?.currentMile || 500);
+  let dlMileOverride = $state(null);
+  let contextMile = $derived(Number(trailContext?.currentMile) || 500);
+  let dlMile = $derived(dlMileOverride ?? contextMile);
 
 
 
@@ -276,7 +103,7 @@
       <span class="tab-icon">🌡️</span>
       <span class="tab-label">Temp</span>
     </button>
-    <button class="nav-tab" class:active={activeSection === 'pressure'} class:alert={pressureAssessment.urgency === 'high' || pressureAssessment.urgency === 'critical'} onclick={() => activeSection = 'pressure'}>
+    <button class="nav-tab" class:active={activeSection === 'pressure'} onclick={() => activeSection = 'pressure'}>
       <span class="tab-icon">📊</span>
       <span class="tab-label">Pressure</span>
     </button>
@@ -332,33 +159,33 @@
 
       <div class="input-panel">
         <div class="input-field">
-          <label class="field-label">Town Temperature</label>
+          <label class="field-label" for="weather-town-temp-range">Town Temperature</label>
           <div class="field-row">
-            <input type="range" bind:value={townTemp} min="-10" max="90" class="slider-input" />
+            <input id="weather-town-temp-range" type="range" bind:value={townTemp} min="-10" max="90" class="slider-input" />
             <div class="field-value">
-              <input type="number" bind:value={townTemp} min="-10" max="90" class="num-input" />
+              <input type="number" bind:value={townTemp} min="-10" max="90" class="num-input" aria-label="Town temperature in degrees Fahrenheit" />
               <span class="unit">°F</span>
             </div>
           </div>
         </div>
 
         <div class="input-field">
-          <label class="field-label">Elevation Gain to Summit</label>
+          <label class="field-label" for="weather-elevation-gain-range">Elevation Gain to Summit</label>
           <div class="field-row">
-            <input type="range" bind:value={elevationGain} min="0" max="5000" step="100" class="slider-input" />
+            <input id="weather-elevation-gain-range" type="range" bind:value={elevationGain} min="0" max="5000" step="100" class="slider-input" />
             <div class="field-value">
-              <input type="number" bind:value={elevationGain} min="0" max="5000" step="100" class="num-input" />
+              <input type="number" bind:value={elevationGain} min="0" max="5000" step="100" class="num-input" aria-label="Elevation gain to summit in feet" />
               <span class="unit">ft</span>
             </div>
           </div>
         </div>
 
         <div class="input-field">
-          <label class="field-label">Expected Wind Speed</label>
+          <label class="field-label" for="weather-wind-speed-range">Expected Wind Speed</label>
           <div class="field-row">
-            <input type="range" bind:value={windSpeed} min="0" max="50" step="5" class="slider-input wind" />
+            <input id="weather-wind-speed-range" type="range" bind:value={windSpeed} min="0" max="50" step="5" class="slider-input wind" />
             <div class="field-value">
-              <input type="number" bind:value={windSpeed} min="0" max="50" step="5" class="num-input" />
+              <input type="number" bind:value={windSpeed} min="0" max="50" step="5" class="num-input" aria-label="Expected wind speed in miles per hour" />
               <span class="unit">mph</span>
             </div>
           </div>
@@ -373,7 +200,7 @@
       <div class="chill-table">
         <div class="table-header">Wind Chill at {summitTemp.toFixed(0)}°F Summit</div>
         <div class="chill-grid">
-          {#each [[5, 4], [10, 8], [15, 12], [20, 18], [25, 25]] as [wind, penalty]}
+          {#each [[5, 4], [10, 8], [15, 12], [20, 18], [25, 25]] as [wind, penalty] (wind)}
             <div class="chill-cell" class:active={windSpeed >= wind && windSpeed < wind + 5}>
               <span class="chill-wind">{wind} mph</span>
               <span class="chill-result">{Math.round(summitTemp - penalty)}°F</span>
@@ -459,12 +286,20 @@
     <section class="wx-section" transition:fade>
       <div class="dl-controls">
         <div class="dl-field">
-          <label class="field-label">Date</label>
-          <input type="date" bind:value={dlDate} class="date-input" />
+          <label class="field-label" for="weather-daylight-date">Date</label>
+          <input id="weather-daylight-date" type="date" bind:value={dlDate} class="date-input" />
         </div>
         <div class="dl-field mile">
-          <label class="field-label">Mile {dlMile} • {dlLatitude.toFixed(1)}°N</label>
-          <input type="range" bind:value={dlMile} min="0" max="2198" class="slider-input" />
+          <label class="field-label" for="weather-daylight-mile">Mile {dlMile} • {dlLatitude.toFixed(1)}°N</label>
+          <input
+            id="weather-daylight-mile"
+            type="range"
+            value={dlMile}
+            oninput={(event) => dlMileOverride = Number(event.currentTarget.value)}
+            min="0"
+            max="2198"
+            class="slider-input"
+          />
         </div>
       </div>
 
@@ -519,12 +354,12 @@
 
   <!-- Guide Links -->
   <div class="guide-links">
-    <a href="/guide/12-weather-strategy" class="guide-link chapter-link">
+    <a href={resolve('/guide/12-weather-strategy')} class="guide-link chapter-link">
       <span class="link-icon">📚</span>
       <span class="link-text">Full Weather Strategy Guide</span>
       <span class="link-arrow">→</span>
     </a>
-    <a href="/guide#12-weather-strategy" class="guide-link field-guide-link">
+    <a href={resolve('/guide#12-weather-strategy')} class="guide-link field-guide-link">
       <span class="link-icon">📖</span>
       <span class="link-text">Field Guide</span>
       <span class="link-arrow">→</span>
@@ -809,708 +644,6 @@
     font-size: 1.1rem;
     font-weight: 700;
     color: var(--ink);
-  }
-
-
-
-  /* Pressure Section */
-  .pressure-hero {
-    display: flex;
-    align-items: center;
-    gap: 1.25rem;
-    padding: 1.25rem;
-    background: linear-gradient(135deg, rgba(166, 181, 137, 0.12) 0%, rgba(166, 181, 137, 0.05) 100%);
-    border: 2px solid var(--pressure-color, var(--alpine));
-    border-radius: 16px;
-    margin-bottom: 1rem;
-  }
-
-  .pressure-trend {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.25rem;
-  }
-
-  .trend-icon { font-size: 2rem; }
-
-  .trend-value {
-    font-family: Oswald, sans-serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-  }
-
-  .pressure-assessment { flex: 1; }
-
-  .assessment-headline {
-    font-family: Oswald, sans-serif;
-    font-size: 1.3rem;
-    font-weight: 700;
-    margin-bottom: 0.25rem;
-  }
-
-  .assessment-message {
-    font-size: 0.9rem;
-    color: var(--muted);
-  }
-
-  .pressure-action {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1rem;
-    background: rgba(251, 191, 36, 0.1);
-    border: 2px solid #fbbf24;
-    border-radius: 12px;
-    margin-bottom: 1.25rem;
-  }
-
-  .pressure-action.critical {
-    background: rgba(220, 38, 38, 0.15);
-    border-color: #dc2626;
-    animation: pulse-border 1s infinite;
-  }
-
-  @keyframes pulse-border {
-    0%, 100% { border-color: #dc2626; }
-    50% { border-color: #ef4444; }
-  }
-
-
-  .action-icon { font-size: 1.5rem; }
-
-  .action-text {
-    font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-  }
-
-  .pressure-inputs {
-    background: var(--bg);
-    border-radius: 14px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .pressure-title {
-    font-family: Oswald, sans-serif;
-    font-size: 0.8rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 0.75rem;
-    letter-spacing: 0.03em;
-  }
-
-  .pressure-concept {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding: 1rem;
-    background: linear-gradient(135deg, rgba(45, 90, 135, 0.08) 0%, rgba(45, 90, 135, 0.03) 100%);
-    border: 2px solid rgba(45, 90, 135, 0.2);
-    border-radius: 12px;
-    margin-bottom: 1rem;
-  }
-
-  .concept-icon {
-    font-size: 1.5rem;
-    flex-shrink: 0;
-  }
-
-  .concept-text {
-    font-size: 0.9rem;
-    line-height: 1.5;
-    color: var(--ink);
-  }
-
-  .drift-compare {
-    margin-top: 0.75rem;
-    padding: 0.75rem;
-    background: rgba(255, 255, 255, 0.7);
-    border-radius: 8px;
-    text-align: center;
-  }
-
-  .drift-result {
-    font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    font-weight: 600;
-  }
-
-  .input-hint {
-    font-size: 0.75rem;
-    color: var(--muted);
-    margin-top: 0.35rem;
-    font-style: italic;
-  }
-
-  .rate-explain {
-    font-size: 0.8rem;
-    color: var(--muted);
-    margin-top: 0.25rem;
-  }
-
-  .pressure-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .pressure-input-group {
-    background: #fff;
-    padding: 0.75rem;
-    border-radius: 10px;
-  }
-
-  .pressure-label {
-    display: block;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--muted);
-    margin-bottom: 0.5rem;
-  }
-
-  .pressure-value-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .pressure-num {
-    width: 80px;
-    padding: 0.4rem 0.5rem;
-    font-family: Oswald, sans-serif;
-    font-size: 1.25rem;
-    font-weight: 700;
-    text-align: center;
-    border: 2px solid var(--alpine);
-    border-radius: 8px;
-    color: var(--ink);
-  }
-
-  .pressure-unit {
-    font-size: 0.85rem;
-    color: var(--muted);
-  }
-
-  .pressure-slider {
-    width: 100%;
-    height: 8px;
-    -webkit-appearance: none;
-    background: linear-gradient(90deg, var(--alpine) 0%, var(--pine) 100%);
-    border-radius: 4px;
-  }
-
-  .pressure-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 20px;
-    height: 20px;
-    background: #fff;
-    border: 3px solid var(--pine);
-    border-radius: 50%;
-    cursor: grab;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  }
-
-  .hours-options {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .hour-btn {
-    flex: 1;
-    padding: 0.5rem;
-    font-family: Oswald, sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
-    background: #fff;
-    border: 2px solid var(--border);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .hour-btn.active {
-    background: var(--pine);
-    border-color: var(--pine);
-    color: #fff;
-  }
-
-  .rate-display {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 1rem;
-    background: #fff;
-    border: 2px solid var(--alpine);
-    border-radius: 10px;
-    margin-bottom: 1.25rem;
-  }
-
-  .rate-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 0.35rem;
-  }
-
-  .rate-value {
-    font-family: Oswald, sans-serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-  }
-
-  .pressure-reference {
-    background: var(--bg);
-    border-radius: 14px;
-    padding: 1rem;
-    margin-bottom: 1.25rem;
-    position: relative;
-  }
-
-  .ref-title {
-    font-family: Oswald, sans-serif;
-    font-size: 0.8rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 0.75rem;
-    letter-spacing: 0.03em;
-  }
-
-  .ref-scale {
-    display: flex;
-    border-radius: 8px;
-    overflow: hidden;
-    margin-bottom: 1.5rem;
-  }
-
-  .ref-zone {
-    flex: 1;
-    padding: 0.75rem 0.5rem;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-  }
-
-  .ref-zone.low { background: rgba(239, 68, 68, 0.15); }
-  .ref-zone.normal { background: rgba(251, 191, 36, 0.15); }
-  .ref-zone.high { background: rgba(34, 197, 94, 0.15); }
-
-  .ref-range {
-    font-size: 0.65rem;
-    color: var(--muted);
-  }
-
-  .ref-name {
-    font-family: Oswald, sans-serif;
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--ink);
-  }
-
-  .ref-weather {
-    font-size: 0.7rem;
-    color: var(--muted);
-  }
-
-  .ref-current {
-    position: absolute;
-    bottom: 1rem;
-    transform: translateX(-50%);
-  }
-
-  .ref-needle {
-    display: block;
-    width: 2px;
-    height: 12px;
-    background: var(--pine);
-    margin: 0 auto 0.25rem;
-  }
-
-  .ref-reading {
-    font-family: Oswald, sans-serif;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--pine);
-  }
-
-  .drop-rates {
-    background: #fff;
-    border: 2px solid var(--alpine);
-    border-radius: 14px;
-    padding: 1rem;
-    margin-bottom: 1.25rem;
-  }
-
-  .drop-title {
-    font-family: Oswald, sans-serif;
-    font-size: 0.8rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: var(--pine);
-    margin-bottom: 0.75rem;
-    letter-spacing: 0.03em;
-  }
-
-  .drop-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .drop-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    background: var(--bg);
-    border-radius: 8px;
-  }
-
-  .drop-rate {
-    font-family: monospace;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--ink);
-    min-width: 90px;
-  }
-
-  .drop-timing {
-    flex: 1;
-    font-size: 0.8rem;
-    color: var(--muted);
-  }
-
-  .drop-action {
-    font-family: Oswald, sans-serif;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-  }
-
-  .drop-action.good { background: rgba(34, 197, 94, 0.15); color: #16a34a; }
-  .drop-action.caution { background: rgba(251, 191, 36, 0.15); color: #d97706; }
-
-  .drop-action.critical { background: #dc2626; color: #fff; }
-
-  .pressure-tips {
-    background: rgba(166, 181, 137, 0.1);
-    border-radius: 12px;
-    padding: 1rem;
-  }
-
-  .tips-title {
-    font-family: Oswald, sans-serif;
-    font-size: 0.8rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: var(--pine);
-    margin-bottom: 0.75rem;
-  }
-
-  .tips-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .tips-list li {
-    font-size: 0.85rem;
-    color: var(--muted);
-    line-height: 1.4;
-  }
-
-  .tips-list li strong {
-    color: var(--ink);
-  }
-
-
-  /* Wind Section */
-  .wind-hero {
-    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-    border-radius: 14px;
-    padding: 1.5rem;
-    margin-bottom: 1.25rem;
-    text-align: center;
-  }
-
-  .wind-gauge {
-    position: relative;
-    width: 200px;
-    height: 120px;
-    margin: 0 auto 1rem;
-  }
-
-  .gauge-svg {
-    width: 100%;
-    height: 100%;
-  }
-
-  .gauge-reading {
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    text-align: center;
-  }
-
-  .gauge-value {
-    font-family: Oswald, sans-serif;
-    font-size: 2.5rem;
-    font-weight: 700;
-    line-height: 1;
-  }
-
-  .gauge-unit {
-    display: block;
-    font-size: 0.75rem;
-    color: var(--muted);
-  }
-
-  .wind-slider {
-    width: 100%;
-    max-width: 200px;
-    height: 8px;
-    -webkit-appearance: none;
-    background: linear-gradient(90deg, #22c55e 0%, #fbbf24 40%, #f97316 70%, #ef4444 100%);
-    border-radius: 4px;
-  }
-
-  .wind-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 20px;
-    height: 20px;
-    background: #fff;
-    border: 3px solid var(--pine);
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  }
-
-  .wind-action {
-    padding: 1.25rem;
-    border-left: 5px solid var(--action-color);
-    background: var(--bg);
-    border-radius: 14px;
-    margin-bottom: 1.25rem;
-  }
-
-  .wind-action.danger {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, var(--bg) 100%);
-  }
-
-  .action-level {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: var(--action-color);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-
-  .action-text {
-    font-family: Oswald, sans-serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--ink);
-    margin: 0.25rem 0 0.75rem;
-  }
-
-  .action-tips {
-    margin: 0;
-    padding-left: 1.25rem;
-    font-size: 0.85rem;
-  }
-
-  .action-tips li { margin-bottom: 0.25rem; }
-
-  /* Shelter Alert */
-  .shelter-alert {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(239, 68, 68, 0.06) 100%);
-    border: 2px solid #ef4444;
-    border-radius: 14px;
-    padding: 1rem;
-    margin-bottom: 1.25rem;
-  }
-
-  .shelter-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .shelter-icon { font-size: 1.5rem; }
-
-  .shelter-title {
-    font-family: Oswald, sans-serif;
-    font-size: 1rem;
-    font-weight: 700;
-    color: #ef4444;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .shelter-body p {
-    margin: 0 0 0.35rem;
-    font-size: 0.9rem;
-  }
-
-  .shelter-reason {
-    font-style: italic;
-    color: var(--muted);
-    font-size: 0.85rem !important;
-  }
-
-  /* Wind Matrix */
-  .wind-matrix {
-    margin-bottom: 1.25rem;
-  }
-
-  .matrix-title {
-    font-family: Oswald, sans-serif;
-    font-size: 0.85rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 0.75rem;
-  }
-
-  .matrix-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-  }
-
-  .matrix-row {
-    display: grid;
-    grid-template-columns: 100px 70px 1fr;
-    gap: 0.5rem;
-    padding: 0.6rem 0.85rem;
-    background: var(--bg);
-    border-radius: 8px;
-    font-size: 0.85rem;
-    border: 2px solid transparent;
-    transition: all 0.2s ease;
-  }
-
-  .matrix-row.active {
-    border-color: var(--alpine);
-    background: rgba(166, 181, 137, 0.15);
-  }
-
-
-  .matrix-row.trigger { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); }
-  .matrix-row.trigger.active { border-color: #ef4444; background: rgba(239, 68, 68, 0.15); }
-  .matrix-row.severe { background: rgba(220, 38, 38, 0.1); }
-  .matrix-row.severe.active { border-color: #dc2626; }
-
-  .m-speed { font-weight: 600; }
-  .m-cond { color: var(--muted); }
-  .m-action { font-weight: 600; }
-
-  /* Tent Tips */
-  .tent-tips {
-    background: var(--bg);
-    border-radius: 12px;
-    padding: 1rem;
-  }
-
-  .tips-title {
-    font-family: Oswald, sans-serif;
-    font-size: 0.9rem;
-    font-weight: 700;
-    margin: 0 0 0.75rem;
-    text-transform: uppercase;
-  }
-
-  .tips-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.5rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .tip-card {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.6rem 0.75rem;
-    background: #fff;
-    border-radius: 8px;
-    font-size: 0.8rem;
-  }
-
-  .tip-icon { font-size: 1rem; }
-
-  .wind-rule {
-    text-align: center;
-    font-size: 0.9rem;
-    color: #ef4444;
-    margin: 0;
-  }
-
-
-
-  /* Pressure Panel */
-  .pressure-panel {
-    background: var(--bg);
-    border-radius: 12px;
-    padding: 1rem;
-  }
-
-  .panel-title {
-    font-family: Oswald, sans-serif;
-    font-size: 0.9rem;
-    font-weight: 700;
-    margin: 0 0 0.25rem;
-    text-transform: uppercase;
-  }
-
-  .panel-note {
-    font-size: 0.8rem;
-    color: var(--muted);
-    margin: 0 0 0.75rem;
-  }
-
-  .pressure-rows {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .p-row {
-    display: grid;
-    grid-template-columns: 90px 80px 1fr;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    background: #fff;
-    border-radius: 6px;
-    border-left: 4px solid var(--p-color);
-    font-size: 0.8rem;
-  }
-
-  .p-drift { font-weight: 600; }
-  .p-time { color: var(--muted); }
-  .p-desc { color: var(--ink); }
-
-  .pressure-warn {
-    font-size: 0.8rem;
-    color: #ef4444;
-    margin: 0;
   }
 
   /* Rain Section */
@@ -1883,13 +1016,9 @@
     .thermo-reading { font-size: 1.25rem; }
 
     .chill-grid { grid-template-columns: repeat(3, 1fr); }
-    .tips-grid { grid-template-columns: 1fr; }
 
     .phase-row { flex-direction: column; }
     .phase-arrow { transform: rotate(90deg); justify-content: center; }
-
-    .matrix-row { grid-template-columns: 1fr; gap: 0.25rem; }
-    .p-row { grid-template-columns: 1fr; gap: 0.15rem; }
 
     .dl-controls { grid-template-columns: 1fr; }
     .sun-times { flex-direction: column; gap: 0.75rem; }
