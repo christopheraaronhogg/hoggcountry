@@ -21,6 +21,12 @@ import type {
 import { publishTrailPulseReport } from './trailPulseSpacetime';
 import { resolveModelPolicy } from './scout/model-policy.ts';
 import {
+	createTrailDocument,
+	limitTrailDocuments,
+	toContextDocuments,
+	updateTrailDocument
+} from './local-documents';
+import {
 	buildFieldPackUrl,
 	clampMile,
 	deriveDayNumber,
@@ -47,7 +53,6 @@ import {
 	type ScoutModelManager
 } from './scout/capacitor-gemma-bridge.ts';
 import type { ContextPack, ContextPackStatus, ScoutAnswer, ScoutRuntime } from './scout';
-import type { LocalDocumentReference } from './scout';
 import type { PersistenceAdapter } from './scout/context-pack-store.ts';
 import type { OnDeviceGemmaBridge } from './scout/providers/on-device-gemma.ts';
 
@@ -57,8 +62,6 @@ const AUTO_GPS_MIN_INTERVAL_MS = 10 * 60 * 1000;
 const AUTO_GPS_MIN_DELTA_MILES = 0.2;
 const AUTO_GPS_FORCE_DELTA_MILES = 1;
 const TRAIL_ID = 'appalachian-trail';
-const MAX_LOCAL_DOCUMENTS = 50;
-const MAX_LOCAL_DOCUMENT_BODY_CHARS = 12_000;
 const FIELD_PACK_ENDPOINT =
 	(import.meta.env.VITE_SCOUT_FIELD_PACK_URL as string | undefined) ??
 	'https://hoggcountry.com/scout/field-pack';
@@ -95,43 +98,6 @@ function makeCheckIn(status: CheckInStatus, note: string, mile: number): CheckIn
 		status,
 		note
 	};
-}
-
-function cleanDocumentText(value: string, fallback = ''): string {
-	const trimmed = value.replace(/\s+/g, ' ').trim();
-	return trimmed || fallback;
-}
-
-function clampDocumentBody(value: string): string {
-	return value.trim().slice(0, MAX_LOCAL_DOCUMENT_BODY_CHARS);
-}
-
-function makeDocument(input: {
-	title: string;
-	body: string;
-	source?: TrailDocument['source'];
-	now?: string;
-}): TrailDocument {
-	const now = input.now ?? new Date().toISOString();
-	return {
-		id: crypto.randomUUID(),
-		title: cleanDocumentText(input.title, 'Untitled field note'),
-		body: clampDocumentBody(input.body),
-		source: input.source ?? 'manual',
-		createdAt: now,
-		updatedAt: now
-	};
-}
-
-function toContextDocuments(documents: TrailDocument[]): LocalDocumentReference[] {
-	return documents.map((document) => ({
-		id: document.id,
-		title: document.title,
-		body: document.body,
-		source: document.source,
-		createdAt: document.createdAt,
-		updatedAt: document.updatedAt
-	}));
 }
 
 function makeTrailPulseReport(input: {
@@ -1187,21 +1153,16 @@ class TrailAssistantStore {
 	}
 
 	createDocument(input: { title: string; body: string; source?: TrailDocument['source'] }): TrailDocument | null {
-		const body = clampDocumentBody(input.body);
-		if (!body) return null;
-		const document = makeDocument({ ...input, body });
-		this.#state.documents = [document, ...this.#state.documents].slice(0, MAX_LOCAL_DOCUMENTS);
+		const document = createTrailDocument(input);
+		if (!document) return null;
+		this.#state.documents = limitTrailDocuments([document, ...this.#state.documents]);
 		void this.#syncDocumentsToFieldPack();
 		return document;
 	}
 
 	updateDocument(id: string, input: { title: string; body: string }): void {
-		const title = cleanDocumentText(input.title, 'Untitled field note');
-		const body = clampDocumentBody(input.body);
 		this.#state.documents = this.#state.documents.map((document) =>
-			document.id === id
-				? { ...document, title, body, updatedAt: new Date().toISOString() }
-				: document
+			document.id === id ? updateTrailDocument(document, input) : document
 		);
 		void this.#syncDocumentsToFieldPack();
 	}
