@@ -24,9 +24,11 @@ import {
 	clampMile,
 	deriveDayNumber,
 	DEFAULT_HIKE_PROFILE,
+	isDadPilotContextPack,
 	isSelfTracked,
 	parseMileFromCheckIn,
 	parseMileFromText,
+	resolvePosition,
 	todayISODate,
 	type HikeMode,
 	type MileSource
@@ -471,7 +473,9 @@ class TrailAssistantStore {
 		// the pack's centered mile. Following the Dad pilot pack still reads position
 		// from the pack as before.
 		if (!isSelfTracked(this.#state.hikeProfile)) {
-			this.#state.currentMile = pack.hiker.currentMile;
+			const position = resolvePosition(this.#state.hikeProfile, pack, HIKE_START_DATE, new Date());
+			this.#state.currentMile = position.currentMile;
+			this.#state.dayNumber = position.dayNumber;
 		}
 		this.#state.trailSettings = {
 			...this.#state.trailSettings,
@@ -819,8 +823,13 @@ class TrailAssistantStore {
 	get dayNumber() {
 		const profile = this.#state.hikeProfile;
 		if (!profile.calibrated) return this.#state.dayNumber;
-		const start = isSelfTracked(profile) && profile.startDate ? profile.startDate : HIKE_START_DATE;
-		return deriveDayNumber(start, new Date());
+		if (isSelfTracked(profile)) {
+			return profile.startDate ? deriveDayNumber(profile.startDate, new Date()) : 1;
+		}
+		if (isDadPilotContextPack(this.#fieldPack)) {
+			return deriveDayNumber(HIKE_START_DATE, new Date());
+		}
+		return this.#state.dayNumber;
 	}
 
 	/** The user's own hike identity + position ("My hike"). */

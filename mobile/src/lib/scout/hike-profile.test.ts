@@ -7,6 +7,7 @@ import {
 	clampMile,
 	deriveDayNumber,
 	DEFAULT_HIKE_PROFILE,
+	isDadPilotContextPack,
 	isDadPilot,
 	isSelfTracked,
 	isValidMile,
@@ -29,6 +30,23 @@ function selfProfile(overrides: Partial<HikeProfile> = {}): HikeProfile {
 		updatedAt: '2026-06-20T00:00:00.000Z',
 		...overrides
 	};
+}
+
+function dadPilotPack() {
+	const pack = cloneDefaultContextPack();
+	pack.frame.source = 'Hogg Country Dad pilot pack + AWOL 2026 reference length';
+	pack.hiker.currentMile = 1438;
+	pack.hiker.dayNumber = 42;
+	pack.downloadedRegions = ['Dad trail-ahead 1438.0-1474.0'];
+	pack.sourceReceipts = [
+		{
+			id: 'field-pack:dad-pilot',
+			title: 'Dad pilot field pack',
+			kind: 'trail-pack',
+			citation: 'Public Hogg Country Dad pilot pack'
+		}
+	];
+	return pack;
 }
 
 test('clampMile bounds and rounds to the real trail length', () => {
@@ -70,6 +88,11 @@ test('isDadPilot only after explicit Dad-following calibration', () => {
 	assert.equal(isDadPilot(selfProfile({ mode: 'dad-pilot' })), true);
 });
 
+test('isDadPilotContextPack only recognizes the real Dad pilot pack', () => {
+	assert.equal(isDadPilotContextPack(cloneDefaultContextPack()), false);
+	assert.equal(isDadPilotContextPack(dadPilotPack()), true);
+});
+
 test('default hike profile starts neutral until calibration', () => {
 	assert.equal(DEFAULT_HIKE_PROFILE.calibrated, false);
 	assert.equal(DEFAULT_HIKE_PROFILE.currentMile, 0);
@@ -93,10 +116,21 @@ test('resolvePosition: uncalibrated / dad-pilot reads position from the pack', (
 	assert.equal(resolved.dayNumber, pack.hiker.dayNumber);
 });
 
-test('resolvePosition: explicit dad-pilot derives day from Dad start date', () => {
+test('resolvePosition: explicit dad-pilot with starter pack stays coherent', () => {
 	const pack = cloneDefaultContextPack();
-	pack.hiker.currentMile = 1438;
-	pack.hiker.dayNumber = 42;
+	const now = new Date('2026-03-15T08:00:00');
+	const resolved = resolvePosition(
+		{ ...DEFAULT_HIKE_PROFILE, calibrated: true, currentMile: 0 },
+		pack,
+		'2026-02-01',
+		now
+	);
+	assert.equal(resolved.currentMile, pack.hiker.currentMile);
+	assert.equal(resolved.dayNumber, pack.hiker.dayNumber);
+});
+
+test('resolvePosition: explicit dad-pilot with Dad pack derives day from Dad start date', () => {
+	const pack = dadPilotPack();
 	const now = new Date('2026-03-15T08:00:00');
 	const resolved = resolvePosition(
 		{ ...DEFAULT_HIKE_PROFILE, calibrated: true, currentMile: 1438 },

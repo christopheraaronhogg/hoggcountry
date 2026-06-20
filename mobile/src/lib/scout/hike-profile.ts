@@ -66,6 +66,28 @@ export function isDadPilot(profile: HikeProfile): boolean {
 	return profile.calibrated && profile.mode === 'dad-pilot';
 }
 
+/**
+ * True when a context pack is recognizably the public Dad pilot pack.
+ *
+ * The bundled starter pack is also "pilot-ish" in broad product copy, so this
+ * deliberately keys off the server's Dad-specific source/region/receipt labels.
+ * That prevents a startup/network-failure state from rendering Dad's calendar
+ * day beside a neutral mile-0 starter pack.
+ */
+export function isDadPilotContextPack(pack: ContextPack): boolean {
+	const receiptText =
+		pack.sourceReceipts
+			?.map((receipt) => [receipt.id, receipt.title, receipt.citation].filter(Boolean).join(' '))
+			.join(' ') ?? '';
+	const haystack = [pack.frame.source, ...pack.downloadedRegions, receiptText].join(' ').toLowerCase();
+	return (
+		haystack.includes('dad pilot') ||
+		haystack.includes('dad trail-ahead') ||
+		haystack.includes('hogg country dad') ||
+		haystack.includes('field-pack:dad')
+	);
+}
+
 export function isValidMile(value: unknown): value is number {
 	return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= TOTAL_AT_MILES;
 }
@@ -110,6 +132,12 @@ export function resolvePosition(
 		};
 	}
 	if (!profile.calibrated) {
+		return {
+			currentMile: pack.hiker.currentMile,
+			dayNumber: pack.hiker.dayNumber
+		};
+	}
+	if (!isDadPilotContextPack(pack)) {
 		return {
 			currentMile: pack.hiker.currentMile,
 			dayNumber: pack.hiker.dayNumber
