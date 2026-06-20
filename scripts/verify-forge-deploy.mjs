@@ -10,6 +10,11 @@ const options = {
 for (let i = 0; i < args.length; i += 1) {
   const arg = args[i];
 
+  if (arg.startsWith('--expected-sha=') || arg.startsWith('--sha=')) {
+    options.expectedSha = arg.slice(arg.indexOf('=') + 1);
+    continue;
+  }
+
   if (arg === '--base-url' && args[i + 1]) {
     options.baseUrl = args[i + 1];
     i += 1;
