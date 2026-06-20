@@ -822,6 +822,7 @@ class TrailAssistantStore {
 
 	get dayNumber() {
 		const profile = this.#state.hikeProfile;
+		if (!profile.calibrated) return this.#state.dayNumber;
 		const start = isSelfTracked(profile) && profile.startDate ? profile.startDate : HIKE_START_DATE;
 		return deriveDayNumber(start, new Date());
 	}

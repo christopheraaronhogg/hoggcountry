@@ -2,6 +2,12 @@ import { json, type RequestHandler } from '@sveltejs/kit';
 
 import { buildPublicMobileFieldPack } from '$lib/server/public-mobile-field-pack';
 
+const CORS_HEADERS = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET, OPTIONS',
+  'access-control-allow-headers': 'Accept'
+};
+
 // `?mile=623.4&direction=NOBO&personal=1` returns a pack centered on the caller's
 // own mile, stripped of Dad/pilot framing (the mobile "My hike" flow). With no
 // params it returns the default Dad pilot pack, fully backward-compatible.
@@ -16,7 +22,12 @@ export const GET: RequestHandler = async ({ url }) => {
 
   return json(pack, {
     headers: {
-      'cache-control': personal ? 'private, max-age=30' : 'public, max-age=60'
+      'cache-control': personal ? 'private, max-age=30' : 'public, max-age=60',
+      ...CORS_HEADERS
     }
   });
+};
+
+export const OPTIONS: RequestHandler = async () => {
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
 };

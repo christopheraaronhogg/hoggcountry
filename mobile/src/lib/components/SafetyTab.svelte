@@ -1,36 +1,7 @@
 <script lang="ts">
 	import { trailAssistant } from '$lib/trailState.svelte';
-	import type { SourceReceipt as ScoutSourceReceipt } from '$lib/scout';
 	import SourceChip from './SourceChip.svelte';
-	import type { SourceConfidence, SourceReceipt as UiSourceReceipt } from './fieldData';
-
-	function receiptConfidence(kind: ScoutSourceReceipt['kind']): SourceConfidence {
-		if (kind === 'official' || kind === 'hiker-input') return 'high';
-		if (kind === 'trail-pack' || kind === 'field-guide' || kind === 'cached-weather') return 'medium';
-		return 'low';
-	}
-
-	function receiptFreshness(receipt: ScoutSourceReceipt): string {
-		if (receipt.generatedAt) {
-			return `Generated ${new Date(receipt.generatedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}`;
-		}
-		if (receipt.miles) {
-			const to = receipt.miles.to ?? receipt.miles.from;
-			return `Miles ${receipt.miles.from.toFixed(1)}-${to.toFixed(1)}`;
-		}
-		return 'Bundled receipt';
-	}
-
-	function toSourceChip(receipt: ScoutSourceReceipt): UiSourceReceipt {
-		return {
-			id: receipt.id,
-			label: receipt.title,
-			provider: receipt.citation ?? receipt.kind,
-			confidence: receiptConfidence(receipt.kind),
-			freshness: receiptFreshness(receipt),
-			verify: receipt.url
-		};
-	}
+	import { toUiSourceReceipt } from './source-receipts';
 
 	function send(status: 'safe' | 'delayed') {
 		const notes = {
@@ -123,7 +94,7 @@
 		(trailAssistant.fieldPack.sourceReceipts ?? [])
 			.filter((receipt) => receipt.kind === 'trail-pack' || receipt.kind === 'derived' || receipt.kind === 'official')
 			.slice(0, 2)
-			.map((receipt) => toSourceChip(receipt))
+			.map((receipt) => toUiSourceReceipt(receipt))
 	);
 </script>
 

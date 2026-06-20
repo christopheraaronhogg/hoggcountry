@@ -104,6 +104,12 @@ export function resolvePosition(
 			dayNumber: profile.startDate ? deriveDayNumber(profile.startDate, now) : 1
 		};
 	}
+	if (!profile.calibrated) {
+		return {
+			currentMile: pack.hiker.currentMile,
+			dayNumber: pack.hiker.dayNumber
+		};
+	}
 	return {
 		currentMile: pack.hiker.currentMile,
 		dayNumber: deriveDayNumber(dadStartDate, now)

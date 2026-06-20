@@ -40,11 +40,47 @@ async function loadFieldPackBuilder() {
   return server.ssrLoadModule(path.join(scoutWebRoot, 'src/lib/server/public-mobile-field-pack.ts'));
 }
 
+async function loadFieldPackRoute(route = 'api/v1/public/scout/field-pack') {
+  viteServerPromise ??= createServer({
+    configFile: false,
+    root: scoutWebRoot,
+    logLevel: 'error',
+    resolve: {
+      alias: {
+        $lib: path.join(scoutWebRoot, 'src/lib')
+      }
+    },
+    server: { middlewareMode: true },
+    appType: 'custom'
+  });
+
+  const server = await viteServerPromise;
+  return server.ssrLoadModule(path.join(scoutWebRoot, `src/routes/${route}/+server.ts`));
+}
+
 test.after(async () => {
   if (viteServerPromise) {
     const server = await viteServerPromise;
     await server.close();
   }
+});
+
+test('mobile field-pack route exposes public read CORS headers', async () => {
+  const route = await loadFieldPackRoute();
+  const response = await route.OPTIONS();
+
+  assert.equal(response.status, 204);
+  assert.equal(response.headers.get('access-control-allow-origin'), '*');
+  assert.equal(response.headers.get('access-control-allow-methods'), 'GET, OPTIONS');
+  assert.equal(response.headers.get('access-control-allow-headers'), 'Accept');
+});
+
+test('legacy /scout/field-pack alias exposes the same OPTIONS handler', async () => {
+  const route = await loadFieldPackRoute('scout/field-pack');
+  const response = await route.OPTIONS();
+
+  assert.equal(response.status, 204);
+  assert.equal(response.headers.get('access-control-allow-origin'), '*');
 });
 
 test('personal mobile field packs use official NWS weather when it is available', async () => {

@@ -3,16 +3,9 @@
 // the components folder so the polish layer can iterate without touching
 // runtime services.
 
-export type SourceConfidence = 'high' | 'medium' | 'low' | 'draft';
-
-export interface SourceReceipt {
-	id: string;
-	label: string;
-	provider: string;
-	confidence: SourceConfidence;
-	freshness: string;
-	verify?: string;
-}
+import type { SourceConfidence, SourceReceipt } from './source-receipts';
+export type { SourceConfidence, SourceReceipt } from './source-receipts';
+export { sourceConfidenceLabels } from './source-receipts';
 
 export type ServiceKind =
 	| 'water'
@@ -241,11 +234,4 @@ export const itineraryConfidence: Record<string, { confidence: SourceConfidence;
 	Sun: { confidence: 'medium', verify: 'Storm window risk' },
 	Mon: { confidence: 'low', verify: 'Driven by Sun weather outcome' },
 	Tue: { confidence: 'draft', verify: 'Re-plan from current field intel' }
-};
-
-export const sourceConfidenceLabels: Record<SourceConfidence, string> = {
-	high: 'Verified',
-	medium: 'Likely',
-	low: 'Soft',
-	draft: 'Unverified'
 };

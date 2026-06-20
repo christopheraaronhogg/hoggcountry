@@ -5,9 +5,9 @@
 		RequiredConfirmation,
 		SafetyFlag,
 		ScoutConfidence,
-		SourceReceipt as RuntimeSourceReceipt
 	} from '$lib/scout';
-	import type { SourceReceipt as UiSourceReceipt } from './fieldData';
+	import type { SourceReceipt as UiSourceReceipt } from './source-receipts';
+	import { toUiSourceReceipt } from './source-receipts';
 	import SourceChip from './SourceChip.svelte';
 	import ConfidenceBadge from './ConfidenceBadge.svelte';
 	import Icon from './Icon.svelte';
@@ -79,35 +79,6 @@
 		}
 	});
 
-	// Convert a runtime SourceReceipt → the UI SourceChip shape. The runtime
-	// owns citations and provenance; the UI just renders them faithfully.
-	function toUiReceipt(receipt: RuntimeSourceReceipt, confidence: ScoutConfidence): UiSourceReceipt {
-		const provider =
-			receipt.kind === 'official'
-				? 'Official source'
-				: receipt.kind === 'field-guide'
-					? 'Field guide'
-					: receipt.kind === 'cached-weather'
-						? 'Cached weather'
-						: receipt.kind === 'hiker-input'
-							? 'Your log'
-							: receipt.kind === 'trail-pack'
-								? 'On-device trail pack'
-								: 'Derived';
-		return {
-			id: receipt.id,
-			label: receipt.title,
-			provider: receipt.citation ?? provider,
-			confidence,
-			freshness: receipt.generatedAt
-				? `Generated ${new Date(receipt.generatedAt).toLocaleDateString()}`
-				: receipt.miles
-					? `Mile ${receipt.miles.from.toFixed(1)}${receipt.miles.to ? `–${receipt.miles.to.toFixed(1)}` : ''}`
-					: 'Local context',
-			verify: receipt.url
-		};
-	}
-
 	function receiptsFor(messageId: string): {
 		receipts: UiSourceReceipt[];
 		tools: string[];
@@ -118,7 +89,7 @@
 		const answer = trailAssistant.scoutAnswerFor?.(messageId) ?? null;
 		if (answer) {
 			return {
-				receipts: answer.receipts.map((receipt) => toUiReceipt(receipt, answer.confidence)),
+				receipts: answer.receipts.map((receipt) => toUiSourceReceipt(receipt, answer.confidence)),
 				tools: answer.toolInvocations.map((invocation) => invocation.toolId),
 				confidence: answer.confidence,
 				confirmations: answer.requiredConfirmations,

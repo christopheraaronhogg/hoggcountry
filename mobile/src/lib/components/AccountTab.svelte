@@ -2,44 +2,15 @@
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import { isSelfTracked, TOTAL_AT_MILES } from '$lib/scout/hike-profile';
 	import type { MileSource } from '$lib/scout/hike-profile';
-	import type { SourceReceipt as ScoutSourceReceipt } from '$lib/scout';
 	import PackStatus from './PackStatus.svelte';
 	import OfflineStatus from './OfflineStatus.svelte';
 	import SourceChip from './SourceChip.svelte';
-	import type { SourceConfidence, SourceReceipt as UiSourceReceipt } from './fieldData';
+	import { toUiSourceReceipt } from './source-receipts';
 
 	function fmtBytes(n: number | undefined): string {
 		if (!n || n < 0) return '—';
 		const gb = n / 1e9;
 		return gb >= 1 ? `${gb.toFixed(1)} GB` : `${Math.round(n / 1e6)} MB`;
-	}
-
-	function receiptConfidence(kind: ScoutSourceReceipt['kind']): SourceConfidence {
-		if (kind === 'official' || kind === 'hiker-input') return 'high';
-		if (kind === 'trail-pack' || kind === 'field-guide' || kind === 'cached-weather') return 'medium';
-		return 'low';
-	}
-
-	function receiptFreshness(receipt: ScoutSourceReceipt): string {
-		if (receipt.generatedAt) {
-			return `Generated ${new Date(receipt.generatedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}`;
-		}
-		if (receipt.miles) {
-			const to = receipt.miles.to ?? receipt.miles.from;
-			return `Miles ${receipt.miles.from.toFixed(1)}-${to.toFixed(1)}`;
-		}
-		return 'Bundled receipt';
-	}
-
-	function toSourceChip(receipt: ScoutSourceReceipt): UiSourceReceipt {
-		return {
-			id: receipt.id,
-			label: receipt.title,
-			provider: receipt.citation ?? receipt.kind,
-			confidence: receiptConfidence(receipt.kind),
-			freshness: receiptFreshness(receipt),
-			verify: receipt.url
-		};
 	}
 
 	// --- "My hike" identity + position --------------------------------------
@@ -117,7 +88,7 @@
 			: 'bundled'
 	);
 	const fieldPackSourceChips = $derived.by(() =>
-		(fieldPack.sourceReceipts ?? []).map((receipt) => toSourceChip(receipt))
+		(fieldPack.sourceReceipts ?? []).map((receipt) => toUiSourceReceipt(receipt))
 	);
 </script>
 

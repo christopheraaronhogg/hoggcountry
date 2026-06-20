@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { SourceReceipt } from './fieldData';
-	import { sourceConfidenceLabels } from './fieldData';
+	import type { SourceReceipt } from './source-receipts';
+	import { sourceConfidenceLabels } from './source-receipts';
 
 	let { source }: { source: SourceReceipt } = $props();
 </script>

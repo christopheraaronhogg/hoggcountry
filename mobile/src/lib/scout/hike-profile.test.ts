@@ -82,7 +82,21 @@ test('resolvePosition: uncalibrated / dad-pilot reads position from the pack', (
 	const now = new Date('2026-03-15T08:00:00');
 	const resolved = resolvePosition(DEFAULT_HIKE_PROFILE, pack, '2026-02-01', now);
 	assert.equal(resolved.currentMile, pack.hiker.currentMile);
-	// Dad day number derives from the Dad start date, not the profile.
+	assert.equal(resolved.dayNumber, pack.hiker.dayNumber);
+});
+
+test('resolvePosition: explicit dad-pilot derives day from Dad start date', () => {
+	const pack = cloneDefaultContextPack();
+	pack.hiker.currentMile = 1438;
+	pack.hiker.dayNumber = 42;
+	const now = new Date('2026-03-15T08:00:00');
+	const resolved = resolvePosition(
+		{ ...DEFAULT_HIKE_PROFILE, calibrated: true, currentMile: 1438 },
+		pack,
+		'2026-02-01',
+		now
+	);
+	assert.equal(resolved.currentMile, pack.hiker.currentMile);
 	assert.equal(resolved.dayNumber, deriveDayNumber('2026-02-01', now));
 });
 
