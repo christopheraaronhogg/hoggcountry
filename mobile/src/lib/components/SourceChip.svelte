@@ -68,7 +68,7 @@
 	}
 
 	.source-label {
-		font-size: 0.74rem;
+		font-size: 0.78rem;
 		font-weight: 700;
 		color: var(--ink);
 		white-space: nowrap;
@@ -77,7 +77,7 @@
 	}
 
 	.source-detail {
-		font-size: 0.66rem;
+		font-size: 0.72rem;
 		font-weight: 600;
 		color: var(--muted);
 		letter-spacing: 0.02em;

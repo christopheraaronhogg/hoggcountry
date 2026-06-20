@@ -135,7 +135,7 @@
 
 		<button class="follow" onclick={followDad} disabled={saving}>
 			<strong>Follow Dad's 2026 thru-hike</strong>
-			<span>Track the Hogg family's real NOBO from Springer — no setup needed.</span>
+			<span>Use the Hogg family's real NOBO position instead of tracking your own hike.</span>
 		</button>
 	</section>
 </div>

@@ -57,45 +57,46 @@ export interface PackItem {
 	note?: string;
 }
 
-// Source receipts — every "claim" in the UI should be able to point at one.
+// Static design fixtures only. Runtime source chips must come from
+// ContextPack.sourceReceipts so the UI cites the pack actually loaded.
 export const sourceReceipts: Record<string, SourceReceipt> = {
 	awol2026: {
 		id: 'awol2026',
-		label: 'AT Guide (NOBO 2026 ed.)',
-		provider: 'AWOL · The A.T. Guide',
-		confidence: 'high',
-		freshness: 'Edition pulled 2026-01',
-		verify: 'Confirm at last shelter logbook'
+		label: 'Demo guide receipt',
+		provider: 'Static UI fixture - not a live guidebook lookup',
+		confidence: 'draft',
+		freshness: 'Fixture copy',
+		verify: 'Use loaded field-pack receipts in production views'
 	},
 	atc: {
 		id: 'atc',
-		label: 'ATC trail updates',
-		provider: 'Appalachian Trail Conservancy',
-		confidence: 'high',
-		freshness: 'Checked online',
-		verify: 'atctrailupdates.org'
+		label: 'Demo trail update receipt',
+		provider: 'Static UI fixture - verify current updates online',
+		confidence: 'draft',
+		freshness: 'Fixture copy',
+		verify: 'Use loaded field-pack receipts in production views'
 	},
 	nws: {
 		id: 'nws',
-		label: 'NWS forecast',
+		label: 'Demo NWS receipt',
 		provider: 'National Weather Service',
-		confidence: 'high',
-		freshness: 'Live forecast when online'
+		confidence: 'draft',
+		freshness: 'Fixture copy; live forecasts come from field packs'
 	},
 	farout: {
 		id: 'farout',
-		label: 'Recent hiker reports',
-		provider: 'Trail reports (FarOut user notes)',
-		confidence: 'medium',
-		freshness: 'User reports — verify in field',
+		label: 'Demo hiker report receipt',
+		provider: 'Static hiker-report placeholder',
+		confidence: 'draft',
+		freshness: 'Fixture copy - verify in field',
 		verify: 'Cross-check at next shelter log'
 	},
 	awol2025: {
 		id: 'awol2025',
-		label: 'AT Guide (2025)',
-		provider: 'AWOL — superseded edition',
-		confidence: 'medium',
-		freshness: 'Older edition; mileposts re-calibrated',
+		label: 'Demo older guide receipt',
+		provider: 'Static UI fixture - not a live guidebook lookup',
+		confidence: 'draft',
+		freshness: 'Fixture copy',
 		verify: 'Treat as backup only'
 	},
 	scoutLocal: {

@@ -130,6 +130,13 @@ export class InMemoryContextPackStore implements ContextPackStore {
 		this.emit();
 	}
 
+	async replace(pack: ContextPack, source: ContextPackStatus['source'] = 'saved'): Promise<void> {
+		this.pack = cloneContextPack(pack);
+		await this.persist();
+		this.setStatus(statusFromPack(this.pack, source));
+		this.emit();
+	}
+
 	subscribe(listener: (pack: ContextPack) => void): () => void {
 		this.listeners.add(listener);
 		return () => {
@@ -169,6 +176,10 @@ export class InMemoryContextPackStore implements ContextPackStore {
 			// persistence failures are non-fatal; the in-memory pack still serves answers
 		}
 	}
+}
+
+function cloneContextPack(pack: ContextPack): ContextPack {
+	return JSON.parse(JSON.stringify(pack)) as ContextPack;
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {

@@ -1,7 +1,36 @@
 <script lang="ts">
 	import { trailAssistant } from '$lib/trailState.svelte';
+	import type { SourceReceipt as ScoutSourceReceipt } from '$lib/scout';
 	import SourceChip from './SourceChip.svelte';
-	import { sourceReceipts } from './fieldData';
+	import type { SourceConfidence, SourceReceipt as UiSourceReceipt } from './fieldData';
+
+	function receiptConfidence(kind: ScoutSourceReceipt['kind']): SourceConfidence {
+		if (kind === 'official' || kind === 'hiker-input') return 'high';
+		if (kind === 'trail-pack' || kind === 'field-guide' || kind === 'cached-weather') return 'medium';
+		return 'low';
+	}
+
+	function receiptFreshness(receipt: ScoutSourceReceipt): string {
+		if (receipt.generatedAt) {
+			return `Generated ${new Date(receipt.generatedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}`;
+		}
+		if (receipt.miles) {
+			const to = receipt.miles.to ?? receipt.miles.from;
+			return `Miles ${receipt.miles.from.toFixed(1)}-${to.toFixed(1)}`;
+		}
+		return 'Bundled receipt';
+	}
+
+	function toSourceChip(receipt: ScoutSourceReceipt): UiSourceReceipt {
+		return {
+			id: receipt.id,
+			label: receipt.title,
+			provider: receipt.citation ?? receipt.kind,
+			confidence: receiptConfidence(receipt.kind),
+			freshness: receiptFreshness(receipt),
+			verify: receipt.url
+		};
+	}
 
 	function send(status: 'safe' | 'delayed') {
 		const notes = {
@@ -27,7 +56,7 @@
 		const names = sms.recipients.map((c) => c.name).join(', ');
 		helpNote = trailAssistant.onlineStatus
 			? `Opening a text to ${names}…`
-			: `No signal — a text to ${names} is ready to send the moment you get a bar.`;
+			: `No signal detected — opening a text draft to ${names}. It will not send until your phone has service and you send it.`;
 		window.location.href = sms.href;
 	}
 
@@ -90,6 +119,12 @@
 		if (shelter) out.push({ name: shelter.name, detail: `shelter candidate, ${(shelter.mile - from).toFixed(1)} mi ahead` });
 		return out;
 	});
+	const bailoutSourceChips = $derived.by(() =>
+		(trailAssistant.fieldPack.sourceReceipts ?? [])
+			.filter((receipt) => receipt.kind === 'trail-pack' || receipt.kind === 'derived' || receipt.kind === 'official')
+			.slice(0, 2)
+			.map((receipt) => toSourceChip(receipt))
+	);
 </script>
 
 <div class="section-stack">
@@ -119,7 +154,7 @@
 			</div>
 			<div>
 				<span class="strip-eyebrow">Connection</span>
-				<strong>{trailAssistant.onlineStatus ? 'Cell · usable' : 'inReach only'}</strong>
+				<strong>{trailAssistant.onlineStatus ? 'Cell/Wi-Fi usable' : 'Offline · local only'}</strong>
 			</div>
 			<div>
 				<span class="strip-eyebrow">Mile</span>
@@ -159,6 +194,10 @@
 			<li><span>Check-in log</span><strong>Stored locally</strong></li>
 			<li><span>Weather context</span><strong>{trailAssistant.fieldPack.weather ? 'Cached field pack' : 'Needs refresh'}</strong></li>
 		</ul>
+		<p class="offline-note">
+			Offline check-ins stay on this phone. No contact receives them until a text, call, or later upload
+			actually sends.
+		</p>
 	</section>
 
 	<section class="card">
@@ -186,7 +225,10 @@
 		<div class="toggle-row">
 			<div class="toggle-copy">
 				<strong>Trail-mile reports</strong>
-				<span>Attach an approximate trail mile only when you choose to report conditions.</span>
+				<span>
+					Use GPS to attach an approximate trail mile to condition reports; if Auto-log mileage is on,
+					the same permission can update your mile.
+				</span>
 			</div>
 			<button
 				class:on={trailAssistant.privacySettings.sharePreciseLocation}
@@ -290,8 +332,9 @@
 			{/each}
 		</ul>
 		<div class="bailout-sources">
-			<SourceChip source={sourceReceipts.awol2026} />
-			<SourceChip source={sourceReceipts.atc} />
+			{#each bailoutSourceChips as receipt (receipt.id)}
+				<SourceChip source={receipt} />
+			{/each}
 		</div>
 	</section>
 </div>
@@ -370,7 +413,7 @@
 	}
 
 	.risk-dial span {
-		font-size: 0.62rem;
+		font-size: 0.72rem;
 		font-weight: 800;
 		text-transform: uppercase;
 		letter-spacing: 0.12em;
@@ -394,7 +437,7 @@
 	}
 
 	.strip-eyebrow {
-		font-size: 0.6rem;
+		font-size: 0.72rem;
 		font-weight: 800;
 		text-transform: uppercase;
 		letter-spacing: 0.1em;
@@ -473,6 +516,14 @@
 		color: var(--forest);
 	}
 
+	.offline-note {
+		margin: 8px 2px 0;
+		font-size: 0.82rem;
+		line-height: 1.4;
+		color: var(--muted);
+		font-weight: 700;
+	}
+
 	.support-row {
 		display: flex;
 		align-items: center;
@@ -548,7 +599,7 @@
 		font-size: 0.95rem;
 	}
 	.help-fineprint {
-		font-size: 0.74rem;
+		font-size: 0.82rem;
 		line-height: 1.4;
 		color: var(--muted);
 		margin-top: 8px;

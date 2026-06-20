@@ -39,6 +39,7 @@
 	// Gear glance — derived from the SAME live loadout the Gear screen uses, so the
 	// two never disagree.
 	const loadout = $derived(trailAssistant.fieldPack.loadout);
+	const hasLoadout = $derived(loadout.length > 0);
 	const packTotalCarriedLb = $derived(
 		Math.round((loadout.filter((i) => i.carried).reduce((s, i) => s + (i.weightOz ?? 0), 0) / 16) * 10) / 10
 	);
@@ -239,9 +240,13 @@
 	<button class="packing card" onclick={() => trailAssistant.openTrailSection('gear')}>
 		<div class="pk-left">
 			<div class="eyebrow">Packing up?</div>
-			<p class="pk-line">{packTotalCarriedLb} lb on your back</p>
+			<p class="pk-line">
+				{hasLoadout ? `${packTotalCarriedLb} lb on your back` : 'Add your gear'}
+			</p>
 			<p class="pk-sub">
-				{packMissingCount > 0
+				{!hasLoadout
+					? 'No personal loadout saved yet - Scout will not guess your base weight'
+					: packMissingCount > 0
 					? `${packMissingCount} item${packMissingCount === 1 ? '' : 's'} not packed — check before you go`
 					: 'Full loadout — nothing left at camp'}
 			</p>
@@ -264,7 +269,7 @@
 	}
 
 	.eyebrow {
-		font-size: 0.64rem;
+		font-size: 0.72rem;
 		letter-spacing: 0.16em;
 		text-transform: uppercase;
 		color: var(--moss);
@@ -283,14 +288,14 @@
 		justify-content: space-between;
 	}
 	.hud-top .day {
-		font-size: 0.7rem;
+		font-size: 0.76rem;
 		letter-spacing: 0.16em;
 		text-transform: uppercase;
 		color: var(--moss);
 		font-weight: 800;
 	}
 	.hud-top .off {
-		font-size: 0.6rem;
+		font-size: 0.72rem;
 		letter-spacing: 0.04em;
 		font-weight: 800;
 		text-transform: uppercase;
@@ -336,7 +341,7 @@
 		gap: 2px;
 	}
 	.splits .k {
-		font-size: 0.6rem;
+		font-size: 0.72rem;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: var(--muted);
@@ -424,7 +429,7 @@
 		margin-bottom: 0;
 	}
 	.wx-src {
-		font-size: 0.62rem;
+		font-size: 0.72rem;
 		font-weight: 800;
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
@@ -465,7 +470,7 @@
 	}
 	.meanslab {
 		display: block;
-		font-size: 0.58rem;
+		font-size: 0.72rem;
 		font-weight: 800;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
@@ -510,7 +515,7 @@
 		opacity: 0.85;
 	}
 	.hpct {
-		font-size: 0.56rem;
+		font-size: 0.72rem;
 		font-weight: 800;
 		color: var(--muted);
 		font-variant-numeric: tabular-nums;
@@ -519,7 +524,7 @@
 		color: var(--clay);
 	}
 	.hlab {
-		font-size: 0.56rem;
+		font-size: 0.72rem;
 		color: var(--muted);
 		font-weight: 700;
 	}
@@ -662,7 +667,7 @@
 		border-top: 1px solid var(--line);
 	}
 	.receipt {
-		font-size: 0.66rem;
+		font-size: 0.72rem;
 		color: var(--muted);
 		background: var(--bg, #fffdf8);
 		border: 1px solid var(--line);
@@ -671,7 +676,7 @@
 	}
 	.badge {
 		margin-left: auto;
-		font-size: 0.64rem;
+		font-size: 0.72rem;
 		letter-spacing: 0.06em;
 		font-weight: 800;
 		text-transform: uppercase;

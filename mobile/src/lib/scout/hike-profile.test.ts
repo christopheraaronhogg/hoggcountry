@@ -62,8 +62,15 @@ test('isSelfTracked only when calibrated AND self mode', () => {
 	assert.equal(isSelfTracked(DEFAULT_HIKE_PROFILE), false);
 });
 
+test('default hike profile starts neutral until calibration', () => {
+	assert.equal(DEFAULT_HIKE_PROFILE.calibrated, false);
+	assert.equal(DEFAULT_HIKE_PROFILE.currentMile, 0);
+	assert.equal(DEFAULT_HIKE_PROFILE.direction, 'NOBO');
+});
+
 test('resolvePosition: self profile wins over the pack (refresh can never move the user)', () => {
-	const pack = cloneDefaultContextPack(); // pack centered on mile 1438 (Dad)
+	const pack = cloneDefaultContextPack();
+	pack.hiker.currentMile = 1438; // simulate a refreshed Dad pilot pack
 	const now = new Date('2026-03-11T08:00:00'); // day 11 from 2026-03-01
 	const resolved = resolvePosition(selfProfile(), pack, '2026-02-01', now);
 	assert.equal(resolved.currentMile, 623.4);
@@ -87,7 +94,7 @@ test('buildFieldPackUrl: self hikers request a pack centered on their mile', () 
 	assert.equal(parsed.searchParams.get('personal'), '1');
 });
 
-test('buildFieldPackUrl: dad-pilot / uncalibrated use the bare endpoint', () => {
+test('buildFieldPackUrl: dad-pilot / uncalibrated return the bare endpoint', () => {
 	const base = 'https://hoggcountry.com/scout/field-pack';
 	assert.equal(buildFieldPackUrl(base, DEFAULT_HIKE_PROFILE), base);
 	assert.equal(buildFieldPackUrl(base, selfProfile({ mode: 'dad-pilot' })), base);

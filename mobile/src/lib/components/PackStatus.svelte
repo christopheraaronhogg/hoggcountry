@@ -61,7 +61,9 @@
 		{/if}
 
 		{#if !carried.length && !notPacked.length}
-			<p class="list-label">No gear loadout in the saved pack yet.</p>
+			<p class="list-label empty-loadout">
+				No personal gear loadout saved yet. Add your gear before trusting base weight or packing prompts.
+			</p>
 		{/if}
 	</div>
 </section>
@@ -116,7 +118,7 @@
 
 	.pack-totals small {
 		display: block;
-		font-size: 0.62rem;
+		font-size: 0.72rem;
 		font-weight: 700;
 		color: var(--muted);
 		letter-spacing: 0.06em;
@@ -140,7 +142,7 @@
 	.list-label {
 		grid-column: 1 / -1;
 		margin: 0 0 2px;
-		font-size: 0.66rem;
+		font-size: 0.72rem;
 		font-weight: 800;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
@@ -149,6 +151,12 @@
 
 	.flagged-label {
 		color: var(--clay);
+	}
+
+	.empty-loadout {
+		text-transform: none;
+		letter-spacing: 0;
+		line-height: 1.4;
 	}
 
 	.carried-list li {

@@ -501,15 +501,17 @@ function buildContextPack(
         citation: 'Hogg Country Field Guide, Section: Cold Weather'
       }
     ],
-    loadout: [
-      { name: 'Durston X-Mid Pro 2', category: 'shelter', weightOz: 19.6, carried: true },
-      { name: 'Enlightened Equipment Revelation 20F', category: 'sleep', weightOz: 22.1, carried: true },
-      { name: 'Hyperlite Southwest 55', category: 'pack', weightOz: 31.5, carried: true },
-      { name: 'Patagonia R1 Hoody', category: 'clothing', weightOz: 13.4, carried: true },
-      { name: 'BRS 3000T stove', category: 'kitchen', weightOz: 0.9, carried: true },
-      { name: 'InReach Mini 2', category: 'safety', weightOz: 3.5, carried: true },
-      { name: 'Anker 10k power bank', category: 'electronics', weightOz: 6.9, carried: true }
-    ],
+    loadout: personal
+      ? []
+      : [
+          { name: 'Durston X-Mid Pro 2', category: 'shelter', weightOz: 19.6, carried: true },
+          { name: 'Enlightened Equipment Revelation 20F', category: 'sleep', weightOz: 22.1, carried: true },
+          { name: 'Hyperlite Southwest 55', category: 'pack', weightOz: 31.5, carried: true },
+          { name: 'Patagonia R1 Hoody', category: 'clothing', weightOz: 13.4, carried: true },
+          { name: 'BRS 3000T stove', category: 'kitchen', weightOz: 0.9, carried: true },
+          { name: 'InReach Mini 2', category: 'safety', weightOz: 3.5, carried: true },
+          { name: 'Anker 10k power bank', category: 'electronics', weightOz: 6.9, carried: true }
+        ],
     weather: weatherPack.weather ?? (
       personal
         ? null

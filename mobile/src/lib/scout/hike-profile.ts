@@ -43,15 +43,15 @@ export interface HikeProfile {
 }
 
 /**
- * The pre-calibration default: uncalibrated, follow-Dad. In this state position
- * still comes from the pack, so the app is usable before onboarding completes —
- * but `calibrated: false` makes the first-run setup sheet appear.
+ * The pre-calibration default is intentionally neutral. The first-run sheet
+ * appears because `calibrated` is false; Dad's real pilot pack is only used
+ * after the user explicitly chooses to follow Dad.
  */
 export const DEFAULT_HIKE_PROFILE: HikeProfile = {
 	calibrated: false,
 	mode: 'dad-pilot',
 	direction: 'NOBO',
-	currentMile: 1438,
+	currentMile: 0,
 	mileSource: 'pilot',
 	updatedAt: '1970-01-01T00:00:00.000Z'
 };
@@ -111,9 +111,10 @@ export function resolvePosition(
 }
 
 /**
- * Build the field-pack endpoint URL for this profile. Self-tracked hikers request
- * a pack centered on THEIR mile (`?mile=&direction=&personal=1`); everyone else
- * gets the default Dad pilot pack at the bare endpoint.
+ * Build the field-pack endpoint URL for a calibrated profile. Self-tracked hikers
+ * request a pack centered on THEIR mile (`?mile=&direction=&personal=1`); explicit
+ * Dad-pilot mode gets the public pilot pack at the bare endpoint. Uncalibrated
+ * users should not refresh yet.
  */
 export function buildFieldPackUrl(base: string, profile: HikeProfile): string {
 	if (!isSelfTracked(profile)) return base;

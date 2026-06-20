@@ -2,15 +2,44 @@
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import { isSelfTracked, TOTAL_AT_MILES } from '$lib/scout/hike-profile';
 	import type { MileSource } from '$lib/scout/hike-profile';
+	import type { SourceReceipt as ScoutSourceReceipt } from '$lib/scout';
 	import PackStatus from './PackStatus.svelte';
 	import OfflineStatus from './OfflineStatus.svelte';
 	import SourceChip from './SourceChip.svelte';
-	import { sourceReceipts } from './fieldData';
+	import type { SourceConfidence, SourceReceipt as UiSourceReceipt } from './fieldData';
 
 	function fmtBytes(n: number | undefined): string {
 		if (!n || n < 0) return '—';
 		const gb = n / 1e9;
 		return gb >= 1 ? `${gb.toFixed(1)} GB` : `${Math.round(n / 1e6)} MB`;
+	}
+
+	function receiptConfidence(kind: ScoutSourceReceipt['kind']): SourceConfidence {
+		if (kind === 'official' || kind === 'hiker-input') return 'high';
+		if (kind === 'trail-pack' || kind === 'field-guide' || kind === 'cached-weather') return 'medium';
+		return 'low';
+	}
+
+	function receiptFreshness(receipt: ScoutSourceReceipt): string {
+		if (receipt.generatedAt) {
+			return `Generated ${new Date(receipt.generatedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}`;
+		}
+		if (receipt.miles) {
+			const to = receipt.miles.to ?? receipt.miles.from;
+			return `Miles ${receipt.miles.from.toFixed(1)}-${to.toFixed(1)}`;
+		}
+		return 'Bundled receipt';
+	}
+
+	function toSourceChip(receipt: ScoutSourceReceipt): UiSourceReceipt {
+		return {
+			id: receipt.id,
+			label: receipt.title,
+			provider: receipt.citation ?? receipt.kind,
+			confidence: receiptConfidence(receipt.kind),
+			freshness: receiptFreshness(receipt),
+			verify: receipt.url
+		};
 	}
 
 	// --- "My hike" identity + position --------------------------------------
@@ -86,6 +115,9 @@
 		fieldPackStatus.lastLoadedAt
 			? new Date(fieldPackStatus.lastLoadedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })
 			: 'bundled'
+	);
+	const fieldPackSourceChips = $derived.by(() =>
+		(fieldPack.sourceReceipts ?? []).map((receipt) => toSourceChip(receipt))
 	);
 </script>
 
@@ -322,7 +354,7 @@
 		<div class="toggle-row">
 			<div class="toggle-copy">
 				<strong>Low-signal mode</strong>
-				<span>Prefer the on-device model and queue everything else.</span>
+				<span>Prefer local Scout answers; network actions wait until service is available.</span>
 			</div>
 			<button
 				class:on={trailAssistant.trailSettings.lowSignalMode}
@@ -436,16 +468,20 @@
 			<span>{fieldPack.downloadedRegions.length} {fieldPack.downloadedRegions.length === 1 ? 'region' : 'regions'} cached</span>
 			<span>{model?.state === 'ready' ? `${fmtBytes(model.expectedBytes)} model on device` : 'Model not downloaded'}</span>
 		</div>
+		<p class="region-caveat">
+			Field packs are planning context, not a basemap. Offline logs stay local until a real upload or
+			text leaves this phone.
+		</p>
 	</section>
 
 	<section class="card data-card">
 		<div class="section-heading">
 			<p class="eyebrow">Data sources</p>
 			<h2>What Scout reads from</h2>
-			<p>Scout always cites its sources. Tap any to verify or open the source page when online.</p>
+			<p>Scout cites the field pack actually loaded on this phone. Official/live sources appear here only when they are in the pack.</p>
 		</div>
 		<div class="data-grid">
-			{#each Object.values(sourceReceipts) as receipt (receipt.id)}
+			{#each fieldPackSourceChips as receipt (receipt.id)}
 				<SourceChip source={receipt} />
 			{/each}
 		</div>
@@ -538,7 +574,7 @@
 	}
 
 	.profile-stats small {
-		font-size: 0.62rem;
+		font-size: 0.72rem;
 		font-weight: 800;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;

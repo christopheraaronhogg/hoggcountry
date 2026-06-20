@@ -167,7 +167,7 @@ like iOS). These are the terms intentionally seeded above and the tags to select
 Console offers tag chips for this category:
 
 - Appalachian Trail · AT thru-hike · NOBO
-- offline maps · hiking · backpacking · trail
+- offline field guide · hiking · backpacking · trail
 - water sources · shelters · trail towns
 - elevation profile · navigation · trail conditions
 - KJV Bible · scripture · offline Bible

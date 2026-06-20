@@ -128,6 +128,7 @@ test('personal mobile field packs use official NWS weather when it is available'
 
     assert.equal(pack.data.dad, null);
     assert.equal(pack.data.context_pack.hiker.currentMile, 600.4);
+    assert.equal(pack.data.context_pack.loadout.length, 0);
     assert.equal(pack.data.context_pack.weather?.source, 'nws');
     assert.equal(pack.data.context_pack.weather?.sourceLabel, 'NWS point forecast near Bland, VA');
     assert.equal(pack.data.context_pack.weather?.highF, 72);
@@ -159,6 +160,7 @@ test('personal mobile field packs do not fall back to the cached pilot forecast 
 
     assert.equal(pack.data.dad, null);
     assert.equal(pack.data.context_pack.hiker.currentMile, 1500.1);
+    assert.equal(pack.data.context_pack.loadout.length, 0);
     assert.equal(pack.data.context_pack.weather, null);
     assert.ok(!pack.meta.source_receipts.some((receipt) => receipt.id === 'official:nws-point-forecast'));
     assert.match(pack.data.pilot_notice, /NWS weather was not available/i);

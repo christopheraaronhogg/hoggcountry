@@ -25,6 +25,16 @@ test('default pack has the calibrated AT total mile frame', () => {
 	assert.equal(DEFAULT_CONTEXT_PACK.frame.totalMiles, 2197.4);
 });
 
+test('default pack is a neutral starter, not Dad pilot data', () => {
+	assert.equal(DEFAULT_CONTEXT_PACK.hiker.currentMile, 0);
+	assert.equal(DEFAULT_CONTEXT_PACK.hiker.dayNumber, 1);
+	assert.equal(DEFAULT_CONTEXT_PACK.hiker.trailName, undefined);
+	assert.equal(DEFAULT_CONTEXT_PACK.loadout.length, 0);
+	assert.equal(DEFAULT_CONTEXT_PACK.weather, null);
+	assert.ok(DEFAULT_CONTEXT_PACK.downloadedRegions.every((region) => !/dad|1438/i.test(region)));
+	assert.ok(DEFAULT_CONTEXT_PACK.sourceReceipts?.every((receipt) => !/dad|1438/i.test(JSON.stringify(receipt))));
+});
+
 test('runtime answers a basic water prompt offline using local pack only', async () => {
 	const { runtime } = makeRuntime();
 	const answer = await runtime.ask({ prompt: 'Where is the next reliable water?', onlineStatus: false });
@@ -32,11 +42,11 @@ test('runtime answers a basic water prompt offline using local pack only', async
 
 	assert.equal(answer.mode, 'offline-local');
 	assert.equal(answer.provider, 'deterministic-fallback');
-	assert.ok(answer.answer.includes('Water plan from mile 1438.0'));
+	assert.ok(answer.answer.includes('Water plan from mile 0.0'));
 	assert.ok(waterTool, 'expected next_water tool invocation');
 	assert.equal(waterTool.confidence, 'low');
-	assert.ok(waterTool.summary.includes('Mapped water candidate'));
-	assert.ok(waterTool.safetyFlags?.some((flag) => flag.id === 'water-candidate-unverified'));
+	assert.ok(waterTool.summary.includes('No water source or mapped water candidate'));
+	assert.ok(waterTool.safetyFlags?.some((flag) => flag.id === 'water-gap'));
 	assert.ok(answer.receipts.length > 0);
 	assert.ok(answer.toolInvocations.some((tool) => tool.toolId === 'next_water'));
 });

@@ -84,7 +84,7 @@ export class DeterministicFallbackProvider implements ScoutProvider {
 		if (VOLATILE_KEYWORDS.some((keyword) => lower.includes(keyword))) {
 			confirmations.push({
 				id: 'volatile-current-source',
-				prompt: 'Confirm against a current source (NWS, ATC, FarOut comments) before depending on this.',
+				prompt: 'Confirm against a current source (NWS, ATC alerts, guidebook, or recent hiker reports) before depending on this.',
 				reason: 'volatile'
 			});
 		}

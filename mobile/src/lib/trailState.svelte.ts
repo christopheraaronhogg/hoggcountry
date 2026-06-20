@@ -31,6 +31,7 @@ import {
 	type HikeMode,
 	type MileSource
 } from './scout/hike-profile.ts';
+import { cloneDefaultContextPack } from './scout/default-pack.ts';
 import { loadTrailGeometry, snapToMile, type TrailGeoPoint } from './trail/trail-geometry';
 import { createCapacitorPreferencesAdapter, createScoutRuntime, InMemoryContextPackStore } from './scout';
 import type { OnDeviceGemmaProvider } from './scout';
@@ -181,10 +182,10 @@ const defaultState: TrailState = {
 	lastCheckIn: {
 		id: crypto.randomUUID(),
 		timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-		location: 'Mile 1438.0',
-		mile: 1438,
+		location: 'Mile 0.0',
+		mile: 0,
 		status: 'safe',
-		note: 'Using the bundled trail-ahead fallback until a fresh field pack is saved on this phone.'
+		note: 'Starter position only. Set your AT mile before relying on trail-ahead context.'
 	},
 	checkInHistory: [],
 	// Trail Pulse starts empty — reports are crowd-sourced from real hikers, so the
@@ -203,7 +204,7 @@ const defaultState: TrailState = {
 		waterAlerts: true,
 		batterySaver: false,
 		lowSignalMode: true,
-		offlineRegion: 'AT NY/CT pilot window'
+		offlineRegion: 'Starter pack - set your AT mile'
 	},
 	trailLogSettings: {
 		autoPublish: false,
@@ -214,8 +215,8 @@ const defaultState: TrailState = {
 	},
 	onlineStatus: true,
 	syncState: 'synced',
-	currentMile: 1438,
-	dayNumber: 42,
+	currentMile: 0,
+	dayNumber: 1,
 	nextCheckInDueAt: isoHoursFromNow(4),
 	// Support circle starts empty — these are the hiker's own emergency contacts,
 	// added on-device. No seeded/fabricated names.
@@ -453,11 +454,17 @@ class TrailAssistantStore {
 	}
 
 	async #loadFieldPack() {
-		const pack = await this.#fieldPackStore.load();
+		let pack = await this.#fieldPackStore.load();
+		if (!this.#state.hikeProfile.calibrated) {
+			this.#state.hikeProfile = { ...DEFAULT_HIKE_PROFILE };
+			this.#resetUncalibratedStarterState();
+			pack = cloneDefaultContextPack();
+			await this.#fieldPackStore.replace(pack, 'bundled');
+		}
 		this.#fieldPack = pack;
 		this.#fieldPackStatus = this.#fieldPackStore.getStatus();
 		this.#applyPackToTrailState(pack);
-		if (this.#state.onlineStatus) {
+		if (this.#state.onlineStatus && this.#state.hikeProfile.calibrated) {
 			await this.refreshFieldPack();
 		}
 	}
@@ -474,6 +481,24 @@ class TrailAssistantStore {
 			...this.#state.trailSettings,
 			offlineRegion: pack.downloadedRegions[0] ?? this.#state.trailSettings.offlineRegion
 		};
+	}
+
+	#resetUncalibratedStarterState() {
+		this.#state.currentMile = 0;
+		this.#state.dayNumber = 1;
+		this.#state.trailSettings = {
+			...this.#state.trailSettings,
+			offlineRegion: 'Starter pack - set your AT mile'
+		};
+		this.#state.lastCheckIn = {
+			id: crypto.randomUUID(),
+			timestamp: new Date().toISOString(),
+			location: 'Mile 0.0',
+			mile: 0,
+			status: 'safe',
+			note: 'Starter position only. Set your AT mile before relying on trail-ahead context.'
+		};
+		this.#state.checkInHistory = [];
 	}
 
 	#finishSync(nextState: SyncState) {
@@ -1082,8 +1107,11 @@ class TrailAssistantStore {
 	}
 
 	async refreshFieldPack(): Promise<ContextPack> {
+		if (!this.#state.hikeProfile.calibrated) {
+			return this.#fieldPack;
+		}
 		// Self-tracked hikers fetch a pack centered on THEIR mile (?mile=&personal=1);
-		// Dad-pilot / uncalibrated fetch the default pilot pack at the bare endpoint.
+		// explicit Dad-pilot mode fetches the public pilot pack at the bare endpoint.
 		const endpoint = buildFieldPackUrl(FIELD_PACK_ENDPOINT, this.#state.hikeProfile);
 		const pack = await this.#fieldPackStore.refreshFromEndpoint(endpoint);
 		this.#fieldPack = pack;
@@ -1142,8 +1170,7 @@ class TrailAssistantStore {
 
 	/**
 	 * Re-anchor the seeded check-in to the user's own starting mile when a personal
-	 * hike begins. The bundled default carries a Dad-pilot check-in at mile 1438; a
-	 * self-tracked hiker must never see that as their last logged position.
+	 * hike begins. A self-tracked hiker must never inherit a stale pilot location.
 	 */
 	#anchorCheckInToSelf(mile: number) {
 		this.#state.lastCheckIn = {
