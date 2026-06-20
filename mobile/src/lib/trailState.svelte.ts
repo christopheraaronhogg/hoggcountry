@@ -36,13 +36,12 @@ import {
 	DEFAULT_HIKE_PROFILE,
 	isDadPilotContextPack,
 	isSelfTracked,
-	parseMileFromCheckIn,
-	parseMileFromText,
 	resolvePosition,
 	todayISODate,
 	type HikeMode,
 	type MileSource
 } from './scout/hike-profile.ts';
+import { detectTrailActionIntent } from './scout/action-intents.ts';
 import { cloneDefaultContextPack } from './scout/default-pack.ts';
 import { loadTrailGeometry, snapToMile, type TrailGeoPoint } from './trail/trail-geometry';
 import { createCapacitorPreferencesAdapter, createScoutRuntime, InMemoryContextPackStore } from './scout';
@@ -824,61 +823,31 @@ class TrailAssistantStore {
 	#detectActionIntent(
 		text: string
 	): { display: ProposedAction; apply: () => void; prompt: string } | null {
-		const lower = text.toLowerCase();
-		let status: CheckInStatus | null = null;
-		if (/\b(need help|need-help|emergency|injured|hurt|sos|rescue|bailing)\b/.test(lower)) {
-			status = 'need-help';
-		} else if (/\b(delayed|behind schedule|running late|short day|taking it slow|slowing down|resting up)\b/.test(lower)) {
-			status = 'delayed';
-		} else if (/\b(check ?in|checking in|i'?m safe|im safe|log me safe|all good|made camp|safe and sound)\b/.test(lower)) {
-			status = 'safe';
-		}
+		const intent = detectTrailActionIntent(text, this.#state.currentMile);
+		if (!intent) return null;
 
-		// Pure position updates use the strict parser (strong false-positive guard);
-		// a check-in additionally accepts a bare "at mile N" locator, so a stated
-		// mile in "I'm safe at mile 700" / "need help at mile 1442" isn't lost.
-		const parsedMile = status ? parseMileFromCheckIn(text) : parseMileFromText(text);
-		if (!status && parsedMile === null) return null;
+		const display: ProposedAction = {
+			id: crypto.randomUUID(),
+			title: intent.title,
+			detail: intent.detail,
+			confirmLabel: intent.confirmLabel
+		};
 
-		// Pure position update ("I'm at mile 623.4") — no check-in status present.
-		if (!status && parsedMile !== null) {
-			const from = this.#state.currentMile;
+		if (intent.kind === 'position-update') {
 			return {
-				display: {
-					id: crypto.randomUUID(),
-					title: 'Update your position',
-					detail: `Move to mile ${parsedMile.toFixed(1)} (from mile ${from.toFixed(1)})`,
-					confirmLabel: 'Update mile'
-				},
-				apply: () => void this.updateCurrentMile(parsedMile, 'check-in'),
-				prompt: `Want me to set your position to mile ${parsedMile.toFixed(1)}? I won't change anything until you confirm below.`
+				display,
+				apply: () => void this.updateCurrentMile(intent.mile, 'check-in'),
+				prompt: intent.prompt
 			};
 		}
 
-		const labels: Record<CheckInStatus, string> = {
-			safe: 'Safe',
-			delayed: 'Delayed',
-			'need-help': 'Need help'
-		};
-		const confirmed = status as CheckInStatus;
-		// A mile in the message moves the hiker first, so the check-in records at the
-		// stated mile rather than the stale one.
-		const mile = parsedMile ?? this.#state.currentMile;
-		const movesPosition = parsedMile !== null && Math.abs(parsedMile - this.#state.currentMile) >= 0.05;
 		return {
-			display: {
-				id: crypto.randomUUID(),
-				title: `Log a "${labels[confirmed]}" check-in`,
-				detail: `Mile ${mile.toFixed(1)} · "${text}"`,
-				confirmLabel: 'Log check-in'
-			},
+			display,
 			apply: () => {
-				if (movesPosition) void this.updateCurrentMile(mile, 'check-in');
-				this.performCheckIn(confirmed, text);
+				if (intent.movesPosition) void this.updateCurrentMile(intent.mile, 'check-in');
+				this.performCheckIn(intent.status, intent.note);
 			},
-			prompt: movesPosition
-				? `Want me to mark you at mile ${mile.toFixed(1)} and log a "${labels[confirmed]}" check-in? I won't record anything until you confirm below.`
-				: `Want me to log a "${labels[confirmed]}" check-in at mile ${mile.toFixed(1)}? I won't record anything until you confirm below.`
+			prompt: intent.prompt
 		};
 	}
 
