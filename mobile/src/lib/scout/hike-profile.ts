@@ -12,6 +12,7 @@
  * tested under `node --test` alongside the rest of scout/.
  */
 
+import type { CheckInRecord } from '../types';
 import type { ContextPack } from './types.ts';
 
 /** Calibrated AT length (AWOL 2026, per repo CLAUDE.md). */
@@ -40,6 +41,25 @@ export interface HikeProfile {
 	mileSource: MileSource;
 	/** ISO timestamp of the last position/profile change. */
 	updatedAt: string;
+}
+
+export interface HikeCalibrationInput {
+	mode: HikeMode;
+	trailName?: string;
+	direction?: 'NOBO' | 'SOBO';
+	startDate?: string;
+	currentMile?: number;
+}
+
+export interface HikeProfileTransition {
+	profile: HikeProfile;
+	currentMile: number | null;
+	anchorCheckIn: CheckInRecord | null;
+}
+
+interface HikeProfileTransitionOptions {
+	now?: Date;
+	checkInId?: string;
 }
 
 /**
@@ -102,6 +122,86 @@ export function clampMile(value: number): number {
 /** Today's date as an ISO `YYYY-MM-DD` string (for a sensible start-date default). */
 export function todayISODate(now: Date = new Date()): string {
 	return now.toISOString().slice(0, 10);
+}
+
+export function createSelfAnchorCheckIn(
+	mile: number,
+	options: HikeProfileTransitionOptions = {}
+): CheckInRecord {
+	const clamped = clampMile(mile);
+	return {
+		id: options.checkInId ?? crypto.randomUUID(),
+		timestamp: (options.now ?? new Date()).toISOString(),
+		location: `Mile ${clamped.toFixed(1)}`,
+		mile: clamped,
+		status: 'safe',
+		note: 'Starting position set — log a check-in when you reach camp.'
+	};
+}
+
+export function calibrateHikeProfile(
+	input: HikeCalibrationInput,
+	dadCurrentMile: number,
+	options: HikeProfileTransitionOptions = {}
+): HikeProfileTransition {
+	const now = options.now ?? new Date();
+	const updatedAt = now.toISOString();
+
+	if (input.mode === 'dad-pilot') {
+		return {
+			profile: {
+				calibrated: true,
+				mode: 'dad-pilot',
+				direction: 'NOBO',
+				currentMile: dadCurrentMile,
+				mileSource: 'pilot',
+				updatedAt
+			},
+			currentMile: null,
+			anchorCheckIn: null
+		};
+	}
+
+	const mile = clampMile(input.currentMile ?? 0);
+	return {
+		profile: {
+			calibrated: true,
+			mode: 'self',
+			trailName: input.trailName?.trim() || undefined,
+			direction: input.direction ?? 'NOBO',
+			startDate: input.startDate || todayISODate(now),
+			currentMile: mile,
+			mileSource: 'onboarding',
+			updatedAt
+		},
+		currentMile: mile,
+		anchorCheckIn: createSelfAnchorCheckIn(mile, options)
+	};
+}
+
+export function updateHikeProfileMile(
+	previous: HikeProfile,
+	mile: number,
+	source: MileSource,
+	options: HikeProfileTransitionOptions = {}
+): HikeProfileTransition {
+	const now = options.now ?? new Date();
+	const clamped = clampMile(mile);
+	const becomingSelf = !previous.calibrated || previous.mode !== 'self';
+	return {
+		profile: {
+			...previous,
+			calibrated: true,
+			mode: 'self',
+			direction: previous.direction ?? 'NOBO',
+			startDate: previous.startDate ?? todayISODate(now),
+			currentMile: clamped,
+			mileSource: source,
+			updatedAt: now.toISOString()
+		},
+		currentMile: clamped,
+		anchorCheckIn: becomingSelf ? createSelfAnchorCheckIn(clamped, options) : null
+	};
 }
 
 /** Day N of the hike (1-based) from an ISO start date. Never below 1. */

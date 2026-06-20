@@ -4,7 +4,9 @@ import { test } from 'node:test';
 import { cloneDefaultContextPack } from './default-pack.ts';
 import {
 	buildFieldPackUrl,
+	calibrateHikeProfile,
 	clampMile,
+	createSelfAnchorCheckIn,
 	deriveDayNumber,
 	DEFAULT_HIKE_PROFILE,
 	isDadPilotContextPack,
@@ -15,6 +17,7 @@ import {
 	parseMileFromText,
 	resolvePosition,
 	TOTAL_AT_MILES,
+	updateHikeProfileMile,
 	type HikeProfile
 } from './hike-profile.ts';
 
@@ -72,6 +75,108 @@ test('deriveDayNumber is 1-based and never below 1', () => {
 	// A "now" before the start date still floors at day 1, never 0 or negative.
 	assert.equal(deriveDayNumber(start, new Date('2026-02-01T08:00:00')), 1);
 	assert.equal(deriveDayNumber('not-a-date'), 1);
+});
+
+test('createSelfAnchorCheckIn creates the neutral self-tracked starter check-in', () => {
+	assert.deepEqual(
+		createSelfAnchorCheckIn(42.04, {
+			now: new Date('2026-06-20T12:00:00.000Z'),
+			checkInId: 'check-1'
+		}),
+		{
+			id: 'check-1',
+			timestamp: '2026-06-20T12:00:00.000Z',
+			location: 'Mile 42.0',
+			mile: 42,
+			status: 'safe',
+			note: 'Starting position set — log a check-in when you reach camp.'
+		}
+	);
+});
+
+test('calibrateHikeProfile builds an explicit Dad-pilot profile without a self check-in', () => {
+	const transition = calibrateHikeProfile(
+		{ mode: 'dad-pilot', currentMile: 12, trailName: 'Ignored' },
+		1438,
+		{ now: new Date('2026-06-20T12:00:00.000Z'), checkInId: 'unused' }
+	);
+
+	assert.deepEqual(transition, {
+		profile: {
+			calibrated: true,
+			mode: 'dad-pilot',
+			direction: 'NOBO',
+			currentMile: 1438,
+			mileSource: 'pilot',
+			updatedAt: '2026-06-20T12:00:00.000Z'
+		},
+		currentMile: null,
+		anchorCheckIn: null
+	});
+});
+
+test('calibrateHikeProfile builds a self profile and starter check-in', () => {
+	const transition = calibrateHikeProfile(
+		{
+			mode: 'self',
+			trailName: '  Sprout  ',
+			direction: 'SOBO',
+			startDate: '2026-04-01',
+			currentMile: 2198
+		},
+		1438,
+		{ now: new Date('2026-06-20T12:00:00.000Z'), checkInId: 'check-self' }
+	);
+
+	assert.equal(transition.currentMile, TOTAL_AT_MILES);
+	assert.deepEqual(transition.profile, {
+		calibrated: true,
+		mode: 'self',
+		trailName: 'Sprout',
+		direction: 'SOBO',
+		startDate: '2026-04-01',
+		currentMile: TOTAL_AT_MILES,
+		mileSource: 'onboarding',
+		updatedAt: '2026-06-20T12:00:00.000Z'
+	});
+	assert.equal(transition.anchorCheckIn?.id, 'check-self');
+	assert.equal(transition.anchorCheckIn?.mile, TOTAL_AT_MILES);
+});
+
+test('updateHikeProfileMile makes uncalibrated or Dad-following hikers self-tracked', () => {
+	const transition = updateHikeProfileMile(DEFAULT_HIKE_PROFILE, 88.04, 'gps', {
+		now: new Date('2026-06-20T12:00:00.000Z'),
+		checkInId: 'check-gps'
+	});
+
+	assert.deepEqual(transition.profile, {
+		...DEFAULT_HIKE_PROFILE,
+		calibrated: true,
+		mode: 'self',
+		startDate: '2026-06-20',
+		currentMile: 88,
+		mileSource: 'gps',
+		updatedAt: '2026-06-20T12:00:00.000Z'
+	});
+	assert.equal(transition.currentMile, 88);
+	assert.equal(transition.anchorCheckIn?.id, 'check-gps');
+	assert.equal(transition.anchorCheckIn?.mile, 88);
+});
+
+test('updateHikeProfileMile preserves an existing self hike without reseeding check-ins', () => {
+	const transition = updateHikeProfileMile(selfProfile(), 700.25, 'check-in', {
+		now: new Date('2026-06-20T12:00:00.000Z'),
+		checkInId: 'unused'
+	});
+
+	assert.deepEqual(transition.profile, {
+		...selfProfile(),
+		currentMile: 700.3,
+		mileSource: 'check-in',
+		updatedAt: '2026-06-20T12:00:00.000Z'
+	});
+	assert.equal(transition.currentMile, 700.3);
+	assert.equal(transition.anchorCheckIn, null);
 });
 
 test('isSelfTracked only when calibrated AND self mode', () => {

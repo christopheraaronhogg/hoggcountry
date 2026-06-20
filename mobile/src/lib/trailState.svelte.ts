@@ -31,13 +31,16 @@ import {
 } from './local-documents';
 import {
 	buildFieldPackUrl,
+	calibrateHikeProfile,
 	clampMile,
 	deriveDayNumber,
 	DEFAULT_HIKE_PROFILE,
 	isDadPilotContextPack,
 	isSelfTracked,
 	resolvePosition,
-	todayISODate,
+	updateHikeProfileMile,
+	type HikeCalibrationInput,
+	type HikeProfileTransition,
 	type HikeMode,
 	type MileSource
 } from './scout/hike-profile.ts';
@@ -1049,39 +1052,9 @@ class TrailAssistantStore {
 	 * — owned by the profile, centered field pack, real day number from their start
 	 * date. `dad-pilot` mode follows the Hogg family's public 2026 thru-hike.
 	 */
-	async calibrateHike(input: {
-		mode: HikeMode;
-		trailName?: string;
-		direction?: 'NOBO' | 'SOBO';
-		startDate?: string;
-		currentMile?: number;
-	}): Promise<void> {
-		const now = new Date().toISOString();
-
-		if (input.mode === 'dad-pilot') {
-			this.#state.hikeProfile = {
-				calibrated: true,
-				mode: 'dad-pilot',
-				direction: 'NOBO',
-				currentMile: this.#fieldPack.hiker.currentMile,
-				mileSource: 'pilot',
-				updatedAt: now
-			};
-		} else {
-			const mile = clampMile(input.currentMile ?? 0);
-			this.#state.hikeProfile = {
-				calibrated: true,
-				mode: 'self',
-				trailName: input.trailName?.trim() || undefined,
-				direction: input.direction ?? 'NOBO',
-				startDate: input.startDate || todayISODate(),
-				currentMile: mile,
-				mileSource: 'onboarding',
-				updatedAt: now
-			};
-			this.#state.currentMile = mile;
-			this.#anchorCheckInToSelf(mile);
-		}
+	async calibrateHike(input: HikeCalibrationInput): Promise<void> {
+		const transition = calibrateHikeProfile(input, this.#fieldPack.hiker.currentMile);
+		this.#applyHikeProfileTransition(transition);
 
 		this.#hikeSetupOpen = false;
 		if (this.#state.onlineStatus) {
@@ -1091,20 +1064,13 @@ class TrailAssistantStore {
 		}
 	}
 
-	/**
-	 * Re-anchor the seeded check-in to the user's own starting mile when a personal
-	 * hike begins. A self-tracked hiker must never inherit a stale pilot location.
-	 */
-	#anchorCheckInToSelf(mile: number) {
-		this.#state.lastCheckIn = {
-			id: crypto.randomUUID(),
-			timestamp: new Date().toISOString(),
-			location: `Mile ${mile.toFixed(1)}`,
-			mile,
-			status: 'safe',
-			note: 'Starting position set — log a check-in when you reach camp.'
-		};
-		this.#state.checkInHistory = [];
+	#applyHikeProfileTransition(transition: HikeProfileTransition): void {
+		this.#state.hikeProfile = transition.profile;
+		if (transition.currentMile !== null) this.#state.currentMile = transition.currentMile;
+		if (transition.anchorCheckIn) {
+			this.#state.lastCheckIn = transition.anchorCheckIn;
+			this.#state.checkInHistory = [];
+		}
 	}
 
 	/**
@@ -1114,22 +1080,8 @@ class TrailAssistantStore {
 	 * pack around the new mile when online.
 	 */
 	async updateCurrentMile(mile: number, source: MileSource): Promise<void> {
-		const clamped = clampMile(mile);
-		const previous = this.#state.hikeProfile;
-		const becomingSelf = !previous.calibrated || previous.mode !== 'self';
-		this.#state.hikeProfile = {
-			...previous,
-			calibrated: true,
-			mode: 'self',
-			direction: previous.direction ?? 'NOBO',
-			startDate: previous.startDate ?? todayISODate(),
-			currentMile: clamped,
-			mileSource: source,
-			updatedAt: new Date().toISOString()
-		};
-		this.#state.currentMile = clamped;
-		// First transition into a personal hike: drop the bundled Dad-pilot check-in.
-		if (becomingSelf) this.#anchorCheckInToSelf(clamped);
+		const transition = updateHikeProfileMile(this.#state.hikeProfile, mile, source);
+		this.#applyHikeProfileTransition(transition);
 		if (this.#state.onlineStatus) {
 			await this.refreshFieldPack();
 		}
