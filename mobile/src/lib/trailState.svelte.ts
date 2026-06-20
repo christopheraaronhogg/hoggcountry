@@ -56,13 +56,20 @@ import {
 import type { ContextPack, ContextPackStatus, ScoutAnswer, ScoutRuntime } from './scout';
 import type { PersistenceAdapter } from './scout/context-pack-store.ts';
 import type { OnDeviceGemmaBridge } from './scout/providers/on-device-gemma.ts';
+import {
+	createTrailPulseReport,
+	formatTrailPulseDisplayText,
+	markTrailPulseReportSeen,
+	nearbyTrailPulseReports,
+	pendingTrailPulseAlert,
+	TRAIL_PULSE_RANGE_MILES,
+	updateTrailPulseSyncState
+} from './trail-pulse';
 
 const STORAGE_KEY = 'hoggcountry:trail-assistant:mobile-prototype:v1';
-const TRAIL_PULSE_RANGE_MILES = 0.1;
 const AUTO_GPS_MIN_INTERVAL_MS = 10 * 60 * 1000;
 const AUTO_GPS_MIN_DELTA_MILES = 0.2;
 const AUTO_GPS_FORCE_DELTA_MILES = 1;
-const TRAIL_ID = 'appalachian-trail';
 const FIELD_PACK_ENDPOINT =
 	(import.meta.env.VITE_SCOUT_FIELD_PACK_URL as string | undefined) ??
 	'https://hoggcountry.com/scout/field-pack';
@@ -98,32 +105,6 @@ function makeCheckIn(status: CheckInStatus, note: string, mile: number): CheckIn
 		mile,
 		status,
 		note
-	};
-}
-
-function makeTrailPulseReport(input: {
-	source: TrailPulseSource;
-	chipText?: TrailPulseChip;
-	noteText: string;
-	reporterTrailName?: string;
-	snappedMile: number;
-	observedAt?: string;
-	syncState?: SyncState;
-}): TrailConditionReport {
-	const observedAt = input.observedAt ?? new Date().toISOString();
-
-	return {
-		id: crypto.randomUUID(),
-		trailId: TRAIL_ID,
-		source: input.source,
-		chipText: input.chipText,
-		noteText: input.noteText,
-		reporterTrailName: input.reporterTrailName?.trim() || undefined,
-		snappedMile: Number(input.snappedMile.toFixed(1)),
-		observedAt,
-		status: 'active',
-		createdAt: observedAt,
-		syncState: input.syncState ?? 'synced'
 	};
 }
 
@@ -167,13 +148,6 @@ function browserStorageAdapter(): PersistenceAdapter {
 			localStorage.setItem(key, value);
 		}
 	};
-}
-
-function trailPulseDisplayText(report: TrailConditionReport): string {
-	const base = report.noteText.trim() || report.chipText || 'Trail note';
-	const trailName = report.reporterTrailName?.trim();
-
-	return trailName ? `${base} -${trailName}` : base;
 }
 
 const defaultState: TrailState = {
@@ -596,8 +570,10 @@ class TrailAssistantStore {
 		const result = await publishTrailPulseReport(report).catch(() => 'failed' as const);
 		const syncState: SyncState = result === 'failed' ? 'queued-offline' : 'synced';
 
-		this.#state.trailPulseReports = this.#state.trailPulseReports.map((candidate) =>
-			candidate.id === report.id ? { ...candidate, syncState } : candidate
+		this.#state.trailPulseReports = updateTrailPulseSyncState(
+			this.#state.trailPulseReports,
+			report.id,
+			syncState
 		);
 
 		if (result !== 'failed') {
@@ -678,16 +654,15 @@ class TrailAssistantStore {
 	}
 
 	get nearbyTrailPulseReports() {
-		return this.#state.trailPulseReports
-			.filter((report) => report.status === 'active' && Math.abs(this.#state.currentMile - report.snappedMile) <= TRAIL_PULSE_RANGE_MILES)
-			.sort((a, b) => new Date(b.observedAt).getTime() - new Date(a.observedAt).getTime());
+		return nearbyTrailPulseReports(this.#state.trailPulseReports, this.#state.currentMile);
 	}
 
 	get pendingTrailPulseAlert() {
-		return (
-			this.nearbyTrailPulseReports.find((report) => !this.#state.seenTrailPulseReportIds.includes(report.id)) ??
-			null
-		);
+		return pendingTrailPulseAlert({
+			reports: this.#state.trailPulseReports,
+			seenReportIds: this.#state.seenTrailPulseReportIds,
+			currentMile: this.#state.currentMile
+		});
 	}
 
 	get trailPulseRangeMiles() {
@@ -1353,7 +1328,7 @@ class TrailAssistantStore {
 		if (!noteText) return null;
 
 		const position = await this.#getCurrentPosition();
-		const report = makeTrailPulseReport({
+		const report = createTrailPulseReport({
 			source: input.source,
 			chipText,
 			noteText,
@@ -1376,12 +1351,14 @@ class TrailAssistantStore {
 	}
 
 	formatTrailPulseReport(report: TrailConditionReport): string {
-		return trailPulseDisplayText(report);
+		return formatTrailPulseDisplayText(report);
 	}
 
 	markTrailPulseAlertSeen(reportId: string) {
-		if (this.#state.seenTrailPulseReportIds.includes(reportId)) return;
-		this.#state.seenTrailPulseReportIds = [reportId, ...this.#state.seenTrailPulseReportIds].slice(0, 120);
+		this.#state.seenTrailPulseReportIds = markTrailPulseReportSeen(
+			this.#state.seenTrailPulseReportIds,
+			reportId
+		);
 	}
 
 	updatePrivacy(patch: Partial<PrivacySettings>) {
