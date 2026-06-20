@@ -3,7 +3,6 @@ import { browser } from '$app/environment';
 import { migrateTab } from './types';
 import type {
 	ChatMessage,
-	CheckInRecord,
 	CheckInStatus,
 	HikeProfile,
 	PrivacySettings,
@@ -65,6 +64,16 @@ import {
 	TRAIL_PULSE_RANGE_MILES,
 	updateTrailPulseSyncState
 } from './trail-pulse';
+import {
+	buildHelpSms as buildHelpSmsLink,
+	createCheckInRecord,
+	isoHoursFromNow,
+	missedCheckInRisk,
+	nextCheckInHours,
+	normalizeSupportContact,
+	reachableSupportContacts,
+	removeSupportContactByName
+} from './safety';
 
 const STORAGE_KEY = 'hoggcountry:trail-assistant:mobile-prototype:v1';
 const AUTO_GPS_MIN_INTERVAL_MS = 10 * 60 * 1000;
@@ -84,27 +93,12 @@ const REQUIRE_GEMMA = MODEL_POLICY === 'gemma4-only';
 // (HikeProfile.startDate) takes over once they calibrate.
 const HIKE_START_DATE = '2026-02-01';
 
-function isoHoursFromNow(hours: number): string {
-	return new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
-}
-
 function makeMessage(role: ChatMessage['role'], content: string): ChatMessage {
 	return {
 		id: crypto.randomUUID(),
 		role,
 		content,
 		timestamp: new Date().toISOString()
-	};
-}
-
-function makeCheckIn(status: CheckInStatus, note: string, mile: number): CheckInRecord {
-	return {
-		id: crypto.randomUUID(),
-		timestamp: new Date().toISOString(),
-		location: `Mile ${mile.toFixed(1)}`,
-		mile,
-		status,
-		note
 	};
 }
 
@@ -788,12 +782,10 @@ class TrailAssistantStore {
 	}
 
 	get missedCheckInRisk() {
-		const hoursUntilDue =
-			(new Date(this.#state.nextCheckInDueAt).getTime() - Date.now()) / (60 * 60 * 1000);
-
-		if (!this.#state.onlineStatus && hoursUntilDue < 1.5) return 'high';
-		if (hoursUntilDue < 2) return 'medium';
-		return 'low';
+		return missedCheckInRisk({
+			nextCheckInDueAt: this.#state.nextCheckInDueAt,
+			onlineStatus: this.#state.onlineStatus
+		});
 	}
 
 	get syncLabel() {
@@ -1259,26 +1251,17 @@ class TrailAssistantStore {
 
 	/** Support contacts that can actually be reached (have a phone number). */
 	get reachableSupportContacts() {
-		return this.#state.supportCircle.filter((c) => !!c.phone);
+		return reachableSupportContacts(this.#state.supportCircle);
 	}
 
 	addSupportContact(contact: SupportContact): void {
-		const name = contact.name.trim();
-		if (!name) return;
-		this.#state.supportCircle = [
-			...this.#state.supportCircle,
-			{
-				name,
-				role: contact.role.trim() || 'Emergency contact',
-				method: contact.method.trim() || (contact.phone?.trim() ? 'Text / call' : 'Reference'),
-				phone: contact.phone?.trim() || undefined,
-				email: contact.email?.trim() || undefined
-			}
-		];
+		const normalized = normalizeSupportContact(contact);
+		if (!normalized) return;
+		this.#state.supportCircle = [...this.#state.supportCircle, normalized];
 	}
 
 	removeSupportContact(name: string): void {
-		this.#state.supportCircle = this.#state.supportCircle.filter((c) => c.name !== name);
+		this.#state.supportCircle = removeSupportContactByName(this.#state.supportCircle, name);
 	}
 
 	/**
@@ -1288,27 +1271,23 @@ class TrailAssistantStore {
 	 * so the UI can prompt to add one instead of pretending help is wired.
 	 */
 	buildHelpSms(): { href: string; recipients: SupportContact[] } | null {
-		const recipients = this.reachableSupportContacts;
-		if (!recipients.length) return null;
-		const mile = this.#state.currentMile.toFixed(1);
-		const name = this.#state.hikeProfile.trailName?.trim() || this.#fieldPack.hiker.trailName || 'Hiker';
-		const body = `${name} needs help on the AT. Near mile ${mile}. Sent from Hogg Country Trail Assistant.`;
-		const numbers = recipients.map((c) => (c.phone ?? '').replace(/[^+\d]/g, '')).filter(Boolean);
-		const href = `sms:${numbers.join(',')}?&body=${encodeURIComponent(body)}`;
-		return { href, recipients };
+		return buildHelpSmsLink({
+			contacts: this.#state.supportCircle,
+			currentMile: this.#state.currentMile,
+			trailName: this.#state.hikeProfile.trailName,
+			fallbackTrailName: this.#fieldPack.hiker.trailName
+		});
 	}
 
 	performCheckIn(status: CheckInStatus, note: string) {
-		const label: Record<CheckInStatus, string> = {
-			safe: note || 'Still on plan and moving well.',
-			delayed: note || 'Taking a lighter day and protecting recovery.',
-			'need-help': note || 'Need human review on the next move.'
-		};
-
-		const record = makeCheckIn(status, label[status], this.#state.currentMile);
+		const record = createCheckInRecord({
+			status,
+			note,
+			mile: this.#state.currentMile
+		});
 		this.#state.lastCheckIn = record;
 		this.#state.checkInHistory = [record, ...this.#state.checkInHistory].slice(0, 6);
-		this.#state.nextCheckInDueAt = isoHoursFromNow(status === 'need-help' ? 1 : 4);
+		this.#state.nextCheckInDueAt = isoHoursFromNow(nextCheckInHours(status));
 
 		if (this.#state.onlineStatus) {
 			this.#finishSync('syncing');
