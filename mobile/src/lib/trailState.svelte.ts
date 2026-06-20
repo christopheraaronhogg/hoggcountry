@@ -21,6 +21,10 @@ import type {
 import { publishTrailPulseReport } from './trailPulseSpacetime';
 import { resolveModelPolicy } from './scout/model-policy.ts';
 import {
+	ScoutModelDownloadSession,
+	type ModelDownloadAutoStart
+} from './scout/model-download-session.svelte.ts';
+import {
 	createTrailDocument,
 	limitTrailDocuments,
 	toContextDocuments,
@@ -47,9 +51,6 @@ import type { OnDeviceGemmaProvider } from './scout';
 import {
 	createCapacitorGemmaBridge,
 	createCapacitorModelManager,
-	type ModelDownloadProgress,
-	type NetworkStatus,
-	type ScoutGemmaModelStatus,
 	type ScoutModelManager
 } from './scout/capacitor-gemma-bridge.ts';
 import type { ContextPack, ContextPackStatus, ScoutAnswer, ScoutRuntime } from './scout';
@@ -234,20 +235,6 @@ type PersistedState = TrailState;
 
 /** A write-action Scout proposes from chat, rendered as a confirm card. */
 type ProposedAction = { id: string; title: string; detail: string; confirmLabel: string };
-type ModelDownloadAutoStart =
-	| 'none'
-	| 'started'
-	| 'downloading'
-	| 'metered'
-	| 'offline'
-	| 'runtime-unavailable'
-	| 'unavailable';
-
-function formatModelSize(bytes: number | undefined): string {
-	if (!bytes || bytes < 0) return 'about 2.6 GB';
-	const gb = bytes / 1e9;
-	return gb >= 1 ? `${gb.toFixed(1)} GB` : `${Math.round(bytes / 1e6)} MB`;
-}
 
 class TrailAssistantStore {
 	#state = $state<TrailState>(defaultState);
@@ -268,13 +255,14 @@ class TrailAssistantStore {
 	#fieldPackStatus = $state<ContextPackStatus>(this.#fieldPackStore.getStatus());
 	#lastScoutAnswer = $state<ScoutAnswer | null>(null);
 	#scoutAnswersByMessage = new Map<string, ScoutAnswer>();
-	#modelStatus = $state<ScoutGemmaModelStatus | null>(null);
-	#modelDownload = $state<{ bytesDownloaded: number; totalBytes: number } | null>(null);
-	#modelError = $state<string | null>(null);
-	// Set when a download was requested on a metered (cellular/hotspot) connection
-	// and the user has not yet okayed the data cost. The UI shows a confirm; calling
-	// downloadModel({ allowMetered: true }) clears it and proceeds.
-	#meteredDownloadPrompt = $state<NetworkStatus | null>(null);
+	#modelDownloads = new ScoutModelDownloadSession({
+		getManager: () => this.#modelManager,
+		ensureNativeWiring: () => this.#ensureNativeWiring(),
+		onModelReady: () => {
+			this.#scout.onDeviceProvider?.invalidateAvailability();
+			this.#warmUpModel();
+		}
+	});
 	// True while a Scout reply is being generated (on-device inference can take
 	// many seconds), so the chat can show a "thinking" indicator instead of
 	// looking frozen.
@@ -573,82 +561,11 @@ class TrailAssistantStore {
 	}
 
 	async #startModelDownloadIfUseful(): Promise<ModelDownloadAutoStart> {
-		this.#ensureNativeWiring();
-		if (!this.#modelManager) return 'unavailable';
-		if (this.#modelDownload) return 'downloading';
-
-		const status = this.#modelStatus ?? (await this.refreshModelStatus());
-		if (!status || status.state === 'ready') return 'none';
-		if (status.runtimeConfigured === false) return 'runtime-unavailable';
-		if (
-			!status.downloadConfigured ||
-			(status.state !== 'needs_download' && status.state !== 'present_unverified')
-		) {
-			return 'unavailable';
-		}
-
-		const network = await this.#modelManager.getNetworkStatus().catch(() => null);
-		if (network && !network.connected) {
-			this.#modelError = 'No internet connection. Connect to Wi-Fi to download the model.';
-			return 'offline';
-		}
-		if (network?.metered) {
-			this.#meteredDownloadPrompt = network;
-			return 'metered';
-		}
-
-		void this.downloadModel();
-		return 'started';
+		return this.#modelDownloads.startIfUseful();
 	}
 
 	#gemmaUnavailableAnswer(autoStart: ModelDownloadAutoStart = 'none'): ScoutAnswer {
-		// Tailor the message: not-installed → guide to the download; otherwise the
-		// model is present but the runtime hasn't warmed up yet.
-		const notInstalled = !this.#modelStatus || this.#modelStatus.state !== 'ready';
-		const modelSize = formatModelSize(this.#modelStatus?.expectedBytes);
-		let answer = 'My on-device model is still warming up. Give it a few seconds and ask again.';
-		if (notInstalled) {
-			if (autoStart === 'started') {
-				answer = `I'm starting the on-device model download now (${modelSize}). Once it verifies, Scout can answer fully offline. You can watch progress in Settings > On-device AI.`;
-			} else if (autoStart === 'downloading' || this.#modelDownload) {
-				answer = `Scout's on-device model is downloading now. Once it verifies, ask again and I'll answer from the local model.`;
-			} else if (autoStart === 'runtime-unavailable' || this.#modelStatus?.runtimeConfigured === false) {
-				answer =
-					"This iOS build can see Scout's model store, but the LiteRT-LM runtime is not linked yet. Install a build with the iOS runtime before testing on-device answers.";
-			} else if (autoStart === 'metered' || this.#meteredDownloadPrompt) {
-				answer = `Scout's on-device model is ${modelSize}, and this connection looks metered. I paused before using mobile data. Open Settings > On-device AI if you want to approve the download anyway.`;
-			} else if (autoStart === 'offline') {
-				answer = this.#modelError ?? "Connect to Wi-Fi to download Scout's on-device model.";
-			} else if (autoStart === 'unavailable') {
-				answer =
-					"The on-device model download isn't available in this build yet. Scout will answer after the verified model/runtime is installed.";
-			} else {
-				answer = `Scout's on-device model isn't installed yet. Download it once on Wi-Fi in Settings > On-device AI, then I can answer fully offline.`;
-			}
-		}
-		return {
-			answer,
-			confidence: 'draft',
-			mode: 'on-device',
-			provider: 'on-device-gemma',
-			// No citations on a status message — this is NOT a model answer, so it
-			// must never carry source provenance. (The chat also renders it as a
-			// plain status line, with no confidence badge — see #dispatchScoutReply.)
-			receipts: [],
-			toolInvocations: [],
-			requiredConfirmations: [],
-			safetyFlags: notInstalled
-				? [
-					{
-						id: 'on-device-model-not-installed',
-						severity: 'warn',
-						message: 'Scout answers run on a Gemma model stored on your phone — download it in Settings to chat offline.'
-					}
-				]
-				: [],
-			contextUsed: ['gemma4-only-policy'],
-			generatedAt: new Date().toISOString()
-		};
+		return this.#modelDownloads.unavailableAnswer(autoStart);
 	}
 
 	#getCurrentPosition(): Promise<GeolocationPosition | null> {
@@ -807,17 +724,17 @@ class TrailAssistantStore {
 
 	/** On-device Gemma model file state, or null off-native / before first probe. */
 	get modelStatus() {
-		return this.#modelStatus;
+		return this.#modelDownloads.status;
 	}
 
 	/** Live download progress while a model download is in flight, else null. */
 	get modelDownload() {
-		return this.#modelDownload;
+		return this.#modelDownloads.download;
 	}
 
 	/** Last model-download error message, cleared when a new download starts. */
 	get modelError() {
-		return this.#modelError;
+		return this.#modelDownloads.error;
 	}
 
 	/**
@@ -827,12 +744,12 @@ class TrailAssistantStore {
 	 * proceeds, dismissMeteredPrompt() backs out.
 	 */
 	get meteredDownloadPrompt() {
-		return this.#meteredDownloadPrompt;
+		return this.#modelDownloads.meteredPrompt;
 	}
 
 	/** True when on-device model management is available (native build w/ plugin). */
 	get supportsOnDeviceModel() {
-		return this.#modelManager !== null;
+		return this.#modelDownloads.supportsModelManagement;
 	}
 
 	get syncState() {
@@ -1310,14 +1227,8 @@ class TrailAssistantStore {
 	}
 
 	/** Refresh the on-device model file status (cheap; no network). */
-	async refreshModelStatus(): Promise<ScoutGemmaModelStatus | null> {
-		if (!this.#modelManager) return null;
-		try {
-			this.#modelStatus = await this.#modelManager.getStatus();
-		} catch {
-			this.#modelStatus = null;
-		}
-		return this.#modelStatus;
+	async refreshModelStatus() {
+		return this.#modelDownloads.refreshStatus();
 	}
 
 	/**
@@ -1331,54 +1242,12 @@ class TrailAssistantStore {
 	 * {@code allowMetered: true} to proceed anyway.
 	 */
 	async downloadModel(options: { allowMetered?: boolean } = {}): Promise<void> {
-		if (!this.#modelManager || this.#modelDownload) return;
-		this.#modelError = null;
-
-		// Best-effort: ask for notification permission so the OS shows background
-		// progress. Denial is non-fatal — the foreground service still runs.
-		await this.#modelManager.requestNotificationsPermission().catch(() => false);
-
-		// Wi-Fi-aware gate. Skip the download (don't burn cellular data) until the
-		// user explicitly okays a metered connection.
-		const network = await this.#modelManager.getNetworkStatus().catch(() => null);
-		if (network && !network.connected) {
-			this.#modelError = 'No internet connection. Connect to Wi-Fi to download the model.';
-			return;
-		}
-		if (network?.metered && !options.allowMetered) {
-			this.#meteredDownloadPrompt = network;
-			return;
-		}
-		this.#meteredDownloadPrompt = null;
-
-		this.#modelDownload = { bytesDownloaded: 0, totalBytes: this.#modelStatus?.expectedBytes ?? -1 };
-		try {
-			const status = await this.#modelManager.startDownload((progress: ModelDownloadProgress) => {
-				this.#modelDownload = {
-					bytesDownloaded: progress.bytesDownloaded,
-					totalBytes: progress.totalBytes
-				};
-			});
-			this.#modelStatus = status;
-			// When the model is now ready, invalidate the cached availability so
-			// the router re-probes the native engine on the next Scout turn —
-			// without this the on-device path stays dead until the app restarts —
-			// and warm the engine so the first chat turn isn't a cold (flaky) init.
-			if (status.state === 'ready') {
-				this.#scout.onDeviceProvider?.invalidateAvailability();
-				this.#warmUpModel();
-			}
-		} catch (error) {
-			this.#modelError = error instanceof Error ? error.message : 'Model download failed.';
-			await this.refreshModelStatus();
-		} finally {
-			this.#modelDownload = null;
-		}
+		await this.#modelDownloads.downloadModel(options);
 	}
 
 	/** Back out of the metered-connection download confirm without downloading. */
 	dismissMeteredPrompt(): void {
-		this.#meteredDownloadPrompt = null;
+		this.#modelDownloads.dismissMeteredPrompt();
 	}
 
 	/**
@@ -1388,53 +1257,12 @@ class TrailAssistantStore {
 	 * flight, and refreshes status (which may now be ready). No-op otherwise.
 	 */
 	async reconcileDownload(): Promise<void> {
-		// Heal native wiring first — this runs on cold start and app resume, the
-		// exact moments a Capacitor injection race might have left the bridge null.
-		this.#ensureNativeWiring();
-		if (!this.#modelManager) return;
-		await this.refreshModelStatus();
-		if (this.#modelStatus?.state === 'ready') {
-			this.#scout.onDeviceProvider?.invalidateAvailability();
-			this.#warmUpModel();
-			return;
-		}
-		if (this.#modelDownload) return; // Already tracking in this session.
-
-		const state = await this.#modelManager.getDownloadState().catch(() => null);
-		if (!state?.active) return; // No background download to re-observe.
-
-		// Seed the progress bar from the last known bytes before awaiting terminal.
-		this.#modelDownload = { bytesDownloaded: state.bytesDownloaded, totalBytes: state.totalBytes };
-		try {
-			const status = await this.#modelManager.reattachDownload((progress: ModelDownloadProgress) => {
-				this.#modelDownload = {
-					bytesDownloaded: progress.bytesDownloaded,
-					totalBytes: progress.totalBytes
-				};
-			});
-			if (status) {
-				this.#modelStatus = status;
-				if (status.state === 'ready') {
-					this.#scout.onDeviceProvider?.invalidateAvailability();
-					this.#warmUpModel();
-				}
-			} else {
-				// Finished between the state check and the re-attach — reconcile.
-				await this.refreshModelStatus();
-			}
-		} catch (error) {
-			this.#modelError = error instanceof Error ? error.message : 'Model download failed.';
-			await this.refreshModelStatus();
-		} finally {
-			this.#modelDownload = null;
-		}
+		await this.#modelDownloads.reconcileDownload();
 	}
 
 	/** Cancel an in-flight model download; the partial file is kept for resume. */
 	async cancelModelDownload(): Promise<void> {
-		if (!this.#modelManager) return;
-		this.#meteredDownloadPrompt = null;
-		await this.#modelManager.cancelDownload();
+		await this.#modelDownloads.cancelDownload();
 	}
 
 	get lastScoutAnswer(): ScoutAnswer | null {
