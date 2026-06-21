@@ -60,13 +60,14 @@ export function clearAuthCookie(cookies: Cookies, url: URL): void {
 export async function authApi<T>(
   path: string,
   init: RequestInit = {},
-  fetcher: typeof fetch = fetch
+  fetcher: typeof fetch = fetch,
+  origin?: string | URL
 ): Promise<AuthApiResult<T>> {
   const headers = new Headers(init.headers);
   if (!headers.has('Accept')) headers.set('Accept', 'application/json');
   if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
 
-  const response = await fetcher(`${publicApiBase()}${path}`, {
+  const response = await fetcher(`${publicApiBase(origin)}${path}`, {
     ...init,
     headers
   });
@@ -86,7 +87,8 @@ export async function authApi<T>(
 
 export async function loadAuthenticatedUser(
   token: string | null,
-  fetcher: typeof fetch = fetch
+  fetcher: typeof fetch = fetch,
+  origin?: string | URL
 ): Promise<AuthUser | null> {
   if (!token) return null;
 
@@ -94,7 +96,7 @@ export async function loadAuthenticatedUser(
     headers: {
       Authorization: `Bearer ${token}`
     }
-  }, fetcher).catch(() => null);
+  }, fetcher, origin).catch(() => null);
 
   return result?.ok ? result.data : null;
 }

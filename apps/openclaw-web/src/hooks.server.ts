@@ -25,7 +25,7 @@ export const handle: Handle = async ({ event, resolve }) => {
   }
 
   event.locals.authToken = readAuthToken(event.cookies);
-  event.locals.authUser = await loadAuthenticatedUser(event.locals.authToken, event.fetch);
+  event.locals.authUser = await loadAuthenticatedUser(event.locals.authToken, event.fetch, event.url.origin);
 
   if (event.locals.authToken && !event.locals.authUser) {
     clearAuthCookie(event.cookies, event.url);

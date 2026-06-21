@@ -11,7 +11,7 @@ export const GET: RequestHandler = async ({ cookies, locals, url, fetch }) => {
       headers: {
         Authorization: `Bearer ${locals.authToken}`
       }
-    }, fetch).catch(() => null);
+    }, fetch, url.origin).catch(() => null);
   }
 
   clearAuthCookie(cookies, url);

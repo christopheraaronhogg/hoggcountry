@@ -27,7 +27,7 @@ function googleLoginUrl(origin: string, redirectTo: string): string {
   const callbackUrl = new URL('/login', origin);
   callbackUrl.searchParams.set('redirect', redirectTo);
 
-  const oauthUrl = new URL(`${publicApiBase()}/auth/google/redirect`, origin);
+  const oauthUrl = new URL(`${publicApiBase(origin)}/auth/google/redirect`, origin);
   oauthUrl.searchParams.set('callback', callbackUrl.toString());
 
   return oauthUrl.toString();
@@ -47,7 +47,7 @@ export const load: PageServerLoad = async ({ cookies, fetch, locals, url }) => {
     const result = await authApi<LoginPayload>('/auth/google/handoff', {
       method: 'POST',
       body: JSON.stringify({ code: handoff })
-    }, fetch);
+    }, fetch, url.origin);
 
     if (result.ok && result.data?.token) {
       setAuthCookie(cookies, url, result.data.token);
@@ -92,7 +92,7 @@ export const actions: Actions = {
         password,
         device_name: 'Scout web'
       })
-    }, fetch);
+    }, fetch, url.origin);
 
     if (!result.ok || !result.data?.token) {
       return fail(result.status === 401 ? 401 : 400, {

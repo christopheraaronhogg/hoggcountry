@@ -58,6 +58,42 @@ test('backend auth keeps registration closed unless explicitly enabled', () => {
   assert.match(controller, /registrationIsClosed\(\)/u);
 });
 
+test('server-side auth calls use an absolute same-origin API base in production', async () => {
+  const savedNodeEnv = process.env.NODE_ENV;
+  const savedPublicApiBase = process.env.PUBLIC_API_BASE_URL;
+  process.env.NODE_ENV = 'production';
+  delete process.env.PUBLIC_API_BASE_URL;
+
+  try {
+    const { publicApiBase } = await import('../apps/openclaw-web/src/lib/server/public-api.ts');
+    assert.equal(publicApiBase('https://hoggcountry.com/login'), 'https://hoggcountry.com/api/v1');
+  } finally {
+    if (savedNodeEnv === undefined) {
+      delete process.env.NODE_ENV;
+    } else {
+      process.env.NODE_ENV = savedNodeEnv;
+    }
+    if (savedPublicApiBase === undefined) {
+      delete process.env.PUBLIC_API_BASE_URL;
+    } else {
+      process.env.PUBLIC_API_BASE_URL = savedPublicApiBase;
+    }
+  }
+
+  const hooks = read('apps/openclaw-web/src/hooks.server.ts');
+  assert.match(hooks, /loadAuthenticatedUser\(event\.locals\.authToken, event\.fetch, event\.url\.origin\)/u);
+
+  const loginServer = read('apps/openclaw-web/src/routes/login/+page.server.ts');
+  assert.match(loginServer, /publicApiBase\(origin\)/u);
+  assert.match(loginServer, /fetch, url\.origin/u);
+
+  const forgotServer = read('apps/openclaw-web/src/routes/forgot-password/+page.server.ts');
+  assert.match(forgotServer, /fetch, url\.origin/u);
+
+  const resetServer = read('apps/openclaw-web/src/routes/reset-password/+page.server.ts');
+  assert.match(resetServer, /fetch, url\.origin/u);
+});
+
 test('OAuth redirect defaults to the registered localhost URI (cloud rejected by OpenAI)', async () => {
   const { resolveOpenAICodexRedirectUri, OPENAI_CODEX_LOCAL_REDIRECT_URI } = await import(
     '../apps/openclaw-web/src/lib/server/claw-openai-codex.ts'

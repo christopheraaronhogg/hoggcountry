@@ -30,7 +30,7 @@ export const actions: Actions = {
         password,
         password_confirmation: passwordConfirmation
       })
-    }, fetch);
+    }, fetch, url.origin);
 
     if (!reset.ok) {
       return fail(400, {
@@ -47,7 +47,7 @@ export const actions: Actions = {
         password,
         device_name: 'Scout web'
       })
-    }, fetch);
+    }, fetch, url.origin);
 
     if (!login.ok || !login.data?.token) {
       throw redirect(303, '/login');

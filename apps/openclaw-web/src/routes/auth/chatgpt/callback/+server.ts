@@ -78,7 +78,8 @@ export const GET: RequestHandler = async (event) => {
       method: 'POST',
       body: JSON.stringify({ id_token: idToken, device_name: 'Scout web (ChatGPT login)' })
     },
-    event.fetch
+    event.fetch,
+    event.url.origin
   );
 
   if (!result.ok || !result.data?.token || !result.data.user) {

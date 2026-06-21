@@ -9,14 +9,14 @@ export const load: PageServerLoad = async ({ url }) => {
 };
 
 export const actions: Actions = {
-  default: async ({ fetch, request }) => {
+  default: async ({ fetch, request, url }) => {
     const formData = await request.formData();
     const email = String(formData.get('email') ?? '').trim();
 
     const result = await authApi<{ message?: string }>('/auth/forgot-password', {
       method: 'POST',
       body: JSON.stringify({ email })
-    }, fetch);
+    }, fetch, url.origin);
 
     if (!result.ok) {
       return fail(400, {
