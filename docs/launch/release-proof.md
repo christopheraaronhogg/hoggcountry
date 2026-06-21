@@ -71,5 +71,5 @@ means:
 3. `npm run release:proof -- --strict` passes.
 4. Physical-device smoke evidence exists for the current build.
 5. App Store Connect / Play Console metadata, privacy answers, support URL,
-   deletion route, signing, archive/upload, and internal testing proof are
-   captured for the current build.
+   deletion route, signing, archive/upload, and TestFlight or internal-testing
+   invite/link proof are captured for the current build.

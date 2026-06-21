@@ -92,14 +92,14 @@ const evidenceGuidance = {
 	},
 	'app-store-connect-record': {
 		file: 'docs/launch/proof/app-store-connect-record-YYYY-MM-DD.md',
-		summary: 'App Store Connect record exists with bundle id, metadata, screenshots, privacy answers, support URL, and review notes entered.',
-		proofTarget: 'Capture the App Store Connect app id/status plus a field checklist for listing, screenshots, privacy, age rating, support URL, and review notes.',
+		summary: 'App Store Connect record exists with bundle id, metadata, screenshots, privacy answers, support URL, review notes, and the Dad TestFlight tester lane.',
+		proofTarget: 'Capture the App Store Connect app id/status plus a field checklist for listing, screenshots, privacy, age rating, support URL, review notes, and the external TestFlight group or intentional internal-tester setup.',
 		urls: ['https://appstoreconnect.apple.com/apps']
 	},
 	'apple-archive-upload': {
 		file: 'docs/launch/proof/apple-archive-upload-YYYY-MM-DD.md',
-		summary: 'Signed iOS archive was created and uploaded to App Store Connect/TestFlight for this repo SHA.',
-		proofTarget: 'Record archive timestamp, bundle/version/build, upload result, and App Store Connect processing status.',
+		summary: 'Signed iOS archive was created, uploaded to App Store Connect/TestFlight, and has a Dad invite/link path.',
+		proofTarget: 'Record archive timestamp, bundle/version/build, upload result, App Store Connect processing status, and Dad invite/link proof after TestFlight review if external.',
 		commands: [
 			'cd mobile && npm run ios:testflight -- --upload --team-id <TEAMID>'
 		]
@@ -248,8 +248,8 @@ const items = [
 		pass: 'DEVELOPMENT_TEAM is set in the iOS project; still verify the selected Apple team in Xcode.',
 		fail: 'Set Chris-owned Apple Developer Team in Xcode before archive/upload.'
 	}),
-	item('manual-account', 'app-store-connect-record', 'manual', 'Create/verify the App Store Connect record, bundle id, category, age rating, screenshots, App Privacy answers, support URL, and review notes.'),
-	item('manual-account', 'apple-archive-upload', 'manual', 'Archive and upload with npm run ios:testflight -- --upload --team-id <TEAMID> after signing is set; capture the archive/upload result.'),
+	item('manual-account', 'app-store-connect-record', 'manual', 'Create/verify the App Store Connect record, bundle id, category, age rating, screenshots, App Privacy answers, support URL, review notes, and Dad TestFlight tester lane.'),
+	item('manual-account', 'apple-archive-upload', 'manual', 'Archive and upload with npm run ios:testflight -- --upload --team-id <TEAMID> after signing is set; capture the archive/upload result and Dad invite/link proof.'),
 	check('manual-account', 'android-upload-keystore', 'manual', hasAndroidKeystoreEnv(), {
 		pass: 'Android upload-key env vars are present in this shell; keep the secret outside git.',
 		fail: 'Create the Play upload keystore and set HC_ANDROID_KEYSTORE_FILE, HC_ANDROID_KEYSTORE_PASSWORD, HC_ANDROID_KEY_ALIAS, and HC_ANDROID_KEY_PASSWORD.'

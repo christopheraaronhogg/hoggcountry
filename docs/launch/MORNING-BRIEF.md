@@ -52,7 +52,11 @@ Everything that does **not** require your Apple/Google accounts, payment, a phys
 1. **Enroll in the Apple Developer Program** ($99/yr) → developer.apple.com. ⛔ **Long pole — approval can take 24–48h+.** *(If you already have a team, skip — just confirm you can sign in to App Store Connect.)*
 2. **App Store Connect:** create the app (bundle `com.hoggcountry.trailassistant`); paste name/subtitle/keywords/description from the Apple copy doc; upload the 6 iOS screenshots (raw or framed); set category + age rating; add the **privacy policy URL** + **support URL**; fill **App Privacy** from the disclosures doc; set **Sign-in required = No** and paste the **App Review notes** (`review-notes.md`).
 3. **On your Mac (with me, ~30 min):** open `mobile/ios` in Xcode, set **Signing Team**, verify the linked LiteRT Swift runtime on device, then **Product ▸ Archive ▸ upload**. `PrivacyInfo.xcprivacy` is already in the App target and the App scheme is already shared.
-4. **TestFlight → Dad:** add him as an **internal tester** = instant install on his iPhone, no review. (Submit for App Review only when you want public release.)
+4. **TestFlight → Dad:** if Dad is not an App Store Connect user on your developer
+   team, add him as an **external tester** or create a tightly limited external
+   public link. The first external TestFlight build needs TestFlight App Review,
+   but this is still beta testing, not public App Store release. Internal
+   TestFlight is only instant for App Store Connect users on your team.
 
 ### 🤖 Google Play
 1. **Create a Play Console account** ($25 one-time) → play.google.com/console. Same-day.
@@ -60,7 +64,11 @@ Everything that does **not** require your Apple/Google accounts, payment, a phys
 3. **Play Console:** create the app; fill listing from the Play copy doc; upload screenshots + **feature graphic** + 512 icon; complete **Data Safety** from the disclosures doc; complete **IARC content rating**; file the **foreground-service (dataSync)** and foreground-location disclosures; add the privacy policy URL.
 4. **Internal testing → Dad:** upload the AAB, add Dad = instant install. Promote to Production when ready.
 
-> **Fastest to Dad's phone:** TestFlight internal (Apple) / Internal testing (Play) — both skip full review. Apple needs enrollment first; that's the only thing standing between now and Dad having it.
+> **Fastest to Dad's phone:** TestFlight external (Apple) for a normal family
+> tester, or TestFlight internal only if Dad is added as an App Store Connect
+> user on your team. Google Play internal testing is same-day once the Play
+> account exists. Apple signing/enrollment is still the gate between now and Dad
+> having the iOS build.
 
 ---
 
@@ -75,8 +83,8 @@ Run `cd mobile && npm run release:proof` to print the current proof ledger. Run
 `npm run release:proof -- --next` to print unresolved gates with copyable
 evidence stubs. Run
 `npm run release:proof -- --strict` before archive/upload; strict mode stays red
-until account, device, privacy/contact, and store-console proof exists. Details:
-`docs/launch/release-proof.md`.
+until account, device, privacy/contact, store-console, TestFlight invite/link,
+and physical smoke proof exists. Details: `docs/launch/release-proof.md`.
 
 ## E) Honest gaps / risks
 - **iOS AI must be runtime-smoked on device before store metadata claims** (Android AI works, pending physical smoke proof). → Decision B-2.
