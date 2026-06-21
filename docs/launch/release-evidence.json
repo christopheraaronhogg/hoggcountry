@@ -59,7 +59,11 @@
     },
     "apple-archive-upload": {
       "status": "pending",
-      "summary": "After Apple signing is configured, run npm run ios:testflight -- --upload --team-id <TEAMID>, wait for App Store Connect processing, then attach the upload/TestFlight proof and Dad invite/link proof."
+      "summary": "After Apple signing is configured, run npm run ios:testflight -- --upload --team-id <TEAMID>, wait for App Store Connect processing, then attach the upload/TestFlight proof."
+    },
+    "dad-testflight-invite": {
+      "status": "pending",
+      "summary": "After the build is processed and external TestFlight review clears if needed, capture Dad's TestFlight email invite or a public link limited to Dad so Chris can send it."
     },
     "android-upload-keystore": {
       "status": "verified",

@@ -98,11 +98,17 @@ const evidenceGuidance = {
 	},
 	'apple-archive-upload': {
 		file: 'docs/launch/proof/apple-archive-upload-YYYY-MM-DD.md',
-		summary: 'Signed iOS archive was created, uploaded to App Store Connect/TestFlight, and has a Dad invite/link path.',
-		proofTarget: 'Record archive timestamp, bundle/version/build, upload result, App Store Connect processing status, and Dad invite/link proof after TestFlight review if external.',
+		summary: 'Signed iOS archive was created and uploaded to App Store Connect/TestFlight for this repo SHA.',
+		proofTarget: 'Record archive timestamp, bundle/version/build, upload result, and App Store Connect processing status.',
 		commands: [
 			'cd mobile && npm run ios:testflight -- --upload --team-id <TEAMID>'
 		]
+	},
+	'dad-testflight-invite': {
+		file: 'docs/launch/proof/dad-testflight-invite-YYYY-MM-DD.md',
+		summary: 'Dad has a TestFlight email invite or limited public link for the processed iOS build.',
+		proofTarget: 'Record TestFlight group name, build number, external review status if applicable, Dad invite email or public link limit, and the exact install link Chris can send.',
+		urls: ['https://appstoreconnect.apple.com/apps']
 	},
 	'play-console-record': {
 		file: 'docs/launch/proof/play-console-record-YYYY-MM-DD.md',
@@ -249,7 +255,8 @@ const items = [
 		fail: 'Set Chris-owned Apple Developer Team in Xcode before archive/upload.'
 	}),
 	item('manual-account', 'app-store-connect-record', 'manual', 'Create/verify the App Store Connect record, bundle id, category, age rating, screenshots, App Privacy answers, support URL, review notes, and Dad TestFlight tester lane.'),
-	item('manual-account', 'apple-archive-upload', 'manual', 'Archive and upload with npm run ios:testflight -- --upload --team-id <TEAMID> after signing is set; capture the archive/upload result and Dad invite/link proof.'),
+	item('manual-account', 'apple-archive-upload', 'manual', 'Archive and upload with npm run ios:testflight -- --upload --team-id <TEAMID> after signing is set; capture the archive/upload result.'),
+	item('manual-account', 'dad-testflight-invite', 'manual', 'After TestFlight processing/review, capture Dad\'s email invite or a public link limited to Dad so Chris can send it.'),
 	check('manual-account', 'android-upload-keystore', 'manual', hasAndroidKeystoreEnv(), {
 		pass: 'Android upload-key env vars are present in this shell; keep the secret outside git.',
 		fail: 'Create the Play upload keystore and set HC_ANDROID_KEYSTORE_FILE, HC_ANDROID_KEYSTORE_PASSWORD, HC_ANDROID_KEY_ALIAS, and HC_ANDROID_KEY_PASSWORD.'

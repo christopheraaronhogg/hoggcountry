@@ -63,6 +63,9 @@ npm run ios:testflight -- --upload --team-id <TEAMID>
 - App Store Connect proof: app record exists, bundle id matches, TestFlight build
   processed, external group exists, and Dad email or limited public link is
   available.
+- Release ledger proof: mark `apple-archive-upload` only after upload/processing
+  is proven, and mark `dad-testflight-invite` only after the actual invite or
+  limited public link exists.
 - Dad-ready proof: Dad can install from the TestFlight link and the physical
   iPhone smoke pass covers first-run setup, model missing/download path, GPS
   allowed/denied, offline kill/relaunch, and one Scout answer if store copy

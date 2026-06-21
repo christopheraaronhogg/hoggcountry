@@ -36,6 +36,7 @@ test('mobile release proof tracks account, device, privacy, and accessibility ga
 	for (const requiredId of [
 		'ios-development-team',
 		'app-store-connect-record',
+		'dad-testflight-invite',
 		'android-upload-keystore',
 		'play-console-record',
 		'ios-physical-scout-answer',
@@ -174,6 +175,7 @@ test('mobile release proof next mode prints unresolved gates and evidence stubs'
 	assert.match(result.stdout, /Trail Assistant remaining release proof/u);
 	assert.match(result.stdout, /ios-development-team/u);
 	assert.match(result.stdout, /app-store-connect-record/u);
+	assert.match(result.stdout, /dad-testflight-invite/u);
 	assert.match(result.stdout, /Evidence JSON stub/u);
 	assert.doesNotMatch(result.stdout, /code-build:/u);
 });
@@ -200,4 +202,5 @@ test('TestFlight helper is a repeatable archive/export/upload lane', () => {
 	assert.match(helper, /DEVELOPMENT_TEAM=\$\{teamId\}/u);
 	assert.match(helper, /ios-testflight-attempt-\$\{timestamp\}\.md/u);
 	assert.match(proofScript, /npm run ios:testflight -- --upload --team-id <TEAMID>/u);
+	assert.match(proofScript, /dad-testflight-invite/u);
 });
