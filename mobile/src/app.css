@@ -33,6 +33,57 @@
 	   sans. (Bundling a woff2 of a libre serif is the full fix — tracked follow-up.) */
 	--font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, Charter, 'Noto Serif', Georgia, 'Times New Roman', serif;
 	--font-mono: 'SF Mono', ui-monospace, 'JetBrains Mono', Menlo, monospace;
+
+	/* ====================================================================
+	   DESIGN SYSTEM — named scales
+	   Spacing, type, radius, depth, and motion are scales, not per-component
+	   guesses. Build with these tokens so every surface stays in rhythm.
+	   ==================================================================== */
+
+	/* Spacing — 4px base */
+	--space-1: 4px;
+	--space-2: 8px;
+	--space-3: 12px;
+	--space-4: 16px;
+	--space-5: 20px;
+	--space-6: 24px;
+	--space-8: 32px;
+
+	/* Radius — xs(controls inside chrome) · sm · md(cards) · lg(sheets) ·
+	   control(buttons/inputs) · pill */
+	--radius-xs: 9px;
+	--radius-control: 14px;
+	--radius-pill: 999px;
+
+	/* Type scale (rem). Display = Iowan serif; UI = Avenir. */
+	--text-2xs: 0.6875rem;
+	--text-xs: 0.75rem;
+	--text-sm: 0.8125rem;
+	--text-base: 0.9375rem;
+	--text-md: 1.0625rem;
+	--text-lg: 1.1875rem;
+	--text-xl: 1.375rem;
+	--display-sm: 2rem;
+	--display-md: 3rem;
+	--display-lg: 3.4rem;
+
+	/* Motion — physical, quick, consistent */
+	--ease-spring: cubic-bezier(0.34, 1.4, 0.7, 1);
+	--ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+	--dur-fast: 0.14s;
+	--dur-base: 0.22s;
+	--dur-slow: 0.32s;
+
+	/* Mode-aware soft accent tints — use these instead of literal rgba()
+	   accents so every tinted surface adapts to dark mode automatically.
+	   This is the systemic fix for the dark-mode washout. */
+	--forest-soft: rgba(47, 75, 53, 0.1);
+	--moss-soft: rgba(106, 132, 95, 0.14);
+	--clay-soft: rgba(170, 104, 67, 0.13);
+	--sky-soft: rgba(95, 128, 144, 0.13);
+	--sand-soft: rgba(200, 167, 122, 0.18);
+	--ink-soft: rgba(31, 36, 29, 0.06);
+	--focus-ring: rgba(47, 75, 53, 0.6);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -60,6 +111,13 @@
 		--shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
 		--shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.2);
 		--shadow-ridge: 0 18px 44px -20px rgba(0, 0, 0, 0.75);
+		/* Mode-aware soft accent tints (night-on-trail) */
+		--forest-soft: rgba(152, 196, 142, 0.16);
+		--moss-soft: rgba(179, 207, 143, 0.16);
+		--clay-soft: rgba(229, 161, 116, 0.16);
+		--sky-soft: rgba(156, 200, 216, 0.16);
+		--sand-soft: rgba(215, 183, 127, 0.18);
+		--ink-soft: rgba(242, 234, 219, 0.08);
 	}
 }
 
@@ -216,17 +274,17 @@ p {
 }
 
 .pill-forest {
-	background: rgba(47, 75, 53, 0.12);
+	background: var(--forest-soft);
 	color: var(--forest);
 }
 
 .pill-clay {
-	background: rgba(170, 104, 67, 0.14);
+	background: var(--clay-soft);
 	color: var(--clay);
 }
 
 .pill-sky {
-	background: rgba(95, 128, 144, 0.14);
+	background: var(--sky-soft);
 	color: var(--sky);
 }
 
@@ -293,10 +351,10 @@ p {
 	width: 100%;
 	min-height: 44px;
 	padding: 11px 14px;
-	border-radius: 13px;
+	border-radius: var(--radius-control);
 	font-weight: 800;
 	letter-spacing: 0.01em;
-	font-size: 0.92rem;
+	font-size: var(--text-base);
 }
 
 .cta-button {

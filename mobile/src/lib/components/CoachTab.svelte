@@ -110,23 +110,25 @@
 	}
 </script>
 
-<div class="section-stack coach-shell">
+<div class="coach-shell">
 	<!-- Chat stays pure: status (Day/Mile/online) lives in the app header, not
 	     repeated here. Only the starter prompts sit above the conversation, and
 	     only until the hiker has started talking. -->
 	{#if trailAssistant.coachMessages.length <= 1}
-		<section class="hero-quick">
-			<p class="quick-label">Quick prompts</p>
-			<div class="prompt-row">
+		<section class="welcome">
+			<p class="welcome-eyebrow">Ask Scout</p>
+			<div class="prompt-grid">
 				{#each quickPrompts as prompt (prompt)}
-					<button class="prompt-pill" onclick={() => usePrompt(prompt)}>{prompt}</button>
+					<button class="prompt-chip" onclick={() => usePrompt(prompt)}>
+						<span>{prompt}</span>
+						<span class="chip-go" aria-hidden="true">›</span>
+					</button>
 				{/each}
 			</div>
 		</section>
 	{/if}
 
-	<section class="chat-card card">
-		<div class="chat-log" bind:this={logRef} onscroll={onLogScroll}>
+	<div class="chat-log" bind:this={logRef} onscroll={onLogScroll}>
 			{#each trailAssistant.coachMessages as message (message.id)}
 				{@const meta = message.role === 'assistant' ? receiptsFor(message.id) : null}
 				<div class:assistant={message.role === 'assistant'} class:user={message.role === 'user'} class="message">
@@ -222,136 +224,188 @@
 		{/if}
 
 		<div class="composer">
-			<textarea
-				bind:value={draft}
-				rows="2"
-				placeholder="Ask about mileage, water, town, safety, or recovery..."
-				onkeydown={(event) => {
-					if (event.key === 'Enter' && !event.shiftKey) {
-						event.preventDefault();
-						submit();
-					}
-				}}
-			></textarea>
-
-			<div class="composer-actions">
-				<div class="composer-meta">
-					<span class="mode-tag" data-online={trailAssistant.onlineStatus}>
-						On-device Scout
-					</span>
-					<span class="hint">Sources cited when used</span>
-				</div>
-				<button class="cta-button send" onclick={submit} disabled={!draft.trim()}>Send</button>
+			<div class="composer-bar">
+				<textarea
+					bind:value={draft}
+					rows="1"
+					placeholder="Ask about water, town, or safety…"
+					onkeydown={(event) => {
+						if (event.key === 'Enter' && !event.shiftKey) {
+							event.preventDefault();
+							submit();
+						}
+					}}
+				></textarea>
+				<button class="send" onclick={submit} disabled={!draft.trim()} aria-label="Send message">
+					<span aria-hidden="true">↑</span>
+				</button>
+			</div>
+			<div class="composer-meta">
+				<span class="mode-tag" data-online={trailAssistant.onlineStatus}>On-device Scout</span>
+				<span class="hint">Sources cited when used</span>
 			</div>
 		</div>
-	</section>
-</div>
+	</div>
 
 <style>
 	.coach-shell {
-		min-height: calc(100vh - 220px);
+		position: relative;
+		flex: 1 1 auto;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
 	}
 
-	.hero-quick {
+	/* welcome / quick prompts (empty state) */
+	.welcome {
+		flex: 0 0 auto;
 		display: grid;
-		gap: 6px;
-		padding-top: 4px;
+		gap: var(--space-2);
+		padding-top: var(--space-1);
 	}
-
-	.quick-label {
-		font-size: 0.62rem;
+	.welcome-eyebrow {
+		font-size: var(--text-sm);
 		font-weight: 800;
 		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		color: var(--muted);
+		letter-spacing: 0.14em;
+		color: var(--moss);
 	}
-
-	.prompt-row {
+	.prompt-grid {
 		display: flex;
-		gap: 6px;
-		overflow-x: auto;
-		margin: 0 -14px;
-		padding: 0 14px;
+		flex-wrap: wrap;
+		gap: var(--space-2);
 	}
-
-	.prompt-row::-webkit-scrollbar {
-		display: none;
-	}
-
-	.prompt-pill {
-		flex: 0 0 auto;
-		padding: 8px 12px;
-		border-radius: 999px;
-		background: rgba(47, 75, 53, 0.08);
-		color: var(--forest);
-		font-size: 0.78rem;
-		font-weight: 800;
-		white-space: nowrap;
-		border: 1px solid rgba(47, 75, 53, 0.1);
-	}
-
-	.chat-card {
-		display: grid;
-		gap: 12px;
-		padding: 14px;
-		position: relative; /* anchor for the floating jump-to-latest pill */
-	}
-
-	.chat-log {
-		display: grid;
-		gap: 12px;
-		max-height: 50vh;
-		overflow: auto;
-		padding-right: 4px;
-		overflow-anchor: none; /* we manage stickiness ourselves */
-	}
-
-	/* Floats over the bottom of the conversation only when the hiker has scrolled
-	   up and there's newer content below. Tapping re-pins to the latest. */
-	.jump-latest {
-		position: absolute;
-		left: 50%;
-		transform: translateX(-50%);
-		bottom: calc(50vh - 28px);
-		z-index: 4;
-		min-height: 40px;
-		padding: 8px 16px;
-		border-radius: 999px;
-		font-size: 0.78rem;
-		font-weight: 800;
-		color: #f7f2e8;
-		background: linear-gradient(135deg, var(--forest), var(--moss));
-		box-shadow: var(--shadow-soft);
+	.prompt-chip {
 		display: inline-flex;
 		align-items: center;
-		gap: 4px;
+		gap: var(--space-2);
+		padding: 9px 14px;
+		border-radius: var(--radius-pill);
+		background: var(--forest-soft);
+		color: var(--forest);
+		border: 1px solid color-mix(in srgb, var(--forest) 16%, transparent);
+		font-size: var(--text-sm);
+		font-weight: 800;
+		text-align: left;
+		line-height: 1.2;
+	}
+	.prompt-chip .chip-go {
+		opacity: 0.55;
+	}
+
+	/* conversation fills the screen; composer pins to the bottom */
+	.chat-log {
+		flex: 1 1 auto;
+		min-height: 0;
+		display: grid;
+		gap: var(--space-3);
+		align-content: start;
+		overflow: auto;
+		overflow-anchor: none;
+		padding: var(--space-1) 2px var(--space-2);
 	}
 
 	.message {
-		max-width: 88%;
-		padding: 11px 13px;
-		border-radius: 16px;
+		max-width: 86%;
+		padding: 11px 14px;
+		border-radius: 18px;
 		display: grid;
 		gap: 6px;
-		box-shadow: var(--shadow-soft);
+		animation: msg-in var(--dur-base) var(--ease-out) both;
 	}
-
+	@keyframes msg-in {
+		from {
+			opacity: 0;
+			transform: translateY(6px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
 	.message.assistant {
 		background: var(--surface);
 		border: 1px solid var(--line);
+		box-shadow: var(--shadow-soft);
+		border-bottom-left-radius: 7px;
 	}
-
 	.message.user {
-		background: rgba(47, 75, 53, 0.12);
+		background: var(--forest-soft);
 		margin-left: auto;
 		max-width: 80%;
+		border-bottom-right-radius: 7px;
 	}
-
 	.message p {
-		font-size: 0.92rem;
-		line-height: 1.4;
+		font-size: var(--text-base);
+		line-height: 1.45;
 	}
 
+	.message-head {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+	.bot-mark {
+		width: 20px;
+		height: 20px;
+		border-radius: 999px;
+		background: linear-gradient(135deg, var(--forest), var(--moss));
+		color: #f7f2e8;
+		display: grid;
+		place-items: center;
+	}
+	.message-head strong {
+		font-size: var(--text-sm);
+		color: var(--forest);
+	}
+
+	.message-tools {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px;
+	}
+	.tool-tag {
+		font-family: var(--font-mono);
+		font-size: var(--text-2xs);
+		font-weight: 700;
+		color: var(--sky);
+		padding: 3px 6px;
+		border-radius: 6px;
+		background: var(--sky-soft);
+		letter-spacing: 0.02em;
+	}
+	.message-receipts {
+		display: flex;
+		gap: 4px;
+		flex-wrap: wrap;
+	}
+	.message-caveats {
+		display: grid;
+		gap: 5px;
+	}
+	.caveat-chip {
+		display: block;
+		padding: 7px 9px;
+		border-radius: 10px;
+		background: var(--warn-soft);
+		color: var(--warn);
+		font-size: var(--text-xs);
+		font-weight: 800;
+		line-height: 1.25;
+	}
+	.caveat-chip[data-kind='critical'],
+	.caveat-chip[data-kind='safety-critical'] {
+		background: var(--danger-soft);
+		color: var(--danger);
+	}
+	.timestamp {
+		font-size: var(--text-2xs);
+		color: var(--muted);
+		justify-self: end;
+	}
+
+	/* thinking */
 	.thinking-dots {
 		display: flex;
 		align-items: center;
@@ -375,7 +429,7 @@
 	.thinking-dots em {
 		margin-left: 6px;
 		font-style: normal;
-		font-size: 0.8rem;
+		font-size: var(--text-sm);
 		color: var(--muted);
 	}
 	@keyframes scoutDot {
@@ -391,13 +445,34 @@
 		}
 	}
 
+	/* jump to latest */
+	.jump-latest {
+		position: absolute;
+		left: 50%;
+		transform: translateX(-50%);
+		bottom: 104px;
+		z-index: 4;
+		min-height: 38px;
+		padding: 8px 16px;
+		border-radius: var(--radius-pill);
+		font-size: var(--text-sm);
+		font-weight: 800;
+		color: #f7f2e8;
+		background: linear-gradient(135deg, var(--forest), var(--moss));
+		box-shadow: var(--shadow);
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+	}
+
+	/* pending action */
 	.action-card {
+		flex: 0 0 auto;
 		display: flex;
 		flex-direction: column;
 		gap: 10px;
-		margin: 8px 0;
 		padding: 12px 14px;
-		border-radius: 13px;
+		border-radius: var(--radius-control);
 		border: 1px solid var(--forest);
 		background: color-mix(in srgb, var(--forest) 8%, var(--surface));
 	}
@@ -407,17 +482,17 @@
 		gap: 2px;
 	}
 	.action-eyebrow {
-		font-size: 0.68rem;
+		font-size: var(--text-xs);
 		font-weight: 800;
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
 		color: var(--forest);
 	}
 	.action-info strong {
-		font-size: 0.95rem;
+		font-size: var(--text-base);
 	}
 	.action-detail {
-		font-size: 0.82rem;
+		font-size: var(--text-sm);
 		color: var(--muted);
 	}
 	.action-buttons {
@@ -430,7 +505,7 @@
 		min-height: 40px;
 		border-radius: 11px;
 		font-weight: 800;
-		font-size: 0.88rem;
+		font-size: var(--text-sm);
 	}
 	.action-cancel {
 		background: transparent;
@@ -443,139 +518,94 @@
 		border: none;
 	}
 
-	.message-head {
-		display: flex;
-		align-items: center;
-		gap: 6px;
+	/* composer */
+	.composer {
+		flex: 0 0 auto;
+		display: grid;
+		gap: var(--space-2);
 	}
-
-	.bot-mark {
-		width: 20px;
-		height: 20px;
-		border-radius: 999px;
-		background: linear-gradient(135deg, var(--forest), var(--moss));
-		color: #f7f2e8;
+	.composer-bar {
+		display: flex;
+		align-items: flex-end;
+		gap: var(--space-2);
+		padding: 7px 7px 7px 15px;
+		border-radius: 24px;
+		background: var(--surface-strong);
+		border: 1px solid var(--line);
+		box-shadow: var(--shadow-soft);
+		transition:
+			border-color var(--dur-base) ease,
+			box-shadow var(--dur-base) ease;
+	}
+	.composer-bar:focus-within {
+		border-color: color-mix(in srgb, var(--forest) 42%, var(--line));
+		box-shadow: 0 0 0 3px var(--forest-soft);
+	}
+	.composer textarea {
+		flex: 1 1 auto;
+		min-width: 0;
+		border: 0;
+		background: transparent;
+		resize: none;
+		min-height: 26px;
+		max-height: 124px;
+		padding: 9px 0;
+		color: var(--ink);
+		font-size: var(--text-base);
+		line-height: 1.4;
+	}
+	.composer textarea:focus {
+		outline: none;
+	}
+	.send {
+		flex: 0 0 auto;
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
 		display: grid;
 		place-items: center;
-	}
-
-	.message-head strong {
-		font-size: 0.82rem;
-		color: var(--forest);
-	}
-
-	.message-tools {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 4px;
-	}
-
-	.tool-tag {
-		font-family: var(--font-mono);
-		font-size: 0.66rem;
-		font-weight: 700;
-		color: var(--sky);
-		padding: 3px 6px;
-		border-radius: 6px;
-		background: rgba(95, 128, 144, 0.1);
-		letter-spacing: 0.02em;
-	}
-
-	.message-receipts {
-		display: flex;
-		gap: 4px;
-		flex-wrap: wrap;
-	}
-
-	.message-caveats {
-		display: grid;
-		gap: 5px;
-	}
-
-	.caveat-chip {
-		display: block;
-		padding: 7px 9px;
-		border-radius: 10px;
-		background: rgba(200, 167, 122, 0.18);
-		color: #8c5d1f;
-		font-size: 0.72rem;
+		background: linear-gradient(135deg, var(--forest), var(--moss));
+		color: #f7f2e8;
+		font-size: 1.2rem;
+		line-height: 1;
 		font-weight: 800;
-		line-height: 1.25;
+		box-shadow: var(--shadow-soft);
 	}
-
-	.caveat-chip[data-kind='critical'],
-	.caveat-chip[data-kind='safety-critical'] {
-		background: rgba(154, 59, 47, 0.12);
-		color: var(--danger);
+	.send:disabled {
+		opacity: 0.4;
 	}
-
-	.timestamp {
-		font-size: 0.66rem;
-		color: var(--muted);
-		justify-self: end;
-	}
-
-	.composer {
-		display: grid;
-		gap: 10px;
-	}
-
-	textarea {
-		width: 100%;
-		resize: none;
-		border-radius: 14px;
-		border: 1px solid var(--line);
-		padding: 12px;
-		min-height: 80px;
-		background: #fffdf8;
-		color: var(--ink);
-	}
-
-	.composer-actions {
+	.composer-meta {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		gap: 12px;
+		gap: var(--space-2);
+		padding: 0 4px;
 	}
-
-	.composer-meta {
-		display: grid;
-		gap: 2px;
-		font-size: 0.74rem;
-		color: var(--muted);
-		min-width: 0;
-	}
-
 	.mode-tag {
-		font-size: 0.66rem;
+		font-size: var(--text-2xs);
 		font-weight: 800;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
 		color: var(--forest);
 		padding: 3px 8px;
-		border-radius: 999px;
-		background: rgba(47, 75, 53, 0.1);
-		justify-self: start;
-		width: max-content;
+		border-radius: var(--radius-pill);
+		background: var(--forest-soft);
 	}
-
 	.mode-tag[data-online='false'] {
-		color: #8c5d1f;
-		background: rgba(200, 167, 122, 0.22);
+		color: var(--warn);
+		background: var(--warn-soft);
 	}
-
 	.hint {
-		font-size: 0.7rem;
+		font-size: var(--text-xs);
 		color: var(--muted);
 	}
 
-	.send {
-		width: auto;
-		min-width: 92px;
-	}
-
-	.send:disabled {
-		opacity: 0.45;
-		cursor: not-allowed;
+	@media (prefers-color-scheme: dark) {
+		/* filled-accent elements need a dark glyph on the light-green accent */
+		.bot-mark,
+		.send,
+		.action-confirm,
+		.jump-latest {
+			color: #10160f;
+		}
 	}
 </style>
