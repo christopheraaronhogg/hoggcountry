@@ -56,8 +56,17 @@
       ]
     },
     "app-store-connect-record": {
-      "status": "pending",
-      "summary": "Create or verify the App Store Connect app record, metadata, screenshots, App Privacy answers, support URL, review notes, and TestFlight tester lane. Dad should use external TestFlight unless he is deliberately added as an App Store Connect user."
+      "status": "verified",
+      "verifiedAt": "2026-06-21T03:35:00Z",
+      "verifiedBy": "Codex on Chris Hogg's Apple Developer/App Store Connect session",
+      "summary": "Created and verified the Apple Developer bundle identifier and App Store Connect iOS app record for Hoggcountry. Bundle identifier com.hoggcountry.trailassistant is registered, App Store Connect app id 6782505691 exists, and Dad remains on the external TestFlight path after a build is uploaded and reviewed.",
+      "files": [
+        "docs/launch/proof/app-store-connect-record-2026-06-21.md"
+      ],
+      "urls": [
+        "https://appstoreconnect.apple.com/apps/6782505691",
+        "https://appstoreconnect.apple.com/teams/83d32732-155b-4fa3-93b0-56917e2d68af/apps/6782505691/testflight"
+      ]
     },
     "apple-archive-upload": {
       "status": "pending",
