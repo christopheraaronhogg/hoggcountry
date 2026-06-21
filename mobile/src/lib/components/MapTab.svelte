@@ -9,10 +9,105 @@
 	// not a basemap or turn-by-turn navigator, but the line on screen is the actual
 	// local AT shape for the selected mile window, not a decorative ribbon.
 	const ZOOMS = [5, 10, 20] as const;
+	const FOCUS_OFFSET = 0.35;
 	let mapZoom = $state<(typeof ZOOMS)[number]>(10);
 
 	const from = $derived(trailAssistant.currentMile);
 	const geo = $derived(trailAssistant.trailGeometry);
+	const trailEnd = $derived.by(() => (geo.length ? geo[geo.length - 1].m : Math.max(from + mapZoom, 0)));
+	let viewFocusMile = $state(trailAssistant.currentMile);
+	let userPanned = $state(false);
+	let drag = $state<{ pointerId: number; startX: number; startFocus: number; width: number } | null>(null);
+
+	function clamp(value: number, min: number, max: number): number {
+		return Math.min(max, Math.max(min, value));
+	}
+
+	const viewStart = $derived.by(() => {
+		const maxStart = Math.max(0, trailEnd - mapZoom);
+		return clamp(viewFocusMile - mapZoom * FOCUS_OFFSET, 0, maxStart);
+	});
+	const viewEnd = $derived.by(() => Math.min(trailEnd, viewStart + mapZoom));
+	const currentInView = $derived(from >= viewStart - 0.05 && from <= viewEnd + 0.05);
+	const viewportRange = $derived(`Mi ${viewStart.toFixed(0)}–${viewEnd.toFixed(0)}`);
+	const currentOffset = $derived(viewFocusMile - from);
+	// Offer the recenter affordance only once the view has actually left the
+	// current mile, the way a maps app surfaces "recenter" after you pan away.
+	const showRecenter = $derived(userPanned && !currentInView);
+
+	$effect(() => {
+		if (!userPanned) viewFocusMile = from;
+	});
+
+	function setZoom(zoom: (typeof ZOOMS)[number]) {
+		mapZoom = zoom;
+		viewFocusMile = clamp(viewFocusMile, 0, trailEnd);
+	}
+
+	function recenter() {
+		userPanned = false;
+		viewFocusMile = from;
+	}
+
+	function beginPan(event: PointerEvent) {
+		if (event.button !== 0 && event.pointerType === 'mouse') return;
+		const target = event.currentTarget as HTMLElement;
+		const rect = target.getBoundingClientRect();
+		drag = {
+			pointerId: event.pointerId,
+			startX: event.clientX,
+			startFocus: viewFocusMile,
+			width: Math.max(rect.width, 1)
+		};
+		target.setPointerCapture?.(event.pointerId);
+	}
+
+	function movePan(event: PointerEvent) {
+		if (!drag || drag.pointerId !== event.pointerId) return;
+		const dx = event.clientX - drag.startX;
+		if (Math.abs(dx) > 3) userPanned = true;
+		viewFocusMile = clamp(drag.startFocus - (dx / drag.width) * mapZoom, 0, trailEnd);
+		event.preventDefault();
+	}
+
+	function endPan(event: PointerEvent) {
+		if (!drag || drag.pointerId !== event.pointerId) return;
+		(event.currentTarget as HTMLElement).releasePointerCapture?.(event.pointerId);
+		drag = null;
+	}
+
+	function nudgeViewport(deltaMiles: number) {
+		userPanned = true;
+		viewFocusMile = clamp(viewFocusMile + deltaMiles, 0, trailEnd);
+	}
+
+	function handleMapKeydown(event: KeyboardEvent) {
+		if (event.key === 'ArrowLeft') {
+			nudgeViewport(-mapZoom * 0.25);
+			event.preventDefault();
+		} else if (event.key === 'ArrowRight') {
+			nudgeViewport(mapZoom * 0.25);
+			event.preventDefault();
+		} else if (event.key === 'Home') {
+			recenter();
+			event.preventDefault();
+		}
+	}
+
+	function distanceLabel(mile: number): string {
+		const dist = mile - from;
+		if (Math.abs(dist) < 0.05) return 'here';
+		return dist > 0 ? `${dist.toFixed(1)}mi` : `${Math.abs(dist).toFixed(1)}mi back`;
+	}
+
+	function currentOffsetLabel(): string {
+		if (currentInView) return 'Current mile in view';
+		if (Math.abs(currentOffset) < 0.1) return 'Centered on current mile';
+		return currentOffset > 0
+			? `${Math.abs(currentOffset).toFixed(1)} mi ahead of current`
+			: `${Math.abs(currentOffset).toFixed(1)} mi behind current`;
+	}
+
 	// The pin label follows the explicit mode boundary. Uncalibrated starter state
 	// is not Dad; Dad appears only after the hiker chooses the public pilot.
 	const youLabel = $derived.by(() => {
@@ -35,7 +130,7 @@
 	const landmarks = $derived.by<Landmark[]>(() => {
 		const pack = trailAssistant.fieldPack;
 		const ahead = <T extends { mile: number }>(items: T[]) =>
-			items.filter((i) => i.mile >= from - 0.01 && i.mile <= from + mapZoom).sort((a, b) => a.mile - b.mile);
+			items.filter((i) => i.mile >= viewStart - 0.01 && i.mile <= viewEnd + 0.01).sort((a, b) => a.mile - b.mile);
 		// The NEXT water already lives in the top chip, so keep the line to shelters
 		// + towns (the sleep/resupply anchors) plus just the next water — fewer, less
 		// cluttered pins than dropping every mapped stream on the ribbon.
@@ -62,9 +157,7 @@
 	const MIN_GAP = 9;
 
 	const trace = $derived.by(() => {
-		const start = Math.max(0, from - 1);
-		const end = from + mapZoom;
-		const points = geo.filter((point) => point.m >= start && point.m <= end);
+		const points = geo.filter((point) => point.m >= viewStart && point.m <= viewEnd);
 		if (points.length < 2) {
 			return {
 				empty: true,
@@ -124,7 +217,7 @@
 	const H = 46;
 	const elev = $derived.by(() => {
 		const W = 280, pad = 5;
-		const lo = from, hi = from + mapZoom;
+		const lo = viewStart, hi = viewEnd;
 		const win = elevationWindow(geo, lo, mapZoom);
 		if (win.length < 2) {
 			return { d: '', gain: 0, loss: 0, minEl: 0, maxEl: 0, hereY: H - pad, lo, hi, empty: true };
@@ -148,7 +241,7 @@
 	const fmt = (n: number) => n.toLocaleString('en-US');
 </script>
 
-<div class="map-screen">
+<div class="map-screen" class:dragging={Boolean(drag)}>
 	<div class="map-canvas">
 		<svg viewBox="0 0 100 100" preserveAspectRatio="none" class="route-svg" aria-label="Real AT trace around the current mile">
 			<defs>
@@ -164,57 +257,84 @@
 				<path class="route-line" d={trace.path} />
 			{/if}
 		</svg>
+		<div
+			class="map-gesture-layer"
+			role="slider"
+			tabindex="0"
+			aria-label="Browse the offline AT trace by mile. Drag, or use arrow keys to move the visible mile window."
+			aria-orientation="horizontal"
+			aria-valuemin={0}
+			aria-valuemax={Math.round(trailEnd)}
+			aria-valuenow={Math.round(viewFocusMile)}
+			aria-valuetext={`Mile ${viewFocusMile.toFixed(1)}`}
+			onpointerdown={beginPan}
+			onpointermove={movePan}
+			onpointerup={endPan}
+			onpointercancel={endPan}
+			onkeydown={handleMapKeydown}
+		></div>
 
-		<!-- next-water chip + honest framing: this is a linear schematic of what's
-		     ahead by mile, NOT a tile-basemap navigator. Says so plainly so it isn't
-		     read as (and judged against) FarOut/Gaia. -->
-		<div class="map-top-chip">
+		<!-- Clean top row: the one glanceable fact (next water) + a compass.
+		     The honest "offline schematic, not a basemap" framing lives in the
+		     bottom card so it stays visible without crowding the trace. -->
+		<div class="map-top">
 			{#if nextWater}
 				<span class="next-water-chip">
-					<span class="wglyph"><Icon name="water" size={13} stroke={2} /></span> Next water {nextWater.dist.toFixed(1)} mi
+					<span class="wglyph"><Icon name="water" size={14} stroke={2} /></span>
+					<span class="nw-text">Next water <strong>{nextWater.dist.toFixed(1)} mi</strong></span>
 					{#if nextWater.candidate}<span class="cand-tag">candidate</span>{/if}
 				</span>
 			{/if}
-			<span class="schematic-tag" title="Real bundled AT geometry around your mile; not a tile basemap.">Real AT trace · offline</span>
-			<span class="limit-tag" title="No offline basemap, turn-by-turn routing, or emergency navigation.">No basemap · no routing</span>
-			<TrailPulseReportAction variant="map" label="Report conditions" />
+			<span class="compass" aria-label="North is up">N</span>
 		</div>
 
-		<div class="map-meta" aria-label="Map orientation and source">
-			<span class="north">N</span>
-			<span>Mi {Math.max(0, from - 1).toFixed(0)}-{(from + mapZoom).toFixed(0)}</span>
-			<span>USGS/AT geometry</span>
+		<!-- Right-edge controls, maps-app style: zoom window, recenter (only once
+		     you've panned off your mile), and a quick conditions report. -->
+		<div class="map-tools">
+			<div class="zoom-stack" role="group" aria-label="Visible mile window">
+				{#each ZOOMS as z (z)}
+					<button class="zbtn" class:on={mapZoom === z} onclick={() => setZoom(z)} aria-pressed={mapZoom === z}>{z}</button>
+				{/each}
+				<span class="zunit">mi</span>
+			</div>
+			{#if showRecenter}
+				<button class="tool-btn recenter" onclick={recenter} aria-label="Recenter map on current mile">
+					<Icon name="now" size={20} stroke={2} />
+				</button>
+			{/if}
+			<div class="tool-report"><TrailPulseReportAction variant="map" label="Report" /></div>
 		</div>
 
 		<!-- upcoming landmark pins, placed along the line by mile -->
 		{#each placed as p (p.kind + p.label + p.mile)}
 			<div class="pin {p.kind}" style="left:{p.leftPct}%; top:{p.topPct}%;">
-				<span class="lbl"><Icon name={pinIcon[p.kind]} size={12} stroke={2} /> {p.label} · {(p.mile - from).toFixed(1)}mi</span>
+				<span class="lbl"><Icon name={pinIcon[p.kind]} size={12} stroke={2} /> {p.label} · {distanceLabel(p.mile)}</span>
 				<span class="dot"></span>
 			</div>
 		{/each}
 
 		<!-- hiker position -->
-		<div class="you" style="left:{youPos.leftPct}%; top:{youPos.topPct}%;">
-			<div class="you-mark"><Icon name="now" size={31} stroke={2} /></div>
-			<span class="youlbl">{youLabel} · Mi {from.toFixed(1)}</span>
-		</div>
+		{#if currentInView}
+			<div class="you" style="left:{youPos.leftPct}%; top:{youPos.topPct}%;">
+				<div class="you-mark"><Icon name="now" size={31} stroke={2} /></div>
+				<span class="youlbl">{youLabel} · Mi {from.toFixed(1)}</span>
+			</div>
+		{/if}
 
-		<!-- elevation ahead -->
+		<!-- orientation + elevation card -->
 		<div class="elev">
-			<div class="etop">
-				<span class="etitle">Elevation ahead</span>
-				<div class="zoom" role="group" aria-label="Zoom map and elevation">
-					{#each ZOOMS as z (z)}
-						<button class="zbtn" class:on={mapZoom === z} onclick={() => (mapZoom = z)}>{z}</button>
-					{/each}
-					<span class="zunit">mi</span>
-				</div>
+			<div class="orient">
+				<span class="orient-range">{viewportRange}</span>
+				<span class="orient-offset" class:inview={currentInView}>{currentOffsetLabel()}</span>
+				<span class="orient-tag" title="Real bundled AT geometry for this mile window — an offline schematic, not a tile basemap or turn-by-turn navigator.">Offline · no basemap</span>
 			</div>
 
-			<div class="updown">
-				<span class="up">↑ +{fmt(elev.gain)} ft</span>
-				<span class="down">↓ −{fmt(elev.loss)} ft</span>
+			<div class="etop">
+				<span class="etitle">Elevation in view</span>
+				<div class="updown">
+					<span class="up">↑ +{fmt(elev.gain)} ft</span>
+					<span class="down">↓ −{fmt(elev.loss)} ft</span>
+				</div>
 			</div>
 
 			<div class="chartrow">
@@ -231,7 +351,7 @@
 			</div>
 
 			<div class="elabels">
-				<span>Mi {elev.lo.toFixed(0)} · here</span>
+				<span>Mi {elev.lo.toFixed(0)}</span>
 				<span>Mi {elev.hi.toFixed(0)}</span>
 			</div>
 		</div>
@@ -260,6 +380,21 @@
 		inset: 0;
 		width: 100%;
 		height: 100%;
+		z-index: 0;
+		pointer-events: none;
+	}
+
+	.map-gesture-layer {
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		cursor: grab;
+		touch-action: none;
+		user-select: none;
+	}
+
+	.map-screen.dragging .map-gesture-layer {
+		cursor: grabbing;
 	}
 
 	.map-grid {
@@ -296,6 +431,7 @@
 		position: absolute;
 		transform: translate(-50%, -100%);
 		z-index: 2;
+		pointer-events: none;
 	}
 	.pin .dot {
 		width: 13px;
@@ -336,6 +472,7 @@
 		position: absolute;
 		transform: translate(-50%, -50%);
 		z-index: 3;
+		pointer-events: none;
 	}
 	.you .you-mark {
 		width: 34px;
@@ -362,60 +499,52 @@
 		box-shadow: var(--shadow-soft);
 	}
 
-	.map-top-chip {
+	/* top row: next-water + compass */
+	.map-top {
 		position: absolute;
-		top: 12px;
+		top: max(12px, env(safe-area-inset-top));
 		left: 12px;
-		right: 118px;
+		right: 12px;
 		display: flex;
-		flex-direction: column;
-		gap: 6px;
 		align-items: flex-start;
+		justify-content: space-between;
+		gap: 10px;
 		z-index: 4;
-		min-width: 0;
+		pointer-events: none;
 	}
-	.schematic-tag {
-		display: inline-flex;
-		align-items: center;
-		padding: 4px 9px;
-		border-radius: 999px;
-		background: rgba(31, 36, 29, 0.7);
-		color: #f4efe4;
-		font-size: 0.72rem;
-		font-weight: 800;
-		letter-spacing: 0.02em;
-	}
-	.limit-tag {
-		display: inline-flex;
-		align-items: center;
-		padding: 4px 9px;
-		border-radius: 999px;
-		background: rgba(154, 59, 47, 0.12);
-		color: var(--danger);
-		font-size: 0.72rem;
-		font-weight: 900;
-		letter-spacing: 0.02em;
+	.map-top > * {
+		pointer-events: auto;
 	}
 	.next-water-chip {
 		display: inline-flex;
 		align-items: center;
-		flex-wrap: wrap;
 		gap: 7px;
-		padding: 7px 11px;
-		border-radius: 13px;
+		min-height: 36px;
+		max-width: calc(100% - 52px);
+		padding: 7px 12px;
+		border-radius: 999px;
 		background: rgba(255, 253, 248, 0.95);
 		border: 1px solid var(--line);
 		box-shadow: var(--shadow-soft);
-		font-size: 0.72rem;
-		font-weight: 800;
+		font-size: 0.76rem;
+		font-weight: 700;
 		color: var(--ink);
 	}
 	.next-water-chip .wglyph {
+		display: inline-flex;
 		color: var(--sky);
-		font-size: 0.9rem;
+	}
+	.next-water-chip .nw-text {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.next-water-chip strong {
+		font-weight: 900;
 	}
 	.cand-tag {
-		font-size: 0.72rem;
+		flex: 0 0 auto;
+		font-size: 0.64rem;
 		font-weight: 900;
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
@@ -424,47 +553,103 @@
 		padding: 2px 6px;
 		border-radius: 6px;
 	}
-
-	.map-meta {
-		position: absolute;
-		right: 12px;
-		top: 12px;
-		z-index: 4;
-		display: grid;
-		justify-items: end;
-		gap: 4px;
-		color: var(--muted);
-		font-size: 0.7rem;
-		font-weight: 900;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		text-shadow: 0 1px 0 rgba(255, 253, 248, 0.7);
-	}
-
-	.map-meta span:not(.north) {
-		padding: 3px 7px;
-		border-radius: 999px;
-		background: rgba(255, 253, 248, 0.72);
-		border: 1px solid rgba(95, 101, 88, 0.1);
-	}
-
-	.north {
-		width: 32px;
-		height: 32px;
+	.compass {
+		flex: 0 0 auto;
+		width: 40px;
+		height: 40px;
 		display: grid;
 		place-items: center;
 		border-radius: 50%;
-		background: rgba(255, 253, 248, 0.92);
+		background: rgba(255, 253, 248, 0.95);
 		color: var(--forest);
-		border: 1px solid rgba(95, 101, 88, 0.14);
+		border: 1px solid var(--line);
 		box-shadow: var(--shadow-soft);
+		font-size: 0.82rem;
+		font-weight: 900;
+	}
+
+	/* right-edge control stack */
+	.map-tools {
+		position: absolute;
+		right: 12px;
+		top: 64px;
+		z-index: 5;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 9px;
+	}
+	.zoom-stack {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 3px;
+		padding: 4px;
+		border-radius: 16px;
+		background: rgba(255, 253, 248, 0.95);
+		border: 1px solid var(--line);
+		box-shadow: var(--shadow-soft);
+	}
+	.tool-btn {
+		width: 44px;
+		height: 44px;
+		display: grid;
+		place-items: center;
+		border-radius: 50%;
+		background: rgba(255, 253, 248, 0.95);
+		border: 1px solid var(--line);
+		box-shadow: var(--shadow-soft);
+		color: var(--forest);
+	}
+	.tool-btn.recenter {
+		background: var(--forest);
+		border-color: var(--forest);
+		color: #f4efe4;
+	}
+	.tool-report :global(button) {
+		min-width: 44px;
+		min-height: 40px;
+		padding: 0 14px;
+		border-radius: 999px;
+		font-size: 0.74rem;
+		box-shadow: var(--shadow-soft);
+	}
+
+	/* orientation strip on the bottom card */
+	.orient {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 6px 10px;
+		margin-bottom: 8px;
+		font-size: 0.66rem;
+		font-weight: 800;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+	.orient-range {
+		color: var(--ink);
+		font-weight: 900;
+	}
+	.orient-offset {
+		color: var(--clay);
+	}
+	.orient-offset.inview {
+		color: var(--forest);
+	}
+	.orient-tag {
+		margin-left: auto;
+		color: var(--muted);
+		font-weight: 800;
+		letter-spacing: 0.02em;
+		text-transform: none;
 	}
 
 	.elev {
 		position: absolute;
 		left: 12px;
 		right: 12px;
-		bottom: 12px;
+		bottom: max(12px, env(safe-area-inset-bottom));
 		z-index: 5;
 		background: var(--surface-strong, #fffdf8);
 		border: 1px solid var(--line);
@@ -485,41 +670,31 @@
 		letter-spacing: 0.09em;
 		color: var(--muted);
 	}
-	/* zoom toggle */
-	.zoom {
-		display: inline-flex;
-		align-items: center;
-		gap: 2px;
-		background: rgba(47, 75, 53, 0.07);
-		border-radius: 8px;
-		padding: 2px;
-	}
+	/* vertical zoom window (right-edge stack) */
 	.zbtn {
-		min-width: 26px;
-		height: 22px;
-		padding: 0 6px;
-		border-radius: 6px;
-		font-size: 0.66rem;
+		width: 38px;
+		min-height: 34px;
+		border-radius: 9px;
+		font-size: 0.78rem;
 		font-weight: 800;
 		color: var(--muted);
 		font-variant-numeric: tabular-nums;
 	}
 	.zbtn.on {
-		background: var(--surface-strong, #fffdf8);
-		color: var(--forest);
+		background: var(--forest);
+		color: #f4efe4;
 		box-shadow: var(--shadow-soft);
 	}
 	.zunit {
-		font-size: 0.66rem;
+		font-size: 0.62rem;
 		font-weight: 800;
 		color: var(--muted);
-		padding: 0 3px 0 2px;
+		padding-bottom: 2px;
 	}
 	/* ascent / descent */
 	.updown {
 		display: flex;
 		gap: 14px;
-		margin-bottom: 4px;
 	}
 	.updown .up {
 		font-size: 0.78rem;
