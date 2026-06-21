@@ -402,7 +402,7 @@
 		padding: 9px 14px;
 		border-radius: 999px;
 		background: rgba(151, 58, 44, 0.12);
-		color: #7c2f24;
+		color: var(--danger);
 		font-weight: 900;
 		font-size: 0.85rem;
 	}
@@ -411,7 +411,7 @@
 		padding: 9px 11px;
 		border-radius: 10px;
 		background: rgba(151, 58, 44, 0.1);
-		color: #6e2d24;
+		color: var(--danger);
 		font-size: 0.88rem;
 		line-height: 1.4;
 		font-weight: 750;
@@ -752,5 +752,29 @@
 		font-size: 1.4rem;
 		color: var(--muted);
 		flex: none;
+	}
+
+	/* Dark mode: several accent tints were hardcoded light-mode values, which
+	   wash out on dark surfaces. Re-tint them with the dark accent values. */
+	@media (prefers-color-scheme: dark) {
+		.bar {
+			background: rgba(242, 234, 219, 0.1);
+		}
+		.safe-btn {
+			background: rgba(152, 196, 142, 0.16);
+		}
+		.help-btn {
+			background: rgba(240, 154, 136, 0.16);
+		}
+		.today-help-note {
+			background: rgba(240, 154, 136, 0.12);
+		}
+		.dot {
+			background: rgba(152, 196, 142, 0.14);
+		}
+		.node.camp .dot,
+		.cand {
+			background: rgba(229, 161, 116, 0.16);
+		}
 	}
 </style>
