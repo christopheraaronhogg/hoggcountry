@@ -84,7 +84,8 @@ console.log('Hogg Country iOS TestFlight lane');
 console.log(`Output: ${relative(repoRoot, outDir)}`);
 console.log(`Proof: ${relative(repoRoot, proofPath)}`);
 if (teamId) console.log(`Team: ${teamId}`);
-if (upload) console.log('Mode: archive and upload to App Store Connect');
+if (diagnoseOnly) console.log('Mode: diagnose only');
+else if (upload) console.log('Mode: archive and upload to App Store Connect');
 else if (archiveOnly) console.log('Mode: archive only');
 else console.log('Mode: archive and export local IPA');
 console.log('');
@@ -97,6 +98,12 @@ try {
   run('release-build-settings', 'bash', [
     '-lc',
     'xcodebuild -showBuildSettings -workspace mobile/ios/App/App.xcworkspace -scheme App -configuration Release | rg -n "(PRODUCT_BUNDLE_IDENTIFIER|DEVELOPMENT_TEAM|CODE_SIGN_STYLE|PROVISIONING_PROFILE_SPECIFIER|MARKETING_VERSION|CURRENT_PROJECT_VERSION|CODE_SIGN_IDENTITY|TARGETED_DEVICE_FAMILY)"'
+  ], { cwd: repoRoot, allowFailure: true });
+  run('ios-signing-readiness', 'bash', [
+    '-lc',
+    teamId
+      ? 'echo "Team override provided; archive will ask Xcode/App Store Connect to provision with that team."'
+      : `xcodebuild -showBuildSettings -workspace mobile/ios/App/App.xcworkspace -scheme App -configuration Release | rg -q "DEVELOPMENT_TEAM = [A-Z0-9]+" && echo "DEVELOPMENT_TEAM is configured." || { echo "Missing DEVELOPMENT_TEAM. Select Chris's Apple Developer Team in Xcode or pass --team-id TEAMID."; exit 1; }`
   ], { cwd: repoRoot, allowFailure: true });
 
   if (diagnoseOnly) {
@@ -253,7 +260,7 @@ ${body}
 }
 
 function writeProof() {
-  const status = exitCode === 0 ? 'passed' : 'blocked';
+  const status = exitCode === 0 && steps.every((step) => step.status === 'pass') ? 'passed' : 'blocked';
   const lines = [
     `# iOS TestFlight lane attempt`,
     '',
@@ -284,7 +291,7 @@ function writeProof() {
   } else if (status === 'passed') {
     lines.push('Upload the exported archive to App Store Connect/TestFlight, then add Dad to a TestFlight group and copy the invite/public link.');
   } else {
-    lines.push('Resolve the first failing step above. If the failing step is `ios-archive` with `requires a development team`, select Chris\'s Apple Developer Team for the App target or rerun with `--team-id TEAMID` after Xcode has a valid Apple account/signing identity.');
+    lines.push('Resolve the first blocked or failing step above. If the blocked step is `ios-signing-readiness` or `ios-archive` with `requires a development team`, select Chris\'s Apple Developer Team for the App target or rerun with `--team-id TEAMID` after Xcode has a valid Apple account/signing identity.');
   }
 
   writeFileSync(proofPath, `${lines.join('\n')}\n`, 'utf8');
