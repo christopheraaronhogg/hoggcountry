@@ -83,6 +83,9 @@ test('server-side auth calls use an absolute same-origin API base in production'
   const hooks = read('apps/openclaw-web/src/hooks.server.ts');
   assert.match(hooks, /loadAuthenticatedUser\(event\.locals\.authToken, event\.fetch, event\.url\.origin\)/u);
 
+  const auth = read('apps/openclaw-web/src/lib/server/auth.ts');
+  assert.match(auth, /const request = origin \? fetch : fetcher/u);
+
   const loginServer = read('apps/openclaw-web/src/routes/login/+page.server.ts');
   assert.match(loginServer, /publicApiBase\(origin\)/u);
   assert.match(loginServer, /fetch, url\.origin/u);

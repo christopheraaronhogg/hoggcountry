@@ -67,7 +67,9 @@ export async function authApi<T>(
   if (!headers.has('Accept')) headers.set('Accept', 'application/json');
   if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
 
-  const response = await fetcher(`${publicApiBase(origin)}${path}`, {
+  const apiBase = publicApiBase(origin);
+  const request = origin ? fetch : fetcher;
+  const response = await request(`${apiBase}${path}`, {
     ...init,
     headers
   });
