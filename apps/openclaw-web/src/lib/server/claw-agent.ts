@@ -55,6 +55,7 @@ import {
 } from './claw-connection';
 import {
   SCOUT_STORED_HISTORY_MESSAGES,
+  applyOpenAIResponsesPayloadCompat,
   resolveClawRuntime,
   simplifyMessages,
   toPiMessage,
@@ -2205,6 +2206,18 @@ function applyOpenCodeGoPayloadCompat(payload: unknown, thinkingEffort: ScoutThi
   return params;
 }
 
+function applyScoutAgentPayloadCompat(runtime: ClawRuntime, payload: unknown, thinkingEffort: ScoutThinkingEffort): unknown {
+  if (runtime.providerId === OPENCODE_GO_PROVIDER_ID) {
+    return applyOpenCodeGoPayloadCompat(payload, thinkingEffort);
+  }
+
+  if (runtime.model.api === 'openai-responses') {
+    return applyOpenAIResponsesPayloadCompat(payload);
+  }
+
+  return payload;
+}
+
 function userBlocksSummary(record: WorkspaceRecord): string[] {
   return record.sections
     .flatMap((section) =>
@@ -2498,7 +2511,8 @@ async function extractFactCandidatesFromTurn(
     },
     sessionId: `workspace:${record.workspaceId}:claw-fact-extract:${reply.id}`,
     transport: 'sse',
-    getApiKey: async () => runtime.apiKey
+    getApiKey: async () => runtime.apiKey,
+    onPayload: (payload) => applyScoutAgentPayloadCompat(runtime, payload, 'low')
   });
 
   await extractor.prompt([
@@ -2642,7 +2656,7 @@ export async function replyInWorkspaceClaw(
         addUniqueSourceReceipts(toolSourceReceipts, receipts);
         return undefined;
       },
-      onPayload: runtime.providerId === OPENCODE_GO_PROVIDER_ID ? (payload) => applyOpenCodeGoPayloadCompat(payload, thinkingEffort) : undefined
+      onPayload: (payload) => applyScoutAgentPayloadCompat(runtime, payload, thinkingEffort)
     });
 
     if (options?.onTextDelta || options?.onThinkingActivity) {

@@ -6,6 +6,7 @@ import {
   type ToolResultMessage,
   type UserMessage
 } from '@mariozechner/pi-ai';
+import { createHash } from 'node:crypto';
 import { resolveOpenAICodexApiKey, type OpenAICodexCredentials } from '$lib/server/claw-openai-codex';
 import { decryptProviderJson } from '$lib/server/provider-crypto';
 import type { WorkspaceClawMessage, WorkspaceRecord } from '$lib/server/workspace-store';
@@ -22,6 +23,7 @@ import {
 } from './claw-connection';
 
 const OPENCODE_GO_REPLY_MAX_TOKENS = 4000;
+const OPENAI_PROMPT_CACHE_KEY_MAX_CHARS = 64;
 export const SCOUT_STORED_HISTORY_MESSAGES = 200;
 
 const ZERO_USAGE = {
@@ -108,6 +110,32 @@ function getOpenCodeGoApiKey(): string {
     throw new Error('OPENCODE_API_KEY is required for the opencode-go Scout lane.');
   }
   return apiKey;
+}
+
+function compactOpenAIPromptCacheKey(value: string): string {
+  const normalized = value.trim();
+  if (normalized.length <= OPENAI_PROMPT_CACHE_KEY_MAX_CHARS) return normalized;
+
+  const digest = createHash('sha256').update(normalized).digest('hex').slice(0, 32);
+  return `scout_${digest}`;
+}
+
+export function applyOpenAIResponsesPayloadCompat(payload: unknown): unknown {
+  if (!payload || typeof payload !== 'object') return payload;
+
+  const params = payload as { prompt_cache_key?: unknown };
+  if (typeof params.prompt_cache_key === 'string') {
+    const compacted = compactOpenAIPromptCacheKey(params.prompt_cache_key);
+    if (compacted) {
+      params.prompt_cache_key = compacted;
+    } else {
+      delete params.prompt_cache_key;
+    }
+  } else if (params.prompt_cache_key !== undefined) {
+    delete params.prompt_cache_key;
+  }
+
+  return params;
 }
 
 async function loadConnectedCredentials(record: WorkspaceRecord): Promise<OpenAICodexCredentials> {

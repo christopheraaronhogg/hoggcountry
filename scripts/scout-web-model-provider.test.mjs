@@ -43,6 +43,7 @@ const {
   replaceWorkspaceClawMessages
 } = await import('../apps/openclaw-web/src/lib/server/workspace-store.ts');
 const {
+  applyOpenAIResponsesPayloadCompat,
   simplifyMessages,
   toPiMessage
 } = await import('../apps/openclaw-web/src/lib/server/claw-runtime.ts');
@@ -169,4 +170,18 @@ test('OpenAI API workspace messages round-trip through the Pi adapter', () => {
   assert.equal(roundTripped.providerId, OPENAI_API_PROVIDER_ID);
   assert.equal(roundTripped.model, 'gpt-5.5');
   assert.equal(roundTripped.text, workspaceMessage.text);
+});
+
+test('OpenAI Responses payload cache keys stay within the API limit', () => {
+  const payload = {
+    model: 'gpt-5.5',
+    prompt_cache_key: 'workspace:dad-private-launch-workspace:claw-fact-extract:claw-assistant-long-message-id'
+  };
+
+  const normalized = applyOpenAIResponsesPayloadCompat(payload);
+
+  assert.equal(normalized, payload);
+  assert.equal(typeof payload.prompt_cache_key, 'string');
+  assert.ok(payload.prompt_cache_key.length <= 64);
+  assert.match(payload.prompt_cache_key, /^scout_[a-f0-9]{32}$/u);
 });
