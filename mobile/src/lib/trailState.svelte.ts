@@ -1,6 +1,5 @@
 import { browser } from '$app/environment';
 
-import { migrateTab } from './types';
 import type {
 	ChatMessage,
 	CheckInStatus,
@@ -33,6 +32,11 @@ import {
 	createDefaultTrailState,
 	resetToUncalibratedStarterState
 } from './trail-state-defaults';
+import {
+	parsePersistedTrailState,
+	snapshotTrailState,
+	type PersistedTrailState
+} from './trail-state-persistence';
 import {
 	prepareQueuedReportsForSync,
 	settledSyncState,
@@ -111,8 +115,6 @@ const REQUIRE_GEMMA = MODEL_POLICY === 'gemma4-only';
 const HIKE_START_DATE = '2026-02-01';
 
 const mobilePersistence = browser ? createMobilePersistenceAdapter() : null;
-
-type PersistedState = TrailState;
 
 /** A write-action Scout proposes from chat, rendered as a confirm card. */
 type ProposedAction = { id: string; title: string; detail: string; confirmLabel: string };
@@ -197,7 +199,7 @@ class TrailAssistantStore {
 
 		$effect.root(() => {
 			$effect(() => {
-				const snapshot = this.#snapshot();
+				const snapshot = snapshotTrailState(this.#state);
 				if (!this.#stateHydrated) return;
 				void this.#persistState(snapshot);
 			});
@@ -217,19 +219,7 @@ class TrailAssistantStore {
 		}
 
 		try {
-			const parsed = JSON.parse(raw) as PersistedState;
-			this.#state = { ...createDefaultTrailState(), ...parsed };
-			// Persisted activeTab may reference a tab that no longer exists after the
-			// IA change (Plan/Town/Safety/You) — map it onto the new pillars.
-			this.#state.activeTab = migrateTab(this.#state.activeTab);
-			// State persisted before "My hike" calibration existed has no profile —
-			// fall back to the uncalibrated default so first-run setup still appears.
-			if (!this.#state.hikeProfile?.mode) {
-				this.#state = resetToUncalibratedStarterState(this.#state);
-			}
-			if (!Array.isArray(this.#state.documents)) {
-				this.#state.documents = [];
-			}
+			this.#state = parsePersistedTrailState(raw);
 		} catch (error) {
 			console.error('Failed to restore Trail Assistant state', error);
 		} finally {
@@ -237,7 +227,7 @@ class TrailAssistantStore {
 		}
 	}
 
-	async #persistState(snapshot: PersistedState) {
+	async #persistState(snapshot: PersistedTrailState) {
 		if (!this.#stateStorage) return;
 		try {
 			await this.#stateStorage.set(STORAGE_KEY, JSON.stringify(snapshot));
@@ -292,29 +282,6 @@ class TrailAssistantStore {
 		if (!adoption) return;
 		this.#lastAutoGpsAt = adoption.recordedAt;
 		await this.updateCurrentMile(adoption.mile, 'gps');
-	}
-
-	#snapshot(): PersistedState {
-		return {
-			activeTab: this.#state.activeTab,
-			hikeProfile: { ...this.#state.hikeProfile },
-			coachMessages: [...this.#state.coachMessages],
-			lastCheckIn: { ...this.#state.lastCheckIn },
-			checkInHistory: [...this.#state.checkInHistory],
-			documents: this.#state.documents.map((document) => ({ ...document })),
-			trailPulseReports: [...this.#state.trailPulseReports],
-			seenTrailPulseReportIds: [...this.#state.seenTrailPulseReportIds],
-			privacySettings: { ...this.#state.privacySettings },
-			trailSettings: { ...this.#state.trailSettings },
-			trailLogSettings: { ...this.#state.trailLogSettings },
-			onlineStatus: this.#state.onlineStatus,
-			syncState: this.#state.syncState,
-			currentMile: this.#state.currentMile,
-			dayNumber: this.#state.dayNumber,
-			nextCheckInDueAt: this.#state.nextCheckInDueAt,
-			supportCircle: [...this.#state.supportCircle],
-			lastSyncAt: this.#state.lastSyncAt
-		};
 	}
 
 	async #loadFieldPack() {
