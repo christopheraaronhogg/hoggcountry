@@ -73,27 +73,29 @@
     },
     "apple-archive-upload": {
       "status": "verified",
-      "verifiedAt": "2026-06-21T12:37:00Z",
+      "verifiedAt": "2026-06-21T14:42:37Z",
       "verifiedBy": "Codex on Chris Hogg's local checkout plus App Store Connect API",
-      "summary": "Uploaded Hoggcountry iOS version 1.0 build 2 to App Store Connect. Apple processed delivery UUID 7f5f5216-7145-4839-b7ed-dcab3702ea41 to build-status VALID. Build id 7f5f5216-7145-4839-b7ed-dcab3702ea41 is READY_FOR_BETA_TESTING internally and READY_FOR_BETA_SUBMISSION externally.",
+      "summary": "Uploaded Hoggcountry iOS version 1.0 build 3 to App Store Connect. Apple processed build id 61615b00-b0df-4d64-aad6-8330c64bf2a2 to processingState VALID; external beta state is READY_FOR_BETA_SUBMISSION.",
       "files": [
-        "docs/launch/proof/ios-testflight-upload-2026-06-21.md"
+        "docs/launch/proof/ios-testflight-upload-2026-06-21.md",
+        "docs/launch/proof/ios-testflight-attempt-2026-06-21T14-36-45-831Z.md",
+        "docs/launch/proof/ios-testflight-build-3-2026-06-21.md"
       ],
       "commands": [
-        "xcodebuild -exportArchive ... -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_T272T83N98.p8 -authenticationKeyID T272T83N98 -authenticationKeyIssuerID <issuer>",
-        "xcrun altool --build-status --delivery-id 7f5f5216-7145-4839-b7ed-dcab3702ea41 --wait --apiKey T272T83N98 --apiIssuer <issuer> --output-format json",
-        "GET https://api.appstoreconnect.apple.com/v1/builds/7f5f5216-7145-4839-b7ed-dcab3702ea41?include=buildBetaDetail,betaGroups"
+        "npm run ios:testflight -- --upload --team-id 3CFU9J87A5 --asc-key-path ~/.appstoreconnect/private_keys/AuthKey_T272T83N98.p8 --asc-key-id T272T83N98 --asc-issuer-id <issuer>",
+        "GET https://api.appstoreconnect.apple.com/v1/builds/61615b00-b0df-4d64-aad6-8330c64bf2a2?include=buildBetaDetail,betaGroups"
       ]
     },
     "dad-testflight-invite": {
       "status": "blocked",
-      "verifiedAt": "2026-06-21T12:47:21Z",
+      "verifiedAt": "2026-06-21T14:42:37Z",
       "verifiedBy": "Codex via App Store Connect API",
-      "summary": "Created the external Dad Pilot beta group, attached build 1.0 (2), created Dad's tester record for jimmy@hoggs.net, applied the required Beta App Review contact details, added the en-US Beta App Description/localization, and submitted build 1.0 (2) for external Beta App Review. Apple now reports externalBuildState WAITING_FOR_BETA_REVIEW. Dad's tester remains NOT_INVITED until Apple approves external beta testing or auto-sends the invite.",
+      "summary": "Dad Pilot is now attached to Hoggcountry iOS build 1.0 (3), and build 1.0 (2) was removed from Dad Pilot. Build 3 is READY_FOR_BETA_SUBMISSION, but Apple rejected the build 3 beta submission because build 2 is still WAITING_FOR_BETA_REVIEW in the same train.",
       "files": [
-        "docs/launch/proof/ios-testflight-upload-2026-06-21.md"
+        "docs/launch/proof/ios-testflight-upload-2026-06-21.md",
+        "docs/launch/proof/ios-testflight-build-3-2026-06-21.md"
       ],
-      "blocker": "Wait for Apple Beta App Review approval, then confirm or send Dad's TestFlight invite."
+      "blocker": "Wait for Apple to finish build 2 beta review, then submit build 3 for Beta App Review. After build 3 approval, enable the Dad Pilot public link with limit 5 and send Chris the link."
     },
     "android-upload-keystore": {
       "status": "verified",
