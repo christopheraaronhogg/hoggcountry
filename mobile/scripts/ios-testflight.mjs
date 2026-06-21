@@ -5,7 +5,7 @@
 // Xcode Accounts or an App Store Connect API key supplied through flags/env.
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -275,6 +275,9 @@ ${body}
 
 function writeProof() {
   const status = exitCode === 0 && steps.every((step) => step.status === 'pass') ? 'passed' : 'blocked';
+  const failedUploadStep = steps.find((step) => step.label === 'upload-to-app-store-connect' && step.status === 'fail');
+  const failedUploadLog = failedUploadStep ? safeReadFile(failedUploadStep.logPath) : '';
+  const failedUseAccounts = /Failed to Use Accounts|DVTDeveloperAccountManager|Invalid credentials/iu.test(failedUploadLog);
   const lines = [
     `# iOS TestFlight lane attempt`,
     '',
@@ -305,6 +308,8 @@ function writeProof() {
     lines.push('Wait for App Store Connect processing, then add Dad to a TestFlight group and copy the invite/public link.');
   } else if (status === 'passed') {
     lines.push('Upload the exported archive to App Store Connect/TestFlight, then add Dad to a TestFlight group and copy the invite/public link.');
+  } else if (failedUseAccounts) {
+    lines.push('Xcode signed and archived the app, but App Store Connect upload auth failed with `Failed to Use Accounts`. Re-auth Xcode Settings > Accounts for Chris\'s Apple ID, or rerun with App Store Connect API key flags/env: `--asc-key-path`, `--asc-key-id`, and `--asc-issuer-id`.');
   } else {
     lines.push('Resolve the first blocked or failing step above. If the blocked step is `ios-signing-readiness` or `ios-archive` with `requires a development team`, select Chris\'s Apple Developer Team for the App target or rerun with `--team-id TEAMID` after Xcode has a valid Apple account/signing identity.');
   }
@@ -366,4 +371,12 @@ function escapeXml(value) {
 function tailText(text, maxLines) {
   const lines = text.trimEnd().split('\n');
   return lines.slice(Math.max(0, lines.length - maxLines)).join('\n');
+}
+
+function safeReadFile(path) {
+  try {
+    return readFileSync(path, 'utf8');
+  } catch {
+    return '';
+  }
 }
