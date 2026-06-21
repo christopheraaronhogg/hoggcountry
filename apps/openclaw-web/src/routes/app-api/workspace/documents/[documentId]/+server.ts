@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { requireWorkspace, ok } from '$lib/server/workspace-endpoint';
-import { deleteWorkspaceDocument, getWorkspaceDocument, updateWorkspaceDocumentState } from '$lib/server/workspace-store';
+import { deleteWorkspaceDocument, getWorkspaceDocument, updateWorkspaceDocumentContent, updateWorkspaceDocumentState } from '$lib/server/workspace-store';
 import type { ImportedDocumentStatus, ImportedDocumentVisibility } from '@hoggcountry/manual-core';
 
 const STATUSES = new Set(['draft', 'needs-review', 'active', 'archived']);
@@ -39,6 +39,19 @@ export const PATCH: RequestHandler = async (event) => {
     : null;
 
   try {
+    if (typeof payload?.textContent === 'string') {
+      const title = typeof payload.title === 'string' ? payload.title : null;
+      const note = typeof payload.note === 'string' ? payload.note : null;
+      const result = await updateWorkspaceDocumentContent(workspaceId, betaProfile, {
+        documentId: event.params.documentId,
+        title,
+        textContent: payload.textContent,
+        note
+      });
+
+      return ok(result);
+    }
+
     const result = await updateWorkspaceDocumentState(workspaceId, betaProfile, {
       documentId: event.params.documentId,
       status,
@@ -54,6 +67,10 @@ export const PATCH: RequestHandler = async (event) => {
     }
 
     if (caught instanceof Error && caught.message === 'Document version not found.') {
+      throw error(400, caught.message);
+    }
+
+    if (caught instanceof Error && caught.message === 'Document text is required.') {
       throw error(400, caught.message);
     }
 

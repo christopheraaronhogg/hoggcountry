@@ -532,4 +532,80 @@
     gap: 0.45rem;
     font-weight: 700;
   }
+
+  @media (max-width: 620px) {
+    :global(.hero-panel) {
+      border-radius: 22px;
+      padding: 1rem;
+    }
+
+    :global(.hero-panel h1) {
+      font-size: clamp(2rem, 11vw, 3rem);
+      line-height: 0.98;
+    }
+
+    :global(.hero-panel .lede) {
+      font-size: 0.9rem;
+      line-height: 1.42;
+    }
+
+    :global(.stats-grid) {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 0.55rem;
+    }
+
+    :global(.stats-grid .card) {
+      border-radius: 17px;
+      padding: 0.78rem;
+    }
+
+    :global(.stats-grid strong) {
+      font-size: 1.55rem;
+      line-height: 1;
+    }
+
+    .loadout-row {
+      align-items: flex-start;
+      min-height: 3.25rem;
+      padding: 0.72rem 0.1rem;
+    }
+
+    .loadout-row-name {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 0.32rem;
+    }
+
+    .loadout-row-weight {
+      padding-top: 0.1rem;
+      font-size: 0.86rem;
+      font-weight: 850;
+    }
+
+    .loadout-form {
+      gap: 0.72rem;
+      margin-top: 0.55rem;
+      border-radius: 17px;
+      padding: 0.72rem;
+    }
+
+    .loadout-flags {
+      grid-template-columns: 1fr;
+    }
+
+    .loadout-check,
+    .loadout-form input,
+    .loadout-form select,
+    .loadout-form textarea,
+    .subtle-actions .btn {
+      min-height: 44px;
+    }
+
+    .subtle-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.55rem;
+      width: 100%;
+    }
+  }
 </style>

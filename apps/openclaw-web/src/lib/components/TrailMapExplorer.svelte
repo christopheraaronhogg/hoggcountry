@@ -958,7 +958,7 @@
   });
 </script>
 
-<section class="trail-map-shell" class:publicRoute aria-label={title}>
+<section class="trail-map-shell" class:publicRoute class:appMode aria-label={title}>
   <div class="map-host" bind:this={host}></div>
   <div class="map-shade" aria-hidden="true"></div>
   <svg class="icon-sprite" aria-hidden="true" focusable="false">
@@ -2040,6 +2040,11 @@
       min-height: 100svh;
     }
 
+    .trail-map-shell.appMode {
+      height: calc(100svh - 5rem - env(safe-area-inset-bottom));
+      min-height: calc(100svh - 5rem - env(safe-area-inset-bottom));
+    }
+
     .map-hud-top {
       align-items: center;
       padding-right: 0.7rem;
@@ -2064,6 +2069,11 @@
     .detail-panel {
       max-height: 49svh;
       overflow-y: auto;
+    }
+
+    .trail-map-shell.appMode .detail-panel {
+      bottom: calc(0.75rem + 4.65rem + env(safe-area-inset-bottom));
+      max-height: 42svh;
     }
 
     .detail-grid {

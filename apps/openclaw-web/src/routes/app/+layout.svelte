@@ -23,14 +23,9 @@
       icon: 'map'
     },
     {
-      href: '/app/loadout',
-      label: 'Loadout',
-      icon: 'loadout'
-    },
-    {
-      href: '/app/profile',
-      label: 'Profile',
-      icon: 'profile'
+      href: '/app/trail',
+      label: 'Trail',
+      icon: 'trail'
     }
   ];
 
@@ -49,7 +44,15 @@
     const path = page.url.pathname;
     if (href === '/app') return path === '/app';
     if (href === '/app/scout') return path === '/app/scout' || path.startsWith('/app/scout/') || path.startsWith('/app/claw') || path.startsWith('/app/plan');
-    if (href === '/app/profile') return path.startsWith('/app/profile') || path.startsWith('/app/setup');
+    if (href === '/app/trail') {
+      return path.startsWith('/app/trail')
+        || path.startsWith('/app/docs')
+        || path.startsWith('/app/resources')
+        || path.startsWith('/app/manual')
+        || path.startsWith('/app/loadout')
+        || path.startsWith('/app/profile')
+        || path.startsWith('/app/setup');
+    }
     if (href === '/app/admin/resources') return path.startsWith('/app/admin');
     return path.startsWith(href);
   }
@@ -112,8 +115,8 @@
           <svg viewBox="0 0 24 24"><path d="M7 4h8l3 3v13H7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><path d="M10 11h5M10 15h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
         {:else if tab.icon === 'map'}
           <svg viewBox="0 0 24 24"><path d="M8 5 3 7v13l5-2 8 2 5-2V5l-5 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><path d="M8 5v13M16 7v13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
-        {:else if tab.icon === 'loadout'}
-          <svg viewBox="0 0 24 24"><path d="M7 9a5 5 0 0 1 10 0v11H7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><path d="M9 15h6M9 5V3h6v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        {:else if tab.icon === 'trail'}
+          <svg viewBox="0 0 24 24"><path d="M4 20c3.5-5.8 6-9.5 8-11.2 2-1.8 4.7-2.4 8-1.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /><path d="M9 20c1.1-2.4 2.4-4.1 4-5.1 1.6-1 3.4-1.3 5.5-0.9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /><path d="M8 6h.01M15 4h.01" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" /></svg>
         {:else}
           <svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
         {/if}
@@ -237,9 +240,8 @@
     left: 0;
     z-index: 40;
     display: none;
-    /* Five tabs (Today / Plan / Map / Loadout / Profile) must fit at 360px. */
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    min-height: calc(3.15rem + env(safe-area-inset-bottom));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    min-height: calc(4.15rem + env(safe-area-inset-bottom));
     border-top: 1px solid rgba(39, 51, 43, 0.14);
     background: #fffdf8;
     box-shadow: none;
@@ -252,7 +254,7 @@
     place-items: center;
     align-content: center;
     gap: 0.12rem;
-    min-height: 2.34rem;
+    min-height: 3.12rem;
     border-radius: 14px;
     color: #2f382e;
     text-decoration: none;
@@ -271,7 +273,7 @@
   }
 
   .app-bottom-nav strong {
-    font-size: 0.6rem;
+    font-size: 0.72rem;
     font-weight: 850;
     letter-spacing: 0.01em;
     line-height: 1;
@@ -279,16 +281,16 @@
   }
 
   .app-bottom-nav a.is-active {
-    min-height: 2.18rem;
-    margin: 0.16rem 0.24rem;
+    min-height: 2.85rem;
+    margin: 0.12rem 0.2rem;
     background: #2e4334;
-    color: #b8c1b7;
+    color: #fffdf8;
   }
 
   @media (max-width: 760px) {
     :global(.site-main) {
       padding-top: 1.15rem;
-      padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+      padding-bottom: calc(6.7rem + env(safe-area-inset-bottom));
     }
 
     .app-topbar {

@@ -37,7 +37,7 @@
   }
 </script>
 
-<section class="card hero-panel">
+<section class="card hero-panel setup-hero">
   <div>
     <p class="eyebrow">Optional setup</p>
     <h1>Tell Scout what you know. Skip what you don’t.</h1>
@@ -52,7 +52,7 @@
   </div>
 </section>
 
-<form class="card panel-copy" style="margin-top:1rem; display:grid; gap:1rem;" onsubmit={handleSubmit}>
+<form class="card panel-copy setup-form" onsubmit={handleSubmit}>
   <p class="muted" style="margin:0;">Everything below is optional. Defaults are safe enough to start; better details just help Scout personalize faster.</p>
   <div class="grid-two">
     <label>
@@ -164,3 +164,78 @@
     <a class="btn btn-ghost" href="/app/scout">Skip for now</a>
   </div>
 </form>
+
+<style>
+  .setup-hero,
+  .setup-form {
+    width: min(100%, 760px);
+    margin-inline: auto;
+  }
+
+  .setup-form {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .setup-form label {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .setup-form input,
+  .setup-form select,
+  .setup-form textarea {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid rgba(77, 89, 74, 0.2);
+    border-radius: 14px;
+    background: rgba(255, 253, 248, 0.95);
+    color: #27332b;
+    font: inherit;
+    padding: 0.72rem 0.82rem;
+  }
+
+  .setup-form textarea {
+    line-height: 1.45;
+  }
+
+  @media (max-width: 620px) {
+    .setup-hero {
+      border-radius: 22px;
+      padding: 1rem;
+    }
+
+    .setup-hero h1 {
+      font-size: clamp(2.1rem, 12vw, 3.2rem);
+      line-height: 0.98;
+    }
+
+    .setup-hero .lede {
+      font-size: 0.9rem;
+      line-height: 1.42;
+    }
+
+    .setup-form {
+      border-radius: 22px;
+      padding: 1rem;
+      padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+    }
+
+    .grid-two {
+      grid-template-columns: 1fr;
+      gap: 0.78rem;
+    }
+
+    .subtle-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.55rem;
+    }
+
+    .subtle-actions .btn {
+      justify-content: center;
+      min-height: 44px;
+    }
+  }
+</style>

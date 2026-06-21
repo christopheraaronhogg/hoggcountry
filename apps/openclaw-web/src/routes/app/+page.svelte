@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { buildTodayCards, getTrailPhase, TRAIL_FACTS, type TodayCard } from '@hoggcountry/trail-data';
-  import { getProfile, listImportedDocuments, listWorkspaceResources, setCurrentMile } from '$lib/manual-db';
+  import { createDefaultProfile, getProfile, initializeManual, listImportedDocuments, listWorkspaceResources, setCurrentMile } from '$lib/manual-db';
   import {
     offlineFieldPackSummary,
     readOfflineFieldPack,
@@ -235,10 +235,27 @@
     locationError = '';
 
     try {
-      const nextProfile = await setCurrentMile(nextMile);
-      if (!nextProfile) throw new Error('Set up your hiker profile before saving a mile.');
+      const hadProfile = Boolean(profile);
+      let nextProfile: ManualProfile | null = null;
+
+      if (!hadProfile) {
+        const starter = {
+          ...createDefaultProfile({
+            trailName: data.betaProfile?.trailName || data.betaProfile?.name || ''
+          }),
+          currentMile: nextMile
+        };
+        await initializeManual(starter);
+        nextProfile = await getProfile().catch(() => starter);
+      } else {
+        nextProfile = await setCurrentMile(nextMile);
+      }
+
+      if (!nextProfile) throw new Error('Scout could not save that mile. Try setup from Profile.');
       applyProfile(nextProfile);
-      mileNotice = `Manual mile saved: AT mile ${nextProfile.currentMile.toFixed(1)}.`;
+      mileNotice = hadProfile
+        ? `Manual mile saved: AT mile ${nextProfile.currentMile.toFixed(1)}.`
+        : `Profile started at AT mile ${nextProfile.currentMile.toFixed(1)}.`;
       if (online) void saveFieldPack(true);
       void loadTrailAhead();
     } catch (caught) {
@@ -448,11 +465,11 @@
 
   <section class="mile-editor" id="manual-mile" aria-label="Manual mile update">
     <div>
-      <strong>Manual mile</strong>
-      <small>Use this when GPS is noisy or off trail.</small>
+      <strong>{profile ? 'Manual mile' : 'Start at a mile'}</strong>
+      <small>{profile ? 'Use this when GPS is noisy or off trail.' : 'Creates your profile and unlocks trail-ahead data.'}</small>
     </div>
     <input type="number" inputmode="decimal" min="0" max={TRAIL_FACTS.totalMiles} step="0.1" bind:value={mileDraft} placeholder="0.0" />
-    <button type="button" onclick={saveMile} disabled={mileBusy}>{mileBusy ? 'Saving' : 'Set'}</button>
+    <button type="button" onclick={saveMile} disabled={mileBusy}>{mileBusy ? 'Saving' : profile ? 'Set' : 'Start'}</button>
   </section>
 
   {#if locationNotice}<p class="hud-note success-note">{locationNotice}</p>{/if}
@@ -549,7 +566,7 @@
       <strong>Field pack</strong>
       <small>{fieldPackStatus}</small>
     </div>
-    <a href="/app/docs">Docs</a>
+    <a href="/app/trail">Trail</a>
     <a href="/app/map">Map</a>
   </section>
 </section>

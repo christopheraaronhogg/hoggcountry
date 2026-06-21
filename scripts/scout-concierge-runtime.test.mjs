@@ -61,12 +61,15 @@ test('Scout chat keeps source receipt rendering stable and replies copyable', ()
   assert.doesNotMatch(page, /\{#each\s+(?:message\.sourceReceipts|activeTurnSourceReceipts|dailyBrief\.sourceReceipts)[^`]+`[^`]*\$\{receipt\.kind\}-\$\{receipt\.label\}`/u);
 });
 
-test('Today manual mile save is independent from GPS errors', () => {
+test('Today manual mile save does not require GPS and can start a profile', () => {
   const page = read('apps/openclaw-web/src/routes/app/+page.svelte');
   const endpoint = read('apps/openclaw-web/src/routes/app-api/workspace/profile/current-mile/+server.ts');
 
   assert.match(page, /let mileNotice = \$state\(''\)/u);
   assert.match(page, /locationError = '';\s*\n\s*try \{/u);
+  assert.match(page, /createDefaultProfile/u);
+  assert.match(page, /initializeManual\(starter\)/u);
+  assert.match(page, /Profile started at AT mile/u);
   assert.match(page, /Manual mile saved: AT mile/u);
   assert.match(page, /\{#if mileNotice\}<p class="hud-note success-note">\{mileNotice\}<\/p>\{\/if\}/u);
   assert.match(endpoint, /getWorkspace\(workspaceId, betaProfile\)/u);

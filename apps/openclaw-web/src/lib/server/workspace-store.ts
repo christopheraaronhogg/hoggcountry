@@ -1752,6 +1752,65 @@ export async function updateWorkspaceDocumentState(
   };
 }
 
+export async function updateWorkspaceDocumentContent(
+  workspaceId: string,
+  betaProfile: BetaProfileCookie,
+  input: {
+    documentId: string;
+    title?: string | null;
+    textContent: string;
+    note?: string | null;
+  }
+): Promise<{
+  readonly workspace: WorkspaceSnapshot;
+  readonly document: ImportedDocument;
+}> {
+  const record = await getWorkspaceRecord(workspaceId, betaProfile);
+  const existing = record.documents.find((document) => document.id === input.documentId);
+
+  if (!existing) {
+    throw new Error('Document not found.');
+  }
+
+  const textContent = input.textContent.trim();
+  if (!textContent) {
+    throw new Error('Document text is required.');
+  }
+
+  const savedAt = nowIso();
+  const title = input.title?.trim() || existing.title;
+  const version = createNextDocumentVersion(existing, {
+    title,
+    textContent,
+    note: input.note?.trim() || 'Edited by user in Scout Docs.',
+    author: 'user',
+    createdAt: savedAt
+  });
+  const document = applyDocumentVersion(
+    {
+      ...existing,
+      fileName: existing.fileName || `${slugifyDocumentTitle(title)}.md`
+    },
+    version,
+    'active',
+    savedAt
+  );
+
+  const workspace = sanitizeRecord(
+    await persist({
+      ...record,
+      documents: record.documents
+        .map((item) => (item.id === input.documentId ? document : item))
+        .sort((left, right) => (right.updatedAt ?? right.importedAt).localeCompare(left.updatedAt ?? left.importedAt))
+    })
+  );
+
+  return {
+    workspace,
+    document
+  };
+}
+
 export async function deleteWorkspaceDocument(
   workspaceId: string,
   betaProfile: BetaProfileCookie,

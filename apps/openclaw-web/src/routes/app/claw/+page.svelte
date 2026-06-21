@@ -2295,6 +2295,8 @@
   }
 
   onMount(() => {
+    document.body.classList.add('scout-fullscreen-lock');
+
     try {
       const storedLastSeenAssistantId = window.localStorage.getItem('scout:last-seen-assistant-message-id');
       if (storedLastSeenAssistantId) {
@@ -2374,6 +2376,7 @@
 
   onDestroy(() => {
     componentDestroyed = true;
+    document.body.classList.remove('scout-fullscreen-lock');
     if (locationWatchId !== null && typeof navigator !== 'undefined' && 'geolocation' in navigator) {
       navigator.geolocation.clearWatch(locationWatchId);
     }
@@ -2895,7 +2898,7 @@
     height: 100%;
   }
 
-  :global(body) {
+  :global(body.scout-fullscreen-lock) {
     overflow: hidden !important;
     background-color: var(--bg, #f5f2e8) !important;
     background-image:
@@ -2909,7 +2912,7 @@
     background-attachment: fixed !important;
   }
 
-  :global(.site-shell) {
+  :global(body.scout-fullscreen-lock .site-shell) {
     height: 100dvh;
     min-height: 100dvh;
     overflow: hidden;
@@ -2921,11 +2924,11 @@
       var(--bg, #f5f2e8);
   }
 
-  :global(.site-header) {
+  :global(body.scout-fullscreen-lock .site-header) {
     display: none;
   }
 
-  :global(.site-main) {
+  :global(body.scout-fullscreen-lock .site-main) {
     display: flex;
     flex: 1 1 auto;
     min-height: 0;
@@ -2933,7 +2936,7 @@
     padding: 0 !important;
   }
 
-  :global(.site-main > .container) {
+  :global(body.scout-fullscreen-lock .site-main > .container) {
     display: flex;
     flex: 1 1 auto;
     width: 100%;
@@ -2943,7 +2946,7 @@
     padding: 0;
   }
 
-  :global(.app-topbar) {
+  :global(body.scout-fullscreen-lock .app-topbar) {
     display: none !important;
   }
 

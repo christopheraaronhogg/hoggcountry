@@ -256,6 +256,23 @@ export async function updateImportedDocumentState(
   return payload.document;
 }
 
+export async function updateImportedDocumentContent(
+  documentId: string,
+  input: {
+    title: string;
+    textContent: string;
+    note?: string;
+  }
+): Promise<ImportedDocument> {
+  const payload = await requestJson<{ document: ImportedDocument; workspace: WorkspaceSnapshot }>(WORKSPACE_ENDPOINT + `/documents/${documentId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input)
+  });
+  cacheWorkspaceSnapshot(payload.workspace);
+
+  return payload.document;
+}
+
 export async function deleteImportedDocument(documentId: string): Promise<void> {
   await requestJson(WORKSPACE_ENDPOINT + `/documents/${documentId}`, {
     method: 'DELETE'

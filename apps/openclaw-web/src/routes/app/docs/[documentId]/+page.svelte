@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { getImportedDocument, updateImportedDocumentState } from '$lib/manual-db';
+  import { getImportedDocument, updateImportedDocumentContent, updateImportedDocumentState } from '$lib/manual-db';
   import { inferStandardDocumentSlotKey, standardDocumentSlotForKey, type ImportedDocument, type ImportedDocumentStatus, type ImportedDocumentVersion, type ImportedDocumentVisibility } from '@hoggcountry/manual-core';
 
   let { data } = $props<{ data?: { documentId?: string } }>();
@@ -13,6 +13,9 @@
   let saving = $state(false);
   let error = $state('');
   let notice = $state('');
+  let editing = $state(false);
+  let editTitle = $state('');
+  let editBody = $state('');
 
   const statuses: ImportedDocumentStatus[] = ['draft', 'needs-review', 'active', 'archived'];
   const visibilities: ImportedDocumentVisibility[] = ['private', 'trusted-link', 'public'];
@@ -93,6 +96,8 @@
       document = await getImportedDocument(documentId);
       selectedVersionId = document.currentVersionId ?? document.versions?.at(-1)?.id ?? '';
       compareVersionId = sortedVersions(document).find((version) => version.id !== selectedVersionId)?.id ?? '';
+      editTitle = document.title;
+      editBody = currentVersion(document)?.textContent ?? document.textContent;
     } catch (caught) {
       console.error(caught);
       error = caught instanceof Error ? caught.message : 'Could not load this document.';
@@ -115,6 +120,8 @@
     try {
       document = await updateImportedDocumentState(document.id, input);
       selectedVersionId = document.currentVersionId ?? selectedVersionId;
+      editTitle = document.title;
+      editBody = currentVersion(document)?.textContent ?? document.textContent;
       notice = 'Document updated.';
     } catch (caught) {
       console.error(caught);
@@ -126,6 +133,54 @@
 
   async function restoreVersion(version: ImportedDocumentVersion) {
     await updateState({ currentVersionId: version.id, status: 'active' });
+  }
+
+  function startEdit() {
+    const version = selectedVersion();
+    if (!document || !version) return;
+    editTitle = version.title || document.title;
+    editBody = version.textContent;
+    editing = true;
+    error = '';
+    notice = '';
+  }
+
+  function cancelEdit() {
+    editing = false;
+    if (!document) return;
+    editTitle = document.title;
+    editBody = currentVersion(document)?.textContent ?? document.textContent;
+  }
+
+  async function saveManualEdit() {
+    if (!document) return;
+    if (!editBody.trim()) {
+      error = 'Document text is required.';
+      return;
+    }
+
+    saving = true;
+    error = '';
+    notice = '';
+
+    try {
+      document = await updateImportedDocumentContent(document.id, {
+        title: editTitle.trim() || document.title,
+        textContent: editBody,
+        note: 'Manual edit from Scout Docs.'
+      });
+      selectedVersionId = document.currentVersionId ?? '';
+      compareVersionId = sortedVersions(document).find((version) => version.id !== selectedVersionId)?.id ?? '';
+      editTitle = document.title;
+      editBody = currentVersion(document)?.textContent ?? document.textContent;
+      editing = false;
+      notice = 'Saved as a new document version.';
+    } catch (caught) {
+      console.error(caught);
+      error = caught instanceof Error ? caught.message : 'Could not save this document.';
+    } finally {
+      saving = false;
+    }
   }
 
   onMount(() => {
@@ -152,7 +207,10 @@
     <nav class="artifact-toolbar" aria-label="Document actions">
       <a class="toolbar-back" href="/app/docs">← Docs</a>
       <strong>{document.title}</strong>
-      <a class="btn btn-secondary" href={`/app/scout?documentId=${encodeURIComponent(document.id)}&documentAction=review`}>Ask Scout</a>
+      <div class="toolbar-actions">
+        <button class="btn btn-ghost" type="button" onclick={startEdit}>Edit</button>
+        <a class="btn btn-secondary" href={`/app/scout?documentId=${encodeURIComponent(document.id)}&documentAction=review`}>Ask Scout</a>
+      </div>
     </nav>
 
     <section class="document-hero">
@@ -200,7 +258,27 @@
           {/if}
         </div>
 
-        <pre class="document-markdown">{viewedVersion?.textContent ?? document.textContent}</pre>
+        {#if editing}
+          <div class="document-editor" aria-label="Edit document">
+            <label>
+              <span>Title</span>
+              <input bind:value={editTitle} />
+            </label>
+            <label>
+              <span>Body</span>
+              <textarea rows="16" bind:value={editBody}></textarea>
+            </label>
+            <div class="edit-actions">
+              <button class="btn btn-secondary" type="button" disabled={saving || !editBody.trim()} onclick={saveManualEdit}>
+                {saving ? 'Saving…' : 'Save version'}
+              </button>
+              <button class="btn btn-ghost" type="button" disabled={saving} onclick={cancelEdit}>Cancel</button>
+            </div>
+            <p class="muted">Manual edits create a new user-authored version; older versions stay available below.</p>
+          </div>
+        {:else}
+          <pre class="document-markdown">{viewedVersion?.textContent ?? document.textContent}</pre>
+        {/if}
       </section>
 
       <aside class="document-side">
@@ -330,6 +408,12 @@
     padding: 0.45rem 0.8rem;
   }
 
+  .toolbar-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
   .document-hero {
     display: grid;
     gap: 1rem;
@@ -428,6 +512,39 @@
   .document-body-card,
   .side-card {
     padding: 1rem;
+  }
+
+  .document-editor {
+    display: grid;
+    gap: 0.82rem;
+  }
+
+  .document-editor label {
+    margin-top: 0;
+  }
+
+  .document-editor input,
+  .document-editor textarea {
+    width: 100%;
+    border: 1px solid rgba(77, 89, 74, 0.2);
+    border-radius: 14px;
+    background: rgba(255, 253, 248, 0.95);
+    color: #27332b;
+    font: inherit;
+    font-size: 0.96rem;
+    padding: 0.82rem;
+  }
+
+  .document-editor textarea {
+    min-height: 18rem;
+    line-height: 1.45;
+    resize: vertical;
+  }
+
+  .edit-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
   }
 
   .document-side {
@@ -580,6 +697,14 @@
     .artifact-toolbar .btn {
       min-height: 2.15rem;
       padding: 0.35rem 0.62rem;
+    }
+
+    .toolbar-actions {
+      gap: 0.3rem;
+    }
+
+    .toolbar-actions .btn {
+      font-size: 0.78rem;
     }
 
     .document-hero {
