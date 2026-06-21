@@ -49,8 +49,78 @@
       // private mode etc.
     }
   }
-  let detailsOpen = $state(false);
   let layersOpen = $state(false);
+  // Bottom-sheet snap state: 0 = peek (glanceable summary), 1 = half, 2 = full.
+  let sheetSnap = $state<0 | 1 | 2>(0);
+  let shellEl = $state<HTMLElement | null>(null);
+  let capEl = $state<HTMLElement | null>(null);
+  let capHeight = $state(170);
+  let viewHeight = $state(0);
+  let dragging = $state(false);
+  let dragHeight = $state<number | null>(null);
+  let dragStartY = 0;
+  let dragStartHeight = 0;
+  const detailsOpen = $derived(sheetSnap >= 1);
+
+  // Snap to explicit sheet heights rather than translating a full-height
+  // panel: peek shows exactly the measured header, half/full are viewport
+  // fractions. Setting height directly keeps the collapsed state pinned to
+  // the header no matter how the detail body reflows after data loads.
+  function snapHeights(): [number, number, number] {
+    const vh = viewHeight || shellEl?.clientHeight || 800;
+    return [capHeight, Math.round(vh * 0.5), Math.round(vh * 0.86)];
+  }
+
+  const sheetHeight = $derived.by(() => {
+    if (dragging && dragHeight !== null) return dragHeight;
+    void sheetSnap;
+    void capHeight;
+    void viewHeight;
+    return snapHeights()[sheetSnap];
+  });
+
+  function beginSheetDrag(event: PointerEvent) {
+    dragging = true;
+    dragStartY = event.clientY;
+    dragStartHeight = snapHeights()[sheetSnap];
+    dragHeight = dragStartHeight;
+    (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
+  }
+
+  function moveSheetDrag(event: PointerEvent) {
+    if (!dragging) return;
+    const heights = snapHeights();
+    // Dragging up (clientY decreases) grows the sheet.
+    dragHeight = clamp(dragStartHeight + (dragStartY - event.clientY), heights[0], heights[2]);
+  }
+
+  function endSheetDrag() {
+    if (!dragging) return;
+    dragging = false;
+    const heights = snapHeights();
+    const current = dragHeight ?? heights[sheetSnap];
+    let best: 0 | 1 | 2 = 0;
+    let bestDist = Infinity;
+    heights.forEach((height, index) => {
+      const dist = Math.abs(height - current);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = index as 0 | 1 | 2;
+      }
+    });
+    sheetSnap = best;
+    dragHeight = null;
+  }
+
+  function cycleSheet() {
+    sheetSnap = sheetSnap === 2 ? 0 : ((sheetSnap + 1) as 0 | 1 | 2);
+  }
+
+  function zoomBy(delta: number) {
+    if (!map) return;
+    map.setZoom(clamp(map.getZoom() + delta, 3, 17));
+  }
+
   let lastRenderedTerrainMode: TerrainMode | null = null;
   let lastRenderedPlaceMode: PlaceMode | null = null;
   let lastRenderedMile = -1;
@@ -315,6 +385,13 @@
     const remaining = Math.max(0, totalMiles - currentPoint.mile);
     return `${pct.toFixed(0)}% of ${Math.round(totalMiles).toLocaleString()} mi · ${Math.round(remaining).toLocaleString()} mi to Katahdin`;
   });
+  const progressPct = $derived.by(() => {
+    if (!currentPoint || !totalMiles) return 0;
+    return clamp((currentPoint.mile / totalMiles) * 100, 0, 100);
+  });
+  const remainingMiles = $derived.by(() =>
+    currentPoint && totalMiles ? Math.max(0, totalMiles - currentPoint.mile) : 0
+  );
   const signalIsLive = $derived.by(() => {
     if (!currentPoint?.observedAt) return false;
     const observed = new Date(currentPoint.observedAt).getTime();
@@ -894,6 +971,9 @@
     const exact = nearestRoutePosition(lat, lon);
     inspectedMile = exact ? Math.round(exact.mile * 10) / 10 : Math.round(milepostMile(best) * 10) / 10;
     dismissScrubHint();
+    // Surface the detail when a hiker taps a mile, but don't yank a sheet
+    // they've deliberately pulled all the way up.
+    if (sheetSnap === 0) sheetSnap = 1;
   }
 
   onMount(async () => {
@@ -911,8 +991,6 @@
       maxZoom: 17,
       attribution: 'Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap'
     }).addTo(map);
-
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     map.on('click', (event: { latlng: { lat: number; lng: number } }) => {
       inspectFromLatLng(event.latlng.lat, event.latlng.lng);
@@ -956,9 +1034,25 @@
     void selectedHistoryIndex;
     addTrackerLayer(false);
   });
+
+  // Track header height (peek size) and the shell's height (the basis for the
+  // half/full snaps) so the snap math reflects the live layout. offsetHeight
+  // is not reactive, so observe both with a ResizeObserver.
+  $effect(() => {
+    if (!capEl || !shellEl) return;
+    const measure = () => {
+      if (capEl) capHeight = capEl.offsetHeight;
+      if (shellEl) viewHeight = shellEl.clientHeight;
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(capEl);
+    observer.observe(shellEl);
+    return () => observer.disconnect();
+  });
 </script>
 
-<section class="trail-map-shell" class:publicRoute class:appMode aria-label={title}>
+<section class="trail-map-shell" class:publicRoute class:appMode class:sheet-full={sheetSnap === 2} aria-label={title} bind:this={shellEl} style:--sheet-h={`${sheetHeight}px`}>
   <div class="map-host" bind:this={host}></div>
   <div class="map-shade" aria-hidden="true"></div>
   <svg class="icon-sprite" aria-hidden="true" focusable="false">
@@ -1030,58 +1124,83 @@
       <path d="M20 12a8 8 0 1 1-2.3-5.7"></path>
       <path d="M20 4v6h-6"></path>
     </symbol>
+    <symbol id="trail-map-icon-locate" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3.4"></circle>
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>
+    </symbol>
   </svg>
 
-  <header class="map-hud map-hud-top">
-    <div class="identity">
-      <a class="back-link" href={appMode ? '/app' : '/'} aria-label="Back">
-        <svg aria-hidden="true"><use href="#trail-map-icon-arrow-left"></use></svg>
-      </a>
-      <div>
-        <p class="eyebrow">{title}</p>
-        <h1>{currentPoint ? `Mile ${fmt(currentPoint.mile, 1)}` : 'Loading trail signal'}</h1>
-        {#if progressLine}
-          <p class="progress-line">{progressLine}</p>
-        {/if}
-      </div>
-    </div>
-
-    <div class="hud-actions">
-      <div class="signal">
-        <span class="signal-dot" class:live={signalIsLive} class:stale={Boolean(currentPoint) && !signalIsLive}></span>
-        <span>
+  <!-- Top: slim floating status pill (tap to recenter on the live position) -->
+  <div class="top-bar">
+    <a class="circle-btn back" href={appMode ? '/app' : '/'} aria-label="Back">
+      <svg aria-hidden="true"><use href="#trail-map-icon-arrow-left"></use></svg>
+    </a>
+    <button class="status-pill" type="button" onclick={recenterOnLive} aria-label="Recenter on current location">
+      <span class="status-dot" class:live={signalIsLive} class:stale={Boolean(currentPoint) && !signalIsLive}></span>
+      <span class="status-text">
+        <strong>{currentPoint ? `Mile ${fmt(currentPoint.mile, 1)}` : loading ? 'Locating…' : 'No signal'}</strong>
+        <small>
           {#if currentPoint}
-            {signalIsLive ? timeLabel(currentPoint.observedAt) : `Last seen ${timeLabel(currentPoint.observedAt)}`}
+            {signalIsLive ? `Live · ${timeLabel(currentPoint.observedAt)}` : `Seen ${timeLabel(currentPoint.observedAt)}`}{#if totalMiles} · {Math.round(remainingMiles).toLocaleString()} mi to go{/if}
           {:else}
-            {loading ? 'Loading' : 'No signal'}
+            {loading ? 'Loading trail signal' : 'Tracker offline'}
           {/if}
-        </span>
-      </div>
-      <button class="layers-toggle" type="button" aria-expanded={layersOpen} aria-controls="map-layer-panel" onclick={() => (layersOpen = !layersOpen)}>
-        <svg class="control-icon" aria-hidden="true"><use href="#trail-map-icon-layers"></use></svg>
-        <span>Layers</span>
-        <strong>{terrainMode === 'difficulty' ? 'Diff' : terrainMode === 'rockiness' ? 'Rock' : 'Grade'} / {placeMode === 'access' ? 'Roads' : placeMode === 'view' ? 'Views' : placeMode === 'camp' ? 'Camp' : 'Core'}</strong>
-      </button>
-    </div>
-  </header>
+        </small>
+      </span>
+      {#if currentPoint && totalMiles}
+        <span class="status-progress" aria-hidden="true"><i style:width={`${progressPct}%`}></i></span>
+      {/if}
+    </button>
+  </div>
 
+  <!-- Right edge: floating map tools -->
+  <div class="edge-tools">
+    <button class="circle-btn" class:on={layersOpen} type="button" aria-expanded={layersOpen} aria-controls="map-layer-sheet" onclick={() => (layersOpen = !layersOpen)} aria-label="Map layers">
+      <svg aria-hidden="true"><use href="#trail-map-icon-layers"></use></svg>
+    </button>
+    <button class="circle-btn" type="button" onclick={recenterOnLive} aria-label="Recenter on current location" disabled={!currentPoint}>
+      <svg aria-hidden="true"><use href="#trail-map-icon-locate"></use></svg>
+    </button>
+    <div class="zoom-pill">
+      <button type="button" onclick={() => zoomBy(1)} aria-label="Zoom in">+</button>
+      <i aria-hidden="true"></i>
+      <button type="button" onclick={() => zoomBy(-1)} aria-label="Zoom out">−</button>
+    </div>
+  </div>
+
+  <!-- Floating context chip -->
+  {#if inspectedMile !== null}
+    <button class="floating-chip inspect" type="button" onclick={clearInspect}>
+      <span>Scouting mi {fmt(inspectedMile, 1)}</span>
+      <strong>Back to live</strong>
+    </button>
+  {:else if scrubHintVisible}
+    <button class="floating-chip hint" type="button" onclick={dismissScrubHint}>
+      <span>Tap the trail to scout any mile — drag the dot to glide</span>
+      <strong>Got it</strong>
+    </button>
+  {/if}
+
+  <!-- Layers sheet -->
   {#if layersOpen}
-    <aside id="map-layer-panel" class="map-hud mode-panel" aria-label="Map layers">
-      <div class="mode-group">
-        <span class="mode-label">Terrain</span>
-        <button class:active={terrainMode === 'difficulty'} type="button" onclick={() => (terrainMode = 'difficulty')}>
-          <svg aria-hidden="true"><use href="#trail-map-icon-difficulty"></use></svg>
-          <span>Diff</span>
-        </button>
-        <button class:active={terrainMode === 'grade'} type="button" onclick={() => (terrainMode = 'grade')}>
-          <svg aria-hidden="true"><use href="#trail-map-icon-grade"></use></svg>
-          <span>Grade</span>
-        </button>
-        <button class:active={terrainMode === 'rockiness'} type="button" onclick={() => (terrainMode = 'rockiness')}>
-          <svg aria-hidden="true"><use href="#trail-map-icon-rock"></use></svg>
-          <span>Rock</span>
+    <button class="sheet-scrim" type="button" aria-label="Close layers" onclick={() => (layersOpen = false)}></button>
+    <aside id="map-layer-sheet" class="layers-sheet" aria-label="Map layers">
+      <div class="layers-head">
+        <h2>Map layers</h2>
+        <button class="layers-close" type="button" onclick={() => (layersOpen = false)} aria-label="Close layers">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></svg>
         </button>
       </div>
+
+      <div class="seg-group">
+        <span class="seg-label">Terrain</span>
+        <div class="seg three">
+          <button class:active={terrainMode === 'difficulty'} type="button" onclick={() => (terrainMode = 'difficulty')}><svg aria-hidden="true"><use href="#trail-map-icon-difficulty"></use></svg><span>Difficulty</span></button>
+          <button class:active={terrainMode === 'grade'} type="button" onclick={() => (terrainMode = 'grade')}><svg aria-hidden="true"><use href="#trail-map-icon-grade"></use></svg><span>Grade</span></button>
+          <button class:active={terrainMode === 'rockiness'} type="button" onclick={() => (terrainMode = 'rockiness')}><svg aria-hidden="true"><use href="#trail-map-icon-rock"></use></svg><span>Rock</span></button>
+        </div>
+      </div>
+
       {#if terrainMode === 'difficulty'}
         <div class="difficulty-legend" aria-label="Difficulty color key">
           <span><i class="cruise"></i>Cruise</span>
@@ -1090,119 +1209,109 @@
           <span><i class="severe"></i>Severe</span>
         </div>
       {/if}
-      <div class="mode-group">
-        <span class="mode-label">Places</span>
-        <button class:active={placeMode === 'core'} type="button" onclick={() => (placeMode = 'core')}>
-          <svg aria-hidden="true"><use href="#trail-map-icon-shelter"></use></svg>
-          <span>Core</span>
-        </button>
-        <button class:active={placeMode === 'access'} type="button" onclick={() => (placeMode = 'access')}>
-          <svg aria-hidden="true"><use href="#trail-map-icon-road"></use></svg>
-          <span>Roads</span>
-        </button>
-        <button class:active={placeMode === 'camp'} type="button" onclick={() => (placeMode = 'camp')}>
-          <svg aria-hidden="true"><use href="#trail-map-icon-camp"></use></svg>
-          <span>Camp</span>
-        </button>
-        <button class:active={placeMode === 'view'} type="button" onclick={() => (placeMode = 'view')}>
-          <svg aria-hidden="true"><use href="#trail-map-icon-view"></use></svg>
-          <span>Views</span>
-        </button>
+
+      <div class="seg-group">
+        <span class="seg-label">Places</span>
+        <div class="seg four">
+          <button class:active={placeMode === 'core'} type="button" onclick={() => (placeMode = 'core')}><svg aria-hidden="true"><use href="#trail-map-icon-shelter"></use></svg><span>Core</span></button>
+          <button class:active={placeMode === 'access'} type="button" onclick={() => (placeMode = 'access')}><svg aria-hidden="true"><use href="#trail-map-icon-road"></use></svg><span>Roads</span></button>
+          <button class:active={placeMode === 'camp'} type="button" onclick={() => (placeMode = 'camp')}><svg aria-hidden="true"><use href="#trail-map-icon-camp"></use></svg><span>Camp</span></button>
+          <button class:active={placeMode === 'view'} type="button" onclick={() => (placeMode = 'view')}><svg aria-hidden="true"><use href="#trail-map-icon-view"></use></svg><span>Views</span></button>
+        </div>
       </div>
-      <button class="refresh" type="button" onclick={() => loadPack(true)} disabled={loading}>
+
+      <button class="layers-refresh" type="button" onclick={() => loadPack(true)} disabled={loading}>
         <svg aria-hidden="true"><use href="#trail-map-icon-refresh"></use></svg>
-        <span>{loading ? '...' : 'Refresh'}</span>
+        <span>{loading ? 'Refreshing…' : 'Refresh trail data'}</span>
       </button>
+      <p class="layers-credit">OpenTopoMap · OSM · USGS 3DEP · Scout RC1</p>
     </aside>
   {/if}
 
-  {#if scrubHintVisible && inspectedMile === null}
-    <button class="map-hud scrub-hint" type="button" onclick={dismissScrubHint}>
-      <span>Tap anywhere on the trail to scout that mile — then drag the dot to glide.</span>
-      <strong>Got it</strong>
-    </button>
-  {/if}
+  <!-- Bottom sheet: peek summary always visible, drag/tap to expand -->
+  <section
+    class="sheet"
+    class:dragging
+    style:height={`${sheetHeight}px`}
+    style:--difficulty-accent={colorForDifficulty(selectedDifficulty?.score ?? 0)}
+    aria-label="Trail detail"
+  >
+    <div class="sheet-head" bind:this={capEl}>
+      <div
+        class="sheet-grab"
+        role="button"
+        tabindex="0"
+        aria-label="Resize trail detail panel"
+        aria-expanded={detailsOpen}
+        onpointerdown={beginSheetDrag}
+        onpointermove={moveSheetDrag}
+        onpointerup={endSheetDrag}
+        onpointercancel={endSheetDrag}
+        onclick={cycleSheet}
+        onkeydown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); cycleSheet(); } }}
+      >
+        <span class="grab-bar"></span>
+      </div>
 
-  {#if inspectedMile !== null}
-    <button class="map-hud inspect-chip" type="button" onclick={clearInspect}>
-      <span>Inspecting mi {fmt(inspectedMile, 1)}</span>
-      <strong>Back to live</strong>
-    </button>
-  {/if}
+      {#if !errorMessage}
+        <div class="peek">
+          <div class="peek-lead">
+            <span class="peek-eyebrow">{inspectedMile !== null ? 'Scouting' : 'Live position'}</span>
+            <strong class="peek-mile">mi {fmt(selectedMile, 1)}</strong>
+            <small class="peek-sub">{inspectedMile !== null ? 'Tapped on the map' : selectedPoint ? timeLabel(selectedPoint.observedAt) : 'No point selected'}</small>
+          </div>
+          <span class={`diff-chip ${selectedDifficultyClass}`}>
+            <em>{selectedDifficulty ? fmt(selectedDifficulty.score, 1) : '--'}</em>
+            <span>{selectedDifficulty ? displayLabel(selectedDifficulty.label) : 'difficulty'}</span>
+          </span>
+        </div>
 
-  <section class="map-hud detail-panel" class:expanded={detailsOpen} aria-label="Trail detail" style:--difficulty-accent={colorForDifficulty(selectedDifficulty?.score ?? 0)}>
-    <button class="sheet-handle" type="button" aria-expanded={detailsOpen} aria-label={detailsOpen ? 'Collapse trail details' : 'Expand trail details'} onclick={() => (detailsOpen = !detailsOpen)}>
-      <span></span>
-    </button>
+        <div class="ahead-strip" aria-label="What's ahead">
+          <button type="button" onclick={() => nextShelter && map?.setView([nextShelter.lat, nextShelter.lon], 13)}>
+            <svg aria-hidden="true"><use href="#trail-map-icon-shelter"></use></svg>
+            <em>{distanceAhead(nextShelter)}</em>
+            <small>Shelter</small>
+          </button>
+          <button type="button" onclick={() => nextWater && map?.setView([nextWater.lat, nextWater.lon], 13)}>
+            <svg aria-hidden="true"><use href="#trail-map-icon-water"></use></svg>
+            <em>{distanceAhead(nextWater)}</em>
+            <small>Water</small>
+          </button>
+          <button type="button" onclick={() => nextTown && map?.setView([nextTown.lat, nextTown.lon], 12)}>
+            <svg aria-hidden="true"><use href="#trail-map-icon-town"></use></svg>
+            <em>{distanceAhead(nextTown)}</em>
+            <small>Town</small>
+          </button>
+          <button type="button" onclick={() => nextRoad && map?.setView([nextRoad.lat, nextRoad.lon], 13)}>
+            <svg aria-hidden="true"><use href="#trail-map-icon-road"></use></svg>
+            <em>{distanceAhead(nextRoad)}</em>
+            <small>Road</small>
+          </button>
+        </div>
+      {/if}
+    </div>
+
     {#if errorMessage}
       <div class="error">{errorMessage}</div>
     {:else}
-      <div class="detail-summary">
-        <div class="detail-grid">
-          <div class="metric primary">
-            <div class="metric-head">
-              <svg aria-hidden="true"><use href="#trail-map-icon-route"></use></svg>
-              <span>Selected</span>
-            </div>
-            <strong>mi {fmt(selectedMile, 1)}</strong>
-            <small>{inspectedMile !== null ? 'Scouted on the map' : selectedPoint ? timeLabel(selectedPoint.observedAt) : 'No point selected'}</small>
-          </div>
-          <div class={`metric difficulty ${selectedDifficultyClass}`}>
-            <div class="metric-head">
-              <svg aria-hidden="true"><use href="#trail-map-icon-difficulty"></use></svg>
-              <span>Difficulty</span>
-            </div>
-            <strong>{selectedDifficulty ? `${fmt(selectedDifficulty.score, 1)}/10` : '--'}</strong>
-            <small>{displayLabel(selectedDifficulty?.label)}</small>
-          </div>
+      <div class="sheet-body">
+        <div class="metric-row">
           <div class="metric">
-            <div class="metric-head">
-              <svg aria-hidden="true"><use href="#trail-map-icon-elevation"></use></svg>
-              <span>Elevation</span>
-            </div>
+            <span class="metric-label"><svg aria-hidden="true"><use href="#trail-map-icon-elevation"></use></svg>Elevation</span>
             <strong>{selectedElevation ? `${fmt(selectedElevation.elevationFt)} ft` : '--'}</strong>
             <small>{selectedElevation?.state || 'USGS screen'}</small>
           </div>
           <div class="metric">
-            <div class="metric-head">
-              <svg aria-hidden="true"><use href="#trail-map-icon-grade"></use></svg>
-              <span>Grade</span>
-            </div>
+            <span class="metric-label"><svg aria-hidden="true"><use href="#trail-map-icon-grade"></use></svg>Grade</span>
             <strong>{selectedTerrain ? `${fmt(selectedTerrain.maxGradePercent)}%` : '--'}</strong>
-            <small>{selectedTerrain ? `${fmt(selectedTerrain.gainFt)} ft up / ${fmt(selectedTerrain.lossFt)} ft down` : 'nearest mile'}</small>
+            <small>{selectedTerrain ? `${fmt(selectedTerrain.gainFt)}↑ / ${fmt(selectedTerrain.lossFt)}↓ ft` : 'nearest mile'}</small>
           </div>
           <div class="metric">
-            <div class="metric-head">
-              <svg aria-hidden="true"><use href="#trail-map-icon-rock"></use></svg>
-              <span>Rock</span>
-            </div>
-            <strong>{selectedRockiness ? `${fmt(selectedRockiness.score, 1)}/10` : '--'}</strong>
+            <span class="metric-label"><svg aria-hidden="true"><use href="#trail-map-icon-rock"></use></svg>Rock</span>
+            <strong>{selectedRockiness ? `${fmt(selectedRockiness.score, 1)}` : '--'}</strong>
             <small>{displayLabel(selectedRockiness?.label)}</small>
           </div>
-          <button class="details-toggle metric-action" type="button" aria-expanded={detailsOpen} onclick={() => (detailsOpen = !detailsOpen)}>
-            <svg aria-hidden="true"><use href="#trail-map-icon-panel"></use></svg>
-            <span>Details</span>
-            <strong>{detailsOpen ? 'Less' : 'More'}</strong>
-          </button>
         </div>
-      </div>
-
-      {#if detailsOpen}
-        {#if history.length > 1}
-          <div class="history-row">
-            <button type="button" onclick={() => (selectedHistoryIndex = Math.max(0, selectedHistoryIndex - 1))}>−</button>
-            <input
-              type="range"
-              min="0"
-              max={history.length - 1}
-              step="1"
-              bind:value={selectedHistoryIndex}
-              aria-label="Historical Garmin point"
-            />
-            <button type="button" onclick={() => (selectedHistoryIndex = Math.min(history.length - 1, selectedHistoryIndex + 1))}>+</button>
-            <button class="center" type="button" onclick={recenterOnSelected}>Center</button>
-          </div>
-        {/if}
 
         <div class="profile-row">
           {#if profileStats}
@@ -1227,6 +1336,22 @@
           {/if}
         </div>
 
+        {#if history.length > 1}
+          <div class="history-row">
+            <button type="button" onclick={() => (selectedHistoryIndex = Math.max(0, selectedHistoryIndex - 1))} aria-label="Previous fix">−</button>
+            <input
+              type="range"
+              min="0"
+              max={history.length - 1}
+              step="1"
+              bind:value={selectedHistoryIndex}
+              aria-label="Historical Garmin point"
+            />
+            <button type="button" onclick={() => (selectedHistoryIndex = Math.min(history.length - 1, selectedHistoryIndex + 1))} aria-label="Next fix">+</button>
+            <button class="center" type="button" onclick={recenterOnSelected}>Center</button>
+          </div>
+        {/if}
+
         <div class="next-grid">
           <button type="button" onclick={() => nextShelter && map?.setView([nextShelter.lat, nextShelter.lon], 12)}>
             <span class="next-head"><svg aria-hidden="true"><use href="#trail-map-icon-shelter"></use></svg><span>Shelter</span></span>
@@ -1248,17 +1373,15 @@
 
         <div class="action-row">
           {#if appMode}
-            <a href={`/app/scout?prompt=${encodeURIComponent(scoutPrompt)}`}>Ask Scout</a>
+            <a href={`/app/scout?prompt=${encodeURIComponent(scoutPrompt)}`}>Ask Scout about this mile</a>
           {:else}
             <a href="/app/map">Open in Scout</a>
           {/if}
-          <span>{pack ? `${pack.terrain.elevation.length.toLocaleString()} elevation points · ${pack.terrain.rockiness.length.toLocaleString()} rockiness miles` : ''}</span>
+          <span>{pack ? `${pack.terrain.elevation.length.toLocaleString()} elevation pts · ${pack.terrain.rockiness.length.toLocaleString()} rockiness mi` : ''}</span>
         </div>
-      {/if}
+      </div>
     {/if}
   </section>
-
-  <div class="map-credit">OpenTopoMap · OSM · USGS 3DEP · Scout RC1</div>
 </section>
 
 <style>
@@ -1283,13 +1406,17 @@
     overflow: hidden;
   }
 
-  .back-link svg,
-  .layers-toggle svg,
-  .mode-group button svg,
-  .refresh svg,
-  .metric-head svg,
-  .details-toggle svg,
-  .next-head svg {
+  /* Shared stroke icon styling across every control. */
+  .circle-btn svg,
+  .zoom-pill svg,
+  .status-text svg,
+  .seg button svg,
+  .layers-refresh svg,
+  .layers-close svg,
+  .metric-label svg,
+  .ahead-strip svg,
+  .next-head svg,
+  .diff-chip svg {
     width: 1rem;
     height: 1rem;
     fill: none;
@@ -1314,161 +1441,9 @@
     box-shadow: 0 0 0 8px rgba(220, 38, 38, 0.2), 0 10px 28px rgba(0, 0, 0, 0.35);
   }
 
-  .trail-map-shell {
-    position: relative;
-    width: min(100vw, 100%);
-    height: calc(100svh - 84px);
-    min-height: 680px;
-    overflow: hidden;
-    border-radius: 0;
-    background: #10130f;
-    color: #fffdf8;
-  }
-
-  .trail-map-shell.publicRoute {
-    width: 100vw;
-    height: 100svh;
-    min-height: 100svh;
-  }
-
-  :global(.site-main .container > .trail-map-shell) {
-    width: 100vw;
-    margin-left: calc(50% - 50vw);
-    margin-right: calc(50% - 50vw);
-  }
-
-  .map-host,
-  .map-shade {
-    position: absolute;
-    inset: 0;
-  }
-
-  .map-host {
-    z-index: 0;
-  }
-
-  .map-shade {
-    z-index: 1;
-    pointer-events: none;
-    background:
-      linear-gradient(180deg, rgba(8, 13, 9, 0.62), rgba(8, 13, 9, 0.05) 30%, rgba(8, 13, 9, 0.18) 62%, rgba(8, 13, 9, 0.72)),
-      radial-gradient(circle at 0% 100%, rgba(4, 10, 6, 0.58), transparent 42%);
-  }
-
-  .map-hud {
-    position: absolute;
-    z-index: 2;
-    border: 1px solid rgba(255, 253, 248, 0.14);
-    background: rgba(20, 28, 22, 0.78);
-    box-shadow: 0 20px 70px rgba(0, 0, 0, 0.32);
-    backdrop-filter: blur(14px);
-  }
-
-  .map-hud-top {
-    top: max(0.75rem, env(safe-area-inset-top));
-    left: max(0.75rem, env(safe-area-inset-left));
-    right: max(0.75rem, env(safe-area-inset-right));
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    border-radius: 18px;
-    padding: 0.75rem 0.85rem;
-  }
-
-  .identity {
-    display: flex;
-    align-items: center;
-    gap: 0.72rem;
-    min-width: 0;
-  }
-
-  .hud-actions {
-    display: flex;
-    align-items: center;
-    flex: 0 0 auto;
-    gap: 0.55rem;
-  }
-
-  .back-link,
-  .layers-toggle,
-  .mode-group button,
-  .refresh,
-  .history-row button,
-  .details-toggle,
-  .next-grid button,
-  .action-row a {
-    border: 1px solid rgba(255, 253, 248, 0.16);
-    color: #fffdf8;
-    background: rgba(255, 253, 248, 0.08);
-    text-decoration: none;
-  }
-
-  .back-link {
-    display: grid;
-    place-items: center;
-    width: 2.55rem;
-    height: 2.55rem;
-    flex: 0 0 auto;
-    border-radius: 999px;
-    font-weight: 900;
-  }
-
-  .back-link svg {
-    width: 1.28rem;
-    height: 1.28rem;
-  }
-
-  .eyebrow {
-    margin: 0 0 0.08rem;
-    color: #d9f99d;
-    font-family: Oswald, Impact, sans-serif;
-    font-size: 0.7rem;
-    font-weight: 900;
-    letter-spacing: 0.16em;
-    line-height: 1;
-    text-transform: uppercase;
-  }
-
-  h1 {
-    margin: 0;
-    overflow: hidden;
-    color: #fffdf8;
-    font-size: clamp(1.55rem, 4vw, 2.8rem);
-    line-height: 0.95;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .signal {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    min-width: 7rem;
-    gap: 0.45rem;
-    color: rgba(255, 253, 248, 0.82);
-    font-size: 0.84rem;
-    font-weight: 800;
-    text-align: right;
-  }
-
-  .signal-dot {
-    width: 0.72rem;
-    height: 0.72rem;
-    border-radius: 999px;
-    background: #64748b;
-  }
-
-  .signal-dot.live {
-    background: #22c55e;
-    box-shadow: 0 0 0 7px rgba(34, 197, 94, 0.15);
-  }
-
   /* Leaflet's stylesheet is code-split and can load AFTER this component's
-     CSS; its `.leaflet-marker-icon { display: block }` ties a lone
-     `.scrub-marker` on specificity and killed the grid-centered dot (the
-     ::after collapsed to an inline sliver). Double up the class selector and
-     absolutely position the dot so cascade order can't break it. */
+     CSS; double up the class selector and absolutely position the dot so
+     cascade order can't collapse it. */
   :global(.leaflet-marker-icon.scrub-marker) {
     background: transparent;
     border: 0;
@@ -1494,218 +1469,421 @@
     cursor: grabbing;
   }
 
-  .scrub-hint {
-    top: calc(max(0.75rem, env(safe-area-inset-top)) + 5.4rem);
+  :global(.trail-map-shell .leaflet-control-attribution) {
+    display: none;
+  }
+
+  /* ---- Shell ---------------------------------------------------------- */
+  .trail-map-shell {
+    position: relative;
+    width: min(100vw, 100%);
+    height: calc(100svh - 84px);
+    min-height: 540px;
+    overflow: hidden;
+    background: #10130f;
+    color: #fffdf8;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .trail-map-shell.publicRoute {
+    width: 100vw;
+    height: 100svh;
+    min-height: 100svh;
+  }
+
+  :global(.site-main .container > .trail-map-shell) {
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+  }
+
+  .map-host,
+  .map-shade {
+    position: absolute;
+    inset: 0;
+  }
+
+  .map-host {
+    z-index: 0;
+  }
+
+  /* Subtle legibility scrim only behind the floating chrome — the topo map
+     itself stays bright, the way a real maps app keeps it. */
+  .map-shade {
+    z-index: 1;
+    pointer-events: none;
+    background:
+      linear-gradient(180deg, rgba(8, 13, 9, 0.42), transparent 16%),
+      linear-gradient(0deg, rgba(8, 13, 9, 0.34), transparent 22%);
+  }
+
+  /* ---- Shared glass surfaces ----------------------------------------- */
+  .circle-btn,
+  .status-pill,
+  .zoom-pill,
+  .floating-chip,
+  .layers-sheet,
+  .sheet {
+    border: 1px solid rgba(255, 253, 248, 0.16);
+    background: rgba(18, 26, 20, 0.82);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
+
+  .circle-btn {
+    display: grid;
+    place-items: center;
+    width: 2.85rem;
+    height: 2.85rem;
+    flex: 0 0 auto;
+    border-radius: 999px;
+    color: #fffdf8;
+    cursor: pointer;
+    transition: transform 120ms ease, background 140ms ease, border-color 140ms ease;
+  }
+
+  .circle-btn svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .circle-btn:active {
+    transform: scale(0.94);
+  }
+
+  .circle-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  .circle-btn.on {
+    border-color: rgba(217, 249, 157, 0.6);
+    background: rgba(217, 249, 157, 0.2);
+    color: #ecfccb;
+  }
+
+  /* ---- Top bar -------------------------------------------------------- */
+  .top-bar {
+    position: absolute;
+    z-index: 4;
+    top: max(0.7rem, env(safe-area-inset-top));
+    left: max(0.7rem, env(safe-area-inset-left));
+    right: max(0.7rem, env(safe-area-inset-right));
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+
+  .status-pill {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 0.6rem;
+    overflow: hidden;
+    border-radius: 999px;
+    padding: 0.5rem 1rem 0.5rem 0.85rem;
+    color: #fffdf8;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .status-dot {
+    width: 0.62rem;
+    height: 0.62rem;
+    flex: 0 0 auto;
+    border-radius: 999px;
+    background: #64748b;
+  }
+
+  .status-dot.live {
+    background: #22c55e;
+    box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.16);
+  }
+
+  .status-dot.stale {
+    background: #f59e0b;
+    box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.14);
+  }
+
+  .status-text {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.05rem;
+    line-height: 1.05;
+  }
+
+  .status-text strong {
+    overflow: hidden;
+    font-size: 1.02rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    text-overflow: ellipsis;
+    text-transform: none;
+    white-space: nowrap;
+  }
+
+  .status-text small {
+    overflow: hidden;
+    color: rgba(255, 253, 248, 0.64);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    text-transform: none;
+    white-space: nowrap;
+  }
+
+  .status-progress {
+    position: absolute;
+    left: 0.85rem;
+    right: 0.85rem;
+    bottom: 0.32rem;
+    height: 2px;
+    border-radius: 999px;
+    background: rgba(255, 253, 248, 0.16);
+  }
+
+  .status-progress i {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #d9f99d, #f97316);
+  }
+
+  /* ---- Edge tools ----------------------------------------------------- */
+  /* Float just above the sheet's top edge and ride up with it as it expands,
+     the way a maps app keeps its controls reachable. */
+  .edge-tools {
+    position: absolute;
+    z-index: 7;
+    right: max(0.7rem, env(safe-area-inset-right));
+    bottom: calc(var(--sheet-h, 170px) + 0.7rem);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.55rem;
+    transition: bottom 0.34s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .trail-map-shell:has(.sheet.dragging) .edge-tools {
+    transition: none;
+  }
+
+  .trail-map-shell.sheet-full .edge-tools {
+    opacity: 0;
+    transform: translateY(0.6rem);
+    pointer-events: none;
+  }
+
+  .zoom-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 2.85rem;
+    border-radius: 1.42rem;
+    overflow: hidden;
+  }
+
+  .zoom-pill button {
+    display: grid;
+    place-items: center;
+    height: 2.5rem;
+    border: 0;
+    background: transparent;
+    color: #fffdf8;
+    cursor: pointer;
+    font-size: 1.4rem;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .zoom-pill button:active {
+    background: rgba(255, 253, 248, 0.1);
+  }
+
+  .zoom-pill i {
+    height: 1px;
+    margin: 0 0.55rem;
+    background: rgba(255, 253, 248, 0.18);
+  }
+
+  /* ---- Floating chip -------------------------------------------------- */
+  .floating-chip {
+    position: absolute;
+    z-index: 4;
+    top: calc(max(0.7rem, env(safe-area-inset-top)) + 3.7rem);
     left: 50%;
     display: flex;
     align-items: center;
     gap: 0.6rem;
     max-width: min(92vw, 30rem);
-    padding: 0.55rem 0.85rem;
+    padding: 0.5rem 0.55rem 0.5rem 0.95rem;
     transform: translateX(-50%);
-    border-radius: 16px;
-    color: rgba(255, 253, 248, 0.9);
+    border: 1px solid rgba(255, 253, 248, 0.16);
+    border-radius: 999px;
+    background: rgba(18, 26, 20, 0.88);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.42);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    color: rgba(255, 253, 248, 0.92);
     font-size: 0.8rem;
-    font-weight: 700;
-    text-align: left;
+    font-weight: 600;
     cursor: pointer;
   }
 
-  .scrub-hint strong {
+  .floating-chip span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .floating-chip strong {
     flex: 0 0 auto;
+    border-radius: 999px;
+    background: rgba(217, 249, 157, 0.16);
     color: #d9f99d;
     font-family: Oswald, Impact, sans-serif;
-    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    padding: 0.28rem 0.6rem;
     text-transform: uppercase;
   }
 
-  .profile-row {
-    position: relative;
+  .floating-chip.inspect strong {
+    background: rgba(249, 115, 22, 0.2);
+    color: #fdba74;
   }
 
-  .profile-y-labels {
+  /* ---- Layers sheet --------------------------------------------------- */
+  .sheet-scrim {
     position: absolute;
-    top: 0.2rem;
-    bottom: 1.6rem;
-    left: 0.35rem;
+    inset: 0;
+    z-index: 8;
+    border: 0;
+    background: rgba(6, 10, 7, 0.5);
+    cursor: pointer;
+    animation: fade-in 160ms ease;
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .layers-sheet {
+    position: absolute;
+    z-index: 9;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: grid;
+    gap: 0.9rem;
+    border-radius: 22px 22px 0 0;
+    padding: 1rem 1.1rem calc(1.1rem + env(safe-area-inset-bottom));
+    animation: slide-up 240ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  @keyframes slide-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .layers-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .layers-head h2 {
+    margin: 0;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .layers-close {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 253, 248, 0.1);
+    color: #fffdf8;
+    cursor: pointer;
+  }
+
+  .layers-close svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .seg-group {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .seg-label {
+    color: rgba(255, 253, 248, 0.6);
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .seg {
+    display: grid;
+    gap: 0.4rem;
+    padding: 0.28rem;
+    border-radius: 14px;
+    background: rgba(255, 253, 248, 0.06);
+  }
+
+  .seg.three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .seg.four {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .seg button {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    color: rgba(255, 253, 248, 0.55);
-    font-size: 0.62rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    pointer-events: none;
-  }
-
-  .profile-x-labels {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.5rem;
-    margin-top: 0.25rem;
-    color: rgba(255, 253, 248, 0.55);
-    font-size: 0.64rem;
-    font-weight: 800;
-  }
-
-  .profile-cursor-label {
-    color: #fdba74;
-    font-size: 0.7rem;
-  }
-
-  .signal-dot.stale {
-    background: #d97706;
-    box-shadow: 0 0 0 7px rgba(217, 119, 6, 0.14);
-  }
-
-  .progress-line {
-    margin: 0.22rem 0 0;
-    overflow: hidden;
-    color: rgba(255, 253, 248, 0.66);
-    font-size: 0.74rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    line-height: 1;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .inspect-chip {
-    top: calc(max(0.75rem, env(safe-area-inset-top)) + 5.4rem);
-    left: 50%;
-    display: flex;
     align-items: center;
-    gap: 0.55rem;
-    padding: 0.5rem 0.8rem;
-    transform: translateX(-50%);
-    border-radius: 999px;
-    color: #fffdf8;
-    font-size: 0.8rem;
-    font-weight: 800;
-    cursor: pointer;
-  }
-
-  .inspect-chip span {
-    color: rgba(255, 253, 248, 0.78);
-  }
-
-  .inspect-chip strong {
-    color: #d9f99d;
-    font-family: Oswald, Impact, sans-serif;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .layers-toggle {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    min-width: 6.45rem;
-    min-height: 2.42rem;
-    align-content: center;
-    align-items: center;
-    column-gap: 0.48rem;
-    border-radius: 999px;
-    cursor: pointer;
-    padding: 0.34rem 0.7rem;
-    text-align: left;
-  }
-
-  .layers-toggle .control-icon {
-    grid-row: 1 / span 2;
-    width: 1.05rem;
-    height: 1.05rem;
-    color: #d9f99d;
-  }
-
-  .layers-toggle span {
-    color: rgba(255, 253, 248, 0.58);
-    font-family: Oswald, Impact, sans-serif;
-    font-size: 0.56rem;
-    font-weight: 900;
-    letter-spacing: 0.12em;
-    line-height: 1;
-    text-transform: uppercase;
-  }
-
-  .layers-toggle strong {
-    grid-column: 2;
-    overflow: hidden;
-    color: #fffdf8;
-    font-family: Oswald, Impact, sans-serif;
-    font-size: 0.78rem;
-    line-height: 1.15;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .layers-toggle[aria-expanded='true'] {
-    border-color: rgba(217, 249, 157, 0.55);
-    background: rgba(217, 249, 157, 0.18);
-  }
-
-  .mode-panel {
-    top: 6.3rem;
-    right: max(0.75rem, env(safe-area-inset-right));
-    display: grid;
-    width: min(17rem, calc(100vw - 1.5rem));
-    gap: 0.65rem;
-    border-radius: 18px;
-    padding: 0.68rem;
-  }
-
-  .mode-group {
-    display: grid;
-    grid-template-columns: 4.2rem repeat(3, minmax(0, 1fr));
-    gap: 0.35rem;
-    align-items: center;
-  }
-
-  .mode-group:nth-of-type(2) {
-    grid-template-columns: 4.2rem repeat(4, minmax(0, 1fr));
-  }
-
-  .mode-group > .mode-label {
-    color: rgba(255, 253, 248, 0.68);
-    font-family: Oswald, Impact, sans-serif;
-    font-size: 0.68rem;
-    font-weight: 900;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .mode-group button,
-  .refresh,
-  .details-toggle,
-  .history-row button {
-    display: inline-flex;
-    align-items: center;
+    gap: 0.28rem;
+    min-height: 3.1rem;
     justify-content: center;
-    gap: 0.32rem;
-    min-height: 2rem;
-    border-radius: 999px;
+    border: 1px solid transparent;
+    border-radius: 11px;
+    background: transparent;
+    color: rgba(255, 253, 248, 0.78);
     cursor: pointer;
     font-family: Oswald, Impact, sans-serif;
     font-size: 0.72rem;
-    font-weight: 900;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.03em;
   }
 
-  .mode-group button svg,
-  .refresh svg {
-    width: 0.86rem;
-    height: 0.86rem;
-    color: rgba(255, 253, 248, 0.74);
+  .seg button svg {
+    width: 1.2rem;
+    height: 1.2rem;
+    color: rgba(255, 253, 248, 0.66);
   }
 
-  .mode-group button.active {
-    border-color: rgba(217, 249, 157, 0.55);
+  .seg button.active {
+    border-color: rgba(217, 249, 157, 0.5);
     background: rgba(217, 249, 157, 0.18);
     color: #ecfccb;
   }
 
-  .mode-group button.active svg {
+  .seg button.active svg {
     color: #d9f99d;
   }
 
@@ -1719,154 +1897,297 @@
     display: flex;
     min-width: 0;
     align-items: center;
-    gap: 0.25rem;
-    color: rgba(255, 253, 248, 0.7);
+    gap: 0.3rem;
+    color: rgba(255, 253, 248, 0.72);
     font-family: Oswald, Impact, sans-serif;
-    font-size: 0.58rem;
-    font-weight: 900;
-    letter-spacing: 0.04em;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
     text-transform: uppercase;
     white-space: nowrap;
   }
 
   .difficulty-legend i {
-    width: 0.5rem;
-    height: 0.5rem;
+    width: 0.55rem;
+    height: 0.55rem;
     flex: 0 0 auto;
     border-radius: 999px;
   }
 
   .difficulty-legend .cruise,
-  .metric.difficulty.cruise {
-    background: rgba(21, 128, 61, 0.34);
+  .diff-chip.cruise {
+    background: rgba(21, 128, 61, 0.4);
   }
 
   .difficulty-legend .steady,
-  .metric.difficulty.steady {
-    background: rgba(202, 138, 4, 0.3);
+  .diff-chip.steady {
+    background: rgba(202, 138, 4, 0.36);
   }
 
   .difficulty-legend .hard,
-  .metric.difficulty.hard {
-    background: rgba(234, 88, 12, 0.32);
+  .diff-chip.hard {
+    background: rgba(234, 88, 12, 0.36);
   }
 
   .difficulty-legend .severe,
-  .metric.difficulty.severe {
-    background: rgba(153, 27, 27, 0.34);
+  .diff-chip.severe {
+    background: rgba(153, 27, 27, 0.4);
   }
 
-  .refresh:disabled {
+  .layers-refresh {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.8rem;
+    border: 1px solid rgba(255, 253, 248, 0.16);
+    border-radius: 999px;
+    background: rgba(255, 253, 248, 0.08);
+    color: #fffdf8;
+    cursor: pointer;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .layers-refresh:disabled {
     cursor: wait;
-    opacity: 0.65;
+    opacity: 0.6;
   }
 
-  .detail-panel {
+  .layers-credit {
+    margin: 0;
+    color: rgba(255, 253, 248, 0.4);
+    font-size: 0.66rem;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  /* ---- Bottom sheet --------------------------------------------------- */
+  .sheet {
     --difficulty-accent: #15803d;
-    left: max(0.75rem, env(safe-area-inset-left));
-    right: max(0.75rem, env(safe-area-inset-right));
-    bottom: max(0.75rem, env(safe-area-inset-bottom));
-    display: grid;
-    gap: 0.55rem;
-    border-radius: 18px;
-    padding: clamp(0.68rem, 1.4vw, 0.9rem) clamp(0.55rem, 1.4vw, 0.8rem) clamp(0.55rem, 1.4vw, 0.8rem);
+    position: absolute;
+    z-index: 6;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    height: 170px;
+    overflow: hidden;
+    border-radius: 22px 22px 0 0;
+    box-shadow: 0 -10px 44px rgba(0, 0, 0, 0.46);
+    will-change: height;
+    transition: height 0.34s cubic-bezier(0.32, 0.72, 0, 1);
   }
 
-  .detail-panel::before {
+  .sheet.dragging {
+    transition: none;
+  }
+
+  .sheet::before {
     content: '';
     position: absolute;
     top: 0;
-    left: 1.15rem;
-    right: 1.15rem;
+    left: 1.2rem;
+    right: 1.2rem;
     height: 2px;
     border-radius: 999px;
     background: linear-gradient(90deg, transparent, var(--difficulty-accent), transparent);
-    opacity: 0.82;
+    opacity: 0.85;
   }
 
-  .sheet-handle {
-    position: absolute;
-    top: 0.28rem;
-    left: 50%;
+  .sheet-head {
+    flex: 0 0 auto;
+  }
+
+  .sheet-grab {
     display: grid;
-    width: 3.9rem;
-    height: 1.05rem;
+    flex: 0 0 auto;
     place-items: center;
-    transform: translateX(-50%);
-    border: 0;
-    background: transparent;
-    cursor: pointer;
-    padding: 0;
+    height: 1.5rem;
+    cursor: grab;
+    touch-action: none;
   }
 
-  .sheet-handle span {
-    display: block;
-    width: 2.3rem;
-    height: 0.22rem;
+  .sheet-grab:active {
+    cursor: grabbing;
+  }
+
+  .grab-bar {
+    width: 2.6rem;
+    height: 0.28rem;
     border-radius: 999px;
-    background: rgba(255, 253, 248, 0.42);
+    background: rgba(255, 253, 248, 0.4);
   }
 
-  .detail-summary {
+  .peek {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0 1.05rem 0.55rem;
+  }
+
+  .peek-lead {
+    display: flex;
     min-width: 0;
+    flex-direction: column;
+    gap: 0.04rem;
   }
 
-  .detail-grid {
+  .peek-eyebrow {
+    color: #d9f99d;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .peek-mile {
+    font-size: 1.65rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .peek-sub {
+    overflow: hidden;
+    color: rgba(255, 253, 248, 0.6);
+    font-size: 0.74rem;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .diff-chip {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 4.6rem;
+    gap: 0.05rem;
+    border-radius: 14px;
+    padding: 0.45rem 0.7rem;
+  }
+
+  .diff-chip em {
+    font-size: 1.4rem;
+    font-style: normal;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .diff-chip span {
+    color: rgba(255, 253, 248, 0.78);
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .ahead-strip {
     display: grid;
-    grid-template-columns: 1.15fr repeat(4, minmax(0, 1fr)) minmax(4.2rem, 0.52fr);
-    gap: 0.55rem;
+    flex: 0 0 auto;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.5rem;
+    padding: 0 1.05rem 0.7rem;
+  }
+
+  .ahead-strip button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.16rem;
+    border: 1px solid rgba(255, 253, 248, 0.1);
+    border-radius: 12px;
+    background: rgba(255, 253, 248, 0.06);
+    color: #fffdf8;
+    cursor: pointer;
+    padding: 0.5rem 0.3rem;
+    transition: background 130ms ease, border-color 130ms ease;
+  }
+
+  .ahead-strip button:active {
+    background: rgba(255, 253, 248, 0.12);
+  }
+
+  .ahead-strip svg {
+    width: 1.05rem;
+    height: 1.05rem;
+    color: rgba(217, 249, 157, 0.85);
+  }
+
+  .ahead-strip em {
+    font-size: 0.92rem;
+    font-style: normal;
+    font-weight: 800;
+  }
+
+  .ahead-strip small {
+    color: rgba(255, 253, 248, 0.56);
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* ---- Expanded body -------------------------------------------------- */
+  .sheet-body {
+    display: grid;
+    flex: 1 1 auto;
+    min-height: 0;
+    align-content: start;
+    gap: 0.6rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    padding: 0.2rem 1.05rem calc(1rem + env(safe-area-inset-bottom));
+  }
+
+  .metric-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
   }
 
   .metric {
-    position: relative;
     min-width: 0;
     border-radius: 13px;
-    background: rgba(255, 253, 248, 0.08);
-    padding: 0.52rem 0.58rem 0.5rem;
-    box-shadow: inset 0 1px 0 rgba(255, 253, 248, 0.08);
+    background: rgba(255, 253, 248, 0.07);
+    padding: 0.55rem 0.6rem;
   }
 
-  .metric.primary {
-    background: rgba(217, 119, 6, 0.22);
-  }
-
-  .metric.difficulty {
-    box-shadow: inset 0 1px 0 rgba(255, 253, 248, 0.1), inset 0 -2px 0 var(--difficulty-accent);
-  }
-
-  .metric-head,
-  .next-head {
+  .metric-label {
     display: flex;
-    min-width: 0;
     align-items: center;
-    gap: 0.34rem;
-  }
-
-  .metric-head svg,
-  .next-head svg {
-    flex: 0 0 auto;
-    color: rgba(217, 249, 157, 0.82);
-  }
-
-  .metric-head span,
-  .next-head span {
-    display: block;
-    overflow: hidden;
-    color: rgba(255, 253, 248, 0.62);
+    gap: 0.3rem;
+    color: rgba(255, 253, 248, 0.6);
     font-family: Oswald, Impact, sans-serif;
-    font-size: 0.66rem;
-    font-weight: 900;
-    letter-spacing: 0.1em;
-    text-overflow: ellipsis;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    white-space: nowrap;
+  }
+
+  .metric-label svg {
+    flex: 0 0 auto;
+    color: rgba(217, 249, 157, 0.8);
   }
 
   .metric strong {
     display: block;
     overflow: hidden;
-    margin: 0.08rem 0;
-    font-size: clamp(1.05rem, 2.3vw, 1.55rem);
+    margin: 0.18rem 0 0.04rem;
+    font-size: 1.32rem;
+    font-weight: 800;
     line-height: 1;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1877,73 +2198,26 @@
   .action-row span {
     display: block;
     overflow: hidden;
-    color: rgba(255, 253, 248, 0.64);
-    font-size: 0.72rem;
-    font-weight: 740;
+    color: rgba(255, 253, 248, 0.62);
+    font-size: 0.7rem;
+    font-weight: 600;
     line-height: 1.2;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .details-toggle {
-    display: grid;
-    min-width: 0;
-    align-content: center;
-    justify-items: center;
-    gap: 0.1rem;
-    border-radius: 13px;
-    padding: 0.42rem 0.45rem;
-  }
-
-  .details-toggle svg {
-    width: 1.04rem;
-    height: 1.04rem;
-    color: #d9f99d;
-  }
-
-  .details-toggle span {
-    color: rgba(255, 253, 248, 0.62);
-    font-family: Oswald, Impact, sans-serif;
-    font-size: 0.6rem;
-    font-weight: 900;
-    letter-spacing: 0.08em;
-    line-height: 1;
-    text-transform: uppercase;
-  }
-
-  .details-toggle strong {
-    color: #fffdf8;
-    font-size: 1.2rem;
-    line-height: 0.95;
-  }
-
-  .history-row {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto auto;
-    gap: 0.5rem;
-    align-items: center;
-  }
-
-  .history-row input {
-    width: 100%;
-    accent-color: #f97316;
-  }
-
-  .history-row .center {
-    padding: 0 0.8rem;
-  }
-
   .profile-row {
+    position: relative;
     overflow: hidden;
     border-radius: 13px;
-    background: rgba(255, 253, 248, 0.07);
-    padding: 0.35rem 0.45rem 0.2rem;
+    background: rgba(255, 253, 248, 0.06);
+    padding: 0.4rem 0.5rem 0.25rem;
   }
 
   .profile-row svg {
     display: block;
     width: 100%;
-    height: 72px;
+    height: 76px;
   }
 
   .profile-fill {
@@ -1964,32 +2238,124 @@
     stroke-width: 2;
   }
 
+  .profile-y-labels {
+    position: absolute;
+    top: 0.45rem;
+    bottom: 1.7rem;
+    left: 0.55rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: rgba(255, 253, 248, 0.55);
+    font-size: 0.6rem;
+    font-weight: 700;
+    pointer-events: none;
+  }
+
+  .profile-x-labels {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 0.2rem;
+    color: rgba(255, 253, 248, 0.55);
+    font-size: 0.64rem;
+    font-weight: 700;
+  }
+
+  .profile-cursor-label {
+    color: #fdba74;
+    font-size: 0.7rem;
+  }
+
+  .history-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .history-row button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.1rem;
+    min-height: 2.1rem;
+    border: 1px solid rgba(255, 253, 248, 0.16);
+    border-radius: 999px;
+    background: rgba(255, 253, 248, 0.08);
+    color: #fffdf8;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 800;
+  }
+
+  .history-row .center {
+    padding: 0 0.85rem;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.74rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .history-row input {
+    width: 100%;
+    accent-color: #f97316;
+  }
+
   .next-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.55rem;
+    gap: 0.5rem;
   }
 
   .next-grid button {
     min-width: 0;
+    border: 1px solid rgba(255, 253, 248, 0.12);
     border-radius: 13px;
+    background: rgba(255, 253, 248, 0.06);
+    color: #fffdf8;
     cursor: pointer;
-    padding: 0.5rem 0.58rem;
+    padding: 0.5rem 0.55rem;
     text-align: left;
     transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
   }
 
-  .next-grid button:hover {
-    transform: translateY(-1px);
-    border-color: rgba(217, 249, 157, 0.38);
-    background: rgba(255, 253, 248, 0.11);
+  .next-grid button:active {
+    transform: translateY(1px);
+    background: rgba(255, 253, 248, 0.1);
+  }
+
+  .next-head {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .next-head svg {
+    flex: 0 0 auto;
+    color: rgba(217, 249, 157, 0.82);
+  }
+
+  .next-head span {
+    overflow: hidden;
+    color: rgba(255, 253, 248, 0.6);
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
   }
 
   .next-grid strong {
     display: block;
-    margin: 0.08rem 0;
+    margin: 0.12rem 0 0.02rem;
     color: #fff7ed;
-    font-size: 1rem;
+    font-size: 1.02rem;
+    font-weight: 800;
   }
 
   .action-row {
@@ -1997,40 +2363,30 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
+    margin-top: 0.1rem;
   }
 
   .action-row a {
+    flex: 0 0 auto;
     border-radius: 999px;
     background: #fff7ed;
     color: #1c1917;
     font-family: Oswald, Impact, sans-serif;
-    font-size: 0.82rem;
-    font-weight: 900;
-    letter-spacing: 0.08em;
-    padding: 0.68rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 0.65rem 1rem;
+    text-decoration: none;
     text-transform: uppercase;
   }
 
   .error {
+    margin: 0 1.05rem 1.05rem;
     border-radius: 16px;
-    background: rgba(127, 29, 29, 0.82);
+    background: rgba(127, 29, 29, 0.85);
     color: #fee2e2;
-    font-weight: 850;
-    padding: 0.8rem;
-  }
-
-  .map-credit {
-    position: absolute;
-    z-index: 2;
-    top: 19.6rem;
-    right: max(0.75rem, env(safe-area-inset-right));
-    border-radius: 999px;
-    background: rgba(17, 24, 39, 0.58);
-    color: rgba(255, 253, 248, 0.68);
-    font-size: 0.68rem;
-    font-weight: 800;
-    padding: 0.35rem 0.55rem;
-    z-index: 2;
+    font-weight: 700;
+    padding: 0.85rem;
   }
 
   @media (max-width: 820px) {
@@ -2044,189 +2400,47 @@
       height: calc(100svh - 5rem - env(safe-area-inset-bottom));
       min-height: calc(100svh - 5rem - env(safe-area-inset-bottom));
     }
+  }
 
-    .map-hud-top {
-      align-items: center;
-      padding-right: 0.7rem;
+  @media (max-width: 420px) {
+    .status-text strong {
+      font-size: 0.96rem;
     }
 
-    .hud-actions {
-      gap: 0.38rem;
-    }
-
-    .signal {
-      min-width: 5.5rem;
-      font-size: 0.72rem;
-    }
-
-    .mode-panel {
-      top: 5.85rem;
-      left: max(0.75rem, env(safe-area-inset-left));
-      right: max(0.75rem, env(safe-area-inset-right));
-      width: auto;
-    }
-
-    .detail-panel {
-      max-height: 49svh;
-      overflow-y: auto;
-    }
-
-    .trail-map-shell.appMode .detail-panel {
-      bottom: calc(0.75rem + 4.65rem + env(safe-area-inset-bottom));
-      max-height: 42svh;
-    }
-
-    .detail-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+    .ahead-strip small {
+      font-size: 0.54rem;
     }
 
     .next-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .map-credit {
-      display: none;
+    .action-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .action-row a {
+      text-align: center;
     }
   }
 
-  @media (max-width: 520px) {
-    .map-hud-top {
-      gap: 0.45rem;
-      border-radius: 16px;
-      padding: 0.58rem;
+  @media (min-width: 821px) {
+    .status-pill {
+      flex: 0 1 24rem;
     }
 
-    .back-link {
-      width: 2.25rem;
-      height: 2.25rem;
+    .top-bar {
+      justify-content: flex-start;
     }
+  }
 
-    h1 {
-      max-width: 7.8rem;
-      font-size: 1.45rem;
-    }
-
-    .hud-actions {
-      align-items: flex-end;
-      flex-direction: column;
-      gap: 0.28rem;
-    }
-
-    .signal {
-      min-width: 0;
-      gap: 0.34rem;
-      font-size: 0.64rem;
-    }
-
-    .signal-dot {
-      width: 0.56rem;
-      height: 0.56rem;
-    }
-
-    .layers-toggle {
-      min-width: 4.8rem;
-      min-height: 1.7rem;
-      padding: 0.22rem 0.54rem;
-    }
-
-    .layers-toggle span {
-      display: none;
-    }
-
-    .layers-toggle strong {
-      font-size: 0.68rem;
-    }
-
-    .mode-group,
-    .mode-group:nth-of-type(2) {
-      grid-template-columns: 1fr;
-    }
-
-    .mode-group {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-
-    .mode-panel {
-      gap: 0.48rem;
-      padding: 0.52rem;
-    }
-
-    .mode-group {
-      gap: 0.28rem;
-    }
-
-    .mode-group button,
-    .refresh,
-    .details-toggle,
-    .history-row button {
-      min-height: 1.85rem;
-      font-size: 0.66rem;
-    }
-
-    .mode-group > .mode-label {
-      grid-column: 1 / -1;
-    }
-
-    .detail-panel {
-      gap: 0.42rem;
-      padding: 0.72rem 0.5rem 0.5rem;
-    }
-
-    .detail-summary {
-      display: block;
-    }
-
-    .detail-grid {
-      grid-template-columns: 1fr 1fr;
-      gap: 0.42rem;
-    }
-
-    .metric {
-      padding: 0.42rem 0.48rem;
-    }
-
-    .metric-head span,
-    .next-head span {
-      font-size: 0.58rem;
-    }
-
-    .metric-head svg,
-    .next-head svg {
-      width: 0.86rem;
-      height: 0.86rem;
-    }
-
-    .metric strong {
-      font-size: 1.22rem;
-    }
-
-    .metric small,
-    .next-grid small,
-    .action-row span {
-      font-size: 0.66rem;
-    }
-
-    .details-toggle {
-      width: auto;
-      min-height: 3.8rem;
-      padding: 0.38rem 0.45rem;
-    }
-
-    .details-toggle strong {
-      font-size: 1rem;
-    }
-
-    .history-row {
-      grid-template-columns: auto minmax(0, 1fr) auto;
-    }
-
-    .history-row .center {
-      grid-column: 1 / -1;
-    }
-
-    .action-row {
-      align-items: flex-start;
-      flex-direction: column;
+  @media (prefers-reduced-motion: reduce) {
+    .sheet,
+    .layers-sheet,
+    .sheet-scrim {
+      transition: none;
+      animation: none;
     }
   }
 </style>

@@ -2,6 +2,13 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "scout-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "-w", "@hoggcountry/scout-web", "--", "--port", "5188", "--strictPort"],
+      "port": 5188,
+      "autoPort": false
+    },
+    {
       "name": "scout-mobile",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "mobile", "run", "dev", "--", "--port", "5199", "--strictPort"],
