@@ -87,6 +87,13 @@ import {
 	reachableSupportContacts,
 	removeSupportContactByName
 } from './safety';
+import {
+	actionCancelledChatText,
+	actionRecordedChatText,
+	appendAssistantStreamChunk,
+	appendChatMessage,
+	setChatMessageContent
+} from './chat-transcript';
 
 const STORAGE_KEY = 'hoggcountry:trail-assistant:mobile-prototype:v1';
 const FIELD_PACK_ENDPOINT =
@@ -102,15 +109,6 @@ const REQUIRE_GEMMA = MODEL_POLICY === 'gemma4-only';
 // basis when following the Dad pilot hike; a self-tracked hiker's own start date
 // (HikeProfile.startDate) takes over once they calibrate.
 const HIKE_START_DATE = '2026-02-01';
-
-function makeMessage(role: ChatMessage['role'], content: string): ChatMessage {
-	return {
-		id: crypto.randomUUID(),
-		role,
-		content,
-		timestamp: new Date().toISOString()
-	};
-}
 
 const mobilePersistence = browser ? createMobilePersistenceAdapter() : null;
 
@@ -639,11 +637,34 @@ class TrailAssistantStore {
 		return formatSyncLabel(this.#state.syncState);
 	}
 
+	#addCoachMessage(role: ChatMessage['role'], content: string): ChatMessage {
+		const result = appendChatMessage(this.#state.coachMessages, role, content);
+		this.#state.coachMessages = result.messages;
+		return result.message;
+	}
+
+	#setCoachMessageContent(messageId: string, content: string): void {
+		this.#state.coachMessages = setChatMessageContent(
+			this.#state.coachMessages,
+			messageId,
+			content
+		);
+	}
+
+	#appendCoachStreamChunk(
+		streamingMessageId: string | null,
+		chunk: string
+	): { streamingMessageId: string | null; started: boolean } {
+		const stream = appendAssistantStreamChunk(this.#state.coachMessages, streamingMessageId, chunk);
+		this.#state.coachMessages = stream.messages;
+		return { streamingMessageId: stream.streamingMessageId, started: stream.started };
+	}
+
 	sendCoachMessage(content: string) {
 		const trimmed = content.trim();
 		if (!trimmed) return;
 
-		this.#state.coachMessages = [...this.#state.coachMessages, makeMessage('user', trimmed)];
+		this.#addCoachMessage('user', trimmed);
 
 		// "Do" tools: if the message is a write-action intent, Scout PROPOSES the
 		// action (a confirm card) instead of just chatting. Nothing is written
@@ -652,7 +673,7 @@ class TrailAssistantStore {
 		if (proposal) {
 			this.#pendingAction = proposal.display;
 			this.#pendingApply = proposal.apply;
-			this.#state.coachMessages = [...this.#state.coachMessages, makeMessage('assistant', proposal.prompt)];
+			this.#addCoachMessage('assistant', proposal.prompt);
 			return;
 		}
 
@@ -705,10 +726,7 @@ class TrailAssistantStore {
 		this.#pendingApply = null;
 		if (!action || !apply) return;
 		apply();
-		this.#state.coachMessages = [
-			...this.#state.coachMessages,
-			makeMessage('assistant', `Done — ${action.title.toLowerCase()} recorded. ✓`)
-		];
+		this.#addCoachMessage('assistant', actionRecordedChatText(action.title));
 	}
 
 	/** Discard the pending Scout-proposed action without applying it. */
@@ -716,10 +734,7 @@ class TrailAssistantStore {
 		if (!this.#pendingAction) return;
 		this.#pendingAction = null;
 		this.#pendingApply = null;
-		this.#state.coachMessages = [
-			...this.#state.coachMessages,
-			makeMessage('assistant', `No problem — I didn't record anything.`)
-		];
+		this.#addCoachMessage('assistant', actionCancelledChatText());
 	}
 
 	async #dispatchScoutReply(prompt: string) {
@@ -733,18 +748,9 @@ class TrailAssistantStore {
 		// arriving, then flip straight into the growing answer.
 		let streamingId: string | null = null;
 		const onToken = (chunk: string) => {
-			if (!chunk) return;
-			if (streamingId === null) {
-				const message = makeMessage('assistant', chunk);
-				streamingId = message.id;
-				this.#scoutThinking = false;
-				this.#state.coachMessages = [...this.#state.coachMessages, message];
-			} else {
-				const id = streamingId;
-				this.#state.coachMessages = this.#state.coachMessages.map((m) =>
-					m.id === id ? { ...m, content: m.content + chunk } : m
-				);
-			}
+			const stream = this.#appendCoachStreamChunk(streamingId, chunk);
+			if (stream.started) this.#scoutThinking = false;
+			streamingId = stream.streamingMessageId;
 		};
 
 		try {
@@ -754,7 +760,7 @@ class TrailAssistantStore {
 				// model answer, so the chat shows no confidence badge or source chips.
 				const autoStart = await this.#startModelDownloadIfUseful();
 				const answer = this.#gemmaUnavailableAnswer(autoStart);
-				this.#state.coachMessages = [...this.#state.coachMessages, makeMessage('assistant', answer.answer)];
+				this.#addCoachMessage('assistant', answer.answer);
 				return;
 			}
 
@@ -775,14 +781,11 @@ class TrailAssistantStore {
 				// attach receipts/confidence so the source chips render.
 				const id = streamingId;
 				this.#scoutAnswersByMessage.set(id, answer);
-				this.#state.coachMessages = this.#state.coachMessages.map((m) =>
-					m.id === id ? { ...m, content: answer.answer } : m
-				);
+				this.#setCoachMessageContent(id, answer.answer);
 			} else {
 				// Provider didn't stream (e.g. deterministic fallback) — append result.
-				const message = makeMessage('assistant', answer.answer);
+				const message = this.#addCoachMessage('assistant', answer.answer);
 				this.#scoutAnswersByMessage.set(message.id, answer);
-				this.#state.coachMessages = [...this.#state.coachMessages, message];
 			}
 		} catch (error) {
 			// On-device generation failed this turn. Under the Gemma-only policy the
@@ -802,12 +805,9 @@ class TrailAssistantStore {
 			const snag =
 				'Scout hit a snag answering that just now — give it a few seconds and ask again.';
 			if (streamingId !== null) {
-				const id = streamingId;
-				this.#state.coachMessages = this.#state.coachMessages.map((m) =>
-					m.id === id ? { ...m, content: snag } : m
-				);
+				this.#setCoachMessageContent(streamingId, snag);
 			} else {
-				this.#state.coachMessages = [...this.#state.coachMessages, makeMessage('assistant', snag)];
+				this.#addCoachMessage('assistant', snag);
 			}
 		} finally {
 			this.#scoutThinking = false;
