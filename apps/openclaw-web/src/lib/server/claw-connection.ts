@@ -1,11 +1,16 @@
 import type { WorkspaceSnapshot } from '$lib/server/workspace-store';
 
 export const OPENAI_CODEX_PROVIDER_ID = 'openai-codex';
+export const OPENAI_API_PROVIDER_ID = 'openai';
 export const OPENCODE_GO_PROVIDER_ID = 'opencode-go';
 export const OPENAI_CODEX_MODEL = 'gpt-5.4';
+export const DEFAULT_OPENAI_API_MODEL = 'gpt-5.4-mini';
 export const DEFAULT_OPENCODE_GO_MODEL = 'deepseek-v4-pro';
 
-export type ClawProviderId = typeof OPENAI_CODEX_PROVIDER_ID | typeof OPENCODE_GO_PROVIDER_ID;
+export type ClawProviderId =
+  | typeof OPENAI_CODEX_PROVIDER_ID
+  | typeof OPENAI_API_PROVIDER_ID
+  | typeof OPENCODE_GO_PROVIDER_ID;
 
 export interface WorkspaceClawConnectionPayload {
   readonly providerId: ClawProviderId;
@@ -24,7 +29,9 @@ export function configuredHouseProviderId(): ClawProviderId | null {
     ''
   ).trim();
   if (provider === OPENCODE_GO_PROVIDER_ID) return OPENCODE_GO_PROVIDER_ID;
+  if (provider === OPENAI_API_PROVIDER_ID) return OPENAI_API_PROVIDER_ID;
   if (provider === OPENAI_CODEX_PROVIDER_ID) return null;
+  if (process.env.OPENAI_API_KEY?.trim()) return OPENAI_API_PROVIDER_ID;
   return process.env.OPENCODE_API_KEY ? OPENCODE_GO_PROVIDER_ID : null;
 }
 
@@ -35,6 +42,14 @@ export function configuredHouseModelId(providerId: ClawProviderId): string {
       process.env.OPENCLAW_CLAW_MODEL ||
       process.env.OPENCLAW_SCOUT_MODEL ||
       DEFAULT_OPENCODE_GO_MODEL
+    ).trim();
+  }
+
+  if (providerId === OPENAI_API_PROVIDER_ID) {
+    return (
+      process.env.SCOUT_MODEL ||
+      process.env.OPENAI_MODEL ||
+      DEFAULT_OPENAI_API_MODEL
     ).trim();
   }
 
@@ -49,6 +64,18 @@ export function getConfiguredClawConnection(record: Pick<WorkspaceSnapshot, 'pro
     return {
       providerId: OPENCODE_GO_PROVIDER_ID,
       label: 'OpenCode Go house lane',
+      status: 'connected',
+      accountId: null,
+      expiresAt: null,
+      model: modelId
+    };
+  }
+
+  if (houseProviderId === OPENAI_API_PROVIDER_ID && process.env.OPENAI_API_KEY?.trim()) {
+    const modelId = configuredHouseModelId(houseProviderId);
+    return {
+      providerId: OPENAI_API_PROVIDER_ID,
+      label: 'OpenAI API house lane',
       status: 'connected',
       accountId: null,
       expiresAt: null,

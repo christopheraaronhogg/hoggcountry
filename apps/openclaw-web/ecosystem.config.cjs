@@ -72,6 +72,8 @@ module.exports = {
           undefined
         ),
         HOGGCOUNTRY_OPENAI_CODEX_REDIRECT_URI: envValue('HOGGCOUNTRY_OPENAI_CODEX_REDIRECT_URI', undefined),
+        OPENAI_API_KEY: envValue('OPENAI_API_KEY', undefined),
+        OPENAI_MODEL: envValue('OPENAI_MODEL', undefined),
         OPENCODE_API_KEY: envValue('OPENCODE_API_KEY', undefined),
         SCOUT_PROVIDER: envValue(['SCOUT_PROVIDER', 'OPENCLAW_CLAW_PROVIDER', 'OPENCLAW_SCOUT_PROVIDER'], undefined),
         SCOUT_MODEL: envValue(['SCOUT_MODEL', 'OPENCLAW_CLAW_MODEL', 'OPENCLAW_SCOUT_MODEL'], undefined),

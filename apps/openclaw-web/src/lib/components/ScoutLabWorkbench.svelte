@@ -12,7 +12,7 @@
   }
 
   interface ProviderConnection {
-    readonly providerId: 'openai-codex' | 'opencode-go';
+    readonly providerId: 'openai-codex' | 'openai' | 'opencode-go';
     readonly label: string;
     readonly status: 'connected';
     readonly accountId: string | null;

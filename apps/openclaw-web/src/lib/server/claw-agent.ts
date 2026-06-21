@@ -52,9 +52,11 @@ import {
 } from '$lib/server/workspace-store';
 import { buildAtRouteGrounding, formatAtRouteMileage, type AtRouteGrounding } from '@hoggcountry/trail-data';
 import {
+  DEFAULT_OPENAI_API_MODEL,
   configuredHouseModelId,
   configuredHouseProviderId,
   DEFAULT_OPENCODE_GO_MODEL,
+  OPENAI_API_PROVIDER_ID,
   OPENAI_CODEX_MODEL,
   OPENAI_CODEX_PROVIDER_ID,
   OPENCODE_GO_PROVIDER_ID,
@@ -2198,6 +2200,26 @@ function resolveModelOrThrow(providerId: ClawProviderId, modelId: string): Model
   const model = getModel(providerId as never, modelId as never);
   if (model) return model;
 
+  if (providerId === OPENAI_API_PROVIDER_ID) {
+    return {
+      id: modelId,
+      name: modelId,
+      api: 'openai-responses',
+      provider: OPENAI_API_PROVIDER_ID,
+      baseUrl: 'https://api.openai.com/v1',
+      reasoning: /^gpt-5(?:\.|$|-)|^o[134](?:\.|$|-)/u.test(modelId),
+      input: ['text', 'image'],
+      cost: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0
+      },
+      contextWindow: 400000,
+      maxTokens: 128000
+    };
+  }
+
   if (providerId === OPENCODE_GO_PROVIDER_ID) {
     return {
       id: modelId,
@@ -2219,6 +2241,14 @@ function resolveModelOrThrow(providerId: ClawProviderId, modelId: string): Model
   }
 
   throw new Error(`Scout model is not registered: ${providerId} / ${modelId}`);
+}
+
+function getOpenAIApiKey(): string {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!apiKey) {
+    throw new Error('OPENAI_API_KEY is required for the OpenAI API Scout lane.');
+  }
+  return apiKey;
 }
 
 function getOpenCodeGoApiKey(): string {
@@ -2277,6 +2307,17 @@ async function resolveClawRuntime(record: WorkspaceRecord): Promise<ClawRuntime>
       modelId,
       model: resolveModelOrThrow(houseProviderId, modelId),
       apiKey: getOpenCodeGoApiKey(),
+      credentials: null
+    };
+  }
+
+  if (houseProviderId === OPENAI_API_PROVIDER_ID) {
+    const modelId = configuredHouseModelId(houseProviderId);
+    return {
+      providerId: OPENAI_API_PROVIDER_ID,
+      modelId,
+      model: resolveModelOrThrow(houseProviderId, modelId),
+      apiKey: getOpenAIApiKey(),
       credentials: null
     };
   }
@@ -2509,13 +2550,29 @@ function toPiMessage(message: WorkspaceClawMessage): Message {
     return userMessage;
   }
 
-  const providerId = message.providerId === OPENCODE_GO_PROVIDER_ID ? OPENCODE_GO_PROVIDER_ID : OPENAI_CODEX_PROVIDER_ID;
+  const providerId =
+    message.providerId === OPENCODE_GO_PROVIDER_ID
+      ? OPENCODE_GO_PROVIDER_ID
+      : message.providerId === OPENAI_API_PROVIDER_ID
+        ? OPENAI_API_PROVIDER_ID
+        : OPENAI_CODEX_PROVIDER_ID;
   const assistantMessage: AssistantMessage = {
     role: 'assistant',
     content: [{ type: 'text', text: message.text }],
-    api: providerId === OPENCODE_GO_PROVIDER_ID ? 'openai-completions' : 'openai-codex-responses',
+    api:
+      providerId === OPENCODE_GO_PROVIDER_ID
+        ? 'openai-completions'
+        : providerId === OPENAI_API_PROVIDER_ID
+          ? 'openai-responses'
+          : 'openai-codex-responses',
     provider: providerId,
-    model: message.model || (providerId === OPENCODE_GO_PROVIDER_ID ? DEFAULT_OPENCODE_GO_MODEL : CLAW_MODEL),
+    model: message.model || (
+      providerId === OPENCODE_GO_PROVIDER_ID
+        ? DEFAULT_OPENCODE_GO_MODEL
+        : providerId === OPENAI_API_PROVIDER_ID
+          ? DEFAULT_OPENAI_API_MODEL
+          : CLAW_MODEL
+    ),
     usage: ZERO_USAGE,
     stopReason: message.error ? 'error' : 'stop',
     errorMessage: message.error ? message.text : undefined,
@@ -2572,7 +2629,12 @@ function simplifyMessages(messages: Message[]): WorkspaceClawMessage[] {
         const text = assistantText(message);
         if (!text) return [];
 
-        const providerId = message.provider === OPENAI_CODEX_PROVIDER_ID || message.provider === OPENCODE_GO_PROVIDER_ID ? message.provider : 'system';
+        const providerId =
+          message.provider === OPENAI_CODEX_PROVIDER_ID ||
+          message.provider === OPENAI_API_PROVIDER_ID ||
+          message.provider === OPENCODE_GO_PROVIDER_ID
+            ? message.provider
+            : 'system';
         const workspaceMessage: WorkspaceClawMessage = {
           id: `claw-assistant-${message.timestamp}`,
           role: 'assistant',

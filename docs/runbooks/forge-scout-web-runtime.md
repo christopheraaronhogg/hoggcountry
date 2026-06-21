@@ -33,6 +33,20 @@ SCOUT_WEB_PROXY_ENABLED=true
 SCOUT_WEB_PROXY_ORIGIN=http://127.0.0.1:3000
 ```
 
+For a house-funded web Scout model lane, also set these values in the same
+shared Forge env file. Keep the API key in Forge only; never commit it.
+
+```env
+OPENAI_API_KEY=<project key>
+SCOUT_PROVIDER=openai
+SCOUT_MODEL=gpt-5.5
+```
+
+If `SCOUT_MODEL` is omitted, the web Scout API lane defaults to
+`gpt-5.4-mini`. The native/mobile app remains on its offline/on-device policy;
+this hosted model lane is only for the web app while App Store release work is
+still in progress.
+
 After changing those values:
 
 ```bash
