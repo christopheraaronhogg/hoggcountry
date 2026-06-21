@@ -73,32 +73,35 @@
     },
     "apple-archive-upload": {
       "status": "verified",
-      "verifiedAt": "2026-06-21T15:10:09Z",
+      "verifiedAt": "2026-06-21T15:26:03Z",
       "verifiedBy": "Codex on Chris Hogg's local checkout plus App Store Connect API",
-      "summary": "Uploaded Hoggcountry iOS version 1.0 build 4 to App Store Connect. Apple processed build id 6f0d598c-ed38-4f5d-aee6-7b00fe118107 to processingState VALID; the build is attached to Dad Pilot and submitted for external Beta App Review.",
+      "summary": "Uploaded Hoggcountry iOS version 1.0 build 5 from repo SHA 9ab36e452bc528af57c8e8307de9c546aa0a62a9 to App Store Connect. Apple processed build id 3e2c90ff-d3dc-4d8f-afa7-8fe292ff8dde to processingState VALID; the build is attached to Dad Pilot and submitted for external Beta App Review.",
       "files": [
         "docs/launch/proof/ios-testflight-upload-2026-06-21.md",
         "docs/launch/proof/ios-testflight-attempt-2026-06-21T14-36-45-831Z.md",
         "docs/launch/proof/ios-testflight-build-3-2026-06-21.md",
         "docs/launch/proof/ios-testflight-attempt-2026-06-21T15-02-23-312Z.md",
-        "docs/launch/proof/ios-testflight-build-4-2026-06-21.md"
+        "docs/launch/proof/ios-testflight-build-4-2026-06-21.md",
+        "docs/launch/proof/ios-testflight-attempt-2026-06-21T15-20-34-857Z.md",
+        "docs/launch/proof/ios-testflight-build-5-2026-06-21.md"
       ],
       "commands": [
         "npm run ios:testflight -- --upload --team-id 3CFU9J87A5 --asc-key-path ~/.appstoreconnect/private_keys/AuthKey_T272T83N98.p8 --asc-key-id T272T83N98 --asc-issuer-id <issuer>",
-        "GET https://api.appstoreconnect.apple.com/v1/builds/6f0d598c-ed38-4f5d-aee6-7b00fe118107?include=buildBetaDetail,betaGroups"
+        "GET https://api.appstoreconnect.apple.com/v1/builds/3e2c90ff-d3dc-4d8f-afa7-8fe292ff8dde?include=buildBetaDetail,betaGroups"
       ]
     },
     "dad-testflight-invite": {
       "status": "blocked",
-      "verifiedAt": "2026-06-21T15:10:09Z",
+      "verifiedAt": "2026-06-21T15:26:03Z",
       "verifiedBy": "Codex via App Store Connect API",
-      "summary": "Dad Pilot is attached to Hoggcountry iOS build 1.0 (4), build 1.0 (3) was removed from Dad Pilot and review, and build 4 was submitted for external Beta App Review. Apple now reports build 4 externalBuildState WAITING_FOR_BETA_REVIEW; Dad's public link remains unavailable until approval.",
+      "summary": "Dad Pilot is attached to Hoggcountry iOS build 1.0 (5), build 1.0 (4) was removed from Dad Pilot and review, and build 5 was submitted for external Beta App Review. Apple now reports build 5 externalBuildState WAITING_FOR_BETA_REVIEW; Dad's public link remains unavailable until approval.",
       "files": [
         "docs/launch/proof/ios-testflight-upload-2026-06-21.md",
         "docs/launch/proof/ios-testflight-build-3-2026-06-21.md",
-        "docs/launch/proof/ios-testflight-build-4-2026-06-21.md"
+        "docs/launch/proof/ios-testflight-build-4-2026-06-21.md",
+        "docs/launch/proof/ios-testflight-build-5-2026-06-21.md"
       ],
-      "blocker": "Wait for Apple to approve build 4 for external beta testing. After build 4 approval, enable the Dad Pilot public link with limit 5 and send Chris the link."
+      "blocker": "Wait for Apple to approve build 5 for external beta testing. After build 5 approval, enable the Dad Pilot public link with limit 5 and send Chris the link."
     },
     "android-upload-keystore": {
       "status": "verified",
