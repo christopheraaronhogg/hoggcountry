@@ -41,6 +41,18 @@ export interface TrailGeolocation {
 	clearWatch(id: number): void;
 }
 
+export function createBrowserGeolocation(browserAvailable: boolean): TrailGeolocation | null {
+	if (!browserAvailable || typeof navigator === 'undefined' || !navigator.geolocation) return null;
+	const { geolocation } = navigator;
+	return {
+		getCurrentPosition: (success, error, options) =>
+			geolocation.getCurrentPosition(success, error, options),
+		watchPosition: (success, error, options) =>
+			geolocation.watchPosition(success, error, options),
+		clearWatch: (id) => geolocation.clearWatch(id)
+	};
+}
+
 interface TrailPositionServiceOptions {
 	browserAvailable: boolean;
 	getGeolocation: () => TrailGeolocation | null;

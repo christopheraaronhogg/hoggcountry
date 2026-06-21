@@ -18,10 +18,7 @@ import type {
 } from './types';
 import { publishTrailPulseReport } from './trailPulseSpacetime';
 import { resolveModelPolicy } from './scout/model-policy.ts';
-import {
-	NativeScoutRuntime,
-	type ModelDownloadAutoStart
-} from './scout/native-scout-runtime.ts';
+import { NativeScoutRuntime } from './scout/native-scout-runtime.ts';
 import {
 	createTrailDocument,
 	limitTrailDocuments,
@@ -61,7 +58,7 @@ import {
 import { detectTrailActionIntent } from './scout/action-intents.ts';
 import { cloneDefaultContextPack } from './scout/default-pack.ts';
 import { loadTrailGeometry, snapToMile, type TrailGeoPoint } from './trail/trail-geometry';
-import { TrailPositionService, type TrailGeolocation } from './trail-position-service';
+import { createBrowserGeolocation, TrailPositionService } from './trail-position-service';
 import { InMemoryContextPackStore } from './scout';
 import type { ContextPack, ContextPackStatus, ScoutAnswer } from './scout';
 import {
@@ -112,18 +109,6 @@ const HIKE_START_DATE = '2026-02-01';
 
 const mobilePersistence = browser ? createMobilePersistenceAdapter() : null;
 
-function browserGeolocation(): TrailGeolocation | null {
-	if (!browser || !navigator.geolocation) return null;
-	const { geolocation } = navigator;
-	return {
-		getCurrentPosition: (success, error, options) =>
-			geolocation.getCurrentPosition(success, error, options),
-		watchPosition: (success, error, options) =>
-			geolocation.watchPosition(success, error, options),
-		clearWatch: (id) => geolocation.clearWatch(id)
-	};
-}
-
 /** A write-action Scout proposes from chat, rendered as a confirm card. */
 type ProposedAction = { id: string; title: string; detail: string; confirmLabel: string };
 
@@ -163,7 +148,7 @@ class TrailAssistantStore {
 	#hikeSetupOpen = $state(false);
 	#position = new TrailPositionService({
 		browserAvailable: browser,
-		getGeolocation: browserGeolocation,
+		getGeolocation: () => createBrowserGeolocation(browser),
 		getPrivacySettings: () => this.#state.privacySettings,
 		getTrailSettings: () => this.#state.trailSettings,
 		getTrailGeometry: () => this.#trailGeo,
@@ -306,18 +291,6 @@ class TrailAssistantStore {
 			);
 			this.#state.lastSyncAt = new Date().toISOString();
 		}, nextState === 'syncing' ? 1300 : 0);
-	}
-
-	async #gemmaReady(): Promise<boolean> {
-		return this.#nativeScout.gemmaReady(REQUIRE_GEMMA);
-	}
-
-	async #startModelDownloadIfUseful(): Promise<ModelDownloadAutoStart> {
-		return this.#nativeScout.startModelDownloadIfUseful();
-	}
-
-	#gemmaUnavailableAnswer(autoStart: ModelDownloadAutoStart = 'none'): ScoutAnswer {
-		return this.#nativeScout.gemmaUnavailableAnswer(autoStart);
 	}
 
 	async #syncTrailPulseReport(report: TrailConditionReport) {
@@ -669,12 +642,12 @@ class TrailAssistantStore {
 		};
 
 		try {
-			if (!(await this.#gemmaReady())) {
+			if (!(await this.#nativeScout.gemmaReady(REQUIRE_GEMMA))) {
 				// Model unavailable: append a PLAIN status message. Deliberately do
 				// NOT register it as a ScoutAnswer or set lastScoutAnswer — it isn't a
 				// model answer, so the chat shows no confidence badge or source chips.
-				const autoStart = await this.#startModelDownloadIfUseful();
-				const answer = this.#gemmaUnavailableAnswer(autoStart);
+				const autoStart = await this.#nativeScout.startModelDownloadIfUseful();
+				const answer = this.#nativeScout.gemmaUnavailableAnswer(autoStart);
 				this.#addCoachMessage('assistant', answer.answer);
 				return;
 			}
@@ -730,12 +703,12 @@ class TrailAssistantStore {
 	}
 
 	async askScout(prompt: string): Promise<ScoutAnswer> {
-		if (!(await this.#gemmaReady())) {
+		if (!(await this.#nativeScout.gemmaReady(REQUIRE_GEMMA))) {
 			// Return the unavailable STATUS to the caller, but do NOT record it as
 			// lastScoutAnswer — otherwise Today's "last answer" recap would show a
 			// status message with a confidence badge, as if it were a real answer.
-			const autoStart = await this.#startModelDownloadIfUseful();
-			return this.#gemmaUnavailableAnswer(autoStart);
+			const autoStart = await this.#nativeScout.startModelDownloadIfUseful();
+			return this.#nativeScout.gemmaUnavailableAnswer(autoStart);
 		}
 
 		const answer = await this.#nativeScout.runtime.ask({
