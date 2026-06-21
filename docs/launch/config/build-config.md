@@ -13,7 +13,7 @@ Branch: `main`.
 | Setting | Value | Status |
 |---|---|---|
 | MARKETING_VERSION | `1.0` | ✓ ready |
-| CURRENT_PROJECT_VERSION (build) | `1` | ✓ ready |
+| CURRENT_PROJECT_VERSION (build) | `3` | ✓ ready |
 | Deployment target | iOS 15.0 | ✓ required by LiteRT-LM Swift |
 | TARGETED_DEVICE_FAMILY | `1` (iPhone-only) | ✓ set tonight (was `1,2`; reversible decision) |
 | NSLocationWhenInUseUsageDescription | present | ✓ |

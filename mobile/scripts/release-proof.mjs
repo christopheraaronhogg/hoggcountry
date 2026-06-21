@@ -184,9 +184,9 @@ const items = [
 		pass: 'iOS bundle id is com.hoggcountry.trailassistant.',
 		fail: 'iOS bundle id is missing or drifted.'
 	}),
-	check('native-config', 'ios-version-build', 'pass', iosProject.includes('MARKETING_VERSION = 1.0;') && iosProject.includes('CURRENT_PROJECT_VERSION = 1;'), {
-		pass: 'iOS marketing version/build are 1.0/1.',
-		fail: 'iOS marketing version/build are not the expected 1.0/1.'
+	check('native-config', 'ios-version-build', 'pass', hasIosVersionBuild(iosProject), {
+		pass: 'iOS marketing version is 1.0 and the build number is set.',
+		fail: 'iOS marketing version is not 1.0 or the build number is missing.'
 	}),
 	check('native-config', 'ios-privacy-manifest-bundled', 'pass', iosPrivacy.includes('NSPrivacyCollectedDataTypeCoarseLocation') && iosProject.includes('PrivacyInfo.xcprivacy in Resources'), {
 		pass: 'iOS privacy manifest exists and is in Copy Bundle Resources.',
@@ -445,6 +445,10 @@ function countFiles(path, suffix) {
 function hasIosDevelopmentTeam(project) {
 	const teams = [...project.matchAll(/DEVELOPMENT_TEAM = ([^;]+);/gu)].map((match) => match[1].trim());
 	return teams.some((team) => team && team !== '""');
+}
+
+function hasIosVersionBuild(project) {
+	return project.includes('MARKETING_VERSION = 1.0;') && /CURRENT_PROJECT_VERSION = [1-9]\d*;/u.test(project);
 }
 
 function hasAndroidKeystoreEnv() {
