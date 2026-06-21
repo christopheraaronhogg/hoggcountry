@@ -86,7 +86,8 @@ const evidenceGuidance = {
 		proofTarget: 'After Apple Developer access is configured, record the selected team id, signing identity, provisioning profile, and Xcode build settings without committing secrets.',
 		commands: [
 			'security find-identity -v -p codesigning',
-			'xcodebuild -workspace mobile/ios/App/App.xcworkspace -scheme App -showBuildSettings | rg -n "DEVELOPMENT_TEAM|CODE_SIGN_STYLE|PROVISIONING_PROFILE|PRODUCT_BUNDLE_IDENTIFIER"'
+			'xcodebuild -workspace mobile/ios/App/App.xcworkspace -scheme App -showBuildSettings | rg -n "DEVELOPMENT_TEAM|CODE_SIGN_STYLE|PROVISIONING_PROFILE|PRODUCT_BUNDLE_IDENTIFIER"',
+			'cd mobile && npm run ios:testflight -- --diagnose-only'
 		]
 	},
 	'app-store-connect-record': {
@@ -100,7 +101,7 @@ const evidenceGuidance = {
 		summary: 'Signed iOS archive was created and uploaded to App Store Connect/TestFlight for this repo SHA.',
 		proofTarget: 'Record archive timestamp, bundle/version/build, upload result, and App Store Connect processing status.',
 		commands: [
-			'xcodebuild -workspace mobile/ios/App/App.xcworkspace -scheme App -configuration Release -archivePath build/App.xcarchive archive'
+			'cd mobile && npm run ios:testflight -- --upload --team-id <TEAMID>'
 		]
 	},
 	'play-console-record': {
@@ -248,7 +249,7 @@ const items = [
 		fail: 'Set Chris-owned Apple Developer Team in Xcode before archive/upload.'
 	}),
 	item('manual-account', 'app-store-connect-record', 'manual', 'Create/verify the App Store Connect record, bundle id, category, age rating, screenshots, App Privacy answers, support URL, and review notes.'),
-	item('manual-account', 'apple-archive-upload', 'manual', 'Archive and upload from Xcode after signing is set; capture the archive/upload result.'),
+	item('manual-account', 'apple-archive-upload', 'manual', 'Archive and upload with npm run ios:testflight -- --upload --team-id <TEAMID> after signing is set; capture the archive/upload result.'),
 	check('manual-account', 'android-upload-keystore', 'manual', hasAndroidKeystoreEnv(), {
 		pass: 'Android upload-key env vars are present in this shell; keep the secret outside git.',
 		fail: 'Create the Play upload keystore and set HC_ANDROID_KEYSTORE_FILE, HC_ANDROID_KEYSTORE_PASSWORD, HC_ANDROID_KEY_ALIAS, and HC_ANDROID_KEY_PASSWORD.'

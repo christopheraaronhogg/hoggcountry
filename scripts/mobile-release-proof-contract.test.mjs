@@ -184,3 +184,20 @@ test('root test suite runs the mobile release proof contract', () => {
 	assert.match(rootPackage, /scripts\/mobile-release-proof-contract\.test\.mjs/u);
 	assert.match(rootPackage, /scripts\/mobile-accessibility-contract\.test\.mjs/u);
 });
+
+test('TestFlight helper is a repeatable archive/export/upload lane', () => {
+	const rootPackage = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
+	const mobilePackage = readFileSync(new URL('../mobile/package.json', import.meta.url), 'utf8');
+	const helper = readFileSync(new URL('../mobile/scripts/ios-testflight.mjs', import.meta.url), 'utf8');
+	const proofScript = readFileSync(new URL('../mobile/scripts/release-proof.mjs', import.meta.url), 'utf8');
+
+	assert.match(rootPackage, /"ios:testflight": "cd mobile && npm run ios:testflight --"/u);
+	assert.match(mobilePackage, /"ios:testflight": "node scripts\/ios-testflight\.mjs"/u);
+	assert.match(helper, /method', 'app-store-connect'/u);
+	assert.match(helper, /destination', upload \? 'upload' : 'export'/u);
+	assert.match(helper, /testFlightInternalTestingOnly/u);
+	assert.match(helper, /APP_STORE_CONNECT_API_KEY_PATH/u);
+	assert.match(helper, /DEVELOPMENT_TEAM=\$\{teamId\}/u);
+	assert.match(helper, /ios-testflight-attempt-\$\{timestamp\}\.md/u);
+	assert.match(proofScript, /npm run ios:testflight -- --upload --team-id <TEAMID>/u);
+});

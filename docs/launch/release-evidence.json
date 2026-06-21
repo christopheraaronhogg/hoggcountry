@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-20",
+  "updatedAt": "2026-06-21",
   "items": {
     "privacy-contact-and-deletion": {
       "status": "verified",
@@ -40,15 +40,17 @@
     },
     "ios-development-team": {
       "status": "blocked",
-      "summary": "Local Apple signing is not configured: no valid code-signing identities, no provisioning profiles, and no DEVELOPMENT_TEAM in the App target build settings. Set Chris's Apple Developer Team/signing identity in Xcode before archive/upload.",
+      "summary": "Local Apple signing is not configured: no valid code-signing identities, no provisioning profiles, and no DEVELOPMENT_TEAM in the App target build settings. The repeatable TestFlight lane runs mobile check/test/iOS sync successfully, then stops at archive because Xcode needs Chris's Apple Developer Team.",
       "files": [
-        "docs/launch/proof/ios-signing-blocked-2026-06-20.md"
+        "docs/launch/proof/ios-signing-blocked-2026-06-20.md",
+        "docs/launch/proof/ios-testflight-attempt-2026-06-21T02-51-42-785Z.md"
       ],
       "commands": [
         "security find-identity -v -p codesigning",
         "ls -la \"$HOME/Library/MobileDevice/Provisioning Profiles\"",
         "xcrun devicectl list devices",
-        "xcodebuild -workspace mobile/ios/App/App.xcworkspace -scheme App -showBuildSettings | rg -n \"DEVELOPMENT_TEAM|CODE_SIGN_STYLE|PRODUCT_BUNDLE_IDENTIFIER|MARKETING_VERSION|CURRENT_PROJECT_VERSION\""
+        "xcodebuild -workspace mobile/ios/App/App.xcworkspace -scheme App -showBuildSettings | rg -n \"DEVELOPMENT_TEAM|CODE_SIGN_STYLE|PRODUCT_BUNDLE_IDENTIFIER|MARKETING_VERSION|CURRENT_PROJECT_VERSION\"",
+        "npm run ios:testflight -- --archive-only"
       ]
     },
     "app-store-connect-record": {
@@ -57,7 +59,7 @@
     },
     "apple-archive-upload": {
       "status": "pending",
-      "summary": "Archive and upload the signed iOS build, then attach the Xcode organizer or App Store Connect upload proof."
+      "summary": "After Apple signing is configured, run npm run ios:testflight -- --upload --team-id <TEAMID>, wait for App Store Connect processing, then attach the upload/TestFlight proof."
     },
     "android-upload-keystore": {
       "status": "verified",

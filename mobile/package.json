@@ -23,6 +23,7 @@
 		"cap:sync:android": "npm run build && node scripts/preflight.mjs --platform android && npx cap sync android",
 		"cap:open:ios": "node scripts/preflight.mjs --platform ios && npx cap open ios",
 		"cap:open:android": "node scripts/preflight.mjs --platform android && npx cap open android",
+		"ios:testflight": "node scripts/ios-testflight.mjs",
 		"android:debug-apk": "bash scripts/android-debug-apk.sh",
 		"android:release-bundle": "bash scripts/android-release-bundle.sh"
 	},

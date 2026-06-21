@@ -59,6 +59,7 @@
     "backend:test": "cd backend && php artisan test",
     "monorepo:dev": "npx concurrently -k -n web,api \"npm run dev\" \"npm run backend:dev\"",
     "monorepo:check": "npm run build && npm run backend:frontend:build && npm run backend:test",
+    "ios:testflight": "cd mobile && npm run ios:testflight --",
     "verify:forge": "node scripts/verify-forge-deploy.mjs",
     "verify:scout:field": "node scripts/verify-scout-field-readiness.mjs",
     "trail-assistant:verify-urls": "node scripts/trail-assistant-url-matrix.mjs",
