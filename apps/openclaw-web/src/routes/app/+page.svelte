@@ -86,6 +86,7 @@
   let locationNotice = $state('');
   let locationError = $state('');
   let mileBusy = $state(false);
+  let mileNotice = $state('');
   let mileError = $state('');
   let trailAhead = $state<TrailAheadContext | null>(null);
   let trailAheadLoading = $state(true);
@@ -228,11 +229,16 @@
     }
 
     mileBusy = true;
+    mileNotice = '';
     mileError = '';
     locationNotice = '';
+    locationError = '';
 
     try {
-      applyProfile(await setCurrentMile(nextMile));
+      const nextProfile = await setCurrentMile(nextMile);
+      if (!nextProfile) throw new Error('Set up your hiker profile before saving a mile.');
+      applyProfile(nextProfile);
+      mileNotice = `Manual mile saved: AT mile ${nextProfile.currentMile.toFixed(1)}.`;
       if (online) void saveFieldPack(true);
       void loadTrailAhead();
     } catch (caught) {
@@ -245,6 +251,7 @@
   async function updateFromGps() {
     locationError = '';
     locationNotice = '';
+    mileNotice = '';
     mileError = '';
 
     if (!navigator.geolocation) {
@@ -450,6 +457,7 @@
 
   {#if locationNotice}<p class="hud-note success-note">{locationNotice}</p>{/if}
   {#if locationError}<p class="hud-note error-note">{locationError}</p>{/if}
+  {#if mileNotice}<p class="hud-note success-note">{mileNotice}</p>{/if}
   {#if mileError}<p class="hud-note error-note">{mileError}</p>{/if}
   {#if fieldPackError}<p class="hud-note error-note">{fieldPackError}</p>{/if}
 

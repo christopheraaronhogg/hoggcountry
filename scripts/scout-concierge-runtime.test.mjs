@@ -61,6 +61,18 @@ test('Scout chat keeps source receipt rendering stable and replies copyable', ()
   assert.doesNotMatch(page, /\{#each\s+(?:message\.sourceReceipts|activeTurnSourceReceipts|dailyBrief\.sourceReceipts)[^`]+`[^`]*\$\{receipt\.kind\}-\$\{receipt\.label\}`/u);
 });
 
+test('Today manual mile save is independent from GPS errors', () => {
+  const page = read('apps/openclaw-web/src/routes/app/+page.svelte');
+  const endpoint = read('apps/openclaw-web/src/routes/app-api/workspace/profile/current-mile/+server.ts');
+
+  assert.match(page, /let mileNotice = \$state\(''\)/u);
+  assert.match(page, /locationError = '';\s*\n\s*try \{/u);
+  assert.match(page, /Manual mile saved: AT mile/u);
+  assert.match(page, /\{#if mileNotice\}<p class="hud-note success-note">\{mileNotice\}<\/p>\{\/if\}/u);
+  assert.match(endpoint, /getWorkspace\(workspaceId, betaProfile\)/u);
+  assert.match(endpoint, /throw error\(409, 'Set up your hiker profile before saving a mile\.'\)/u);
+});
+
 test('Scout offline pack exposes compact AT reference context', async () => {
   const offlinePackEndpoint = read('apps/openclaw-web/src/routes/app-api/offline-pack/+server.ts');
   const offlinePackClient = read('apps/openclaw-web/src/lib/offline-field-pack.ts');
