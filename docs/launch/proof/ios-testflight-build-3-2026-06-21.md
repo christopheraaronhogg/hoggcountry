@@ -1,6 +1,6 @@
 # iOS TestFlight build 3 state
 
-Checked at: 2026-06-21T14:42:37Z
+Checked at: 2026-06-21T14:51:19Z
 
 ## Build uploaded
 
@@ -9,7 +9,7 @@ Checked at: 2026-06-21T14:42:37Z
 - Uploaded build: `1.0` (`3`)
 - Build id: `61615b00-b0df-4d64-aad6-8330c64bf2a2`
 - Processing state: `VALID`
-- External beta state: `READY_FOR_BETA_SUBMISSION`
+- External beta state: `WAITING_FOR_BETA_REVIEW`
 - Upload proof: `docs/launch/proof/ios-testflight-attempt-2026-06-21T14-36-45-831Z.md`
 - Archive/upload artifacts: `.scout-artifacts/ios-testflight/2026-06-21T14-36-45-831Z/`
 
@@ -22,13 +22,20 @@ Checked at: 2026-06-21T14:42:37Z
 - Public link: not enabled yet.
 - Dad tester: `jimmy@hoggs.net`
 
+## Build 2 review cleared
+
+Apple previously had build `2` (`7f5f5216-7145-4839-b7ed-dcab3702ea41`) in external beta review:
+
+- Build `2` external beta state after removal: `READY_FOR_BETA_SUBMISSION`
+- Build `2` beta review submissions after removal: none
+- Build `2` remains removed from Dad Pilot.
+
 ## Current blocker
 
-Apple still has build `2` (`7f5f5216-7145-4839-b7ed-dcab3702ea41`) in external beta review:
+Build `3` was submitted for external Beta App Review at 2026-06-21T14:51:19Z:
 
-- Build `2` external beta state: `WAITING_FOR_BETA_REVIEW`
-- Build `2` beta review submission state: `WAITING_FOR_REVIEW`
-- App Store Connect API rejected build `3` beta submission with `ENTITY_UNPROCESSABLE.ANOTHER_BUILD_IN_REVIEW`.
-- The API does not allow deleting `betaAppReviewSubmissions`; Apple returns `FORBIDDEN_ERROR` and says allowed operations are `CREATE`, `GET_COLLECTION`, and `GET_INSTANCE`.
+- Submission API status: `201 Created`
+- Build `3` beta review submission state: `WAITING_FOR_REVIEW`
+- Build `3` external beta state: `WAITING_FOR_BETA_REVIEW`
 
-Next action: once Apple finishes build `2` beta review, submit build `3` for Beta App Review. When build `3` is externally approved, enable the Dad Pilot public link with a limit of 5 and send that TestFlight link to Chris.
+Next action: wait for Apple to approve build `3` for external testing. When build `3` is externally approved, enable the Dad Pilot public link with a limit of 5 and send that TestFlight link to Chris.

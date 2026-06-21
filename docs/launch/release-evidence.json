@@ -73,9 +73,9 @@
     },
     "apple-archive-upload": {
       "status": "verified",
-      "verifiedAt": "2026-06-21T14:42:37Z",
+      "verifiedAt": "2026-06-21T14:51:19Z",
       "verifiedBy": "Codex on Chris Hogg's local checkout plus App Store Connect API",
-      "summary": "Uploaded Hoggcountry iOS version 1.0 build 3 to App Store Connect. Apple processed build id 61615b00-b0df-4d64-aad6-8330c64bf2a2 to processingState VALID; external beta state is READY_FOR_BETA_SUBMISSION.",
+      "summary": "Uploaded Hoggcountry iOS version 1.0 build 3 to App Store Connect. Apple processed build id 61615b00-b0df-4d64-aad6-8330c64bf2a2 to processingState VALID; the build is attached to Dad Pilot and submitted for external Beta App Review.",
       "files": [
         "docs/launch/proof/ios-testflight-upload-2026-06-21.md",
         "docs/launch/proof/ios-testflight-attempt-2026-06-21T14-36-45-831Z.md",
@@ -88,14 +88,14 @@
     },
     "dad-testflight-invite": {
       "status": "blocked",
-      "verifiedAt": "2026-06-21T14:42:37Z",
+      "verifiedAt": "2026-06-21T14:51:19Z",
       "verifiedBy": "Codex via App Store Connect API",
-      "summary": "Dad Pilot is now attached to Hoggcountry iOS build 1.0 (3), and build 1.0 (2) was removed from Dad Pilot. Build 3 is READY_FOR_BETA_SUBMISSION, but Apple rejected the build 3 beta submission because build 2 is still WAITING_FOR_BETA_REVIEW in the same train.",
+      "summary": "Dad Pilot is attached to Hoggcountry iOS build 1.0 (3), build 1.0 (2) was removed from Dad Pilot, and build 3 was submitted for external Beta App Review. Apple now reports build 3 externalBuildState WAITING_FOR_BETA_REVIEW; Dad's public link remains unavailable until approval.",
       "files": [
         "docs/launch/proof/ios-testflight-upload-2026-06-21.md",
         "docs/launch/proof/ios-testflight-build-3-2026-06-21.md"
       ],
-      "blocker": "Wait for Apple to finish build 2 beta review, then submit build 3 for Beta App Review. After build 3 approval, enable the Dad Pilot public link with limit 5 and send Chris the link."
+      "blocker": "Wait for Apple to approve build 3 for external beta testing. After build 3 approval, enable the Dad Pilot public link with limit 5 and send Chris the link."
     },
     "android-upload-keystore": {
       "status": "verified",
