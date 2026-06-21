@@ -1,6 +1,6 @@
 # Forge Scout Web Runtime Runbook
 
-Last verified: 2026-05-02
+Last verified: 2026-06-20
 
 ## Purpose
 
@@ -12,6 +12,7 @@ The active production shape is:
 - Laravel keeps `/api/*`, `/up`, and `/native`
 - Laravel proxies the SvelteKit web surface to the Node app on localhost, including non-GET app/API requests needed by the gated `/app` beta workspace
 - PM2 keeps the Node app alive
+- `app.hoggcountry.com` is the private web-app host; the apex still serves the public site and `/app` auth gate.
 
 ## Current live paths
 
@@ -31,7 +32,17 @@ In `/home/forge/hoggcountry.on-forge.com/.env`:
 ```env
 SCOUT_WEB_PROXY_ENABLED=true
 SCOUT_WEB_PROXY_ORIGIN=http://127.0.0.1:3000
+PUBLIC_REGISTRATION_ENABLED=false
+SCOUT_LAUNCH_INVITE_EMAIL=<private beta email>
+SCOUT_LAUNCH_INVITE_PASSWORD=<private beta password>
+SCOUT_LAUNCH_INVITE_NAME=<private beta name>
+SCOUT_LAUNCH_INVITE_TRAIL_NAME=<private beta trail name>
 ```
+
+Keep `PUBLIC_REGISTRATION_ENABLED=false` while the hosted Scout lane is funded
+by a house OpenAI key. `/signup` is a launch-list page, not account creation.
+The invite variables above lazily provision the private test account on first
+successful login without reopening public registration.
 
 For a house-funded web Scout model lane, also set these values in the same
 shared Forge env file. Keep the API key in Forge only; never commit it.
@@ -46,6 +57,17 @@ If `SCOUT_MODEL` is omitted, the web Scout API lane defaults to
 `gpt-5.4-mini`. The native/mobile app remains on its offline/on-device policy;
 this hosted model lane is only for the web app while App Store release work is
 still in progress.
+
+## App subdomain
+
+`app.hoggcountry.com` should point at the same Forge server as the apex domain:
+
+- DNS: `A app 129.212.138.246`
+- Forge site domain: add `app.hoggcountry.com`
+- SSL: issue or refresh a Let's Encrypt certificate covering `app.hoggcountry.com`
+
+The SvelteKit hook redirects `https://app.hoggcountry.com/` to `/app`. Login,
+signup/waitlist, and `/app/*` routes remain available on both hosts.
 
 After changing those values:
 

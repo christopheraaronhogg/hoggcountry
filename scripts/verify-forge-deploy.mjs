@@ -180,7 +180,7 @@ const checks = [
     expectStatus: 200,
     validate(result) {
       if (!hasHtml(result)) return 'expected login HTML response';
-      if (!includesAll(result.text, [/Continue with Google/i, /Email/i, /Password/i, /Forgot password/i])) {
+      if (!includesAll(result.text, [/Private beta email and password/i, /Email/i, /Password/i, /Forgot password/i, /Join launch list/i])) {
         return 'expected unified login form markers';
       }
       return null;
@@ -192,8 +192,8 @@ const checks = [
     expectStatus: 200,
     validate(result) {
       if (!hasHtml(result)) return 'expected signup HTML response';
-      if (!includesAll(result.text, [/Create your trail workspace/i, /Confirm password/i, /Already have an account/i])) {
-        return 'expected current signup form markers';
+      if (!includesAll(result.text, [/Private web beta/i, /Notify me/i, /Already have a login/i])) {
+        return 'expected private beta launch-list markers';
       }
       return null;
     }

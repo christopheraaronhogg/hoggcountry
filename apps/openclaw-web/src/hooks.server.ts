@@ -7,12 +7,21 @@ import {
   readAuthToken
 } from '$lib/server/auth';
 
+const APP_HOST = 'app.hoggcountry.com';
+
 export const handle: Handle = async ({ event, resolve }) => {
   // Canonical host: www resolves to the apex after the Forge cutover.
   if (event.url.hostname.startsWith('www.')) {
     const target = new URL(event.url);
     target.hostname = event.url.hostname.slice(4);
     return new Response(null, { status: 301, headers: { location: target.toString() } });
+  }
+
+  if (event.url.hostname === APP_HOST && event.url.pathname === '/') {
+    const target = new URL(event.url);
+    target.pathname = '/app';
+    target.search = '';
+    return new Response(null, { status: 302, headers: { location: target.toString() } });
   }
 
   event.locals.authToken = readAuthToken(event.cookies);

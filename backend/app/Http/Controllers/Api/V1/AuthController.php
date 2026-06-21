@@ -20,6 +20,14 @@ class AuthController extends ApiController
 {
     public function register(Request $request)
     {
+        if ($this->registrationIsClosed()) {
+            return $this->fail(
+                'registration_closed',
+                $this->registrationClosedMessage(),
+                403
+            );
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
@@ -70,9 +78,13 @@ class AuthController extends ApiController
         $user = $this->findUserByEmail($email);
 
         if (! $user || ! Hash::check($validated['password'], $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
-            ]);
+            $user = $this->resolveLaunchInviteUser($email, $validated['password']);
+
+            if (! $user) {
+                throw ValidationException::withMessages([
+                    'email' => ['The provided credentials are incorrect.'],
+                ]);
+            }
         }
 
         $tokenName = $validated['device_name'] ?? 'web-client';
@@ -218,6 +230,21 @@ class AuthController extends ApiController
 
         if (! $this->googleEmailIsVerified($googleUser)) {
             return $this->fail('oauth_unverified_email', 'Google did not return a verified email for this account.', 422, [
+                'provider' => 'google',
+            ]);
+        }
+
+        $knownSocialAccount = SocialAccount::query()
+            ->where('provider', 'google')
+            ->where('provider_user_id', $providerUserId)
+            ->exists();
+
+        if (
+            $this->registrationIsClosed()
+            && ! $knownSocialAccount
+            && ! $this->findUserByEmail($email)
+        ) {
+            return $this->fail('registration_closed', $this->registrationClosedMessage(), 403, [
                 'provider' => 'google',
             ]);
         }
@@ -380,6 +407,21 @@ class AuthController extends ApiController
             ]);
         }
 
+        $knownSocialAccount = SocialAccount::query()
+            ->where('provider', 'openai')
+            ->where('provider_user_id', $providerUserId)
+            ->exists();
+
+        if (
+            $this->registrationIsClosed()
+            && ! $knownSocialAccount
+            && ! $this->findUserByEmail($email)
+        ) {
+            return $this->fail('registration_closed', $this->registrationClosedMessage(), 403, [
+                'provider' => 'openai',
+            ]);
+        }
+
         $user = DB::transaction(function () use ($claims, $providerUserId, $email): User {
             $social = SocialAccount::query()
                 ->where('provider', 'openai')
@@ -495,6 +537,58 @@ class AuthController extends ApiController
         array_unshift($providers, 'email');
 
         return array_values(array_unique($providers));
+    }
+
+    private function registrationIsClosed(): bool
+    {
+        return ! (bool) config('app.public_registration_enabled');
+    }
+
+    private function registrationClosedMessage(): string
+    {
+        return 'Scout web signups are closed while the hosted AI beta is private. Join the launch list from the app page.';
+    }
+
+    private function resolveLaunchInviteUser(string $email, string $password): ?User
+    {
+        $invite = config('app.launch_invite', []);
+        if (! is_array($invite)) {
+            return null;
+        }
+
+        $inviteEmail = $this->normalizeEmail((string) ($invite['email'] ?? ''));
+        $invitePassword = (string) ($invite['password'] ?? '');
+
+        if ($inviteEmail === '' || $invitePassword === '') {
+            return null;
+        }
+
+        if (! hash_equals($inviteEmail, $this->normalizeEmail($email)) || ! hash_equals($invitePassword, $password)) {
+            return null;
+        }
+
+        $name = trim((string) ($invite['name'] ?? '')) ?: 'Dad';
+        $trailName = trim((string) ($invite['trail_name'] ?? '')) ?: $name;
+
+        return DB::transaction(function () use ($inviteEmail, $invitePassword, $name, $trailName): User {
+            $user = $this->findUserByEmail($inviteEmail) ?? new User(['email' => $inviteEmail]);
+            $user->forceFill([
+                'name' => $user->exists ? $user->name : $name,
+                'password' => $invitePassword,
+                'email_verified_at' => $user->email_verified_at ?? now(),
+            ])->save();
+
+            $profile = $user->profile()->first();
+            $user->profile()->updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'display_name' => $profile?->display_name ?: $name,
+                    'trail_name' => $profile?->trail_name ?: $trailName,
+                ]
+            );
+
+            return $user->load('profile');
+        });
     }
 
     private function googleEmailIsVerified($googleUser): bool

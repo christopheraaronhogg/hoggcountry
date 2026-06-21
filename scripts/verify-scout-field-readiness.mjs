@@ -110,7 +110,7 @@ function expectHtmlMarkers(label, result, markers) {
 const login = await request('/login');
 expectHtmlMarkers('/login', login, [
   /Sign in to your trail workspace/u,
-  /Continue with Google/u,
+  /private beta email and password/u,
   /Email/u,
   /Password/u,
   /Forgot password/u
@@ -118,9 +118,9 @@ expectHtmlMarkers('/login', login, [
 
 const signup = await request('/signup');
 expectHtmlMarkers('/signup', signup, [
-  /Create your trail workspace/u,
-  /Confirm password/u,
-  /Already have an account/u
+  /Private web beta/u,
+  /Notify me/u,
+  /Already have a login/u
 ]);
 
 const forgotPassword = await request('/forgot-password');

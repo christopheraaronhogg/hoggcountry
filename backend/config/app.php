@@ -68,6 +68,15 @@ return [
 
     'frontend_password_reset_url' => env('FRONTEND_PASSWORD_RESET_URL'),
 
+    'public_registration_enabled' => (bool) env('PUBLIC_REGISTRATION_ENABLED', false),
+
+    'launch_invite' => [
+        'email' => env('SCOUT_LAUNCH_INVITE_EMAIL'),
+        'password' => env('SCOUT_LAUNCH_INVITE_PASSWORD'),
+        'name' => env('SCOUT_LAUNCH_INVITE_NAME', 'Dad'),
+        'trail_name' => env('SCOUT_LAUNCH_INVITE_TRAIL_NAME'),
+    ],
+
     'frontend_auth_allowed_hosts' => array_values(
         array_filter(
             array_map(

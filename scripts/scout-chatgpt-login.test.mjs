@@ -28,18 +28,34 @@ test('login flow keeps lane storage non-fatal so auth still succeeds', () => {
   assert.match(callback, /connected lane save failed; login continues/u);
 });
 
-test('login and signup ChatGPT buttons exist but are gated off by default', () => {
+test('login ChatGPT is gated and signup is waitlist-only during private hosted beta', () => {
   const login = read('apps/openclaw-web/src/routes/login/+page.svelte');
   assert.match(login, /Continue with ChatGPT/u);
   assert.match(login, /\{#if data\.chatgptUrl\}/u);
+  assert.match(login, /Join launch list/u);
+  assert.doesNotMatch(login, /Create account/u);
 
   const loginServer = read('apps/openclaw-web/src/routes/login/+page.server.ts');
   assert.match(loginServer, /PUBLIC_CHATGPT_LOGIN_ENABLED/u);
 
   const signup = read('apps/openclaw-web/src/routes/signup/+page.svelte');
-  assert.match(signup, /Continue with ChatGPT/u);
-  assert.match(signup, /\{#if data\.chatgptEnabled\}/u);
-  assert.match(signup, /\/auth\/chatgpt\/start/u);
+  assert.match(signup, /Private web beta/u);
+  assert.match(signup, /WaitlistSignup/u);
+  assert.doesNotMatch(signup, /Continue with ChatGPT/u);
+  assert.doesNotMatch(signup, /\/auth\/chatgpt\/start/u);
+});
+
+test('backend auth keeps registration closed unless explicitly enabled', () => {
+  const config = read('backend/config/app.php');
+  assert.match(config, /public_registration_enabled/u);
+  assert.match(config, /PUBLIC_REGISTRATION_ENABLED/u);
+  assert.match(config, /SCOUT_LAUNCH_INVITE/u);
+
+  const controller = read('backend/app/Http/Controllers/Api/V1/AuthController.php');
+  assert.match(controller, /registration_closed/u);
+  assert.match(controller, /resolveLaunchInviteUser/u);
+  assert.match(controller, /launch_invite/u);
+  assert.match(controller, /registrationIsClosed\(\)/u);
 });
 
 test('OAuth redirect defaults to the registered localhost URI (cloud rejected by OpenAI)', async () => {

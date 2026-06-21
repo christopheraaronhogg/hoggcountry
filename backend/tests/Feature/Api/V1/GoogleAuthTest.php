@@ -28,6 +28,8 @@ class GoogleAuthTest extends TestCase
 
     public function test_google_redirect_stores_callback_url_via_state_cache(): void
     {
+        config()->set('app.frontend_auth_allowed_hosts', ['frontend.example.com']);
+
         $capturedState = null;
         $driver = Mockery::mock();
         $driver->shouldReceive('stateless')->once()->andReturnSelf();
@@ -61,6 +63,8 @@ class GoogleAuthTest extends TestCase
 
     public function test_google_callback_creates_user_social_link_and_api_token(): void
     {
+        config()->set('app.public_registration_enabled', true);
+
         $socialUser = $this->fakeGoogleUser(
             id: 'google-123',
             email: 'walker@example.com',
@@ -97,6 +101,30 @@ class GoogleAuthTest extends TestCase
             'email' => 'walker@example.com',
         ]);
         $this->assertGreaterThan(0, $user->tokens()->count());
+    }
+
+    public function test_google_callback_rejects_new_user_when_registration_is_closed(): void
+    {
+        $socialUser = $this->fakeGoogleUser(
+            id: 'google-private-beta',
+            email: 'private-beta@example.com',
+            name: 'Private Beta'
+        );
+
+        Socialite::shouldReceive('driver->stateless->user')
+            ->once()
+            ->andReturn($socialUser);
+
+        $response = $this->getJson('/api/v1/auth/google/callback');
+
+        $response
+            ->assertStatus(403)
+            ->assertJsonPath('error.code', 'registration_closed')
+            ->assertJsonPath('error.details.provider', 'google');
+
+        $this->assertDatabaseMissing('users', [
+            'email' => 'private-beta@example.com',
+        ]);
     }
 
     public function test_google_callback_links_existing_user_by_email(): void
@@ -136,6 +164,7 @@ class GoogleAuthTest extends TestCase
 
     public function test_google_callback_redirects_browser_to_frontend_callback_url_when_configured(): void
     {
+        config()->set('app.public_registration_enabled', true);
         config()->set('app.frontend_auth_callback_url', 'https://frontend.example.com/login');
 
         $socialUser = $this->fakeGoogleUser(
@@ -180,6 +209,8 @@ class GoogleAuthTest extends TestCase
 
     public function test_google_callback_uses_state_mapped_callback_url_when_present(): void
     {
+        config()->set('app.public_registration_enabled', true);
+        config()->set('app.frontend_auth_allowed_hosts', ['localhost', 'state.example.com']);
         Cache::put('oauth_google_state:test-state', 'https://state.example.com/login', now()->addMinutes(10));
 
         $socialUser = $this->fakeGoogleUser(

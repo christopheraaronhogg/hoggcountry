@@ -19,10 +19,11 @@ test('Scout app and API aliases exist while legacy Claw routes remain compatible
   const signup = read('apps/openclaw-web/src/routes/signup/+page.server.ts');
   const appLayout = read('apps/openclaw-web/src/routes/app/+layout.svelte');
   const alias = read('apps/openclaw-web/src/lib/server/scout-api-alias.ts');
-  // Unified Scout auth (945eb36) made signup redirect-param aware; it must
-  // still land users inside the gated app via the sanitized redirect target.
+  // Private hosted beta keeps signup redirect-param aware for the login link,
+  // but account creation itself is closed while AI costs are app-managed.
   assert.match(signup, /normalizeRedirect/u);
-  assert.match(signup, /redirect\(303, redirectTo\)/u);
+  assert.match(signup, /REGISTRATION_CLOSED_MESSAGE/u);
+  assert.match(signup, /fail\(403/u);
   assert.match(appLayout, /href: '\/app\/scout'/u);
   assert.match(appLayout, /path\.startsWith\('\/app\/claw'\)/u);
   assert.match(alias, /target\.pathname = `\/app-api\/claw/u);

@@ -30,7 +30,7 @@
 
     <div class="auth-links">
       <a href="/login">Back to sign in</a>
-      <a href="/signup">Create account</a>
+      <a href="/signup">Join launch list</a>
     </div>
   </form>
 </section>

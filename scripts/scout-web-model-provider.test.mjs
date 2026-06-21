@@ -14,7 +14,19 @@ registerHooks({
     if (specifier.startsWith('$lib/')) {
       return nextResolve(new URL(`${specifier.slice('$lib/'.length)}.ts`, libRoot).href, context);
     }
-    return nextResolve(specifier, context);
+
+    try {
+      return nextResolve(specifier, context);
+    } catch (error) {
+      const isRelative = specifier.startsWith('./') || specifier.startsWith('../');
+      const parentIsScoutLib = typeof context.parentURL === 'string' && context.parentURL.startsWith(libRoot.href);
+      const hasExplicitExtension = /\.[cm]?[jt]s$/u.test(specifier);
+      if (!isRelative || !parentIsScoutLib || hasExplicitExtension) {
+        throw error;
+      }
+
+      return nextResolve(`${specifier}.ts`, context);
+    }
   }
 });
 
@@ -30,6 +42,10 @@ const {
   getWorkspaceRecord,
   replaceWorkspaceClawMessages
 } = await import('../apps/openclaw-web/src/lib/server/workspace-store.ts');
+const {
+  simplifyMessages,
+  toPiMessage
+} = await import('../apps/openclaw-web/src/lib/server/claw-runtime.ts');
 
 const savedEnv = {
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
@@ -130,4 +146,27 @@ test('workspace messages preserve the OpenAI API provider id', async () => {
 
   const reloaded = await getWorkspaceRecord(workspaceId, betaProfile);
   assert.equal(reloaded.clawMessages[0]?.providerId, OPENAI_API_PROVIDER_ID);
+});
+
+test('OpenAI API workspace messages round-trip through the Pi adapter', () => {
+  const workspaceMessage = {
+    id: 'claw-assistant-openai-pi',
+    role: 'assistant',
+    text: 'OpenAI API lane answer.',
+    createdAt: '2026-06-21T12:00:00.000Z',
+    providerId: OPENAI_API_PROVIDER_ID,
+    model: 'gpt-5.5',
+    error: false
+  };
+
+  const piMessage = toPiMessage(workspaceMessage);
+  assert.equal(piMessage.role, 'assistant');
+  assert.equal(piMessage.provider, OPENAI_API_PROVIDER_ID);
+  assert.equal(piMessage.api, 'openai-responses');
+  assert.equal(piMessage.model, 'gpt-5.5');
+
+  const [roundTripped] = simplifyMessages([piMessage]);
+  assert.equal(roundTripped.providerId, OPENAI_API_PROVIDER_ID);
+  assert.equal(roundTripped.model, 'gpt-5.5');
+  assert.equal(roundTripped.text, workspaceMessage.text);
 });

@@ -8,14 +8,14 @@
 
 <svelte:head>
   <title>Sign in | Hogg Country</title>
-  <meta name="description" content="Sign in to Scout with Google or email and password." />
+  <meta name="description" content="Sign in to the private Scout web beta." />
 </svelte:head>
 
 <section class="auth-shell">
   <div class="auth-copy">
     <p class="eyebrow">Scout account</p>
     <h1>Sign in to your trail workspace.</h1>
-    <p class="lede">Use Google or email and password. Same verified email, same Scout workspace.</p>
+    <p class="lede">Use your private beta email and password. New hosted accounts are closed while Dad tests Scout.</p>
   </div>
 
   <div class="auth-panel">
@@ -25,9 +25,10 @@
         <span class="chatgpt-note">also connects Scout's brain</span>
       </a>
     {/if}
-    <a class="google-button" href={data.googleUrl}>Continue with Google</a>
 
-    <div class="divider"><span>or</span></div>
+    {#if data.chatgptUrl}
+      <div class="divider"><span>or</span></div>
+    {/if}
 
     <form method="POST" class="auth-form">
       <input type="hidden" name="redirectTo" value={redirectTo} />
@@ -51,7 +52,7 @@
 
     <div class="auth-links">
       <a href={`/forgot-password?email=${encodeURIComponent(form?.email ?? '')}`}>Forgot password?</a>
-      <a href={`/signup?redirect=${encodeURIComponent(redirectTo)}`}>Create account</a>
+      <a href={`/signup?redirect=${encodeURIComponent(redirectTo)}`}>Join launch list</a>
     </div>
   </div>
 </section>
@@ -121,7 +122,6 @@
     font: inherit;
   }
 
-  .google-button,
   .primary-button {
     display: inline-flex;
     align-items: center;
@@ -131,12 +131,6 @@
     padding: 0 0.9rem;
     font-weight: 900;
     text-decoration: none;
-  }
-
-  .google-button {
-    border: 1px solid rgba(77, 89, 74, 0.18);
-    background: white;
-    color: var(--ink);
   }
 
   .chatgpt-button {

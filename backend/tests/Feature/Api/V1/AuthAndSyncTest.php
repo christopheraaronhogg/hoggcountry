@@ -15,9 +15,26 @@ class AuthAndSyncTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_public_registration_is_closed_by_default(): void
+    {
+        $response = $this->postJson('/api/v1/auth/register', [
+            'name' => 'Trail Bot',
+            'email' => 'bot@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+
+        $response
+            ->assertStatus(403)
+            ->assertJsonPath('error.code', 'registration_closed');
+
+        $this->assertDatabaseCount('users', 0);
+    }
+
     public function test_user_can_register_and_fetch_profile_with_bearer_token(): void
     {
         Notification::fake();
+        config()->set('app.public_registration_enabled', true);
 
         $registerResponse = $this->postJson('/api/v1/auth/register', [
             'name' => 'Chris Hogg',
@@ -56,6 +73,8 @@ class AuthAndSyncTest extends TestCase
 
     public function test_duplicate_register_returns_account_exists_without_creating_user(): void
     {
+        config()->set('app.public_registration_enabled', true);
+
         User::factory()->create([
             'email' => 'exists@example.com',
         ]);
@@ -73,6 +92,34 @@ class AuthAndSyncTest extends TestCase
             ->assertJsonPath('error.details.email', 'exists@example.com');
 
         $this->assertDatabaseCount('users', 1);
+    }
+
+    public function test_launch_invite_login_provisions_private_beta_user(): void
+    {
+        config()->set('app.launch_invite.email', 'jimmy@hoggs.net');
+        config()->set('app.launch_invite.password', 'private-beta-pass');
+        config()->set('app.launch_invite.name', 'Jimmy Hogg');
+        config()->set('app.launch_invite.trail_name', 'Dad');
+
+        $response = $this->postJson('/api/v1/auth/login', [
+            'email' => 'JIMMY@HOGGS.NET',
+            'password' => 'private-beta-pass',
+            'device_name' => 'Dad Safari',
+        ]);
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.user.email', 'jimmy@hoggs.net')
+            ->assertJsonPath('data.user.name', 'Jimmy Hogg')
+            ->assertJsonPath('data.user.profile.trail_name', 'Dad');
+
+        $token = $response->json('data.token');
+        $this->assertNotEmpty($token);
+
+        $user = User::where('email', 'jimmy@hoggs.net')->first();
+        $this->assertNotNull($user);
+        $this->assertTrue(Hash::check('private-beta-pass', $user->password));
+        $this->assertNotNull($user->email_verified_at);
     }
 
     public function test_google_account_can_set_password_through_frontend_reset_link(): void

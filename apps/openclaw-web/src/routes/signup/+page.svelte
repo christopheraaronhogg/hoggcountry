@@ -1,4 +1,5 @@
 <script lang="ts">
+  import WaitlistSignup from '$lib/components/WaitlistSignup.svelte';
   import type { ActionData, PageData } from './$types';
 
   const { data, form } = $props<{ data: PageData; form: ActionData }>();
@@ -6,67 +7,39 @@
 </script>
 
 <svelte:head>
-  <title>Create Scout account | Hogg Country</title>
+  <title>Scout launch list | Hogg Country</title>
   <meta name="robots" content="noindex,nofollow" />
 </svelte:head>
 
 <section class="auth-shell">
   <div class="auth-copy">
-    <p class="eyebrow">Scout account</p>
-    <h1>Create your trail workspace.</h1>
-    <p class="lede">Use email and password now. You can still add Google later with the same verified email.</p>
+    <p class="eyebrow">Private web beta</p>
+    <h1>Scout accounts are invite-only right now.</h1>
+    <p class="lede">
+      The hosted beta is using real AI usage, so new accounts are closed while Dad tests the trail workspace.
+      Join the launch list and we will let you know when the app opens.
+    </p>
   </div>
 
-  <form method="POST" class="auth-panel">
-    {#if data.chatgptEnabled}
-      <a class="chatgpt-button" href={`/auth/chatgpt/start?redirect=${encodeURIComponent(redirectTo)}`}>
-        Continue with ChatGPT
-        <span class="chatgpt-note">creates your account + connects Scout's brain</span>
-      </a>
-
-      <div class="divider"><span>or</span></div>
-    {/if}
-
-    <input type="hidden" name="redirectTo" value={redirectTo} />
-
-    <label>
-      <span>Name</span>
-      <input name="name" autocomplete="name" required value={form?.name ?? ''} />
-    </label>
-
-    <label>
-      <span>Email</span>
-      <input name="email" type="email" autocomplete="email" required value={form?.email ?? ''} />
-    </label>
-
-    <label>
-      <span>Password</span>
-      <input name="password" type="password" autocomplete="new-password" minlength="8" required />
-    </label>
-
-    <label>
-      <span>Confirm password</span>
-      <input name="passwordConfirmation" type="password" autocomplete="new-password" minlength="8" required />
-    </label>
-
+  <div class="auth-panel">
     {#if form?.message}
       <p class="status" data-type="error">{form.message}</p>
     {/if}
 
-    <button class="primary-button" type="submit">Create account</button>
+    <WaitlistSignup source="closed-signup" />
 
     <div class="auth-links">
-      <a href={`/login?redirect=${encodeURIComponent(redirectTo)}`}>Already have an account?</a>
-      <a href={`/forgot-password?email=${encodeURIComponent(form?.email ?? '')}`}>Recover login</a>
+      <a href={`/login?redirect=${encodeURIComponent(redirectTo)}`}>Already have a login?</a>
+      <a href="/forgot-password">Recover login</a>
     </div>
-  </form>
+  </div>
 </section>
 
 <style>
   .auth-shell {
     display: grid;
     gap: 1.2rem;
-    max-width: 860px;
+    max-width: 900px;
     margin: 0 auto;
     padding: clamp(2rem, 7vw, 4.5rem) 1rem;
   }
@@ -86,15 +59,15 @@
   }
 
   .lede {
-    max-width: 36rem;
+    max-width: 38rem;
     margin: 0 auto;
     color: var(--muted);
   }
 
   .auth-panel {
     display: grid;
-    gap: 0.85rem;
-    max-width: 440px;
+    gap: 1rem;
+    max-width: 460px;
     width: 100%;
     margin: 0 auto;
     padding: 1rem;
@@ -102,73 +75,6 @@
     border-radius: 8px;
     background: #fffdf8;
     box-shadow: 0 16px 34px rgba(31, 41, 55, 0.08);
-  }
-
-  .chatgpt-button {
-    display: grid;
-    justify-items: center;
-    gap: 0.1rem;
-    min-height: 3.3rem;
-    border-radius: 8px;
-    padding: 0.5rem 0.9rem;
-    background: #0d0d0d;
-    color: white;
-    font-weight: 900;
-    text-decoration: none;
-  }
-
-  .chatgpt-note {
-    color: rgba(255, 255, 255, 0.66);
-    font-size: 0.72rem;
-    font-weight: 700;
-  }
-
-  .divider {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    gap: 0.65rem;
-    color: var(--muted);
-    font-size: 0.82rem;
-    font-weight: 800;
-  }
-
-  .divider::before,
-  .divider::after {
-    content: '';
-    height: 1px;
-    background: rgba(77, 89, 74, 0.16);
-  }
-
-  label {
-    display: grid;
-    gap: 0.35rem;
-    color: var(--muted);
-    font-weight: 800;
-  }
-
-  input {
-    min-height: 2.9rem;
-    width: 100%;
-    border: 1px solid rgba(77, 89, 74, 0.18);
-    border-radius: 8px;
-    padding: 0 0.8rem;
-    background: white;
-    color: var(--ink);
-    font: inherit;
-  }
-
-  .primary-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 2.95rem;
-    border: 0;
-    border-radius: 8px;
-    background: var(--pine);
-    color: white;
-    font-weight: 900;
-    cursor: pointer;
   }
 
   .status {
@@ -188,7 +94,7 @@
 
   @media (min-width: 760px) {
     .auth-shell {
-      grid-template-columns: minmax(0, 1fr) 440px;
+      grid-template-columns: minmax(0, 1fr) 460px;
       align-items: center;
     }
 

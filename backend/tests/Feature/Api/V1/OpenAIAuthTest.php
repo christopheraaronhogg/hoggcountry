@@ -44,6 +44,8 @@ class OpenAIAuthTest extends TestCase
 
     public function test_chatgpt_login_creates_user_and_social_account(): void
     {
+        config()->set('app.public_registration_enabled', true);
+
         $response = $this->postJson('/api/v1/auth/openai/exchange', [
             'id_token' => $this->signedIdToken([
                 'email' => 'hiker@example.com',
@@ -72,8 +74,28 @@ class OpenAIAuthTest extends TestCase
         $this->assertTrue($social->user->is($user));
     }
 
+    public function test_chatgpt_login_rejects_new_user_when_registration_is_closed(): void
+    {
+        $response = $this->postJson('/api/v1/auth/openai/exchange', [
+            'id_token' => $this->signedIdToken([
+                'email' => 'private-beta@example.com',
+                'name' => 'Private Beta',
+            ]),
+        ]);
+
+        $response
+            ->assertStatus(403)
+            ->assertJsonPath('error.code', 'registration_closed')
+            ->assertJsonPath('error.details.provider', 'openai');
+
+        $this->assertSame(0, User::query()->where('email', 'private-beta@example.com')->count());
+        $this->assertSame(0, SocialAccount::query()->where('provider', 'openai')->count());
+    }
+
     public function test_repeat_chatgpt_login_reuses_existing_user(): void
     {
+        config()->set('app.public_registration_enabled', true);
+
         $this->postJson('/api/v1/auth/openai/exchange', [
             'id_token' => $this->signedIdToken(['email' => 'hiker@example.com']),
         ])->assertOk();
