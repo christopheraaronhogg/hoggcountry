@@ -27,9 +27,9 @@ cd mobile && bash scripts/android-debug-apk.sh --install
 No phone cable? Transfer the `.apk` to the phone and tap it (allow "install from
 this source").
 
-> The debug build is intentionally **not** the gemma4-only Play build, so if the
-> model isn't installed yet, Scout still answers from the deterministic offline
-> pack. That's expected — the model card tells you the real engine state.
+> Scout does not generate canned/template answers when the model is missing. If
+> the model is not installed yet, the chat shows the model status and download
+> controls instead of pretending to answer.
 
 ## 2. Download + verify the model
 

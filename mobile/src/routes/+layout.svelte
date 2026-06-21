@@ -39,7 +39,8 @@
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-	<title>Trail Assistant</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+	<title>Hoggcountry</title>
 	<meta
 		name="description"
 		content="On-device Appalachian Trail companion — offline field guide, elevation profile, gear, scripture, and Scout, a private AI assistant that cites its sources."

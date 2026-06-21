@@ -50,12 +50,21 @@ export interface BibleSearchHit {
 	score: number;
 }
 
+export interface BibleReferenceQuery {
+	bookName: string;
+	chapter: number;
+	startVerse?: number;
+	endChapter?: number;
+	endVerse?: number;
+}
+
 export interface BibleIndex {
 	data: KjvData;
 	books: KjvBook[];
 	search(query: string, limit?: number): BibleSearchHit[];
 	getBook(name: string): KjvBook | undefined;
 	getChapter(bookName: string, chapter: number): KjvChapter | undefined;
+	resolveReference(reference: string, limit?: number): BibleSearchHit[];
 }
 
 // Common English function words that would otherwise dominate scripture search
@@ -70,12 +79,80 @@ const STOPWORDS = new Set([
 	'there', 'here', 'been', 'being', 'has', 'our', 'its', 'it'
 ]);
 
+const COMMON_BOOK_ALIASES: Record<string, string[]> = {
+	Genesis: ['gen'],
+	Exodus: ['exo', 'exod'],
+	Leviticus: ['lev'],
+	Numbers: ['num', 'numb'],
+	Deuteronomy: ['deut', 'dt'],
+	Joshua: ['josh'],
+	Judges: ['judg'],
+	Psalms: ['psalm', 'ps', 'psa', 'psalm'],
+	Proverbs: ['prov', 'prv'],
+	Ecclesiastes: ['eccl'],
+	'Song of Solomon': ['song', 'song of songs', 'sos', 'canticles'],
+	Isaiah: ['isa'],
+	Jeremiah: ['jer'],
+	Lamentations: ['lam'],
+	Ezekiel: ['ezek'],
+	Daniel: ['dan'],
+	Hosea: ['hos'],
+	Obadiah: ['obad'],
+	Jonah: ['jon'],
+	Micah: ['mic'],
+	Nahum: ['nah'],
+	Habakkuk: ['hab'],
+	Zephaniah: ['zeph'],
+	Haggai: ['hag'],
+	Zechariah: ['zech'],
+	Malachi: ['mal'],
+	Matthew: ['matt', 'mt'],
+	Mark: ['mk', 'mrk'],
+	Luke: ['lk'],
+	John: ['jn', 'jhn'],
+	Acts: ['act'],
+	Romans: ['rom'],
+	'1 Corinthians': ['1 cor', '1 corinth', 'i corinthians', 'i cor', 'first corinthians'],
+	'2 Corinthians': ['2 cor', '2 corinth', 'ii corinthians', 'ii cor', 'second corinthians'],
+	Galatians: ['gal'],
+	Ephesians: ['eph'],
+	Philippians: ['phil'],
+	Colossians: ['col'],
+	'1 Thessalonians': ['1 thess', '1 thes', 'i thessalonians', 'i thess', 'first thessalonians'],
+	'2 Thessalonians': ['2 thess', '2 thes', 'ii thessalonians', 'ii thess', 'second thessalonians'],
+	'1 Timothy': ['1 tim', 'i timothy', 'i tim', 'first timothy'],
+	'2 Timothy': ['2 tim', 'ii timothy', 'ii tim', 'second timothy'],
+	Titus: ['tit'],
+	Philemon: ['philem', 'phlm'],
+	Hebrews: ['heb'],
+	James: ['jas'],
+	'1 Peter': ['1 pet', 'i peter', 'i pet', 'first peter'],
+	'2 Peter': ['2 pet', 'ii peter', 'ii pet', 'second peter'],
+	'1 John': ['1 jn', '1 joh', 'i john', 'i jn', 'first john'],
+	'2 John': ['2 jn', '2 joh', 'ii john', 'ii jn', 'second john'],
+	'3 John': ['3 jn', '3 joh', 'iii john', 'iii jn', 'third john'],
+	Revelation: ['rev', 'apocalypse']
+};
+
 export function tokenize(text: string): string[] {
 	return text
 		.toLowerCase()
 		.replace(/[^a-z0-9\s]/g, ' ')
 		.split(/\s+/)
 		.filter((token) => token.length >= 3 && !STOPWORDS.has(token));
+}
+
+function normalizeReferenceText(value: string): string {
+	return value
+		.toLowerCase()
+		.replace(/\./g, '')
+		.replace(/\s+/g, ' ')
+		.trim();
+}
+
+function addBookAlias(map: Map<string, KjvBook>, alias: string, book: KjvBook): void {
+	const normalized = normalizeReferenceText(alias);
+	if (normalized) map.set(normalized, book);
 }
 
 /**
@@ -86,9 +163,15 @@ export function buildBibleIndex(data: KjvData): BibleIndex {
 	const verses: KjvVerse[] = [];
 	const verseBook: string[] = [];
 	const booksByName = new Map<string, KjvBook>();
+	const booksByAlias = new Map<string, KjvBook>();
 
 	for (const book of data.books) {
 		booksByName.set(book.name.toLowerCase(), book);
+		addBookAlias(booksByAlias, book.name, book);
+		addBookAlias(booksByAlias, book.abbreviation, book);
+		for (const alias of COMMON_BOOK_ALIASES[book.name] ?? []) {
+			addBookAlias(booksByAlias, alias, book);
+		}
 		for (const chapter of book.chapters) {
 			for (const verse of chapter.verses) {
 				verses.push(verse);
@@ -111,6 +194,9 @@ export function buildBibleIndex(data: KjvData): BibleIndex {
 	});
 
 	function search(query: string, limit = 5): BibleSearchHit[] {
+		const referenceHits = resolveReference(query, limit);
+		if (referenceHits.length) return referenceHits;
+
 		const tokens = [...new Set(tokenize(query))];
 		if (!tokens.length) return [];
 
@@ -136,23 +222,125 @@ export function buildBibleIndex(data: KjvData): BibleIndex {
 			return verses[a].text.length - verses[b].text.length;
 		});
 
-		return ranked.slice(0, limit).map((index) => ({
+		const expanded = expandQuestionAnswerVerses(ranked).slice(0, limit);
+		return expanded.map((index) => ({
 			reference: verses[index].reference,
 			text: verses[index].text,
 			bookName: verseBook[index],
-			score: coverage.get(index) ?? 0
+			score: coverage.get(index) ?? 1
 		}));
 	}
 
+	function expandQuestionAnswerVerses(indices: number[]): number[] {
+		const expanded: number[] = [];
+		const seen = new Set<number>();
+
+		for (const index of indices) {
+			if (!seen.has(index)) {
+				expanded.push(index);
+				seen.add(index);
+			}
+
+			const nextIndex = index + 1;
+			const current = verses[index];
+			const next = verses[nextIndex];
+			if (
+				current?.text.trim().endsWith('?') &&
+				next &&
+				verseBook[nextIndex] === verseBook[index] &&
+				next.number === current.number + 1 &&
+				!seen.has(nextIndex)
+			) {
+				expanded.push(nextIndex);
+				seen.add(nextIndex);
+			}
+		}
+
+		return expanded;
+	}
+
 	function getBook(name: string): KjvBook | undefined {
-		return booksByName.get(name.toLowerCase());
+		return booksByName.get(name.toLowerCase()) ?? booksByAlias.get(normalizeReferenceText(name));
 	}
 
 	function getChapter(bookName: string, chapter: number): KjvChapter | undefined {
 		return getBook(bookName)?.chapters.find((c) => c.number === chapter);
 	}
 
-	return { data, books: data.books, search, getBook, getChapter };
+	function parseReference(reference: string): BibleReferenceQuery | null {
+		const normalized = normalizeReferenceText(reference);
+		if (!normalized) return null;
+
+		const aliases = [...booksByAlias.keys()].sort((a, b) => b.length - a.length);
+		for (const alias of aliases) {
+			if (normalized !== alias && !normalized.startsWith(`${alias} `)) continue;
+			const book = booksByAlias.get(alias);
+			if (!book) continue;
+			const rest = normalized.slice(alias.length).trim();
+			if (!rest) continue;
+			const readableRest = rest
+				.replace(/\bchapter\b|\bchap\b|\bch\b/g, ' ')
+				.replace(/\bverses?\b|\bv\b/g, ':')
+				.replace(/\s+/g, ' ')
+				.trim();
+
+			const verseMatch = readableRest.match(/^(\d+)\s*[:]\s*(\d+)(?:\s*[-–]\s*(?:(\d+)\s*[:]\s*)?(\d+))?$/);
+			if (verseMatch) {
+				const chapter = Number(verseMatch[1]);
+				const startVerse = Number(verseMatch[2]);
+				const endChapter = verseMatch[3] ? Number(verseMatch[3]) : undefined;
+				const endVerse = verseMatch[4] ? Number(verseMatch[4]) : undefined;
+				return {
+					bookName: book.name,
+					chapter,
+					startVerse,
+					endChapter,
+					endVerse
+				};
+			}
+
+			const chapterMatch = readableRest.match(/^(\d+)$/);
+			if (chapterMatch) {
+				return { bookName: book.name, chapter: Number(chapterMatch[1]) };
+			}
+		}
+
+		return null;
+	}
+
+	function hitForVerse(verse: KjvVerse, bookName: string): BibleSearchHit {
+		return {
+			reference: verse.reference,
+			text: verse.text,
+			bookName,
+			score: 999
+		};
+	}
+
+	function resolveReference(reference: string, limit = 50): BibleSearchHit[] {
+		const parsed = parseReference(reference);
+		if (!parsed || !Number.isFinite(parsed.chapter)) return [];
+		const book = getBook(parsed.bookName);
+		const chapter = book?.chapters.find((c) => c.number === parsed.chapter);
+		if (!book || !chapter) return [];
+
+		if (parsed.startVerse == null) {
+			return chapter.verses.slice(0, limit).map((verse) => hitForVerse(verse, book.name));
+		}
+
+		const startVerse = parsed.startVerse;
+		const endChapter = parsed.endChapter ?? parsed.chapter;
+		const endVerse = parsed.endVerse ?? parsed.startVerse;
+		if (endChapter !== parsed.chapter) return [];
+		const lo = Math.min(startVerse, endVerse);
+		const hi = Math.max(startVerse, endVerse);
+		return chapter.verses
+			.filter((verse) => verse.number >= lo && verse.number <= hi)
+			.slice(0, limit)
+			.map((verse) => hitForVerse(verse, book.name));
+	}
+
+	return { data, books: data.books, search, getBook, getChapter, resolveReference };
 }
 
 // Lazy, cached load of the packaged KJV asset. The promise is memoized so the

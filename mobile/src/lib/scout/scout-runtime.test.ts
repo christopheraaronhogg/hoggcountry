@@ -34,19 +34,16 @@ test('offline ask with an available on-device engine answers on-device', async (
 	assert.ok(ans.generatedAt, 'stamps generatedAt');
 });
 
-test('on-device engine failure degrades to the deterministic fallback (never throws to the user)', async () => {
+test('on-device engine failure surfaces instead of using a synthetic answer', async () => {
 	const { runtime } = createScoutRuntime({ initialPack: cloneDefaultContextPack(), onDeviceBridge: throwingBridge });
-	const ans = await runtime.ask({ prompt: 'where is the next water', onlineStatus: false });
-	assert.equal(ans.provider, 'deterministic-fallback');
-	assert.equal(ans.mode, 'offline-local');
-	assert.ok(ans.answer.length > 0);
+	await assert.rejects(() => runtime.ask({ prompt: 'where is the next water', onlineStatus: false }), /engine boom/);
 });
 
-test('under preferredMode on-device, an engine failure REthrows — never a silent offline fallback', async () => {
+test('under preferredMode on-device, an engine failure REthrows — never a silent template answer', async () => {
 	// Regression for the "asked a question, it acted offline" bug: in a Gemma-only
 	// build the caller forces preferredMode 'on-device'. A native generate() failure
 	// must surface (so the caller can warm + retry), NOT masquerade as a normal
-	// deterministic offline answer.
+	// canned/template answer.
 	const { runtime } = createScoutRuntime({
 		initialPack: cloneDefaultContextPack(),
 		onDeviceBridge: throwingBridge
@@ -57,11 +54,10 @@ test('under preferredMode on-device, an engine failure REthrows — never a sile
 	);
 });
 
-test('under preferredMode on-device, an UNAVAILABLE engine surfaces — never a silent deterministic offline answer', async () => {
-	// The router-selected-fallback path: isAvailable() returns false (no throw), so
-	// the router must still pick on-device (forced), whose generate() throws
-	// OnDeviceModelUnavailableError, which the runtime rethrows. It must NOT return
-	// the canned "Offline read from mile…" deterministic answer.
+test('under preferredMode on-device, an UNAVAILABLE engine surfaces — never a silent template answer', async () => {
+	// isAvailable() returns false (no throw), so the router must still pick
+	// on-device (forced), whose generate() throws OnDeviceModelUnavailableError,
+	// which the runtime rethrows. It must NOT return canned prose.
 	const { runtime } = createScoutRuntime({
 		initialPack: cloneDefaultContextPack(),
 		onDeviceBridge: unavailableBridge
@@ -71,20 +67,18 @@ test('under preferredMode on-device, an UNAVAILABLE engine surfaces — never a 
 	);
 });
 
-test('with no engine and offline, it answers deterministically — never a cloud provider', async () => {
+test('with no engine and offline, Scout surfaces unavailable instead of answering synthetically', async () => {
 	const { runtime } = createScoutRuntime({ initialPack: cloneDefaultContextPack() });
-	const ans = await runtime.ask({ prompt: 'how is the weather tomorrow', onlineStatus: false });
-	assert.equal(ans.provider, 'deterministic-fallback');
-	assert.equal(ans.mode, 'offline-local');
-	assert.notEqual(ans.mode, 'cloud');
+	await assert.rejects(() => runtime.ask({ prompt: 'how is the weather tomorrow', onlineStatus: false }));
 });
 
 test('a volatile prompt (weather) attaches a verify-from-current-source confirmation', async () => {
-	const { runtime } = createScoutRuntime({ initialPack: cloneDefaultContextPack() });
+	const { runtime } = createScoutRuntime({ initialPack: cloneDefaultContextPack(), onDeviceBridge: okBridge });
 	const ans = await runtime.ask({ prompt: 'how is the weather and wind tomorrow', onlineStatus: false });
+	assert.ok(ans.toolInvocations.some((tool) => tool.toolId === 'weather_lookup'));
 	assert.ok(
-		ans.requiredConfirmations.some((c) => c.reason === 'volatile'),
-		'volatile facts must carry a verify-live confirmation'
+		ans.toolInvocations.some((tool) => tool.confidence === 'low'),
+		'weather tool must not make unavailable weather look high-confidence'
 	);
 });
 
@@ -101,11 +95,10 @@ test('offline source search includes saved hiker documents with receipts', async
 		}
 	];
 
-	const { runtime } = createScoutRuntime({ initialPack: pack });
+	const { runtime } = createScoutRuntime({ initialPack: pack, onDeviceBridge: okBridge });
 	const ans = await runtime.ask({ prompt: 'what did I write about the left shoe laces?', onlineStatus: false });
 
-	assert.equal(ans.provider, 'deterministic-fallback');
-	assert.match(ans.answer, /left shoe looser/i);
+	assert.equal(ans.provider, 'on-device-gemma');
 	assert.ok(
 		ans.receipts.some((receipt) => receipt.kind === 'hiker-input' && receipt.title === 'Foot care note'),
 		'saved docs should be cited as hiker-input'

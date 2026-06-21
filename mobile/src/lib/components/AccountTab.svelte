@@ -37,6 +37,7 @@
 		onboarding: 'set when you started',
 		'check-in': 'from your last check-in',
 		gps: 'snapped from GPS',
+		manual: 'set manually',
 		pilot: "following Dad's pilot pack"
 	};
 
@@ -60,7 +61,7 @@
 	);
 	async function setMileFromInput() {
 		if (!mileDraftValid) return;
-		await trailAssistant.updateCurrentMile(mileDraft as number, 'check-in');
+		await trailAssistant.updateCurrentMile(mileDraft as number, 'manual');
 		mileDraft = null;
 		gpsMessage = null;
 	}

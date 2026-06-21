@@ -634,7 +634,7 @@ function extractKjvReferenceCandidates(prompt: string): string[] {
 }
 
 function promptAsksForScripture(prompt: string): boolean {
-  return /\b(scripture|bible|kjv|king\s+james|pce|pure\s+cambridge|verse|verses|quote|proverbs|psalms?|gospel)\b/iu.test(prompt)
+  return /\b(scripture|bible|kjv|king\s+james|pce|pure\s+cambridge|verse|verses|quote|proverbs|psalms?|gospel|salvation|be\s+saved|born\s+again|eternal\s+life|everlasting\s+life)\b/iu.test(prompt)
     || extractKjvReferenceCandidates(prompt).length > 0;
 }
 

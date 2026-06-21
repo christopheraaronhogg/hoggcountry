@@ -63,4 +63,13 @@ describe('Scout source selection', () => {
 
     assert.ok(sources.some((source) => source.id === 'kjv-pce'));
   });
+
+  it('selects KJV PCE for plain salvation wording', () => {
+    const sources = selectScoutSourceManifests({
+      query: 'what must i do to be saved',
+      limit: 5,
+    });
+
+    assert.ok(sources.some((source) => source.id === 'kjv-pce'));
+  });
 });

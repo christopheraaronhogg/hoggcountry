@@ -79,12 +79,17 @@
 html,
 body {
 	margin: 0;
+	width: 100%;
+	height: 100%;
 	min-height: 100%;
+	overflow: hidden;
+	overscroll-behavior: none;
 	background:
 		radial-gradient(circle at top, rgba(198, 167, 122, 0.18), transparent 36%),
 		linear-gradient(180deg, var(--bg) 0%, #efe7d7 100%);
 	color: var(--ink);
 	font-family: var(--font-sans);
+	-webkit-text-size-adjust: 100%;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }
@@ -128,7 +133,8 @@ p {
 }
 
 .phone-frame {
-	max-width: var(--app-width);
+	width: min(100vw, var(--app-width));
+	max-width: 100%;
 	margin: 0 auto;
 	height: 100dvh;
 	min-height: 100vh;
@@ -138,6 +144,7 @@ p {
 	display: grid;
 	grid-template-rows: auto minmax(0, 1fr) auto;
 	overflow: hidden;
+	overscroll-behavior: none;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -148,8 +155,12 @@ p {
 }
 
 .screen-scroll {
+	width: 100%;
+	min-width: 0;
 	min-height: 0;
 	overflow-y: auto;
+	overflow-x: hidden;
+	overscroll-behavior: contain;
 	padding: 14px 14px 18px;
 	-webkit-overflow-scrolling: touch;
 }
@@ -510,8 +521,8 @@ p {
 
 	.phone-frame {
 		border-radius: 30px;
-		min-height: calc(100vh - 28px);
-		height: calc(100vh - 28px);
+		min-height: calc(100dvh - 28px);
+		height: calc(100dvh - 28px);
 		overflow: hidden;
 		box-shadow: var(--shadow-ridge);
 	}

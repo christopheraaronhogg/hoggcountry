@@ -1030,7 +1030,7 @@ export function scoreScoutSourceManifest(manifest: ScoutSourceManifest, query: S
   if (manifest.accessMode === 'route-validator' && /\b(route|itinerary|mileage|mile|nobo|sobo|northbound|southbound|pine grove|halfway|mental\s+halfway|psychological\s+halfway|harpers?\s+ferry|harper['’]?s?\s+ferry|atc\s+hq|keys\s+gap|weverton|ed\s+garvey|dahlgren|gathland|crampton\s+gap|fontana|newfound|gsmnp|smokies|great smoky|shenandoah|snp|rockfish|swift run|blackrock|pinefield|hightop|vermont|long\s+trail|white\s+mountains|whites|franconia|crawford|galehead|zealand|ethan|garfield|baxter|katahdin|abol|monson|birches|100[-\s]?mile|hundred\s+mile|shelter|camp|permit)\b/iu.test(query.query)) score += 5;
   if (manifest.accessMode === 'user-import-required' && /\b(exact|guide|shelter|hut|huts|camp(?:site|sites|ing)?|water|mileage|mileages|service|farout|awol|a\.t\. guide)\b/iu.test(query.query)) score += 10;
   if (manifest.accessMode === 'workspace-private' && /\b(private|workspace|resource|document|doc|note|import|uploaded|source|sources|comments?|water|shelter)\b/iu.test(query.query)) score += 5;
-  if (manifest.id === 'kjv-pce' && /\b(scripture|bible|kjv|king\s+james|pce|pure\s+cambridge|verse|verses|quote|proverbs|psalms?|john|romans|isaiah|matthew|hebrews|james|timothy)\b|(?:\b[1-3]\s*)?\b[A-Z][a-z]+\s+\d{1,3}:\d{1,3}/u.test(query.query)) score += 10;
+  if (manifest.id === 'kjv-pce' && /\b(scripture|bible|kjv|king\s+james|pce|pure\s+cambridge|verse|verses|quote|proverbs|psalms?|john|romans|isaiah|matthew|hebrews|james|timothy|salvation|be\s+saved|born\s+again|eternal\s+life|everlasting\s+life)\b|(?:\b[1-3]\s*)?\b[A-Z][a-z]+\s+\d{1,3}:\d{1,3}/u.test(query.query)) score += 10;
 
   return score;
 }

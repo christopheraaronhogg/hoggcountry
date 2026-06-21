@@ -1,8 +1,9 @@
 export type ScoutConfidence = 'high' | 'medium' | 'low' | 'draft';
 
-export type ScoutMode = 'offline-local' | 'on-device' | 'cloud';
+export type ScoutMode = 'on-device' | 'cloud';
+export type LegacyScoutMode = 'offline-local';
 
-export type ProviderId = 'deterministic-fallback' | 'on-device-gemma' | 'cloud-scout';
+export type ProviderId = 'on-device-gemma' | 'cloud-scout';
 
 export interface SourceReceipt {
 	id: string;
@@ -42,6 +43,7 @@ export interface ToolInvocationRecord {
 	summary: string;
 	confidence: ScoutConfidence;
 	receipts: SourceReceipt[];
+	confirmations?: RequiredConfirmation[];
 	safetyFlags?: SafetyFlag[];
 }
 
@@ -222,7 +224,7 @@ export interface RouterDecisionInput {
 	onlineStatus: boolean;
 	batterySaver: boolean;
 	allowCloud: boolean;
-	preferredMode?: ScoutMode;
+	preferredMode?: ScoutMode | LegacyScoutMode;
 }
 
 export interface RouterDecision {
@@ -247,7 +249,7 @@ export interface ScoutAskInput {
 	onlineStatus: boolean;
 	batterySaver?: boolean;
 	allowCloud?: boolean;
-	preferredMode?: ScoutMode;
+	preferredMode?: ScoutMode | LegacyScoutMode;
 }
 
 export interface ScoutRuntime {

@@ -22,6 +22,7 @@ if (help) {
 Usage:
   npm run ios:testflight
   npm run ios:testflight -- --team-id TEAMID
+  npm run ios:testflight -- --provisioning-profile "Hoggcountry App Store Connect"
   npm run ios:testflight -- --upload --team-id TEAMID
   npm run ios:testflight -- --upload --asc-key-path /secure/AuthKey_XXXX.p8 --asc-key-id KEYID --asc-issuer-id ISSUER
 
@@ -33,6 +34,7 @@ Modes:
 
 Useful env:
   HC_IOS_DEVELOPMENT_TEAM or IOS_DEVELOPMENT_TEAM or DEVELOPMENT_TEAM
+  HC_IOS_PROVISIONING_PROFILE
   APP_STORE_CONNECT_API_KEY_PATH
   APP_STORE_CONNECT_API_KEY_ID
   APP_STORE_CONNECT_API_ISSUER_ID
@@ -47,6 +49,7 @@ const allowedFlags = new Set([
   '--diagnose-only',
   '--skip-gates',
   '--team-id',
+  '--provisioning-profile',
   '--out',
   '--asc-key-path',
   '--asc-key-id',
@@ -67,6 +70,7 @@ const exportPath = join(outDir, 'export');
 const exportOptionsPath = join(outDir, 'ExportOptions.plist');
 const proofPath = join(repoRoot, 'docs', 'launch', 'proof', `ios-testflight-attempt-${timestamp}.md`);
 const teamId = readFlag('--team-id') || process.env.HC_IOS_DEVELOPMENT_TEAM || process.env.IOS_DEVELOPMENT_TEAM || process.env.DEVELOPMENT_TEAM || '';
+const provisioningProfile = readFlag('--provisioning-profile') || process.env.HC_IOS_PROVISIONING_PROFILE || 'Hoggcountry App Store Connect';
 const archiveOnly = hasFlag('--archive-only');
 const upload = hasFlag('--upload');
 const internalOnly = hasFlag('--internal-only');
@@ -84,6 +88,7 @@ console.log('Hogg Country iOS TestFlight lane');
 console.log(`Output: ${relative(repoRoot, outDir)}`);
 console.log(`Proof: ${relative(repoRoot, proofPath)}`);
 if (teamId) console.log(`Team: ${teamId}`);
+if (provisioningProfile) console.log(`Provisioning profile: ${provisioningProfile}`);
 if (diagnoseOnly) console.log('Mode: diagnose only');
 else if (upload) console.log('Mode: archive and upload to App Store Connect');
 else if (archiveOnly) console.log('Mode: archive only');
@@ -233,18 +238,27 @@ function exportOptionsPlist() {
   const values = [
     ['method', 'app-store-connect'],
     ['destination', upload ? 'upload' : 'export'],
-    ['signingStyle', 'automatic'],
+    ['signingStyle', provisioningProfile ? 'manual' : 'automatic'],
     ['stripSwiftSymbols', true],
     ['uploadSymbols', true],
     ['manageAppVersionAndBuildNumber', false]
   ];
 
   if (teamId) values.push(['teamID', teamId]);
+  if (provisioningProfile) {
+    values.push(['provisioningProfiles', { 'com.hoggcountry.trailassistant': provisioningProfile }]);
+  }
   if (internalOnly) values.push(['testFlightInternalTestingOnly', true]);
 
   const body = values
     .map(([key, value]) => {
       if (typeof value === 'boolean') return `\t<key>${key}</key>\n\t<${value ? 'true' : 'false'}/>`;
+      if (value && typeof value === 'object') {
+        const entries = Object.entries(value)
+          .map(([nestedKey, nestedValue]) => `\t\t<key>${escapeXml(nestedKey)}</key>\n\t\t<string>${escapeXml(nestedValue)}</string>`)
+          .join('\n');
+        return `\t<key>${key}</key>\n\t<dict>\n${entries}\n\t</dict>`;
+      }
       return `\t<key>${key}</key>\n\t<string>${escapeXml(value)}</string>`;
     })
     .join('\n');
@@ -275,6 +289,7 @@ function writeProof() {
     `- Archive only: ${archiveOnly ? 'yes' : 'no'}`,
     `- Internal TestFlight only: ${internalOnly ? 'yes' : 'no'}`,
     `- Team override provided: ${teamId ? 'yes' : 'no'}`,
+    `- Provisioning profile: ${provisioningProfile || 'automatic'}`,
     `- App Store Connect API key provided: ${ascAuth.length ? 'yes' : 'no'}`,
     '',
     '## Steps',
@@ -323,7 +338,7 @@ function unknownFlags(argv, allowed) {
       unknown.push(arg);
       continue;
     }
-    if (['--team-id', '--out', '--asc-key-path', '--asc-key-id', '--asc-issuer-id'].includes(name) && !arg.includes('=')) {
+    if (['--team-id', '--provisioning-profile', '--out', '--asc-key-path', '--asc-key-id', '--asc-issuer-id'].includes(name) && !arg.includes('=')) {
       index += 1;
     }
   }

@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { OnDeviceGemmaProvider, type OnDeviceGemmaBridge } from './providers/on-device-gemma.ts';
+import {
+	OnDeviceGemmaProvider,
+	renderSystemContext,
+	type OnDeviceGemmaBridge
+} from './providers/on-device-gemma.ts';
+import { cloneDefaultContextPack } from './default-pack.ts';
 
 function bridge(state: { available: boolean }): OnDeviceGemmaBridge {
 	return {
@@ -63,4 +68,32 @@ test('a throwing bridge does not cache and does not crash', async () => {
 	assert.equal(await provider.available(), false, 'transient error → false, not cached');
 	throwIt = false;
 	assert.equal(await provider.available(), true, 're-probes after a transient failure');
+});
+
+test('system context keeps Scout plain-spoken and avoids markdown/corny voice', () => {
+	const pack = cloneDefaultContextPack();
+	pack.hiker.currentMile = 0;
+	pack.hiker.dayNumber = 1;
+
+	const systemContext = renderSystemContext({
+		prompt: 'Man I dunno how hard is today gonna be?',
+		pack,
+		toolInvocations: [
+			{
+				toolId: 'trail-distance',
+				args: {},
+				summary: 'Next 10 miles include candidate water and Hawk Mountain Shelter.',
+				confidence: 'medium',
+				receipts: []
+			}
+		],
+		now: new Date('2026-06-20T12:00:00Z')
+	});
+
+	assert.match(systemContext, /plain-spoken/);
+	assert.match(systemContext, /Do not use "howdy", "partner", "well now"/);
+	assert.match(systemContext, /Answer the hiker's immediate question first/);
+	assert.match(systemContext, /Use plain text only/);
+	assert.match(systemContext, /Do not use Markdown headings, bold markers, tables, or long bullet lists/);
+	assert.match(systemContext, /Never turn candidate water, shelters, towns, or weather into guarantees/);
 });

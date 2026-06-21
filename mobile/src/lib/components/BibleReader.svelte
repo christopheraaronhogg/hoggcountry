@@ -151,10 +151,9 @@
 
 	const searching = $derived(query.trim().length > 0);
 
-	// Only show Scout's prose when a real on-device/cloud model synthesized it; the
-	// deterministic fallback just dumps the verses (already shown as cited cards),
-	// so we replace that with a clean line. The verse cards are always the payload.
-	const synthesized = $derived(askGrounded && !!askAnswer && askAnswer.provider !== 'deterministic-fallback');
+	// Only show Scout's prose when a real on-device/cloud model synthesized it.
+	// The verse cards are always the source-backed payload.
+	const synthesized = $derived(askGrounded && !!askAnswer);
 	const modelHint = $derived(!!askAnswer && askAnswer.provider === 'on-device-gemma' && !askGrounded);
 </script>
 

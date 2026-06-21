@@ -11,9 +11,11 @@
 	import SourceChip from './SourceChip.svelte';
 	import ConfidenceBadge from './ConfidenceBadge.svelte';
 	import Icon from './Icon.svelte';
+	import ScoutModelStatusBubble from './ScoutModelStatusBubble.svelte';
 
 	let draft = $state('');
 	let logRef = $state<HTMLDivElement | null>(null);
+	let modelPhase = $derived(trailAssistant.modelPhase);
 
 	// Auto-scroll only when the hiker is following the bottom. If they've scrolled
 	// up to read, we must NOT yank them back down on every streamed token (the
@@ -72,6 +74,11 @@
 		trailAssistant.coachMessages.length;
 		trailAssistant.scoutThinking;
 		trailAssistant.pendingAction;
+		modelPhase.kind;
+		if (modelPhase.kind === 'downloading') {
+			modelPhase.percent;
+			modelPhase.bytesLabel;
+		}
 		if (pinned) {
 			scrollToBottom(false);
 		} else {
@@ -165,6 +172,14 @@
 					<span class="timestamp">{new Date(message.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
 				</div>
 			{/each}
+
+			<ScoutModelStatusBubble
+				phase={modelPhase}
+				onRetry={() => trailAssistant.downloadModel()}
+				onAllowMetered={() => trailAssistant.downloadModel({ allowMetered: true })}
+				onDismissMetered={() => trailAssistant.dismissMeteredPrompt()}
+				onCancel={() => trailAssistant.cancelModelDownload()}
+			/>
 
 			{#if trailAssistant.scoutThinking}
 				<div class="message assistant thinking">

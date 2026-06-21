@@ -107,21 +107,23 @@ export class ScoutModelDownloadSession {
 		let answer = 'My on-device model is still warming up. Give it a few seconds and ask again.';
 		if (notInstalled) {
 			if (autoStart === 'started') {
-				answer = `I'm starting the on-device model download now (${modelSize}). Once it verifies, Scout can answer fully offline. You can watch progress in Settings > On-device AI.`;
+				answer = `I'm downloading my on-device model now (${modelSize}). You can watch progress right here. Once it verifies, ask again and I'll answer fully offline.`;
 			} else if (autoStart === 'downloading' || this.#download) {
-				answer = `Scout's on-device model is downloading now. Once it verifies, ask again and I'll answer from the local model.`;
+				answer =
+					"My on-device model is still downloading. Watch the progress here; once it verifies, ask again and I'll answer from the local model.";
 			} else if (autoStart === 'runtime-unavailable' || this.#status?.runtimeConfigured === false) {
 				answer =
 					"This iOS build can see Scout's model store, but the LiteRT-LM runtime is not linked yet. Install a build with the iOS runtime before testing on-device answers.";
 			} else if (autoStart === 'metered' || this.#meteredPrompt) {
-				answer = `Scout's on-device model is ${modelSize}, and this connection looks metered. I paused before using mobile data. Open Settings > On-device AI if you want to approve the download anyway.`;
+				answer = `My on-device model is ${modelSize}, and this connection looks metered. I paused before using mobile data; use the prompt here to allow it or wait for Wi-Fi.`;
 			} else if (autoStart === 'offline') {
 				answer = this.#error ?? "Connect to Wi-Fi to download Scout's on-device model.";
 			} else if (autoStart === 'unavailable') {
 				answer =
 					"The on-device model download isn't available in this build yet. Scout will answer after the verified model/runtime is installed.";
 			} else {
-				answer = `Scout's on-device model isn't installed yet. Download it once on Wi-Fi in Settings > On-device AI, then I can answer fully offline.`;
+				answer =
+					"My on-device model isn't installed yet. Send a message on Wi-Fi and I'll start the download here, then I can answer fully offline.";
 			}
 		}
 		return {
@@ -138,7 +140,7 @@ export class ScoutModelDownloadSession {
 							id: 'on-device-model-not-installed',
 							severity: 'warn',
 							message:
-								'Scout answers run on a Gemma model stored on your phone — download it in Settings to chat offline.'
+								'Scout answers run on a Gemma model stored on your phone — download it once on Wi-Fi to chat offline.'
 						}
 					]
 				: [],

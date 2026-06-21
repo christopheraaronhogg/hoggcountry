@@ -18,17 +18,9 @@
 	// say so instead of pretending help is wired.
 	let helpNote = $state('');
 	function needHelp() {
-		trailAssistant.performCheckIn('need-help', 'Need help — flagged from Safety.');
-		const sms = trailAssistant.buildHelpSms();
-		if (!sms) {
-			helpNote = 'Logged on this phone. Add a contact with a phone number below so this can text someone.';
-			return;
-		}
-		const names = sms.recipients.map((c) => c.name).join(', ');
-		helpNote = trailAssistant.onlineStatus
-			? `Opening a text to ${names}…`
-			: `No signal detected — opening a text draft to ${names}. It will not send until your phone has service and you send it.`;
-		window.location.href = sms.href;
+		const request = trailAssistant.requestHelp('Safety');
+		helpNote = request.message;
+		if (request.href) window.location.href = request.href;
 	}
 
 	// Add-contact form (the missing editor — Support Circle was read-only and empty).

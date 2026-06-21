@@ -11,6 +11,12 @@ import type {
 } from './types.ts';
 
 const STALE_WEATHER_HOURS = 6;
+const SOURCE_SEARCH_LIMIT = 6;
+const SOURCE_STOPWORDS = new Set([
+	'about', 'after', 'again', 'also', 'and', 'are', 'before', 'but', 'can', 'for',
+	'from', 'has', 'have', 'how', 'into', 'near', 'need', 'not', 'now', 'should',
+	'tell', 'that', 'the', 'this', 'trail', 'what', 'when', 'where', 'with', 'you'
+]);
 
 function trailPackReceipt(title: string, miles?: { from: number; to?: number }): SourceReceipt {
 	return {
@@ -75,6 +81,30 @@ function hikerDocumentReceipt(document: LocalDocumentReference): SourceReceipt {
 function excerptText(text: string, max = 420): string {
 	const normalized = text.replace(/\s+/g, ' ').trim();
 	return normalized.length > max ? `${normalized.slice(0, max - 1)}...` : normalized;
+}
+
+function sourceTokens(query: string): string[] {
+	return [...new Set(
+		query
+			.toLowerCase()
+			.replace(/[^a-z0-9\s]/g, ' ')
+			.split(/\s+/)
+			.filter((token) => token.length > 2 && !SOURCE_STOPWORDS.has(token))
+	)];
+}
+
+function scoreSource(text: string, tokens: string[]): number {
+	const haystack = text.toLowerCase();
+	let score = 0;
+	for (const token of tokens) {
+		const index = haystack.indexOf(token);
+		if (index === -1) continue;
+		score += 2;
+		if (index < 160) score += 1;
+		const matches = haystack.match(new RegExp(`\\b${token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'gu'));
+		score += Math.min(matches?.length ?? 0, 4) * 0.25;
+	}
+	return score;
 }
 
 function weatherReceipt(weather: CachedWeather): SourceReceipt {
@@ -310,6 +340,13 @@ const weatherLookupTool: ToolHandler<WeatherArgs> = {
 				summary: 'No cached weather available; ask the hiker to refresh from a current source when online.',
 				confidence: 'low',
 				receipts: [],
+				confirmations: [
+					{
+						id: 'weather-missing-confirm-current',
+						prompt: 'Refresh or check an official weather source before using this for exposed terrain.',
+						reason: 'volatile'
+					}
+				],
 				safetyFlags: [
 					{
 						id: 'weather-missing',
@@ -330,6 +367,15 @@ const weatherLookupTool: ToolHandler<WeatherArgs> = {
 			summary,
 			confidence: stale ? 'low' : 'medium',
 			receipts: [weatherReceipt(weather)],
+			confirmations: stale
+				? [
+						{
+							id: 'weather-stale-confirm-current',
+							prompt: 'Cached weather is stale; refresh or check an official weather source before relying on it.',
+							reason: 'stale-cache'
+						}
+					]
+				: undefined,
 			safetyFlags:
 				weather.windMph >= 20 || weather.lowF <= 25
 					? [
@@ -382,15 +428,35 @@ const sourceSearchTool: ToolHandler<SourceSearchArgs> = {
 			};
 		}
 
-		const tokens = query.split(/\s+/).filter((token) => token.length > 2);
-		const matches = ctx.pack.guideExcerpts.filter((excerpt) => {
-			const haystack = `${excerpt.title} ${excerpt.body} ${excerpt.tags.join(' ')}`.toLowerCase();
-			return tokens.some((token) => haystack.includes(token));
-		});
-		const documentMatches = (ctx.pack.documents ?? []).filter((document) => {
-			const haystack = `${document.title} ${document.body}`.toLowerCase();
-			return tokens.some((token) => haystack.includes(token));
-		});
+		const tokens = sourceTokens(query);
+		if (!tokens.length) {
+			return {
+				toolId: 'source_search',
+				args: toolArgs(args),
+				summary: 'Search query did not include enough specific terms.',
+				confidence: 'draft',
+				receipts: []
+			};
+		}
+
+		const matches = ctx.pack.guideExcerpts
+			.map((excerpt) => ({
+				excerpt,
+				score: scoreSource(`${excerpt.title} ${excerpt.body} ${excerpt.tags.join(' ')}`, tokens)
+			}))
+			.filter((match) => match.score > 0)
+			.sort((a, b) => b.score - a.score)
+			.slice(0, SOURCE_SEARCH_LIMIT)
+			.map((match) => match.excerpt);
+		const documentMatches = (ctx.pack.documents ?? [])
+			.map((document) => ({
+				document,
+				score: scoreSource(`${document.title} ${document.body}`, tokens)
+			}))
+			.filter((match) => match.score > 0)
+			.sort((a, b) => b.score - a.score)
+			.slice(0, SOURCE_SEARCH_LIMIT)
+			.map((match) => match.document);
 
 		if (!matches.length && !documentMatches.length) {
 			return {
@@ -402,11 +468,11 @@ const sourceSearchTool: ToolHandler<SourceSearchArgs> = {
 			};
 		}
 
-		const guideSummary = matches.map((m) => `${m.title}: ${m.body}`);
+		const guideSummary = matches.map((m) => `${m.title}: ${excerptText(m.body)}`);
 		const documentSummary = documentMatches.map(
 			(document) => `Saved doc - ${document.title}: ${excerptText(document.body)}`
 		);
-		const summary = [...guideSummary, ...documentSummary].join('\n\n');
+		const summary = [...guideSummary, ...documentSummary].slice(0, SOURCE_SEARCH_LIMIT).join('\n\n');
 		return {
 			toolId: 'source_search',
 			args: toolArgs(args),

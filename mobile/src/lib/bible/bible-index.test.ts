@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { buildBibleIndex, tokenize, type KjvData } from './bible-index.ts';
 
 // Tiny fixture mirroring the real kjv.json shape so the index logic is tested
@@ -87,4 +88,34 @@ test('getChapter returns verses for a known book + chapter', () => {
 	assert.ok(chapter);
 	assert.equal(chapter?.verses[0].reference, 'Psalms 23:4');
 	assert.equal(index.getChapter('Nowhere', 1), undefined);
+});
+
+test('shipped KJV search finds Acts 16 for salvation wording', async () => {
+	const data = JSON.parse(await readFile(new URL('../../../static/bible/kjv.json', import.meta.url), 'utf8')) as KjvData;
+	const index = buildBibleIndex(data);
+	const hits = index.search('what must i do to be saved', 5);
+
+	assert.ok(hits.length >= 1);
+	assert.equal(hits[0].reference, 'Acts 16:30');
+	assert.match(hits[0].text, /what must I do to be saved/i);
+	assert.equal(hits[1]?.reference, 'Acts 16:31');
+	assert.match(hits[1]?.text ?? '', /Believe on the Lord Jesus Christ/i);
+});
+
+test('shipped KJV search treats exact references as exact references', async () => {
+	const data = JSON.parse(await readFile(new URL('../../../static/bible/kjv.json', import.meta.url), 'utf8')) as KjvData;
+	const index = buildBibleIndex(data);
+
+	const john316 = index.search('John 3:16', 25);
+	assert.deepEqual(john316.map((hit) => hit.reference), ['John 3:16']);
+	assert.match(john316[0]?.text ?? '', /For God so loved the world/i);
+
+	const shortJohn316 = index.search('Jn 3:16', 25);
+	assert.deepEqual(shortJohn316.map((hit) => hit.reference), ['John 3:16']);
+
+	const firstJohn = index.search('1 John 4:8', 25);
+	assert.deepEqual(firstJohn.map((hit) => hit.reference), ['1 John 4:8']);
+
+	const range = index.search('John 3:16-17', 25);
+	assert.deepEqual(range.map((hit) => hit.reference), ['John 3:16', 'John 3:17']);
 });

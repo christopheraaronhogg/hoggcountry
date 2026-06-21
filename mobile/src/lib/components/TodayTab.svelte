@@ -123,6 +123,12 @@
 		trailAssistant.runQuickPrompt(prompt);
 	}
 	const lastAnswer = $derived(trailAssistant.lastScoutAnswer);
+	let helpNote = $state('');
+	function needHelp() {
+		const request = trailAssistant.requestHelp('Today');
+		helpNote = request.message;
+		if (request.href) window.location.href = request.href;
+	}
 
 	const checkInDue = $derived(
 		new Date(trailAssistant.nextCheckInDueAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
@@ -145,10 +151,14 @@
 		</div>
 		<div class="checkin">
 			<span class="ci-due">Check-in due {checkInDue}</span>
-			<button class="safe-btn" onclick={() => trailAssistant.performCheckIn('safe', 'Quick safe check-in from Today.')}>
-				I'm safe ✓
-			</button>
+			<div class="checkin-buttons">
+				<button class="safe-btn" onclick={() => trailAssistant.performCheckIn('safe', 'Quick safe check-in from Today.')}>
+					I'm safe ✓
+				</button>
+				<button class="help-btn" onclick={needHelp}>Need help</button>
+			</div>
 		</div>
+		{#if helpNote}<p class="today-help-note">{helpNote}</p>{/if}
 	</section>
 
 	<!-- NEXT: glance-first next action -->
@@ -360,6 +370,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		flex-wrap: wrap;
 		gap: 10px;
 		margin-top: 13px;
 		padding-top: 12px;
@@ -370,6 +381,13 @@
 		color: var(--muted);
 		font-weight: 700;
 	}
+	.checkin-buttons {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
 	.safe-btn {
 		min-height: 44px;
 		padding: 9px 16px;
@@ -378,6 +396,25 @@
 		color: var(--forest);
 		font-weight: 800;
 		font-size: 0.85rem;
+	}
+	.help-btn {
+		min-height: 44px;
+		padding: 9px 14px;
+		border-radius: 999px;
+		background: rgba(151, 58, 44, 0.12);
+		color: #7c2f24;
+		font-weight: 900;
+		font-size: 0.85rem;
+	}
+	.today-help-note {
+		margin-top: 10px;
+		padding: 9px 11px;
+		border-radius: 10px;
+		background: rgba(151, 58, 44, 0.1);
+		color: #6e2d24;
+		font-size: 0.88rem;
+		line-height: 1.4;
+		font-weight: 750;
 	}
 
 	/* NEXT line */

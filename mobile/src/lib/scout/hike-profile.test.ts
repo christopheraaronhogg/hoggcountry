@@ -16,6 +16,7 @@ import {
 	parseMileFromCheckIn,
 	parseMileFromText,
 	resolvePosition,
+	sanitizeContextPackForSelfProfile,
 	TOTAL_AT_MILES,
 	updateHikeProfileMile,
 	type HikeProfile
@@ -49,6 +50,19 @@ function dadPilotPack() {
 			citation: 'Public Hogg Country Dad pilot pack'
 		}
 	];
+	pack.water = [{ name: 'Dad cached stream', mile: 1440, reliability: 'thin' }];
+	pack.shelters = [{ name: 'Dad cached shelter', mile: 1442 }];
+	pack.towns = [{ name: 'Dad cached town', mile: 1445, access: 'cached pilot' }];
+	pack.loadout = [{ name: 'Dad cached tent', category: 'shelter', weightOz: 20, carried: true }];
+	pack.weather = {
+		mile: 1438,
+		summary: 'Cached pilot weather',
+		highF: 46,
+		lowF: 28,
+		windMph: 17,
+		generatedAt: '2026-06-16T00:00:00.000Z',
+		source: 'cached-pilot'
+	};
 	return pack;
 }
 
@@ -179,6 +193,16 @@ test('updateHikeProfileMile preserves an existing self hike without reseeding ch
 	assert.equal(transition.anchorCheckIn, null);
 });
 
+test('updateHikeProfileMile records manual mile edits distinctly from check-ins', () => {
+	const transition = updateHikeProfileMile(selfProfile(), 701.1, 'manual', {
+		now: new Date('2026-06-20T12:00:00.000Z')
+	});
+
+	assert.equal(transition.profile.currentMile, 701.1);
+	assert.equal(transition.profile.mileSource, 'manual');
+	assert.equal(transition.anchorCheckIn, null);
+});
+
 test('isSelfTracked only when calibrated AND self mode', () => {
 	assert.equal(isSelfTracked(selfProfile()), true);
 	assert.equal(isSelfTracked(selfProfile({ calibrated: false })), false);
@@ -211,6 +235,27 @@ test('resolvePosition: self profile wins over the pack (refresh can never move t
 	const resolved = resolvePosition(selfProfile(), pack, '2026-02-01', now);
 	assert.equal(resolved.currentMile, 623.4);
 	assert.equal(resolved.dayNumber, 11);
+});
+
+test('sanitizeContextPackForSelfProfile strips stale Dad pack surfaces immediately', () => {
+	const sanitized = sanitizeContextPackForSelfProfile(
+		dadPilotPack(),
+		selfProfile({ currentMile: 623.4 }),
+		new Date('2026-03-11T08:00:00')
+	);
+
+	assert.equal(sanitized.hiker.currentMile, 623.4);
+	assert.equal(sanitized.hiker.dayNumber, 11);
+	assert.equal(sanitized.hiker.trailName, 'Birdsong');
+	assert.equal(sanitized.weather, null);
+	assert.deepEqual(sanitized.water, []);
+	assert.deepEqual(sanitized.shelters, []);
+	assert.deepEqual(sanitized.towns, []);
+	assert.deepEqual(sanitized.loadout, []);
+	assert.deepEqual(sanitized.downloadedRegions, ['Personal pack pending refresh around mile 623.4']);
+	assert.equal(sanitized.validUntil, undefined);
+	assert.equal(sanitized.sourceReceipts?.some((receipt) => receipt.id === 'field-pack:dad-pilot'), false);
+	assert.match(sanitized.pilotNotice ?? '', /Personal pack pending refresh/);
 });
 
 test('resolvePosition: uncalibrated / dad-pilot reads position from the pack', () => {

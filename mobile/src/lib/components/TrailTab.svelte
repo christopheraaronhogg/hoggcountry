@@ -2,6 +2,7 @@
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import BibleReader from './BibleReader.svelte';
 	import type { TrailDocument } from '$lib/types';
+	import type { FieldGuideExcerpt } from '$lib/scout/types';
 
 	type Section = 'guide' | 'bible' | 'docs' | 'gear';
 	// Section is shared in trailState so deep links (e.g. Today's "packing up?"
@@ -28,6 +29,7 @@
 	let draftBody = $state('');
 	let scoutDraftTopic = $state('');
 	let docsNotice = $state('');
+	let sourceDocQuery = $state('');
 
 	function fmtTime(iso: string): string {
 		const d = new Date(iso);
@@ -89,6 +91,44 @@
 		const topic = scoutDraftTopic.trim();
 		if (!topic) return;
 		trailAssistant.draftDocumentWithScout(topic);
+	}
+
+	function docExcerpt(text: string, max = 260): string {
+		const normalized = text.replace(/\s+/g, ' ').trim();
+		return normalized.length > max ? `${normalized.slice(0, max - 1)}…` : normalized;
+	}
+
+	function scoreSourceDoc(document: FieldGuideExcerpt, queryText: string): number {
+		const tokens = queryText
+			.toLowerCase()
+			.replace(/[^a-z0-9\s]/g, ' ')
+			.split(/\s+/)
+			.filter((token) => token.length > 2);
+		if (!tokens.length) return 0;
+		const haystack = `${document.title} ${document.body} ${document.tags.join(' ')}`.toLowerCase();
+		return tokens.reduce((score, token) => score + (haystack.includes(token) ? 1 : 0), 0);
+	}
+
+	const sourceDocs = $derived(guide);
+	const visibleSourceDocs = $derived.by(() => {
+		const queryText = sourceDocQuery.trim();
+		if (!queryText) return sourceDocs.slice(0, 8);
+		return sourceDocs
+			.map((document) => ({ document, score: scoreSourceDoc(document, queryText) }))
+			.filter((result) => result.score > 0)
+			.sort((a, b) => b.score - a.score)
+			.slice(0, 12)
+			.map((result) => result.document);
+	});
+
+	function copySourceToDoc(document: FieldGuideExcerpt) {
+		const created = trailAssistant.createDocument({
+			title: document.title.replace(/^(Field Guide|AT Source):\s*/i, ''),
+			body: [`Source: ${document.citation ?? 'Bundled offline source library'}`, '', document.body].join('\n')
+		});
+		if (!created) return;
+		editDocument(created);
+		docsNotice = 'Copied source into an editable offline doc.';
 	}
 </script>
 
@@ -204,8 +244,37 @@
 					</article>
 				{/each}
 			{:else}
-				<p class="empty">No offline docs yet. Save a note here, then ask Scout about it with no signal.</p>
+				<p class="empty">No personal docs yet. The bundled source library below is still searchable offline by Scout.</p>
 			{/if}
+
+			<section class="card source-library" aria-label="Bundled offline source library">
+				<div class="doc-editor-head">
+					<div>
+						<p class="section-kicker">Bundled source library</p>
+						<h2>{sourceDocs.length} offline source docs</h2>
+					</div>
+				</div>
+				<input
+					class="doc-title-input"
+					bind:value={sourceDocQuery}
+					placeholder="Search trail sources, weather policy, shelters, water..."
+					aria-label="Search bundled source docs"
+				/>
+				<div class="source-results">
+					{#each visibleSourceDocs as sourceDoc (sourceDoc.id)}
+						<article class="source-doc">
+							<div>
+								<strong>{sourceDoc.title}</strong>
+								<p>{docExcerpt(sourceDoc.body)}</p>
+								{#if sourceDoc.citation}<span>{sourceDoc.citation}</span>{/if}
+							</div>
+							<button type="button" onclick={() => copySourceToDoc(sourceDoc)}>Copy to edit</button>
+						</article>
+					{:else}
+						<p class="empty">No bundled source docs match “{sourceDocQuery}”.</p>
+					{/each}
+				</div>
+			</section>
 
 			{#if checkIns.length}
 				<div class="section-divider">
@@ -259,6 +328,9 @@
 	.trail {
 		display: grid;
 		gap: 14px;
+		min-width: 0;
+		max-width: 100%;
+		overflow: hidden;
 	}
 
 	.trail-head h1 {
@@ -270,6 +342,7 @@
 		font-size: 0.84rem;
 		color: var(--muted);
 		margin-top: 2px;
+		overflow-wrap: break-word;
 	}
 
 	.segmented {
@@ -279,6 +352,7 @@
 		padding: 4px;
 		border-radius: 12px;
 		background: rgba(47, 75, 53, 0.07);
+		min-width: 0;
 	}
 
 	.seg {
@@ -298,23 +372,30 @@
 	.stack {
 		display: grid;
 		gap: 10px;
+		min-width: 0;
+		max-width: 100%;
 	}
 
 	.entry {
 		padding: 12px 14px;
 		display: grid;
 		gap: 6px;
+		min-width: 0;
+		max-width: 100%;
+		overflow: hidden;
 	}
 
 	.entry h3 {
 		font-family: var(--font-display);
 		font-size: 1rem;
+		overflow-wrap: break-word;
 	}
 
 	.body {
 		font-size: 0.88rem;
 		line-height: 1.5;
 		color: var(--ink);
+		overflow-wrap: break-word;
 	}
 
 	.tags {
@@ -335,6 +416,7 @@
 	.cite {
 		font-size: 0.72rem;
 		color: var(--muted);
+		overflow-wrap: anywhere;
 	}
 
 	.empty {
@@ -348,6 +430,12 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 8px;
+		min-width: 0;
+	}
+
+	.entry-top strong {
+		min-width: 0;
+		overflow-wrap: anywhere;
 	}
 
 	.entry-meta {
@@ -371,6 +459,9 @@
 		display: grid;
 		gap: 8px;
 		padding: 12px 14px;
+		min-width: 0;
+		max-width: 100%;
+		overflow: hidden;
 	}
 
 	.doc-editor-head {
@@ -378,6 +469,7 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 10px;
+		min-width: 0;
 	}
 
 	.section-kicker {
@@ -386,6 +478,7 @@
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
 		color: var(--muted);
+		overflow-wrap: anywhere;
 	}
 
 	.section-divider {
@@ -475,6 +568,68 @@
 		white-space: pre-wrap;
 	}
 
+	.source-library {
+		display: grid;
+		gap: 10px;
+		padding: 12px 14px;
+		min-width: 0;
+		max-width: 100%;
+		overflow: hidden;
+	}
+
+	.source-results {
+		display: grid;
+		gap: 8px;
+	}
+
+	.source-doc {
+		display: grid;
+		gap: 10px;
+		padding: 10px 0;
+		border-top: 1px solid rgba(95, 101, 88, 0.12);
+		min-width: 0;
+	}
+
+	.source-doc:first-child {
+		border-top: 0;
+		padding-top: 0;
+	}
+
+	.source-doc strong {
+		display: block;
+		font-size: 0.9rem;
+		line-height: 1.25;
+		color: var(--ink);
+	}
+
+	.source-doc p {
+		margin-top: 4px;
+		font-size: 0.84rem;
+		line-height: 1.45;
+		color: var(--muted);
+		overflow-wrap: break-word;
+	}
+
+	.source-doc span {
+		display: block;
+		margin-top: 5px;
+		font-size: 0.72rem;
+		line-height: 1.35;
+		color: var(--moss);
+		overflow-wrap: anywhere;
+	}
+
+	.source-doc button {
+		justify-self: start;
+		min-height: 44px;
+		border-radius: 10px;
+		padding: 8px 12px;
+		font-size: 0.82rem;
+		font-weight: 800;
+		background: rgba(47, 75, 53, 0.08);
+		color: var(--forest);
+	}
+
 	/* Gear section */
 	.gear-intro {
 		font-size: 0.82rem;
@@ -486,6 +641,8 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 12px 14px;
+		gap: 12px;
+		min-width: 0;
 	}
 	.gs-lab {
 		font-size: 0.66rem;
@@ -518,6 +675,7 @@
 		gap: 10px;
 		padding: 10px 14px;
 		background: var(--surface-strong, #fffdf8);
+		min-width: 0;
 	}
 	.gear-row.dropped {
 		opacity: 0.5;
@@ -526,9 +684,11 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1px;
+		min-width: 0;
 	}
 	.gear-name strong {
 		font-size: 0.88rem;
+		overflow-wrap: anywhere;
 	}
 	.gear-cat {
 		font-size: 0.68rem;
@@ -540,6 +700,7 @@
 	.gear-note {
 		font-size: 0.74rem;
 		color: var(--muted);
+		overflow-wrap: break-word;
 	}
 	.gear-weight {
 		font-size: 0.84rem;

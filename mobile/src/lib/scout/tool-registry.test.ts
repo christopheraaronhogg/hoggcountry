@@ -39,6 +39,17 @@ test('runToolsFor routes keyword prompts to the matching built-in tools once', a
 	);
 });
 
+test('runToolsFor recognizes salvation phrasing as scripture search', async () => {
+	const records = await runToolsFor(
+		'what must I do to be saved?',
+		DEFAULT_CONTEXT_PACK,
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	assert.equal(records[0]?.toolId, 'bible_search');
+});
+
 test('runToolsFor falls back to current mile plus source search for unmatched prompts', async () => {
 	const records = await runToolsFor(
 		'what should I keep in mind tonight?',

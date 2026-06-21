@@ -1,3 +1,4 @@
+import { NoScoutModelAvailableError } from './model-router.ts';
 import { runToolsFor } from './tool-registry.ts';
 import type {
 	RequiredConfirmation,
@@ -54,25 +55,7 @@ export class DefaultScoutRuntime implements ScoutRuntime {
 				onDevice?.invalidateAvailability?.();
 			}
 
-			// Under a Gemma-required policy the caller forces preferredMode 'on-device'.
-			// Do NOT silently answer from the deterministic fallback in that case — a
-			// canned "offline" answer is indistinguishable from a real on-device reply
-			// and hides the failure (this was the "acted offline" bug). Surface it so
-			// the caller can warm the engine and offer a retry.
-			if (failedOnDevice && input.preferredMode === 'on-device') {
-				throw error;
-			}
-
-			const fallbackProvider = this.options.router.providers().find((p) => p.capabilities.id === 'deterministic-fallback');
-			if (!fallbackProvider) throw error;
-			// The fallback is instant; don't stream it (callers treat a streamed
-			// chunk as "started", and a mid-stream switch to fallback would look odd).
-			providerResponse = await fallbackProvider.generate({
-				prompt: input.prompt,
-				pack,
-				toolInvocations,
-				now
-			});
+			throw error;
 		}
 
 		const receipts = mergeReceipts(toolInvocations, providerResponse.additionalReceipts ?? []);
@@ -93,6 +76,8 @@ export class DefaultScoutRuntime implements ScoutRuntime {
 		};
 	}
 }
+
+export { NoScoutModelAvailableError };
 
 function mergeReceipts(records: ToolInvocationRecord[], extras: SourceReceipt[]): SourceReceipt[] {
 	const map = new Map<string, SourceReceipt>();

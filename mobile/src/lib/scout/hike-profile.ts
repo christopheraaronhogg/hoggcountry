@@ -13,7 +13,7 @@
  */
 
 import type { CheckInRecord } from '../types';
-import type { ContextPack } from './types.ts';
+import type { ContextPack, SourceReceipt } from './types.ts';
 
 /** Calibrated AT length (AWOL 2026, per repo CLAUDE.md). */
 export const TOTAL_AT_MILES = 2197.4;
@@ -26,7 +26,10 @@ export const TOTAL_AT_MILES = 2197.4;
 export type HikeMode = 'self' | 'dad-pilot';
 
 /** Where the current mile came from — surfaced honestly in the UI, never faked. */
-export type MileSource = 'onboarding' | 'check-in' | 'gps' | 'pilot';
+export type MileSource = 'onboarding' | 'check-in' | 'gps' | 'manual' | 'pilot';
+
+const SELF_CONTEXT_RADIUS_MILES = 50;
+const SELF_WEATHER_RADIUS_MILES = 25;
 
 export interface HikeProfile {
 	/** False until the user has completed (or skipped) first-run calibration. */
@@ -106,6 +109,73 @@ export function isDadPilotContextPack(pack: ContextPack): boolean {
 		haystack.includes('hogg country dad') ||
 		haystack.includes('field-pack:dad')
 	);
+}
+
+function containsDadPilotSignal(value: string | undefined): boolean {
+	if (!value) return false;
+	return /\b(?:dad\s+pilot|dad\s+trail-ahead|hogg\s+country\s+dad|field-pack:dad|cached-pilot)\b/i.test(value);
+}
+
+function receiptLooksPilotOwned(receipt: SourceReceipt): boolean {
+	return containsDadPilotSignal([receipt.id, receipt.title, receipt.citation].filter(Boolean).join(' '));
+}
+
+function keepNearbyMile(mile: number | undefined, center: number, radius: number): boolean {
+	return typeof mile === 'number' && Number.isFinite(mile) && Math.abs(mile - center) <= radius;
+}
+
+/**
+ * Re-own a cached pack immediately after a hiker enters self-tracking mode.
+ *
+ * Network refresh may fail offline, but Scout tools still read the local pack.
+ * This prevents a stale Dad/pilot cache from powering weather, region labels,
+ * tool mileage, or fallback answer headers after the user has set their own mile.
+ */
+export function sanitizeContextPackForSelfProfile(
+	pack: ContextPack,
+	profile: HikeProfile,
+	now: Date = new Date()
+): ContextPack {
+	if (!isSelfTracked(profile)) return pack;
+
+	const currentMile = clampMile(profile.currentMile);
+	const packLooksPilotOwned = isDadPilotContextPack(pack);
+	const dayNumber = profile.startDate ? deriveDayNumber(profile.startDate, now) : 1;
+	const weather =
+		pack.weather &&
+		pack.weather.source !== 'cached-pilot' &&
+		keepNearbyMile(pack.weather.mile, currentMile, SELF_WEATHER_RADIUS_MILES)
+			? pack.weather
+			: null;
+	const sourceReceipts = (pack.sourceReceipts ?? []).filter((receipt) => !receiptLooksPilotOwned(receipt));
+
+	return {
+		...pack,
+		frame: {
+			...pack.frame,
+			source: packLooksPilotOwned
+				? 'AWOL 2026 reference length + personal offline pack pending refresh'
+				: pack.frame.source
+		},
+		hiker: {
+			...pack.hiker,
+			trailName: profile.trailName,
+			currentMile,
+			direction: profile.direction,
+			dayNumber
+		},
+		water: pack.water.filter((item) => keepNearbyMile(item.mile, currentMile, SELF_CONTEXT_RADIUS_MILES)),
+		shelters: pack.shelters.filter((item) => keepNearbyMile(item.mile, currentMile, SELF_CONTEXT_RADIUS_MILES)),
+		towns: pack.towns.filter((item) => keepNearbyMile(item.mile, currentMile, SELF_CONTEXT_RADIUS_MILES)),
+		loadout: packLooksPilotOwned ? [] : pack.loadout,
+		weather,
+		downloadedRegions: [`Personal pack pending refresh around mile ${currentMile.toFixed(1)}`],
+		generatedAt: now.toISOString(),
+		validUntil: undefined,
+		sourceReceipts,
+		pilotNotice:
+			'Personal pack pending refresh. Scout is using your saved mile and local documents; refresh when connectivity returns, and verify water, weather, services, rules, and access before relying on them.'
+	};
 }
 
 export function isValidMile(value: unknown): value is number {

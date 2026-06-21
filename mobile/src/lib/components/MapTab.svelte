@@ -5,14 +5,9 @@
 	import Icon, { type IconName } from './Icon.svelte';
 	import TrailPulseReportAction from './TrailPulseReportAction.svelte';
 
-	// Trail-ribbon map (matches the d1 "Scout Hub" bake-off mockup): a stylized
-	// winding AT line over a soft contour field, with the hiker's position and the
-	// upcoming water / shelter / town placed ALONG the line by mile, plus a compact
-	// "elevation ahead" card. Not a geographic tile map — a calm linear read of
-	// what's coming, which is exactly how a thru-hike is experienced.
-	//
-	// One zoom control (5 / 10 / 20 mi, default 10) drives BOTH the ribbon window
-	// and the elevation card, so zooming re-scales the whole "what's ahead" view.
+	// Real offline trail trace from the bundled AT lat/lon geometry. This is still
+	// not a basemap or turn-by-turn navigator, but the line on screen is the actual
+	// local AT shape for the selected mile window, not a decorative ribbon.
 	const ZOOMS = [5, 10, 20] as const;
 	let mapZoom = $state<(typeof ZOOMS)[number]>(10);
 
@@ -58,71 +53,67 @@
 		return { name: w.name, dist: Math.max(0, w.mile - from), candidate: w.reliability !== 'reliable' };
 	});
 
-	// --- place pins along the real trail path -------------------------------
-	// The hiker sits ~62% down (trail already walked continues below; what's ahead
-	// climbs up the ribbon). Each landmark's vertical position is proportional to
-	// its distance ahead, and its horizontal position is read OFF the winding line
-	// (sample the path, find the x at that y) so every pin sits on the trail. The
-	// SVG uses preserveAspectRatio="none", so viewBox coords map linearly to
-	// container percentages (x/320, y/540) regardless of rendered size.
-	const YOU_TOP = 62; // % down where "you" sits
-	const AHEAD_TOP = 9; // % down for the far end of the window
-	let pathEl = $state<SVGPathElement | null>(null);
-	let samples: Array<{ x: number; y: number }> = [];
 	type Placed = Landmark & { leftPct: number; topPct: number };
-	let placed = $state<Placed[]>([]);
-	let youPos = $state<{ leftPct: number; topPct: number }>({ leftPct: 47, topPct: YOU_TOP });
-
-	function buildSamples(): void {
-		if (!pathEl) return;
-		const total = pathEl.getTotalLength();
-		const N = 240;
-		samples = Array.from({ length: N + 1 }, (_, i) => {
-			const p = pathEl!.getPointAtLength((total * i) / N);
-			return { x: p.x, y: p.y };
-		});
-	}
-
-	function xForY(targetY: number): number {
-		if (!samples.length) return 160;
-		let best = samples[0];
-		for (const s of samples) {
-			if (Math.abs(s.y - targetY) < Math.abs(best.y - targetY)) best = s;
-		}
-		return best.x;
-	}
-
-	function place(mile: number): { leftPct: number; topPct: number } {
-		const frac = Math.max(0, Math.min(1, (mile - from) / mapZoom));
-		const topPct = YOU_TOP - frac * (YOU_TOP - AHEAD_TOP);
-		return { leftPct: (xForY((topPct / 100) * 540) / 320) * 100, topPct };
-	}
+	type ProjectedPoint = { mile: number; leftPct: number; topPct: number };
 
 	// Minimum vertical gap (% of height) between adjacent pins so their labels can't
 	// overlap. Pins keep their true horizontal spot on the line; only the vertical
 	// position is nudged up when two landmarks fall too close in mileage.
 	const MIN_GAP = 9;
 
-	$effect(() => {
-		// Re-place whenever the path mounts or the landmark set / position changes.
-		const list = landmarks;
-		if (!pathEl) return;
-		buildSamples();
-		youPos = place(from);
-		// Nearest first (largest topPct, lowest on screen). Walk upward and push any
-		// pin that's within MIN_GAP of the previous one further up the ribbon, then
-		// re-read its x off the line so the dot still sits on the trail.
-		const next = list
-			.map((l) => ({ ...l, ...place(l.mile) }))
+	const trace = $derived.by(() => {
+		const start = Math.max(0, from - 1);
+		const end = from + mapZoom;
+		const points = geo.filter((point) => point.m >= start && point.m <= end);
+		if (points.length < 2) {
+			return {
+				empty: true,
+				path: '',
+				points: [] as ProjectedPoint[]
+			};
+		}
+
+		const lats = points.map((point) => point.lat);
+		const lons = points.map((point) => point.lon);
+		const minLat = Math.min(...lats);
+		const maxLat = Math.max(...lats);
+		const minLon = Math.min(...lons);
+		const maxLon = Math.max(...lons);
+		const pad = 8;
+		const usable = 100 - pad * 2;
+		const projected = points.map((point) => ({
+			mile: point.m,
+			leftPct: pad + ((point.lon - minLon) / (maxLon - minLon || 1)) * usable,
+			topPct: pad + ((maxLat - point.lat) / (maxLat - minLat || 1)) * usable
+		}));
+		const path = projected
+			.map((point, index) => `${index === 0 ? 'M' : 'L'}${point.leftPct.toFixed(2)},${point.topPct.toFixed(2)}`)
+			.join(' ');
+		return { empty: false, path, points: projected };
+	});
+
+	function place(mile: number): { leftPct: number; topPct: number } {
+		if (!trace.points.length) return { leftPct: 50, topPct: 58 };
+		let best = trace.points[0];
+		for (const point of trace.points) {
+			if (Math.abs(point.mile - mile) < Math.abs(best.mile - mile)) best = point;
+		}
+		return { leftPct: best.leftPct, topPct: best.topPct };
+	}
+
+	const youPos = $derived(place(from));
+	const placed = $derived.by<Placed[]>(() => {
+		const next = landmarks
+			.map((landmark) => ({ ...landmark, ...place(landmark.mile) }))
 			.sort((a, b) => b.topPct - a.topPct);
 		for (let i = 1; i < next.length; i++) {
 			const gap = next[i - 1].topPct - next[i].topPct;
 			if (gap < MIN_GAP) {
-				const top = Math.max(AHEAD_TOP - 4, next[i - 1].topPct - MIN_GAP);
-				next[i] = { ...next[i], topPct: top, leftPct: (xForY((top / 100) * 540) / 320) * 100 };
+				const topPct = Math.max(8, next[i - 1].topPct - MIN_GAP);
+				next[i] = { ...next[i], topPct };
 			}
 		}
-		placed = next;
+		return next;
 	});
 
 	const pinIcon: Record<Landmark['kind'], IconName> = { water: 'water', shelter: 'shelter', town: 'town' };
@@ -159,35 +150,24 @@
 
 <div class="map-screen">
 	<div class="map-canvas">
-		<!-- topo contours (decorative) -->
-		<svg class="topo" viewBox="0 0 320 540" preserveAspectRatio="none" aria-hidden="true">
-			<path class="faint" d="M-10,70 C60,40 120,90 180,60 C240,30 300,80 340,55" />
-			<path d="M-10,110 C60,80 120,130 180,100 C240,70 300,120 340,95" />
-			<path class="faint" d="M-10,158 C70,130 130,180 200,150 C260,124 310,168 340,150" />
-			<path d="M-10,210 C80,184 140,236 210,206 C270,180 320,222 340,206" />
-			<path class="faint" d="M-10,270 C70,250 150,296 220,266 C280,242 320,280 340,268" />
-			<path d="M-10,330 C80,314 150,352 230,326 C290,306 320,338 340,330" />
-			<path class="faint" d="M-10,392 C90,378 160,408 240,388 C300,374 330,398 340,392" />
-			<path d="M-10,452 C90,442 170,468 250,450 C300,440 330,456 340,452" />
-			<path class="river" d="M70,540 C84,470 60,420 96,372 C120,338 100,300 130,260" />
-		</svg>
-
-		<!-- AT line down the ridge -->
-		<svg viewBox="0 0 320 540" preserveAspectRatio="none" class="at-svg" aria-hidden="true">
-			<path
-				class="at-line shadow"
-				d="M150,540 C140,470 178,440 168,386 C158,330 196,300 186,250 C178,206 150,180 168,128 C182,86 162,56 176,8"
-			/>
-			<path
-				bind:this={pathEl}
-				class="at-line"
-				d="M150,540 C140,470 178,440 168,386 C158,330 196,300 186,250 C178,206 150,180 168,128 C182,86 162,56 176,8"
-			/>
+		<svg viewBox="0 0 100 100" preserveAspectRatio="none" class="route-svg" aria-label="Real AT trace around the current mile">
+			<defs>
+				<pattern id="mapGrid" width="10" height="10" patternUnits="userSpaceOnUse">
+					<path d="M10 0H0V10" class="grid-line" />
+				</pattern>
+			</defs>
+			<rect width="100" height="100" class="map-grid" />
+			{#if trace.empty}
+				<text x="50" y="50" text-anchor="middle" class="empty-map">Load trail geometry</text>
+			{:else}
+				<path class="route-line shadow" d={trace.path} />
+				<path class="route-line" d={trace.path} />
+			{/if}
 		</svg>
 
 		<!-- next-water chip + honest framing: this is a linear schematic of what's
-		     ahead by mile, NOT a geographic/GPS tile map. Says so plainly so it isn't
-		     read as (and judged against) FarOut. -->
+		     ahead by mile, NOT a tile-basemap navigator. Says so plainly so it isn't
+		     read as (and judged against) FarOut/Gaia. -->
 		<div class="map-top-chip">
 			{#if nextWater}
 				<span class="next-water-chip">
@@ -195,9 +175,15 @@
 					{#if nextWater.candidate}<span class="cand-tag">candidate</span>{/if}
 				</span>
 			{/if}
-			<span class="schematic-tag" title="A linear schematic of what's ahead by mile — not a GPS/tile map.">Schematic · not a GPS map</span>
+			<span class="schematic-tag" title="Real bundled AT geometry around your mile; not a tile basemap.">Real AT trace · offline</span>
 			<span class="limit-tag" title="No offline basemap, turn-by-turn routing, or emergency navigation.">No basemap · no routing</span>
 			<TrailPulseReportAction variant="map" label="Report conditions" />
+		</div>
+
+		<div class="map-meta" aria-label="Map orientation and source">
+			<span class="north">N</span>
+			<span>Mi {Math.max(0, from - 1).toFixed(0)}-{(from + mapZoom).toFixed(0)}</span>
+			<span>USGS/AT geometry</span>
 		</div>
 
 		<!-- upcoming landmark pins, placed along the line by mile -->
@@ -265,56 +251,51 @@
 		position: absolute;
 		inset: 0;
 		background:
-			radial-gradient(circle at 30% 16%, rgba(106, 132, 95, 0.1), transparent 40%),
-			linear-gradient(180deg, #e9efe0 0%, #e3e9d6 48%, #dde7cf 100%);
+			radial-gradient(circle at 22% 16%, rgba(95, 128, 144, 0.12), transparent 38%),
+			linear-gradient(180deg, #eaf0e3 0%, #dde7d2 54%, #d4e1c8 100%);
 	}
 
-	.topo {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		opacity: 0.42;
-		pointer-events: none;
-	}
-	.topo path {
-		fill: none;
-		stroke: #8a9b6f;
-		stroke-width: 1;
-	}
-	.topo .faint {
-		stroke: rgba(138, 155, 111, 0.5);
-		stroke-width: 0.8;
-	}
-	.river {
-		fill: none;
-		stroke: var(--sky);
-		stroke-width: 3;
-		opacity: 0.55;
-		stroke-linecap: round;
-	}
-
-	.at-svg {
+	.route-svg {
 		position: absolute;
 		inset: 0;
 		width: 100%;
 		height: 100%;
 	}
-	.at-line {
+
+	.map-grid {
+		fill: url(#mapGrid);
+		opacity: 0.52;
+	}
+
+	.grid-line {
+		fill: none;
+		stroke: rgba(95, 101, 88, 0.14);
+		stroke-width: 0.22;
+	}
+
+	.empty-map {
+		fill: var(--muted);
+		font-size: 4px;
+		font-weight: 800;
+	}
+
+	.route-line {
 		fill: none;
 		stroke: #a85f3b;
-		stroke-width: 4.5;
+		stroke-width: 1.5;
 		stroke-linecap: round;
+		stroke-linejoin: round;
 	}
-	.at-line.shadow {
+
+	.route-line.shadow {
 		stroke: rgba(40, 30, 20, 0.18);
-		stroke-width: 7;
-		transform: translateY(1.5px);
+		stroke-width: 2.8;
 	}
 
 	.pin {
 		position: absolute;
 		transform: translate(-50%, -100%);
+		z-index: 2;
 	}
 	.pin .dot {
 		width: 13px;
@@ -329,6 +310,9 @@
 		bottom: calc(100% + 3px);
 		transform: translateX(-50%);
 		white-space: nowrap;
+		max-width: min(180px, calc(100vw - 48px));
+		overflow: hidden;
+		text-overflow: ellipsis;
 		font-size: 0.7rem;
 		font-weight: 900;
 		letter-spacing: 0.02em;
@@ -351,6 +335,7 @@
 	.you {
 		position: absolute;
 		transform: translate(-50%, -50%);
+		z-index: 3;
 	}
 	.you .you-mark {
 		width: 34px;
@@ -381,12 +366,13 @@
 		position: absolute;
 		top: 12px;
 		left: 12px;
-		right: 12px;
+		right: 118px;
 		display: flex;
 		flex-direction: column;
 		gap: 6px;
 		align-items: flex-start;
 		z-index: 4;
+		min-width: 0;
 	}
 	.schematic-tag {
 		display: inline-flex;
@@ -413,6 +399,7 @@
 	.next-water-chip {
 		display: inline-flex;
 		align-items: center;
+		flex-wrap: wrap;
 		gap: 7px;
 		padding: 7px 11px;
 		border-radius: 13px;
@@ -438,12 +425,48 @@
 		border-radius: 6px;
 	}
 
+	.map-meta {
+		position: absolute;
+		right: 12px;
+		top: 12px;
+		z-index: 4;
+		display: grid;
+		justify-items: end;
+		gap: 4px;
+		color: var(--muted);
+		font-size: 0.7rem;
+		font-weight: 900;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		text-shadow: 0 1px 0 rgba(255, 253, 248, 0.7);
+	}
+
+	.map-meta span:not(.north) {
+		padding: 3px 7px;
+		border-radius: 999px;
+		background: rgba(255, 253, 248, 0.72);
+		border: 1px solid rgba(95, 101, 88, 0.1);
+	}
+
+	.north {
+		width: 32px;
+		height: 32px;
+		display: grid;
+		place-items: center;
+		border-radius: 50%;
+		background: rgba(255, 253, 248, 0.92);
+		color: var(--forest);
+		border: 1px solid rgba(95, 101, 88, 0.14);
+		box-shadow: var(--shadow-soft);
+	}
+
 	.elev {
 		position: absolute;
 		left: 12px;
 		right: 12px;
 		bottom: 12px;
-		background: rgba(255, 253, 248, 0.95);
+		z-index: 5;
+		background: var(--surface-strong, #fffdf8);
 		border: 1px solid var(--line);
 		border-radius: 14px;
 		box-shadow: var(--shadow);

@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
 	appId: 'com.hoggcountry.trailassistant',
-	appName: 'Trail Assistant',
+	appName: 'Hoggcountry',
 	webDir: 'build',
 	server: {
 		androidScheme: 'https'

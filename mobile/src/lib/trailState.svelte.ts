@@ -19,6 +19,7 @@ import type {
 import { publishTrailPulseReport } from './trailPulseSpacetime';
 import { resolveModelPolicy } from './scout/model-policy.ts';
 import { NativeScoutRuntime } from './scout/native-scout-runtime.ts';
+import { deriveModelPhase } from './scout/model-download-phase.ts';
 import {
 	createTrailDocument,
 	limitTrailDocuments,
@@ -49,6 +50,7 @@ import {
 	isDadPilotContextPack,
 	isSelfTracked,
 	resolvePosition,
+	sanitizeContextPackForSelfProfile,
 	updateHikeProfileMile,
 	type HikeCalibrationInput,
 	type HikeProfileTransition,
@@ -57,6 +59,10 @@ import {
 } from './scout/hike-profile.ts';
 import { detectTrailActionIntent } from './scout/action-intents.ts';
 import { cloneDefaultContextPack } from './scout/default-pack.ts';
+import {
+	loadOfflineSourceDocs,
+	mergeOfflineSourceDocs
+} from './scout/offline-source-docs.ts';
 import { loadTrailGeometry, snapToMile, type TrailGeoPoint } from './trail/trail-geometry';
 import { createBrowserGeolocation, TrailPositionService } from './trail-position-service';
 import { InMemoryContextPackStore } from './scout';
@@ -101,6 +107,7 @@ const MODEL_POLICY = resolveModelPolicy(
 	Boolean(import.meta.env.DEV)
 );
 const REQUIRE_GEMMA = MODEL_POLICY === 'gemma4-only';
+const WEATHER_PROMPT_RE = /\b(weather|forecast|storm|rain|snow|ice|wind|thunder|lightning|heat|cold|hypothermia|exposed|ridge)\b/iu;
 
 // Dad's NOBO start date (src/data/gear.json startDate). Used as the day-number
 // basis when following the Dad pilot hike; a self-tracked hiker's own start date
@@ -250,7 +257,13 @@ class TrailAssistantStore {
 		}
 		this.#fieldPack = pack;
 		this.#fieldPackStatus = this.#fieldPackStore.getStatus();
+		await this.#mergeOfflineSourceDocs();
+		pack = this.#fieldPack;
 		await this.#syncDocumentsToFieldPack();
+		if (isSelfTracked(this.#state.hikeProfile)) {
+			await this.#sanitizeFieldPackForSelfProfile();
+			pack = this.#fieldPack;
+		}
 		this.#applyPackToTrailState(pack);
 		if (this.#state.onlineStatus && this.#state.hikeProfile.calibrated) {
 			await this.refreshFieldPack();
@@ -275,6 +288,30 @@ class TrailAssistantStore {
 
 	async #syncDocumentsToFieldPack() {
 		await this.#fieldPackStore.updateDocuments(toContextDocuments(this.#state.documents));
+		this.#fieldPack = this.#fieldPackStore.get();
+		this.#fieldPackStatus = this.#fieldPackStore.getStatus();
+	}
+
+	async #mergeOfflineSourceDocs() {
+		if (!browser) return;
+		const docs = await loadOfflineSourceDocs().catch((error) => {
+			console.error('Failed to load offline source docs', error);
+			return [];
+		});
+		const merged = mergeOfflineSourceDocs(this.#fieldPackStore.get(), docs);
+		if (!merged.changed) return;
+		await this.#fieldPackStore.replace(merged.pack, this.#fieldPackStatus.source);
+		this.#fieldPack = this.#fieldPackStore.get();
+		this.#fieldPackStatus = this.#fieldPackStore.getStatus();
+	}
+
+	async #sanitizeFieldPackForSelfProfile() {
+		if (!isSelfTracked(this.#state.hikeProfile)) return;
+		const sanitized = sanitizeContextPackForSelfProfile(
+			this.#fieldPackStore.get(),
+			this.#state.hikeProfile
+		);
+		await this.#fieldPackStore.replace(sanitized, 'saved');
 		this.#fieldPack = this.#fieldPackStore.get();
 		this.#fieldPackStatus = this.#fieldPackStore.getStatus();
 	}
@@ -449,6 +486,16 @@ class TrailAssistantStore {
 		return this.#modelDownloads.meteredPrompt;
 	}
 
+	/** Reader-facing model install phase for inline Scout chat/status UI. */
+	get modelPhase() {
+		return deriveModelPhase({
+			download: this.#modelDownloads.download,
+			status: this.#modelDownloads.status,
+			error: this.#modelDownloads.error,
+			meteredPrompt: this.#modelDownloads.meteredPrompt
+		});
+	}
+
 	/** True when on-device model management is available (native build w/ plugin). */
 	get supportsOnDeviceModel() {
 		return this.#modelDownloads.supportsModelManagement;
@@ -481,7 +528,7 @@ class TrailAssistantStore {
 
 	/** True until the user has completed (or skipped) first-run calibration. */
 	get needsCalibration(): boolean {
-		return browser && !this.#state.hikeProfile.calibrated;
+		return browser && this.#stateHydrated && !this.#state.hikeProfile.calibrated;
 	}
 
 	/** True while the "My hike" setup sheet should be shown (first run or re-edit). */
@@ -642,6 +689,8 @@ class TrailAssistantStore {
 		};
 
 		try {
+			await this.#refreshFieldPackForPrompt(prompt);
+
 			if (!(await this.#nativeScout.gemmaReady(REQUIRE_GEMMA))) {
 				// Model unavailable: append a PLAIN status message. Deliberately do
 				// NOT register it as a ScoutAnswer or set lastScoutAnswer — it isn't a
@@ -671,7 +720,7 @@ class TrailAssistantStore {
 				this.#scoutAnswersByMessage.set(id, answer);
 				this.#setCoachMessageContent(id, answer.answer);
 			} else {
-				// Provider didn't stream (e.g. deterministic fallback) — append result.
+				// Provider returned a complete response without streaming.
 				const message = this.#addCoachMessage('assistant', answer.answer);
 				this.#scoutAnswersByMessage.set(message.id, answer);
 			}
@@ -722,6 +771,14 @@ class TrailAssistantStore {
 		return answer;
 	}
 
+	async #refreshFieldPackForPrompt(prompt: string): Promise<void> {
+		if (!this.#state.onlineStatus || !this.#state.hikeProfile.calibrated) return;
+		if (!WEATHER_PROMPT_RE.test(prompt)) return;
+		await this.refreshFieldPack().catch((error) => {
+			console.error('Weather/source refresh before Scout reply failed', error);
+		});
+	}
+
 	async refreshFieldPack(): Promise<ContextPack> {
 		if (!this.#state.hikeProfile.calibrated) {
 			return this.#fieldPack;
@@ -730,6 +787,7 @@ class TrailAssistantStore {
 		// explicit Dad-pilot mode fetches the public pilot pack at the bare endpoint.
 		const endpoint = buildFieldPackUrl(FIELD_PACK_ENDPOINT, this.#state.hikeProfile);
 		await this.#fieldPackStore.refreshFromEndpoint(endpoint);
+		await this.#mergeOfflineSourceDocs();
 		await this.#syncDocumentsToFieldPack();
 		const pack = this.#fieldPackStore.get();
 		this.#fieldPack = pack;
@@ -786,6 +844,7 @@ class TrailAssistantStore {
 	async calibrateHike(input: HikeCalibrationInput): Promise<void> {
 		const transition = calibrateHikeProfile(input, this.#fieldPack.hiker.currentMile);
 		this.#applyHikeProfileTransition(transition);
+		await this.#sanitizeFieldPackForSelfProfile();
 
 		this.#hikeSetupOpen = false;
 		if (this.#state.onlineStatus) {
@@ -813,6 +872,7 @@ class TrailAssistantStore {
 	async updateCurrentMile(mile: number, source: MileSource): Promise<void> {
 		const transition = updateHikeProfileMile(this.#state.hikeProfile, mile, source);
 		this.#applyHikeProfileTransition(transition);
+		await this.#sanitizeFieldPackForSelfProfile();
 		if (this.#state.onlineStatus) {
 			await this.refreshFieldPack();
 		}
@@ -912,6 +972,31 @@ class TrailAssistantStore {
 			trailName: this.#state.hikeProfile.trailName,
 			fallbackTrailName: this.#fieldPack.hiker.trailName
 		});
+	}
+
+	requestHelp(source: 'Today' | 'Safety' = 'Today'): {
+		href: string | null;
+		message: string;
+		recipients: SupportContact[];
+	} {
+		this.performCheckIn('need-help', `Need help — flagged from ${source}.`);
+		const sms = this.buildHelpSms();
+		if (!sms) {
+			return {
+				href: null,
+				recipients: [],
+				message: 'Logged on this phone. Add a support contact with a phone number so this can text someone.'
+			};
+		}
+
+		const names = sms.recipients.map((contact) => contact.name).join(', ');
+		return {
+			href: sms.href,
+			recipients: sms.recipients,
+			message: this.#state.onlineStatus
+				? `Opening a text to ${names}…`
+				: `No signal detected — opening a text draft to ${names}. It will not send until your phone has service and you send it.`
+		};
 	}
 
 	performCheckIn(status: CheckInStatus, note: string) {
