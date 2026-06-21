@@ -40,11 +40,12 @@
     },
     "ios-development-team": {
       "status": "blocked",
-      "summary": "Apple Developer enrollment has been paid, but local Xcode signing is still not configured: no valid code-signing identities, no provisioning profiles, and no DEVELOPMENT_TEAM in the App target build settings. The repeatable TestFlight lane can diagnose this and is ready to upload once Xcode sees Chris's Apple Developer Team.",
+      "summary": "Apple Developer enrollment has been paid and an Apple ID was added to Xcode, but Xcode currently exposes only Christopher Hogg (Personal Team) teamID 3CFU9J87A5. Archive with that team fails because no iOS development provisioning profile/device exists; TestFlight needs the paid Apple Developer Program team to appear in Xcode and be selected for the App target.",
       "files": [
         "docs/launch/proof/ios-signing-blocked-2026-06-20.md",
         "docs/launch/proof/ios-testflight-attempt-2026-06-21T02-51-42-785Z.md",
-        "docs/launch/proof/ios-testflight-attempt-2026-06-21T03-15-52-518Z.md"
+        "docs/launch/proof/ios-testflight-attempt-2026-06-21T03-15-52-518Z.md",
+        "docs/launch/proof/ios-testflight-attempt-2026-06-21T03-18-10-690Z.md"
       ],
       "commands": [
         "security find-identity -v -p codesigning",
