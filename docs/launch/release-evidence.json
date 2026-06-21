@@ -39,13 +39,16 @@
       ]
     },
     "ios-development-team": {
-      "status": "blocked",
-      "summary": "Apple Developer enrollment has been paid and an Apple ID was added to Xcode, but Xcode currently exposes only Christopher Hogg (Personal Team) teamID 3CFU9J87A5. Archive with that team fails because no iOS development provisioning profile/device exists; TestFlight needs the paid Apple Developer Program team to appear in Xcode and be selected for the App target.",
+      "status": "verified",
+      "verifiedAt": "2026-06-21T12:34:25Z",
+      "verifiedBy": "Codex on Chris Hogg's local checkout plus App Store Connect API key auth",
+      "summary": "Xcode archived and exported an App Store Connect build signed by Apple Distribution: Christopher Hogg (3CFU9J87A5). App Store Connect API-key auth succeeded, and the signed archive uploaded to TestFlight processing.",
       "files": [
         "docs/launch/proof/ios-signing-blocked-2026-06-20.md",
         "docs/launch/proof/ios-testflight-attempt-2026-06-21T02-51-42-785Z.md",
         "docs/launch/proof/ios-testflight-attempt-2026-06-21T03-15-52-518Z.md",
-        "docs/launch/proof/ios-testflight-attempt-2026-06-21T03-18-10-690Z.md"
+        "docs/launch/proof/ios-testflight-attempt-2026-06-21T03-18-10-690Z.md",
+        "docs/launch/proof/ios-testflight-upload-2026-06-21.md"
       ],
       "commands": [
         "security find-identity -v -p codesigning",
@@ -69,12 +72,28 @@
       ]
     },
     "apple-archive-upload": {
-      "status": "pending",
-      "summary": "After Apple signing is configured, run npm run ios:testflight -- --upload --team-id <TEAMID>, wait for App Store Connect processing, then attach the upload/TestFlight proof."
+      "status": "verified",
+      "verifiedAt": "2026-06-21T12:37:00Z",
+      "verifiedBy": "Codex on Chris Hogg's local checkout plus App Store Connect API",
+      "summary": "Uploaded Hoggcountry iOS version 1.0 build 2 to App Store Connect. Apple processed delivery UUID 7f5f5216-7145-4839-b7ed-dcab3702ea41 to build-status VALID. Build id 7f5f5216-7145-4839-b7ed-dcab3702ea41 is READY_FOR_BETA_TESTING internally and READY_FOR_BETA_SUBMISSION externally.",
+      "files": [
+        "docs/launch/proof/ios-testflight-upload-2026-06-21.md"
+      ],
+      "commands": [
+        "xcodebuild -exportArchive ... -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_T272T83N98.p8 -authenticationKeyID T272T83N98 -authenticationKeyIssuerID <issuer>",
+        "xcrun altool --build-status --delivery-id 7f5f5216-7145-4839-b7ed-dcab3702ea41 --wait --apiKey T272T83N98 --apiIssuer <issuer> --output-format json",
+        "GET https://api.appstoreconnect.apple.com/v1/builds/7f5f5216-7145-4839-b7ed-dcab3702ea41?include=buildBetaDetail,betaGroups"
+      ]
     },
     "dad-testflight-invite": {
-      "status": "pending",
-      "summary": "After the build is processed and external TestFlight review clears if needed, capture Dad's TestFlight email invite or a public link limited to Dad so Chris can send it."
+      "status": "blocked",
+      "verifiedAt": "2026-06-21T12:43:00Z",
+      "verifiedBy": "Codex via App Store Connect API",
+      "summary": "Created the external Dad Pilot beta group, attached build 1.0 (2), and created Dad's tester record for jimmy@hoggs.net. The tester remains NOT_INVITED because external TestFlight requires Beta App Review. Apple rejected the Beta App Review detail PATCH until a real contactPhone is provided.",
+      "files": [
+        "docs/launch/proof/ios-testflight-upload-2026-06-21.md"
+      ],
+      "blocker": "Provide a real TestFlight review contact phone number, then submit build 1.0 (2) for Beta App Review."
     },
     "android-upload-keystore": {
       "status": "verified",
