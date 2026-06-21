@@ -87,13 +87,13 @@
     },
     "dad-testflight-invite": {
       "status": "blocked",
-      "verifiedAt": "2026-06-21T12:43:00Z",
+      "verifiedAt": "2026-06-21T12:47:21Z",
       "verifiedBy": "Codex via App Store Connect API",
-      "summary": "Created the external Dad Pilot beta group, attached build 1.0 (2), and created Dad's tester record for jimmy@hoggs.net. The tester remains NOT_INVITED because external TestFlight requires Beta App Review. Apple rejected the Beta App Review detail PATCH until a real contactPhone is provided.",
+      "summary": "Created the external Dad Pilot beta group, attached build 1.0 (2), created Dad's tester record for jimmy@hoggs.net, applied the required Beta App Review contact details, added the en-US Beta App Description/localization, and submitted build 1.0 (2) for external Beta App Review. Apple now reports externalBuildState WAITING_FOR_BETA_REVIEW. Dad's tester remains NOT_INVITED until Apple approves external beta testing or auto-sends the invite.",
       "files": [
         "docs/launch/proof/ios-testflight-upload-2026-06-21.md"
       ],
-      "blocker": "Provide a real TestFlight review contact phone number, then submit build 1.0 (2) for Beta App Review."
+      "blocker": "Wait for Apple Beta App Review approval, then confirm or send Dad's TestFlight invite."
     },
     "android-upload-keystore": {
       "status": "verified",

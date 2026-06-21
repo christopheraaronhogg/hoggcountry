@@ -98,9 +98,46 @@ Created and attached Dad's tester record:
 
 The tester is not invited yet because external TestFlight requires Beta App Review before Apple can send the external invite for this build.
 
-## Remaining blocker
+## Beta App Review submission
 
-Beta App Review details are still blank because Apple requires a real contact phone number. Attempting to patch review details without `contactPhone` returned:
+Chris provided the required App Store Connect review contact phone number. Codex applied it to the Beta App Review detail without committing the full phone number to git.
+
+- Review contact: Chris Hogg
+- Review email: `chris.stitchscreen@gmail.com`
+- Review phone: ending in `5761`
+- Demo account required: `false`
+
+Apple then required a Beta App Description before submission. Codex created the `en-US` beta app localization with:
+
+- Feedback email: `chris.stitchscreen@gmail.com`
+- Marketing URL: `https://hoggcountry.com`
+- Privacy policy URL: `https://hoggcountry.com/privacy`
+- Beta description: offline-first Appalachian Trail pilot focused on Today, Trail Guide search, Scout model setup/honest unavailable states, Safety/SMS support circle, Docs, Bible search, and offline kill/relaunch behavior.
+
+After adding those fields, App Store Connect accepted the Beta App Review submission:
+
+```json
+{
+  "betaReviewState": "WAITING_FOR_REVIEW"
+}
+```
+
+The build beta detail now reports:
+
+```json
+{
+  "internalBuildState": "READY_FOR_BETA_TESTING",
+  "externalBuildState": "WAITING_FOR_BETA_REVIEW"
+}
+```
+
+Codex polled the build state three times after submission; it remained `WAITING_FOR_BETA_REVIEW`.
+
+## Remaining Apple-side wait
+
+The contact-phone blocker is resolved. Build `1.0 (2)` is submitted for external Beta App Review and is waiting on Apple.
+
+Previous blocker, now resolved:
 
 ```json
 {
@@ -110,4 +147,4 @@ Beta App Review details are still blank because Apple requires a real contact ph
 }
 ```
 
-Next action: add a real review contact phone, submit build `1.0 (2)` to Beta App Review, then wait for approval. After approval, Dad's `jimmy@hoggs.net` TestFlight invite can be sent from the Dad Pilot group.
+Next action: wait for Apple to approve external Beta App Review. After approval, Dad's `jimmy@hoggs.net` TestFlight invite can be sent from the Dad Pilot group if it is not auto-sent.
