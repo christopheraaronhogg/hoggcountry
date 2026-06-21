@@ -94,9 +94,11 @@ function atReferenceDocuments() {
 	return docs;
 }
 
-const documents = [...guideDocuments(), ...atReferenceDocuments()]
+const guideDocs = guideDocuments().filter((document) => document.body);
+const atReferenceDocs = atReferenceDocuments()
 	.filter((document) => document.body)
 	.sort((left, right) => left.title.localeCompare(right.title));
+const documents = [...guideDocs, ...atReferenceDocs];
 
 mkdirSync(dirname(outputPath), { recursive: true });
 writeFileSync(

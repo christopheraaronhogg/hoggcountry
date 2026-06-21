@@ -30,6 +30,8 @@
 	let scoutDraftTopic = $state('');
 	let docsNotice = $state('');
 	let sourceDocQuery = $state('');
+	let guideQuery = $state('');
+	let selectedGuideId = $state<string | null>(null);
 
 	function fmtTime(iso: string): string {
 		const d = new Date(iso);
@@ -98,6 +100,14 @@
 		return normalized.length > max ? `${normalized.slice(0, max - 1)}…` : normalized;
 	}
 
+	function normalizeGuideTitle(title: string): string {
+		return title.replace(/^Field Guide:\s*/i, '').replace(/^At\b/u, 'AT');
+	}
+
+	function wordCount(text: string): number {
+		return text.trim().split(/\s+/).filter(Boolean).length;
+	}
+
 	function scoreSourceDoc(document: FieldGuideExcerpt, queryText: string): number {
 		const tokens = queryText
 			.toLowerCase()
@@ -110,6 +120,21 @@
 	}
 
 	const sourceDocs = $derived(guide);
+	const fieldGuideDocs = $derived(guide.filter((document) => document.id.startsWith('field-guide:')));
+	const guideWordCount = $derived(fieldGuideDocs.reduce((sum, document) => sum + wordCount(document.body), 0));
+	const visibleGuideDocs = $derived.by(() => {
+		const queryText = guideQuery.trim();
+		if (!queryText) return fieldGuideDocs;
+		return fieldGuideDocs
+			.map((document) => ({ document, score: scoreSourceDoc(document, queryText) }))
+			.filter((result) => result.score > 0)
+			.sort((a, b) => b.score - a.score)
+			.map((result) => result.document);
+	});
+	const selectedGuideDoc = $derived.by(() => {
+		if (!visibleGuideDocs.length) return null;
+		return visibleGuideDocs.find((document) => document.id === selectedGuideId) ?? visibleGuideDocs[0];
+	});
 	const visibleSourceDocs = $derived.by(() => {
 		const queryText = sourceDocQuery.trim();
 		if (!queryText) return sourceDocs.slice(0, 8);
@@ -155,19 +180,58 @@
 
 	{#if section === 'guide'}
 		<div class="stack">
-			{#if guide.length}
-				{#each guide as excerpt (excerpt.id)}
-					<article class="card entry">
-						<h3>{excerpt.title}</h3>
-						<p class="body">{excerpt.body}</p>
-						{#if excerpt.tags.length}
-							<div class="tags">
-								{#each excerpt.tags as tag (tag)}<span class="tag">{tag}</span>{/each}
-							</div>
+			{#if fieldGuideDocs.length}
+				<section class="card guide-reader" aria-label="Dad's full offline field guide">
+					<div class="guide-reader-head">
+						<div>
+							<p class="section-kicker">Dad's full guide</p>
+							<h2>AT NOBO Field Guide</h2>
+							<p>{fieldGuideDocs.length} sections · about {Math.round(guideWordCount / 1000)}k words · bundled offline</p>
+						</div>
+						<span class="offline-badge">Offline</span>
+					</div>
+
+					<input
+						class="doc-title-input"
+						bind:value={guideQuery}
+						placeholder="Search the full guide..."
+						aria-label="Search Dad's full field guide"
+					/>
+
+					<div class="guide-layout">
+						{#if selectedGuideDoc}
+							<article class="guide-chapter">
+								<div class="guide-chapter-head">
+									<div>
+										<p class="section-kicker">Reading offline</p>
+										<h3>{normalizeGuideTitle(selectedGuideDoc.title)}</h3>
+									</div>
+									<button type="button" onclick={() => copySourceToDoc(selectedGuideDoc)}>Copy to docs</button>
+								</div>
+								<p class="body">{selectedGuideDoc.body}</p>
+								{#if selectedGuideDoc.citation}<p class="cite">{selectedGuideDoc.citation}</p>{/if}
+							</article>
 						{/if}
-						{#if excerpt.citation}<p class="cite">{excerpt.citation}</p>{/if}
-					</article>
-				{/each}
+
+						<div class="section-divider">
+							<p class="section-kicker">Sections</p>
+						</div>
+						<div class="guide-toc" aria-label="Guide table of contents">
+							{#each visibleGuideDocs as chapter (chapter.id)}
+								<button
+									type="button"
+									class:active={selectedGuideDoc?.id === chapter.id}
+									onclick={() => (selectedGuideId = chapter.id)}
+								>
+									<strong>{normalizeGuideTitle(chapter.title)}</strong>
+									<span>{wordCount(chapter.body).toLocaleString()} words</span>
+								</button>
+							{:else}
+								<p class="empty">No guide sections match “{guideQuery}”.</p>
+							{/each}
+						</div>
+					</div>
+				</section>
 			{:else}
 				<p class="empty">No field guide entries in the loaded pack yet.</p>
 			{/if}
@@ -385,12 +449,6 @@
 		overflow: hidden;
 	}
 
-	.entry h3 {
-		font-family: var(--font-display);
-		font-size: 1rem;
-		overflow-wrap: break-word;
-	}
-
 	.body {
 		font-size: 0.88rem;
 		line-height: 1.5;
@@ -398,25 +456,129 @@
 		overflow-wrap: break-word;
 	}
 
-	.tags {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 5px;
-	}
-
-	.tag {
-		font-size: 0.66rem;
-		font-weight: 700;
-		padding: 2px 8px;
-		border-radius: 999px;
-		background: rgba(47, 75, 53, 0.08);
-		color: var(--forest);
-	}
-
 	.cite {
 		font-size: 0.72rem;
 		color: var(--muted);
 		overflow-wrap: anywhere;
+	}
+
+	.guide-reader {
+		display: grid;
+		gap: 12px;
+		padding: 12px 14px;
+		min-width: 0;
+		max-width: 100%;
+		overflow: hidden;
+	}
+
+	.guide-reader-head,
+	.guide-chapter-head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 10px;
+		min-width: 0;
+	}
+
+	.guide-reader-head h2,
+	.guide-chapter-head h3 {
+		font-family: var(--font-display);
+		color: var(--ink);
+		overflow-wrap: anywhere;
+	}
+
+	.guide-reader-head h2 {
+		font-size: 1.12rem;
+	}
+
+	.guide-chapter-head h3 {
+		font-size: 1.02rem;
+	}
+
+	.guide-reader-head p:not(.section-kicker) {
+		margin-top: 3px;
+		font-size: 0.82rem;
+		line-height: 1.4;
+		color: var(--muted);
+		overflow-wrap: break-word;
+	}
+
+	.offline-badge {
+		flex: 0 0 auto;
+		border-radius: 999px;
+		padding: 5px 9px;
+		background: rgba(47, 75, 53, 0.1);
+		color: var(--forest);
+		font-size: 0.74rem;
+		font-weight: 900;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.guide-layout {
+		display: grid;
+		gap: 12px;
+		min-width: 0;
+	}
+
+	.guide-toc {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+		gap: 8px;
+		min-width: 0;
+	}
+
+	.guide-toc button {
+		min-height: 58px;
+		display: grid;
+		align-content: center;
+		gap: 3px;
+		text-align: left;
+		border: 1px solid rgba(95, 101, 88, 0.14);
+		border-radius: 12px;
+		background: var(--surface-strong, #fffdf8);
+		color: var(--ink);
+		padding: 9px 10px;
+		min-width: 0;
+	}
+
+	.guide-toc button.active {
+		border-color: rgba(47, 75, 53, 0.42);
+		background: rgba(47, 75, 53, 0.08);
+	}
+
+	.guide-toc strong {
+		font-size: 0.84rem;
+		line-height: 1.22;
+		overflow-wrap: anywhere;
+	}
+
+	.guide-toc span {
+		font-size: 0.72rem;
+		color: var(--muted);
+	}
+
+	.guide-chapter {
+		display: grid;
+		gap: 10px;
+		padding-top: 12px;
+		border-top: 1px solid rgba(95, 101, 88, 0.14);
+		min-width: 0;
+	}
+
+	.guide-chapter .body {
+		white-space: pre-wrap;
+	}
+
+	.guide-chapter-head button {
+		flex: 0 0 auto;
+		min-height: 44px;
+		border-radius: 10px;
+		padding: 8px 12px;
+		background: rgba(47, 75, 53, 0.08);
+		color: var(--forest);
+		font-size: 0.82rem;
+		font-weight: 800;
 	}
 
 	.empty {
