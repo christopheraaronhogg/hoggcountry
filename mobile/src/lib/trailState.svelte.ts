@@ -46,11 +46,6 @@ import {
 	syncStateForLocalWrite
 } from './sync-state';
 import {
-	nextAutoGpsAdoption,
-	resolveManualGpsMile,
-	shouldAutoGpsWatch as shouldStartAutoGpsWatch
-} from './gps-mileage';
-import {
 	buildFieldPackUrl,
 	calibrateHikeProfile,
 	deriveDayNumber,
@@ -66,6 +61,7 @@ import {
 import { detectTrailActionIntent } from './scout/action-intents.ts';
 import { cloneDefaultContextPack } from './scout/default-pack.ts';
 import { loadTrailGeometry, snapToMile, type TrailGeoPoint } from './trail/trail-geometry';
+import { TrailPositionService, type TrailGeolocation } from './trail-position-service';
 import { InMemoryContextPackStore } from './scout';
 import type { ContextPack, ContextPackStatus, ScoutAnswer } from './scout';
 import {
@@ -116,6 +112,18 @@ const HIKE_START_DATE = '2026-02-01';
 
 const mobilePersistence = browser ? createMobilePersistenceAdapter() : null;
 
+function browserGeolocation(): TrailGeolocation | null {
+	if (!browser || !navigator.geolocation) return null;
+	const { geolocation } = navigator;
+	return {
+		getCurrentPosition: (success, error, options) =>
+			geolocation.getCurrentPosition(success, error, options),
+		watchPosition: (success, error, options) =>
+			geolocation.watchPosition(success, error, options),
+		clearWatch: (id) => geolocation.clearWatch(id)
+	};
+}
+
 /** A write-action Scout proposes from chat, rendered as a confirm card. */
 type ProposedAction = { id: string; title: string; detail: string; confirmLabel: string };
 
@@ -149,11 +157,30 @@ class TrailAssistantStore {
 	// from static/. Powers the elevation profile and GPS→mile snapping. Empty
 	// until loaded, so UI renders an honest empty state in the meantime.
 	#trailGeo = $state.raw<TrailGeoPoint[]>([]);
-	#gpsWatchId: number | null = null;
-	#lastAutoGpsAt = 0;
+	#autoGpsActive = $state(false);
 	// True while the "My hike" calibration sheet is showing. Opened on first run
 	// (when the profile isn't calibrated yet) or from Settings to re-edit.
 	#hikeSetupOpen = $state(false);
+	#position = new TrailPositionService({
+		browserAvailable: browser,
+		getGeolocation: browserGeolocation,
+		getPrivacySettings: () => this.#state.privacySettings,
+		getTrailSettings: () => this.#state.trailSettings,
+		getTrailGeometry: () => this.#trailGeo,
+		setTrailGeometry: (points) => {
+			this.#trailGeo = points;
+		},
+		setAutoGpsActive: (active) => {
+			this.#autoGpsActive = active;
+		},
+		getCurrentMile: () => this.#state.currentMile,
+		updateCurrentMile: (mile, source) => this.updateCurrentMile(mile, source),
+		loadGeometry: loadTrailGeometry,
+		snapToMile,
+		onGeometryError: (error) => {
+			console.error('Failed to load trail geometry', error);
+		}
+	});
 
 	constructor() {
 		if (!browser) return;
@@ -167,14 +194,7 @@ class TrailAssistantStore {
 			this.#fieldPackStatus = status;
 		});
 		void this.#bootstrap();
-		void loadTrailGeometry()
-			.then((points) => {
-				this.#trailGeo = points;
-				this.#reconcileAutoGpsWatch();
-			})
-			.catch((error) => {
-				console.error('Failed to load trail geometry', error);
-			});
+		void this.#position.loadTrailGeometry();
 		// Re-observe any model download that kept running in the background service
 		// while the app was closed (also refreshes status, which may now be ready).
 		void this.reconcileDownload();
@@ -234,54 +254,6 @@ class TrailAssistantStore {
 		} catch (error) {
 			console.error('Failed to persist Trail Assistant state', error);
 		}
-	}
-
-	#shouldAutoGpsWatch(): boolean {
-		return shouldStartAutoGpsWatch({
-			browserAvailable: browser,
-			hasGeolocation: Boolean(browser && navigator.geolocation),
-			trailPointCount: this.#trailGeo.length,
-			privacySettings: this.#state.privacySettings,
-			trailSettings: this.#state.trailSettings
-		});
-	}
-
-	#reconcileAutoGpsWatch() {
-		if (!browser || !navigator.geolocation) return;
-		if (!this.#shouldAutoGpsWatch()) {
-			this.#stopAutoGpsWatch();
-			return;
-		}
-		if (this.#gpsWatchId !== null) return;
-
-		this.#gpsWatchId = navigator.geolocation.watchPosition(
-			(position) => {
-				void this.#adoptAutoGpsPosition(position);
-			},
-			() => {
-				// Manual "Use GPS" still reports a human-facing reason. The background
-				// watcher stays quiet because losing a fix on trail is normal.
-			},
-			{ enableHighAccuracy: false, maximumAge: 15 * 60_000, timeout: 10_000 }
-		);
-	}
-
-	#stopAutoGpsWatch() {
-		if (!browser || !navigator.geolocation || this.#gpsWatchId === null) return;
-		navigator.geolocation.clearWatch(this.#gpsWatchId);
-		this.#gpsWatchId = null;
-	}
-
-	async #adoptAutoGpsPosition(position: GeolocationPosition) {
-		if (!this.#shouldAutoGpsWatch()) return;
-		const adoption = nextAutoGpsAdoption({
-			snappedMile: snapToMile(this.#trailGeo, position.coords.latitude, position.coords.longitude),
-			currentMile: this.#state.currentMile,
-			lastAutoGpsAt: this.#lastAutoGpsAt
-		});
-		if (!adoption) return;
-		this.#lastAutoGpsAt = adoption.recordedAt;
-		await this.updateCurrentMile(adoption.mile, 'gps');
 	}
 
 	async #loadFieldPack() {
@@ -346,30 +318,6 @@ class TrailAssistantStore {
 
 	#gemmaUnavailableAnswer(autoStart: ModelDownloadAutoStart = 'none'): ScoutAnswer {
 		return this.#nativeScout.gemmaUnavailableAnswer(autoStart);
-	}
-
-	#getCurrentPosition(): Promise<GeolocationPosition | null> {
-		if (!browser || !navigator.geolocation) return Promise.resolve(null);
-		// Enforce the privacy toggle: location is only read when the hiker has opted
-		// in (default off). This is also why the OS permission prompt only appears
-		// after they enable "Precise location" — we never read it silently.
-		if (!this.#state.privacySettings.sharePreciseLocation) return Promise.resolve(null);
-
-		return new Promise((resolve) => {
-			navigator.geolocation.getCurrentPosition(
-				(position) => resolve(position),
-				() => resolve(null),
-				{ enableHighAccuracy: true, maximumAge: 60_000, timeout: 4_000 }
-			);
-		});
-	}
-
-	/** Snap a GPS fix to the nearest real AT mile (USGS route geometry). Falls back
-	 * to the last known mile when there's no fix or geometry isn't loaded yet. */
-	#snapPositionToTrailMile(position: GeolocationPosition | null): number {
-		if (!position) return this.#state.currentMile;
-		const mile = snapToMile(this.#trailGeo, position.coords.latitude, position.coords.longitude);
-		return mile ?? this.#state.currentMile;
 	}
 
 	async #syncTrailPulseReport(report: TrailConditionReport) {
@@ -484,7 +432,7 @@ class TrailAssistantStore {
 	}
 
 	get autoGpsActive() {
-		return this.#gpsWatchId !== null;
+		return this.#autoGpsActive;
 	}
 
 	get trailLogSettings() {
@@ -904,20 +852,7 @@ class TrailAssistantStore {
 	 * reason the UI can show, rather than fabricating a mile.
 	 */
 	async useGpsForMile(): Promise<{ ok: boolean; mile?: number; reason?: string }> {
-		const sharePreciseLocation = this.#state.privacySettings.sharePreciseLocation;
-		const position = sharePreciseLocation ? await this.#getCurrentPosition() : null;
-		const snappedMile = position
-			? snapToMile(this.#trailGeo, position.coords.latitude, position.coords.longitude)
-			: null;
-		const result = resolveManualGpsMile({
-			sharePreciseLocation,
-			hasPosition: position !== null,
-			snappedMile,
-			trailGeometryLoaded: this.#trailGeo.length > 0
-		});
-		if (!result.ok) return result;
-		await this.updateCurrentMile(result.mile, 'gps');
-		return result;
+		return this.#position.useGpsForMile();
 	}
 
 	/** Refresh the on-device model file status (cheap; no network). */
@@ -1033,13 +968,13 @@ class TrailAssistantStore {
 		const noteText = (input.noteText?.trim() || chipText || '').trim();
 		if (!noteText) return null;
 
-		const position = await this.#getCurrentPosition();
+		const position = await this.#position.getCurrentPosition();
 		const report = createTrailPulseReport({
 			source: input.source,
 			chipText,
 			noteText,
 			reporterTrailName: input.reporterTrailName,
-			snappedMile: this.#snapPositionToTrailMile(position),
+			snappedMile: this.#position.snapPositionToTrailMile(position),
 			syncState: syncStateForLocalWrite(this.#state.onlineStatus)
 		});
 
@@ -1069,12 +1004,12 @@ class TrailAssistantStore {
 
 	updatePrivacy(patch: Partial<PrivacySettings>) {
 		this.#state.privacySettings = { ...this.#state.privacySettings, ...patch };
-		this.#reconcileAutoGpsWatch();
+		this.#position.reconcileAutoGpsWatch();
 	}
 
 	updateTrailSetting<K extends keyof TrailSettings>(key: K, value: TrailSettings[K]) {
 		this.#state.trailSettings = { ...this.#state.trailSettings, [key]: value };
-		if (key === 'autoLogMileage') this.#reconcileAutoGpsWatch();
+		if (key === 'autoLogMileage') this.#position.reconcileAutoGpsWatch();
 	}
 
 	updateTrailLogSetting<K extends keyof TrailLogSettings>(key: K, value: TrailLogSettings[K]) {
