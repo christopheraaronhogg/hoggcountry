@@ -58,9 +58,27 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 10px;
-		background: linear-gradient(180deg, rgba(255, 252, 246, 0.98), rgba(248, 242, 230, 0.95));
+		background: linear-gradient(180deg, rgba(255, 252, 246, 0.92), rgba(248, 242, 230, 0.88));
+		backdrop-filter: blur(14px);
+		-webkit-backdrop-filter: blur(14px);
 		border-bottom: 1px solid rgba(95, 101, 88, 0.14);
 		box-shadow: 0 8px 16px -16px rgba(64, 53, 38, 0.4);
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.header {
+			background: linear-gradient(180deg, rgba(27, 33, 25, 0.92), rgba(18, 23, 16, 0.86));
+			border-bottom-color: rgba(242, 234, 219, 0.08);
+		}
+
+		.status-strip,
+		.conn {
+			background: rgba(152, 196, 142, 0.12);
+		}
+
+		.gear[aria-current='page'] {
+			background: rgba(152, 196, 142, 0.16);
+		}
 	}
 
 	.brand {
