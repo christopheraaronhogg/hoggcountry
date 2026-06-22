@@ -472,11 +472,10 @@
 </div>
 
 <style>
-	.profile-card,
-	.pack-card,
-	.offline-section,
-	.region-card,
-	.data-card {
+	/* Every section card gets consistent inner padding. (Previously only a
+	   hand-listed subset did, so the bare cards — Trail-log automation, Daily
+	   habits — plus the hike/model cards rendered their text flush to the edge.) */
+	.section-stack .card {
 		padding: 14px;
 	}
 

@@ -303,6 +303,12 @@
 </div>
 
 <style>
+	/* Every section card gets consistent inner padding — the bare Privacy and
+	   Support-circle cards were rendering their text flush to the edge. */
+	.section-stack .card {
+		padding: 14px;
+	}
+
 	.safety-hero {
 		padding: 14px;
 		display: grid;
