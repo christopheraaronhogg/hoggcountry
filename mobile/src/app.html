@@ -3,6 +3,9 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<!-- No CSP today (permissive). If one is ever added it MUST keep the map's tiles:
+		     img-src 'self' data: blob: https://*.tile.opentopomap.org;
+		     connect-src 'self' https://*.tile.opentopomap.org https://hoggcountry.com -->
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

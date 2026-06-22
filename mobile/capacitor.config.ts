@@ -5,7 +5,9 @@ const config: CapacitorConfig = {
 	appName: 'Hoggcountry',
 	webDir: 'build',
 	server: {
-		androidScheme: 'https'
+		androidScheme: 'https',
+		// Allow the offline-aware map to fetch OpenTopoMap basemap tiles when online.
+		allowNavigation: ['*.tile.opentopomap.org', 'tile.opentopomap.org', '*.opentopomap.org']
 	}
 };
 
