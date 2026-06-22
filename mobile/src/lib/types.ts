@@ -36,6 +36,7 @@ export function migrateTab(value: unknown): Tab {
 
 import type { HikeProfile } from './scout/hike-profile';
 export type { HikeProfile } from './scout/hike-profile';
+import type { LoadoutItem } from './scout/types';
 
 export type SyncState = 'synced' | 'syncing' | 'queued-offline';
 export type CheckInStatus = 'safe' | 'delayed' | 'need-help';
@@ -174,6 +175,9 @@ export interface TrailState {
 	lastCheckIn: CheckInRecord;
 	checkInHistory: CheckInRecord[];
 	documents: TrailDocument[];
+	/** The hiker's personal gear list. User-owned like documents — kept here so a
+	 * field-pack refresh never clobbers it; synced into the pack's loadout for Scout. */
+	personalLoadout: LoadoutItem[];
 	trailPulseReports: TrailConditionReport[];
 	seenTrailPulseReportIds: string[];
 	privacySettings: PrivacySettings;

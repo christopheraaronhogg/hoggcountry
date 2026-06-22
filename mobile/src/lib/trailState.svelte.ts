@@ -67,6 +67,7 @@ import { loadTrailGeometry, snapToMile, type TrailGeoPoint } from './trail/trail
 import { createBrowserGeolocation, TrailPositionService } from './trail-position-service';
 import { InMemoryContextPackStore } from './scout';
 import type { ContextPack, ContextPackStatus, ScoutAnswer } from './scout';
+import type { LoadoutItem } from './scout/types';
 import {
 	createMobilePersistenceAdapter,
 	type PersistenceAdapter
@@ -259,7 +260,17 @@ class TrailAssistantStore {
 		this.#fieldPackStatus = this.#fieldPackStore.getStatus();
 		await this.#mergeOfflineSourceDocs();
 		pack = this.#fieldPack;
+		// One-time adoption so the editor starts from real gear: take over gear already
+		// in the pack — a self-tracked hiker's personal pack, or, when following Dad, his
+		// published loadout. The one thing we must NOT do is hand a self-tracked hiker
+		// Dad's pilot gear as their own (sanitize clears it for exactly that reason).
+		const wouldInheritPilotGear =
+			isSelfTracked(this.#state.hikeProfile) && isDadPilotContextPack(pack);
+		if (!this.#state.personalLoadout.length && pack.loadout.length && !wouldInheritPilotGear) {
+			this.#state.personalLoadout = pack.loadout.map((item) => ({ ...item }));
+		}
 		await this.#syncDocumentsToFieldPack();
+		await this.#syncLoadoutToFieldPack();
 		if (isSelfTracked(this.#state.hikeProfile)) {
 			await this.#sanitizeFieldPackForSelfProfile();
 			pack = this.#fieldPack;
@@ -288,6 +299,15 @@ class TrailAssistantStore {
 
 	async #syncDocumentsToFieldPack() {
 		await this.#fieldPackStore.updateDocuments(toContextDocuments(this.#state.documents));
+		this.#fieldPack = this.#fieldPackStore.get();
+		this.#fieldPackStatus = this.#fieldPackStore.getStatus();
+	}
+
+	// Gear is user-owned (like documents): the source of truth is #state.personalLoadout,
+	// pushed into the pack's loadout so a remote refresh — which spreads a server pack
+	// over the local one — can never wipe the hiker's own gear list.
+	async #syncLoadoutToFieldPack() {
+		await this.#fieldPackStore.updateLoadout(this.#state.personalLoadout.map((item) => ({ ...item })));
 		this.#fieldPack = this.#fieldPackStore.get();
 		this.#fieldPackStatus = this.#fieldPackStore.getStatus();
 	}
@@ -789,6 +809,7 @@ class TrailAssistantStore {
 		await this.#fieldPackStore.refreshFromEndpoint(endpoint);
 		await this.#mergeOfflineSourceDocs();
 		await this.#syncDocumentsToFieldPack();
+		await this.#syncLoadoutToFieldPack();
 		const pack = this.#fieldPackStore.get();
 		this.#fieldPack = pack;
 		this.#fieldPackStatus = this.#fieldPackStore.getStatus();
@@ -815,6 +836,53 @@ class TrailAssistantStore {
 	deleteDocument(id: string): void {
 		this.#state.documents = this.#state.documents.filter((document) => document.id !== id);
 		void this.#syncDocumentsToFieldPack();
+	}
+
+	// --- Gear / loadout editing -------------------------------------------------
+	get personalLoadout(): LoadoutItem[] {
+		return this.#state.personalLoadout;
+	}
+
+	addGearItem(input: {
+		name: string;
+		category: LoadoutItem['category'];
+		weightOz?: number;
+		note?: string;
+		carried?: boolean;
+	}): void {
+		const name = input.name.trim();
+		if (!name) return;
+		const entry: LoadoutItem = {
+			name,
+			category: input.category,
+			carried: input.carried ?? true
+		};
+		if (typeof input.weightOz === 'number' && Number.isFinite(input.weightOz) && input.weightOz > 0) {
+			entry.weightOz = input.weightOz;
+		}
+		if (input.note?.trim()) entry.note = input.note.trim();
+		this.#state.personalLoadout = [...this.#state.personalLoadout, entry];
+		void this.#syncLoadoutToFieldPack();
+	}
+
+	updateGearItem(index: number, patch: Partial<LoadoutItem>): void {
+		if (index < 0 || index >= this.#state.personalLoadout.length) return;
+		this.#state.personalLoadout = this.#state.personalLoadout.map((item, i) =>
+			i === index ? { ...item, ...patch } : item
+		);
+		void this.#syncLoadoutToFieldPack();
+	}
+
+	toggleGearCarried(index: number): void {
+		const item = this.#state.personalLoadout[index];
+		if (!item) return;
+		this.updateGearItem(index, { carried: !item.carried });
+	}
+
+	removeGearItem(index: number): void {
+		if (index < 0 || index >= this.#state.personalLoadout.length) return;
+		this.#state.personalLoadout = this.#state.personalLoadout.filter((_, i) => i !== index);
+		void this.#syncLoadoutToFieldPack();
 	}
 
 	saveLastScoutAnswerAsDocument(title = 'Scout field draft'): TrailDocument | null {

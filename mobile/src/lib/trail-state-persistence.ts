@@ -30,6 +30,9 @@ export function restorePersistedTrailState(
 	if (!Array.isArray(state.documents)) {
 		state.documents = [];
 	}
+	if (!Array.isArray(state.personalLoadout)) {
+		state.personalLoadout = [];
+	}
 
 	return state;
 }
@@ -46,6 +49,7 @@ export function snapshotTrailState(state: TrailState): PersistedTrailState {
 		lastCheckIn: { ...state.lastCheckIn },
 		checkInHistory: state.checkInHistory.map((record) => ({ ...record })),
 		documents: state.documents.map((document) => ({ ...document })),
+		personalLoadout: state.personalLoadout.map((item) => ({ ...item })),
 		trailPulseReports: state.trailPulseReports.map((report) => ({ ...report })),
 		seenTrailPulseReportIds: [...state.seenTrailPulseReportIds],
 		privacySettings: { ...state.privacySettings },

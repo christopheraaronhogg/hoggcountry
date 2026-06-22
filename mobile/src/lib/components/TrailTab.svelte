@@ -19,11 +19,63 @@
 	const guide = $derived(trailAssistant.fieldPack.guideExcerpts);
 	const documents = $derived(trailAssistant.documents);
 	const checkIns = $derived(trailAssistant.checkInHistory);
-	const loadout = $derived(trailAssistant.fieldPack.loadout);
+	// The hiker's own gear list is the editable source of truth (synced into the
+	// pack for Scout). Editing by index against THIS array keeps rows stable.
+	const loadout = $derived(trailAssistant.personalLoadout);
 	const carried = $derived(loadout.filter((item) => item.carried));
 	const totalLb = $derived(
 		(carried.reduce((sum, item) => sum + (item.weightOz ?? 0), 0) / 16).toFixed(1)
 	);
+
+	// --- Gear editor ----------------------------------------------------------
+	const GEAR_CATEGORIES = [
+		'pack',
+		'shelter',
+		'sleep',
+		'clothing',
+		'kitchen',
+		'electronics',
+		'safety',
+		'consumable'
+	] as const;
+	let gearName = $state('');
+	let gearCategory = $state<(typeof GEAR_CATEGORIES)[number]>('pack');
+	let gearWeight = $state<number | null>(null);
+	let editingGearIndex = $state<number | null>(null);
+	const gearFormValid = $derived(gearName.trim().length > 0);
+
+	function resetGearForm() {
+		editingGearIndex = null;
+		gearName = '';
+		gearCategory = 'pack';
+		gearWeight = null;
+	}
+	function submitGear() {
+		if (!gearFormValid) return;
+		const weightOz = gearWeight != null && Number.isFinite(gearWeight) && gearWeight > 0 ? gearWeight : undefined;
+		if (editingGearIndex !== null) {
+			trailAssistant.updateGearItem(editingGearIndex, {
+				name: gearName.trim(),
+				category: gearCategory,
+				weightOz
+			});
+		} else {
+			trailAssistant.addGearItem({ name: gearName.trim(), category: gearCategory, weightOz, carried: true });
+		}
+		resetGearForm();
+	}
+	function editGear(index: number) {
+		const item = loadout[index];
+		if (!item) return;
+		editingGearIndex = index;
+		gearName = item.name;
+		gearCategory = item.category;
+		gearWeight = item.weightOz ?? null;
+	}
+	function removeGear(index: number) {
+		trailAssistant.removeGearItem(index);
+		if (editingGearIndex === index) resetGearForm();
+	}
 	let editingId = $state<string | null>(null);
 	let draftTitle = $state('');
 	let draftBody = $state('');
@@ -147,7 +199,11 @@
 		return tokens.reduce((score, token) => score + (haystack.includes(token) ? 1 : 0), 0);
 	}
 
-	const sourceDocs = $derived(guide);
+	// The Docs source library lists EXTERNAL trail sources only. The field-guide
+	// chapters already are the Guide sub-tab, so re-listing them here just inflated
+	// the count and duplicated the guide. They stay searchable by Scout regardless
+	// (its grounding corpus is the full offline-source-docs set, not this list).
+	const sourceDocs = $derived(guide.filter((document) => document.id.startsWith('at-open-reference:')));
 	const fieldGuideDocs = $derived(guide.filter((document) => document.id.startsWith('field-guide:')));
 	const guideWordCount = $derived(fieldGuideDocs.reduce((sum, document) => sum + wordCount(document.body), 0));
 	const visibleGuideDocs = $derived.by(() => {
@@ -368,8 +424,8 @@
 			<section class="card source-library" aria-label="Bundled offline source library">
 				<div class="doc-editor-head">
 					<div>
-						<p class="section-kicker">Bundled source library</p>
-						<h2>{sourceDocs.length} offline source docs</h2>
+						<p class="section-kicker">Trail source library</p>
+						<h2>{sourceDocs.length} AT source docs</h2>
 					</div>
 				</div>
 				<input
@@ -412,7 +468,7 @@
 		</div>
 	{:else}
 		<div class="stack">
-			<p class="gear-intro">What's on your back — glance before you pack up so nothing's left at camp.</p>
+			<p class="gear-intro">What's on your back — tap to carry or drop, edit any item, and add your own. Base weight and Scout's packing prompts follow this list.</p>
 			<div class="gear-summary card">
 				<div class="gs-row">
 					<div>
@@ -427,24 +483,66 @@
 					</div>
 				{/if}
 			</div>
+
 			{#if loadout.length}
 				<div class="gear-list">
-					{#each loadout as item (item.name)}
+					{#each loadout as item, index (index)}
 						<div class="gear-row" class:dropped={!item.carried}>
-							<div class="gear-name">
-								<strong>{item.name}</strong>
-								<span class="gear-cat">{item.category}</span>
-								{#if item.note}<span class="gear-note">{item.note}</span>{/if}
-							</div>
-							<span class="gear-weight tabular">
-								{item.weightOz ? `${(item.weightOz / 16).toFixed(1)} lb` : '—'}
-							</span>
+							<button
+								class="toggle gear-carry"
+								class:on={item.carried}
+								role="switch"
+								aria-checked={item.carried}
+								aria-label={item.carried ? `${item.name}: carried — tap to drop` : `${item.name}: not packed — tap to carry`}
+								onclick={() => trailAssistant.toggleGearCarried(index)}
+							></button>
+							<button class="gear-edit-tap" type="button" onclick={() => editGear(index)} aria-label={`Edit ${item.name}`}>
+								<span class="gear-name">
+									<strong>{item.name}</strong>
+									<span class="gear-cat">{item.category}</span>
+									{#if item.note}<span class="gear-note">{item.note}</span>{/if}
+								</span>
+								<span class="gear-weight tabular">
+									{item.weightOz ? `${(item.weightOz / 16).toFixed(1)} lb` : '—'}
+								</span>
+							</button>
+							<button class="gear-remove" type="button" aria-label={`Remove ${item.name}`} onclick={() => removeGear(index)}>×</button>
 						</div>
 					{/each}
 				</div>
 			{:else}
-				<p class="empty">No loadout in the loaded pack yet.</p>
+				<p class="empty">No gear yet. Add your pack below — Scout uses it for base weight and "did you pack X?" prompts.</p>
 			{/if}
+
+			<form class="gear-form card" onsubmit={(event) => { event.preventDefault(); submitGear(); }}>
+				<p class="gear-form-title">{editingGearIndex !== null ? 'Edit item' : 'Add gear'}</p>
+				<input class="gear-input" bind:value={gearName} placeholder="Item name (e.g. Tent, Puffy jacket)" aria-label="Gear name" autocomplete="off" />
+				<div class="gear-form-row">
+					<select class="gear-select" bind:value={gearCategory} aria-label="Category">
+						{#each GEAR_CATEGORIES as cat (cat)}
+							<option value={cat}>{cat}</option>
+						{/each}
+					</select>
+					<input
+						class="gear-input gear-weight-input"
+						type="number"
+						inputmode="decimal"
+						min="0"
+						step="0.1"
+						bind:value={gearWeight}
+						placeholder="oz"
+						aria-label="Weight in ounces"
+					/>
+				</div>
+				<div class="gear-form-actions">
+					{#if editingGearIndex !== null}
+						<button class="outline-button" type="button" onclick={resetGearForm}>Cancel</button>
+					{/if}
+					<button class="cta-button" type="submit" disabled={!gearFormValid}>
+						{editingGearIndex !== null ? 'Save item' : 'Add to pack'}
+					</button>
+				</div>
+			</form>
 		</div>
 	{/if}
 </div>
@@ -1010,14 +1108,43 @@
 	.gear-row {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
 		gap: 10px;
-		padding: 10px 14px;
+		padding: 8px 12px;
 		background: var(--surface-strong, #fffdf8);
 		min-width: 0;
 	}
 	.gear-row.dropped {
-		opacity: 0.5;
+		opacity: 0.55;
+	}
+	.gear-carry {
+		flex: 0 0 auto;
+	}
+	.gear-edit-tap {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px;
+		min-height: 44px;
+		padding: 0;
+		background: none;
+		border: 0;
+		text-align: left;
+		color: inherit;
+		cursor: pointer;
+	}
+	.gear-remove {
+		flex: 0 0 auto;
+		width: 40px;
+		height: 40px;
+		display: grid;
+		place-items: center;
+		border-radius: 10px;
+		font-size: 1.25rem;
+		line-height: 1;
+		color: var(--muted);
+		background: var(--ink-soft);
 	}
 	.gear-name {
 		display: flex;
@@ -1045,5 +1172,51 @@
 		font-size: 0.84rem;
 		font-weight: 700;
 		color: var(--ink);
+		flex: 0 0 auto;
+	}
+
+	.gear-form {
+		display: grid;
+		gap: 8px;
+		padding: 12px;
+	}
+	.gear-form-title {
+		font-size: var(--text-floor);
+		font-weight: 800;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--muted);
+	}
+	.gear-input,
+	.gear-select {
+		width: 100%;
+		min-height: 44px;
+		padding: 10px 12px;
+		border-radius: var(--radius-control);
+		border: 1px solid var(--line);
+		background: var(--surface-strong);
+		color: var(--ink);
+		font-size: 0.95rem;
+	}
+	.gear-input:focus,
+	.gear-select:focus {
+		outline: none;
+		border-color: var(--forest);
+		box-shadow: 0 0 0 3px var(--forest-soft);
+	}
+	.gear-form-row {
+		display: grid;
+		grid-template-columns: 1fr 96px;
+		gap: 8px;
+	}
+	.gear-weight-input {
+		text-align: right;
+	}
+	.gear-form-actions {
+		display: grid;
+		gap: 8px;
+		grid-auto-flow: column;
+		grid-auto-columns: 1fr;
+		margin-top: 2px;
 	}
 </style>

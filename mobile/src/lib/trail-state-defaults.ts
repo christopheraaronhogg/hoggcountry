@@ -56,6 +56,7 @@ export function createDefaultTrailState(options: TrailStateDefaultsOptions = {})
 		lastCheckIn: createStarterCheckIn(now, id, 2),
 		checkInHistory: [],
 		documents: [],
+		personalLoadout: [],
 		trailPulseReports: [],
 		seenTrailPulseReportIds: [],
 		privacySettings: {
