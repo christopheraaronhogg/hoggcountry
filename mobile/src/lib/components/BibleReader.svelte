@@ -26,6 +26,41 @@
 	let chapter = $state<KjvChapter | null>(null);
 	let highlightVerse = $state<number | null>(null);
 
+	// User verse highlights — persisted locally, keyed by the global verse id.
+	const HL_TINTS = [
+		{ swatch: '#e0a93a', name: 'amber' },
+		{ swatch: '#6a845f', name: 'green' },
+		{ swatch: '#5f8090', name: 'blue' },
+		{ swatch: '#b06a45', name: 'clay' }
+	];
+	const HL_KEY = 'hc-bible-highlights-v1';
+	let highlights = $state<Record<string, number>>({});
+	let selectedVerse = $state<string | null>(null);
+	function persistHighlights() {
+		try {
+			localStorage.setItem(HL_KEY, JSON.stringify(highlights));
+		} catch {
+			/* storage may be unavailable; highlights stay in-session */
+		}
+	}
+	function selectVerse(id: string) {
+		selectedVerse = selectedVerse === id ? null : id;
+	}
+	function applyHighlight(tint: number) {
+		if (!selectedVerse) return;
+		highlights = { ...highlights, [selectedVerse]: tint };
+		selectedVerse = null;
+		persistHighlights();
+	}
+	function clearHighlight() {
+		if (!selectedVerse) return;
+		const next = { ...highlights };
+		delete next[selectedVerse];
+		highlights = next;
+		selectedVerse = null;
+		persistHighlights();
+	}
+
 	// search
 	let query = $state('');
 	let results = $state<BibleSearchHit[]>([]);
@@ -71,6 +106,12 @@
 	}
 
 	onMount(async () => {
+		try {
+			const rawHl = localStorage.getItem(HL_KEY);
+			if (rawHl) highlights = JSON.parse(rawHl);
+		} catch {
+			/* ignore unreadable highlight store */
+		}
 		try {
 			index = await loadBibleIndex();
 			const psalms = index.getBook('Psalms');
@@ -246,9 +287,34 @@
 			<div class="passage">
 				<h3>{book.name} {chapter.number}</h3>
 				{#each chapter.verses as verse (verse.id)}
-					<p class="scripture" class:hl={highlightVerse === verse.number}>
+					<button
+						class="scripture"
+						class:hl={highlightVerse === verse.number}
+						class:selected={selectedVerse === verse.id}
+						data-tint={highlights[verse.id] ?? ''}
+						type="button"
+						aria-label={`${verse.reference} — tap to highlight`}
+						aria-pressed={highlights[verse.id] !== undefined}
+						onclick={() => selectVerse(verse.id)}
+					>
 						<span class="vnum">{verse.number}</span>{verse.readingText}
-					</p>
+					</button>
+					{#if selectedVerse === verse.id}
+						<div class="hl-bar" role="toolbar" aria-label="Highlight verse">
+							{#each HL_TINTS as t, i (t.name)}
+								<button
+									class="hl-swatch"
+									class:on={highlights[verse.id] === i}
+									style="--sw:{t.swatch}"
+									type="button"
+									onclick={() => applyHighlight(i)}
+									aria-label={`Highlight ${t.name}`}
+								></button>
+							{/each}
+							<span class="hl-div" aria-hidden="true"></span>
+							<button class="hl-remove" type="button" onclick={clearHighlight} aria-label="Remove highlight">✕</button>
+						</div>
+					{/if}
 				{/each}
 			</div>
 		{:else}
@@ -573,15 +639,93 @@
 		color: var(--forest);
 	}
 	.scripture {
+		display: block;
+		width: calc(100% + 16px);
+		text-align: left;
 		font-size: 1rem;
 		line-height: 1.62;
 		color: var(--ink);
+		cursor: pointer;
+		border-radius: 8px;
+		padding: 3px 8px;
+		margin: 0 -8px;
+		transition: background var(--dur-fast) var(--ease-out);
 	}
 	.scripture.hl {
 		background: var(--sand-soft);
-		border-radius: 8px;
-		padding: 4px 8px;
-		margin: -2px -4px;
+	}
+	/* User highlight tints — readable behind the dark scripture ink in both themes. */
+	.scripture[data-tint='0'] {
+		background: rgba(224, 169, 58, 0.28);
+	}
+	.scripture[data-tint='1'] {
+		background: rgba(106, 132, 95, 0.32);
+	}
+	.scripture[data-tint='2'] {
+		background: rgba(95, 128, 144, 0.3);
+	}
+	.scripture[data-tint='3'] {
+		background: rgba(176, 106, 69, 0.28);
+	}
+	.scripture.selected {
+		outline: 2px solid var(--forest);
+		outline-offset: 1px;
+	}
+	.scripture:focus-visible {
+		outline: 2px solid var(--forest);
+		outline-offset: 1px;
+	}
+
+	/* Highlight toolbar — appears inline right under the tapped verse, so the
+	   action is exactly where you're looking (and needs no fragile fixed/sticky
+	   positioning inside the transformed tab wrapper). */
+	.hl-bar {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		width: fit-content;
+		margin: 8px 0 12px;
+		padding: 8px 12px;
+		border-radius: 999px;
+		background: var(--surface-strong);
+		border: 1px solid var(--line);
+		box-shadow: var(--shadow);
+		animation: hl-rise var(--dur-base) var(--ease-spring) both;
+	}
+	@keyframes hl-rise {
+		from {
+			opacity: 0;
+			transform: translateY(-6px) scale(0.96);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+	.hl-swatch {
+		width: 30px;
+		height: 30px;
+		border-radius: 50%;
+		background: var(--sw);
+		border: 2.5px solid transparent;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) inset;
+	}
+	.hl-swatch.on {
+		border-color: var(--ink);
+	}
+	.hl-div {
+		width: 1px;
+		height: 22px;
+		background: var(--line);
+	}
+	.hl-remove {
+		width: 30px;
+		height: 30px;
+		border-radius: 50%;
+		background: var(--ink-soft);
+		color: var(--muted);
+		font-weight: 800;
+		font-size: 0.8rem;
 	}
 	.vnum {
 		font-size: 0.66rem;
