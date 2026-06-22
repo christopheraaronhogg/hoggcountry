@@ -34,6 +34,12 @@
 	// mile (the "how far / how much up" tool). null when nothing is being measured.
 	let measureMile = $state<number | null>(null);
 
+	// Whole-trail shelters (OSM, open-licensed) — the navigation landmarks a
+	// thru-hiker keys off. Loaded once so the map shows POIs the length of the
+	// trail, not just the handful in the field pack near the current mile.
+	type TrailShelter = { name: string; mile: number; lat: number; lon: number };
+	let trailShelters = $state<TrailShelter[]>([]);
+
 	const geo = $derived(trailAssistant.trailGeometry);
 	const from = $derived(trailAssistant.currentMile);
 	// 0.1-mi quantized current mile — throttles the route rebuild to real movement.
@@ -50,6 +56,15 @@
 	// Real elevation per mile is bundled, so difficulty bands are honest, not faked.
 	const hasElev = $derived(geo.length >= 100 && geo.every((p) => Number.isFinite(p.ft)));
 	const isOverview = $derived(liveZoom > 0 ? liveZoom < 8.5 : mapZoom === OVERVIEW);
+	// Shelters in (or near) the current window — all of them at overview so the
+	// whole trail is dotted; the few in frame when zoomed in.
+	const sheltersInView = $derived.by(() => {
+		if (!trailShelters.length) return [];
+		const margin = isOverview ? 0 : 2;
+		const lo = viewStart - margin;
+		const hi = viewEnd + margin;
+		return trailShelters.filter((s) => s.mile >= lo && s.mile <= hi);
+	});
 	const showPois = $derived(liveZoom >= 9);
 
 	// --- chrome data (kept from the schematic version) ------------------------
@@ -70,10 +85,10 @@
 		const hi = viewEnd + 0.5;
 		const inWin = <T extends { mile: number }>(items: T[]) =>
 			items.filter((i) => i.mile >= lo && i.mile <= hi).sort((a, b) => a.mile - b.mile);
-		const water = inWin(pack.water).slice(0, 4).map((w) => ({ kind: 'water' as const, mile: w.mile, label: short(w.name) }));
+		const water = inWin(pack.water).slice(0, 14).map((w) => ({ kind: 'water' as const, mile: w.mile, label: short(w.name) }));
 		const shelters = inWin(pack.shelters).map((s) => ({ kind: 'shelter' as const, mile: s.mile, label: short(s.name) }));
 		const towns = inWin(pack.towns).map((t) => ({ kind: 'town' as const, mile: t.mile, label: short(t.name) }));
-		return [...water, ...shelters, ...towns].sort((a, b) => a.mile - b.mile).slice(0, 8);
+		return [...water, ...shelters, ...towns].sort((a, b) => a.mile - b.mile).slice(0, 40);
 	});
 	const nextWater = $derived.by(() => {
 		const w = trailAssistant.fieldPack.water
@@ -152,6 +167,7 @@
 	let routeLayer: LeafletNS.LayerGroup | null = null;
 	let poiLayer: LeafletNS.LayerGroup | null = null;
 	let endpointLayer: LeafletNS.LayerGroup | null = null;
+	let shelterLayer: LeafletNS.LayerGroup | null = null;
 	let measureLayer: LeafletNS.LayerGroup | null = null;
 	let measureMarker: LeafletNS.Marker | null = null;
 	let measureDragging = false;
@@ -373,10 +389,19 @@
 		tiles.addTo(map);
 
 		routeLayer = L.layerGroup().addTo(map);
+		shelterLayer = L.layerGroup().addTo(map);
 		poiLayer = L.layerGroup().addTo(map);
 		endpointLayer = L.layerGroup().addTo(map);
 		measureLayer = L.layerGroup().addTo(map);
 		youLayer = L.layerGroup().addTo(map);
+
+		// Load the whole-trail shelter POIs (best-effort; the map works without them).
+		fetch('/trail/shelters.json')
+			.then((r) => (r.ok ? r.json() : null))
+			.then((d) => {
+				if (d && Array.isArray(d.shelters)) trailShelters = d.shelters;
+			})
+			.catch(() => {});
 
 		map.on('zoomend moveend', onMoveEnd);
 		map.on('dragstart zoomstart', () => (userInteracted = true));
@@ -527,6 +552,33 @@
 		} else {
 			youMarker.setLatLng(ll);
 			youMarker.setTooltipContent(content);
+		}
+	});
+
+	// Whole-trail shelter POIs — small moss dots at their real positions, the
+	// length of the trail. Labels on tap (not permanent) so 180 markers don't
+	// shout at once. Hidden only when fully zoomed out past usefulness.
+	$effect(() => {
+		void sheltersInView;
+		void liveZoom;
+		if (!L || !map || !shelterLayer) return;
+		shelterLayer.clearLayers();
+		const r = liveZoom >= 11 ? 5 : liveZoom >= 8 ? 4 : 3;
+		for (const s of sheltersInView) {
+			L.circleMarker([s.lat, s.lon], {
+				radius: r,
+				weight: 1.8,
+				color: '#fffdf8',
+				fillColor: '#6a845f',
+				fillOpacity: 1,
+				className: 'poi poi-shelter'
+			})
+				.bindTooltip(`<span class="tip-rot">${s.name} · mi ${s.mile.toFixed(1)}</span>`, {
+					direction: 'top',
+					offset: [0, -4],
+					className: 'map-tip poi-tip'
+				})
+				.addTo(shelterLayer);
 		}
 	});
 
@@ -708,20 +760,26 @@
 
 	<!-- Right-edge controls -->
 	<div class="map-tools">
-		<div class="zoom-stack" role="group" aria-label="Map zoom">
-			{#each ZOOMS as z (z)}
+		<!-- Whole-trail is a mode, not a corridor width — its own glassy toggle. -->
+		<button
+			class="tool-btn overview"
+			class:on={isOverview}
+			onclick={() => setZoom(OVERVIEW)}
+			aria-label="Whole trail"
+			aria-pressed={isOverview}
+		>
+			<Icon name="map" size={18} stroke={2} />
+		</button>
+		<div class="zoom-stack" role="group" aria-label="Corridor width in miles">
+			{#each [20, 10, 5] as z (z)}
 				<button
 					class="zbtn"
-					class:map={z === OVERVIEW}
 					class:on={mapZoom === z}
-					onclick={() => setZoom(z)}
+					onclick={() => setZoom(z as Zoom)}
 					aria-pressed={mapZoom === z}
-					aria-label={z === OVERVIEW ? 'Whole trail' : `${z} mile view`}
-				>
-					{#if z === OVERVIEW}<Icon name="map" size={15} stroke={2} />{:else}{z}{/if}
-				</button>
+					aria-label={`${z} mile view`}
+				>{z}<span class="zb-unit">mi</span></button>
 			{/each}
-			<span class="zunit">mi</span>
 		</div>
 		{#if showRecenter || isOverview}
 			<button class="tool-btn recenter" onclick={recenter} aria-label={isOverview ? 'Zoom to my location' : 'Recenter on current mile'}>
@@ -1124,45 +1182,54 @@
 	.map-tools {
 		position: absolute;
 		right: 12px;
-		top: 70px;
+		top: 66px;
 		z-index: 5;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 9px;
+		gap: 8px;
 	}
+	/* Glassy, light chrome — lighter than the old solid pill, reads like a
+	   modern maps app floating over the terrain. */
 	.zoom-stack {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 4px;
-		padding: 5px;
-		border-radius: 18px;
-		background: rgba(255, 253, 248, 0.95);
-		border: 1px solid var(--line);
+		gap: 2px;
+		padding: 4px;
+		border-radius: 16px;
+		background: rgba(255, 253, 248, 0.74);
+		backdrop-filter: blur(12px) saturate(1.1);
+		-webkit-backdrop-filter: blur(12px) saturate(1.1);
+		border: 1px solid rgba(255, 255, 255, 0.55);
 		box-shadow: var(--shadow-soft);
 	}
 	.zbtn {
-		width: 44px;
-		min-height: 42px;
-		display: grid;
-		place-items: center;
-		border-radius: 12px;
-		font-size: 0.84rem;
+		width: 40px;
+		min-height: 38px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0;
+		line-height: 1;
+		border-radius: 11px;
+		font-size: 0.92rem;
 		font-weight: 800;
 		color: var(--muted);
 		font-variant-numeric: tabular-nums;
 	}
+	.zb-unit {
+		font-size: 0.5rem;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		opacity: 0.65;
+		margin-top: 1px;
+	}
 	.zbtn.on {
 		background: var(--forest);
 		color: var(--on-accent);
-		box-shadow: 0 4px 12px -4px rgba(47, 75, 53, 0.5);
-	}
-	.zunit {
-		font-size: 0.62rem;
-		font-weight: 800;
-		color: var(--muted);
-		padding-bottom: 2px;
+		box-shadow: 0 3px 9px -3px rgba(47, 75, 53, 0.5);
 	}
 	.tool-btn {
 		width: 44px;
@@ -1170,15 +1237,22 @@
 		display: grid;
 		place-items: center;
 		border-radius: 50%;
-		background: rgba(255, 253, 248, 0.95);
-		border: 1px solid var(--line);
+		background: rgba(255, 253, 248, 0.74);
+		backdrop-filter: blur(12px) saturate(1.1);
+		-webkit-backdrop-filter: blur(12px) saturate(1.1);
+		border: 1px solid rgba(255, 255, 255, 0.55);
 		box-shadow: var(--shadow-soft);
+		color: var(--forest);
+	}
+	.tool-btn.overview.on {
+		background: var(--forest-soft);
+		border-color: var(--forest);
 		color: var(--forest);
 	}
 	.tool-btn.recenter {
 		background: var(--forest);
 		border-color: var(--forest);
-		color: #f4efe4;
+		color: var(--on-accent);
 	}
 	.tool-report :global(button) {
 		min-width: 44px;
@@ -1380,13 +1454,23 @@
 	   rules so it wins) — their token-colored text was washing out on cream. */
 	@media (prefers-color-scheme: dark) {
 		.next-water-chip,
-		.orient-btn,
+		.orient-btn {
+			background: rgba(22, 29, 20, 0.92);
+		}
+		/* Glassy dark chrome — lighter than the old near-solid pill. */
 		.zoom-stack,
 		.tool-btn {
-			background: rgba(22, 29, 20, 0.92);
+			background: rgba(18, 24, 16, 0.6);
+			border-color: rgba(255, 255, 255, 0.12);
+		}
+		.tool-btn.overview.on {
+			background: var(--forest-soft);
+			border-color: var(--forest);
+			color: var(--forest);
 		}
 		.tool-btn.recenter {
 			background: var(--forest);
+			border-color: var(--forest);
 			color: #10160f;
 		}
 		.zbtn.on {
