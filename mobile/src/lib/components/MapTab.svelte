@@ -547,7 +547,7 @@
 				<Icon name="now" size={20} stroke={2} />
 			</button>
 		{/if}
-		<div class="tool-report"><TrailPulseReportAction variant="map" label="Report" /></div>
+		<div class="tool-report"><TrailPulseReportAction variant="map" label="Report conditions" /></div>
 	</div>
 
 	<!-- Orientation + elevation card -->
@@ -598,8 +598,8 @@
 	.map-screen {
 		position: relative;
 		height: 100%;
-		/* break out of the .screen-scroll padding so the map is edge-to-edge */
-		margin: -14px -14px -18px;
+		/* The parent <main> drops its padding for Map (.flush-screen), so the map
+		   fills the whole middle row flush to header and nav — no dead strip. */
 		overflow: hidden;
 		background: var(--bg-deep);
 	}

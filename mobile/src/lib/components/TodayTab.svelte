@@ -136,19 +136,18 @@
 </script>
 
 <div class="today">
-	<!-- HUD: real data only, no readiness score -->
-	<section class="hud card">
+	<!-- HUD hero: the day's anchor — a deep-forest panel, real data only -->
+	<section class="hud">
 		<div class="hud-top">
 			<span class="day">Day {dayNumber}</span>
 			<span class="off">{scoutAiLabel}</span>
 		</div>
 		<div class="mile tabular">{from.toFixed(1)}<span class="of"> / {TOTAL_MILES.toLocaleString()} mi</span></div>
-		<div class="bar"><div class="fill" style="width:{pct}%"></div></div>
 		<div class="splits">
-			<div><span class="k">Done</span><b class="tabular">{from.toFixed(0)} mi</b></div>
-			<div><span class="k">To go</span><b class="tabular">{toGo.toFixed(0)} mi</b></div>
-			<div><span class="k">Progress</span><b class="tabular">{pct}%</b></div>
+			<div class="s"><span class="k">Done</span><b class="tabular">{from.toFixed(0)}<span class="u"> mi</span></b></div>
+			<div class="s"><span class="k">To go</span><b class="tabular">{toGo.toFixed(0)}<span class="u"> mi</span></b></div>
 		</div>
+		<div class="bar"><div class="fill" style="width:{pct}%"></div></div>
 		<div class="checkin">
 			<span class="ci-due">Check-in due {checkInDue}</span>
 			<div class="checkin-buttons">
@@ -281,31 +280,56 @@
 		display: block;
 	}
 
-	/* HUD */
+	/* HUD hero — the day's anchor. A deep-forest panel that reads as system chrome
+	   (not a content card), consistent in light and dark, with cream type and a
+	   sage progress bar. This is the M1-reference look the rest of Today keys off. */
 	.hud {
-		padding: 16px 18px 14px;
+		position: relative;
+		overflow: hidden;
+		padding: 17px 19px 16px;
+		border-radius: var(--radius-md);
+		background: linear-gradient(150deg, #2f4b35 0%, #284230 56%, #1e3725 100%);
+		border: 1px solid rgba(148, 168, 134, 0.16);
+		box-shadow: var(--shadow-ridge), 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+		/* Cream-on-forest accents, fixed in both themes. */
+		--hud-label: rgba(225, 234, 210, 0.82);
+		--hud-faint: rgba(225, 234, 210, 0.62);
+		--hud-cream: #f1ede2;
+	}
+	/* Soft sage glow, top-right — the reference's quiet depth cue. */
+	.hud::after {
+		content: '';
+		position: absolute;
+		right: -34px;
+		top: -34px;
+		width: 150px;
+		height: 150px;
+		border-radius: 50%;
+		background: radial-gradient(circle at 40% 40%, rgba(148, 168, 134, 0.22), transparent 70%);
+		pointer-events: none;
 	}
 	.hud-top {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		position: relative;
 	}
 	.hud-top .day {
 		font-size: var(--text-floor);
-		letter-spacing: 0.16em;
+		letter-spacing: 0.14em;
 		text-transform: uppercase;
-		color: var(--moss);
+		color: var(--hud-label);
 		font-weight: 800;
 	}
 	.hud-top .off {
 		font-size: var(--text-floor);
-		letter-spacing: 0.04em;
+		letter-spacing: 0.05em;
 		font-weight: 800;
 		text-transform: uppercase;
-		color: var(--clay);
-		background: var(--clay-soft);
+		color: var(--hud-cream);
+		background: rgba(255, 255, 255, 0.12);
 		border-radius: 999px;
-		padding: 3px 9px;
+		padding: 3px 10px;
 	}
 	.mile {
 		font-family: var(--font-display);
@@ -313,48 +337,59 @@
 		font-size: var(--display-lg);
 		line-height: 1;
 		letter-spacing: 0;
-		color: var(--ink);
-		margin: 6px 0 10px;
+		color: var(--hud-cream);
+		margin: 8px 0 0;
+		position: relative;
 	}
 	.mile .of {
-		font-size: 1.05rem;
+		font-family: var(--font-sans);
+		font-size: 1.02rem;
 		font-weight: 700;
-		color: var(--muted);
-	}
-	.bar {
-		height: 7px;
-		border-radius: 999px;
-		background: var(--forest-soft);
-		overflow: hidden;
-	}
-	.fill {
-		height: 100%;
-		border-radius: 999px;
-		background: var(--forest);
+		color: var(--hud-faint);
 	}
 	.splits {
 		display: flex;
-		justify-content: space-between;
-		gap: 8px;
+		gap: 22px;
 		margin-top: 12px;
+		padding-top: 12px;
+		border-top: 1px solid rgba(185, 202, 169, 0.26);
+		position: relative;
 	}
-	.splits div {
+	.splits .s {
 		display: flex;
 		flex-direction: column;
 		gap: 2px;
 	}
 	.splits .k {
 		font-size: var(--text-floor);
-		letter-spacing: 0.08em;
+		letter-spacing: 0.12em;
 		text-transform: uppercase;
-		color: var(--muted);
+		color: var(--hud-label);
 		font-weight: 800;
 	}
 	.splits b {
 		font-family: var(--font-display);
-		font-size: 1.1rem;
-		color: var(--ink);
+		font-size: 1.18rem;
+		color: var(--hud-cream);
 		font-weight: 800;
+	}
+	.splits b .u {
+		font-family: var(--font-sans);
+		font-size: 0.78rem;
+		font-weight: 700;
+		color: var(--hud-faint);
+	}
+	.bar {
+		height: 7px;
+		border-radius: 999px;
+		background: rgba(185, 202, 169, 0.22);
+		overflow: hidden;
+		margin-top: 13px;
+	}
+	.fill {
+		height: 100%;
+		border-radius: 999px;
+		background: linear-gradient(90deg, #8fae7f, #cdd9bf);
 	}
 	.checkin {
 		display: flex;
@@ -362,49 +397,52 @@
 		justify-content: space-between;
 		flex-wrap: wrap;
 		gap: 10px;
-		margin-top: 13px;
-		padding-top: 12px;
-		border-top: 1px solid var(--line);
+		margin-top: 14px;
+		padding-top: 13px;
+		border-top: 1px solid rgba(185, 202, 169, 0.2);
+		position: relative;
 	}
 	.ci-due {
 		font-size: var(--text-floor);
-		color: var(--muted);
+		color: var(--hud-faint);
 		font-weight: 700;
 	}
 	.checkin-buttons {
 		display: flex;
 		align-items: center;
 		justify-content: flex-end;
-		flex-wrap: wrap;
 		gap: 8px;
 	}
-	.safe-btn {
-		min-height: 44px;
-		padding: 9px 16px;
-		border-radius: 999px;
-		background: var(--forest-soft);
-		color: var(--forest);
-		font-weight: 800;
-		font-size: 0.85rem;
-	}
+	/* Compact pills on the hero — present and tappable (44px hit area) without the
+	   bulk of the old full-width light-card buttons. */
+	.safe-btn,
 	.help-btn {
 		min-height: 44px;
-		padding: 9px 14px;
+		padding: 7px 14px;
 		border-radius: 999px;
-		background: var(--danger-soft);
-		color: var(--danger);
+		font-weight: 800;
+		font-size: 0.82rem;
+		white-space: nowrap;
+	}
+	.safe-btn {
+		background: rgba(255, 255, 255, 0.14);
+		color: var(--hud-cream);
+	}
+	.help-btn {
+		background: rgba(240, 154, 136, 0.95);
+		color: #2c100a;
 		font-weight: 900;
-		font-size: 0.85rem;
 	}
 	.today-help-note {
-		margin-top: 10px;
+		position: relative;
+		margin-top: 12px;
 		padding: 9px 11px;
 		border-radius: 10px;
-		background: var(--danger-soft);
-		color: var(--danger);
+		background: rgba(240, 154, 136, 0.16);
+		color: #ffe3da;
 		font-size: 0.88rem;
 		line-height: 1.4;
-		font-weight: 750;
+		font-weight: 700;
 	}
 
 	/* NEXT line */

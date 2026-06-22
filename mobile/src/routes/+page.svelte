@@ -17,7 +17,7 @@
 <div class="phone-frame">
 	<AppHeader />
 
-	<main class="screen-scroll" class:chat-screen={tab === 'Scout'}>
+	<main class="screen-scroll" class:chat-screen={tab === 'Scout'} class:flush-screen={tab === 'Map'}>
 		{#if tab === 'Scout'}
 			<CoachTab />
 		{:else if tab === 'Today'}
@@ -47,6 +47,14 @@
 		display: flex;
 		flex-direction: column;
 		min-height: 0;
+		overflow: hidden;
+	}
+
+	/* The map is full-bleed chrome — it fills the whole middle row edge-to-edge,
+	   so it drops the standard card padding (which otherwise left a dead strip
+	   above the nav). MapTab paints flush to header and nav itself. */
+	.flush-screen {
+		padding: 0;
 		overflow: hidden;
 	}
 </style>

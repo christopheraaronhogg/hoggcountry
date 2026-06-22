@@ -18,12 +18,12 @@
 			class="status-strip"
 			type="button"
 			onclick={() => (trailAssistant.activeTab = 'Today')}
-			aria-label="Open Today"
+			aria-label={`Open Today — day ${trailAssistant.dayNumber}, mile ${trailAssistant.currentMile.toFixed(1)}, ${percentComplete}% complete`}
 		>
 			<span class="day">Day {trailAssistant.dayNumber}</span>
 			<span class="dot" aria-hidden="true">·</span>
-			<span class="mile tabular">Mi {trailAssistant.currentMile.toFixed(1)}</span>
-			<span class="pct">{percentComplete}%</span>
+			<span class="mile tabular">{trailAssistant.currentMile.toFixed(1)}</span>
+			<span class="unit">mi</span>
 		</button>
 	</div>
 
@@ -106,15 +106,17 @@
 	.status-strip {
 		display: inline-flex;
 		align-items: baseline;
-		gap: 6px;
-		padding: 4px 10px;
+		gap: 5px;
+		padding: 5px 12px;
 		min-height: 44px;
 		border-radius: 999px;
-		background: rgba(47, 75, 53, 0.07);
+		background: var(--forest-soft);
 		color: var(--ink);
-		font-size: 0.82rem;
+		font-size: 0.84rem;
 		font-weight: 700;
 		min-width: 0;
+		/* One clean line — the strip used to wrap to two on a 375px screen. */
+		white-space: nowrap;
 	}
 
 	.status-strip .day {
@@ -129,12 +131,14 @@
 		color: var(--forest);
 		font-family: var(--font-display);
 		font-weight: 800;
+		font-size: 0.98rem;
 	}
 
-	.status-strip .pct {
+	.status-strip .unit {
 		color: var(--muted);
 		font-size: var(--text-floor);
 		font-weight: 700;
+		margin-left: -1px;
 	}
 
 	.status-strip .dot {
