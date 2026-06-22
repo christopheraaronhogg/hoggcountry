@@ -285,8 +285,10 @@
 	</section>
 
 	<section class="card bailout-card">
-		<p class="eyebrow">Bailout options</p>
-		<h3>If today goes sideways</h3>
+		<div class="section-heading">
+			<p class="eyebrow">Bailout options</p>
+			<h2>If today goes sideways</h2>
+		</div>
 		<ul>
 			{#each bailouts as b (b.name)}
 				<li><strong>{b.name}</strong> · {b.detail}</li>
@@ -309,25 +311,29 @@
 		padding: 14px;
 	}
 
+	/* Risk drives the hero tint on tokens, so every state stays legible in dark.
+	   (The old high-risk skin was a near-white block at night — the exact opposite
+	   of the alarm a hiker reading "HIGH risk" needs.) */
 	.safety-hero {
 		padding: 14px;
 		display: grid;
 		gap: 12px;
 		background:
-			radial-gradient(circle at top right, rgba(154, 59, 47, 0.1), transparent 38%),
-			linear-gradient(180deg, rgba(255, 251, 248, 0.98), rgba(247, 239, 235, 0.96));
+			radial-gradient(circle at top right, var(--forest-soft), transparent 40%),
+			var(--surface-strong);
 	}
 
 	.safety-hero[data-risk='medium'] {
 		background:
-			radial-gradient(circle at top right, rgba(200, 167, 122, 0.22), transparent 38%),
-			linear-gradient(180deg, rgba(255, 251, 248, 0.98), rgba(247, 239, 226, 0.96));
+			radial-gradient(circle at top right, var(--warn-soft), transparent 40%),
+			var(--surface-strong);
 	}
 
 	.safety-hero[data-risk='high'] {
 		background:
-			radial-gradient(circle at top right, rgba(154, 59, 47, 0.18), transparent 38%),
-			linear-gradient(180deg, rgba(247, 230, 224, 0.6), rgba(255, 251, 248, 1));
+			radial-gradient(circle at top right, var(--danger-soft), transparent 38%),
+			var(--surface-strong);
+		border-color: var(--danger);
 	}
 
 	.hero-head {
@@ -354,16 +360,16 @@
 		gap: 0;
 		padding: 8px 14px;
 		border-radius: 12px;
-		background: rgba(47, 106, 71, 0.14);
+		background: var(--forest-soft);
 		text-align: center;
 	}
 
 	.risk-dial[data-risk='medium'] {
-		background: rgba(200, 167, 122, 0.28);
+		background: var(--warn-soft);
 	}
 
 	.risk-dial[data-risk='high'] {
-		background: rgba(154, 59, 47, 0.18);
+		background: var(--danger-soft);
 	}
 
 	.risk-dial strong {
@@ -379,6 +385,13 @@
 	}
 	.risk-dial[data-risk='high'] strong {
 		color: var(--danger);
+	}
+
+	@media (prefers-color-scheme: dark) {
+		/* #8c5d1f vanishes on a dark dial — flip the medium label to the bright warn ink. */
+		.risk-dial[data-risk='medium'] strong {
+			color: var(--warn);
+		}
 	}
 
 	.risk-dial span {
@@ -401,7 +414,7 @@
 		gap: 2px;
 		padding: 10px 8px;
 		border-radius: 12px;
-		background: rgba(47, 75, 53, 0.06);
+		background: var(--forest-soft);
 		text-align: center;
 	}
 
@@ -451,12 +464,12 @@
 		font-weight: 800;
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
-		background: rgba(47, 75, 53, 0.1);
+		background: var(--forest-soft);
 		color: var(--forest);
 	}
 
 	.status-pill[data-online='false'] {
-		background: rgba(170, 104, 67, 0.14);
+		background: var(--clay-soft);
 		color: var(--clay);
 	}
 
@@ -475,7 +488,7 @@
 		gap: 12px;
 		padding: 8px 10px;
 		border-radius: 10px;
-		background: rgba(47, 75, 53, 0.05);
+		background: var(--forest-soft);
 		font-size: 0.84rem;
 	}
 
@@ -502,7 +515,7 @@
 	}
 
 	.support-row + .support-row {
-		border-top: 1px solid rgba(95, 101, 88, 0.12);
+		border-top: 1px solid var(--divider-soft);
 	}
 
 	.support-row div {
@@ -523,16 +536,16 @@
 		color: var(--sky);
 		padding: 5px 10px;
 		border-radius: 999px;
-		background: rgba(95, 128, 144, 0.16);
+		background: var(--sky-soft);
 	}
 	.method-pill.link {
-		color: #2f6a47;
-		background: rgba(47, 106, 71, 0.16);
+		color: var(--success);
+		background: var(--success-soft);
 		text-decoration: none;
 	}
 	.method-pill.muted-pill {
 		color: var(--muted);
-		background: rgba(95, 101, 88, 0.12);
+		background: var(--ink-soft);
 	}
 	.support-actions {
 		display: flex;
@@ -548,14 +561,14 @@
 		font-size: 1.1rem;
 		line-height: 1;
 		color: var(--danger);
-		background: rgba(154, 59, 47, 0.1);
+		background: var(--danger-soft);
 	}
 	.add-contact {
 		display: grid;
 		gap: 8px;
 		margin-top: 12px;
 		padding-top: 12px;
-		border-top: 1px solid rgba(95, 101, 88, 0.12);
+		border-top: 1px solid var(--divider-soft);
 	}
 	.add-contact input {
 		width: 100%;
@@ -586,11 +599,6 @@
 		gap: 8px;
 	}
 
-	.bailout-card h3 {
-		font-family: var(--font-display);
-		font-size: 1.08rem;
-	}
-
 	.bailout-card ul {
 		list-style: none;
 		margin: 0;
@@ -603,7 +611,7 @@
 	.bailout-card li {
 		padding: 8px 10px;
 		border-radius: 10px;
-		background: rgba(170, 104, 67, 0.08);
+		background: var(--clay-soft);
 		color: var(--ink);
 	}
 

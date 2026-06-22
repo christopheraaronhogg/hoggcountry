@@ -37,13 +37,14 @@
 <style>
 	.settings-screen {
 		display: grid;
-		gap: 18px;
+		gap: 20px;
+		padding-bottom: 8px;
 	}
 
 	.settings-head {
 		display: flex;
 		align-items: center;
-		gap: 8px;
+		gap: 10px;
 	}
 
 	.settings-head h1 {
@@ -52,20 +53,24 @@
 	}
 
 	.back {
-		width: 34px;
-		height: 34px;
-		border-radius: 10px;
+		width: 44px;
+		height: 44px;
+		border-radius: var(--radius-control);
 		display: grid;
 		place-items: center;
-		font-size: 1.4rem;
+		font-size: 1.55rem;
 		line-height: 1;
 		color: var(--forest);
-		background: rgba(47, 75, 53, 0.08);
+		background: var(--forest-soft);
 	}
 
 	.group {
 		display: grid;
-		gap: 10px;
+		gap: 12px;
+	}
+
+	.group + .group {
+		margin-top: 6px;
 	}
 
 	.group-title {

@@ -79,6 +79,21 @@
 			model.downloadConfigured &&
 			(model.state === 'needs_download' || model.state === 'present_unverified')
 	);
+	// One state machine for the model card so the heading pill and the body render
+	// from the same truth. Order preserves the original branch priority exactly.
+	const modelPhase = $derived(
+		dl
+			? 'downloading'
+			: runtimeUnavailable
+				? 'unavailable'
+				: model?.state === 'ready'
+					? 'ready'
+					: trailAssistant.meteredDownloadPrompt
+						? 'metered'
+						: canDownload
+							? 'idle'
+							: 'unconfigured'
+	);
 	const fieldPack = $derived(trailAssistant.fieldPack);
 	const fieldPackStatus = $derived(trailAssistant.fieldPackStatus);
 	const fieldPackMiles = $derived(Math.max(0, fieldPack.frame.endMile - fieldPack.frame.startMile));
@@ -186,7 +201,20 @@
 		<section class="card model-card">
 			<div class="section-heading">
 				<p class="eyebrow">On-device AI · Gemma 4</p>
-				<h2>Offline brain</h2>
+				<div class="heading-with-status">
+					<h2>Offline brain</h2>
+					{#if trailAssistant.modelError}
+						<span class="pill pill-danger">Error</span>
+					{:else if modelPhase === 'ready'}
+						<span class="pill pill-forest">Ready</span>
+					{:else if modelPhase === 'downloading'}
+						<span class="pill pill-sky">Downloading</span>
+					{:else if modelPhase === 'metered'}
+						<span class="pill pill-warn">On cellular</span>
+					{:else if modelPhase === 'unavailable'}
+						<span class="pill pill-warn">Runtime pending</span>
+					{/if}
+				</div>
 				<p>
 					Scout's chat runs on a Gemma 4 model stored on your phone. Download it once on Wi-Fi and
 					Scout answers keep working with no signal. The download continues in the background — you
@@ -194,28 +222,32 @@
 				</p>
 			</div>
 
-			{#if dl}
+			{#if modelPhase === 'downloading'}
 				<div class="model-progress">
-					<div class="bar"><div class="fill" style="width:{pct ?? 0}%"></div></div>
 					<div class="model-row">
-						<span>{pct !== null ? `${pct}%` : 'Downloading…'}</span>
-						<span class="tabular">{fmtBytes(dl.bytesDownloaded)} / {fmtBytes(dl.totalBytes)}</span>
+						<span class="model-state-label">{pct !== null ? `${pct}%` : 'Downloading…'}</span>
+						<span class="tabular">{fmtBytes(dl?.bytesDownloaded)} / {fmtBytes(dl?.totalBytes)}</span>
 					</div>
+					<div class="bar"><div class="fill" style="width:{pct ?? 0}%"></div></div>
 					<button class="outline-button compact" onclick={() => trailAssistant.cancelModelDownload()}>
 						Cancel download
 					</button>
 				</div>
-			{:else if runtimeUnavailable}
+			{:else if modelPhase === 'unavailable'}
 				<p class="model-note">
 					This iOS build can manage the model file, but the LiteRT-LM runtime is not linked yet.
 					Install a runtime-enabled build before testing on-device Scout answers.
 				</p>
-			{:else if model?.state === 'ready'}
-				<p class="model-ready">✓ Installed and verified — Scout works fully offline.</p>
-			{:else if trailAssistant.meteredDownloadPrompt}
-				<div class="metered-warn">
+			{:else if modelPhase === 'ready'}
+				<p class="state-banner state-ok">
+					<span class="state-ic" aria-hidden="true">✓</span>
+					Installed and verified — Scout works fully offline.
+				</p>
+			{:else if modelPhase === 'metered'}
+				<div class="state-banner state-warn metered">
 					<p>
-						You're on {trailAssistant.meteredDownloadPrompt.type === 'cellular'
+						<span class="state-ic" aria-hidden="true">⚠</span>
+						You're on {trailAssistant.meteredDownloadPrompt?.type === 'cellular'
 							? 'cellular'
 							: 'a metered connection'} — this model is ≈ {fmtBytes(model?.expectedBytes)}. Downloading
 						now may use your mobile data.
@@ -235,7 +267,7 @@
 						</button>
 					</div>
 				</div>
-			{:else if canDownload}
+			{:else if modelPhase === 'idle'}
 				<div class="model-row">
 					<span>Model size ≈ {fmtBytes(model?.expectedBytes)}</span>
 					<button class="cta-button compact" onclick={() => trailAssistant.downloadModel()}>
@@ -250,7 +282,10 @@
 			{/if}
 
 			{#if trailAssistant.modelError}
-				<p class="model-error">{trailAssistant.modelError}</p>
+				<p class="state-banner state-danger" role="alert">
+					<span class="state-ic" aria-hidden="true">!</span>
+					{trailAssistant.modelError}
+				</p>
 			{/if}
 		</section>
 	{/if}
@@ -430,12 +465,14 @@
 	</section>
 
 	<section class="card region-card">
-		<p class="eyebrow">Offline readiness</p>
-		<h3>{fieldPackRegion}</h3>
-		<p>
-			{fieldPackStatus.label}. Covers miles {fieldPack.frame.startMile.toFixed(1)}-{fieldPack.frame.endMile.toFixed(1)}
-			({fieldPackMiles.toFixed(0)} mi) from the {fieldPackStatus.source} pack, loaded {fieldPackLoaded}.
-		</p>
+		<div class="section-heading">
+			<p class="eyebrow">Offline readiness</p>
+			<h2>{fieldPackRegion}</h2>
+			<p>
+				{fieldPackStatus.label}. Covers miles {fieldPack.frame.startMile.toFixed(1)}-{fieldPack.frame.endMile.toFixed(1)}
+				({fieldPackMiles.toFixed(0)} mi) from the {fieldPackStatus.source} pack, loaded {fieldPackLoaded}.
+			</p>
+		</div>
 		<div class="region-meta">
 			<span>{fieldPack.downloadedRegions.length} {fieldPack.downloadedRegions.length === 1 ? 'region' : 'regions'} cached</span>
 			<span>{model?.state === 'ready' ? `${fmtBytes(model.expectedBytes)} model on device` : 'Model not downloaded'}</span>
@@ -481,8 +518,8 @@
 
 	.profile-card {
 		background:
-			radial-gradient(circle at top right, rgba(106, 132, 95, 0.18), transparent 40%),
-			linear-gradient(180deg, rgba(255, 253, 248, 0.98), rgba(244, 238, 224, 0.96));
+			radial-gradient(circle at top right, var(--moss-soft), transparent 42%),
+			var(--surface-strong);
 		display: grid;
 		gap: 12px;
 	}
@@ -500,7 +537,7 @@
 		display: grid;
 		place-items: center;
 		background: linear-gradient(135deg, var(--forest), #466852);
-		color: #f9f3e8;
+		color: var(--on-accent);
 		font-family: var(--font-display);
 		font-weight: 800;
 		box-shadow: var(--shadow-soft);
@@ -530,7 +567,7 @@
 	.profile-stats div {
 		padding: 10px 8px;
 		border-radius: 12px;
-		background: rgba(47, 75, 53, 0.08);
+		background: var(--forest-soft);
 		text-align: center;
 		display: grid;
 		gap: 2px;
@@ -563,7 +600,7 @@
 		gap: 14px;
 		padding: 12px 14px;
 		border-radius: 13px;
-		background: rgba(47, 75, 53, 0.07);
+		background: var(--forest-soft);
 	}
 
 	.mile-figure {
@@ -609,9 +646,10 @@
 	.mile-set input {
 		flex: 1;
 		min-width: 0;
+		min-height: 44px;
 		border: 1px solid var(--line);
-		border-radius: 12px;
-		padding: 10px 12px;
+		border-radius: var(--radius-control);
+		padding: 11px 12px;
 		background: var(--surface-strong);
 		color: var(--ink);
 	}
@@ -619,7 +657,7 @@
 	.mile-set input:focus {
 		outline: none;
 		border-color: var(--forest);
-		box-shadow: 0 0 0 3px rgba(47, 75, 53, 0.12);
+		box-shadow: 0 0 0 3px var(--forest-soft);
 	}
 
 	.mile-set .cta-button.compact {
@@ -669,9 +707,9 @@
 	.outline-button.compact,
 	.cta-button.compact {
 		width: auto;
-		min-height: 38px;
-		padding: 6px 12px;
-		font-size: 0.82rem;
+		min-height: 44px;
+		padding: 9px 14px;
+		font-size: 0.84rem;
 		justify-self: start;
 	}
 
@@ -694,23 +732,30 @@
 		gap: 8px;
 	}
 
+	.heading-with-status {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		flex-wrap: wrap;
+	}
+
+	.model-state-label {
+		font-weight: 800;
+		color: var(--forest);
+	}
+
 	.model-progress .bar {
 		height: 8px;
 		border-radius: 999px;
-		background: var(--line);
+		background: var(--forest-soft);
 		overflow: hidden;
 	}
 
 	.model-progress .fill {
 		height: 100%;
+		border-radius: 999px;
 		background: var(--forest);
-		transition: width 0.2s ease;
-	}
-
-	.model-ready {
-		font-weight: 700;
-		color: var(--forest);
-		margin: 0;
+		transition: width var(--dur-base) var(--ease-out);
 	}
 
 	.model-note {
@@ -719,31 +764,62 @@
 		margin: 0;
 	}
 
-	.model-error {
-		font-size: 0.82rem;
-		color: var(--danger, #b14a3d);
+	/* One banner primitive, three semantic skins — every one has a dark pair, so
+	   "ready / on cellular / something broke" read honestly in both modes. */
+	.state-banner {
+		display: flex;
+		align-items: flex-start;
+		gap: 8px;
 		margin: 0;
-	}
-
-	.metered-warn {
-		display: grid;
-		gap: 10px;
 		padding: 10px 12px;
-		border-radius: 12px;
-		background: rgba(177, 74, 61, 0.08);
-		border: 1px solid rgba(177, 74, 61, 0.2);
+		border-radius: var(--radius-sm);
+		font-size: 0.86rem;
+		line-height: 1.4;
 	}
 
-	.metered-warn p {
-		font-size: 0.84rem;
-		color: var(--ink, #2c2a24);
+	.state-banner p {
 		margin: 0;
+	}
+
+	.state-ic {
+		flex-shrink: 0;
+		font-weight: 900;
+		line-height: 1.4;
+	}
+
+	.state-ok {
+		background: var(--success-soft);
+		color: var(--success);
+	}
+
+	.state-warn {
+		background: var(--warn-soft);
+		color: #8c5d1f;
+	}
+
+	.state-danger {
+		background: var(--danger-soft);
+		color: var(--danger);
+	}
+
+	.state-banner.metered {
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.state-warn {
+			color: var(--warn);
+		}
 	}
 
 	.metered-actions {
 		display: flex;
 		gap: 8px;
-		flex-wrap: wrap;
+	}
+
+	.metered-actions > button {
+		flex: 1;
 	}
 
 	.habit-grid {
@@ -770,16 +846,12 @@
 
 	.region-card {
 		display: grid;
-		gap: 6px;
+		gap: 8px;
 	}
 
-	.region-card h3 {
-		font-family: var(--font-display);
-		font-size: 1.05rem;
-	}
-
-	.region-card p {
-		font-size: 0.84rem;
+	.region-caveat {
+		font-size: var(--text-xs);
+		line-height: 1.4;
 		color: var(--muted);
 	}
 
@@ -826,6 +898,7 @@
 	}
 
 	.legal-links span {
-		color: rgba(95, 101, 88, 0.4);
+		color: var(--muted);
+		opacity: 0.55;
 	}
 </style>
