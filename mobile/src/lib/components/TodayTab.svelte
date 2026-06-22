@@ -274,19 +274,9 @@
 		gap: 14px;
 	}
 
-	.card {
-		background: var(--surface-strong);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-md);
-		box-shadow: var(--shadow-soft);
-	}
-
+	/* .card is the global design-system primitive (app.css). Today only needs the
+	   in-card eyebrow spacing on top of the shared .eyebrow token. */
 	.eyebrow {
-		font-size: var(--text-floor);
-		letter-spacing: 0.16em;
-		text-transform: uppercase;
-		color: var(--moss);
-		font-weight: 800;
 		margin-bottom: 10px;
 		display: block;
 	}
@@ -313,14 +303,14 @@
 		font-weight: 800;
 		text-transform: uppercase;
 		color: var(--clay);
-		background: rgba(170, 104, 67, 0.12);
+		background: var(--clay-soft);
 		border-radius: 999px;
 		padding: 3px 9px;
 	}
 	.mile {
 		font-family: var(--font-display);
 		font-weight: 800;
-		font-size: 3.4rem;
+		font-size: var(--display-lg);
 		line-height: 1;
 		letter-spacing: 0;
 		color: var(--ink);
@@ -334,7 +324,7 @@
 	.bar {
 		height: 7px;
 		border-radius: 999px;
-		background: rgba(47, 75, 53, 0.1);
+		background: var(--forest-soft);
 		overflow: hidden;
 	}
 	.fill {
@@ -392,7 +382,7 @@
 		min-height: 44px;
 		padding: 9px 16px;
 		border-radius: 999px;
-		background: rgba(47, 75, 53, 0.1);
+		background: var(--forest-soft);
 		color: var(--forest);
 		font-weight: 800;
 		font-size: 0.85rem;
@@ -401,7 +391,7 @@
 		min-height: 44px;
 		padding: 9px 14px;
 		border-radius: 999px;
-		background: rgba(151, 58, 44, 0.12);
+		background: var(--danger-soft);
 		color: var(--danger);
 		font-weight: 900;
 		font-size: 0.85rem;
@@ -410,7 +400,7 @@
 		margin-top: 10px;
 		padding: 9px 11px;
 		border-radius: 10px;
-		background: rgba(151, 58, 44, 0.1);
+		background: var(--danger-soft);
 		color: var(--danger);
 		font-size: 0.88rem;
 		line-height: 1.4;
@@ -440,7 +430,7 @@
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
 		color: var(--clay);
-		background: rgba(170, 104, 67, 0.12);
+		background: var(--clay-soft);
 		border-radius: 999px;
 		padding: 2px 8px;
 		margin-left: 4px;
@@ -484,7 +474,7 @@
 	.temp {
 		font-family: var(--font-display);
 		font-weight: 800;
-		font-size: 3rem;
+		font-size: var(--display-md);
 		line-height: 1;
 		color: var(--sky);
 	}
@@ -503,7 +493,7 @@
 		font-size: 0.86rem;
 		line-height: 1.5;
 		color: var(--ink);
-		background: rgba(95, 128, 144, 0.08);
+		background: var(--sky-soft);
 		border-radius: 10px;
 		padding: 10px 12px;
 		margin: 10px 0;
@@ -516,57 +506,6 @@
 		text-transform: uppercase;
 		color: var(--sky);
 		margin-bottom: 3px;
-	}
-	.hourly {
-		display: flex;
-		align-items: flex-end;
-		justify-content: space-between;
-		gap: 6px;
-		height: 64px;
-		margin: 6px 0 4px;
-	}
-	.hcol {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 3px;
-		height: 100%;
-		justify-content: flex-end;
-	}
-	.htrack {
-		width: 100%;
-		max-width: 22px;
-		height: 38px;
-		display: flex;
-		align-items: flex-end;
-		background: rgba(95, 128, 144, 0.1);
-		border-radius: 5px;
-		overflow: hidden;
-	}
-	.hfill {
-		width: 100%;
-		background: var(--sky);
-		opacity: 0.55;
-		border-radius: 5px 5px 0 0;
-	}
-	.hfill.peak {
-		background: var(--clay);
-		opacity: 0.85;
-	}
-	.hpct {
-		font-size: var(--text-floor);
-		font-weight: 800;
-		color: var(--muted);
-		font-variant-numeric: tabular-nums;
-	}
-	.hpct.peak {
-		color: var(--clay);
-	}
-	.hlab {
-		font-size: var(--text-floor);
-		color: var(--muted);
-		font-weight: 700;
 	}
 	.wx-foot {
 		display: block;
@@ -609,16 +548,16 @@
 		display: grid;
 		place-items: center;
 		font-size: var(--text-floor);
-		background: rgba(47, 75, 53, 0.08);
+		background: var(--forest-soft);
 		color: var(--moss);
 		z-index: 1;
 	}
 	.node.now .dot {
 		background: var(--forest);
-		color: #f4efe4;
+		color: var(--on-accent);
 	}
 	.node.camp .dot {
-		background: rgba(170, 104, 67, 0.14);
+		background: var(--clay-soft);
 		color: var(--clay);
 	}
 	.ntitle {
@@ -680,7 +619,7 @@
 		font-size: 1rem;
 	}
 	.exchange {
-		background: var(--bg, #fffdf8);
+		background: var(--bg);
 		border: 1px solid var(--line);
 		border-left: 3px solid var(--forest);
 		border-radius: 10px;
@@ -709,7 +648,7 @@
 	.receipt {
 		font-size: var(--text-floor);
 		color: var(--muted);
-		background: var(--bg, #fffdf8);
+		background: var(--bg);
 		border: 1px solid var(--line);
 		border-radius: 999px;
 		padding: 3px 9px;
@@ -720,9 +659,10 @@
 		letter-spacing: 0.06em;
 		font-weight: 800;
 		text-transform: uppercase;
-		color: var(--warn, #9a7320);
-		background: rgba(182, 137, 44, 0.13);
-		border: 1px solid rgba(182, 137, 44, 0.34);
+		/* Matches the borderless .pill-warn treatment: dark amber ink on light,
+		   bright warn on dark. */
+		color: #8c5d1f;
+		background: var(--warn-soft);
 		border-radius: 999px;
 		padding: 3px 10px;
 	}
@@ -754,27 +694,13 @@
 		flex: none;
 	}
 
-	/* Dark mode: several accent tints were hardcoded light-mode values, which
-	   wash out on dark surfaces. Re-tint them with the dark accent values. */
+	/* Every accent surface above now rides a mode-aware --*-soft token, so the
+	   dark theme adapts on its own. The one exception: #8c5d1f confidence ink
+	   vanishes on a dark amber chip, so flip it to the bright warn ink (the same
+	   move .pill-warn makes). */
 	@media (prefers-color-scheme: dark) {
-		.bar {
-			background: rgba(242, 234, 219, 0.1);
-		}
-		.safe-btn {
-			background: rgba(152, 196, 142, 0.16);
-		}
-		.help-btn {
-			background: rgba(240, 154, 136, 0.16);
-		}
-		.today-help-note {
-			background: rgba(240, 154, 136, 0.12);
-		}
-		.dot {
-			background: rgba(152, 196, 142, 0.14);
-		}
-		.node.camp .dot,
-		.cand {
-			background: rgba(229, 161, 116, 0.16);
+		.badge {
+			color: var(--warn);
 		}
 	}
 </style>

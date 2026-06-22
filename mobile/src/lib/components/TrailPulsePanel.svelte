@@ -100,23 +100,21 @@
 </section>
 
 <style>
+	/* Clay-soft wash over the surface — a topo-paper trail note. Mirrors the
+	   SafetyTab hero grammar (radial accent-soft over --surface-strong), so it
+	   adapts to dark on its own. */
 	.trail-pulse {
 		padding: 18px;
 		display: grid;
 		gap: 14px;
 		background:
-			linear-gradient(180deg, rgba(255, 253, 248, 0.98), rgba(246, 242, 232, 0.98)),
-			radial-gradient(circle at top left, rgba(170, 104, 67, 0.12), transparent 38%);
+			radial-gradient(circle at top left, var(--clay-soft), transparent 42%),
+			var(--surface-strong);
 	}
 
-	@media (prefers-color-scheme: dark) {
-		.trail-pulse {
-			background:
-				linear-gradient(180deg, rgba(31, 39, 29, 0.98), rgba(24, 31, 23, 0.98)),
-				radial-gradient(circle at top left, rgba(179, 207, 143, 0.12), transparent 38%);
-		}
-	}
-
+	/* A nearby report just landed — an attention banner, not an alarm. Clay accent
+	   on a soft clay surface stays legible in both themes (the old near-black chip
+	   sank into the dark card). */
 	.pulse-alert {
 		display: flex;
 		align-items: center;
@@ -124,8 +122,9 @@
 		gap: 12px;
 		padding: 12px;
 		border-radius: 14px;
-		background: #241f19;
-		color: #fff8e8;
+		background: var(--clay-soft);
+		border: 1px solid var(--clay);
+		color: var(--ink);
 	}
 
 	.pulse-alert div {
@@ -133,16 +132,20 @@
 		gap: 3px;
 	}
 
-	.pulse-alert .eyebrow,
+	.pulse-alert .eyebrow {
+		color: var(--clay);
+	}
+
 	.pulse-alert span {
-		color: rgba(255, 248, 232, 0.76);
+		color: var(--muted);
 	}
 
 	.dismiss-alert {
 		min-width: 44px;
 		min-height: 44px;
 		border-radius: 12px;
-		background: rgba(255, 248, 232, 0.14);
+		background: var(--surface-strong);
+		color: var(--ink);
 		font-weight: 800;
 	}
 
@@ -178,28 +181,17 @@
 		align-items: center;
 		padding: 11px;
 		border-radius: 14px;
-		background: rgba(47, 75, 53, 0.07);
+		background: var(--forest-soft);
 	}
 
 	.mile-chip {
 		padding: 7px 9px;
 		border-radius: 999px;
-		background: rgba(255, 253, 248, 0.86);
+		background: var(--surface-strong);
 		color: var(--forest);
 		font-size: var(--text-floor);
 		font-weight: 800;
 		white-space: nowrap;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.pulse-row {
-			background: rgba(179, 207, 143, 0.09);
-		}
-
-		.mile-chip {
-			background: rgba(242, 234, 219, 0.1);
-			color: var(--moss);
-		}
 	}
 
 	.pulse-copy {
