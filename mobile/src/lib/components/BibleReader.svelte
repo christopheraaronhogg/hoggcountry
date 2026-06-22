@@ -61,6 +61,77 @@
 		persistHighlights();
 	}
 
+	// Verse notes — persisted, keyed by verse id; optionally shared to the map feed.
+	const NOTE_KEY = 'hc-bible-notes-v1';
+	let notes = $state<Record<string, string>>({});
+	let noteEditorOpen = $state(false);
+	let noteDraft = $state('');
+	let shareNote = $state(false);
+	let noteShareState = $state<'idle' | 'sharing' | 'shared'>('idle');
+	function persistNotes() {
+		try {
+			localStorage.setItem(NOTE_KEY, JSON.stringify(notes));
+		} catch {
+			/* storage may be unavailable; notes stay in-session */
+		}
+	}
+	function openNoteEditor(id: string) {
+		noteDraft = notes[id] ?? '';
+		shareNote = false;
+		noteShareState = 'idle';
+		noteEditorOpen = true;
+	}
+	function cancelNote() {
+		noteEditorOpen = false;
+		noteShareState = 'idle';
+	}
+	async function saveNote(verse: { id: string; reference: string }) {
+		const text = noteDraft.trim();
+		const next = { ...notes };
+		if (text) next[verse.id] = text;
+		else delete next[verse.id];
+		notes = next;
+		persistNotes();
+		// Optionally drop the note onto the shared trail feed at the current mile.
+		if (text && shareNote) {
+			noteShareState = 'sharing';
+			try {
+				await trailAssistant.submitTrailPulseReport({
+					source: 'text',
+					noteText: `📖 ${verse.reference}: ${text}`,
+					reporterTrailName: trailAssistant.hikeProfile.trailName
+				});
+				noteShareState = 'shared';
+			} catch {
+				noteShareState = 'idle';
+			}
+		}
+		noteEditorOpen = false;
+		selectedVerse = null;
+	}
+
+	// Chapter navigation — a tap-to-open picker plus prev/next that rolls across
+	// books, the way the good Bible apps do it (no giant always-on chapter grid).
+	let chapterPickerOpen = $state(false);
+	function gotoAdjacentChapter(delta: number) {
+		if (!index || !book || !chapter) return;
+		const ci = book.chapters.findIndex((c) => c.number === chapter!.number);
+		const target = ci + delta;
+		if (target >= 0 && target < book.chapters.length) {
+			chapter = book.chapters[target];
+		} else {
+			const bi = index.books.findIndex((b) => b.name === book!.name);
+			const nb = index.books[bi + delta];
+			if (!nb) return;
+			book = nb;
+			chapter = delta > 0 ? nb.chapters[0] : nb.chapters[nb.chapters.length - 1];
+		}
+		selectedVerse = null;
+		noteEditorOpen = false;
+		chapterPickerOpen = false;
+		highlightVerse = null;
+	}
+
 	// search
 	let query = $state('');
 	let results = $state<BibleSearchHit[]>([]);
@@ -109,8 +180,10 @@
 		try {
 			const rawHl = localStorage.getItem(HL_KEY);
 			if (rawHl) highlights = JSON.parse(rawHl);
+			const rawNotes = localStorage.getItem(NOTE_KEY);
+			if (rawNotes) notes = JSON.parse(rawNotes);
 		} catch {
-			/* ignore unreadable highlight store */
+			/* ignore unreadable highlight/note store */
 		}
 		try {
 			index = await loadBibleIndex();
@@ -139,6 +212,9 @@
 		if (!book) return;
 		chapter = book.chapters.find((c) => c.number === num) ?? null;
 		highlightVerse = null;
+		selectedVerse = null;
+		noteEditorOpen = false;
+		chapterPickerOpen = false;
 	}
 
 	function parseRef(reference: string): { book: string; chapter: number; verse?: number } | null {
@@ -267,53 +343,100 @@
 		{#if book && chapter}
 			<div class="reader-head">
 				<button class="back-link" type="button" onclick={() => (mode = 'browse')}>‹ Books</button>
-				<strong>{book.name}</strong>
-			</div>
-			<div class="chapter-row" role="tablist" aria-label="Chapter">
-				{#each book.chapters as c (c.number)}
+				<div class="chap-nav">
+					<button class="chap-arrow" type="button" onclick={() => gotoAdjacentChapter(-1)} aria-label="Previous chapter">‹</button>
 					<button
-						class="chip"
-						class:active={chapter.number === c.number}
+						class="chap-current"
 						type="button"
-						role="tab"
-						aria-selected={chapter.number === c.number}
-						aria-label={`${book.name} chapter ${c.number}`}
-						onclick={() => openChapter(c.number)}
+						aria-expanded={chapterPickerOpen}
+						onclick={() => (chapterPickerOpen = !chapterPickerOpen)}
 					>
-						{c.number}
+						{book.name} {chapter.number}
+						<span class="caret" class:open={chapterPickerOpen} aria-hidden="true">▾</span>
 					</button>
-				{/each}
+					<button class="chap-arrow" type="button" onclick={() => gotoAdjacentChapter(1)} aria-label="Next chapter">›</button>
+				</div>
 			</div>
+			{#if chapterPickerOpen}
+				<div class="chapter-row" role="tablist" aria-label="Chapter">
+					{#each book.chapters as c (c.number)}
+						<button
+							class="chip"
+							class:active={chapter.number === c.number}
+							type="button"
+							role="tab"
+							aria-selected={chapter.number === c.number}
+							aria-label={`${book.name} chapter ${c.number}`}
+							onclick={() => openChapter(c.number)}
+						>
+							{c.number}
+						</button>
+					{/each}
+				</div>
+			{/if}
 			<div class="passage">
-				<h3>{book.name} {chapter.number}</h3>
 				{#each chapter.verses as verse (verse.id)}
 					<button
 						class="scripture"
 						class:hl={highlightVerse === verse.number}
 						class:selected={selectedVerse === verse.id}
+						class:noted={notes[verse.id] !== undefined}
 						data-tint={highlights[verse.id] ?? ''}
 						type="button"
-						aria-label={`${verse.reference} — tap to highlight`}
+						aria-label={`${verse.reference} — tap to highlight or note`}
 						aria-pressed={highlights[verse.id] !== undefined}
 						onclick={() => selectVerse(verse.id)}
 					>
-						<span class="vnum">{verse.number}</span>{verse.readingText}
+						<span class="vnum">{verse.number}</span>{verse.readingText}{#if notes[verse.id] !== undefined}<span class="note-flag" aria-hidden="true">✎</span>{/if}
 					</button>
+					{#if notes[verse.id] !== undefined && selectedVerse !== verse.id}
+						<p class="note-read">{notes[verse.id]}</p>
+					{/if}
 					{#if selectedVerse === verse.id}
-						<div class="hl-bar" role="toolbar" aria-label="Highlight verse">
-							{#each HL_TINTS as t, i (t.name)}
-								<button
-									class="hl-swatch"
-									class:on={highlights[verse.id] === i}
-									style="--sw:{t.swatch}"
-									type="button"
-									onclick={() => applyHighlight(i)}
-									aria-label={`Highlight ${t.name}`}
-								></button>
-							{/each}
-							<span class="hl-div" aria-hidden="true"></span>
-							<button class="hl-remove" type="button" onclick={clearHighlight} aria-label="Remove highlight">✕</button>
-						</div>
+						{#if noteEditorOpen}
+							<div class="note-editor">
+								<textarea
+									class="note-input"
+									bind:value={noteDraft}
+									rows="3"
+									placeholder={`Your note on ${verse.reference}…`}
+									aria-label={`Note on ${verse.reference}`}
+								></textarea>
+								<label class="note-share">
+									<input type="checkbox" bind:checked={shareNote} />
+									<span>Share to the trail feed</span>
+								</label>
+								<div class="note-actions">
+									<button class="note-cancel" type="button" onclick={cancelNote}>Cancel</button>
+									<button
+										class="note-save"
+										type="button"
+										disabled={noteShareState === 'sharing'}
+										onclick={() => saveNote(verse)}
+									>
+										{noteShareState === 'sharing' ? 'Sharing…' : 'Save'}
+									</button>
+								</div>
+							</div>
+						{:else}
+							<div class="hl-bar" role="toolbar" aria-label="Highlight or note verse">
+								{#each HL_TINTS as t, i (t.name)}
+									<button
+										class="hl-swatch"
+										class:on={highlights[verse.id] === i}
+										style="--sw:{t.swatch}"
+										type="button"
+										onclick={() => applyHighlight(i)}
+										aria-label={`Highlight ${t.name}`}
+									></button>
+								{/each}
+								<span class="hl-div" aria-hidden="true"></span>
+								<button class="hl-note" type="button" onclick={() => openNoteEditor(verse.id)}>
+									{notes[verse.id] !== undefined ? 'Edit note' : 'Note'}
+								</button>
+								<button class="hl-remove" type="button" onclick={clearHighlight} aria-label="Remove highlight">✕</button>
+							</div>
+						{/if}
 					{/if}
 				{/each}
 			</div>
@@ -587,11 +710,8 @@
 	.reader-head {
 		display: flex;
 		align-items: center;
-		gap: 10px;
-	}
-	.reader-head strong {
-		font-family: var(--font-display);
-		font-size: 1.1rem;
+		justify-content: space-between;
+		gap: 6px;
 	}
 	.back-link {
 		min-height: 44px;
@@ -601,13 +721,51 @@
 		font-weight: 800;
 		font-size: 0.84rem;
 	}
+	/* Chapter nav — prev/next arrows around a tap-to-open title (best-app pattern). */
+	.chap-nav {
+		display: flex;
+		align-items: center;
+		gap: 2px;
+	}
+	.chap-arrow {
+		width: 38px;
+		height: 44px;
+		display: grid;
+		place-items: center;
+		font-size: 1.5rem;
+		font-weight: 700;
+		color: var(--forest);
+		border-radius: 10px;
+	}
+	.chap-current {
+		min-height: 44px;
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 0 12px;
+		border-radius: 999px;
+		background: var(--forest-soft);
+		color: var(--forest);
+		font-family: var(--font-display);
+		font-size: 1.08rem;
+		font-weight: 700;
+		white-space: nowrap;
+	}
+	.caret {
+		font-size: 0.7rem;
+		transition: transform var(--dur-base) var(--ease-out);
+	}
+	.caret.open {
+		transform: rotate(180deg);
+	}
 	.chapter-row {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 6px;
-		max-height: 108px;
+		max-height: 188px;
 		overflow-y: auto;
-		padding-bottom: 2px;
+		padding: 8px 2px;
+		border-bottom: 1px solid var(--divider-soft);
 	}
 	.chip {
 		min-width: 44px;
@@ -632,11 +790,6 @@
 		display: grid;
 		gap: 9px;
 		max-width: 38rem;
-	}
-	.passage h3 {
-		font-family: var(--font-display);
-		font-size: 1.15rem;
-		color: var(--forest);
 	}
 	.scripture {
 		display: block;
@@ -718,6 +871,16 @@
 		height: 22px;
 		background: var(--line);
 	}
+	.hl-note {
+		min-height: 30px;
+		padding: 0 12px;
+		border-radius: 999px;
+		background: var(--forest-soft);
+		color: var(--forest);
+		font-weight: 800;
+		font-size: 0.78rem;
+		white-space: nowrap;
+	}
 	.hl-remove {
 		width: 30px;
 		height: 30px;
@@ -726,6 +889,90 @@
 		color: var(--muted);
 		font-weight: 800;
 		font-size: 0.8rem;
+	}
+
+	/* Verse note: a small ✎ flag on the verse + the note shown beneath it. */
+	.note-flag {
+		display: inline-block;
+		margin-left: 6px;
+		font-size: 0.78rem;
+		color: var(--clay);
+		vertical-align: baseline;
+	}
+	.note-read {
+		margin: 2px 0 10px 8px;
+		padding: 8px 11px;
+		border-left: 2.5px solid var(--clay);
+		background: var(--clay-soft);
+		border-radius: 0 8px 8px 0;
+		font-size: 0.84rem;
+		line-height: 1.45;
+		color: var(--ink);
+	}
+	.note-editor {
+		display: grid;
+		gap: 9px;
+		margin: 8px 0 12px;
+		padding: 12px;
+		border-radius: var(--radius-md);
+		background: var(--surface-strong);
+		border: 1px solid var(--line);
+		box-shadow: var(--shadow-soft);
+		animation: hl-rise var(--dur-base) var(--ease-spring) both;
+	}
+	.note-input {
+		width: 100%;
+		resize: vertical;
+		min-height: 64px;
+		padding: 10px 12px;
+		border-radius: var(--radius-sm);
+		border: 1px solid var(--line);
+		background: var(--bg);
+		color: var(--ink);
+		font-size: 0.92rem;
+		line-height: 1.45;
+	}
+	.note-input:focus-visible {
+		outline: 2px solid var(--forest);
+		outline-offset: 1px;
+	}
+	.note-share {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 0.84rem;
+		font-weight: 700;
+		color: var(--muted);
+		cursor: pointer;
+	}
+	.note-share input {
+		width: 18px;
+		height: 18px;
+		accent-color: var(--forest);
+	}
+	.note-actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: 8px;
+	}
+	.note-cancel,
+	.note-save {
+		min-height: 40px;
+		padding: 0 16px;
+		border-radius: var(--radius-control);
+		font-weight: 800;
+		font-size: 0.86rem;
+	}
+	.note-cancel {
+		background: var(--ink-soft);
+		color: var(--ink);
+	}
+	.note-save {
+		background: var(--forest);
+		color: var(--on-accent);
+	}
+	.note-save:disabled {
+		opacity: 0.6;
 	}
 	.vnum {
 		font-size: 0.66rem;
