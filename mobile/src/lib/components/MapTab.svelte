@@ -30,6 +30,9 @@
 	// elevation-card window (driven by the live map bounds on moveend)
 	let viewStart = $state(0);
 	let viewEnd = $state(0);
+	// A tapped trail point → measures distance + climb/descent from the current
+	// mile (the "how far / how much up" tool). null when nothing is being measured.
+	let measureMile = $state<number | null>(null);
 
 	const geo = $derived(trailAssistant.trailGeometry);
 	const from = $derived(trailAssistant.currentMile);
@@ -139,6 +142,7 @@
 	let routeLayer: LeafletNS.LayerGroup | null = null;
 	let poiLayer: LeafletNS.LayerGroup | null = null;
 	let endpointLayer: LeafletNS.LayerGroup | null = null;
+	let measureLayer: LeafletNS.LayerGroup | null = null;
 	let youLayer: LeafletNS.LayerGroup | null = null;
 	let youMarker: LeafletNS.Marker | null = null;
 	let atBounds: LeafletNS.LatLngBounds | null = null;
@@ -178,13 +182,16 @@
 	const showRecenter = $derived(userInteracted && !isOverview);
 
 	function onMapClick(lat: number, lon: number) {
-		if (!isOverview || geo.length < 2) return;
-		const mile = snapToMile(geo, lat, lon, 6);
-		if (mile == null) return;
-		viewFocusMile = mile;
-		mapZoom = 10;
-		userInteracted = true;
-		flyToCorridor(mile, 10);
+		if (geo.length < 2) return;
+		// Snap the tap to the nearest real trail mile. A tap on (or near) the trail
+		// measures to that point; a tap far out in open map clears it. The snap
+		// tolerance scales with zoom — generous on the whole-trail view (where the
+		// line is a few pixels wide), tight in the corridor.
+		const tol = isOverview ? 80 : 6;
+		measureMile = snapToMile(geo, lat, lon, tol);
+	}
+	function clearMeasure() {
+		measureMile = null;
 	}
 
 	function onMoveEnd() {
@@ -219,35 +226,95 @@
 	}
 	const bearing = $derived(geo.length > 1 ? bearingAtMile(fromClamped) : 0);
 
-	// --- elevation profile (whole hike in overview; the visible window in detail) ---
+	// --- measurement: tap a trail point → distance + gain/loss from current mile -
+	const measure = $derived.by(() => {
+		if (measureMile == null || geo.length < 2) return null;
+		const target = clamp(measureMile, trailLo, trailHi);
+		const a = Math.min(fromClamped, target);
+		const b = Math.max(fromClamped, target);
+		const win = elevationWindow(geo, a, b - a);
+		if (win.length < 2) return null;
+		// Gain/loss as actually walked — from the current mile toward the point.
+		const seq = target >= fromClamped ? win : [...win].reverse();
+		let gain = 0;
+		let loss = 0;
+		for (let i = 1; i < seq.length; i++) {
+			const delta = seq[i].elevation - seq[i - 1].elevation;
+			if (delta > 0) gain += delta;
+			else loss += -delta;
+		}
+		return {
+			mile: target,
+			ahead: target >= fromClamped,
+			dist: Math.abs(target - fromClamped),
+			gain: Math.round(gain),
+			loss: Math.round(loss)
+		};
+	});
+
+	// --- elevation profile (whole hike / visible window / measured segment) ------
+	// Grade band per segment so upcoming terrain difficulty reads at a glance by
+	// colour (gentle / moderate / steep), not just from the line's shape.
+	function gradeBand(dEl: number, dMi: number): 0 | 1 | 2 {
+		const g = Math.abs(dEl / Math.max(dMi, 0.01)); // ft per mile
+		return g > 400 ? 2 : g > 180 ? 1 : 0;
+	}
 	const H = 46;
+	const elevLo = $derived(measure ? Math.min(fromClamped, measure.mile) : viewStart);
+	const elevHi = $derived(measure ? Math.max(fromClamped, measure.mile) : Math.max(viewEnd, viewStart + 0.5));
 	const elev = $derived.by(() => {
 		const W = 280;
 		const pad = 5;
-		const lo = viewStart;
-		const hi = Math.max(viewEnd, lo + 0.5);
+		const lo = elevLo;
+		const hi = Math.max(elevHi, lo + 0.5);
 		const win = elevationWindow(geo, lo, hi - lo);
 		if (win.length < 2) {
-			return { d: '', gain: 0, loss: 0, minEl: 0, maxEl: 0, lo, hi, empty: true };
+			return { fillD: '', segments: [] as { d: string; band: 0 | 1 | 2 }[], gain: 0, loss: 0, minEl: 0, maxEl: 0, lo, hi, empty: true };
 		}
 		const elevs = win.map((p) => p.elevation);
 		const minEl = Math.min(...elevs);
 		const maxEl = Math.max(...elevs);
 		const x = (m: number) => ((m - lo) / (hi - lo || 1)) * W;
 		const y = (e: number) => H - pad - ((e - minEl) / (maxEl - minEl || 1)) * (H - pad * 2);
-		const line = win.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(p.mile).toFixed(1)},${y(p.elevation).toFixed(1)}`).join(' ');
-		const d = `${line} L${x(win[win.length - 1].mile).toFixed(1)},${H} L${x(win[0].mile).toFixed(1)},${H} Z`;
+		const pt = (i: number) => `${x(win[i].mile).toFixed(1)},${y(win[i].elevation).toFixed(1)}`;
+		const line = win.map((_, i) => `${i === 0 ? 'M' : 'L'}${pt(i)}`).join(' ');
+		const fillD = `${line} L${x(win[win.length - 1].mile).toFixed(1)},${H} L${x(win[0].mile).toFixed(1)},${H} Z`;
+		// Colour the line by grade, merging consecutive same-band segments.
+		const segments: { d: string; band: 0 | 1 | 2 }[] = [];
+		let runBand: 0 | 1 | 2 | null = null;
+		let runD = '';
 		let gain = 0;
 		let loss = 0;
 		for (let i = 1; i < win.length; i++) {
 			const delta = win[i].elevation - win[i - 1].elevation;
 			if (delta > 0) gain += delta;
 			else loss += -delta;
+			const band = gradeBand(delta, win[i].mile - win[i - 1].mile);
+			if (band === runBand) {
+				runD += ` L${pt(i)}`;
+			} else {
+				if (runD) segments.push({ d: runD, band: runBand as 0 | 1 | 2 });
+				runBand = band;
+				runD = `M${pt(i - 1)} L${pt(i)}`;
+			}
 		}
-		return { d, gain: Math.round(gain), loss: Math.round(loss), minEl, maxEl, lo, hi, empty: false };
+		if (runD) segments.push({ d: runD, band: runBand as 0 | 1 | 2 });
+		return { fillD, segments, gain: Math.round(gain), loss: Math.round(loss), minEl, maxEl, lo, hi, empty: false };
 	});
-	const rangeLabel = $derived(isOverview ? 'Whole trail' : `Mi ${elev.lo.toFixed(0)}–${elev.hi.toFixed(0)}`);
-	const elevTitle = $derived(isOverview ? 'Whole-hike elevation' : 'Elevation in view');
+	const rangeLabel = $derived(
+		measure
+			? `Mi ${Math.min(fromClamped, measure.mile).toFixed(0)}–${Math.max(fromClamped, measure.mile).toFixed(0)}`
+			: isOverview
+				? 'Whole trail'
+				: `Mi ${elev.lo.toFixed(0)}–${elev.hi.toFixed(0)}`
+	);
+	const elevTitle = $derived(
+		measure
+			? `From here · ${measure.dist.toFixed(1)} mi ${measure.ahead ? 'ahead' : 'back'}`
+			: isOverview
+				? 'Whole-hike elevation'
+				: 'Elevation in view'
+	);
 	const progressLabel = $derived(`${Math.round((from / TOTAL_MILES) * 100)}% complete`);
 	const fmt = (n: number) => n.toLocaleString('en-US');
 
@@ -296,6 +363,7 @@
 		routeLayer = L.layerGroup().addTo(map);
 		poiLayer = L.layerGroup().addTo(map);
 		endpointLayer = L.layerGroup().addTo(map);
+		measureLayer = L.layerGroup().addTo(map);
 		youLayer = L.layerGroup().addTo(map);
 
 		map.on('zoomend moveend', onMoveEnd);
@@ -445,6 +513,43 @@
 		}
 	});
 
+	// Measurement: highlight the from→tapped segment and pin a gain/loss callout.
+	$effect(() => {
+		void measure;
+		void fromQ;
+		if (!L || !map || !measureLayer) return;
+		measureLayer.clearLayers();
+		const m = measure;
+		if (!m) return;
+		const a = Math.min(fromClamped, m.mile);
+		const b = Math.max(fromClamped, m.mile);
+		const seg = geo.filter((p) => p.m >= a - 0.01 && p.m <= b + 0.01).map((p) => [p.lat, p.lon] as [number, number]);
+		if (seg.length >= 2) {
+			L.polyline(seg, {
+				weight: 5.5,
+				opacity: 0.96,
+				lineCap: 'round',
+				lineJoin: 'round',
+				interactive: false,
+				className: 'rt rt-measure'
+			}).addTo(measureLayer);
+		}
+		const dir = m.ahead ? 'ahead' : 'back';
+		const html = `<span class="mz-line"><b>${m.dist.toFixed(1)} mi</b> ${dir}</span><span class="mz-sub">↑ ${fmt(m.gain)} ft · ↓ ${fmt(m.loss)} ft · mi ${m.mile.toFixed(1)}</span>`;
+		L.marker(interpAtMile(m.mile), {
+			icon: L.divIcon({
+				className: 'measure-leaf',
+				iconSize: [20, 20],
+				iconAnchor: [10, 10],
+				html: '<span class="mz-ring"></span><span class="mz-dot"></span>'
+			}),
+			interactive: false,
+			zIndexOffset: 1200
+		})
+			.bindTooltip(html, { permanent: true, direction: 'top', offset: [0, -10], className: 'map-tip measure-tip' })
+			.addTo(measureLayer);
+	});
+
 	// Endpoint markers + permanent labels (shown in overview via CSS).
 	$effect(() => {
 		void latlngs;
@@ -553,11 +658,17 @@
 	<!-- Orientation + elevation card -->
 	<div class="elev">
 		<div class="orient">
-			{#if !isOverview}
-				<button class="orient-back" onclick={() => setZoom(OVERVIEW)} aria-label="Back to whole trail">‹ Whole trail</button>
+			{#if measure}
+				<button class="orient-back measuring" onclick={clearMeasure} aria-label="Clear measurement">✕ Clear</button>
+				<span class="orient-range">{rangeLabel}</span>
+			{:else}
+				{#if !isOverview}
+					<button class="orient-back" onclick={() => setZoom(OVERVIEW)} aria-label="Back to whole trail">‹ Whole trail</button>
+				{/if}
+				<span class="orient-range">{rangeLabel}</span>
+				<span class="orient-progress">{progressLabel}</span>
+				<span class="measure-hint">tap trail to measure</span>
 			{/if}
-			<span class="orient-range">{rangeLabel}</span>
-			<span class="orient-progress">{progressLabel}</span>
 			<span class="basemap-tag" data-state={basemapState.dot}>
 				<span class="bm-dot"></span>{basemapState.text}
 			</span>
@@ -566,8 +677,8 @@
 		<div class="etop">
 			<span class="etitle">{elevTitle}</span>
 			<div class="updown">
-				<span class="up">↑ +{fmt(elev.gain)} ft</span>
-				<span class="down">↓ −{fmt(elev.loss)} ft</span>
+				<span class="up">↑ +{fmt(measure ? measure.gain : elev.gain)} ft</span>
+				<span class="down">↓ −{fmt(measure ? measure.loss : elev.loss)} ft</span>
 			</div>
 		</div>
 
@@ -580,11 +691,14 @@
 						<stop offset="1" stop-color="rgba(47,75,53,.04)" />
 					</linearGradient>
 				</defs>
-				<path class="epath" d={elev.d} />
+				{#if elev.fillD}<path class="efill" d={elev.fillD} />{/if}
+				{#each elev.segments as seg, i (i)}
+					<path class="eline b{seg.band}" d={seg.d} />
+				{/each}
 			</svg>
 		</div>
 
-		{#if showBands}
+		{#if !elev.empty}
 			<div class="band-legend" aria-label="Difficulty key">
 				<span><i class="b0"></i>Gentle</span>
 				<span><i class="b1"></i>Moderate</span>
@@ -671,6 +785,40 @@
 		fill: var(--forest);
 	}
 
+	/* measurement: bright gold highlight on the from→tapped segment + a pin */
+	:global(.rt-measure) {
+		stroke: #f0c24a;
+		filter: drop-shadow(0 0 3px rgba(240, 194, 74, 0.55));
+	}
+	:global(.measure-leaf) {
+		display: grid;
+		place-items: center;
+	}
+	:global(.measure-leaf .mz-dot) {
+		position: absolute;
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		background: #f0c24a;
+		border: 2.5px solid #fffdf8;
+		box-shadow: 0 0 0 2px rgba(240, 194, 74, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
+	}
+	:global(.measure-leaf .mz-ring) {
+		position: absolute;
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		background: color-mix(in srgb, #f0c24a 45%, transparent);
+		animation: youPulse 2.4s ease-out infinite;
+		will-change: transform, opacity;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		:global(.measure-leaf .mz-ring) {
+			animation: none;
+			opacity: 0;
+		}
+	}
+
 	/* you-marker: layered pulse + dot, animation survives GPS updates */
 	:global(.you-leaf) {
 		display: grid;
@@ -743,6 +891,28 @@
 		display: inline-block;
 		transform: rotate(var(--maprot, 0deg));
 	}
+	/* measurement callout: a two-line gold-edged bubble at the tapped point */
+	:global(.leaflet-tooltip.measure-tip) {
+		text-align: center;
+		padding: 4px 9px;
+		border-color: #e2af3c;
+		box-shadow: var(--shadow);
+	}
+	:global(.leaflet-tooltip.measure-tip .mz-line) {
+		display: block;
+		font-size: 0.72rem;
+		color: var(--ink);
+	}
+	:global(.leaflet-tooltip.measure-tip .mz-line b) {
+		color: #a9790f;
+	}
+	:global(.leaflet-tooltip.measure-tip .mz-sub) {
+		display: block;
+		font-size: 0.6rem;
+		font-weight: 800;
+		color: var(--muted);
+		margin-top: 1px;
+	}
 	/* zoom-gated labels: hide POIs in overview, endpoints in corridor */
 	:global(.z-overview .leaflet-tooltip.poi-tip),
 	:global(.z-overview .leaflet-tooltip.you-tip) {
@@ -776,6 +946,9 @@
 		:global(.you-tip),
 		:global(.ov-tip) {
 			color: #10160f;
+		}
+		:global(.leaflet-tooltip.measure-tip .mz-line b) {
+			color: #f0c24a;
 		}
 	}
 
@@ -881,28 +1054,28 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 3px;
-		padding: 4px;
-		border-radius: 16px;
+		gap: 4px;
+		padding: 5px;
+		border-radius: 18px;
 		background: rgba(255, 253, 248, 0.95);
 		border: 1px solid var(--line);
 		box-shadow: var(--shadow-soft);
 	}
 	.zbtn {
 		width: 44px;
-		min-height: 40px;
+		min-height: 42px;
 		display: grid;
 		place-items: center;
-		border-radius: 10px;
-		font-size: 0.78rem;
+		border-radius: 12px;
+		font-size: 0.84rem;
 		font-weight: 800;
 		color: var(--muted);
 		font-variant-numeric: tabular-nums;
 	}
 	.zbtn.on {
 		background: var(--forest);
-		color: #f4efe4;
-		box-shadow: var(--shadow-soft);
+		color: var(--on-accent);
+		box-shadow: 0 4px 12px -4px rgba(47, 75, 53, 0.5);
 	}
 	.zunit {
 		font-size: 0.62rem;
@@ -977,6 +1150,23 @@
 	}
 	.orient-progress {
 		color: var(--forest);
+	}
+	.orient-back.measuring {
+		background: rgba(240, 194, 74, 0.18);
+		color: #a9790f;
+	}
+	@media (prefers-color-scheme: dark) {
+		.orient-back.measuring {
+			color: #f0c24a;
+		}
+	}
+	.measure-hint {
+		color: var(--muted);
+		font-weight: 700;
+		text-transform: none;
+		letter-spacing: 0;
+		font-size: 0.62rem;
+		opacity: 0.85;
 	}
 	.basemap-tag {
 		display: inline-flex;
@@ -1056,10 +1246,24 @@
 		height: 46px;
 		flex: 1;
 	}
-	.elev .epath {
+	.elev .efill {
 		fill: url(#elevfill);
-		stroke: var(--forest);
-		stroke-width: 1.6;
+		stroke: none;
+	}
+	.elev .eline {
+		fill: none;
+		stroke-width: 2;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+	.elev .eline.b0 {
+		stroke: #2f8a4e;
+	}
+	.elev .eline.b1 {
+		stroke: #d98b0a;
+	}
+	.elev .eline.b2 {
+		stroke: #b23a1e;
 	}
 	.band-legend {
 		display: flex;
