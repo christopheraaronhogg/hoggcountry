@@ -130,17 +130,21 @@
 	function decimate(pts: [number, number][], step: number): [number, number][] {
 		return step <= 1 ? pts : pts.filter((_, i) => i % step === 0 || i === pts.length - 1);
 	}
-	// Terrain difficulty (gentle / moderate / steep) for the trail between two
-	// sample indices, as ft-per-mile. Same thresholds as the elevation chart's
-	// gradeBand, so the map line and the profile read in the same colours.
+	// Terrain difficulty for the trail between two sample indices. We only have
+	// real elevation (no rock-surface data), so difficulty = TOTAL vertical change
+	// per mile — every up AND down summed, not just net grade. That's the honest
+	// proxy for how punishing a stretch is: the AT's hardest miles are rolling,
+	// churned-up terrain (PUDs) where net grade is ~flat but the climbing never
+	// stops. Same thresholds as the elevation chart's gradeBand.
 	function bandOfRange(i0: number, i1: number): 0 | 1 | 2 {
 		const a = geo;
 		const lo = Math.max(0, Math.min(i0, a.length - 1));
 		const hi = Math.max(0, Math.min(i1, a.length - 1));
-		const dft = Math.abs(a[hi].ft - a[lo].ft);
-		const dmi = Math.abs(a[hi].m - a[lo].m) || 1;
-		const g = dft / dmi;
-		return g > 400 ? 2 : g > 180 ? 1 : 0;
+		if (hi <= lo) return 0;
+		let change = 0;
+		for (let j = lo; j < hi; j++) change += Math.abs(a[j + 1].ft - a[j].ft);
+		const perMile = change / (Math.abs(a[hi].m - a[lo].m) || 1);
+		return perMile > 400 ? 2 : perMile > 180 ? 1 : 0;
 	}
 
 	// --- Leaflet layers (created in onMount) ----------------------------------
@@ -149,6 +153,8 @@
 	let poiLayer: LeafletNS.LayerGroup | null = null;
 	let endpointLayer: LeafletNS.LayerGroup | null = null;
 	let measureLayer: LeafletNS.LayerGroup | null = null;
+	let measureMarker: LeafletNS.Marker | null = null;
+	let measureDragging = false;
 	let youLayer: LeafletNS.LayerGroup | null = null;
 	let youMarker: LeafletNS.Marker | null = null;
 	let atBounds: LeafletNS.LatLngBounds | null = null;
@@ -550,14 +556,22 @@
 		}
 	});
 
-	// Measurement: highlight the from→tapped segment and pin a gain/loss callout.
+	// Measurement: a draggable point you can pick up and slide along the trail.
+	// The segment highlight rebuilds reactively in measureLayer; the marker is
+	// persistent (created once) so a drag isn't torn down mid-gesture.
 	$effect(() => {
 		void measure;
 		void fromQ;
 		if (!L || !map || !measureLayer) return;
 		measureLayer.clearLayers();
 		const m = measure;
-		if (!m) return;
+		if (!m) {
+			if (measureMarker) {
+				measureMarker.remove();
+				measureMarker = null;
+			}
+			return;
+		}
 		const a = Math.min(fromClamped, m.mile);
 		const b = Math.max(fromClamped, m.mile);
 		const seg = geo.filter((p) => p.m >= a - 0.01 && p.m <= b + 0.01).map((p) => [p.lat, p.lon] as [number, number]);
@@ -573,20 +587,43 @@
 		}
 		const dir = m.ahead ? 'ahead' : 'back';
 		const html = `<span class="mz-line"><b>${m.dist.toFixed(1)} mi</b> ${dir}</span><span class="mz-sub">↑ ${fmt(m.gain)} ft · ↓ ${fmt(m.loss)} ft · mi ${m.mile.toFixed(1)}</span>`;
-		L.marker(interpAtMile(m.mile), {
-			icon: L.divIcon({
-				className: 'measure-leaf',
-				iconSize: [20, 20],
-				iconAnchor: [10, 10],
-				html: '<span class="mz-ring"></span><span class="mz-dot"></span>'
-			}),
-			interactive: false,
-			zIndexOffset: 1200
-		})
-			// 'auto' flips the callout to the left when the point sits on the right
-			// (e.g. under the zoom stack), so the chrome never occludes it.
-			.bindTooltip(html, { permanent: true, direction: 'auto', offset: [0, 0], className: 'map-tip measure-tip' })
-			.addTo(measureLayer);
+		const ll = interpAtMile(m.mile);
+		if (!measureMarker) {
+			measureDragging = false;
+			measureMarker = L.marker(ll, {
+				icon: L.divIcon({
+					className: 'measure-leaf',
+					iconSize: [30, 30],
+					iconAnchor: [15, 15],
+					html: '<span class="mz-ring"></span><span class="mz-dot"></span>'
+				}),
+				draggable: true,
+				autoPan: false,
+				bubblingMouseEvents: false,
+				zIndexOffset: 1300
+			})
+				// 'auto' flips the callout left when the point sits on the right edge
+				// (e.g. under the zoom stack), so the chrome never occludes it.
+				.bindTooltip(html, { permanent: true, direction: 'auto', offset: [0, 0], className: 'map-tip measure-tip' })
+				.addTo(map);
+			measureMarker.on('dragstart', () => {
+				measureDragging = true;
+			});
+			measureMarker.on('drag', (e) => {
+				const p = (e.target as LeafletNS.Marker).getLatLng();
+				// Snap with no tolerance — the point tracks the nearest trail mile
+				// wherever you drag, so it rides the line.
+				const snapped = snapToMile(geo, p.lat, p.lng, Number.POSITIVE_INFINITY);
+				if (snapped != null) measureMile = snapped;
+			});
+			measureMarker.on('dragend', () => {
+				measureDragging = false;
+				if (measureMile != null) measureMarker?.setLatLng(interpAtMile(clamp(measureMile, trailLo, trailHi)));
+			});
+		} else {
+			measureMarker.setTooltipContent(html);
+			if (!measureDragging) measureMarker.setLatLng(ll);
+		}
 	});
 
 	// Endpoint markers + permanent labels (shown in overview via CSS).
@@ -706,7 +743,7 @@
 				{/if}
 				<span class="orient-range">{rangeLabel}</span>
 				<span class="orient-progress">{progressLabel}</span>
-				<span class="measure-hint">tap trail to measure</span>
+				<span class="measure-hint">tap or drag the trail to measure</span>
 			{/if}
 			<span class="basemap-tag" data-state={basemapState.dot}>
 				<span class="bm-dot"></span>{basemapState.text}
@@ -832,20 +869,25 @@
 	:global(.measure-leaf) {
 		display: grid;
 		place-items: center;
+		cursor: grab;
+	}
+	:global(.measure-leaf.leaflet-drag-target),
+	:global(.leaflet-dragging .measure-leaf) {
+		cursor: grabbing;
 	}
 	:global(.measure-leaf .mz-dot) {
 		position: absolute;
-		width: 12px;
-		height: 12px;
+		width: 15px;
+		height: 15px;
 		border-radius: 50%;
 		background: #f0c24a;
-		border: 2.5px solid #fffdf8;
-		box-shadow: 0 0 0 2px rgba(240, 194, 74, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
+		border: 3px solid #fffdf8;
+		box-shadow: 0 0 0 2px rgba(240, 194, 74, 0.45), 0 2px 7px rgba(0, 0, 0, 0.35);
 	}
 	:global(.measure-leaf .mz-ring) {
 		position: absolute;
-		width: 12px;
-		height: 12px;
+		width: 15px;
+		height: 15px;
 		border-radius: 50%;
 		background: color-mix(in srgb, #f0c24a 45%, transparent);
 		animation: youPulse 2.4s ease-out infinite;

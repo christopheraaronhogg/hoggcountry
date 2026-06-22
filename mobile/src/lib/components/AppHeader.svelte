@@ -28,13 +28,16 @@
 	</div>
 
 	<div class="right">
+		<!-- Online is the expected state, so it's just a quiet dot; Offline is the
+		     one worth surfacing, so it gets a labelled chip. -->
 		<span
 			class="conn"
 			data-online={trailAssistant.onlineStatus}
-			title={trailAssistant.onlineStatus ? 'Online' : 'Offline ready'}
+			title={trailAssistant.onlineStatus ? 'Online' : 'Offline — Scout still works on-device'}
+			aria-label={trailAssistant.onlineStatus ? 'Online' : 'Offline ready'}
 		>
 			<span class="conn-dot"></span>
-			{trailAssistant.onlineStatus ? 'Online' : 'Offline'}
+			{#if !trailAssistant.onlineStatus}<span class="conn-label">Offline</span>{/if}
 		</span>
 		<button
 			class="gear"
@@ -69,11 +72,6 @@
 		.header {
 			background: linear-gradient(180deg, rgba(27, 33, 25, 0.92), rgba(18, 23, 16, 0.86));
 			border-bottom-color: rgba(242, 234, 219, 0.08);
-		}
-
-		.status-strip,
-		.conn {
-			background: rgba(152, 196, 142, 0.12);
 		}
 
 		.gear[aria-current='page'] {
@@ -155,30 +153,35 @@
 	.conn {
 		display: inline-flex;
 		align-items: center;
-		gap: 5px;
-		padding: 4px 8px;
-		border-radius: 999px;
-		background: rgba(47, 75, 53, 0.08);
-		font-size: var(--text-floor);
-		font-weight: 800;
-		letter-spacing: 0.03em;
-		color: var(--ink);
+		gap: 6px;
 	}
 
+	/* Online: a bare glowing dot. Offline: a labelled clay chip. */
 	.conn[data-online='false'] {
-		background: rgba(170, 104, 67, 0.14);
-		color: var(--clay);
+		padding: 5px 10px;
+		border-radius: 999px;
+		background: var(--clay-soft);
 	}
 
 	.conn-dot {
-		width: 7px;
-		height: 7px;
+		width: 8px;
+		height: 8px;
 		border-radius: 50%;
-		background: var(--success, #4a7a52);
+		background: var(--success);
+		box-shadow: 0 0 0 3px rgba(47, 106, 71, 0.16);
 	}
 
 	.conn[data-online='false'] .conn-dot {
-		background: var(--warn, #c89a4a);
+		background: var(--clay);
+		box-shadow: none;
+	}
+
+	.conn-label {
+		font-size: var(--text-floor);
+		font-weight: 800;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--clay);
 	}
 
 	.gear {
