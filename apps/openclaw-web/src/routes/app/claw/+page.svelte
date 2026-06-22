@@ -2376,7 +2376,9 @@
 
   onDestroy(() => {
     componentDestroyed = true;
-    document.body.classList.remove('scout-fullscreen-lock');
+    if (typeof document !== 'undefined') {
+      document.body.classList.remove('scout-fullscreen-lock');
+    }
     if (locationWatchId !== null && typeof navigator !== 'undefined' && 'geolocation' in navigator) {
       navigator.geolocation.clearWatch(locationWatchId);
     }
@@ -2386,8 +2388,10 @@
     scoutRealtimeSubscription?.unsubscribe();
     onlineStateCleanup?.();
     resumeRecoveryCleanup?.();
-    if (streamingAppendFrame) window.cancelAnimationFrame(streamingAppendFrame);
-    if (streamingScrollFrame) window.cancelAnimationFrame(streamingScrollFrame);
+    if (typeof window !== 'undefined') {
+      if (streamingAppendFrame) window.cancelAnimationFrame(streamingAppendFrame);
+      if (streamingScrollFrame) window.cancelAnimationFrame(streamingScrollFrame);
+    }
   });
 </script>
 

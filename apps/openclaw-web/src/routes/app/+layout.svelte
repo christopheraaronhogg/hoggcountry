@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import type { LayoutData } from './$types';
 
@@ -39,6 +40,26 @@
         }
       ]
     : appTabs);
+  const appTitle = $derived.by(() => {
+    const path = page.url.pathname;
+    if (path.startsWith('/app/admin/reference-progress')) return 'Reference Progress';
+    if (path.startsWith('/app/admin/resources')) return 'Resource Explorer';
+    if (path.startsWith('/app/scout-lab/reliability')) return 'Scout Reliability Lab';
+    if (path.startsWith('/app/scout-lab')) return 'Scout Lab';
+    if (path.startsWith('/app/settings/skills')) return 'Scout Skills';
+    if (path.startsWith('/app/docs')) return 'Scout Docs';
+    if (path.startsWith('/app/resources')) return 'Scout Resources';
+    if (path.startsWith('/app/loadout')) return 'Loadout';
+    if (path.startsWith('/app/profile')) return 'Profile';
+    if (path.startsWith('/app/progress')) return 'Journey Progress';
+    if (path.startsWith('/app/setup')) return 'Trail Setup';
+    if (path.startsWith('/app/tools')) return 'Scout Tools';
+    if (path.startsWith('/app/manual')) return 'Field Manual';
+    if (path.startsWith('/app/map')) return 'Trail Map';
+    if (path.startsWith('/app/trail')) return 'Trail';
+    if (path.startsWith('/app/scout') || path.startsWith('/app/claw')) return 'Scout Plan';
+    return 'Today';
+  });
 
   function tabActive(href: string): boolean {
     const path = page.url.pathname;
@@ -74,11 +95,12 @@
 </script>
 
 <svelte:head>
+  <title>{appTitle} | Hogg Country</title>
   <meta name="robots" content="noindex,nofollow" />
 </svelte:head>
 
 <section class="app-topbar" aria-label="Scout workspace">
-  <a class="app-lockup" href="/app" aria-label="Scout home">
+  <a class="app-lockup" href={resolve('/app')} aria-label="Scout home">
     <span class="app-mark">HC</span>
     <span>
       <span class="eyebrow">Scout beta</span>
@@ -96,18 +118,18 @@
   </span>
 
   <nav class="app-nav" aria-label="App">
-    {#each visibleAppTabs as tab}
-      <a href={tab.href} class:is-active={tabActive(tab.href)}>{tab.label}</a>
+    {#each visibleAppTabs as tab (tab.href)}
+      <a href={resolve(tab.href)} class:is-active={tabActive(tab.href)}>{tab.label}</a>
     {/each}
-    <a href="/app/logout">Switch</a>
+    <a href={resolve('/app/logout')}>Switch</a>
   </nav>
 </section>
 
 {@render children()}
 
 <nav class="app-bottom-nav" aria-label="Primary app navigation">
-  {#each visibleAppTabs.slice(0, 5) as tab}
-    <a href={tab.href} class:is-active={tabActive(tab.href)}>
+  {#each visibleAppTabs.slice(0, 5) as tab (tab.href)}
+    <a href={resolve(tab.href)} class:is-active={tabActive(tab.href)}>
       <span class="nav-icon" aria-hidden="true">
         {#if tab.icon === 'home'}
           <svg viewBox="0 0 24 24"><path d="M4 11.5 12 5l8 6.5V20h-5v-5.2H9V20H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>

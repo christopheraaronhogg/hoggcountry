@@ -173,10 +173,13 @@ test('mobile release proof next mode prints unresolved gates and evidence stubs'
 
 	assert.equal(result.status, 0, result.stderr);
 	assert.match(result.stdout, /Trail Assistant remaining release proof/u);
-	assert.match(result.stdout, /ios-development-team/u);
-	assert.match(result.stdout, /app-store-connect-record/u);
 	assert.match(result.stdout, /dad-testflight-invite/u);
+	assert.match(result.stdout, /play-console-record/u);
+	assert.match(result.stdout, /ios-physical-scout-answer/u);
+	assert.match(result.stdout, /android-physical-scout-answer/u);
 	assert.match(result.stdout, /Evidence JSON stub/u);
+	assert.doesNotMatch(result.stdout, /ios-development-team/u);
+	assert.doesNotMatch(result.stdout, /app-store-connect-record/u);
 	assert.doesNotMatch(result.stdout, /code-build:/u);
 });
 

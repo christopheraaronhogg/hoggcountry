@@ -375,7 +375,7 @@
 	}
 	.splits b .u {
 		font-family: var(--font-sans);
-		font-size: 0.78rem;
+		font-size: var(--text-floor);
 		font-weight: 700;
 		color: var(--hud-faint);
 	}
