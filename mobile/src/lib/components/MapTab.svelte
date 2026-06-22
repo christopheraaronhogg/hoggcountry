@@ -127,13 +127,18 @@
 
 	function handleMapKeydown(event: KeyboardEvent) {
 		if (event.key === 'ArrowLeft') {
+			if (isOverview) return; // nothing to pan in the whole-trail view — don't swallow the key
 			nudgeViewport(-(mapZoom as number) * 0.25);
 			event.preventDefault();
 		} else if (event.key === 'ArrowRight') {
+			if (isOverview) return;
 			nudgeViewport((mapZoom as number) * 0.25);
 			event.preventDefault();
 		} else if (event.key === 'Home') {
 			recenter();
+			event.preventDefault();
+		} else if ((event.key === 'Enter' || event.key === ' ') && isOverview) {
+			recenter(); // overview → drop into the corridor at the current mile
 			event.preventDefault();
 		}
 	}
@@ -362,6 +367,10 @@
 		return toScreen(p.x, p.y);
 	}
 
+	// HTML overlays project through the live camera + canvas size; until the
+	// canvas is measured (bind:clientWidth fires async) toScreen falls back to
+	// raw percentages, so hold the overlays one frame to avoid a position snap.
+	const ready = $derived(canvasW > 0 && canvasH > 0);
 	const youPos = $derived(place(from));
 	const endpointStart = $derived(
 		projectedPoints.length ? toScreen(projectedPoints[0].x, projectedPoints[0].y) : null
@@ -436,7 +445,7 @@
 			class="map-gesture-layer"
 			role="slider"
 			tabindex="0"
-			aria-label="Browse the offline AT trace. Drag to pan, tap the whole trail to jump there, or use arrow keys to move the visible mile window."
+			aria-label="Selected Appalachian Trail mile. Tap the whole trail to jump there; in the corridor, drag or use arrow keys to move, Home to recenter."
 			aria-orientation="horizontal"
 			aria-valuemin={0}
 			aria-valuemax={Math.round(trailEnd)}
@@ -490,7 +499,7 @@
 		</div>
 
 		<!-- overview endpoint labels -->
-		{#if isOverview && endpointStart && endpointEnd}
+		{#if ready && isOverview && endpointStart && endpointEnd}
 			<div class="endpoint-lbl start" style="left:{endpointStart.leftPct}%; top:{endpointStart.topPct}%;">
 				<span class="lbl">Springer · GA</span>
 			</div>
@@ -500,7 +509,7 @@
 		{/if}
 
 		<!-- upcoming landmark pins (corridor only) -->
-		{#if !isOverview}
+		{#if ready && !isOverview}
 			{#each placed as p (p.kind + p.label + p.mile)}
 				<div class="pin {p.kind}" style="left:{p.leftPct}%; top:{p.topPct}%;">
 					<span class="lbl"><Icon name={pinIcon[p.kind]} size={12} stroke={2} /> {p.label} · {distanceLabel(p.mile)}</span>
@@ -510,7 +519,7 @@
 		{/if}
 
 		<!-- hiker position -->
-		{#if isOverview || currentInView}
+		{#if ready && (isOverview || currentInView)}
 			<div class="you" class:overview={isOverview} style="left:{youPos.leftPct}%; top:{youPos.topPct}%;">
 				<div class="you-mark"><Icon name="now" size={isOverview ? 22 : 31} stroke={2} /></div>
 				{#if !isOverview}<span class="youlbl">{youLabel} · Mi {from.toFixed(1)}</span>{/if}
@@ -809,8 +818,8 @@
 	}
 	.compass {
 		flex: 0 0 auto;
-		width: 40px;
-		height: 40px;
+		width: 44px;
+		height: 44px;
 		display: grid;
 		place-items: center;
 		border-radius: 50%;
@@ -884,7 +893,8 @@
 	.orient-back {
 		display: inline-flex;
 		align-items: center;
-		padding: 2px 8px;
+		min-height: 30px;
+		padding: 4px 11px;
 		border-radius: var(--radius-pill);
 		background: var(--forest-soft);
 		color: var(--forest);
@@ -938,11 +948,11 @@
 	}
 	/* vertical zoom window (right-edge stack) */
 	.zbtn {
-		width: 38px;
-		min-height: 34px;
+		width: 44px;
+		min-height: 40px;
 		display: grid;
 		place-items: center;
-		border-radius: 9px;
+		border-radius: 10px;
 		font-size: 0.78rem;
 		font-weight: 800;
 		color: var(--muted);
@@ -1034,6 +1044,9 @@
 		.pin .lbl {
 			background: rgba(22, 29, 20, 0.94);
 			color: var(--ink);
+		}
+		.pin .dot {
+			box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 1px 5px rgba(0, 0, 0, 0.6);
 		}
 		.endpoint-lbl .lbl,
 		.you .youlbl {
