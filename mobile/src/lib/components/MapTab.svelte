@@ -50,7 +50,6 @@
 	// Real elevation per mile is bundled, so difficulty bands are honest, not faked.
 	const hasElev = $derived(geo.length >= 100 && geo.every((p) => Number.isFinite(p.ft)));
 	const isOverview = $derived(liveZoom > 0 ? liveZoom < 8.5 : mapZoom === OVERVIEW);
-	const showBands = $derived(hasElev && liveZoom >= 9.5);
 	const showPois = $derived(liveZoom >= 9);
 
 	// --- chrome data (kept from the schematic version) ------------------------
@@ -131,10 +130,17 @@
 	function decimate(pts: [number, number][], step: number): [number, number][] {
 		return step <= 1 ? pts : pts.filter((_, i) => i % step === 0 || i === pts.length - 1);
 	}
-	function bandOf(i: number): number {
+	// Terrain difficulty (gentle / moderate / steep) for the trail between two
+	// sample indices, as ft-per-mile. Same thresholds as the elevation chart's
+	// gradeBand, so the map line and the profile read in the same colours.
+	function bandOfRange(i0: number, i1: number): 0 | 1 | 2 {
 		const a = geo;
-		const g = Math.abs(a[Math.min(i + 1, a.length - 1)].ft - a[i].ft);
-		return g > 420 ? 2 : g > 190 ? 1 : 0;
+		const lo = Math.max(0, Math.min(i0, a.length - 1));
+		const hi = Math.max(0, Math.min(i1, a.length - 1));
+		const dft = Math.abs(a[hi].ft - a[lo].ft);
+		const dmi = Math.abs(a[hi].m - a[lo].m) || 1;
+		const g = dft / dmi;
+		return g > 400 ? 2 : g > 180 ? 1 : 0;
 	}
 
 	// --- Leaflet layers (created in onMount) ----------------------------------
@@ -397,69 +403,100 @@
 		onMoveEnd();
 	});
 
-	// Build the progress route (rebuilds on real movement, zoom band/detail changes).
+	// Build the route, coloured by terrain difficulty so the climbs read straight
+	// off the map. Rebuilds on real movement and zoom (detail) changes.
 	$effect(() => {
 		void fromQ;
 		void latlngs;
 		void liveZoom;
-		void showBands;
+		void hasElev;
 		if (!L || !map || !routeLayer || latlngs.length < 2) return;
 		routeLayer.clearLayers();
 		const overview = liveZoom > 0 ? liveZoom < 8 : true;
-		const step = overview ? 4 : 1;
-		const done = decimate(latlngs.slice(0, splitIdx + 1), step);
-		const remain = decimate(latlngs.slice(splitIdx), step);
-		// 1) casing/halo under everything
-		L.polyline(decimate(latlngs, step), {
+		const step = overview ? 3 : 1;
+		const n = latlngs.length;
+
+		// 1) casing/halo — solid under the done portion, dash-matched under the
+		//    remainder, so each coloured dash keeps its outline (no white line
+		//    bleeding through between dashes).
+		L.polyline(decimate(latlngs.slice(0, splitIdx + 1), step), {
 			color: '#fffdf8',
-			weight: 6,
+			weight: 6.5,
 			opacity: 0.85,
 			lineCap: 'round',
 			lineJoin: 'round',
 			interactive: false,
 			className: 'rt rt-halo'
 		}).addTo(routeLayer);
-		// 2) dashed remainder
-		L.polyline(remain, {
-			color: '#8a8475',
-			weight: 2.8,
-			opacity: 0.9,
+		L.polyline(decimate(latlngs.slice(splitIdx), step), {
+			color: '#fffdf8',
+			weight: 6,
+			opacity: 0.8,
 			dashArray: '2 7',
 			lineCap: 'round',
+			lineJoin: 'round',
 			interactive: false,
-			className: 'rt rt-remain'
+			className: 'rt rt-halo'
 		}).addTo(routeLayer);
-		// 3) done — difficulty bands at corridor zoom, single forest line otherwise
-		if (showBands && !overview) {
-			let runStart = 0;
-			let runBand = bandOf(0);
-			const doneFull = latlngs.slice(0, splitIdx + 1);
-			for (let k = 1; k <= doneFull.length; k++) {
-				const b = k < doneFull.length ? bandOf(k) : runBand;
-				if (k === doneFull.length || b !== runBand) {
-					const slice = doneFull.slice(runStart, Math.min(k + 1, doneFull.length));
-					if (slice.length > 1)
-						L.polyline(slice, {
-							weight: 5,
-							opacity: 1,
+
+		if (hasElev) {
+			// 2) difficulty-banded trail. Done = solid, the upcoming remainder =
+			//    dashed (same gentle/moderate/steep colours), so progress still reads
+			//    while the terrain ahead shows its grade.
+			const drawBanded = (i0: number, i1: number, dashed: boolean) => {
+				if (!L || !routeLayer || i1 <= i0) return;
+				const idx: number[] = [];
+				for (let i = i0; i < i1; i += step) idx.push(i);
+				idx.push(i1);
+				if (idx.length < 2) return;
+				const style: LeafletNS.PolylineOptions = dashed
+					? { weight: 4, opacity: 0.95, dashArray: '2 7' }
+					: { weight: 5, opacity: 1 };
+				let runStartK = 1;
+				let runBand = bandOfRange(idx[0], idx[1]);
+				const flush = (endK: number) => {
+					const slice = idx.slice(runStartK - 1, endK + 1).map((i) => latlngs[i]);
+					if (slice.length > 1) {
+						L!.polyline(slice, {
+							...style,
 							lineCap: 'round',
 							lineJoin: 'round',
 							interactive: false,
 							className: `rt rt-band b${runBand}`
-						}).addTo(routeLayer);
-					runStart = k;
-					runBand = b;
+						}).addTo(routeLayer!);
+					}
+				};
+				for (let k = 2; k < idx.length; k++) {
+					const band = bandOfRange(idx[k - 1], idx[k]);
+					if (band !== runBand) {
+						flush(k - 1);
+						runStartK = k;
+						runBand = band;
+					}
 				}
-			}
+				flush(idx.length - 1);
+			};
+			drawBanded(0, splitIdx, false); // done — solid
+			drawBanded(splitIdx, n - 1, true); // remainder — dashed
 		} else {
-			L.polyline(done, {
+			// No elevation data yet — fall back to honest progress shading, no faked grade.
+			L.polyline(decimate(latlngs.slice(0, splitIdx + 1), step), {
 				color: '#2f4b35',
-				weight: 3.6,
+				weight: 4,
 				opacity: 0.97,
 				lineCap: 'round',
 				lineJoin: 'round',
 				interactive: false,
 				className: 'rt rt-done'
+			}).addTo(routeLayer);
+			L.polyline(decimate(latlngs.slice(splitIdx), step), {
+				color: '#8a8475',
+				weight: 2.8,
+				opacity: 0.9,
+				dashArray: '2 7',
+				lineCap: 'round',
+				interactive: false,
+				className: 'rt rt-remain'
 			}).addTo(routeLayer);
 		}
 	});
