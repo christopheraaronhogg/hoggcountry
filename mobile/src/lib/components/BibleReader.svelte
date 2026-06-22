@@ -234,6 +234,9 @@
 						class="chip"
 						class:active={chapter.number === c.number}
 						type="button"
+						role="tab"
+						aria-selected={chapter.number === c.number}
+						aria-label={`${book.name} chapter ${c.number}`}
 						onclick={() => openChapter(c.number)}
 					>
 						{c.number}

@@ -36,6 +36,7 @@
 	let serifBody = $state(true); // book serif by default; sans is the sun-glare escape hatch
 	let copiedGuideId = $state<string | null>(null);
 	let saveState = $state<'idle' | 'saved'>('idle');
+	let saveTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
 	function escapeHtml(text: string): string {
 		return text
@@ -93,8 +94,10 @@
 		}
 		docsNotice = 'Saved offline · on this phone only.';
 		saveState = 'saved';
-		setTimeout(() => {
-			if (saveState === 'saved') saveState = 'idle';
+		if (saveTimeoutId) clearTimeout(saveTimeoutId);
+		saveTimeoutId = setTimeout(() => {
+			saveState = 'idle';
+			saveTimeoutId = null;
 		}, 2200);
 	}
 
@@ -256,7 +259,7 @@
 									</button>
 								</div>
 								<div class="body" class:serif={serifBody}>
-									{#each selectedGuideDoc.body.split(/\n{2,}/) as para, i (i)}
+									{#each selectedGuideDoc.body.split(/\n{2,}/) as para, i (selectedGuideDoc.id + ':' + i)}
 										<p>{@html highlightGuide(para)}</p>
 									{/each}
 								</div>
@@ -322,7 +325,7 @@
 						{saveState === 'saved' ? '✓ Saved offline' : 'Save offline'}
 					</button>
 					<button class="doc-button" type="button" onclick={cancelEdit}>Clear</button>
-					<button class="doc-button" type="button" onclick={saveScoutAnswer} disabled={!trailAssistant.lastScoutAnswer} title={trailAssistant.lastScoutAnswer ? '' : 'Ask Scout for a draft first'}>Save last Scout answer</button>
+					<button class="doc-button" type="button" onclick={saveScoutAnswer} disabled={!trailAssistant.lastScoutAnswer} aria-label={trailAssistant.lastScoutAnswer ? 'Save last Scout answer' : 'Save last Scout answer — ask Scout for a draft first'} title={trailAssistant.lastScoutAnswer ? '' : 'Ask Scout for a draft first'}>Save last Scout answer</button>
 				</div>
 
 				<div class="scout-draft-row">
