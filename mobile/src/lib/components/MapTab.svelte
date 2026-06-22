@@ -20,7 +20,7 @@
 	let map = $state<LeafletNS.Map | null>(null);
 	let host = $state<HTMLDivElement | null>(null);
 
-	let mapZoom = $state<Zoom>(OVERVIEW);
+	let mapZoom = $state<Zoom>(10); // open on a 10-mi corridor; pinch for custom zoom
 	let liveZoom = $state(0);
 	let userInteracted = $state(false);
 	let viewFocusMile = $state(trailAssistant.currentMile);
@@ -237,7 +237,31 @@
 		// tolerance scales with zoom — generous on the whole-trail view (where the
 		// line is a few pixels wide), tight in the corridor.
 		const tol = isOverview ? 80 : 6;
-		measureMile = snapToMile(geo, lat, lon, tol);
+		measureMile = snapMeasureToTrail(lat, lon, tol);
+	}
+	// Coarse 1-mi snap (respects tolerance), then refine against the high-res
+	// centerline so the measured point glides at ~0.1 mi instead of jumping in
+	// jarring 1-mile steps as you drag it.
+	function snapMeasureToTrail(lat: number, lon: number, tol: number): number | null {
+		const coarse = snapToMile(geo, lat, lon, tol);
+		if (coarse == null || routeHi.length < 2) return coarse;
+		const span = (trailHi - trailLo) || 1;
+		const approx = Math.round(((coarse - trailLo) / span) * (routeHi.length - 1));
+		const lo = Math.max(0, approx - 25);
+		const hi = Math.min(routeHi.length - 1, approx + 25);
+		const cosLat = Math.cos((lat * Math.PI) / 180);
+		let bestIdx = approx;
+		let bestD = Infinity;
+		for (let i = lo; i <= hi; i++) {
+			const dLat = routeHi[i][0] - lat;
+			const dLon = (routeHi[i][1] - lon) * cosLat;
+			const d = dLat * dLat + dLon * dLon;
+			if (d < bestD) {
+				bestD = d;
+				bestIdx = i;
+			}
+		}
+		return trailLo + (bestIdx / (routeHi.length - 1)) * span;
 	}
 	function clearMeasure() {
 		measureMile = null;
@@ -378,7 +402,8 @@
 			zoomControl: false,
 			attributionControl: false,
 			scrollWheelZoom: true,
-			zoomSnap: 0.25,
+			// Fully continuous pinch zoom — no snapping to fixed levels.
+			zoomSnap: 0,
 			zoomDelta: 0.5,
 			minZoom: 4,
 			maxZoom: 16,
@@ -442,7 +467,8 @@
 			if (latlngs.length > 1 && L) {
 				atBounds = L.latLngBounds(latlngs).pad(0.12);
 				map?.setMaxBounds(atBounds);
-				fitWholeTrail(false);
+				if (mapZoom === OVERVIEW) fitWholeTrail(false);
+				else flyToCorridor(from, mapZoom as number, false);
 			}
 			onMoveEnd();
 		});
@@ -459,7 +485,10 @@
 		if (!L || !map || latlngs.length < 2) return;
 		atBounds = L.latLngBounds(latlngs).pad(0.12);
 		map.setMaxBounds(atBounds);
-		if (!userInteracted && mapZoom === OVERVIEW) fitWholeTrail(false);
+		if (!userInteracted) {
+			if (mapZoom === OVERVIEW) fitWholeTrail(false);
+			else flyToCorridor(from, mapZoom as number, false);
+		}
 		onMoveEnd();
 	});
 
@@ -718,9 +747,9 @@
 			});
 			measureMarker.on('drag', (e) => {
 				const p = (e.target as LeafletNS.Marker).getLatLng();
-				// Snap with no tolerance — the point tracks the nearest trail mile
-				// wherever you drag, so it rides the line.
-				const snapped = snapToMile(geo, p.lat, p.lng, Number.POSITIVE_INFINITY);
+				// Fine snap (no tolerance) — the point rides the high-res line
+				// smoothly instead of stepping mile to mile.
+				const snapped = snapMeasureToTrail(p.lat, p.lng, Number.POSITIVE_INFINITY);
 				if (snapped != null) measureMile = snapped;
 			});
 			measureMarker.on('dragend', () => {
