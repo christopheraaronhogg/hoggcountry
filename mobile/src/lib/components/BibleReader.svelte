@@ -367,26 +367,26 @@
 	}
 
 	/* mode switcher — one sliding thumb, matching the Trail segmented control */
+	/* Editorial underline tabs (display serif) — deliberately NOT a second pill
+	   like the Trail section switcher above it. This reads as in-context reading
+	   navigation and gives the Bible its own book-like voice. */
 	.modebar {
 		position: relative;
 		display: grid;
 		grid-template-columns: repeat(4, 1fr);
 		gap: 0;
-		background: var(--forest-soft);
-		border-radius: var(--radius-control);
-		padding: 4px;
+		border-bottom: 1px solid var(--divider-soft);
 		isolation: isolate;
 	}
 	.mode-thumb {
 		position: absolute;
 		z-index: 0;
-		top: 4px;
-		bottom: 4px;
-		left: 4px;
-		width: calc((100% - 8px) / 4);
-		border-radius: var(--radius-xs);
-		background: var(--surface-strong);
-		box-shadow: var(--shadow-soft);
+		bottom: -1px;
+		left: 0;
+		height: 2.5px;
+		width: 25%;
+		border-radius: 2px 2px 0 0;
+		background: var(--forest);
 		transform: translateX(calc(var(--seg-i) * 100%));
 	}
 	@media (prefers-reduced-motion: no-preference) {
@@ -397,15 +397,17 @@
 	.mode {
 		position: relative;
 		z-index: 1;
-		min-height: 44px;
-		border-radius: var(--radius-xs);
-		font-size: 0.84rem;
-		font-weight: 800;
+		min-height: 46px;
+		font-family: var(--font-display);
+		font-size: 1.02rem;
+		font-weight: 700;
+		letter-spacing: 0.01em;
 		color: var(--muted);
-		transition: color var(--dur-fast) var(--ease-out);
+		transition:
+			color var(--dur-fast) var(--ease-out),
+			transform var(--dur-fast) var(--ease-out);
 	}
 	.mode.active {
-		background: transparent;
 		color: var(--forest);
 	}
 
@@ -544,17 +546,21 @@
 	.chip {
 		min-width: 44px;
 		height: 44px;
-		padding: 0 8px;
-		border-radius: var(--radius-control);
-		background: var(--forest-soft);
+		padding: 0 10px;
+		border-radius: 12px;
+		background: var(--surface-strong);
+		border: 1px solid var(--line);
 		color: var(--ink);
+		font-family: var(--font-display);
 		font-weight: 700;
-		font-size: 0.84rem;
+		font-size: 1rem;
 		font-variant-numeric: tabular-nums;
 	}
 	.chip.active {
 		background: var(--forest);
+		border-color: var(--forest);
 		color: var(--on-accent);
+		box-shadow: 0 3px 9px -3px rgba(47, 75, 53, 0.5);
 	}
 	.passage {
 		display: grid;
