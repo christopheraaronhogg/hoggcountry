@@ -40,6 +40,12 @@
 	type TrailShelter = { name: string; mile: number; lat: number; lon: number };
 	let trailShelters = $state<TrailShelter[]>([]);
 
+	// High-resolution trail centerline (~0.1 mi sampling, 10x the elevation data)
+	// used to DRAW the route so it hugs the real path. Elevation/position/measure
+	// stay on the 1-mi data; this is geometry-only. Empty until loaded → the map
+	// falls back to the 1-mi line.
+	let routeHi = $state<[number, number][]>([]);
+
 	const geo = $derived(trailAssistant.trailGeometry);
 	const from = $derived(trailAssistant.currentMile);
 	// 0.1-mi quantized current mile — throttles the route rebuild to real movement.
@@ -145,6 +151,20 @@
 	function decimate(pts: [number, number][], step: number): [number, number][] {
 		return step <= 1 ? pts : pts.filter((_, i) => i % step === 0 || i === pts.length - 1);
 	}
+
+	// The line we DRAW: the high-res centerline when loaded, else the 1-mi points.
+	// Both are the same OSM trail at different densities, so positions map by
+	// fraction-along-trail and difficulty by the corresponding 1-mi geo segment.
+	const routeSource = $derived<[number, number][]>(routeHi.length > 1 ? routeHi : latlngs);
+	const routeCount = $derived(routeSource.length);
+	const splitIdxRoute = $derived.by(() => {
+		if (routeCount < 2 || geo.length < 2) return 1;
+		const frac = (fromClamped - trailLo) / ((trailHi - trailLo) || 1);
+		return Math.max(1, Math.min(routeCount - 1, Math.round(frac * (routeCount - 1))));
+	});
+	// Map a route-source index to its (fractional) index in the 1-mi geo array.
+	const geoIdxOfRoute = (ri: number) =>
+		routeCount < 2 || geo.length < 2 ? 0 : (ri / (routeCount - 1)) * (geo.length - 1);
 	// Terrain difficulty for the trail between two sample indices. We only have
 	// real elevation (no rock-surface data), so difficulty = TOTAL vertical change
 	// per mile — every up AND down summed, not just net grade. That's the honest
@@ -404,6 +424,14 @@
 			})
 			.catch(() => {});
 
+		// Load the high-res centerline (best-effort; falls back to the 1-mi line).
+		fetch('/trail/route-hi.json')
+			.then((r) => (r.ok ? r.json() : null))
+			.then((d) => {
+				if (d && Array.isArray(d.path) && d.path.length > 1) routeHi = d.path;
+			})
+			.catch(() => {});
+
 		map.on('zoomend moveend', onMoveEnd);
 		map.on('dragstart zoomstart', () => (userInteracted = true));
 		map.on('click', (e: LeafletNS.LeafletMouseEvent) => onMapClick(e.latlng.lat, e.latlng.lng));
@@ -439,19 +467,24 @@
 	// off the map. Rebuilds on real movement and zoom (detail) changes.
 	$effect(() => {
 		void fromQ;
-		void latlngs;
+		void routeSource;
 		void liveZoom;
 		void hasElev;
-		if (!L || !map || !routeLayer || latlngs.length < 2) return;
+		if (!L || !map || !routeLayer || routeCount < 2) return;
 		routeLayer.clearLayers();
 		const overview = liveZoom > 0 ? liveZoom < 8 : true;
-		const step = overview ? 3 : 1;
-		const n = latlngs.length;
+		const hires = routeHi.length > 1;
+		// Hug the real path: dense in the corridor, lighter at overview where the
+		// fine bends aren't visible anyway. Falls back to the 1-mi line's steps.
+		const step = overview ? (hires ? 7 : 3) : hires ? 2 : 1;
+		const src = routeSource;
+		const split = splitIdxRoute;
+		const n = routeCount;
 
 		// 1) casing/halo — solid under the done portion, dash-matched under the
 		//    remainder, so each coloured dash keeps its outline (no white line
 		//    bleeding through between dashes).
-		L.polyline(decimate(latlngs.slice(0, splitIdx + 1), step), {
+		L.polyline(decimate(src.slice(0, split + 1), step), {
 			color: '#fffdf8',
 			weight: 6.5,
 			opacity: 0.85,
@@ -460,7 +493,7 @@
 			interactive: false,
 			className: 'rt rt-halo'
 		}).addTo(routeLayer);
-		L.polyline(decimate(latlngs.slice(splitIdx), step), {
+		L.polyline(decimate(src.slice(split), step), {
 			color: '#fffdf8',
 			weight: 6,
 			opacity: 0.8,
@@ -472,9 +505,15 @@
 		}).addTo(routeLayer);
 
 		if (hasElev) {
-			// 2) difficulty-banded trail. Done = solid, the upcoming remainder =
-			//    dashed (same gentle/moderate/steep colours), so progress still reads
-			//    while the terrain ahead shows its grade.
+			// Difficulty band for a stretch of the drawn line, looked up from the
+			// matching 1-mi elevation segment(s).
+			const bandFor = (ra: number, rb: number): 0 | 1 | 2 => {
+				const ga = Math.floor(geoIdxOfRoute(ra));
+				const gb = Math.max(ga + 1, Math.ceil(geoIdxOfRoute(rb)));
+				return bandOfRange(ga, gb);
+			};
+			// 2) difficulty-banded trail. Done = solid, upcoming remainder = dashed
+			//    (same gentle/moderate/steep colours), so progress still reads.
 			const drawBanded = (i0: number, i1: number, dashed: boolean) => {
 				if (!L || !routeLayer || i1 <= i0) return;
 				const idx: number[] = [];
@@ -485,9 +524,9 @@
 					? { weight: 4, opacity: 0.95, dashArray: '2 7' }
 					: { weight: 5, opacity: 1 };
 				let runStartK = 1;
-				let runBand = bandOfRange(idx[0], idx[1]);
+				let runBand = bandFor(idx[0], idx[1]);
 				const flush = (endK: number) => {
-					const slice = idx.slice(runStartK - 1, endK + 1).map((i) => latlngs[i]);
+					const slice = idx.slice(runStartK - 1, endK + 1).map((i) => src[i]);
 					if (slice.length > 1) {
 						L!.polyline(slice, {
 							...style,
@@ -499,7 +538,7 @@
 					}
 				};
 				for (let k = 2; k < idx.length; k++) {
-					const band = bandOfRange(idx[k - 1], idx[k]);
+					const band = bandFor(idx[k - 1], idx[k]);
 					if (band !== runBand) {
 						flush(k - 1);
 						runStartK = k;
@@ -508,11 +547,11 @@
 				}
 				flush(idx.length - 1);
 			};
-			drawBanded(0, splitIdx, false); // done — solid
-			drawBanded(splitIdx, n - 1, true); // remainder — dashed
+			drawBanded(0, split, false); // done — solid
+			drawBanded(split, n - 1, true); // remainder — dashed
 		} else {
 			// No elevation data yet — fall back to honest progress shading, no faked grade.
-			L.polyline(decimate(latlngs.slice(0, splitIdx + 1), step), {
+			L.polyline(decimate(src.slice(0, split + 1), step), {
 				color: '#2f4b35',
 				weight: 4,
 				opacity: 0.97,
@@ -521,7 +560,7 @@
 				interactive: false,
 				className: 'rt rt-done'
 			}).addTo(routeLayer);
-			L.polyline(decimate(latlngs.slice(splitIdx), step), {
+			L.polyline(decimate(src.slice(split), step), {
 				color: '#8a8475',
 				weight: 2.8,
 				opacity: 0.9,
@@ -638,7 +677,11 @@
 		}
 		const a = Math.min(fromClamped, m.mile);
 		const b = Math.max(fromClamped, m.mile);
-		const seg = geo.filter((p) => p.m >= a - 0.01 && p.m <= b + 0.01).map((p) => [p.lat, p.lon] as [number, number]);
+		// Slice the drawn (high-res) line so the highlight hugs the same path.
+		const span = (trailHi - trailLo) || 1;
+		const aIdx = Math.round(((a - trailLo) / span) * (routeCount - 1));
+		const bIdx = Math.round(((b - trailLo) / span) * (routeCount - 1));
+		const seg = routeSource.slice(Math.max(0, Math.min(aIdx, bIdx)), Math.max(aIdx, bIdx) + 1);
 		if (seg.length >= 2) {
 			L.polyline(seg, {
 				weight: 5.5,
@@ -1225,20 +1268,19 @@
 		align-items: center;
 		gap: 8px;
 	}
-	/* Glassy, light chrome — lighter than the old solid pill, reads like a
-	   modern maps app floating over the terrain. */
+	/* Solid, consistent chrome. The old translucent "glass" picked up whatever
+	   terrain sat behind it (tan here, dark there) so the buttons never matched —
+	   these are one crisp surface, uniform over any ground. */
 	.zoom-stack {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 2px;
-		padding: 4px;
-		border-radius: 16px;
-		background: rgba(255, 253, 248, 0.74);
-		backdrop-filter: blur(12px) saturate(1.1);
-		-webkit-backdrop-filter: blur(12px) saturate(1.1);
-		border: 1px solid rgba(255, 255, 255, 0.55);
-		box-shadow: var(--shadow-soft);
+		padding: 3px;
+		border-radius: 15px;
+		background: var(--surface-strong);
+		border: 1px solid var(--line);
+		box-shadow: var(--shadow);
 	}
 	.zbtn {
 		width: 40px;
@@ -1265,7 +1307,6 @@
 	.zbtn.on {
 		background: var(--forest);
 		color: var(--on-accent);
-		box-shadow: 0 3px 9px -3px rgba(47, 75, 53, 0.5);
 	}
 	.tool-btn {
 		width: 44px;
@@ -1273,11 +1314,9 @@
 		display: grid;
 		place-items: center;
 		border-radius: 50%;
-		background: rgba(255, 253, 248, 0.74);
-		backdrop-filter: blur(12px) saturate(1.1);
-		-webkit-backdrop-filter: blur(12px) saturate(1.1);
-		border: 1px solid rgba(255, 255, 255, 0.55);
-		box-shadow: var(--shadow-soft);
+		background: var(--surface-strong);
+		border: 1px solid var(--line);
+		box-shadow: var(--shadow);
 		color: var(--forest);
 	}
 	.tool-btn.overview.on {
@@ -1286,9 +1325,7 @@
 		color: var(--forest);
 	}
 	.tool-btn.recenter {
-		background: var(--forest);
-		border-color: var(--forest);
-		color: var(--on-accent);
+		color: var(--forest);
 	}
 	.tool-report :global(button) {
 		min-width: 44px;
@@ -1493,21 +1530,20 @@
 		.orient-btn {
 			background: rgba(22, 29, 20, 0.92);
 		}
-		/* Glassy dark chrome — lighter than the old near-solid pill. */
+		/* Solid dark chrome — one consistent surface, crisp on any terrain. */
 		.zoom-stack,
 		.tool-btn {
-			background: rgba(18, 24, 16, 0.6);
-			border-color: rgba(255, 255, 255, 0.12);
+			background: var(--surface-strong);
+			border-color: var(--line);
+		}
+		.tool-btn,
+		.tool-btn.recenter {
+			color: var(--forest);
 		}
 		.tool-btn.overview.on {
 			background: var(--forest-soft);
 			border-color: var(--forest);
 			color: var(--forest);
-		}
-		.tool-btn.recenter {
-			background: var(--forest);
-			border-color: var(--forest);
-			color: #10160f;
 		}
 		.zbtn.on {
 			color: #10160f;
