@@ -546,7 +546,9 @@
 			interactive: false,
 			zIndexOffset: 1200
 		})
-			.bindTooltip(html, { permanent: true, direction: 'top', offset: [0, -10], className: 'map-tip measure-tip' })
+			// 'auto' flips the callout to the left when the point sits on the right
+			// (e.g. under the zoom stack), so the chrome never occludes it.
+			.bindTooltip(html, { permanent: true, direction: 'auto', offset: [0, 0], className: 'map-tip measure-tip' })
 			.addTo(measureLayer);
 	});
 

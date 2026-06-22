@@ -160,20 +160,35 @@
 		{#if helpNote}<p class="today-help-note">{helpNote}</p>{/if}
 	</section>
 
-	<!-- NEXT: glance-first next action -->
+	<!-- NEXT: glance-first next actions, read in travel order -->
 	{#if nextWater || camp}
 		<section class="next card">
-			<span class="eyebrow">Now → next</span>
+			<div class="next-head">
+				<span class="eyebrow">Next</span>
+				{#if camp}<span class="next-day">Today · {(camp.mile - from).toFixed(1)} mi</span>{/if}
+			</div>
 			{#if nextWater}
-				<p class="next-main">
-					Top off water · <b>{(nextWater.mile - from).toFixed(1)} mi</b>
-					{#if nextWater.reliability !== 'reliable'}<span class="cand">candidate — confirm flow</span>{/if}
-				</p>
+				{@const cand = nextWater.reliability !== 'reliable'}
+				<div class="next-row">
+					<span class="ord ord-1">1st</span>
+					<div class="next-copy">
+						<p class="next-title">Top off water</p>
+						<p class="next-meta" class:flag={cand}>{cand ? 'candidate — confirm flow' : 'reliable source'}</p>
+					</div>
+					<div class="next-num" class:cand>
+						<b>{(nextWater.mile - from).toFixed(1)}</b><span>mi ahead</span>
+					</div>
+				</div>
 			{/if}
 			{#if camp}
-				<p class="next-sub">
-					then <b>{(camp.mile - from).toFixed(1)} mi</b> to {camp.name}{#if climbFt > 0} · +{climbFt.toLocaleString()} ft{/if}
-				</p>
+				<div class="next-row" class:divided={nextWater}>
+					<span class="ord {nextWater ? 'ord-2' : 'ord-1'}">{nextWater ? 'Then' : '1st'}</span>
+					<div class="next-copy">
+						<p class="next-title">{camp.name}</p>
+						{#if climbFt > 0}<p class="next-meta">+{climbFt.toLocaleString()} ft climb</p>{/if}
+					</div>
+					<div class="next-num"><b>{(camp.mile - from).toFixed(1)}</b><span>mi on</span></div>
+				</div>
 			{/if}
 		</section>
 	{/if}
@@ -189,7 +204,7 @@
 				<div class="temp tabular">{wx.highF}°</div>
 				<div class="wx-meta">
 					<p class="sum">{wx.summary}</p>
-					<p class="hilo">High {wx.highF}° · Low {wx.lowF}° · wind {wx.windMph} mph</p>
+					<p class="hilo"><span class="lo">▼ {wx.lowF}° low</span> · wind {wx.windMph} mph</p>
 				</div>
 			</div>
 			<p class="means">
@@ -447,46 +462,102 @@
 
 	/* NEXT line */
 	.next {
-		padding: 14px 18px 15px;
-		border-left: 3px solid var(--forest);
+		padding: 13px 16px 12px;
+		border-left: 3px solid var(--clay);
 	}
-	.next-main {
-		font-family: var(--font-display);
-		font-size: 1.2rem;
-		font-weight: 700;
-		color: var(--ink);
-		line-height: 1.3;
+	.next-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		margin-bottom: 4px;
 	}
-	.next-main b {
-		color: var(--forest);
+	.next-head .eyebrow {
+		margin-bottom: 0;
 	}
-	.cand {
-		display: inline-block;
-		font-family: var(--font-sans);
+	.next-day {
 		font-size: var(--text-floor);
 		font-weight: 800;
-		text-transform: uppercase;
 		letter-spacing: 0.04em;
-		color: var(--clay);
-		background: var(--clay-soft);
-		border-radius: 999px;
-		padding: 2px 8px;
-		margin-left: 4px;
-		vertical-align: middle;
-	}
-	.next-sub {
-		font-size: 0.86rem;
+		text-transform: uppercase;
 		color: var(--muted);
-		margin-top: 5px;
 	}
-	.next-sub b {
+	.next-row {
+		display: grid;
+		grid-template-columns: auto 1fr auto;
+		align-items: center;
+		gap: 12px;
+		padding: 9px 0;
+	}
+	.next-row.divided {
+		border-top: 1px solid var(--divider-soft);
+	}
+	/* Ordinal chip — filled clay for the nearest action, outline for the next. */
+	.ord {
+		display: inline-grid;
+		place-items: center;
+		min-width: 40px;
+		min-height: 26px;
+		padding: 0 9px;
+		border-radius: 999px;
+		font-size: var(--text-2xs);
+		font-weight: 900;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+	.ord-1 {
+		background: var(--clay);
+		color: var(--on-accent);
+	}
+	.ord-2 {
+		background: transparent;
+		border: 1px solid var(--line);
+		color: var(--muted);
+	}
+	.next-copy {
+		min-width: 0;
+	}
+	.next-title {
+		font-family: var(--font-display);
+		font-size: 1.08rem;
+		font-weight: 700;
 		color: var(--ink);
+		line-height: 1.16;
+	}
+	.next-meta {
+		font-size: var(--text-floor);
+		color: var(--muted);
+		margin-top: 2px;
+	}
+	.next-meta.flag {
+		color: var(--clay);
 		font-weight: 800;
 	}
+	.next-num {
+		text-align: right;
+		line-height: 1;
+	}
+	.next-num b {
+		display: block;
+		font-family: var(--font-display);
+		font-size: 1.5rem;
+		font-weight: 800;
+		color: var(--forest);
+	}
+	.next-num.cand b {
+		color: var(--clay);
+	}
+	.next-num span {
+		font-size: var(--text-2xs);
+		font-weight: 800;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--muted);
+	}
 
-	/* Weather */
+	/* Weather — sky top-border accent (the reference's first-class weather card). */
 	.wx {
 		padding: 15px 18px 16px;
+		border-top: 3px solid var(--sky);
 	}
 	.wx-head {
 		display: flex;
@@ -526,6 +597,10 @@
 		font-size: var(--text-floor);
 		color: var(--muted);
 		margin-top: 2px;
+	}
+	.wx-meta .hilo .lo {
+		color: var(--sky);
+		font-weight: 800;
 	}
 	.means {
 		font-size: 0.86rem;
