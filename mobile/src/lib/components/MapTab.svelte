@@ -173,6 +173,7 @@
 	let measureDragging = false;
 	let youLayer: LeafletNS.LayerGroup | null = null;
 	let youMarker: LeafletNS.Marker | null = null;
+	let youInitial = ''; // tracked so the avatar glyph only re-renders when it changes
 	let atBounds: LeafletNS.LatLngBounds | null = null;
 
 	function fitWholeTrail(animate = true) {
@@ -532,26 +533,37 @@
 		}
 	});
 
-	// You-marker — created once, moved thereafter so the pulse never restarts.
+	// You-marker — a Life360-style avatar (trail-name initial in a forest ring
+	// over a pulse). Created once and moved so the pulse never restarts; the glyph
+	// only re-renders if the label changes. This is the first member of the
+	// people layer the live-sharing presence system will fill out.
+	const avatarIcon = (initial: string) =>
+		L!.divIcon({
+			className: 'you-leaf',
+			iconSize: [38, 38],
+			iconAnchor: [19, 19],
+			html: `<span class="yl-pulse"></span><span class="yl-avatar">${initial}</span>`
+		});
 	$effect(() => {
 		void fromQ;
 		void youLabel;
 		if (!L || !map || !youLayer || geo.length < 2) return;
 		const ll = interpAtMile(fromClamped);
+		const initial = (youLabel.trim()[0] || 'Y').toUpperCase();
 		const content = `<span class="tip-rot">${youLabel} · Mi ${fromClamped.toFixed(1)}</span>`;
 		if (!youMarker) {
-			const icon = L.divIcon({
-				className: 'you-leaf',
-				iconSize: [34, 34],
-				iconAnchor: [17, 17],
-				html: '<span class="yl-pulse"></span><span class="yl-dot"></span>'
-			});
-			youMarker = L.marker(ll, { icon, zIndexOffset: 1000, interactive: false })
-				.bindTooltip(content, { direction: 'right', offset: [14, 0], className: 'map-tip you-tip' })
+			youInitial = initial;
+			youMarker = L.marker(ll, { icon: avatarIcon(initial), zIndexOffset: 1000, interactive: false })
+				.bindTooltip(content, { direction: 'right', offset: [16, 0], className: 'map-tip you-tip' })
 				.addTo(youLayer);
 		} else {
 			youMarker.setLatLng(ll);
 			youMarker.setTooltipContent(content);
+			// Only swap the icon (which restarts the pulse) when the initial changes.
+			if (initial !== youInitial) {
+				youInitial = initial;
+				youMarker.setIcon(avatarIcon(initial));
+			}
 		}
 	});
 
@@ -971,6 +983,30 @@
 		background: var(--forest);
 		border: 3px solid #fffdf8;
 		box-shadow: 0 0 0 3px rgba(47, 75, 53, 0.35), 0 2px 6px rgba(0, 0, 0, 0.3);
+	}
+	/* Life360-style avatar: trail-name initial in a forest ring. */
+	:global(.you-leaf .yl-avatar) {
+		position: absolute;
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		display: grid;
+		place-items: center;
+		background: linear-gradient(135deg, var(--forest), #3a5f43);
+		border: 2.5px solid #fffdf8;
+		box-shadow: 0 0 0 2px rgba(47, 75, 53, 0.3), 0 3px 8px rgba(0, 0, 0, 0.4);
+		color: #f4efe4;
+		font-family: var(--font-display);
+		font-weight: 800;
+		font-size: 0.95rem;
+		line-height: 1;
+	}
+	@media (prefers-color-scheme: dark) {
+		:global(.you-leaf .yl-avatar) {
+			border-color: #1b2117;
+			background: linear-gradient(135deg, #98c48e, #7fad78);
+			color: #10160f;
+		}
 	}
 	:global(.you-leaf .yl-pulse) {
 		position: absolute;
