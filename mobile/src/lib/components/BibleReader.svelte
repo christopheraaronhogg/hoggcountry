@@ -55,6 +55,21 @@
 		{ key: 'ask', label: 'Ask' }
 	];
 
+	// In-text search highlight (mirrors the field guide) — escape, then mark.
+	function escapeHtml(text: string): string {
+		return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+	}
+	function escapeReg(text: string): string {
+		return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	}
+	const queryTerms = $derived(query.trim().split(/\s+/u).filter((t) => t.length > 1));
+	function highlightBible(text: string): string {
+		const safe = escapeHtml(text);
+		if (!queryTerms.length) return safe;
+		const re = new RegExp(`(${queryTerms.map(escapeReg).join('|')})`, 'giu');
+		return safe.replace(re, '<mark>$1</mark>');
+	}
+
 	onMount(async () => {
 		try {
 			index = await loadBibleIndex();
@@ -158,7 +173,13 @@
 </script>
 
 <div class="bible">
-	<div class="modebar" role="tablist" aria-label="Bible modes">
+	<div
+		class="modebar"
+		role="tablist"
+		aria-label="Bible modes"
+		style="--seg-i:{modes.findIndex((m) => m.key === mode)}"
+	>
+		<span class="mode-thumb" aria-hidden="true"></span>
 		{#each modes as m (m.key)}
 			<button
 				class="mode"
@@ -254,7 +275,7 @@
 						<li>
 							<button class="result" type="button" onclick={() => openReference(hit.reference)}>
 								<span class="ref">{hit.reference} ›</span>
-								<span class="verse">{hit.text}</span>
+								<span class="verse">{@html highlightBible(hit.text)}</span>
 							</button>
 						</li>
 					{/each}
@@ -342,26 +363,47 @@
 		gap: 12px;
 	}
 
-	/* mode switcher */
+	/* mode switcher — one sliding thumb, matching the Trail segmented control */
 	.modebar {
+		position: relative;
 		display: grid;
 		grid-template-columns: repeat(4, 1fr);
-		gap: 3px;
-		background: rgba(47, 75, 53, 0.06);
-		border-radius: 12px;
-		padding: 3px;
+		gap: 0;
+		background: var(--forest-soft);
+		border-radius: var(--radius-control);
+		padding: 4px;
+		isolation: isolate;
+	}
+	.mode-thumb {
+		position: absolute;
+		z-index: 0;
+		top: 4px;
+		bottom: 4px;
+		left: 4px;
+		width: calc((100% - 8px) / 4);
+		border-radius: var(--radius-xs);
+		background: var(--surface-strong);
+		box-shadow: var(--shadow-soft);
+		transform: translateX(calc(var(--seg-i) * 100%));
+	}
+	@media (prefers-reduced-motion: no-preference) {
+		.mode-thumb {
+			transition: transform var(--dur-base) var(--ease-spring);
+		}
 	}
 	.mode {
+		position: relative;
+		z-index: 1;
 		min-height: 44px;
-		border-radius: 9px;
+		border-radius: var(--radius-xs);
 		font-size: 0.84rem;
 		font-weight: 800;
 		color: var(--muted);
+		transition: color var(--dur-fast) var(--ease-out);
 	}
 	.mode.active {
-		background: var(--surface-strong, #fffdf8);
+		background: transparent;
 		color: var(--forest);
-		box-shadow: var(--shadow-soft);
 	}
 
 	.empty {
@@ -389,8 +431,8 @@
 		width: 100%;
 		padding: 14px 16px;
 		border-radius: var(--radius-md, 14px);
-		background: rgba(95, 128, 144, 0.08);
-		border: 1px solid rgba(95, 128, 144, 0.2);
+		background: var(--sky-soft);
+		border: 1px solid var(--sky);
 	}
 	.votd-lab {
 		font-size: 0.6rem;
@@ -422,17 +464,17 @@
 		flex: 1;
 		min-height: 46px;
 		padding: 10px 14px;
-		border-radius: 12px;
-		border: 1px solid rgba(95, 101, 88, 0.25);
-		background: var(--bg, #fffdf8);
+		border-radius: var(--radius-control);
+		border: 1px solid var(--line);
+		background: var(--surface-strong);
 		font-size: 0.92rem;
 		color: var(--ink);
 	}
 	.clear {
 		width: 44px;
 		height: 44px;
-		border-radius: 10px;
-		background: rgba(47, 75, 53, 0.08);
+		border-radius: var(--radius-control);
+		background: var(--forest-soft);
 		color: var(--muted);
 		font-size: 0.9rem;
 	}
@@ -453,9 +495,9 @@
 		width: 100%;
 		text-align: left;
 		padding: 12px 14px;
-		border-radius: 12px;
-		background: rgba(47, 75, 53, 0.05);
-		border: 1px solid rgba(95, 101, 88, 0.12);
+		border-radius: var(--radius-control);
+		background: var(--forest-soft);
+		border: 1px solid var(--contour-line);
 	}
 	.ref {
 		display: block;
@@ -500,8 +542,8 @@
 		min-width: 44px;
 		height: 44px;
 		padding: 0 8px;
-		border-radius: 10px;
-		background: rgba(47, 75, 53, 0.07);
+		border-radius: var(--radius-control);
+		background: var(--forest-soft);
 		color: var(--ink);
 		font-weight: 700;
 		font-size: 0.84rem;
@@ -509,11 +551,12 @@
 	}
 	.chip.active {
 		background: var(--forest);
-		color: #f7f2e8;
+		color: var(--on-accent);
 	}
 	.passage {
 		display: grid;
 		gap: 9px;
+		max-width: 38rem;
 	}
 	.passage h3 {
 		font-family: var(--font-display);
@@ -526,7 +569,7 @@
 		color: var(--ink);
 	}
 	.scripture.hl {
-		background: rgba(198, 154, 62, 0.18);
+		background: var(--sand-soft);
 		border-radius: 8px;
 		padding: 4px 8px;
 		margin: -2px -4px;
@@ -534,7 +577,7 @@
 	.vnum {
 		font-size: 0.66rem;
 		font-weight: 800;
-		color: var(--clay, #b06a3d);
+		color: var(--clay);
 		vertical-align: super;
 		margin-right: 4px;
 	}
@@ -550,9 +593,9 @@
 		text-align: left;
 		min-height: 44px;
 		padding: 11px 12px;
-		border-radius: 10px;
-		background: rgba(47, 75, 53, 0.05);
-		border: 1px solid rgba(95, 101, 88, 0.12);
+		border-radius: var(--radius-control);
+		background: var(--forest-soft);
+		border: 1px solid var(--contour-line);
 		font-size: 0.86rem;
 		font-weight: 700;
 		color: var(--ink);
@@ -577,9 +620,9 @@
 		width: 46px;
 		height: 46px;
 		flex: none;
-		border-radius: 12px;
+		border-radius: var(--radius-control);
 		background: var(--forest);
-		color: #f4efe4;
+		color: var(--on-accent);
 		font-size: 1.2rem;
 		font-weight: 800;
 	}
@@ -594,9 +637,9 @@
 		text-align: left;
 		min-height: 44px;
 		padding: 11px 14px;
-		border-radius: 12px;
-		background: rgba(47, 75, 53, 0.05);
-		border: 1px solid rgba(95, 101, 88, 0.14);
+		border-radius: var(--radius-control);
+		background: var(--forest-soft);
+		border: 1px solid var(--contour-line);
 		font-size: 0.88rem;
 		font-weight: 600;
 		color: var(--ink);
@@ -609,7 +652,7 @@
 		justify-self: end;
 		max-width: 85%;
 		background: var(--forest);
-		color: #f4efe4;
+		color: var(--on-accent);
 		font-size: 0.9rem;
 		font-weight: 700;
 		padding: 9px 14px;
@@ -674,9 +717,17 @@
 		width: 100%;
 		text-align: left;
 		padding: 11px 13px;
-		border-radius: 11px;
-		background: rgba(95, 128, 144, 0.07);
-		border: 1px solid rgba(95, 128, 144, 0.16);
+		border-radius: var(--radius-control);
+		background: var(--sky-soft);
+		border: 1px solid var(--contour-line);
+	}
+
+	/* <mark> is injected via {@html} in search results — target through scope. */
+	.results :global(mark) {
+		background: var(--sand-soft);
+		color: var(--ink);
+		border-radius: 3px;
+		padding: 0 2px;
 	}
 	.ask-verse .verse {
 		font-size: 0.88rem;
