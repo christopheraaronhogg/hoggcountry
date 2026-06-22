@@ -83,6 +83,8 @@
 	--sky-soft: rgba(95, 128, 144, 0.13);
 	--sand-soft: rgba(200, 167, 122, 0.18);
 	--ink-soft: rgba(31, 36, 29, 0.06);
+	/* Ink that sits ON a filled --forest/--clay surface (chips, primary buttons). */
+	--on-accent: #f7f2e8;
 	--focus-ring: rgba(47, 75, 53, 0.6);
 
 	/* Topo-paper map texture (offline contour ground) */
@@ -123,6 +125,7 @@
 		--sky-soft: rgba(156, 200, 216, 0.16);
 		--sand-soft: rgba(215, 183, 127, 0.18);
 		--ink-soft: rgba(242, 234, 219, 0.08);
+		--on-accent: #10160f; /* dark glyph on the now-bright forest/clay */
 		--contour-line: rgba(152, 196, 142, 0.06);
 		--contour-index: rgba(152, 196, 142, 0.11);
 		--stream-line: rgba(156, 200, 216, 0.07);

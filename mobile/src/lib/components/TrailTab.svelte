@@ -32,6 +32,28 @@
 	let sourceDocQuery = $state('');
 	let guideQuery = $state('');
 	let selectedGuideId = $state<string | null>(null);
+	// Reading + micro-state for the elevated Guide/Docs.
+	let serifBody = $state(true); // book serif by default; sans is the sun-glare escape hatch
+	let copiedGuideId = $state<string | null>(null);
+	let saveState = $state<'idle' | 'saved'>('idle');
+
+	function escapeHtml(text: string): string {
+		return text
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;');
+	}
+	function escapeReg(text: string): string {
+		return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	}
+	const guideTerms = $derived(guideQuery.trim().split(/\s+/u).filter((t) => t.length > 1));
+	// Escape first, then wrap matches in <mark> — so the query "lands the eye" in the open chapter.
+	function highlightGuide(text: string): string {
+		const safe = escapeHtml(text);
+		if (!guideTerms.length) return safe;
+		const re = new RegExp(`(${guideTerms.map(escapeReg).join('|')})`, 'giu');
+		return safe.replace(re, '<mark>$1</mark>');
+	}
 
 	function fmtTime(iso: string): string {
 		const d = new Date(iso);
@@ -64,13 +86,16 @@
 		if (!draftBody.trim()) return;
 		if (editingId) {
 			trailAssistant.updateDocument(editingId, { title: draftTitle, body: draftBody });
-			docsNotice = 'Saved offline.';
 		} else {
 			const document = trailAssistant.createDocument({ title: draftTitle, body: draftBody });
 			if (!document) return;
 			editingId = document.id;
-			docsNotice = 'Saved offline.';
 		}
+		docsNotice = 'Saved offline · on this phone only.';
+		saveState = 'saved';
+		setTimeout(() => {
+			if (saveState === 'saved') saveState = 'idle';
+		}, 2200);
 	}
 
 	function removeDocument(id: string) {
@@ -155,6 +180,15 @@
 		editDocument(created);
 		docsNotice = 'Copied source into an editable offline doc.';
 	}
+
+	// Guide "Copy to docs" with a brief ✓ confirm, then revert the label.
+	function copyGuideToDoc(document: FieldGuideExcerpt) {
+		copySourceToDoc(document);
+		copiedGuideId = document.id;
+		setTimeout(() => {
+			if (copiedGuideId === document.id) copiedGuideId = null;
+		}, 1600);
+	}
 </script>
 
 <div class="trail">
@@ -163,7 +197,13 @@
 		<p>Your offline library: field guide, scripture, docs, and your pack.</p>
 	</header>
 
-	<div class="segmented" role="tablist" aria-label="Trail sections">
+	<div
+		class="segmented"
+		role="tablist"
+		aria-label="Trail sections"
+		style="--seg-i:{sections.findIndex((s) => s.key === section)}"
+	>
+		<span class="seg-thumb" aria-hidden="true"></span>
 		{#each sections as s (s.key)}
 			<button
 				class="seg"
@@ -188,7 +228,12 @@
 							<h2>AT NOBO Field Guide</h2>
 							<p>{fieldGuideDocs.length} sections · about {Math.round(guideWordCount / 1000)}k words · bundled offline</p>
 						</div>
-						<span class="offline-badge">Offline</span>
+						<div class="guide-head-actions">
+							<button class="serif-toggle" type="button" aria-pressed={serifBody} onclick={() => (serifBody = !serifBody)}>
+								{serifBody ? 'Aa serif' : 'Aa sans'}
+							</button>
+							<span class="offline-badge">Offline</span>
+						</div>
 					</div>
 
 					<input
@@ -206,10 +251,16 @@
 										<p class="section-kicker">Reading offline</p>
 										<h3>{normalizeGuideTitle(selectedGuideDoc.title)}</h3>
 									</div>
-									<button type="button" onclick={() => copySourceToDoc(selectedGuideDoc)}>Copy to docs</button>
+									<button type="button" class:copied={copiedGuideId === selectedGuideDoc.id} onclick={() => copyGuideToDoc(selectedGuideDoc)}>
+										{copiedGuideId === selectedGuideDoc.id ? '✓ Copied' : 'Copy to docs'}
+									</button>
 								</div>
-								<p class="body">{selectedGuideDoc.body}</p>
-								{#if selectedGuideDoc.citation}<p class="cite">{selectedGuideDoc.citation}</p>{/if}
+								<div class="body" class:serif={serifBody}>
+									{#each selectedGuideDoc.body.split(/\n{2,}/) as para, i (i)}
+										<p>{@html highlightGuide(para)}</p>
+									{/each}
+								</div>
+								{#if selectedGuideDoc.citation}<p class="cite">{@html highlightGuide(selectedGuideDoc.citation)}</p>{/if}
 							</article>
 						{/if}
 
@@ -268,10 +319,10 @@
 
 				<div class="doc-actions">
 					<button class="doc-button primary" type="button" onclick={saveDocument} disabled={!draftBody.trim()}>
-						Save offline
+						{saveState === 'saved' ? '✓ Saved offline' : 'Save offline'}
 					</button>
 					<button class="doc-button" type="button" onclick={cancelEdit}>Clear</button>
-					<button class="doc-button" type="button" onclick={saveScoutAnswer}>Save last Scout answer</button>
+					<button class="doc-button" type="button" onclick={saveScoutAnswer} disabled={!trailAssistant.lastScoutAnswer} title={trailAssistant.lastScoutAnswer ? '' : 'Ask Scout for a draft first'}>Save last Scout answer</button>
 				</div>
 
 				<div class="scout-draft-row">
@@ -294,7 +345,7 @@
 
 			{#if documents.length}
 				{#each documents as document (document.id)}
-					<article class="card entry doc-card">
+					<article class="card entry doc-card" data-source={document.source}>
 						<div class="entry-top">
 							<strong>{document.title}</strong>
 							<span class="status">{document.source === 'scout-draft' ? 'Scout draft' : 'Manual'}</span>
@@ -360,11 +411,18 @@
 		<div class="stack">
 			<p class="gear-intro">What's on your back — glance before you pack up so nothing's left at camp.</p>
 			<div class="gear-summary card">
-				<div>
-					<p class="gs-lab">Carried</p>
-					<strong>{totalLb} lb</strong>
+				<div class="gs-row">
+					<div>
+						<p class="gs-lab">Carried</p>
+						<strong>{totalLb} lb</strong>
+					</div>
+					<span class="gear-count">{carried.length} of {loadout.length} items</span>
 				</div>
-				<span class="gear-count">{carried.length} of {loadout.length} items</span>
+				{#if loadout.length}
+					<div class="pack-bar" class:incomplete={carried.length < loadout.length} aria-hidden="true">
+						<span style="width:{Math.round((carried.length / loadout.length) * 100)}%"></span>
+					</div>
+				{/if}
 			</div>
 			{#if loadout.length}
 				<div class="gear-list">
@@ -410,27 +468,50 @@
 	}
 
 	.segmented {
+		position: relative;
 		display: grid;
 		grid-template-columns: repeat(4, 1fr);
-		gap: 4px;
+		gap: 0;
 		padding: 4px;
-		border-radius: 12px;
-		background: rgba(47, 75, 53, 0.07);
+		border-radius: var(--radius-control);
+		background: var(--forest-soft);
 		min-width: 0;
+		isolation: isolate;
+	}
+
+	/* one sliding thumb instead of per-button background swaps */
+	.seg-thumb {
+		position: absolute;
+		z-index: 0;
+		top: 4px;
+		bottom: 4px;
+		left: 4px;
+		width: calc((100% - 8px) / 4);
+		border-radius: var(--radius-xs);
+		background: var(--surface-strong);
+		box-shadow: var(--shadow-soft);
+		transform: translateX(calc(var(--seg-i) * 100%));
+	}
+	@media (prefers-reduced-motion: no-preference) {
+		.seg-thumb {
+			transition: transform var(--dur-base) var(--ease-spring);
+		}
 	}
 
 	.seg {
-		min-height: 36px;
-		border-radius: 9px;
-		font-size: 0.82rem;
+		position: relative;
+		z-index: 1;
+		min-height: 44px;
+		border-radius: var(--radius-xs);
+		font-size: 0.84rem;
 		font-weight: 700;
 		color: var(--muted);
+		transition: color var(--dur-fast) var(--ease-out);
 	}
 
 	.seg.active {
-		background: var(--bg, #fffdf8);
+		background: transparent;
 		color: var(--forest);
-		box-shadow: var(--shadow-soft);
 	}
 
 	.stack {
@@ -507,7 +588,7 @@
 		flex: 0 0 auto;
 		border-radius: 999px;
 		padding: 5px 9px;
-		background: rgba(47, 75, 53, 0.1);
+		background: var(--forest-soft);
 		color: var(--forest);
 		font-size: 0.74rem;
 		font-weight: 900;
@@ -534,17 +615,20 @@
 		align-content: center;
 		gap: 3px;
 		text-align: left;
-		border: 1px solid rgba(95, 101, 88, 0.14);
-		border-radius: 12px;
+		border: 1px solid var(--contour-line);
+		border-radius: var(--radius-sm);
 		background: var(--surface-strong, #fffdf8);
 		color: var(--ink);
 		padding: 9px 10px;
 		min-width: 0;
+		transition:
+			border-color var(--dur-fast) var(--ease-out),
+			background var(--dur-fast) var(--ease-out);
 	}
 
 	.guide-toc button.active {
-		border-color: rgba(47, 75, 53, 0.42);
-		background: rgba(47, 75, 53, 0.08);
+		border-color: var(--forest);
+		background: var(--forest-soft);
 	}
 
 	.guide-toc strong {
@@ -562,23 +646,83 @@
 		display: grid;
 		gap: 10px;
 		padding-top: 12px;
-		border-top: 1px solid rgba(95, 101, 88, 0.14);
+		border-top: 1px solid var(--contour-line);
 		min-width: 0;
 	}
+	.guide-chapter h3 {
+		scroll-margin-top: 12px;
+	}
 
+	/* the Guide is the app's one long-form reading surface — give it a real
+	   reading column: serif by default, a comfortable measure + book leading */
 	.guide-chapter .body {
+		display: grid;
+		gap: 0.85em;
+		max-width: 38rem;
+		font-size: 1.02rem;
+		line-height: 1.62;
+		color: var(--ink);
+	}
+	.guide-chapter .body.serif {
+		font-family: var(--font-display);
+		letter-spacing: 0.003em;
+	}
+	.guide-chapter .body p {
+		margin: 0;
 		white-space: pre-wrap;
+		overflow-wrap: break-word;
+	}
+	.guide-chapter .cite {
+		max-width: 38rem;
+		font-size: 0.8rem;
+		line-height: 1.4;
+	}
+	/* <mark> is injected via {@html}, so it never gets Svelte's scope class —
+	   target it through the scoped chapter with :global. */
+	.guide-chapter :global(mark) {
+		background: var(--sand-soft);
+		color: var(--ink);
+		border-radius: 4px;
+		padding: 0 2px;
+		box-decoration-break: clone;
+		-webkit-box-decoration-break: clone;
+	}
+
+	.guide-head-actions {
+		flex: 0 0 auto;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+	.serif-toggle {
+		min-height: 34px;
+		padding: 5px 11px;
+		border-radius: var(--radius-pill);
+		background: var(--ink-soft);
+		color: var(--muted);
+		font-size: 0.76rem;
+		font-weight: 800;
+		white-space: nowrap;
+	}
+	.serif-toggle[aria-pressed='true'] {
+		background: var(--forest-soft);
+		color: var(--forest);
 	}
 
 	.guide-chapter-head button {
 		flex: 0 0 auto;
 		min-height: 44px;
-		border-radius: 10px;
+		border-radius: var(--radius-control);
 		padding: 8px 12px;
-		background: rgba(47, 75, 53, 0.08);
+		background: var(--forest-soft);
 		color: var(--forest);
 		font-size: 0.82rem;
 		font-weight: 800;
+		white-space: nowrap;
+	}
+	.guide-chapter-head button.copied {
+		background: var(--moss-soft);
+		color: var(--moss);
 	}
 
 	.empty {
@@ -612,7 +756,7 @@
 		letter-spacing: 0.04em;
 		padding: 2px 8px;
 		border-radius: 999px;
-		background: rgba(47, 75, 53, 0.1);
+		background: var(--forest-soft);
 		color: var(--forest);
 	}
 
@@ -657,17 +801,17 @@
 	.doc-button,
 	.doc-row-actions button {
 		min-height: 44px;
-		border-radius: 10px;
+		border-radius: var(--radius-control);
 		padding: 8px 12px;
 		font-size: 0.82rem;
 		font-weight: 800;
-		background: rgba(47, 75, 53, 0.08);
+		background: var(--forest-soft);
 		color: var(--forest);
 	}
 
 	.doc-button.primary {
 		background: var(--forest);
-		color: var(--bg, #fffdf8);
+		color: var(--on-accent);
 	}
 
 	.doc-button:disabled {
@@ -730,6 +874,15 @@
 		white-space: pre-wrap;
 	}
 
+	/* provenance at a glance — your hand (moss) vs a Scout draft (sky); the
+	   status pill text still names it, so the edge is redundant (CVD-safe). */
+	.doc-card {
+		border-left: 3px solid var(--moss);
+	}
+	.doc-card[data-source='scout-draft'] {
+		border-left-color: var(--sky);
+	}
+
 	.source-library {
 		display: grid;
 		gap: 10px;
@@ -748,7 +901,7 @@
 		display: grid;
 		gap: 10px;
 		padding: 10px 0;
-		border-top: 1px solid rgba(95, 101, 88, 0.12);
+		border-top: 1px solid var(--contour-line);
 		min-width: 0;
 	}
 
@@ -784,11 +937,11 @@
 	.source-doc button {
 		justify-self: start;
 		min-height: 44px;
-		border-radius: 10px;
+		border-radius: var(--radius-control);
 		padding: 8px 12px;
 		font-size: 0.82rem;
 		font-weight: 800;
-		background: rgba(47, 75, 53, 0.08);
+		background: var(--forest-soft);
 		color: var(--forest);
 	}
 
@@ -799,12 +952,33 @@
 		line-height: 1.45;
 	}
 	.gear-summary {
+		display: grid;
+		gap: 10px;
+		padding: 12px 14px;
+		min-width: 0;
+	}
+	.gs-row {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 12px 14px;
 		gap: 12px;
 		min-width: 0;
+	}
+	.pack-bar {
+		height: 6px;
+		border-radius: var(--radius-pill);
+		background: var(--forest-soft);
+		overflow: hidden;
+	}
+	.pack-bar span {
+		display: block;
+		height: 100%;
+		border-radius: var(--radius-pill);
+		background: var(--forest);
+		transition: width var(--dur-slow) var(--ease-out);
+	}
+	.pack-bar.incomplete span {
+		background: var(--clay);
 	}
 	.gs-lab {
 		font-size: 0.66rem;
@@ -826,9 +1000,9 @@
 	.gear-list {
 		display: grid;
 		gap: 1px;
-		border-radius: 12px;
+		border-radius: var(--radius-sm);
 		overflow: hidden;
-		background: rgba(95, 101, 88, 0.12);
+		background: var(--contour-line);
 	}
 	.gear-row {
 		display: flex;
