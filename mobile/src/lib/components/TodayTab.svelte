@@ -14,13 +14,11 @@
 	const dayNumber = $derived(trailAssistant.dayNumber);
 	const pct = $derived(Math.min(100, Math.round((from / TOTAL_MILES) * 100)));
 	const toGo = $derived(Math.max(0, TOTAL_MILES - from));
-	const scoutAiLabel = $derived(
-		trailAssistant.modelStatus?.runtimeConfigured === false
-			? 'Runtime missing'
-			: trailAssistant.modelStatus?.state === 'ready'
-				? 'On-device AI'
-				: 'AI not installed'
-	);
+	// Only surface AI status in the hero when it's a reassurance ("On-device AI").
+	// Download / not-installed / runtime states are handled by Scout's own status
+	// bubble — a hero billboard reading "AI NOT INSTALLED" makes a working app look
+	// broken on the day's anchor panel.
+	const scoutReady = $derived(trailAssistant.modelStatus?.state === 'ready');
 
 	// Forecast that travels with the field pack (CachedWeather | null). When the
 	// server can reach NWS it is an official point forecast; otherwise the UI stays
@@ -140,7 +138,7 @@
 	<section class="hud">
 		<div class="hud-top">
 			<span class="day">Day {dayNumber}</span>
-			<span class="off">{scoutAiLabel}</span>
+			{#if scoutReady}<span class="off">On-device AI</span>{/if}
 		</div>
 		<div class="mile tabular">{from.toFixed(1)}<span class="of"> / {TOTAL_MILES.toLocaleString()} mi</span></div>
 		<div class="splits">
@@ -207,7 +205,7 @@
 					<p class="hilo"><span class="lo">▼ {wx.lowF}° low</span> · wind {wx.windMph} mph</p>
 				</div>
 			</div>
-			<p class="means">
+			<p class="means" data-caveat={wxIsNws ? null : 'cached'}>
 				<span class="meanslab">{wxCaveat}</span>
 				{wx.riskNote ?? 'This is cached field-pack weather. Refresh before relying on it.'}
 			</p>
@@ -438,6 +436,15 @@
 		font-weight: 800;
 		font-size: 0.82rem;
 		white-space: nowrap;
+		transition:
+			background var(--dur-fast, 0.12s) var(--ease-out, ease),
+			transform var(--dur-fast, 0.12s) var(--ease-out, ease);
+	}
+	/* The two emergency interactions must confirm the press landed — tapped at
+	   night or under stress, silence reads as "did it register?". */
+	.safe-btn:active,
+	.help-btn:active {
+		transform: scale(0.96);
 	}
 	.safe-btn {
 		background: rgba(255, 255, 255, 0.14);
@@ -462,7 +469,7 @@
 
 	/* NEXT line */
 	.next {
-		padding: 13px 16px 12px;
+		padding: 15px 18px;
 		border-left: 3px solid var(--clay);
 	}
 	.next-head {
@@ -557,7 +564,7 @@
 	/* Weather — sky accent rail on the LEFT, matching the NEXT card's clay rail
 	   (consistent accent placement across the day's cards). */
 	.wx {
-		padding: 15px 18px 16px;
+		padding: 15px 18px;
 		border-left: 3px solid var(--sky);
 	}
 	.wx-head {
@@ -611,6 +618,15 @@
 		border-radius: 10px;
 		padding: 10px 12px;
 		margin: 10px 0;
+	}
+	/* A stale (cached, non-live) forecast above exposed terrain is the one weather
+	   state with real safety stakes — make it read categorically different from an
+	   official NWS forecast instead of the same benign sky wash. */
+	.means[data-caveat='cached'] {
+		background: var(--warn-soft);
+	}
+	.means[data-caveat='cached'] .meanslab {
+		color: var(--warn);
 	}
 	.meanslab {
 		display: block;
