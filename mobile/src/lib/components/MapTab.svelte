@@ -9,6 +9,14 @@
 	import TrailPulseReportAction from './TrailPulseReportAction.svelte';
 	import PeopleSheet from './PeopleSheet.svelte';
 	import { people, AVATAR_TINTS, personInitial } from '$lib/people/people.svelte';
+	import {
+		waterReports,
+		waterBucket,
+		WATER_STATUS_WORD,
+		relAge,
+		ageBucket,
+		type WaterStatus
+	} from '$lib/water/waterReports.svelte';
 
 	// A real Leaflet map on OpenTopoMap tiles showing the whole Appalachian Trail
 	// from the bundled offline geometry — progress-shaded, with the corridor's
@@ -25,6 +33,9 @@
 	let mapZoom = $state<Zoom>(10); // open on a 10-mi corridor; pinch for custom zoom
 	let liveZoom = $state(0);
 	let userInteracted = $state(false);
+	// While a POI popup is open, suppress the pilot auto-recenter — the map
+	// shouldn't jump (and close the popup) while you're reading/reporting a point.
+	let poiPopupOpen = $state(false);
 	let viewFocusMile = $state(trailAssistant.currentMile);
 	let headUp = $state(false);
 	let tilesOk = $state(false);
@@ -514,6 +525,9 @@
 			maxZoom: 16,
 			preferCanvas: false,
 			maxBoundsViscosity: 0.7,
+			// A POI popup is a working surface (water-status buttons) — don't let a
+			// stray map click dismiss it; it closes via its ✕ or opening another.
+			closePopupOnClick: false,
 			renderer: L.svg({ padding: 0.5 })
 		});
 		map.setView([39, -77], 5);
@@ -575,6 +589,16 @@
 		map.on('zoomend moveend', onMoveEnd);
 		map.on('dragstart zoomstart', () => (userInteracted = true));
 		map.on('click', (e: LeafletNS.LeafletMouseEvent) => onMapClick(e.latlng.lat, e.latlng.lng));
+		// One delegated handler (registered once) re-renders a POI popup from fresh
+		// state on open and wires any water-report buttons — survives the corridor
+		// layer being torn down and rebuilt, where per-marker listeners wouldn't.
+		map.on('popupopen', (e: LeafletNS.PopupEvent) => {
+			if (e.popup.getElement()?.querySelector('.poi-pop')) {
+				poiPopupOpen = true;
+				renderPoiPopup(e.popup);
+			}
+		});
+		map.on('popupclose', () => (poiPopupOpen = false));
 
 		await tick();
 		requestAnimationFrame(() => {
@@ -600,7 +624,7 @@
 		if (!L || !map || latlngs.length < 2) return;
 		atBounds = L.latLngBounds(latlngs).pad(0.12);
 		map.setMaxBounds(atBounds);
-		if (!userInteracted) {
+		if (!userInteracted && !poiPopupOpen) {
 			if (mapZoom === OVERVIEW) fitWholeTrail(false);
 			else flyToCorridor(from, mapZoom as number, false);
 		}
@@ -815,27 +839,100 @@
 	// Corridor POI pins (only when zoomed in), filtered by the legend. Tap → select
 	// it as the measured spot (distance + climb/descent light up the card and the
 	// trail) AND open a popup naming it, with the elevation change to get there.
+	function escapeHtml(s: string): string {
+		return s
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;');
+	}
+	// The bind-time popup body is a reactive-free SHELL: just the root with data-poi-*
+	// and the name. It reads nothing reactive (no distance/elev/store), so the marker
+	// effect can't depend on the current mile or the water store — and therefore never
+	// recreates the marker (closing an open popup) on a position tick or a report.
+	function poiPopupShell(lm: Landmark): string {
+		const name = escapeHtml(lm.label);
+		return (
+			`<div class="poi-pop pop-${lm.kind}" data-poi-kind="${lm.kind}" data-poi-mile="${lm.mile}" ` +
+			`data-poi-name="${name}" data-poi-rel="${lm.reliability ?? ''}">` +
+			`<strong class="pp-name">${name}</strong></div>`
+		);
+	}
+	// The reported-state detail span for a water source (or the dataset default).
+	function waterDetailHtml(mile: number, reliability?: WaterReliability): string {
+		const rep = waterReports.latestForBucket(waterBucket(mile));
+		if (rep)
+			return `<span class="pp-water-state age-${ageBucket(rep.observedAt)}">${WATER_STATUS_WORD[rep.status]}</span> · ${escapeHtml(waterReports.attribution(rep))} · ${relAge(rep.observedAt)}`;
+		return reliability ? RELIABILITY_WORD[reliability] : 'unverified';
+	}
+	// Full popup body, built from FRESH state on open (and reconstructed from the
+	// shell's data-poi-*). Reads distance/elevation/store — fine here because this
+	// runs in event handlers, not the reactive marker effect.
+	function poiPopupBody(kind: PoiKind, mile: number, label: string, reliability?: WaterReliability): string {
+		const ec = elevChangeTo(mile);
+		const elev = `<span class="pp-elev">↑ ${fmt(ec.gain)} ft · ↓ ${fmt(ec.loss)} ft to reach</span>`;
+		if (kind !== 'water') {
+			return `<strong class="pp-name">${escapeHtml(label)}</strong><span class="pp-meta">${POI_WORD[kind]} · ${distanceLabel(mile)}</span>${elev}`;
+		}
+		const rep = waterReports.latestForBucket(waterBucket(mile));
+		const buttons = (['flowing', 'low', 'dry'] as WaterStatus[])
+			.map(
+				(s) =>
+					`<button type="button" class="wbtn wbtn-${s}${rep?.status === s ? ' active' : ''}" data-water-set="${s}">${WATER_STATUS_WORD[s]}</button>`
+			)
+			.join('');
+		return (
+			`<strong class="pp-name">${escapeHtml(label)}</strong>` +
+			`<span class="pp-meta">Water · ${distanceLabel(mile)} · ${waterDetailHtml(mile, reliability)}</span>${elev}` +
+			`<div class="pp-water-report" role="group" aria-label="Report water state">${buttons}</div>`
+		);
+	}
+	// On popupopen: fill the shell with fresh content and wire any water-report
+	// buttons. Reports update the line + active button IN PLACE (no setContent →
+	// no autoPan → the marker effect never re-runs, so the popup stays put).
+	function renderPoiPopup(popup: LeafletNS.Popup): void {
+		const root = popup.getElement()?.querySelector('.poi-pop') as HTMLElement | null;
+		if (!root) return;
+		const kind = (root.dataset.poiKind as PoiKind) || 'water';
+		const mile = Number(root.dataset.poiMile);
+		const label = root.dataset.poiName ?? '';
+		const reliability = (root.dataset.poiRel as WaterReliability) || undefined;
+		root.innerHTML = poiPopupBody(kind, mile, label, reliability);
+		if (kind !== 'water') return;
+		const bucket = waterBucket(mile);
+		root.querySelectorAll<HTMLButtonElement>('[data-water-set]').forEach((btn) => {
+			btn.addEventListener('click', (ev) => {
+				ev.stopPropagation(); // don't bubble to the map (would drop a measure)
+				const rep = waterReports.report({ bucket, mile, status: btn.dataset.waterSet as WaterStatus, name: label });
+				const meta = root.querySelector('.pp-meta');
+				if (meta) meta.innerHTML = `Water · ${distanceLabel(mile)} · ${waterDetailHtml(mile, reliability)}`;
+				root
+					.querySelectorAll<HTMLButtonElement>('.wbtn')
+					.forEach((b) => b.classList.toggle('active', b.dataset.waterSet === rep.status));
+			});
+		});
+	}
+
 	$effect(() => {
 		void visibleLandmarks;
 		void showPois;
 		void liveZoom;
-		void fromQ;
+		// NOT fromQ and NOT the store: the bind content is a reactive-free shell, so
+		// the markers are rebuilt only when the visible set / zoom changes — never on
+		// a position tick or a water report, which would close an open popup.
 		if (!L || !map || !poiLayer) return;
 		poiLayer.clearLayers();
 		if (!showPois) return;
 		for (const lm of visibleLandmarks) {
-			// Water carries its actual reliability (reliable / seasonal / thin flow)
-			// in the detail line — far more useful than a "?" on every coin.
-			const rel = lm.kind === 'water' && lm.reliability ? ` · ${RELIABILITY_WORD[lm.reliability]}` : '';
-			const ec = elevChangeTo(lm.mile);
 			const marker = L.marker(interpAtMile(lm.mile), { icon: poiIcon(lm.kind), keyboard: false })
-				.bindPopup(
-					`<div class="poi-pop pop-${lm.kind}"><strong class="pp-name">${lm.label}</strong>` +
-						`<span class="pp-meta">${POI_WORD[lm.kind]} · ${distanceLabel(lm.mile)}${rel}</span>` +
-						`<span class="pp-elev">↑ ${fmt(ec.gain)} ft · ↓ ${fmt(ec.loss)} ft to reach</span></div>`,
+				.bindPopup(poiPopupShell(lm), {
 					// Pan clear of the top strip, the right control stack, and the bottom card.
-					{ className: 'poi-popup', closeButton: true, autoPanPaddingTopLeft: [24, 64], autoPanPaddingBottomRight: [70, 300], maxWidth: 240 }
-				);
+					className: 'poi-popup',
+					closeButton: true,
+					autoPanPaddingTopLeft: [24, 64],
+					autoPanPaddingBottomRight: [70, 300],
+					maxWidth: 240
+				});
 			marker.on('click', () => selectPoi(lm.mile));
 			marker.addTo(poiLayer);
 		}
@@ -1437,6 +1534,49 @@
 		font-size: 0.72rem;
 		font-weight: 800;
 		color: var(--ink);
+	}
+	/* Reported water state in the detail line — fresh reads confident, then ages to
+	   warn, then muted, so old reports visibly carry less weight. */
+	:global(.poi-pop .pp-water-state) {
+		font-weight: 900;
+	}
+	:global(.poi-pop .pp-water-state.age-fresh) {
+		color: var(--ink);
+	}
+	:global(.poi-pop .pp-water-state.age-aging) {
+		color: var(--warn);
+	}
+	:global(.poi-pop .pp-water-state.age-stale) {
+		color: var(--muted);
+	}
+	/* One-tap report row: Flowing / Low / Dry. */
+	:global(.poi-pop .pp-water-report) {
+		display: flex;
+		gap: 6px;
+		margin-top: 8px;
+	}
+	:global(.poi-pop .wbtn) {
+		flex: 1;
+		min-height: 38px;
+		padding: 4px 6px;
+		border-radius: 9px;
+		border: 1.5px solid var(--line);
+		background: var(--bg);
+		color: var(--ink);
+		font-size: 0.72rem;
+		font-weight: 800;
+		cursor: pointer;
+		transition:
+			background var(--dur-fast, 0.12s) ease,
+			transform var(--dur-fast, 0.12s) ease;
+	}
+	:global(.poi-pop .wbtn:active) {
+		transform: scale(0.96);
+	}
+	:global(.poi-pop .wbtn.active) {
+		background: var(--forest);
+		border-color: var(--forest);
+		color: var(--on-accent);
 	}
 	:global(.leaflet-popup.poi-popup a.leaflet-popup-close-button) {
 		color: var(--muted);
