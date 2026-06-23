@@ -219,10 +219,28 @@
 		if (!visibleGuideDocs.length) return null;
 		return visibleGuideDocs.find((document) => document.id === selectedGuideId) ?? visibleGuideDocs[0];
 	});
+	// The 90 "AT source docs" were 5 internal pipeline docs (attribution, license,
+	// data-quality, status…) + 85 per-25-mile segment summaries, listed
+	// alphabetically — so a hiker at mile 1497 saw "Miles 0-25 / 100-125" first.
+	// Drop the internal meta from the browsable list (Scout still grounds on the
+	// full set) and surface the trail segments NEAREST the current mile, so the
+	// library is a handful of relevant docs instead of 90.
+	function segmentStartMile(document: FieldGuideExcerpt): number | null {
+		const m = (document.title || '').match(/Miles\s+(\d+)\s*[-–]\s*\d+/i);
+		return m ? Number(m[1]) : null;
+	}
+	const segmentDocs = $derived.by(() => {
+		const cur = trailAssistant.currentMile;
+		return sourceDocs
+			.map((document) => ({ document, start: segmentStartMile(document) }))
+			.filter((x): x is { document: FieldGuideExcerpt; start: number } => x.start !== null)
+			.sort((a, b) => Math.abs(a.start - cur) - Math.abs(b.start - cur))
+			.map((x) => x.document);
+	});
 	const visibleSourceDocs = $derived.by(() => {
 		const queryText = sourceDocQuery.trim();
-		if (!queryText) return sourceDocs.slice(0, 8);
-		return sourceDocs
+		if (!queryText) return segmentDocs.slice(0, 6);
+		return segmentDocs
 			.map((document) => ({ document, score: scoreSourceDoc(document, queryText) }))
 			.filter((result) => result.score > 0)
 			.sort((a, b) => b.score - a.score)
@@ -424,21 +442,24 @@
 			<section class="card source-library" aria-label="Bundled offline source library">
 				<div class="doc-editor-head">
 					<div>
-						<p class="section-kicker">Trail source library</p>
-						<h2>{sourceDocs.length} AT source docs</h2>
+						<p class="section-kicker">Trail segments near you</p>
+						<h2>Mile {trailAssistant.currentMile.toFixed(0)} &amp; nearby</h2>
+						<p class="section-note">
+							{segmentDocs.length} open-source segment briefs, nearest your position first. Search all of them, or the field guide above.
+						</p>
 					</div>
 				</div>
 				<input
 					class="doc-title-input"
 					bind:value={sourceDocQuery}
-					placeholder="Search trail sources, weather policy, shelters, water..."
+					placeholder="Search segments, water, shelters, terrain..."
 					aria-label="Search bundled source docs"
 				/>
 				<div class="source-results">
 					{#each visibleSourceDocs as sourceDoc (sourceDoc.id)}
 						<article class="source-doc">
 							<div>
-								<strong>{sourceDoc.title}</strong>
+								<strong>{sourceDoc.title.replace(/^AT Source:\s*/i, '')}</strong>
 								<p>{docExcerpt(sourceDoc.body)}</p>
 								{#if sourceDoc.citation}<span>{sourceDoc.citation}</span>{/if}
 							</div>
@@ -886,6 +907,12 @@
 		letter-spacing: 0.08em;
 		color: var(--muted);
 		overflow-wrap: anywhere;
+	}
+	.section-note {
+		margin-top: 4px;
+		font-size: 0.84rem;
+		line-height: 1.4;
+		color: var(--muted);
 	}
 
 	.section-divider {
