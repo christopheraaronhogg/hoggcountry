@@ -82,7 +82,9 @@
 		return isDadPilot(profile) ? 'Dad' : 'Set mile';
 	});
 
-	type Landmark = { kind: 'water' | 'shelter' | 'town'; mile: number; label: string };
+	type PoiKind = 'water' | 'shelter' | 'town';
+	type Landmark = { kind: PoiKind; mile: number; label: string; candidate?: boolean };
+	const POI_WORD = { water: 'Water', shelter: 'Shelter', town: 'Town' } as const;
 	function short(name: string): string {
 		const trimmed = name.replace(/ (Memorial )?Shelter$/iu, '');
 		return trimmed.length > 15 ? trimmed.slice(0, 14).trimEnd() + '…' : trimmed;
@@ -93,11 +95,24 @@
 		const hi = viewEnd + 0.5;
 		const inWin = <T extends { mile: number }>(items: T[]) =>
 			items.filter((i) => i.mile >= lo && i.mile <= hi).sort((a, b) => a.mile - b.mile);
-		const water = inWin(pack.water).slice(0, 14).map((w) => ({ kind: 'water' as const, mile: w.mile, label: short(w.name) }));
+		const water = inWin(pack.water)
+			.slice(0, 14)
+			.map((w) => ({ kind: 'water' as const, mile: w.mile, label: short(w.name), candidate: w.reliability !== 'reliable' }));
 		const shelters = inWin(pack.shelters).map((s) => ({ kind: 'shelter' as const, mile: s.mile, label: short(s.name) }));
 		const towns = inWin(pack.towns).map((t) => ({ kind: 'town' as const, mile: t.mile, label: short(t.name) }));
 		return [...water, ...shelters, ...towns].sort((a, b) => a.mile - b.mile).slice(0, 40);
 	});
+	// POI category filter, doubling as the legend's state. Never let all three off
+	// (an empty map reads as broken).
+	let poiFilter = $state(new Set<PoiKind>(['water', 'shelter', 'town']));
+	function togglePoi(k: PoiKind) {
+		const next = new Set(poiFilter);
+		if (next.has(k)) next.delete(k);
+		else next.add(k);
+		if (next.size === 0) return;
+		poiFilter = next;
+	}
+	const visibleLandmarks = $derived(landmarks.filter((lm) => poiFilter.has(lm.kind)));
 	const nextWater = $derived.by(() => {
 		const w = trailAssistant.fieldPack.water
 			.filter((s) => s.mile >= from - 0.01)
@@ -678,6 +693,29 @@
 		}
 	});
 
+	// Category POI pins — a teardrop in the category colour with the matching glyph
+	// (droplet / tent / house) in the head, so a point of interest can never be
+	// confused with the trail's round difficulty dots and the category reads at a
+	// glance (shape + glyph, not hue alone).
+	const POI_GLYPH: Record<PoiKind, string> = {
+		water: '<path d="M12 3.5C12 3.5 5.5 11 5.5 15.5a6.5 6.5 0 0 0 13 0C18.5 11 12 3.5 12 3.5Z"/>',
+		shelter: '<path d="M2.5 20 12 4.5 21.5 20"/><path d="M2.5 20H21.5"/><path d="M9 20 12 13.5 15 20"/>',
+		town: '<path d="M4 11 12 4.5 20 11V20H4Z"/><path d="M10 20v-5h4v5"/>'
+	};
+	function poiIcon(kind: PoiKind, candidate: boolean) {
+		const sz = liveZoom >= 12 ? 34 : 28;
+		const w = Math.round(sz * 0.74);
+		return L!.divIcon({
+			className: `poi-pin pin-${kind}`,
+			iconSize: [w, sz],
+			iconAnchor: [w / 2, sz], // teardrop tip touches the trail point
+			html:
+				`<span class="pp-body"></span>` +
+				`<svg class="pp-glyph" viewBox="0 0 24 24" aria-hidden="true">${POI_GLYPH[kind]}</svg>` +
+				(candidate ? '<span class="pp-cand" aria-hidden="true">?</span>' : '')
+		});
+	}
+
 	// You-marker — a Life360-style avatar (trail-name initial in a forest ring
 	// over a pulse). Created once and moved so the pulse never restarts; the glyph
 	// only re-renders if the label changes. This is the first member of the
@@ -713,15 +751,26 @@
 	});
 
 	// Whole-trail shelter POIs — small moss dots at their real positions, the
-	// length of the trail. Labels on tap (not permanent) so 180 markers don't
-	// shout at once. Hidden only when fully zoomed out past usefulness.
+	// length of the trail: the thru-hiker's orientation backbone. Labels on tap
+	// (not permanent) so 180 markers don't shout at once. When zoomed into the
+	// corridor a shelter is promoted to a labelled pin, so we suppress the dot
+	// wherever a corridor shelter pin already shows it (mile-bucket dedup).
 	$effect(() => {
 		void sheltersInView;
 		void liveZoom;
+		void visibleLandmarks;
 		if (!L || !map || !shelterLayer) return;
 		shelterLayer.clearLayers();
+		const pinned = showPois
+			? new Set(
+					visibleLandmarks
+						.filter((lm) => lm.kind === 'shelter')
+						.map((lm) => Math.round(lm.mile * 20)) // ~0.05-mi buckets
+				)
+			: new Set<number>();
 		const r = liveZoom >= 11 ? 5 : liveZoom >= 8 ? 4 : 3;
 		for (const s of sheltersInView) {
+			if (pinned.has(Math.round(s.mile * 20))) continue; // a corridor pin already shows it
 			L.circleMarker([s.lat, s.lon], {
 				radius: r,
 				weight: 1.8,
@@ -739,28 +788,25 @@
 		}
 	});
 
-	// POI markers (corridor only) on the interpolated centerline.
-	const POI_CLASS = { water: 'poi-water', shelter: 'poi-shelter', town: 'poi-town' } as const;
+	// Corridor POI pins (only when zoomed in), filtered by the legend. Tap → a
+	// name-first callout (name, then category · distance).
 	$effect(() => {
-		void landmarks;
+		void visibleLandmarks;
 		void showPois;
+		void liveZoom;
 		if (!L || !map || !poiLayer) return;
 		poiLayer.clearLayers();
 		if (!showPois) return;
-		for (const lm of landmarks) {
-			L.circleMarker(interpAtMile(lm.mile), {
-				radius: 6,
-				weight: 2.5,
-				color: '#fffdf8',
-				fillColor: lm.kind === 'water' ? '#5f8090' : lm.kind === 'shelter' ? '#6a845f' : '#aa6843',
-				fillOpacity: 1,
-				className: `poi ${POI_CLASS[lm.kind]}`
-			})
-				.bindTooltip(`<span class="tip-rot">${lm.label} · ${distanceLabel(lm.mile)}</span>`, {
-					direction: 'top',
-					offset: [0, -4],
-					className: 'map-tip poi-tip'
-				})
+		for (const lm of visibleLandmarks) {
+			const cand = lm.kind === 'water' && !!lm.candidate;
+			L.marker(interpAtMile(lm.mile), { icon: poiIcon(lm.kind, cand), keyboard: false })
+				.bindTooltip(
+					`<span class="tip-rot poi-call"><span class="pc-name">${lm.label}</span>` +
+						`<span class="pc-meta">${POI_WORD[lm.kind]} · ${distanceLabel(lm.mile)}${cand ? ' · candidate' : ''}</span></span>`,
+					// 'auto' flips the callout to the open side so it never spills off the
+					// edge or under the right control stack.
+					{ direction: 'auto', offset: [0, 0], className: 'map-tip poi-tip' }
+				)
 				.addTo(poiLayer);
 		}
 	});
@@ -997,6 +1043,23 @@
 			</svg>
 		</div>
 
+		{#if showPois}
+			<div class="poi-legend" role="group" aria-label="Points of interest — tap to filter">
+				{#each ['water', 'shelter', 'town'] as const as k (k)}
+					<button
+						type="button"
+						class="poi-key {k}"
+						class:off={!poiFilter.has(k)}
+						aria-pressed={poiFilter.has(k)}
+						onclick={() => togglePoi(k)}
+					>
+						<Icon name={k} size={13} stroke={2} />
+						<span>{POI_WORD[k]}</span>
+					</button>
+				{/each}
+			</div>
+		{/if}
+
 		{#if !elev.empty}
 			<div class="band-legend" aria-label="Difficulty key">
 				<span><i class="b0"></i>Gentle</span>
@@ -1084,6 +1147,65 @@
 	}
 	:global(.ep-mark) {
 		fill: var(--forest);
+	}
+
+	/* Category POI pins — a teardrop (rounded square with one sharpened corner,
+	   rotated to point down) in the category colour, with the glyph upright in the
+	   head. The --surface-strong casing + glyph stay legible on either theme. */
+	:global(.poi-pin) {
+		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+	}
+	:global(.poi-pin .pp-body) {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		width: 100%;
+		height: 78%;
+		border-radius: 50% 50% 50% 0;
+		transform: rotate(45deg);
+		transform-origin: center;
+		background: var(--pin-fill);
+		border: 2px solid var(--surface-strong);
+	}
+	:global(.poi-pin .pp-glyph) {
+		position: absolute;
+		top: 11%;
+		left: 50%;
+		width: 60%;
+		height: 60%;
+		/* counter-rotate the glyph in head-up mode so it stays upright */
+		transform: translateX(-50%) rotate(var(--maprot, 0deg));
+		fill: none;
+		stroke: var(--surface-strong);
+		stroke-width: 2.1;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		pointer-events: none;
+	}
+	:global(.poi-pin.pin-water) {
+		--pin-fill: var(--sky);
+	}
+	:global(.poi-pin.pin-shelter) {
+		--pin-fill: var(--moss);
+	}
+	:global(.poi-pin.pin-town) {
+		--pin-fill: var(--clay);
+	}
+	:global(.poi-pin .pp-cand) {
+		position: absolute;
+		top: -3px;
+		right: -3px;
+		width: 14px;
+		height: 14px;
+		display: grid;
+		place-items: center;
+		font-size: 0.52rem;
+		font-weight: 900;
+		line-height: 1;
+		border-radius: 50%;
+		color: var(--clay);
+		background: var(--clay-soft);
+		border: 1.5px solid var(--surface-strong);
 	}
 
 	/* measurement: bright gold highlight on the from→tapped segment + a pin */
@@ -1242,6 +1364,28 @@
 		font-weight: 800;
 		color: var(--muted);
 		margin-top: 1px;
+	}
+	/* POI tap callout: name first (the thing you tapped to read), then the
+	   category word + distance underneath. */
+	:global(.poi-call) {
+		display: block;
+		text-align: left;
+	}
+	:global(.poi-call .pc-name) {
+		display: block;
+		font-size: 0.78rem;
+		font-weight: 900;
+		color: var(--ink);
+		line-height: 1.15;
+	}
+	:global(.poi-call .pc-meta) {
+		display: block;
+		margin-top: 1px;
+		font-size: 0.6rem;
+		font-weight: 800;
+		color: var(--muted);
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
 	}
 	/* zoom-gated labels: hide POIs in overview, endpoints in corridor */
 	:global(.z-overview .leaflet-tooltip.poi-tip),
@@ -1574,10 +1718,61 @@
 	.elev .eline.b2 {
 		stroke: #b23a1e;
 	}
+	/* POI key — also the category filter. Each chip's tint matches its pin colour,
+	   so the legend teaches the code. Tap to show/hide a category. */
+	.poi-legend {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		margin-top: 8px;
+	}
+	.poi-key {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		min-height: 30px;
+		padding: 4px 10px;
+		border-radius: 999px;
+		font-size: 0.62rem;
+		font-weight: 900;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		border: 1.5px solid transparent;
+		background: var(--bg);
+		color: var(--ink);
+		transition:
+			opacity var(--dur-fast, 0.12s) ease,
+			transform var(--dur-fast, 0.12s) ease;
+	}
+	.poi-key.water {
+		background: var(--sky-soft);
+		border-color: color-mix(in srgb, var(--sky) 55%, transparent);
+		color: var(--sky);
+	}
+	.poi-key.shelter {
+		background: var(--moss-soft);
+		border-color: color-mix(in srgb, var(--moss) 55%, transparent);
+		color: var(--moss);
+	}
+	.poi-key.town {
+		background: var(--clay-soft);
+		border-color: color-mix(in srgb, var(--clay) 55%, transparent);
+		color: var(--clay);
+	}
+	.poi-key.off {
+		background: var(--bg);
+		border-color: var(--line);
+		color: var(--muted);
+		opacity: 0.5;
+	}
+	.poi-key:active {
+		transform: scale(0.97);
+	}
+
 	.band-legend {
 		display: flex;
 		gap: 14px;
-		margin-top: 7px;
+		margin-top: 8px;
 		font-size: 0.62rem;
 		font-weight: 800;
 		text-transform: uppercase;
