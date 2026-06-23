@@ -890,40 +890,40 @@
 	<div class="leaflet-host" bind:this={host}></div>
 	<div class="map-scrim" aria-hidden="true"></div>
 
-	<!-- Group selector (Life360-style) — opens the people sheet -->
-	<button class="map-group" type="button" onclick={() => people.openSheet()} aria-haspopup="dialog">
-		<span class="mg-glyph" aria-hidden="true">
-			<svg width="16" height="16" viewBox="0 0 24 24">
-				<circle cx="9" cy="8" r="3.2" fill="currentColor" />
-				<circle cx="16.5" cy="9.5" r="2.4" fill="currentColor" opacity="0.7" />
-				<path d="M3 19c0-3 2.7-5 6-5s6 2 6 5z" fill="currentColor" />
-				<path d="M14.5 19c0-2 1.4-3.6 3.6-3.6S21.5 17 21.5 19z" fill="currentColor" opacity="0.7" />
-			</svg>
-		</span>
-		<span class="mg-name">{people.activeGroup.name}</span>
-		<span class="mg-caret" aria-hidden="true">▾</span>
-	</button>
-
-	<!-- Top row: next water + head-up/north toggle -->
+	<!-- Top status strip: Family selector + Next water, one left-aligned row -->
 	<div class="map-top">
+		<!-- Group selector (Life360-style) — opens the people sheet -->
+		<button class="map-group" type="button" onclick={() => people.openSheet()} aria-haspopup="dialog">
+			<span class="mg-glyph" aria-hidden="true">
+				<svg width="16" height="16" viewBox="0 0 24 24">
+					<circle cx="9" cy="8" r="3.2" fill="currentColor" />
+					<circle cx="16.5" cy="9.5" r="2.4" fill="currentColor" opacity="0.7" />
+					<path d="M3 19c0-3 2.7-5 6-5s6 2 6 5z" fill="currentColor" />
+					<path d="M14.5 19c0-2 1.4-3.6 3.6-3.6S21.5 17 21.5 19z" fill="currentColor" opacity="0.7" />
+				</svg>
+			</span>
+			<span class="mg-name">{people.activeGroup.name}</span>
+			<span class="mg-caret" aria-hidden="true">▾</span>
+		</button>
+
 		{#if nextWater}
 			<span class="next-water-chip">
 				<span class="wglyph"><Icon name="water" size={14} stroke={2} /></span>
 				<span class="nw-text">Next water <strong>{nextWater.dist.toFixed(1)} mi</strong></span>
-				{#if nextWater.candidate}<span class="cand-tag">candidate</span>{/if}
+				{#if nextWater.candidate}<span class="cand-tag" title="Candidate water source — verify on arrival" aria-label="candidate water source">?</span>{/if}
 			</span>
 		{/if}
-		<button class="orient-btn" class:head={headUp} type="button" onclick={() => (headUp = !headUp)} aria-label={headUp ? 'Heading up — switch to north up' : 'North up — switch to heading up'}>
+	</div>
+
+	<!-- Top-right controls: orientation (rose) · whole-trail · recenter · drop-note.
+	     Zoom is pinch (the map opens at 10 mi). -->
+	<div class="map-tools">
+		<button class="tool-btn orient-btn" class:head={headUp} type="button" onclick={() => (headUp = !headUp)} aria-label={headUp ? 'Heading up — switch to north up' : 'North up — switch to heading up'} aria-pressed={headUp}>
 			<svg class="rose" width="22" height="22" viewBox="0 0 24 24" style="transform: rotate({headUp ? -bearing : 0}deg)" aria-hidden="true">
 				<path d="M12 2 L15 12 L12 10 L9 12 Z" fill="var(--danger)" />
 				<path d="M12 22 L9 12 L12 14 L15 12 Z" fill="var(--muted)" />
 			</svg>
-			<span class="orient-cap">{headUp ? 'Heading' : 'North'}</span>
 		</button>
-	</div>
-
-	<!-- Top-right: whole-trail + recenter. Zoom is pinch (opens at 10 mi). -->
-	<div class="map-tools">
 		<button
 			class="tool-btn overview"
 			class:on={isOverview}
@@ -1271,20 +1271,16 @@
 	/* ---- chrome (floats over the map) -------------------------------------- */
 	/* Life360-style group selector, centered up top. */
 	.map-group {
-		position: absolute;
-		top: max(12px, env(safe-area-inset-top));
-		left: 50%;
-		transform: translateX(-50%);
-		z-index: 6;
+		flex: 0 0 auto; /* primary control — never shrinks, name stays readable */
 		display: inline-flex;
 		align-items: center;
 		gap: 7px;
-		min-height: 38px;
-		padding: 6px 14px;
+		min-height: 36px; /* match the chip so the strip reads as one unit */
+		padding: 6px 12px;
 		border-radius: 999px;
 		background: var(--surface-strong);
 		border: 1px solid var(--line);
-		box-shadow: var(--shadow);
+		box-shadow: var(--shadow-soft);
 		color: var(--forest);
 		font-weight: 800;
 		font-size: 0.86rem;
@@ -1294,6 +1290,10 @@
 	}
 	.mg-name {
 		color: var(--ink);
+		max-width: 10rem; /* guard against a pathologically long future group name */
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 	.mg-caret {
 		font-size: 0.7rem;
@@ -1302,28 +1302,29 @@
 
 	.map-top {
 		position: absolute;
-		top: max(58px, calc(env(safe-area-inset-top) + 46px));
+		top: max(12px, env(safe-area-inset-top)); /* promoted to the top band */
 		left: 12px;
 		right: 12px;
 		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: 10px;
-		z-index: 5;
+		align-items: center;
+		justify-content: flex-start;
+		gap: 8px;
+		z-index: 6;
 		pointer-events: none;
 	}
 	.map-top > * {
 		pointer-events: auto;
 	}
 	.next-water-chip {
+		flex: 0 1 auto; /* yields before the row can overflow */
+		min-width: 0; /* lets .nw-text actually ellipsis under pressure */
 		display: inline-flex;
 		align-items: center;
 		gap: 7px;
 		min-height: 36px;
-		max-width: calc(100% - 56px);
 		padding: 7px 12px;
 		border-radius: 999px;
-		background: rgba(255, 253, 248, 0.95);
+		background: var(--surface-strong);
 		border: 1px solid var(--line);
 		box-shadow: var(--shadow-soft);
 		font-size: 0.76rem;
@@ -1342,49 +1343,31 @@
 	.next-water-chip strong {
 		font-weight: 900;
 	}
+	/* Candidate (unconfirmed) water → a compact disc, not a 76px word badge. A
+	   single glyph can never mid-word-ellipsis; full meaning lives in title +
+	   aria-label. */
 	.cand-tag {
 		flex: 0 0 auto;
-		font-size: 0.62rem;
-		font-weight: 900;
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-		color: var(--clay);
-		background: var(--clay-soft);
-		padding: 2px 6px;
-		border-radius: 6px;
-	}
-	.orient-btn {
-		flex: 0 0 auto;
-		position: relative;
-		width: 44px;
-		height: 44px;
 		display: grid;
 		place-items: center;
+		width: 18px;
+		height: 18px;
+		font-size: 0.66rem;
+		font-weight: 900;
+		line-height: 1;
+		color: var(--clay);
+		background: var(--clay-soft);
 		border-radius: 50%;
-		background: rgba(255, 253, 248, 0.95);
-		border: 1px solid var(--line);
-		box-shadow: var(--shadow-soft);
-		cursor: pointer;
 	}
+	/* The rose now lives in the .map-tools stack as a .tool-btn — it only needs
+	   its active tint and the rotation transition; the 44px circle/surface/border
+	   come from .tool-btn. */
 	.orient-btn.head {
 		border-color: var(--forest);
 		background: var(--forest-soft);
 	}
 	.orient-btn .rose {
 		transition: transform 0.4s ease;
-	}
-	.orient-cap {
-		position: absolute;
-		top: 100%;
-		left: 50%;
-		transform: translateX(-50%);
-		margin-top: 3px;
-		font-size: 0.52rem;
-		font-weight: 900;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		color: var(--muted);
-		white-space: nowrap;
 	}
 
 	/* Controls live in the top-right corner — a short, solid stack (globe ·
@@ -1393,7 +1376,7 @@
 	.map-tools {
 		position: absolute;
 		right: 12px;
-		top: max(110px, calc(env(safe-area-inset-top) + 98px));
+		top: max(58px, calc(env(safe-area-inset-top) + 46px)); /* tuck under the strip */
 		z-index: 5;
 		display: flex;
 		flex-direction: column;
@@ -1610,11 +1593,9 @@
 	/* Dark mode: float the chrome on dark surfaces (placed after the base chrome
 	   rules so it wins) — their token-colored text was washing out on cream. */
 	@media (prefers-color-scheme: dark) {
-		.next-water-chip,
-		.orient-btn {
-			background: rgba(22, 29, 20, 0.92);
-		}
-		/* Solid dark chrome — one consistent surface, crisp on any terrain. */
+		/* Solid dark chrome — one consistent surface, crisp on any terrain. The
+		   strip pills (.map-group / .next-water-chip) use --surface-strong, so they
+		   pick up dark automatically; the rose is now a .tool-btn below. */
 		.tool-btn {
 			background: var(--surface-strong);
 			border-color: var(--line);
