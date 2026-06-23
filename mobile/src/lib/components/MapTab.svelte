@@ -298,16 +298,44 @@
 	}
 	const bearing = $derived(geo.length > 1 ? bearingAtMile(fromClamped) : 0);
 
+	// Elevation (ft) interpolated at an exact mile from the 1-mi profile.
+	function elevAtMile(mile: number): number {
+		const a = geo;
+		if (a.length < 1) return 0;
+		const m = clamp(mile, a[0].m, a[a.length - 1].m);
+		let lo = 0;
+		let hi = a.length - 1;
+		while (hi - lo > 1) {
+			const mid = (lo + hi) >> 1;
+			if (a[mid].m <= m) lo = mid;
+			else hi = mid;
+		}
+		const t = (m - a[lo].m) / Math.max(1e-6, a[hi].m - a[lo].m);
+		return a[lo].ft + (a[hi].ft - a[lo].ft) * t;
+	}
+
+	// Build an elevation segment with interpolated endpoints, so even a span
+	// shorter than the 1-mi profile spacing still has a real ≥2-point profile.
+	function elevSegment(lo: number, hi: number): { mile: number; elevation: number }[] {
+		const interior = elevationWindow(geo, lo, hi - lo).filter(
+			(p) => p.mile > lo + 1e-6 && p.mile < hi - 1e-6
+		);
+		return [
+			{ mile: lo, elevation: elevAtMile(lo) },
+			...interior,
+			{ mile: hi, elevation: elevAtMile(hi) }
+		];
+	}
+
 	// --- measurement: tap a trail point → distance + gain/loss from current mile -
 	const measure = $derived.by(() => {
 		if (measureMile == null || geo.length < 2) return null;
 		const target = clamp(measureMile, trailLo, trailHi);
 		const a = Math.min(fromClamped, target);
 		const b = Math.max(fromClamped, target);
-		const win = elevationWindow(geo, a, b - a);
-		if (win.length < 2) return null;
+		const segUp = elevSegment(a, b);
 		// Gain/loss as actually walked — from the current mile toward the point.
-		const seq = target >= fromClamped ? win : [...win].reverse();
+		const seq = target >= fromClamped ? segUp : [...segUp].reverse();
 		let gain = 0;
 		let loss = 0;
 		for (let i = 1; i < seq.length; i++) {
@@ -339,7 +367,7 @@
 		const pad = 5;
 		const lo = elevLo;
 		const hi = Math.max(elevHi, lo + 0.5);
-		const win = elevationWindow(geo, lo, hi - lo);
+		const win = elevSegment(lo, hi);
 		if (win.length < 2) {
 			return { fillD: '', segments: [] as { d: string; band: 0 | 1 | 2 }[], gain: 0, loss: 0, minEl: 0, maxEl: 0, lo, hi, empty: true };
 		}
