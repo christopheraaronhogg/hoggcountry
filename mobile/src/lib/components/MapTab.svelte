@@ -232,28 +232,23 @@
 	const showRecenter = $derived(userInteracted && !isOverview);
 
 	function onMapClick(lat: number, lon: number) {
-		if (geo.length < 2) return;
-		// Snap the tap to the nearest real trail mile. A tap on (or near) the trail
-		// measures to that point; a tap far out in open map clears it. The snap
-		// tolerance scales with zoom — generous on the whole-trail view (where the
-		// line is a few pixels wide), tight in the corridor.
+		if (geo.length < 2 && routeHi.length < 2) return;
+		// Snap the tap to the nearest point on the trail; a tap far out in open map
+		// clears it. Tolerance scales with zoom — generous on the whole-trail view
+		// (the line is a few pixels wide), tighter in the corridor.
 		const tol = isOverview ? 80 : 6;
 		measureMile = snapMeasureToTrail(lat, lon, tol);
 	}
-	// Coarse 1-mi snap (respects tolerance), then refine against the high-res
-	// centerline so the measured point glides at ~0.1 mi instead of jumping in
-	// jarring 1-mile steps as you drag it.
+	// Snap straight to the nearest point on the DRAWN high-res line (not the 1-mi
+	// elevation points, whose geometry differs). This is exact at any zoom — a tap
+	// at 1-mi or tighter lands precisely where you touched, and a drag glides along
+	// the line. ~70k points is a sub-millisecond scan; fine per tap and per drag.
 	function snapMeasureToTrail(lat: number, lon: number, tol: number): number | null {
-		const coarse = snapToMile(geo, lat, lon, tol);
-		if (coarse == null || routeHi.length < 2) return coarse;
-		const span = (trailHi - trailLo) || 1;
-		const approx = Math.round(((coarse - trailLo) / span) * (routeHi.length - 1));
-		const lo = Math.max(0, approx - 25);
-		const hi = Math.min(routeHi.length - 1, approx + 25);
+		if (routeHi.length < 2) return snapToMile(geo, lat, lon, tol);
 		const cosLat = Math.cos((lat * Math.PI) / 180);
-		let bestIdx = approx;
+		let bestIdx = 0;
 		let bestD = Infinity;
-		for (let i = lo; i <= hi; i++) {
+		for (let i = 0; i < routeHi.length; i++) {
 			const dLat = routeHi[i][0] - lat;
 			const dLon = (routeHi[i][1] - lon) * cosLat;
 			const d = dLat * dLat + dLon * dLon;
@@ -262,6 +257,9 @@
 				bestIdx = i;
 			}
 		}
+		// 1° latitude ≈ 69 mi — reject taps farther than the tolerance from the line.
+		if (Math.sqrt(bestD) * 69 > tol) return null;
+		const span = (trailHi - trailLo) || 1;
 		return trailLo + (bestIdx / (routeHi.length - 1)) * span;
 	}
 	function clearMeasure() {
