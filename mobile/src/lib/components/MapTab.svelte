@@ -693,22 +693,21 @@
 		}
 	});
 
-	// Category POI pins — a teardrop in the category colour with the matching glyph
-	// (droplet / tent / house) in the head, so a point of interest can never be
-	// confused with the trail's round difficulty dots and the category reads at a
-	// glance (shape + glyph, not hue alone).
+	// Category POI markers — a category-coloured COIN (disc + cream ring) with the
+	// matching glyph (droplet / tent / house) centred. The icon + ring + size set
+	// it apart from the trail's small bare difficulty dots, and the glyph (not hue
+	// alone) carries the category. A neutral circle — no shape that implies a type.
 	const POI_GLYPH: Record<PoiKind, string> = {
 		water: '<path d="M12 3.5C12 3.5 5.5 11 5.5 15.5a6.5 6.5 0 0 0 13 0C18.5 11 12 3.5 12 3.5Z"/>',
 		shelter: '<path d="M2.5 20 12 4.5 21.5 20"/><path d="M2.5 20H21.5"/><path d="M9 20 12 13.5 15 20"/>',
 		town: '<path d="M4 11 12 4.5 20 11V20H4Z"/><path d="M10 20v-5h4v5"/>'
 	};
 	function poiIcon(kind: PoiKind, candidate: boolean) {
-		const sz = liveZoom >= 12 ? 34 : 28;
-		const w = Math.round(sz * 0.74);
+		const d = liveZoom >= 12 ? 30 : 26;
 		return L!.divIcon({
 			className: `poi-pin pin-${kind}`,
-			iconSize: [w, sz],
-			iconAnchor: [w / 2, sz], // teardrop tip touches the trail point
+			iconSize: [d, d],
+			iconAnchor: [d / 2, d / 2], // coin sits centred on the trail point
 			html:
 				`<span class="pp-body"></span>` +
 				`<svg class="pp-glyph" viewBox="0 0 24 24" aria-hidden="true">${POI_GLYPH[kind]}</svg>` +
@@ -1149,35 +1148,31 @@
 		fill: var(--forest);
 	}
 
-	/* Category POI pins — a teardrop (rounded square with one sharpened corner,
-	   rotated to point down) in the category colour, with the glyph upright in the
-	   head. The --surface-strong casing + glyph stay legible on either theme. */
+	/* Category POI coin — a category-coloured disc with a --surface-strong ring and
+	   the glyph centred (cream in light, near-black in dark for contrast on either
+	   theme). A neutral circle, sized + ringed + iconed so it never reads as a bare
+	   trail dot. */
 	:global(.poi-pin) {
-		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
 	}
 	:global(.poi-pin .pp-body) {
 		position: absolute;
-		bottom: 0;
-		left: 0;
-		width: 100%;
-		height: 78%;
-		border-radius: 50% 50% 50% 0;
-		transform: rotate(45deg);
-		transform-origin: center;
+		inset: 0;
+		border-radius: 50%;
 		background: var(--pin-fill);
 		border: 2px solid var(--surface-strong);
 	}
 	:global(.poi-pin .pp-glyph) {
 		position: absolute;
-		top: 11%;
+		top: 50%;
 		left: 50%;
 		width: 60%;
 		height: 60%;
 		/* counter-rotate the glyph in head-up mode so it stays upright */
-		transform: translateX(-50%) rotate(var(--maprot, 0deg));
+		transform: translate(-50%, -50%) rotate(var(--maprot, 0deg));
 		fill: none;
 		stroke: var(--surface-strong);
-		stroke-width: 2.1;
+		stroke-width: 2.2;
 		stroke-linecap: round;
 		stroke-linejoin: round;
 		pointer-events: none;
