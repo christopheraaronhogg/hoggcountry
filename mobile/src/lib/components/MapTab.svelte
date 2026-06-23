@@ -89,15 +89,14 @@
 	type WaterReliability = 'reliable' | 'seasonal' | 'thin';
 	type Landmark = { kind: PoiKind; mile: number; label: string; reliability?: WaterReliability };
 	const POI_WORD = { water: 'Water', shelter: 'Shelter', town: 'Town' } as const;
+	// The open water dataset carries no real flow data — the pack defaults every
+	// unconfirmed source to 'thin', so 'thin' here means "unverified", NOT a
+	// measured low flow. Only 'reliable'/'seasonal' are positive confirmations.
 	const RELIABILITY_WORD: Record<WaterReliability, string> = {
 		reliable: 'reliable',
 		seasonal: 'seasonal',
-		thin: 'thin flow'
+		thin: 'unverified'
 	};
-	function short(name: string): string {
-		const trimmed = name.replace(/ (Memorial )?Shelter$/iu, '');
-		return trimmed.length > 15 ? trimmed.slice(0, 14).trimEnd() + '…' : trimmed;
-	}
 	const landmarks = $derived.by<Landmark[]>(() => {
 		const pack = trailAssistant.fieldPack;
 		const lo = viewStart - 0.5;
@@ -106,9 +105,9 @@
 			items.filter((i) => i.mile >= lo && i.mile <= hi).sort((a, b) => a.mile - b.mile);
 		const water = inWin(pack.water)
 			.slice(0, 14)
-			.map((w) => ({ kind: 'water' as const, mile: w.mile, label: short(w.name), reliability: w.reliability }));
-		const shelters = inWin(pack.shelters).map((s) => ({ kind: 'shelter' as const, mile: s.mile, label: short(s.name) }));
-		const towns = inWin(pack.towns).map((t) => ({ kind: 'town' as const, mile: t.mile, label: short(t.name) }));
+			.map((w) => ({ kind: 'water' as const, mile: w.mile, label: w.name, reliability: w.reliability }));
+		const shelters = inWin(pack.shelters).map((s) => ({ kind: 'shelter' as const, mile: s.mile, label: s.name }));
+		const towns = inWin(pack.towns).map((t) => ({ kind: 'town' as const, mile: t.mile, label: t.name }));
 		return [...water, ...shelters, ...towns].sort((a, b) => a.mile - b.mile).slice(0, 40);
 	});
 	// POI category filter, doubling as the legend's state. Never let all three off
