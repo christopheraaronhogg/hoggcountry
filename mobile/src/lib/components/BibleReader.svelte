@@ -342,20 +342,21 @@
 	{:else if mode === 'read'}
 		{#if book && chapter}
 			<div class="reader-head">
-				<button class="back-link" type="button" onclick={() => (mode = 'browse')}>‹ Books</button>
+				<button class="chap-arrow" type="button" onclick={() => gotoAdjacentChapter(-1)} aria-label="Previous chapter">‹</button>
 				<div class="chap-nav">
-					<button class="chap-arrow" type="button" onclick={() => gotoAdjacentChapter(-1)} aria-label="Previous chapter">‹</button>
+					<!-- Two boxes: tap the book → book picker, tap the number → chapter picker. -->
+					<button class="chap-box book" type="button" onclick={() => (mode = 'browse')}>{book.name}</button>
 					<button
-						class="chap-current"
+						class="chap-box chapter"
 						type="button"
 						aria-expanded={chapterPickerOpen}
 						onclick={() => (chapterPickerOpen = !chapterPickerOpen)}
 					>
-						{book.name} {chapter.number}
+						{chapter.number}
 						<span class="caret" class:open={chapterPickerOpen} aria-hidden="true">▾</span>
 					</button>
-					<button class="chap-arrow" type="button" onclick={() => gotoAdjacentChapter(1)} aria-label="Next chapter">›</button>
 				</div>
+				<button class="chap-arrow" type="button" onclick={() => gotoAdjacentChapter(1)} aria-label="Next chapter">›</button>
 			</div>
 			{#if chapterPickerOpen}
 				<div class="chapter-row" role="tablist" aria-label="Chapter">
@@ -713,43 +714,46 @@
 		justify-content: space-between;
 		gap: 6px;
 	}
-	.back-link {
-		min-height: 44px;
-		display: inline-flex;
-		align-items: center;
-		color: var(--forest);
-		font-weight: 800;
-		font-size: 0.84rem;
-	}
-	/* Chapter nav — prev/next arrows around a tap-to-open title (best-app pattern). */
+	/* Chapter nav — prev/next arrows around two boxes: book · chapter. */
 	.chap-nav {
 		display: flex;
-		align-items: center;
-		gap: 2px;
+		align-items: stretch;
+		gap: 6px;
+		flex: 1;
+		justify-content: center;
 	}
 	.chap-arrow {
-		width: 38px;
+		width: 40px;
 		height: 44px;
 		display: grid;
 		place-items: center;
 		font-size: 1.5rem;
 		font-weight: 700;
 		color: var(--forest);
-		border-radius: 10px;
+		border-radius: 12px;
+		flex: 0 0 auto;
 	}
-	.chap-current {
+	.chap-box {
 		min-height: 44px;
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
-		padding: 0 12px;
-		border-radius: 999px;
+		padding: 0 14px;
+		border-radius: 12px;
 		background: var(--forest-soft);
 		color: var(--forest);
 		font-family: var(--font-display);
 		font-size: 1.08rem;
 		font-weight: 700;
 		white-space: nowrap;
+	}
+	.chap-box.book {
+		flex: 1 1 auto;
+		justify-content: center;
+		min-width: 0;
+		max-width: 60%;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 	.caret {
 		font-size: 0.7rem;

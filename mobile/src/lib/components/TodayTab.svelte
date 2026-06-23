@@ -554,10 +554,11 @@
 		color: var(--muted);
 	}
 
-	/* Weather — sky top-border accent (the reference's first-class weather card). */
+	/* Weather — sky accent rail on the LEFT, matching the NEXT card's clay rail
+	   (consistent accent placement across the day's cards). */
 	.wx {
 		padding: 15px 18px 16px;
-		border-top: 3px solid var(--sky);
+		border-left: 3px solid var(--sky);
 	}
 	.wx-head {
 		display: flex;

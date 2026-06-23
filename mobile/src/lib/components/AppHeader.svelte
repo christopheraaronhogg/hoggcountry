@@ -103,7 +103,7 @@
 
 	.status-strip {
 		display: inline-flex;
-		align-items: baseline;
+		align-items: center;
 		gap: 5px;
 		padding: 5px 12px;
 		min-height: 44px;
