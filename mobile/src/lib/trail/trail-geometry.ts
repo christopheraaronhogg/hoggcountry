@@ -1,10 +1,11 @@
 import { browser } from '$app/environment';
 
 /**
- * Real Appalachian Trail route geometry + elevation, sampled at 1-mile NOBO
- * resolution from USGS 3DEP (public domain). Generated into static/ by
- * scripts/build-trail-geometry.mjs and fetched at runtime (same pattern as the
- * offline KJV Bible). Each point: mile (NOBO), elevation (ft), lat, lon.
+ * Real Appalachian Trail route geometry + elevation, sampled at ~100-metre
+ * (~0.06-mile) NOBO resolution from USGS 3DEP (public domain) — ~16x finer than
+ * the old 1-mile cut, so gain/loss, grade, and the elevation profile are honest
+ * at sub-mile scale. Fetched at runtime (same pattern as the offline KJV Bible).
+ * Each point: mile (NOBO), elevation (ft), lat, lon.
  *
  * Powers (a) the Today/Map elevation profile and (b) snapping an on-device GPS
  * fix to a real trail mile. This replaces the former hand-authored "illustrative"
@@ -23,7 +24,7 @@ export interface ElevationPoint {
 	label?: string;
 }
 
-const ASSET_URL = '/trail/elevation-1mi.json';
+const ASSET_URL = '/trail/elevation-100m.json';
 
 let cache: TrailGeoPoint[] | null = null;
 let inFlight: Promise<TrailGeoPoint[]> | null = null;

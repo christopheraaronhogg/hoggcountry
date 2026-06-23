@@ -163,24 +163,35 @@
 		const frac = (fromClamped - trailLo) / ((trailHi - trailLo) || 1);
 		return Math.max(1, Math.min(routeCount - 1, Math.round(frac * (routeCount - 1))));
 	});
-	// Map a route-source index to its (fractional) index in the 1-mi geo array.
-	const geoIdxOfRoute = (ri: number) =>
-		routeCount < 2 || geo.length < 2 ? 0 : (ri / (routeCount - 1)) * (geo.length - 1);
-	// Terrain difficulty for the trail between two sample indices. We only have
-	// real elevation (no rock-surface data), so difficulty = TOTAL vertical change
-	// per mile — every up AND down summed, not just net grade. That's the honest
-	// proxy for how punishing a stretch is: the AT's hardest miles are rolling,
-	// churned-up terrain (PUDs) where net grade is ~flat but the climbing never
-	// stops. Same thresholds as the elevation chart's gradeBand.
-	function bandOfRange(i0: number, i1: number): 0 | 1 | 2 {
+	// Sustained terrain difficulty at a mile — TOTAL vertical change (every up AND
+	// down) per mile over a ~0.4-mi window. We only have real elevation (no
+	// rock-surface data), and total change is the honest proxy for how punishing a
+	// stretch is (the AT's hardest miles are rolling, churned-up PUDs). Windowed so
+	// the 100-m profile's local spikes don't paint everything steep, and tuned to
+	// the real profile: easy ridgewalks read gentle, typical AT moderate, rugged
+	// climbs steep.
+	function bandAtMile(mile: number): 0 | 1 | 2 {
 		const a = geo;
-		const lo = Math.max(0, Math.min(i0, a.length - 1));
-		const hi = Math.max(0, Math.min(i1, a.length - 1));
-		if (hi <= lo) return 0;
+		if (a.length < 2) return 0;
+		const lo = mile - 0.2;
+		const hi = mile + 0.2;
+		let i = 0;
+		let j = a.length - 1;
+		while (j - i > 1) {
+			const m = (i + j) >> 1;
+			if (a[m].m < lo) i = m;
+			else j = m;
+		}
 		let change = 0;
-		for (let j = lo; j < hi; j++) change += Math.abs(a[j + 1].ft - a[j].ft);
-		const perMile = change / (Math.abs(a[hi].m - a[lo].m) || 1);
-		return perMile > 400 ? 2 : perMile > 180 ? 1 : 0;
+		let span = 0;
+		for (let k = i; k < a.length - 1 && a[k].m < hi; k++) {
+			if (a[k + 1].m <= lo) continue;
+			change += Math.abs(a[k + 1].ft - a[k].ft);
+			span += a[k + 1].m - a[k].m;
+		}
+		if (span < 0.02) return 0;
+		const perMile = change / span;
+		return perMile > 650 ? 2 : perMile > 320 ? 1 : 0;
 	}
 
 	// --- Leaflet layers (created in onMount) ----------------------------------
@@ -298,7 +309,7 @@
 	}
 	const bearing = $derived(geo.length > 1 ? bearingAtMile(fromClamped) : 0);
 
-	// Elevation (ft) interpolated at an exact mile from the 1-mi profile.
+	// Elevation (ft) interpolated at an exact mile from the 100-m profile.
 	function elevAtMile(mile: number): number {
 		const a = geo;
 		if (a.length < 1) return 0;
@@ -315,7 +326,7 @@
 	}
 
 	// Build an elevation segment with interpolated endpoints, so even a span
-	// shorter than the 1-mi profile spacing still has a real ≥2-point profile.
+	// shorter than the 100-m profile spacing still has a real ≥2-point profile.
 	function elevSegment(lo: number, hi: number): { mile: number; elevation: number }[] {
 		const interior = elevationWindow(geo, lo, hi - lo).filter(
 			(p) => p.mile > lo + 1e-6 && p.mile < hi - 1e-6
@@ -353,11 +364,33 @@
 	});
 
 	// --- elevation profile (whole hike / visible window / measured segment) ------
-	// Grade band per segment so upcoming terrain difficulty reads at a glance by
-	// colour (gentle / moderate / steep), not just from the line's shape.
-	function gradeBand(dEl: number, dMi: number): 0 | 1 | 2 {
-		const g = Math.abs(dEl / Math.max(dMi, 0.01)); // ft per mile
-		return g > 400 ? 2 : g > 180 ? 1 : 0;
+	// Decimate a high-res window to ~targetN buckets for the SVG, keeping each
+	// bucket's local min AND max (in mile order) so summits and notches survive —
+	// a plain stride would alias them away at whole-trail zoom. Gain/loss is always
+	// summed from the full-resolution window, never this drawing copy.
+	function decimateProfile(
+		pts: { mile: number; elevation: number }[],
+		targetN: number
+	): { mile: number; elevation: number }[] {
+		if (pts.length <= targetN) return pts;
+		const bucket = pts.length / targetN;
+		const out: { mile: number; elevation: number }[] = [pts[0]];
+		for (let b = 0; b < targetN; b++) {
+			const start = Math.floor(b * bucket);
+			const end = Math.min(pts.length, Math.floor((b + 1) * bucket));
+			let lo = pts[start];
+			let hi = pts[start];
+			for (let i = start + 1; i < end; i++) {
+				if (pts[i].elevation < lo.elevation) lo = pts[i];
+				if (pts[i].elevation > hi.elevation) hi = pts[i];
+			}
+			const [first, second] = lo.mile <= hi.mile ? [lo, hi] : [hi, lo];
+			if (first !== out[out.length - 1]) out.push(first);
+			if (second !== first) out.push(second);
+		}
+		const last = pts[pts.length - 1];
+		if (out[out.length - 1] !== last) out.push(last);
+		return out;
 	}
 	const H = 46;
 	const elevLo = $derived(measure ? Math.min(fromClamped, measure.mile) : viewStart);
@@ -367,10 +400,20 @@
 		const pad = 5;
 		const lo = elevLo;
 		const hi = Math.max(elevHi, lo + 0.5);
-		const win = elevSegment(lo, hi);
-		if (win.length < 2) {
+		const full = elevSegment(lo, hi);
+		if (full.length < 2) {
 			return { fillD: '', segments: [] as { d: string; band: 0 | 1 | 2 }[], gain: 0, loss: 0, minEl: 0, maxEl: 0, lo, hi, empty: true };
 		}
+		// Gain/loss from the full-resolution window — honest at 100-m spacing.
+		let gain = 0;
+		let loss = 0;
+		for (let i = 1; i < full.length; i++) {
+			const delta = full[i].elevation - full[i - 1].elevation;
+			if (delta > 0) gain += delta;
+			else loss += -delta;
+		}
+		// Decimate only for drawing the SVG path.
+		const win = decimateProfile(full, 220);
 		const elevs = win.map((p) => p.elevation);
 		const minEl = Math.min(...elevs);
 		const maxEl = Math.max(...elevs);
@@ -379,17 +422,14 @@
 		const pt = (i: number) => `${x(win[i].mile).toFixed(1)},${y(win[i].elevation).toFixed(1)}`;
 		const line = win.map((_, i) => `${i === 0 ? 'M' : 'L'}${pt(i)}`).join(' ');
 		const fillD = `${line} L${x(win[win.length - 1].mile).toFixed(1)},${H} L${x(win[0].mile).toFixed(1)},${H} Z`;
-		// Colour the line by grade, merging consecutive same-band segments.
+		// Colour the line by the same sustained terrain band the map uses (a ±0.2-mi
+		// window), merging consecutive same-band segments so the profile reads
+		// gentle / moderate / steep instead of saturating on every 100-m wiggle.
 		const segments: { d: string; band: 0 | 1 | 2 }[] = [];
 		let runBand: 0 | 1 | 2 | null = null;
 		let runD = '';
-		let gain = 0;
-		let loss = 0;
 		for (let i = 1; i < win.length; i++) {
-			const delta = win[i].elevation - win[i - 1].elevation;
-			if (delta > 0) gain += delta;
-			else loss += -delta;
-			const band = gradeBand(delta, win[i].mile - win[i - 1].mile);
+			const band = bandAtMile((win[i - 1].mile + win[i].mile) / 2);
 			if (band === runBand) {
 				runD += ` L${pt(i)}`;
 			} else {
@@ -564,11 +604,9 @@
 		if (hasElev) {
 			// Difficulty band for a stretch of the drawn line, looked up from the
 			// matching 1-mi elevation segment(s).
-			const bandFor = (ra: number, rb: number): 0 | 1 | 2 => {
-				const ga = Math.floor(geoIdxOfRoute(ra));
-				const gb = Math.max(ga + 1, Math.ceil(geoIdxOfRoute(rb)));
-				return bandOfRange(ga, gb);
-			};
+			const span = (trailHi - trailLo) || 1;
+			const bandFor = (ra: number, rb: number): 0 | 1 | 2 =>
+				bandAtMile(trailLo + (((ra + rb) / 2) / (routeCount - 1)) * span);
 			// 2) difficulty-banded trail. Done = solid, upcoming remainder = dashed
 			//    (same gentle/moderate/steep colours), so progress still reads.
 			const drawBanded = (i0: number, i1: number, dashed: boolean) => {
