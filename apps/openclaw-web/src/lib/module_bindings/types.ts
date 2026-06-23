@@ -54,20 +54,6 @@ export const PublicAnnouncement = __t.object("PublicAnnouncement", {
 });
 export type PublicAnnouncement = __Infer<typeof PublicAnnouncement>;
 
-export const TrailConditionReport = __t.object("TrailConditionReport", {
-  id: __t.u64(),
-  trailId: __t.string(),
-  source: __t.string(),
-  chipText: __t.string().optional(),
-  noteText: __t.string(),
-  reporterTrailName: __t.string().optional(),
-  snappedMile: __t.f64(),
-  observedAt: __t.string(),
-  status: __t.string(),
-  createdAt: __t.string(),
-});
-export type TrailConditionReport = __Infer<typeof TrailConditionReport>;
-
 export const ScoutTurn = __t.object("ScoutTurn", {
   id: __t.u64(),
   workspaceId: __t.string(),
@@ -98,6 +84,20 @@ export const ScoutWorkspaceAccess = __t.object("ScoutWorkspaceAccess", {
 });
 export type ScoutWorkspaceAccess = __Infer<typeof ScoutWorkspaceAccess>;
 
+export const TrailConditionReport = __t.object("TrailConditionReport", {
+  id: __t.u64(),
+  trailId: __t.string(),
+  source: __t.string(),
+  chipText: __t.option(__t.string()),
+  noteText: __t.string(),
+  reporterTrailName: __t.option(__t.string()),
+  snappedMile: __t.f64(),
+  observedAt: __t.string(),
+  status: __t.string(),
+  createdAt: __t.string(),
+});
+export type TrailConditionReport = __Infer<typeof TrailConditionReport>;
+
 export const VideoDispatch = __t.object("VideoDispatch", {
   id: __t.u64(),
   youtubeId: __t.string(),
@@ -106,3 +106,16 @@ export const VideoDispatch = __t.object("VideoDispatch", {
   publishedAt: __t.string(),
 });
 export type VideoDispatch = __Infer<typeof VideoDispatch>;
+
+export const WaterReport = __t.object("WaterReport", {
+  id: __t.u64(),
+  trailId: __t.string(),
+  mile: __t.f64(),
+  sourceName: __t.string(),
+  status: __t.string(),
+  reporterTrailName: __t.option(__t.string()),
+  observedAt: __t.string(),
+  createdAt: __t.string(),
+});
+export type WaterReport = __Infer<typeof WaterReport>;
+

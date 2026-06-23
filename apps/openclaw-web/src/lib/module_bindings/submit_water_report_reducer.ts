@@ -12,10 +12,9 @@ import {
 
 export default {
   trailId: __t.string(),
-  source: __t.string(),
-  chipText: __t.option(__t.string()),
-  noteText: __t.string(),
+  mile: __t.f64(),
+  sourceName: __t.string(),
+  status: __t.string(),
   reporterTrailName: __t.option(__t.string()),
-  snappedMile: __t.f64(),
   observedAt: __t.option(__t.string()),
 };

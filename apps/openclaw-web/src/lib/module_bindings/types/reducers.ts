@@ -12,6 +12,7 @@ import MirrorScoutTurnReducer from "../mirror_scout_turn_reducer";
 import MirrorScoutTurnEventReducer from "../mirror_scout_turn_event_reducer";
 import RegisterBetaProfileReducer from "../register_beta_profile_reducer";
 import SubmitTrailConditionReportReducer from "../submit_trail_condition_report_reducer";
+import SubmitWaterReportReducer from "../submit_water_report_reducer";
 
 export type AppendManualNoteParams = __Infer<typeof AppendManualNoteReducer>;
 export type JoinScoutWorkspaceParams = __Infer<typeof JoinScoutWorkspaceReducer>;
@@ -19,3 +20,5 @@ export type MirrorScoutTurnParams = __Infer<typeof MirrorScoutTurnReducer>;
 export type MirrorScoutTurnEventParams = __Infer<typeof MirrorScoutTurnEventReducer>;
 export type RegisterBetaProfileParams = __Infer<typeof RegisterBetaProfileReducer>;
 export type SubmitTrailConditionReportParams = __Infer<typeof SubmitTrailConditionReportReducer>;
+export type SubmitWaterReportParams = __Infer<typeof SubmitWaterReportReducer>;
+

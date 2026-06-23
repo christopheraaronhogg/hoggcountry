@@ -2,6 +2,11 @@ import { browser } from '$app/environment';
 import { trailAssistant } from '$lib/trailState.svelte';
 import { syncStateForLocalWrite } from '$lib/sync-state';
 import type { SyncState } from '$lib/types';
+import {
+	publishWaterReport,
+	startWaterReportSync,
+	type RemoteWaterReport
+} from '$lib/waterReportSpacetime';
 
 // Crowdsourced water-status reports (FarOut-style). The open water dataset has no
 // real flow data, so each source shows "unverified" until a hiker reports what
@@ -104,15 +109,54 @@ class WaterReportStore {
 		return this.#reports.filter((r) => r.syncState === 'queued-offline');
 	}
 
-	// SpacetimeDB sync drops in here, mirroring trailState's Trail Pulse path:
-	// publish, then mark the report synced/queued and re-persist. No-op until the
-	// water table + publishWaterReport land.
-	async #sync(_report: WaterReport): Promise<void> {
-		/* v2: const ok = await publishWaterReport(_report).catch(() => false);
-		   this.#setSyncState(_report.id, ok ? 'synced' : 'queued-offline'); this.#persist(); */
+	/** Start receiving the tramily's reports from the shared DB (no-op until the
+	 *  sync is configured + deployed). Idempotent; safe to call on map mount. */
+	#syncStarted = false;
+	startSync() {
+		if (!browser || this.#syncStarted) return;
+		this.#syncStarted = true;
+		startWaterReportSync((remote) => this.#ingestRemote(remote));
+		// Re-publish anything written while offline.
+		for (const r of this.queuedReports()) void this.#sync(r);
 	}
 
-	// eslint-disable-next-line @typescript-eslint/no-unused-private-class-members
+	// A report from another hiker (or our own, echoed back). Dedup by the source +
+	// timestamp + reporter so an echo of our own write doesn't double up; display is
+	// latest-wins, so newer reports naturally supersede.
+	#ingestRemote(remote: RemoteWaterReport) {
+		const status = remote.status as WaterStatus;
+		if (status !== 'flowing' && status !== 'low' && status !== 'dry') return;
+		const bucket = waterBucket(remote.mile);
+		const key = `${bucket}|${remote.observedAt}|${remote.reporterTrailName ?? ''}`;
+		if (this.#reports.some((r) => `${r.bucket}|${r.observedAt}|${r.reporterTrailName ?? ''}` === key)) return;
+		const report: WaterReport = {
+			id: crypto.randomUUID(),
+			bucket,
+			mile: remote.mile,
+			sourceName: remote.sourceName,
+			status,
+			reporterTrailName: remote.reporterTrailName,
+			observedAt: remote.observedAt,
+			syncState: 'synced'
+		};
+		this.#reports = [report, ...this.#reports].slice(0, 500);
+		this.#persist();
+	}
+
+	// Publish to the shared DB, then mark the report synced or queued-offline.
+	async #sync(report: WaterReport): Promise<void> {
+		const result = await publishWaterReport({
+			mile: report.mile,
+			sourceName: report.sourceName,
+			status: report.status,
+			reporterTrailName: report.reporterTrailName,
+			observedAt: report.observedAt
+		}).catch(() => 'failed' as const);
+		if (result === 'skipped') return; // sync not configured — keep the local state
+		this.#setSyncState(report.id, result === 'synced' ? 'synced' : 'queued-offline');
+		this.#persist();
+	}
+
 	#setSyncState(id: string, state: SyncState) {
 		this.#reports = this.#reports.map((r) => (r.id === id ? { ...r, syncState: state } : r));
 	}

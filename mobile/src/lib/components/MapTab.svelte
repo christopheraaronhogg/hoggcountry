@@ -509,6 +509,9 @@
 
 	// --- lifecycle ------------------------------------------------------------
 	onMount(async () => {
+		// Start receiving the tramily's water reports from the shared DB (no-op until
+		// the SpacetimeDB sync is configured + deployed).
+		waterReports.startSync();
 		const leaflet = await import('leaflet');
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		L = ((leaflet as any).default ?? leaflet) as typeof LeafletNS;
@@ -959,6 +962,20 @@
 			marker.on('click', () => selectPoi(lm.mile));
 			marker.addTo(poiLayer);
 		}
+	});
+
+	// Keep the coin shading in sync with the reports — runs when a report lands
+	// (your own OR a synced one from the tramily) and after the coins are rebuilt on
+	// pan/zoom. Re-shades existing coins IN PLACE (class only), so it never recreates
+	// a marker or closes an open popup.
+	$effect(() => {
+		void waterReports.all;
+		void visibleLandmarks;
+		if (typeof document === 'undefined') return;
+		document.querySelectorAll<HTMLElement>('.poi-pin .pp-body[data-wbucket]').forEach((el) => {
+			const rep = waterReports.latestForBucket(Number(el.dataset.wbucket));
+			el.className = `pp-body water-${rep ? rep.status : 'unverified'}`;
+		});
 	});
 
 	// Measurement: a draggable point you can pick up and slide along the trail.

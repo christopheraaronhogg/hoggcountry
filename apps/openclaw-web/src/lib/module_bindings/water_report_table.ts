@@ -13,12 +13,10 @@ import {
 export default __t.row({
   id: __t.u64().primaryKey(),
   trailId: __t.string().name("trail_id"),
-  source: __t.string(),
-  chipText: __t.option(__t.string()).name("chip_text"),
-  noteText: __t.string().name("note_text"),
-  reporterTrailName: __t.option(__t.string()).name("reporter_trail_name"),
-  snappedMile: __t.f64().name("snapped_mile"),
-  observedAt: __t.string().name("observed_at"),
+  mile: __t.f64(),
+  sourceName: __t.string().name("source_name"),
   status: __t.string(),
+  reporterTrailName: __t.option(__t.string()).name("reporter_trail_name"),
+  observedAt: __t.string().name("observed_at"),
   createdAt: __t.string().name("created_at"),
 });

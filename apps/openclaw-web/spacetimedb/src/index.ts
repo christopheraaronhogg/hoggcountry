@@ -67,6 +67,40 @@ const trailConditionReport = table(
   }
 );
 
+// Crowdsourced water-source status (flowing / low / dry), keyed to a source's
+// mile so it's shared across the tramily. The client buckets by 0.1 mi and shows
+// latest-wins per source.
+const waterReport = table(
+  {
+    name: 'water_report',
+    public: true,
+    indexes: [
+      {
+        accessor: 'trailId',
+        name: 'water_report_trail_id_idx',
+        algorithm: 'btree',
+        columns: ['trailId']
+      },
+      {
+        accessor: 'mile',
+        name: 'water_report_mile_idx',
+        algorithm: 'btree',
+        columns: ['mile']
+      }
+    ]
+  },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    trailId: t.string(),
+    mile: t.f64(),
+    sourceName: t.string(),
+    status: t.string(),
+    reporterTrailName: t.string().optional(),
+    observedAt: t.string(),
+    createdAt: t.string()
+  }
+);
+
 const betaProfile = table(
   { name: 'beta_profile' },
   {
@@ -149,6 +183,7 @@ const scoutDb = schema({
   videoDispatch,
   publicAnnouncement,
   trailConditionReport,
+  waterReport,
   betaProfile,
   manualNote,
   scoutWorkspaceAccess,
@@ -264,6 +299,35 @@ export const submitTrailConditionReport = scoutDb.reducer(
       snappedMile,
       observedAt,
       status: 'active',
+      createdAt: new Date().toISOString()
+    });
+  }
+);
+
+export const submitWaterReport = scoutDb.reducer(
+  {
+    trailId: t.string(),
+    mile: t.f64(),
+    sourceName: t.string(),
+    status: t.string(),
+    reporterTrailName: t.string().optional(),
+    observedAt: t.string().optional()
+  },
+  (ctx, payload) => {
+    const status = payload.status.trim();
+    if (status !== 'flowing' && status !== 'low' && status !== 'dry') return;
+
+    const mile = Math.round(payload.mile * 10) / 10;
+    if (!Number.isFinite(mile) || mile < 0) return;
+
+    ctx.db.waterReport.insert({
+      id: 0n,
+      trailId: payload.trailId.trim() || 'appalachian-trail',
+      mile,
+      sourceName: payload.sourceName.trim() || 'Water',
+      status,
+      reporterTrailName: payload.reporterTrailName?.trim() || undefined,
+      observedAt: payload.observedAt?.trim() || new Date().toISOString(),
       createdAt: new Date().toISOString()
     });
   }
