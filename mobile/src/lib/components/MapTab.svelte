@@ -7,6 +7,8 @@
 	import { elevationWindow, snapToMile } from '$lib/trail/trail-geometry';
 	import Icon, { type IconName } from './Icon.svelte';
 	import TrailPulseReportAction from './TrailPulseReportAction.svelte';
+	import PeopleSheet from './PeopleSheet.svelte';
+	import { people, AVATAR_TINTS, personInitial } from '$lib/people/people.svelte';
 
 	// A real Leaflet map on OpenTopoMap tiles showing the whole Appalachian Trail
 	// from the bundled offline geometry — progress-shaded, with the corridor's
@@ -824,6 +826,20 @@
 	<div class="leaflet-host" bind:this={host}></div>
 	<div class="map-scrim" aria-hidden="true"></div>
 
+	<!-- Group selector (Life360-style) — opens the people sheet -->
+	<button class="map-group" type="button" onclick={() => people.openSheet()} aria-haspopup="dialog">
+		<span class="mg-glyph" aria-hidden="true">
+			<svg width="16" height="16" viewBox="0 0 24 24">
+				<circle cx="9" cy="8" r="3.2" fill="currentColor" />
+				<circle cx="16.5" cy="9.5" r="2.4" fill="currentColor" opacity="0.7" />
+				<path d="M3 19c0-3 2.7-5 6-5s6 2 6 5z" fill="currentColor" />
+				<path d="M14.5 19c0-2 1.4-3.6 3.6-3.6S21.5 17 21.5 19z" fill="currentColor" opacity="0.7" />
+			</svg>
+		</span>
+		<span class="mg-name">{people.activeGroup.name}</span>
+		<span class="mg-caret" aria-hidden="true">▾</span>
+	</button>
+
 	<!-- Top row: next water + head-up/north toggle -->
 	<div class="map-top">
 		{#if nextWater}
@@ -911,6 +927,8 @@
 			</div>
 		{/if}
 	</div>
+
+	<PeopleSheet />
 </div>
 
 <style>
@@ -1187,9 +1205,40 @@
 	}
 
 	/* ---- chrome (floats over the map) -------------------------------------- */
-	.map-top {
+	/* Life360-style group selector, centered up top. */
+	.map-group {
 		position: absolute;
 		top: max(12px, env(safe-area-inset-top));
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 6;
+		display: inline-flex;
+		align-items: center;
+		gap: 7px;
+		min-height: 38px;
+		padding: 6px 14px;
+		border-radius: 999px;
+		background: var(--surface-strong);
+		border: 1px solid var(--line);
+		box-shadow: var(--shadow);
+		color: var(--forest);
+		font-weight: 800;
+		font-size: 0.86rem;
+	}
+	.mg-glyph {
+		display: inline-flex;
+	}
+	.mg-name {
+		color: var(--ink);
+	}
+	.mg-caret {
+		font-size: 0.7rem;
+		color: var(--muted);
+	}
+
+	.map-top {
+		position: absolute;
+		top: max(58px, calc(env(safe-area-inset-top) + 46px));
 		left: 12px;
 		right: 12px;
 		display: flex;
@@ -1280,7 +1329,7 @@
 	.map-tools {
 		position: absolute;
 		right: 12px;
-		top: 66px;
+		top: max(110px, calc(env(safe-area-inset-top) + 98px));
 		z-index: 5;
 		display: flex;
 		flex-direction: column;
