@@ -6,8 +6,10 @@
 		AVATAR_TINTS,
 		personInitial,
 		personStatus,
+		dialString,
 		type Person
 	} from '$lib/people/people.svelte';
+	import Icon from './Icon.svelte';
 
 	// The one real on-trail position is the device hiker (Dad in pilot mode, or
 	// the self-tracked user). Everyone else is "following" until live sharing lands.
@@ -30,11 +32,26 @@
 	const sharingCount = $derived(activeMembers.filter((m) => m.mile != null).length);
 
 	let newName = $state('');
+	let newPhone = $state('');
 	function addPerson() {
 		const name = newName.trim();
 		if (!name) return;
-		people.addPerson(people.activeGroupId, name);
+		people.addPerson(people.activeGroupId, name, newPhone);
 		newName = '';
+		newPhone = '';
+	}
+
+	// Inline "add a number" editor for a member who has none yet.
+	let editingPhoneId = $state<string | null>(null);
+	let editPhone = $state('');
+	function startEditPhone(p: Person) {
+		editingPhoneId = p.id;
+		editPhone = p.phone ?? '';
+	}
+	function saveEditPhone(p: Person) {
+		people.setPhone(people.activeGroupId, p.id, editPhone);
+		editingPhoneId = null;
+		editPhone = '';
 	}
 
 	function statusLine(p: Person): string {
@@ -79,17 +96,48 @@
 						<span class="member-avatar" style="--tint:{AVATAR_TINTS[m.tint % AVATAR_TINTS.length]}">
 							{personInitial(m.name)}
 						</span>
-						<div class="member-copy">
-							<strong>{m.name}{#if m.self}<span class="you-tag">you</span>{/if}</strong>
-							<span>{statusLine(m)}</span>
-						</div>
-						{#if !m.self}
-							<button
-								class="member-remove"
-								type="button"
-								onclick={() => people.removePerson(people.activeGroupId, m.id)}
-								aria-label={`Remove ${m.name}`}>✕</button
-							>
+						{#if editingPhoneId === m.id}
+							<input
+								class="phone-edit"
+								type="tel"
+								inputmode="tel"
+								bind:value={editPhone}
+								placeholder="Phone number"
+								aria-label={`Phone number for ${m.name}`}
+							/>
+							<button class="phone-save" type="button" onclick={() => saveEditPhone(m)}>Save</button>
+						{:else}
+							<div class="member-copy">
+								<strong>{m.name}{#if m.self}<span class="you-tag">you</span>{/if}</strong>
+								<span>{statusLine(m)}</span>
+							</div>
+							<div class="member-actions">
+								{#if m.phone}
+									<!-- Hand off to the phone's own dialer / Messages — no in-app messaging. -->
+									<a
+										class="contact-btn call"
+										href="tel:{dialString(m.phone)}"
+										aria-label={`Call ${m.name}`}><Icon name="phone" size={16} stroke={2} /></a
+									>
+									<a
+										class="contact-btn msg"
+										href="sms:{dialString(m.phone)}"
+										aria-label={`Text ${m.name}`}><Icon name="message" size={16} stroke={2} /></a
+									>
+								{:else if !m.self}
+									<button class="contact-btn add" type="button" onclick={() => startEditPhone(m)}>
+										+ number
+									</button>
+								{/if}
+								{#if !m.self}
+									<button
+										class="member-remove"
+										type="button"
+										onclick={() => people.removePerson(people.activeGroupId, m.id)}
+										aria-label={`Remove ${m.name}`}>✕</button
+									>
+								{/if}
+							</div>
 						{/if}
 					</div>
 				{/each}
@@ -109,10 +157,18 @@
 			}}
 		>
 			<input
-				class="add-input"
+				class="add-input add-name"
 				bind:value={newName}
 				placeholder={`Add to ${people.activeGroup.name}…`}
 				aria-label="New person's name"
+			/>
+			<input
+				class="add-input"
+				type="tel"
+				inputmode="tel"
+				bind:value={newPhone}
+				placeholder="Phone (optional · for call/text)"
+				aria-label="Phone number"
 			/>
 			<button class="add-btn" type="submit" disabled={!newName.trim()}>Add</button>
 		</form>
@@ -253,6 +309,67 @@
 		font-weight: 800;
 		font-size: 0.78rem;
 	}
+	/* One-tap call / text — hands off to the phone's own apps (tel:/sms:). */
+	.member-actions {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+	.contact-btn {
+		width: 38px;
+		height: 38px;
+		display: grid;
+		place-items: center;
+		border-radius: 50%;
+		border: 1px solid transparent;
+		transition: transform var(--dur-fast, 0.12s) ease;
+	}
+	.contact-btn.call {
+		background: var(--forest-soft);
+		color: var(--forest);
+	}
+	.contact-btn.msg {
+		background: var(--sky-soft);
+		color: var(--sky);
+	}
+	.contact-btn.add {
+		width: auto;
+		height: 34px;
+		padding: 0 12px;
+		border-radius: 999px;
+		background: var(--bg);
+		border-color: var(--line);
+		color: var(--muted);
+		font-size: 0.72rem;
+		font-weight: 800;
+		white-space: nowrap;
+	}
+	.contact-btn:active {
+		transform: scale(0.94);
+	}
+	.phone-edit {
+		min-height: 40px;
+		padding: 0 12px;
+		border-radius: var(--radius-control);
+		border: 1px solid var(--line);
+		background: var(--bg);
+		color: var(--ink);
+		font-size: 0.9rem;
+		min-width: 0;
+	}
+	.phone-edit:focus-visible {
+		outline: 2px solid var(--forest);
+		outline-offset: 1px;
+	}
+	.phone-save {
+		min-height: 40px;
+		padding: 0 14px;
+		border-radius: var(--radius-control);
+		background: var(--forest);
+		color: var(--on-accent);
+		font-weight: 800;
+		font-size: 0.85rem;
+	}
 	.people-empty {
 		font-size: 0.86rem;
 		line-height: 1.45;
@@ -263,6 +380,9 @@
 		display: grid;
 		grid-template-columns: 1fr auto;
 		gap: 8px;
+	}
+	.add-row .add-name {
+		grid-column: 1 / -1;
 	}
 	.add-input {
 		min-height: 44px;

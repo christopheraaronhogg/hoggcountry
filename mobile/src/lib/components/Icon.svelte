@@ -17,7 +17,9 @@
 		| 'moon'
 		| 'arrowUp'
 		| 'search'
-		| 'book';
+		| 'book'
+		| 'phone'
+		| 'message';
 
 	let {
 		name,
@@ -97,6 +99,14 @@
 	{:else if name === 'book'}
 		<path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2Z" />
 		<path d="M18 16H7a2 2 0 0 0-2 2" />
+	{:else if name === 'phone'}
+		<!-- handset -->
+		<path
+			d="M6.5 3.5h3l1.3 3.3-1.7 1.3a11 11 0 0 0 5.3 5.3l1.3-1.7 3.3 1.3v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.7 2 2 0 0 1 6.5 3.5Z"
+		/>
+	{:else if name === 'message'}
+		<!-- speech bubble -->
+		<path d="M5 5h14a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 19 16H9l-4 3.5V16a1.5 1.5 0 0 1-1.5-1.5v-8A1.5 1.5 0 0 1 5 5Z" />
 	{/if}
 </svg>
 

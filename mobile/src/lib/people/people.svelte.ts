@@ -15,7 +15,15 @@ export interface Person {
 	tint: number; // index into AVATAR_TINTS
 	mile: number | null; // live trail mile, or null when not sharing a position
 	lastSeen: string | null; // ISO timestamp of the last position, when shared
+	phone?: string; // for one-tap call / text via the phone's own apps
 	self?: boolean; // the device owner
+}
+
+/** Digits (+ leading '+') only — a tel:/sms: target the OS will accept. */
+export function dialString(phone: string): string {
+	const trimmed = phone.trim();
+	const plus = trimmed.startsWith('+') ? '+' : '';
+	return plus + trimmed.replace(/[^0-9]/g, '');
 }
 
 export interface PeopleGroup {
@@ -89,7 +97,7 @@ class PeopleStore {
 		return 1 + (group.members.length % (AVATAR_TINTS.length - 1));
 	}
 
-	addPerson(groupId: string, name: string): void {
+	addPerson(groupId: string, name: string, phone?: string): void {
 		const trimmed = name.trim();
 		if (!trimmed) return;
 		const group = this.#groups.find((g) => g.id === groupId);
@@ -99,8 +107,16 @@ class PeopleStore {
 			name: trimmed,
 			tint: this.#nextTint(group),
 			mile: null,
-			lastSeen: null
+			lastSeen: null,
+			phone: phone?.trim() || undefined
 		});
+		this.#persist();
+	}
+
+	setPhone(groupId: string, personId: string, phone: string): void {
+		const member = this.#groups.find((g) => g.id === groupId)?.members.find((m) => m.id === personId);
+		if (!member) return;
+		member.phone = phone.trim() || undefined;
 		this.#persist();
 	}
 
