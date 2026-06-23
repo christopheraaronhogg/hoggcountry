@@ -108,6 +108,95 @@
 		return safe.replace(re, '<mark>$1</mark>');
 	}
 
+	// Inline markdown for the structured guide: escape, then **bold** / *italic*,
+	// then the search highlight. Content is our own bundled guide (trusted), so
+	// injecting these known tags via {@html} is safe.
+	function formatGuideInline(text: string): string {
+		let s = escapeHtml(text)
+			.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>')
+			.replace(/\*([^*\n]+?)\*/g, '<em>$1</em>');
+		if (guideTerms.length) {
+			const re = new RegExp(`(${guideTerms.map(escapeReg).join('|')})`, 'giu');
+			s = s.replace(re, '<mark>$1</mark>');
+		}
+		return s;
+	}
+
+	type GuideBlock =
+		| { kind: 'h'; level: number; text: string }
+		| { kind: 'subtitle'; text: string }
+		| { kind: 'ul'; items: string[] }
+		| { kind: 'quote'; text: string }
+		| { kind: 'p'; text: string };
+
+	// Parse authored chapter markdown into reading blocks (headings, paragraphs,
+	// bullet lists, blockquotes). Line-based and intentionally small — the bundled
+	// guide is plain, well-formed markdown.
+	function parseGuideProse(md: string): GuideBlock[] {
+		const blocks: GuideBlock[] = [];
+		let para: string[] = [];
+		let list: string[] | null = null;
+		let quote: string[] = [];
+		const flushPara = () => {
+			if (para.length) blocks.push({ kind: 'p', text: para.join(' ') });
+			para = [];
+		};
+		const flushList = () => {
+			if (list && list.length) blocks.push({ kind: 'ul', items: list });
+			list = null;
+		};
+		const flushQuote = () => {
+			if (quote.length) blocks.push({ kind: 'quote', text: quote.join(' ') });
+			quote = [];
+		};
+		const flushAll = () => {
+			flushPara();
+			flushList();
+			flushQuote();
+		};
+		for (const raw of md.replace(/\r\n/g, '\n').split('\n')) {
+			const line = raw.trim();
+			if (!line) {
+				flushAll();
+				continue;
+			}
+			const heading = line.match(/^(#{1,4})\s+(.+)$/u);
+			if (heading) {
+				flushAll();
+				blocks.push({ kind: 'h', level: heading[1].length, text: heading[2].trim() });
+				continue;
+			}
+			const item = line.match(/^[-*]\s+(.+)$/u);
+			if (item) {
+				flushPara();
+				flushQuote();
+				(list ??= []).push(item[1].trim());
+				continue;
+			}
+			const q = line.match(/^>\s?(.*)$/u);
+			if (q) {
+				flushPara();
+				flushList();
+				if (q[1].trim()) quote.push(q[1].trim());
+				continue;
+			}
+			const subtitle = line.match(/^\*([^*].*?)\*$/u);
+			if (subtitle && !para.length && !list && !quote.length) {
+				flushAll();
+				blocks.push({ kind: 'subtitle', text: subtitle[1].trim() });
+				continue;
+			}
+			flushList();
+			flushQuote();
+			para.push(line);
+		}
+		flushAll();
+		return blocks;
+	}
+
+	// Chapter title is an <h3>, so authored headings nest below it: # → h4, deeper → h5.
+	const guideHeadingTag = (level: number): 'h4' | 'h5' => (level <= 1 ? 'h4' : 'h5');
+
 	function fmtTime(iso: string): string {
 		const d = new Date(iso);
 		return Number.isNaN(d.getTime())
@@ -219,6 +308,11 @@
 		if (!visibleGuideDocs.length) return null;
 		return visibleGuideDocs.find((document) => document.id === selectedGuideId) ?? visibleGuideDocs[0];
 	});
+	// Reading blocks for the open chapter — authored markdown when present, else
+	// the reader falls back to splitting the flat body on blank lines.
+	const guideBlocks = $derived(
+		selectedGuideDoc?.prose ? parseGuideProse(selectedGuideDoc.prose) : null
+	);
 	// The 90 "AT source docs" were 5 internal pipeline docs (attribution, license,
 	// data-quality, status…) + 85 per-25-mile segment summaries, listed
 	// alphabetically — so a hiker at mile 1497 saw "Miles 0-25 / 100-125" first.
@@ -333,9 +427,29 @@
 									</button>
 								</div>
 								<div class="body" class:serif={serifBody}>
-									{#each selectedGuideDoc.body.split(/\n{2,}/) as para, i (selectedGuideDoc.id + ':' + i)}
-										<p>{@html highlightGuide(para)}</p>
-									{/each}
+									{#if guideBlocks}
+										{#each guideBlocks as block, i (selectedGuideDoc.id + ':' + i)}
+											{#if block.kind === 'h'}
+												<svelte:element this={guideHeadingTag(block.level)} class="g-h g-h{block.level <= 1 ? 1 : 2}">{@html formatGuideInline(block.text)}</svelte:element>
+											{:else if block.kind === 'subtitle'}
+												<p class="g-subtitle">{@html formatGuideInline(block.text)}</p>
+											{:else if block.kind === 'ul'}
+												<ul class="g-list">
+													{#each block.items as item, j (i + '-' + j)}
+														<li>{@html formatGuideInline(item)}</li>
+													{/each}
+												</ul>
+											{:else if block.kind === 'quote'}
+												<blockquote class="g-quote">{@html formatGuideInline(block.text)}</blockquote>
+											{:else}
+												<p>{@html formatGuideInline(block.text)}</p>
+											{/if}
+										{/each}
+									{:else}
+										{#each selectedGuideDoc.body.split(/\n{2,}/) as para, i (selectedGuideDoc.id + ':' + i)}
+											<p>{@html highlightGuide(para)}</p>
+										{/each}
+									{/if}
 								</div>
 								{#if selectedGuideDoc.citation}<p class="cite">{@html highlightGuide(selectedGuideDoc.citation)}</p>{/if}
 							</article>
@@ -793,6 +907,50 @@
 		margin: 0;
 		white-space: pre-wrap;
 		overflow-wrap: break-word;
+	}
+	/* Authored structure — restores the headings/lists/quotes the flat search
+	   text had stripped. Sized in display type so it reads like a field manual. */
+	.guide-chapter .body .g-h {
+		margin: 0.5em 0 -0.1em;
+		font-family: var(--font-display);
+		font-weight: 800;
+		line-height: 1.15;
+		letter-spacing: 0.01em;
+		color: var(--ink);
+	}
+	.guide-chapter .body .g-h1 {
+		font-size: 1.18rem;
+	}
+	.guide-chapter .body .g-h2 {
+		font-size: 1.02rem;
+		color: var(--forest);
+	}
+	.guide-chapter .body .g-subtitle {
+		margin: 0;
+		font-size: 0.82rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--moss);
+	}
+	.guide-chapter .body .g-list {
+		margin: 0;
+		padding-left: 1.15em;
+		display: grid;
+		gap: 0.35em;
+	}
+	.guide-chapter .body .g-list li {
+		padding-left: 0.15em;
+	}
+	.guide-chapter .body .g-list li::marker {
+		color: var(--forest);
+	}
+	.guide-chapter .body .g-quote {
+		margin: 0.2em 0;
+		padding: 0.1em 0 0.1em 0.9em;
+		border-left: 3px solid var(--clay);
+		font-style: italic;
+		color: var(--muted);
 	}
 	.guide-chapter .cite {
 		max-width: 38rem;

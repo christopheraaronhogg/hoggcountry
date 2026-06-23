@@ -93,6 +93,9 @@ export interface FieldGuideExcerpt {
 	id: string;
 	title: string;
 	body: string;
+	/** Authored markdown (headings/paragraphs/lists/quotes) for the Trail reader.
+	 * `body` stays the flat text Scout grounds on; `prose` is reading-only. */
+	prose?: string;
 	tags: string[];
 	citation?: string;
 }

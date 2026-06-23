@@ -41,6 +41,15 @@ export async function loadOfflineSourceDocs(fetcher: typeof fetch = fetch): Prom
 	return docsPromise;
 }
 
+function sameBundledDoc(a: FieldGuideExcerpt, b: FieldGuideExcerpt): boolean {
+	return (
+		a.body === b.body &&
+		(a.prose ?? '') === (b.prose ?? '') &&
+		a.title === b.title &&
+		(a.citation ?? '') === (b.citation ?? '')
+	);
+}
+
 export function mergeOfflineSourceDocs(
 	pack: ContextPack,
 	offlineDocs: FieldGuideExcerpt[]
@@ -49,7 +58,12 @@ export function mergeOfflineSourceDocs(
 	const byId = new Map(pack.guideExcerpts.map((excerpt) => [excerpt.id, excerpt]));
 	let changed = false;
 	for (const doc of offlineDocs) {
-		if (byId.has(doc.id)) continue;
+		// Bundled offline docs are canonical and read-only: add new ones, and
+		// refresh any whose content changed (e.g. a new `prose` field) so guide
+		// updates reach packs persisted before the change. Identical ones are left
+		// alone, so a no-op re-merge reports no change.
+		const existing = byId.get(doc.id);
+		if (existing && sameBundledDoc(existing, doc)) continue;
 		byId.set(doc.id, doc);
 		changed = true;
 	}

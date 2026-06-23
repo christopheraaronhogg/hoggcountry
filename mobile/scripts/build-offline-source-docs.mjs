@@ -25,19 +25,37 @@ function readJson(path) {
 	return JSON.parse(readFileSync(path, 'utf8'));
 }
 
+// The authored chapter markdown (headings, paragraphs, lists, quotes) lives in
+// src/content/guide/*.md — the same source the flat search-index `content` was
+// stripped from. We attach it as `prose` so the Trail reader can render real
+// structure, while `body` stays the normalized flat text Scout grounds on (so
+// the grounding corpus is byte-for-byte unchanged). Quick-ref ids already carry
+// the `quick/` path segment, so one mapping covers chapters and quick refs.
+function guideProse(id) {
+	try {
+		return cleanMarkdown(readFileSync(join(repoRoot, 'src/content/guide', `${id}.md`), 'utf8'));
+	} catch {
+		return ''; // no authored chapter → reader falls back to splitting `body`
+	}
+}
+
 function guideDocuments() {
 	const index = readJson(join(repoRoot, 'public/guide-search-index.json'));
-	return index.map((entry) => ({
-		id: `field-guide:${entry.id}`,
-		title: `Field Guide: ${entry.title}`,
-		body: String(entry.content ?? '').trim(),
-		tags: [
-			'hogg-country-field-guide',
-			entry.quickRef ? 'quick-reference' : 'field-guide',
-			...(entry.headers ? String(entry.headers).split('|').map((header) => header.trim().toLowerCase()) : [])
-		].filter(Boolean),
-		citation: 'Hogg Country Field Guide bundled offline index'
-	}));
+	return index.map((entry) => {
+		const prose = guideProse(entry.id);
+		return {
+			id: `field-guide:${entry.id}`,
+			title: `Field Guide: ${entry.title}`,
+			body: String(entry.content ?? '').trim(),
+			...(prose ? { prose } : {}),
+			tags: [
+				'hogg-country-field-guide',
+				entry.quickRef ? 'quick-reference' : 'field-guide',
+				...(entry.headers ? String(entry.headers).split('|').map((header) => header.trim().toLowerCase()) : [])
+			].filter(Boolean),
+			citation: 'Hogg Country Field Guide bundled offline index'
+		};
+	});
 }
 
 function atReferenceDocuments() {
