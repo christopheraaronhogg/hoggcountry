@@ -708,6 +708,7 @@
 			className: `poi-pin pin-${kind}`,
 			iconSize: [d, d],
 			iconAnchor: [d / 2, d / 2], // coin sits centred on the trail point
+			popupAnchor: [0, -Math.round(d / 2) - 2], // popup opens just above the coin
 			html:
 				`<span class="pp-body"></span>` +
 				`<svg class="pp-glyph" viewBox="0 0 24 24" aria-hidden="true">${POI_GLYPH[kind]}</svg>` +
@@ -778,11 +779,11 @@
 				fillOpacity: 1,
 				className: 'poi poi-shelter'
 			})
-				.bindTooltip(`<span class="tip-rot">${s.name} · mi ${s.mile.toFixed(1)}</span>`, {
-					direction: 'top',
-					offset: [0, -4],
-					className: 'map-tip poi-tip'
-				})
+				.bindPopup(
+					`<div class="poi-pop pop-shelter"><strong class="pp-name">${s.name}</strong>` +
+						`<span class="pp-meta">Shelter · mi ${s.mile.toFixed(1)}</span></div>`,
+					{ className: 'poi-popup', closeButton: true, autoPanPaddingTopLeft: [24, 64], autoPanPaddingBottomRight: [70, 300], maxWidth: 240 }
+				)
 				.addTo(shelterLayer);
 		}
 	});
@@ -799,12 +800,13 @@
 		for (const lm of visibleLandmarks) {
 			const cand = lm.kind === 'water' && !!lm.candidate;
 			L.marker(interpAtMile(lm.mile), { icon: poiIcon(lm.kind, cand), keyboard: false })
-				.bindTooltip(
-					`<span class="tip-rot poi-call"><span class="pc-name">${lm.label}</span>` +
-						`<span class="pc-meta">${POI_WORD[lm.kind]} · ${distanceLabel(lm.mile)}${cand ? ' · candidate' : ''}</span></span>`,
-					// 'auto' flips the callout to the open side so it never spills off the
-					// edge or under the right control stack.
-					{ direction: 'auto', offset: [0, 0], className: 'map-tip poi-tip' }
+				// A click-to-open POPUP (not a hover tooltip) so tapping a POI reliably
+				// selects it and the detail stays put until dismissed.
+				.bindPopup(
+					`<div class="poi-pop pop-${lm.kind}"><strong class="pp-name">${lm.label}</strong>` +
+						`<span class="pp-meta">${POI_WORD[lm.kind]} · ${distanceLabel(lm.mile)}${cand ? ' · candidate' : ''}</span></div>`,
+					// Pan clear of the top strip, the right control stack, and the bottom card.
+					{ className: 'poi-popup', closeButton: true, autoPanPaddingTopLeft: [24, 64], autoPanPaddingBottomRight: [70, 300], maxWidth: 240 }
 				)
 				.addTo(poiLayer);
 		}
@@ -1155,6 +1157,14 @@
 	:global(.poi-pin) {
 		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
 	}
+	/* Generous invisible tap pad — a finger shouldn't have to hit the 26px coin
+	   dead-centre to select it. */
+	:global(.poi-pin::before) {
+		content: '';
+		position: absolute;
+		inset: -10px;
+		border-radius: 50%;
+	}
 	:global(.poi-pin .pp-body) {
 		position: absolute;
 		inset: 0;
@@ -1360,27 +1370,51 @@
 		color: var(--muted);
 		margin-top: 1px;
 	}
-	/* POI tap callout: name first (the thing you tapped to read), then the
-	   category word + distance underneath. */
-	:global(.poi-call) {
-		display: block;
-		text-align: left;
+	/* POI selection popup — click-to-open and it stays put (a selection, not a
+	   hover hint). Name first, then category · distance. Mode-aware via tokens. */
+	:global(.leaflet-popup.poi-popup .leaflet-popup-content-wrapper) {
+		background: var(--surface-strong);
+		color: var(--ink);
+		border: 1px solid var(--line);
+		border-radius: 12px;
+		box-shadow: var(--shadow);
+		/* counter-rotate so the bubble stays upright in head-up mode */
+		transform: rotate(var(--maprot, 0deg));
 	}
-	:global(.poi-call .pc-name) {
+	:global(.leaflet-popup.poi-popup .leaflet-popup-content) {
+		margin: 8px 12px;
+	}
+	:global(.leaflet-popup.poi-popup .leaflet-popup-tip) {
+		background: var(--surface-strong);
+		border: 1px solid var(--line);
+		box-shadow: none;
+	}
+	:global(.poi-pop .pp-name) {
 		display: block;
-		font-size: 0.78rem;
+		font-size: 0.92rem;
 		font-weight: 900;
 		color: var(--ink);
-		line-height: 1.15;
+		line-height: 1.18;
 	}
-	:global(.poi-call .pc-meta) {
+	:global(.poi-pop .pp-meta) {
 		display: block;
-		margin-top: 1px;
-		font-size: 0.6rem;
+		margin-top: 2px;
+		font-size: 0.68rem;
 		font-weight: 800;
 		color: var(--muted);
 		text-transform: uppercase;
 		letter-spacing: 0.03em;
+	}
+	:global(.leaflet-popup.poi-popup a.leaflet-popup-close-button) {
+		color: var(--muted);
+		font-weight: 700;
+		width: 24px;
+		height: 24px;
+		font-size: 19px;
+		padding: 3px 0 0;
+	}
+	:global(.leaflet-popup.poi-popup a.leaflet-popup-close-button:hover) {
+		color: var(--ink);
 	}
 	/* zoom-gated labels: hide POIs in overview, endpoints in corridor */
 	:global(.z-overview .leaflet-tooltip.poi-tip),
