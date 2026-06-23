@@ -9,7 +9,32 @@
 		dialString,
 		type Person
 	} from '$lib/people/people.svelte';
+	import { memberLocation } from '$lib/people/memberLocation.svelte';
 	import Icon from './Icon.svelte';
+
+	// Live location sharing (Phase 3) for the active group.
+	const activeGroup = $derived(people.activeGroup);
+	const liveCount = $derived(memberLocation.positionsForGroup(activeGroup.shareCode).length);
+	let joinOpen = $state(false);
+	let joinCode = $state('');
+	let copied = $state(false);
+	function copyCode() {
+		const code = activeGroup.shareCode;
+		if (!code || !navigator.clipboard) return;
+		navigator.clipboard.writeText(code).then(
+			() => {
+				copied = true;
+				setTimeout(() => (copied = false), 1500);
+			},
+			() => {}
+		);
+	}
+	function submitJoin() {
+		if (people.joinWithCode(activeGroup.id, joinCode)) {
+			joinCode = '';
+			joinOpen = false;
+		}
+	}
 
 	// The one real on-trail position is the device hiker (Dad in pilot mode, or
 	// the self-tracked user). Everyone else is "following" until live sharing lands.
@@ -29,7 +54,8 @@
 			? [liveHiker, ...people.activeGroup.members]
 			: people.activeGroup.members
 	);
-	const sharingCount = $derived(activeMembers.filter((m) => m.mile != null).length);
+	// "Sharing live" = real positions arriving over SpacetimeDB for this group.
+	const sharingCount = $derived(liveCount);
 
 	let newName = $state('');
 	let newPhone = $state('');
@@ -88,6 +114,62 @@
 				No one sharing live yet — invite your {people.activeGroup.name.toLowerCase()}.
 			{/if}
 		</p>
+
+		<div class="live-share">
+			<div class="live-share-row">
+				<div class="live-copy">
+					<strong>Share my live location</strong>
+					<span>{activeGroup.name} members see your trail mile. Private to this group.</span>
+				</div>
+				<button
+					class="toggle"
+					class:on={activeGroup.sharing}
+					role="switch"
+					aria-checked={activeGroup.sharing ?? false}
+					aria-label="Share my live location with {activeGroup.name}"
+					type="button"
+					onclick={() => people.setSharing(activeGroup.id, !activeGroup.sharing)}
+				></button>
+			</div>
+
+			{#if activeGroup.sharing && activeGroup.shareCode}
+				<div class="invite-code">
+					<div class="ic-label">Invite code — text it to {activeGroup.name.toLowerCase()}</div>
+					<div class="ic-row">
+						<code>{activeGroup.shareCode}</code>
+						<button class="ic-copy" type="button" onclick={copyCode}>{copied ? 'Copied' : 'Copy'}</button>
+					</div>
+				</div>
+			{/if}
+
+			{#if joinOpen}
+				<form
+					class="join-form"
+					onsubmit={(e) => {
+						e.preventDefault();
+						submitJoin();
+					}}
+				>
+					<input
+						class="join-input"
+						bind:value={joinCode}
+						placeholder="Paste a code you were sent…"
+						aria-label="Group invite code"
+						autocapitalize="off"
+						autocomplete="off"
+					/>
+					<button class="join-go" type="submit" disabled={joinCode.trim().length < 8}>Join</button>
+				</form>
+			{:else}
+				<button class="join-toggle" type="button" onclick={() => (joinOpen = true)}>
+					Have a code from family? Join their group
+				</button>
+			{/if}
+
+			{#if !memberLocation.available}
+				<p class="live-note">Live positions start syncing once live sharing is enabled on your account.</p>
+			{/if}
+		</div>
 
 		{#if activeMembers.length}
 			<div class="member-list">
@@ -240,6 +322,141 @@
 	.people-sub {
 		font-size: 0.84rem;
 		color: var(--muted);
+	}
+
+	/* Live location sharing */
+	.live-share {
+		display: grid;
+		gap: 10px;
+		padding: 12px;
+		border-radius: var(--radius-control, 12px);
+		background: var(--forest-soft);
+		border: 1px solid var(--line);
+	}
+	.live-share-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+	}
+	.live-copy {
+		display: grid;
+		gap: 2px;
+	}
+	.live-copy strong {
+		font-size: 0.92rem;
+		color: var(--ink);
+	}
+	.live-copy span {
+		font-size: 0.74rem;
+		color: var(--muted);
+		line-height: 1.35;
+	}
+	.toggle {
+		flex: none;
+		width: 46px;
+		height: 28px;
+		border-radius: 999px;
+		background: var(--line);
+		position: relative;
+		transition: background var(--dur-fast, 0.15s) var(--ease-out, ease);
+	}
+	.toggle::after {
+		content: '';
+		position: absolute;
+		top: 3px;
+		left: 3px;
+		width: 22px;
+		height: 22px;
+		border-radius: 50%;
+		background: var(--surface-strong, #fff);
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+		transition: transform var(--dur-fast, 0.15s) var(--ease-out, ease);
+	}
+	.toggle.on {
+		background: var(--forest);
+	}
+	.toggle.on::after {
+		transform: translateX(18px);
+	}
+	.invite-code {
+		display: grid;
+		gap: 5px;
+	}
+	.ic-label {
+		font-size: 0.72rem;
+		font-weight: 700;
+		color: var(--muted);
+	}
+	.ic-row {
+		display: flex;
+		align-items: stretch;
+		gap: 8px;
+	}
+	.ic-row code {
+		flex: 1;
+		min-width: 0;
+		padding: 9px 12px;
+		border-radius: var(--radius-control, 10px);
+		background: var(--surface-strong);
+		border: 1px solid var(--line);
+		font-family: ui-monospace, monospace;
+		font-size: 0.86rem;
+		letter-spacing: 0.04em;
+		color: var(--ink);
+		overflow-x: auto;
+		white-space: nowrap;
+	}
+	.ic-copy {
+		flex: none;
+		padding: 0 14px;
+		border-radius: var(--radius-control, 10px);
+		background: var(--forest);
+		color: var(--on-accent);
+		font-weight: 800;
+		font-size: 0.82rem;
+	}
+	.join-toggle {
+		justify-self: start;
+		padding: 0;
+		font-size: 0.8rem;
+		font-weight: 800;
+		color: var(--forest);
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+	.join-form {
+		display: flex;
+		gap: 8px;
+	}
+	.join-input {
+		flex: 1;
+		min-width: 0;
+		min-height: 40px;
+		padding: 0 12px;
+		border-radius: var(--radius-control, 10px);
+		border: 1px solid var(--line);
+		background: var(--bg);
+		color: var(--ink);
+		font-size: 0.86rem;
+	}
+	.join-go {
+		flex: none;
+		padding: 0 16px;
+		border-radius: var(--radius-control, 10px);
+		background: var(--forest);
+		color: var(--on-accent);
+		font-weight: 800;
+		font-size: 0.84rem;
+	}
+	.join-go:disabled {
+		opacity: 0.5;
+	}
+	.live-note {
+		font-size: 0.72rem;
+		color: var(--muted);
+		line-height: 1.4;
+		margin: 0;
 	}
 	.member-list {
 		display: grid;

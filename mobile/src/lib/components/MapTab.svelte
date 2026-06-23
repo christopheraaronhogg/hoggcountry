@@ -9,6 +9,7 @@
 	import TrailPulseReportAction from './TrailPulseReportAction.svelte';
 	import PeopleSheet from './PeopleSheet.svelte';
 	import { people, AVATAR_TINTS, personInitial } from '$lib/people/people.svelte';
+	import { memberLocation } from '$lib/people/memberLocation.svelte';
 	import {
 		waterReports,
 		waterBucket,
@@ -239,6 +240,7 @@
 	let measureRenderer: LeafletNS.SVG | null = null;
 	let measureDragging = false;
 	let youLayer: LeafletNS.LayerGroup | null = null;
+	let memberLayer: LeafletNS.LayerGroup | null = null;
 	let youMarker: LeafletNS.Marker | null = null;
 	let youInitial = ''; // tracked so the avatar glyph only re-renders when it changes
 	let atBounds: LeafletNS.LatLngBounds | null = null;
@@ -572,6 +574,7 @@
 		endpointLayer = L.layerGroup().addTo(map);
 		measureLayer = L.layerGroup().addTo(map);
 		youLayer = L.layerGroup().addTo(map);
+		memberLayer = L.layerGroup().addTo(map);
 
 		// Load the whole-trail shelter POIs (best-effort; the map works without them).
 		fetch('/trail/shelters.json')
@@ -810,6 +813,47 @@
 				youInitial = initial;
 				youMarker.setIcon(avatarIcon(initial));
 			}
+		}
+	});
+
+	// Live tramily/family avatars — co-members of the active group sharing a
+	// position via SpacetimeDB, placed at their real trail mile (clay ring, so they
+	// read distinctly from the forest "you"). Empty until live sharing is on and
+	// configured; redraws on each position update (small N → clear+rebuild is fine).
+	// Privacy is server-enforced: positions only arrive for groups this device is in.
+	function liveAge(iso: string): string {
+		const t = Date.parse(iso);
+		if (!Number.isFinite(t)) return 'live';
+		const secs = Math.max(0, Math.round((Date.now() - t) / 1000));
+		if (secs < 90) return 'just now';
+		const mins = Math.round(secs / 60);
+		if (mins < 60) return `${mins} min ago`;
+		const hrs = Math.round(mins / 60);
+		if (hrs < 24) return `${hrs}h ago`;
+		return `${Math.round(hrs / 24)}d ago`;
+	}
+	const memberAvatarIcon = (initial: string) =>
+		L!.divIcon({
+			className: 'member-leaf',
+			iconSize: [32, 32],
+			iconAnchor: [16, 16],
+			html: `<span class="ml-avatar">${escapeHtml(initial)}</span>`
+		});
+	$effect(() => {
+		const live = memberLocation.positions;
+		const code = people.activeGroup?.shareCode;
+		void fromQ;
+		if (!L || !map || !memberLayer || geo.length < 2) return;
+		memberLayer.clearLayers();
+		if (!code) return;
+		for (const m of live) {
+			if (m.groupCode !== code || m.isSelf) continue;
+			const ll = interpAtMile(Math.max(trailLo, Math.min(trailHi, m.mile)));
+			const initial = (m.trailName.trim()[0] || '?').toUpperCase();
+			const tip = `<span class="tip-rot">${escapeHtml(m.trailName)} · Mi ${m.mile.toFixed(1)} · ${liveAge(m.updatedAt)}</span>`;
+			L.marker(ll, { icon: memberAvatarIcon(initial), zIndexOffset: 800, interactive: true })
+				.bindTooltip(tip, { direction: 'right', offset: [15, 0], className: 'map-tip member-tip' })
+				.addTo(memberLayer);
 		}
 	});
 
@@ -1459,6 +1503,28 @@
 		font-weight: 800;
 		font-size: 0.95rem;
 		line-height: 1;
+	}
+	/* Live co-member avatar — clay ring so family/tramily read distinctly from the
+	   forest "you", no pulse (only your own dot pulses). */
+	:global(.member-leaf .ml-avatar) {
+		display: grid;
+		place-items: center;
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		background: linear-gradient(135deg, var(--clay), #8f4f33);
+		border: 2.5px solid #fffdf8;
+		box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+		color: #fff;
+		font-family: var(--font-display);
+		font-weight: 800;
+		font-size: 0.92rem;
+		line-height: 1;
+	}
+	@media (prefers-color-scheme: dark) {
+		:global(.member-leaf .ml-avatar) {
+			border-color: #1b2117;
+		}
 	}
 	@media (prefers-color-scheme: dark) {
 		:global(.you-leaf .yl-avatar) {

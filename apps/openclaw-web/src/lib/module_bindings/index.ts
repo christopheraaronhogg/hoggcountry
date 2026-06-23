@@ -35,10 +35,14 @@ import {
 
 // Import all reducer arg schemas
 import AppendManualNoteReducer from "./append_manual_note_reducer";
+import JoinGroupReducer from "./join_group_reducer";
 import JoinScoutWorkspaceReducer from "./join_scout_workspace_reducer";
+import LeaveGroupReducer from "./leave_group_reducer";
 import MirrorScoutTurnReducer from "./mirror_scout_turn_reducer";
 import MirrorScoutTurnEventReducer from "./mirror_scout_turn_event_reducer";
+import PublishPositionReducer from "./publish_position_reducer";
 import RegisterBetaProfileReducer from "./register_beta_profile_reducer";
+import StopSharingPositionReducer from "./stop_sharing_position_reducer";
 import SubmitTrailConditionReportReducer from "./submit_trail_condition_report_reducer";
 import SubmitWaterReportReducer from "./submit_water_report_reducer";
 
@@ -46,6 +50,8 @@ import SubmitWaterReportReducer from "./submit_water_report_reducer";
 
 // Import all table schema definitions
 import DadUpdateRow from "./dad_update_table";
+import MyGroupMembersRow from "./my_group_members_table";
+import MyGroupPositionsRow from "./my_group_positions_table";
 import MyScoutTurnEventsRow from "./my_scout_turn_events_table";
 import MyScoutTurnsRow from "./my_scout_turns_table";
 import PublicAnnouncementRow from "./public_announcement_table";
@@ -124,6 +130,20 @@ const tablesSchema = __schema({
       { name: 'water_report_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, WaterReportRow),
+  myGroupMembers: __table({
+    name: 'my_group_members',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, MyGroupMembersRow),
+  myGroupPositions: __table({
+    name: 'my_group_positions',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, MyGroupPositionsRow),
   myScoutTurnEvents: __table({
     name: 'my_scout_turn_events',
     indexes: [
@@ -143,10 +163,14 @@ const tablesSchema = __schema({
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
 const reducersSchema = __reducers(
   __reducerSchema("append_manual_note", AppendManualNoteReducer),
+  __reducerSchema("join_group", JoinGroupReducer),
   __reducerSchema("join_scout_workspace", JoinScoutWorkspaceReducer),
+  __reducerSchema("leave_group", LeaveGroupReducer),
   __reducerSchema("mirror_scout_turn", MirrorScoutTurnReducer),
   __reducerSchema("mirror_scout_turn_event", MirrorScoutTurnEventReducer),
+  __reducerSchema("publish_position", PublishPositionReducer),
   __reducerSchema("register_beta_profile", RegisterBetaProfileReducer),
+  __reducerSchema("stop_sharing_position", StopSharingPositionReducer),
   __reducerSchema("submit_trail_condition_report", SubmitTrailConditionReportReducer),
   __reducerSchema("submit_water_report", SubmitWaterReportReducer),
 );

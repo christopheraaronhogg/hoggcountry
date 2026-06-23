@@ -7,18 +7,26 @@ import { type Infer as __Infer } from "spacetimedb";
 
 // Import all reducer arg schemas
 import AppendManualNoteReducer from "../append_manual_note_reducer";
+import JoinGroupReducer from "../join_group_reducer";
 import JoinScoutWorkspaceReducer from "../join_scout_workspace_reducer";
+import LeaveGroupReducer from "../leave_group_reducer";
 import MirrorScoutTurnReducer from "../mirror_scout_turn_reducer";
 import MirrorScoutTurnEventReducer from "../mirror_scout_turn_event_reducer";
+import PublishPositionReducer from "../publish_position_reducer";
 import RegisterBetaProfileReducer from "../register_beta_profile_reducer";
+import StopSharingPositionReducer from "../stop_sharing_position_reducer";
 import SubmitTrailConditionReportReducer from "../submit_trail_condition_report_reducer";
 import SubmitWaterReportReducer from "../submit_water_report_reducer";
 
 export type AppendManualNoteParams = __Infer<typeof AppendManualNoteReducer>;
+export type JoinGroupParams = __Infer<typeof JoinGroupReducer>;
 export type JoinScoutWorkspaceParams = __Infer<typeof JoinScoutWorkspaceReducer>;
+export type LeaveGroupParams = __Infer<typeof LeaveGroupReducer>;
 export type MirrorScoutTurnParams = __Infer<typeof MirrorScoutTurnReducer>;
 export type MirrorScoutTurnEventParams = __Infer<typeof MirrorScoutTurnEventReducer>;
+export type PublishPositionParams = __Infer<typeof PublishPositionReducer>;
 export type RegisterBetaProfileParams = __Infer<typeof RegisterBetaProfileReducer>;
+export type StopSharingPositionParams = __Infer<typeof StopSharingPositionReducer>;
 export type SubmitTrailConditionReportParams = __Infer<typeof SubmitTrailConditionReportReducer>;
 export type SubmitWaterReportParams = __Infer<typeof SubmitWaterReportReducer>;
 

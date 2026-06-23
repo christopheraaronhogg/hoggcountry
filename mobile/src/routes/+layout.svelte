@@ -6,6 +6,7 @@
 	import { cloudAuth } from '$lib/cloud/auth.svelte';
 	import { syncEngine } from '$lib/cloud/syncEngine.svelte';
 	import { registerCloudRestore } from '$lib/cloud/restore';
+	import { registerLiveLocation } from '$lib/people/liveLocation';
 
 	let { children } = $props();
 
@@ -20,6 +21,10 @@
 		registerCloudRestore();
 		void cloudAuth.init();
 		syncEngine.start();
+
+		// Live tramily/family location (Phase 3). No-op until SpacetimeDB is
+		// configured; otherwise joins shared groups + broadcasts the hiker's mile.
+		registerLiveLocation();
 
 		async function configureNativeChrome() {
 			const [{ Capacitor }, { StatusBar }, { App }] = await Promise.all([

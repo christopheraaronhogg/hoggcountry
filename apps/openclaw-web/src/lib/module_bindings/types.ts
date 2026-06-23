@@ -30,6 +30,26 @@ export const DadUpdate = __t.object("DadUpdate", {
 });
 export type DadUpdate = __Infer<typeof DadUpdate>;
 
+export const GroupMember = __t.object("GroupMember", {
+  id: __t.u64(),
+  groupCode: __t.string(),
+  identity: __t.identity(),
+  trailName: __t.string(),
+  joinedAt: __t.string(),
+});
+export type GroupMember = __Infer<typeof GroupMember>;
+
+export const GroupPosition = __t.object("GroupPosition", {
+  id: __t.u64(),
+  groupCode: __t.string(),
+  identity: __t.identity(),
+  trailName: __t.string(),
+  mile: __t.f64(),
+  observedAt: __t.string(),
+  updatedAt: __t.string(),
+});
+export type GroupPosition = __Infer<typeof GroupPosition>;
+
 export const ManualNote = __t.object("ManualNote", {
   id: __t.u64(),
   trailName: __t.string(),
@@ -39,6 +59,12 @@ export const ManualNote = __t.object("ManualNote", {
   createdAt: __t.string(),
 });
 export type ManualNote = __Infer<typeof ManualNote>;
+
+export const MyGroupMembers = __t.object("MyGroupMembers", {});
+export type MyGroupMembers = __Infer<typeof MyGroupMembers>;
+
+export const MyGroupPositions = __t.object("MyGroupPositions", {});
+export type MyGroupPositions = __Infer<typeof MyGroupPositions>;
 
 export const MyScoutTurnEvents = __t.object("MyScoutTurnEvents", {});
 export type MyScoutTurnEvents = __Infer<typeof MyScoutTurnEvents>;

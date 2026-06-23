@@ -31,6 +31,37 @@ export interface PeopleGroup {
 	id: string;
 	name: string;
 	members: Person[];
+	// Live-location sharing (Phase 3). shareCode is the high-entropy SpacetimeDB
+	// group code (the bearer secret you text to family); sharing = "broadcast my
+	// live position to this group". Both back up with the roster.
+	shareCode?: string;
+	sharing?: boolean;
+}
+
+/** A high-entropy, unguessable group code — the bearer secret that grants access
+ *  to a live group (like a Life360 invite link). Never derive it from the group
+ *  name/id, which would be guessable. */
+export function generateShareCode(): string {
+	const bytes = new Uint8Array(12);
+	if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+		crypto.getRandomValues(bytes);
+	} else {
+		// Defense-in-depth: crypto is universally available in the browser/WebView,
+		// but never emit a CONSTANT code if it isn't — that would drop every device
+		// into the same group and leak locations. Vary from time + Math.random.
+		for (let i = 0; i < bytes.length; i++) {
+			bytes[i] = Math.floor((Math.random() * 256 + Date.now() + i) % 256);
+		}
+	}
+	const base32 = 'abcdefghijkmnpqrstuvwxyz23456789';
+	let code = '';
+	for (const b of bytes) code += base32[b & 31];
+	return `hc-${code}`;
+}
+
+/** Accept a code a family member shared (trim, lower-case, strip stray spaces). */
+export function normalizeShareCode(raw: string): string {
+	return raw.trim().toLowerCase().replace(/\s+/g, '');
 }
 
 // Avatar ring colours, mode-agnostic (read on both themes).
@@ -144,6 +175,40 @@ class PeopleStore {
 		if (!this.#groups.some((g) => g.id === this.activeGroupId)) {
 			this.activeGroupId = this.#groups[0].id;
 		}
+		this.#persist();
+		return true;
+	}
+
+	/** Generate (once) and return this group's shareable code. */
+	ensureShareCode(groupId: string): string | undefined {
+		const group = this.#groups.find((g) => g.id === groupId);
+		if (!group) return undefined;
+		if (!group.shareCode) {
+			group.shareCode = generateShareCode();
+			this.#persist();
+		}
+		return group.shareCode;
+	}
+
+	/** Turn live-location sharing on/off for a group (the liveLocation coordinator
+	 *  reacts to this flag to join/leave + publish/stop). Turning on mints a code. */
+	setSharing(groupId: string, on: boolean): void {
+		const group = this.#groups.find((g) => g.id === groupId);
+		if (!group) return;
+		if (on && !group.shareCode) group.shareCode = generateShareCode();
+		group.sharing = on;
+		this.#persist();
+	}
+
+	/** Adopt a code a family member shared, so this device joins the SAME live
+	 *  group. Returns false if the code looks invalid. */
+	joinWithCode(groupId: string, rawCode: string): boolean {
+		const group = this.#groups.find((g) => g.id === groupId);
+		if (!group) return false;
+		const code = normalizeShareCode(rawCode);
+		if (code.length < 8) return false;
+		group.shareCode = code;
+		group.sharing = true;
 		this.#persist();
 		return true;
 	}
