@@ -110,7 +110,7 @@
 	}
 </script>
 
-<div class="coach-shell">
+<div class="coach-shell" class:empty={trailAssistant.coachMessages.length <= 1}>
 	<!-- Chat stays pure: status (Day/Mile/online) lives in the app header, not
 	     repeated here. Only the starter prompts sit above the conversation, and
 	     only until the hiker has started talking. -->
@@ -264,6 +264,18 @@
 		gap: var(--space-2);
 		padding-top: var(--space-1);
 	}
+	/* Before the conversation starts, center the prompts + greeting as one calm
+	   group instead of pinning them to the top above a big dead void. The auto
+	   margins split the free space above the welcome and below the greeting, while
+	   the composer (a later flex child) stays pinned to the bottom. */
+	.coach-shell.empty .welcome {
+		margin-top: auto;
+	}
+	.coach-shell.empty .chat-log {
+		flex: 0 0 auto;
+		margin-bottom: auto;
+		overflow: visible;
+	}
 	.welcome-eyebrow {
 		font-size: var(--text-sm);
 		font-weight: 800;
@@ -280,7 +292,8 @@
 		display: inline-flex;
 		align-items: center;
 		gap: var(--space-2);
-		padding: 9px 14px;
+		min-height: 44px; /* primary entry point to Scout — meet the iOS touch min */
+		padding: 8px 14px;
 		border-radius: var(--radius-pill);
 		background: var(--forest-soft);
 		color: var(--forest);
