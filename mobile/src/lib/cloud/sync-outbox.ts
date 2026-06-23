@@ -38,6 +38,18 @@ export interface PushRejected {
 	server?: { etag?: string };
 }
 
+/** A document as it comes back from /sync/bootstrap (restore). */
+export interface RemoteDoc {
+	doc_type: string;
+	doc_id: string;
+	op: Op;
+	content: unknown;
+	etag: string;
+}
+
+/** What restore should do with one remote document. */
+export type RestoreDecision = 'apply' | 'skip-have' | 'skip-local';
+
 export type PendingMap = Record<string, OutboxEntry>;
 export type SyncedMap = Record<string, string>; // docKey -> etag confirmed on the server
 
@@ -139,11 +151,47 @@ export function reconcilePush(
 		if (nextPending[key]?.etag === a.etag) delete nextPending[key];
 	}
 	for (const r of rejected) {
+		// The server holds a newer copy (another device wrote since we synced). Drop
+		// our losing push, and FORGET our baseline for this doc so the next restore
+		// re-pulls and applies the server's authoritative content — converging local
+		// to it. (Pinning synced to the server etag without applying its content
+		// would leave local silently diverged, since a later restore would then
+		// skip-have.) The caller re-runs restore when rejectedKeys is non-empty.
 		const key = docKey(r.doc_type, r.doc_id);
-		if (r.server?.etag) nextSynced[key] = r.server.etag;
 		delete nextPending[key];
+		delete nextSynced[key];
 		rejectedKeys.push(key);
 	}
 
 	return { pending: nextPending, synced: nextSynced, rejectedKeys };
+}
+
+/**
+ * Decide what restore should do with one remote document — the policy that keeps
+ * a cloud restore from ever destroying data:
+ *
+ *  - `skip-have`  the remote etag already matches our synced baseline — we have
+ *                 this exact version, nothing to do.
+ *  - `apply`      adopt the remote copy. Always on a FRESH install (local state
+ *                 is just defaults, so the backup must win); otherwise only when
+ *                 the remote differs from our baseline AND we have no unsynced
+ *                 local edit (i.e. another device changed it since we synced).
+ *  - `skip-local` we hold an unsynced local edit for this doc (it's in the
+ *                 outbox) — local wins; it will push up rather than be overwritten.
+ *
+ * `fresh` is sampled once at the start of restore (before any doc is applied),
+ * so a backup that restores the profile doesn't flip the install to "not fresh"
+ * mid-pass and start preserving the very defaults it's meant to replace.
+ */
+export function restoreDecision(
+	pending: PendingMap,
+	synced: SyncedMap,
+	key: string,
+	remoteEtag: string,
+	fresh: boolean
+): RestoreDecision {
+	if (synced[key] === remoteEtag) return 'skip-have';
+	if (fresh) return 'apply';
+	if (pending[key]) return 'skip-local';
+	return 'apply';
 }

@@ -132,6 +132,22 @@ class PeopleStore {
 		this.#persist();
 	}
 
+	/**
+	 * Replace the roster with a restored cloud copy (the inverse of the backup in
+	 * #persist). Returns whether it applied; a non-array is rejected so a malformed
+	 * document never wipes the roster. Persists locally afterward. Called only by
+	 * the cloud restore orchestrator under the last-write-wins policy.
+	 */
+	applyRestored(groups: unknown): boolean {
+		if (!Array.isArray(groups) || groups.length === 0) return false;
+		this.#groups = groups as PeopleGroup[];
+		if (!this.#groups.some((g) => g.id === this.activeGroupId)) {
+			this.activeGroupId = this.#groups[0].id;
+		}
+		this.#persist();
+		return true;
+	}
+
 	setActiveGroup(id: string): void {
 		this.activeGroupId = id;
 	}

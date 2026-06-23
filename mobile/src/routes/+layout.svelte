@@ -5,16 +5,19 @@
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import { cloudAuth } from '$lib/cloud/auth.svelte';
 	import { syncEngine } from '$lib/cloud/syncEngine.svelte';
+	import { registerCloudRestore } from '$lib/cloud/restore';
 
 	let { children } = $props();
 
 	onMount(() => {
 		let removeResume: (() => void) | undefined;
 
-		// Opt-in cloud backup: restore any saved session and start the outbox
-		// engine app-wide, so a signed-in hike keeps backing up in the background
-		// whether or not the Account tab is ever opened. Both are no-ops when
-		// signed out beyond restoring state.
+		// Opt-in cloud backup: register the restore applier, then restore any saved
+		// session and start the outbox engine app-wide, so a signed-in hike keeps
+		// backing up (and a fresh install restores) whether or not the Account tab is
+		// ever opened. Registering the applier FIRST means a sign-in during boot has
+		// somewhere to apply the pulled documents. All no-ops when signed out.
+		registerCloudRestore();
 		void cloudAuth.init();
 		syncEngine.start();
 

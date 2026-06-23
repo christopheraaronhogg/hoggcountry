@@ -121,6 +121,12 @@ const mobilePersistence = browser ? createMobilePersistenceAdapter() : null;
 /** A write-action Scout proposes from chat, rendered as a confirm card. */
 type ProposedAction = { id: string; title: string; detail: string; confirmLabel: string };
 
+/** A non-null, non-array object — the shape a restored profile/settings/check-in
+ *  document must have before we trust and adopt it. */
+function isRecordObject(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 class TrailAssistantStore {
 	#state = $state<TrailState>(createDefaultTrailState());
 	#syncTimer: ReturnType<typeof setTimeout> | null = null;
@@ -249,6 +255,87 @@ class TrailAssistantStore {
 			history: snapshot.checkInHistory,
 			nextDueAt: snapshot.nextCheckInDueAt
 		});
+	}
+
+	/** True when local state is just defaults — a fresh / lost-phone install. The
+	 *  cloud restore policy reads this once to decide whether the backup outranks
+	 *  the on-device defaults. */
+	get isFreshInstall(): boolean {
+		return !this.#state.hikeProfile.calibrated;
+	}
+
+	/**
+	 * Apply one restored backup document to local state — the inverse of
+	 * #backupSnapshot, called only by the cloud restore orchestrator under the
+	 * last-write-wins restore policy. Returns whether it applied; a shape it
+	 * doesn't recognize or can't trust is skipped (returns false) so a malformed
+	 * document never corrupts the hike. Runs synchronously so the persistence
+	 * effect flushes once over fully-restored state.
+	 */
+	applyRestoredDoc(docType: string, content: unknown): boolean {
+		if (content == null || typeof content !== 'object') return false;
+		switch (docType) {
+			case 'profile': {
+				const p = content as Partial<HikeProfile>;
+				// Guard the fields the app keys off: a malformed `calibrated`/`mode`
+				// would corrupt first-run + restore decisions (isFreshInstall).
+				if (typeof p.calibrated !== 'boolean' || typeof p.mode !== 'string') return false;
+				this.#state.hikeProfile = content as HikeProfile;
+				return true;
+			}
+			case 'position': {
+				const p = content as { currentMile?: unknown; dayNumber?: unknown };
+				if (typeof p.currentMile !== 'number' || typeof p.dayNumber !== 'number') return false;
+				this.#state.currentMile = p.currentMile;
+				this.#state.dayNumber = p.dayNumber;
+				return true;
+			}
+			case 'settings': {
+				const s = content as {
+					privacy?: PrivacySettings;
+					trail?: TrailSettings;
+					log?: TrailLogSettings;
+				};
+				if (!isRecordObject(s.privacy) || !isRecordObject(s.trail) || !isRecordObject(s.log)) {
+					return false;
+				}
+				this.#state.privacySettings = s.privacy;
+				this.#state.trailSettings = s.trail;
+				this.#state.trailLogSettings = s.log;
+				return true;
+			}
+			case 'support-circle': {
+				if (!Array.isArray(content)) return false;
+				this.#state.supportCircle = content as SupportContact[];
+				return true;
+			}
+			case 'loadout': {
+				if (!Array.isArray(content)) return false;
+				this.#state.personalLoadout = content as LoadoutItem[];
+				return true;
+			}
+			case 'documents': {
+				if (!Array.isArray(content)) return false;
+				this.#state.documents = content as TrailDocument[];
+				return true;
+			}
+			case 'checkins': {
+				const c = content as {
+					last?: TrailState['lastCheckIn'];
+					history?: unknown;
+					nextDueAt?: unknown;
+				};
+				if (!isRecordObject(c.last) || !Array.isArray(c.history)) return false;
+				this.#state.lastCheckIn = c.last;
+				this.#state.checkInHistory = c.history as TrailState['checkInHistory'];
+				if (typeof c.nextDueAt === 'string') {
+					this.#state.nextCheckInDueAt = c.nextDueAt;
+				}
+				return true;
+			}
+			default:
+				return false;
+		}
 	}
 
 	async #bootstrap() {

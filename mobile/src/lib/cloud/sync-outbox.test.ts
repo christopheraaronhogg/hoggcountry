@@ -6,6 +6,7 @@ import {
 	makeDelete,
 	makeUpsert,
 	reconcilePush,
+	restoreDecision,
 	shouldEnqueueUpsert,
 	toPushChanges,
 	type PendingMap,
@@ -98,18 +99,21 @@ test('reconcilePush: a doc re-dirtied mid-flight is kept for the next round', ()
 	assert.equal(out.synced[key], pushedEtag, 'the pushed version is still recorded as synced');
 });
 
-test('reconcilePush: rejected (stale) drops our push and adopts the server copy', () => {
+test('reconcilePush: rejected (stale) drops our push and forgets the baseline so restore re-pulls', () => {
 	const key = docKey('settings', 'me');
 	const pending: PendingMap = { [key]: makeUpsert('settings', 'me', { a: 1 }, 'T') };
 
 	const out = reconcilePush(
 		pending,
-		{},
+		{ [key]: 'old-baseline' },
 		[],
 		[{ doc_type: 'settings', doc_id: 'me', reason: 'stale_client_updated_at', server: { etag: 'srv-9' } }]
 	);
 	assert.equal(out.pending[key], undefined, 'stale local push is dropped, not retried in a loop');
-	assert.equal(out.synced[key], 'srv-9', 'the newer server etag wins');
+	// We must NOT pin synced to the server etag without applying its content — that
+	// would leave local silently diverged (a later restore would skip-have). Forget
+	// the baseline so the engine's re-restore pulls + applies the server copy.
+	assert.equal(out.synced[key], undefined, 'baseline forgotten so restore converges local to the server copy');
 	assert.deepEqual(out.rejectedKeys, [key]);
 });
 
@@ -120,4 +124,37 @@ test('reconcilePush does not mutate its inputs', () => {
 	reconcilePush(pending, synced, [{ doc_type: 'loadout', doc_id: 'me', etag: pending[key].etag }], []);
 	assert.ok(pending[key], 'original pending map is untouched (caller swaps in the returned maps)');
 	assert.deepEqual(synced, {});
+});
+
+// --- restore policy (the data-loss-critical decisions) ----------------------
+
+test('restore: a fresh install adopts the backup even over queued local defaults', () => {
+	const key = docKey('profile', 'me');
+	// On a fresh/lost-phone install the boot enqueue has already queued DEFAULT
+	// state for this doc — restore must still pull the real backup down over it.
+	const pending: PendingMap = { [key]: makeUpsert('profile', 'me', { calibrated: false }, 'T') };
+	assert.equal(restoreDecision(pending, {}, key, 'remote-etag', true), 'apply');
+});
+
+test('restore: skip when we already hold this exact version (even on a fresh install)', () => {
+	const key = docKey('settings', 'me');
+	assert.equal(restoreDecision({}, { [key]: 'e1' }, key, 'e1', false), 'skip-have');
+	assert.equal(restoreDecision({}, { [key]: 'e1' }, key, 'e1', true), 'skip-have');
+});
+
+test('restore: a real device with an unsynced local edit keeps local (never clobbered)', () => {
+	const key = docKey('position', 'me');
+	const pending: PendingMap = { [key]: makeUpsert('position', 'me', { mile: 1600 }, 'T') };
+	// Not fresh, and we have an un-pushed local change → local wins; it will push
+	// up rather than be overwritten by the (older) cloud copy.
+	assert.equal(restoreDecision(pending, { [key]: 'old' }, key, 'cloud', false), 'skip-local');
+});
+
+test('restore: a real device adopts a doc another device changed since we synced', () => {
+	const key = docKey('documents', 'me');
+	// Not fresh, no local pending edit, and the cloud etag differs from our synced
+	// baseline → another device changed it; adopt the newer cloud copy.
+	assert.equal(restoreDecision({}, { [key]: 'old' }, key, 'newer', false), 'apply');
+	// First sight of a doc we've never seen (no baseline, no pending) → adopt.
+	assert.equal(restoreDecision({}, {}, key, 'remote', false), 'apply');
 });

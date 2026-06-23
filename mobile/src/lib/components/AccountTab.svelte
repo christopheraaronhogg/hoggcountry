@@ -27,7 +27,7 @@
 		return days === 1 ? 'yesterday' : `${days}d ago`;
 	}
 	const backupState = $derived(
-		syncEngine.status === 'backing-up'
+		syncEngine.status === 'backing-up' || syncEngine.status === 'restoring'
 			? 'is-syncing'
 			: syncEngine.status === 'offline' || syncEngine.status === 'error'
 				? 'is-waiting'
@@ -35,6 +35,8 @@
 	);
 	const backupLabel = $derived.by(() => {
 		switch (syncEngine.status) {
+			case 'restoring':
+				return 'Restoring your hike…';
 			case 'backing-up':
 				return 'Backing up…';
 			case 'offline':
