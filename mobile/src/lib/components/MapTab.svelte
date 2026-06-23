@@ -35,6 +35,9 @@
 	// A tapped trail point → measures distance + climb/descent from the current
 	// mile (the "how far / how much up" tool). null when nothing is being measured.
 	let measureMile = $state<number | null>(null);
+	// True when the measure target is a POI the user selected (vs a free trail tap),
+	// so we skip the draggable measure dot — the POI coin already marks the spot.
+	let measureFromPoi = $state(false);
 
 	// Whole-trail shelters (OSM, open-licensed) — the navigation landmarks a
 	// thru-hiker keys off. Loaded once so the map shows POIs the length of the
@@ -265,6 +268,7 @@
 		// (the line is a few pixels wide), tighter in the corridor.
 		const tol = isOverview ? 80 : 6;
 		measureMile = snapMeasureToTrail(lat, lon, tol);
+		measureFromPoi = false; // a free trail tap — show the draggable measure dot
 	}
 	// Snap straight to the nearest point on the DRAWN high-res line (not the 1-mi
 	// elevation points, whose geometry differs). This is exact at any zoom — a tap
@@ -291,6 +295,13 @@
 	}
 	function clearMeasure() {
 		measureMile = null;
+		measureFromPoi = false;
+	}
+	// Select a POI as the measured spot: distance + climb/descent to it light up in
+	// the card and the trail highlights, alongside the popup that names it.
+	function selectPoi(mile: number) {
+		measureMile = clamp(mile, trailLo, trailHi);
+		measureFromPoi = true;
 	}
 
 	function onMoveEnd() {
@@ -355,13 +366,13 @@
 	}
 
 	// --- measurement: tap a trail point → distance + gain/loss from current mile -
-	const measure = $derived.by(() => {
-		if (measureMile == null || geo.length < 2) return null;
-		const target = clamp(measureMile, trailLo, trailHi);
+	// Cumulative climb + descent actually walked from the current mile to a target
+	// mile (either direction). Reused by the measure card and the POI popups.
+	function elevChangeTo(targetMile: number): { gain: number; loss: number } {
+		const target = clamp(targetMile, trailLo, trailHi);
 		const a = Math.min(fromClamped, target);
 		const b = Math.max(fromClamped, target);
 		const segUp = elevSegment(a, b);
-		// Gain/loss as actually walked — from the current mile toward the point.
 		const seq = target >= fromClamped ? segUp : [...segUp].reverse();
 		let gain = 0;
 		let loss = 0;
@@ -370,12 +381,18 @@
 			if (delta > 0) gain += delta;
 			else loss += -delta;
 		}
+		return { gain: Math.round(gain), loss: Math.round(loss) };
+	}
+	const measure = $derived.by(() => {
+		if (measureMile == null || geo.length < 2) return null;
+		const target = clamp(measureMile, trailLo, trailHi);
+		const { gain, loss } = elevChangeTo(target);
 		return {
 			mile: target,
 			ahead: target >= fromClamped,
 			dist: Math.abs(target - fromClamped),
-			gain: Math.round(gain),
-			loss: Math.round(loss)
+			gain,
+			loss
 		};
 	});
 
@@ -759,6 +776,7 @@
 		void sheltersInView;
 		void liveZoom;
 		void visibleLandmarks;
+		void fromQ;
 		if (!L || !map || !shelterLayer) return;
 		shelterLayer.clearLayers();
 		const pinned = showPois
@@ -771,44 +789,49 @@
 		const r = liveZoom >= 11 ? 5 : liveZoom >= 8 ? 4 : 3;
 		for (const s of sheltersInView) {
 			if (pinned.has(Math.round(s.mile * 20))) continue; // a corridor pin already shows it
-			L.circleMarker([s.lat, s.lon], {
+			const ec = elevChangeTo(s.mile);
+			const dot = L.circleMarker([s.lat, s.lon], {
 				radius: r,
 				weight: 1.8,
 				color: '#fffdf8',
 				fillColor: '#6a845f',
 				fillOpacity: 1,
 				className: 'poi poi-shelter'
-			})
-				.bindPopup(
-					`<div class="poi-pop pop-shelter"><strong class="pp-name">${s.name}</strong>` +
-						`<span class="pp-meta">Shelter · mi ${s.mile.toFixed(1)}</span></div>`,
-					{ className: 'poi-popup', closeButton: true, autoPanPaddingTopLeft: [24, 64], autoPanPaddingBottomRight: [70, 300], maxWidth: 240 }
-				)
-				.addTo(shelterLayer);
+			}).bindPopup(
+				`<div class="poi-pop pop-shelter"><strong class="pp-name">${s.name}</strong>` +
+					`<span class="pp-meta">Shelter · ${distanceLabel(s.mile)}</span>` +
+					`<span class="pp-elev">↑ ${fmt(ec.gain)} ft · ↓ ${fmt(ec.loss)} ft to reach</span></div>`,
+				{ className: 'poi-popup', closeButton: true, autoPanPaddingTopLeft: [24, 64], autoPanPaddingBottomRight: [70, 300], maxWidth: 240 }
+			);
+			dot.on('click', () => selectPoi(s.mile));
+			dot.addTo(shelterLayer);
 		}
 	});
 
-	// Corridor POI pins (only when zoomed in), filtered by the legend. Tap → a
-	// name-first callout (name, then category · distance).
+	// Corridor POI pins (only when zoomed in), filtered by the legend. Tap → select
+	// it as the measured spot (distance + climb/descent light up the card and the
+	// trail) AND open a popup naming it, with the elevation change to get there.
 	$effect(() => {
 		void visibleLandmarks;
 		void showPois;
 		void liveZoom;
+		void fromQ;
 		if (!L || !map || !poiLayer) return;
 		poiLayer.clearLayers();
 		if (!showPois) return;
 		for (const lm of visibleLandmarks) {
 			const cand = lm.kind === 'water' && !!lm.candidate;
-			L.marker(interpAtMile(lm.mile), { icon: poiIcon(lm.kind, cand), keyboard: false })
-				// A click-to-open POPUP (not a hover tooltip) so tapping a POI reliably
-				// selects it and the detail stays put until dismissed.
+			const ec = elevChangeTo(lm.mile);
+			const marker = L.marker(interpAtMile(lm.mile), { icon: poiIcon(lm.kind, cand), keyboard: false })
 				.bindPopup(
 					`<div class="poi-pop pop-${lm.kind}"><strong class="pp-name">${lm.label}</strong>` +
-						`<span class="pp-meta">${POI_WORD[lm.kind]} · ${distanceLabel(lm.mile)}${cand ? ' · candidate' : ''}</span></div>`,
+						`<span class="pp-meta">${POI_WORD[lm.kind]} · ${distanceLabel(lm.mile)}${cand ? ' · candidate' : ''}</span>` +
+						`<span class="pp-elev">↑ ${fmt(ec.gain)} ft · ↓ ${fmt(ec.loss)} ft to reach</span></div>`,
 					// Pan clear of the top strip, the right control stack, and the bottom card.
 					{ className: 'poi-popup', closeButton: true, autoPanPaddingTopLeft: [24, 64], autoPanPaddingBottomRight: [70, 300], maxWidth: 240 }
-				)
-				.addTo(poiLayer);
+				);
+			marker.on('click', () => selectPoi(lm.mile));
+			marker.addTo(poiLayer);
 		}
 	});
 
@@ -818,6 +841,7 @@
 	$effect(() => {
 		void measure;
 		void fromQ;
+		void measureFromPoi;
 		if (!L || !map || !measureLayer) return;
 		measureLayer.clearLayers();
 		const m = measure;
@@ -847,6 +871,15 @@
 				renderer: measureRenderer ?? undefined,
 				className: 'rt rt-measure'
 			}).addTo(measureLayer);
+		}
+		// A POI selection already shows its own coin + popup, so skip the draggable
+		// measure dot (it would cover the category icon) — just the highlight + card.
+		if (measureFromPoi) {
+			if (measureMarker) {
+				measureMarker.remove();
+				measureMarker = null;
+			}
+			return;
 		}
 		const dir = m.ahead ? 'ahead' : 'back';
 		const html = `<span class="mz-line"><b>${m.dist.toFixed(1)} mi</b> ${dir}</span><span class="mz-sub">↑ ${fmt(m.gain)} ft · ↓ ${fmt(m.loss)} ft · mi ${m.mile.toFixed(1)}</span>`;
@@ -1404,6 +1437,16 @@
 		color: var(--muted);
 		text-transform: uppercase;
 		letter-spacing: 0.03em;
+	}
+	/* climb/descent to reach the POI — echoes the measure card's gold accent */
+	:global(.poi-pop .pp-elev) {
+		display: block;
+		margin-top: 5px;
+		padding-top: 5px;
+		border-top: 1px solid var(--line);
+		font-size: 0.72rem;
+		font-weight: 800;
+		color: var(--ink);
 	}
 	:global(.leaflet-popup.poi-popup a.leaflet-popup-close-button) {
 		color: var(--muted);
