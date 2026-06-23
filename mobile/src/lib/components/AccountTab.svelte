@@ -8,10 +8,45 @@
 	import SourceChip from './SourceChip.svelte';
 	import { toUiSourceReceipt } from './source-receipts';
 	import { cloudAuth } from '$lib/cloud/auth.svelte';
+	import { syncEngine } from '$lib/cloud/syncEngine.svelte';
 
 	// Opt-in cloud backup (Phase 0). The app stays fully local + offline until the
 	// hiker signs in here.
 	let authMode = $state<'signin' | 'signup'>('signin');
+
+	// Live backup state for the signed-in card (driven by the outbox engine).
+	function relTime(iso: string | null): string {
+		if (!iso) return 'not yet';
+		const secs = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+		if (secs < 45) return 'just now';
+		const mins = Math.round(secs / 60);
+		if (mins < 60) return `${mins}m ago`;
+		const hrs = Math.round(mins / 60);
+		if (hrs < 24) return `${hrs}h ago`;
+		const days = Math.round(hrs / 24);
+		return days === 1 ? 'yesterday' : `${days}d ago`;
+	}
+	const backupState = $derived(
+		syncEngine.status === 'backing-up'
+			? 'is-syncing'
+			: syncEngine.status === 'offline' || syncEngine.status === 'error'
+				? 'is-waiting'
+				: 'is-ok'
+	);
+	const backupLabel = $derived.by(() => {
+		switch (syncEngine.status) {
+			case 'backing-up':
+				return 'Backing up…';
+			case 'offline':
+				return syncEngine.pendingCount
+					? `Saved on this phone · ${syncEngine.pendingCount} waiting for signal`
+					: 'Saved on this phone · backs up when online';
+			case 'error':
+				return 'Backup paused — retrying shortly';
+			default:
+				return `Backed up · ${relTime(syncEngine.lastBackupAt)}`;
+		}
+	});
 	let authName = $state('');
 	let authEmail = $state('');
 	let authPassword = $state('');
@@ -172,11 +207,14 @@
 					<p class="eyebrow">Cloud backup</p>
 					<h2>Backed up to the cloud</h2>
 				</div>
-				<span class="backup-dot" aria-hidden="true"></span>
+				<div class="backup-state {backupState}" aria-live="polite">
+					<span class="backup-dot" aria-hidden="true"></span>
+					<span>{backupLabel}</span>
+				</div>
 			</div>
 			<p class="backup-sub">
-				Signed in as <strong>{cloudAuth.user?.email}</strong>. Your hike syncs to the cloud, so it
-				survives a lost or dead phone and restores on a new one.
+				Signed in as <strong>{cloudAuth.user?.email}</strong>. Your position, check-ins, notes, gear
+				and people sync to the cloud, so they survive a lost or dead phone and restore on a new one.
 			</p>
 			<button class="backup-signout" type="button" onclick={() => cloudAuth.logout()}>Sign out</button>
 		{:else}
@@ -247,6 +285,14 @@
 					{cloudAuth.busy ? 'Working…' : authMode === 'signup' ? 'Create account' : 'Sign in'}
 				</button>
 			</form>
+
+			{#if authMode === 'signup'}
+				<p class="auth-note">
+					Accounts are invite-only during the family beta. If Chris sent you an invite — an email and
+					password — enter those on
+					<button class="auth-link" type="button" onclick={() => (authMode = 'signin')}>Sign in</button>.
+				</p>
+			{/if}
 
 			<button class="auth-apple" type="button" onclick={() => cloudAuth.signInWithApple()}>
 				 Sign in with Apple
@@ -646,7 +692,8 @@
 		display: flex;
 		align-items: flex-start;
 		justify-content: space-between;
-		gap: 10px;
+		gap: 10px 12px;
+		flex-wrap: wrap;
 	}
 	.backup-head h2 {
 		margin-top: 2px;
@@ -658,9 +705,78 @@
 		width: 9px;
 		height: 9px;
 		border-radius: 50%;
-		margin-top: 6px;
 		background: var(--moss);
 		box-shadow: 0 0 0 4px var(--moss-soft);
+	}
+
+	/* Live backup status chip (top-right of the signed-in card). One pill, three
+	   honest skins: backed up, backing up (pulsing), waiting for signal/retry. */
+	.backup-state {
+		display: inline-flex;
+		align-items: center;
+		gap: 7px;
+		padding: 5px 11px 5px 9px;
+		border-radius: 999px;
+		font-size: 0.78rem;
+		font-weight: 800;
+		white-space: nowrap;
+		margin-top: 2px;
+	}
+	.backup-state .backup-dot {
+		width: 7px;
+		height: 7px;
+		box-shadow: none;
+	}
+	.backup-state.is-ok {
+		background: var(--moss-soft);
+		color: var(--moss);
+	}
+	.backup-state.is-ok .backup-dot {
+		background: var(--moss);
+	}
+	.backup-state.is-syncing {
+		background: color-mix(in srgb, var(--sky) 16%, transparent);
+		color: var(--sky);
+	}
+	.backup-state.is-syncing .backup-dot {
+		background: var(--sky);
+		animation: backup-pulse 1s ease-in-out infinite;
+	}
+	.backup-state.is-waiting {
+		background: var(--warn-soft);
+		color: #8c5d1f;
+	}
+	.backup-state.is-waiting .backup-dot {
+		background: var(--clay);
+	}
+	@keyframes backup-pulse {
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.3;
+		}
+	}
+	@media (prefers-color-scheme: dark) {
+		.backup-state.is-waiting {
+			color: var(--warn);
+		}
+	}
+
+	.auth-note {
+		font-size: 0.8rem;
+		line-height: 1.45;
+		color: var(--muted);
+	}
+	.auth-link {
+		display: inline;
+		padding: 0;
+		font: inherit;
+		font-weight: 800;
+		color: var(--forest);
+		text-decoration: underline;
+		text-underline-offset: 2px;
 	}
 	.backup-sub {
 		font-size: 0.86rem;

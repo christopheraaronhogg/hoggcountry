@@ -3,11 +3,20 @@
 	import '../app.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { trailAssistant } from '$lib/trailState.svelte';
+	import { cloudAuth } from '$lib/cloud/auth.svelte';
+	import { syncEngine } from '$lib/cloud/syncEngine.svelte';
 
 	let { children } = $props();
 
 	onMount(() => {
 		let removeResume: (() => void) | undefined;
+
+		// Opt-in cloud backup: restore any saved session and start the outbox
+		// engine app-wide, so a signed-in hike keeps backing up in the background
+		// whether or not the Account tab is ever opened. Both are no-ops when
+		// signed out beyond restoring state.
+		void cloudAuth.init();
+		syncEngine.start();
 
 		async function configureNativeChrome() {
 			const [{ Capacitor }, { StatusBar }, { App }] = await Promise.all([

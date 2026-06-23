@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import { syncEngine } from '../cloud/syncEngine.svelte';
 
 // Phase 1 of "Life360 for the tramily". A person is a member of a group; only
 // members who are actively sharing a live position get a map avatar. Right now
@@ -87,6 +88,10 @@ class PeopleStore {
 		} catch {
 			/* storage may be unavailable */
 		}
+		// Mirror the family/tramily roster (names, phones, tints) to the cloud
+		// backup so it restores on a new phone. Live positions are deliberately
+		// excluded here — those flow through the realtime SpacetimeDB layer.
+		syncEngine.enqueue('people-groups', 'me', this.#groups);
 	}
 
 	#nextTint(group: PeopleGroup): number {

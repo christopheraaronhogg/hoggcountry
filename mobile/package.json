@@ -10,7 +10,7 @@
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"test": "node --experimental-strip-types --experimental-transform-types --test src/lib/*.test.ts src/lib/scout/*.test.ts src/lib/bible/*.test.ts",
+		"test": "node --experimental-strip-types --experimental-transform-types --test src/lib/*.test.ts src/lib/cloud/*.test.ts src/lib/scout/*.test.ts src/lib/bible/*.test.ts",
 		"build:offline-source-docs": "node scripts/build-offline-source-docs.mjs",
 		"preflight": "node scripts/preflight.mjs",
 		"release:proof": "node scripts/release-proof.mjs",

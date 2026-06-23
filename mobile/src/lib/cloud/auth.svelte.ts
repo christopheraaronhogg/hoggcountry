@@ -117,10 +117,20 @@ class CloudAuth {
 		this.user = user;
 		this.status = 'signed-in';
 		await secureSet(TOKEN_KEY, token);
+		await this.ensureDeviceRegistered();
+	}
+
+	/**
+	 * Bind this device to the account (idempotent server-side). Best-effort at
+	 * sign-in; the sync engine also calls this to recover if a push ever comes
+	 * back `unknown_device` (e.g. the device row was pruned).
+	 */
+	async ensureDeviceRegistered(): Promise<void> {
+		if (!this.#token) return;
 		try {
 			await apiRequest('/devices/register', {
 				method: 'POST',
-				token,
+				token: this.#token,
 				body: { device_id: await this.deviceId(), platform: 'ios', device_name: DEVICE_NAME }
 			});
 		} catch {

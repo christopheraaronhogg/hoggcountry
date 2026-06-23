@@ -35,6 +35,7 @@ import {
 	snapshotTrailState,
 	type PersistedTrailState
 } from './trail-state-persistence';
+import { syncEngine } from './cloud/syncEngine.svelte';
 import {
 	prepareQueuedReportsForSync,
 	settledSyncState,
@@ -215,7 +216,38 @@ class TrailAssistantStore {
 				const snapshot = snapshotTrailState(this.#state);
 				if (!this.#stateHydrated) return;
 				void this.#persistState(snapshot);
+				this.#backupSnapshot(snapshot);
 			});
+		});
+	}
+
+	/**
+	 * Decompose the durable hike state into small per-entity backup documents and
+	 * hand them to the cloud sync engine. Each is fingerprinted there, so unchanged
+	 * entities are skipped — only what actually moved is queued. Position is its own
+	 * document (it changes often) so a settings edit and a mile update never clobber
+	 * each other under document-level last-write-wins. The chat transcript and
+	 * ephemeral UI flags (online/sync status, "seen" ids) are intentionally not
+	 * backed up; Trail Pulse reports already live in the shared SpacetimeDB feed.
+	 */
+	#backupSnapshot(snapshot: PersistedTrailState): void {
+		syncEngine.enqueue('profile', 'me', snapshot.hikeProfile);
+		syncEngine.enqueue('position', 'me', {
+			currentMile: snapshot.currentMile,
+			dayNumber: snapshot.dayNumber
+		});
+		syncEngine.enqueue('settings', 'me', {
+			privacy: snapshot.privacySettings,
+			trail: snapshot.trailSettings,
+			log: snapshot.trailLogSettings
+		});
+		syncEngine.enqueue('support-circle', 'me', snapshot.supportCircle);
+		syncEngine.enqueue('loadout', 'me', snapshot.personalLoadout);
+		syncEngine.enqueue('documents', 'me', snapshot.documents);
+		syncEngine.enqueue('checkins', 'me', {
+			last: snapshot.lastCheckIn,
+			history: snapshot.checkInHistory,
+			nextDueAt: snapshot.nextCheckInDueAt
 		});
 	}
 
