@@ -14,31 +14,34 @@
 </span>
 
 <style>
+	/* Mode-aware confidence surfaces — the old baked rgba() values were fixed
+	   light-mode tints that washed out in dark mode, exactly where offline source
+	   attribution (Scout's trust surface) matters most. */
 	.source-chip {
 		display: inline-flex;
 		align-items: center;
 		gap: 8px;
 		padding: 6px 10px;
 		border-radius: 999px;
-		background: rgba(95, 128, 144, 0.1);
-		border: 1px solid rgba(95, 128, 144, 0.18);
+		background: var(--sky-soft);
+		border: 1px solid color-mix(in srgb, var(--sky) 30%, transparent);
 		color: var(--ink);
 		min-width: 0;
 	}
 
 	.source-chip[data-confidence='medium'] {
-		background: rgba(200, 167, 122, 0.18);
-		border-color: rgba(200, 167, 122, 0.32);
+		background: var(--warn-soft);
+		border-color: color-mix(in srgb, var(--warn) 38%, transparent);
 	}
 
 	.source-chip[data-confidence='low'] {
-		background: rgba(170, 104, 67, 0.14);
-		border-color: rgba(170, 104, 67, 0.3);
+		background: var(--clay-soft);
+		border-color: color-mix(in srgb, var(--clay) 36%, transparent);
 	}
 
 	.source-chip[data-confidence='draft'] {
-		background: rgba(154, 59, 47, 0.1);
-		border-color: rgba(154, 59, 47, 0.28);
+		background: var(--danger-soft);
+		border-color: color-mix(in srgb, var(--danger) 34%, transparent);
 	}
 
 	.source-dot {
@@ -50,7 +53,7 @@
 	}
 
 	.source-chip[data-confidence='medium'] .source-dot {
-		background: #b6892c;
+		background: var(--warn);
 	}
 
 	.source-chip[data-confidence='low'] .source-dot {

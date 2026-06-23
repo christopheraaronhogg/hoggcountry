@@ -79,6 +79,17 @@
 		background: rgba(47, 75, 53, 0.1);
 		color: var(--forest);
 	}
+	/* Immediate down-state on tap — the four primary tabs gave no press feedback,
+	   so navigation felt laggy before the active spring landed. Plus a visible
+	   keyboard/AT focus ring. */
+	.nav-item:active {
+		transform: scale(0.9);
+		opacity: 0.7;
+	}
+	.nav-item:focus-visible {
+		outline: 2px solid var(--forest);
+		outline-offset: -2px;
+	}
 
 	.nav-glyph :global(svg) {
 		transition: transform 0.2s cubic-bezier(0.34, 1.4, 0.7, 1);
