@@ -85,12 +85,15 @@
 	{#if nearbyReports.length}
 		<div class="pulse-list">
 			{#each nearbyReports as report (report.id)}
-				<article class="pulse-row">
+				<article class="pulse-row" class:has-photo={report.photo}>
 					<div class="mile-chip">Mile {report.snappedMile.toFixed(1)}</div>
 					<div class="pulse-copy">
 						<strong>{trailAssistant.formatTrailPulseReport(report)}</strong>
 						<span>{formatAge(report.observedAt)} {report.syncState === 'queued-offline' ? '| queued offline' : ''}</span>
 					</div>
+					{#if report.photo}
+						<img class="pulse-photo" src={report.photo} alt="Trail photo at mile {report.snappedMile.toFixed(1)}" />
+					{/if}
 				</article>
 			{/each}
 		</div>
@@ -182,6 +185,16 @@
 		padding: 11px;
 		border-radius: 14px;
 		background: var(--forest-soft);
+	}
+	.pulse-row.has-photo {
+		grid-template-columns: auto 1fr auto;
+	}
+	.pulse-photo {
+		width: 52px;
+		height: 52px;
+		object-fit: cover;
+		border-radius: 10px;
+		border: 1px solid var(--line);
 	}
 
 	.mile-chip {

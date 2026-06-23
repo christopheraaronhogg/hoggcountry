@@ -32,8 +32,37 @@
 	let inputSource = $state<TrailPulseSource>('chip');
 	let submitState = $state<'idle' | 'saving' | 'saved'>('idle');
 	let voiceState = $state<'idle' | 'listening' | 'unsupported'>('idle');
+	let photoDataUrl = $state('');
+	let photoInput = $state<HTMLInputElement | null>(null);
 
-	const submitDisabled = $derived(submitState === 'saving' || (!selectedChip && !noteText.trim()));
+	const submitDisabled = $derived(
+		submitState === 'saving' || (!selectedChip && !noteText.trim() && !photoDataUrl)
+	);
+
+	// Downscale a captured photo to a small JPEG data URL so it fits on-device.
+	async function onPhotoPick(event: Event) {
+		const file = (event.currentTarget as HTMLInputElement).files?.[0];
+		if (!file) return;
+		try {
+			const bitmap = await createImageBitmap(file);
+			const max = 900;
+			const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+			const w = Math.round(bitmap.width * scale);
+			const h = Math.round(bitmap.height * scale);
+			const canvas = document.createElement('canvas');
+			canvas.width = w;
+			canvas.height = h;
+			canvas.getContext('2d')?.drawImage(bitmap, 0, 0, w, h);
+			photoDataUrl = canvas.toDataURL('image/jpeg', 0.72);
+			submitState = 'idle';
+		} catch {
+			/* unreadable image — ignore */
+		}
+	}
+	function clearPhoto() {
+		photoDataUrl = '';
+		if (photoInput) photoInput.value = '';
+	}
 	const locationNote = $derived(
 		trailAssistant.privacySettings.sharePreciseLocation
 			? 'GPS can snap this to an approximate trail mile. Raw coordinates are not stored or sent.'
@@ -64,6 +93,7 @@
 		sheetOpen = false;
 		submitState = 'idle';
 		voiceState = 'idle';
+		clearPhoto();
 	}
 
 	function chooseChip(chip: TrailPulseChip) {
@@ -116,7 +146,8 @@
 			source: inputSource,
 			chipText: selectedChip,
 			noteText,
-			reporterTrailName
+			reporterTrailName,
+			photo: photoDataUrl || undefined
 		});
 
 		if (!report) {
@@ -127,6 +158,7 @@
 		selectedChip = undefined;
 		noteText = '';
 		reporterTrailName = '';
+		clearPhoto();
 		inputSource = 'chip';
 		submitState = 'saved';
 
@@ -190,6 +222,37 @@
 						? 'Listening now'
 						: 'Watch-ready voice note'}
 			</span>
+		</div>
+
+		<div class="photo-row">
+			<input
+				class="photo-input"
+				bind:this={photoInput}
+				type="file"
+				accept="image/*"
+				capture="environment"
+				onchange={onPhotoPick}
+				aria-label="Take or choose a photo"
+			/>
+			{#if photoDataUrl}
+				<div class="photo-preview">
+					<img src={photoDataUrl} alt="Attached" />
+					<button class="photo-remove" type="button" onclick={clearPhoto} aria-label="Remove photo">✕</button>
+				</div>
+			{:else}
+				<button class="photo-button" type="button" onclick={() => photoInput?.click()}>
+					<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+						<path
+							d="M4 8h3l1.5-2h7L17 8h3v11H4zM12 16a3.5 3.5 0 100-7 3.5 3.5 0 000 7z"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.8"
+							stroke-linejoin="round"
+						/>
+					</svg>
+					Add photo
+				</button>
+			{/if}
 		</div>
 
 		<label class="field-label" for="pulse-note">Text note</label>
@@ -314,6 +377,47 @@
 		align-items: center;
 		font-size: 0.8rem;
 		color: var(--muted);
+	}
+
+	.photo-input {
+		display: none;
+	}
+	.photo-button {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		min-height: 44px;
+		padding: 0 16px;
+		border-radius: var(--radius-control);
+		border: 1px dashed var(--line);
+		background: var(--ink-soft);
+		color: var(--forest);
+		font-weight: 800;
+		font-size: 0.84rem;
+	}
+	.photo-preview {
+		position: relative;
+		width: fit-content;
+	}
+	.photo-preview img {
+		display: block;
+		max-height: 140px;
+		max-width: 100%;
+		border-radius: var(--radius-sm);
+		border: 1px solid var(--line);
+	}
+	.photo-remove {
+		position: absolute;
+		top: -8px;
+		right: -8px;
+		width: 26px;
+		height: 26px;
+		border-radius: 50%;
+		background: var(--ink);
+		color: var(--surface-strong);
+		font-weight: 800;
+		font-size: 0.8rem;
+		box-shadow: var(--shadow-soft);
 	}
 
 	.field-label {

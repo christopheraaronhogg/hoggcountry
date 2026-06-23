@@ -1089,9 +1089,10 @@ class TrailAssistantStore {
 		chipText?: TrailPulseChip;
 		noteText?: string;
 		reporterTrailName?: string;
+		photo?: string;
 	}): Promise<TrailConditionReport | null> {
 		const chipText = input.chipText;
-		const noteText = (input.noteText?.trim() || chipText || '').trim();
+		const noteText = (input.noteText?.trim() || chipText || (input.photo ? 'Photo' : '')).trim();
 		if (!noteText) return null;
 
 		const position = await this.#position.getCurrentPosition();
@@ -1101,7 +1102,8 @@ class TrailAssistantStore {
 			noteText,
 			reporterTrailName: input.reporterTrailName,
 			snappedMile: this.#position.snapPositionToTrailMile(position),
-			syncState: syncStateForLocalWrite(this.#state.onlineStatus)
+			syncState: syncStateForLocalWrite(this.#state.onlineStatus),
+			photo: input.photo
 		});
 
 		this.#state.trailPulseReports = [report, ...this.#state.trailPulseReports];

@@ -82,6 +82,8 @@ export interface TrailConditionReport {
 	status: TrailPulseStatus;
 	createdAt: string;
 	syncState: SyncState;
+	/** Optional downscaled JPEG data URL. Kept on-device (not yet synced). */
+	photo?: string;
 }
 
 export interface PrivacySettings {

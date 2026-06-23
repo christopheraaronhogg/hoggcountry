@@ -18,6 +18,7 @@ export function createTrailPulseReport(input: {
 	observedAt?: string;
 	syncState?: SyncState;
 	id?: string;
+	photo?: string;
 }): TrailConditionReport {
 	const observedAt = input.observedAt ?? new Date().toISOString();
 
@@ -32,7 +33,8 @@ export function createTrailPulseReport(input: {
 		observedAt,
 		status: 'active',
 		createdAt: observedAt,
-		syncState: input.syncState ?? 'synced'
+		syncState: input.syncState ?? 'synced',
+		photo: input.photo
 	};
 }
 
