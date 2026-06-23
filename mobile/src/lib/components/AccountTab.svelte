@@ -2,10 +2,40 @@
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import { isSelfTracked, TOTAL_AT_MILES } from '$lib/scout/hike-profile';
 	import type { MileSource } from '$lib/scout/hike-profile';
+	import { onMount } from 'svelte';
 	import PackStatus from './PackStatus.svelte';
 	import OfflineStatus from './OfflineStatus.svelte';
 	import SourceChip from './SourceChip.svelte';
 	import { toUiSourceReceipt } from './source-receipts';
+	import { cloudAuth } from '$lib/cloud/auth.svelte';
+
+	// Opt-in cloud backup (Phase 0). The app stays fully local + offline until the
+	// hiker signs in here.
+	let authMode = $state<'signin' | 'signup'>('signin');
+	let authName = $state('');
+	let authEmail = $state('');
+	let authPassword = $state('');
+	const canSubmitAuth = $derived(
+		!cloudAuth.busy &&
+			authEmail.trim().length > 3 &&
+			authPassword.length >= 8 &&
+			(authMode === 'signin' || authName.trim().length > 0)
+	);
+	async function submitAuth() {
+		if (!canSubmitAuth) return;
+		const ok =
+			authMode === 'signup'
+				? await cloudAuth.register({ name: authName, email: authEmail, password: authPassword })
+				: await cloudAuth.login({ email: authEmail, password: authPassword });
+		if (ok) {
+			authName = '';
+			authEmail = '';
+			authPassword = '';
+		}
+	}
+	onMount(() => {
+		void cloudAuth.init();
+	});
 
 	function fmtBytes(n: number | undefined): string {
 		if (!n || n < 0) return '—';
@@ -133,6 +163,97 @@
 				<small>to Katahdin</small>
 			</div>
 		</div>
+	</section>
+
+	<section class="card backup-card">
+		{#if cloudAuth.signedIn}
+			<div class="backup-head">
+				<div>
+					<p class="eyebrow">Cloud backup</p>
+					<h2>Backed up to the cloud</h2>
+				</div>
+				<span class="backup-dot" aria-hidden="true"></span>
+			</div>
+			<p class="backup-sub">
+				Signed in as <strong>{cloudAuth.user?.email}</strong>. Your hike syncs to the cloud, so it
+				survives a lost or dead phone and restores on a new one.
+			</p>
+			<button class="backup-signout" type="button" onclick={() => cloudAuth.logout()}>Sign out</button>
+		{:else}
+			<div class="backup-head">
+				<div>
+					<p class="eyebrow">Cloud backup</p>
+					<h2>Back up my hike</h2>
+				</div>
+			</div>
+			<p class="backup-sub">
+				Optional — the app works fully offline. Sign in to keep your position, check-ins, notes and
+				people safe in the cloud and restore them on a new phone.
+			</p>
+
+			<div class="auth-tabs" role="tablist" aria-label="Sign in or create an account">
+				<button
+					class="auth-tab"
+					class:active={authMode === 'signin'}
+					type="button"
+					role="tab"
+					aria-selected={authMode === 'signin'}
+					onclick={() => (authMode = 'signin')}>Sign in</button
+				>
+				<button
+					class="auth-tab"
+					class:active={authMode === 'signup'}
+					type="button"
+					role="tab"
+					aria-selected={authMode === 'signup'}
+					onclick={() => (authMode = 'signup')}>Create account</button
+				>
+			</div>
+
+			<form
+				class="auth-form"
+				onsubmit={(e) => {
+					e.preventDefault();
+					submitAuth();
+				}}
+			>
+				{#if authMode === 'signup'}
+					<input
+						class="auth-input"
+						bind:value={authName}
+						placeholder="Name"
+						autocomplete="name"
+						aria-label="Name"
+					/>
+				{/if}
+				<input
+					class="auth-input"
+					type="email"
+					inputmode="email"
+					autocomplete="email"
+					bind:value={authEmail}
+					placeholder="Email"
+					aria-label="Email"
+				/>
+				<input
+					class="auth-input"
+					type="password"
+					autocomplete={authMode === 'signup' ? 'new-password' : 'current-password'}
+					bind:value={authPassword}
+					placeholder="Password"
+					aria-label="Password"
+				/>
+				<button class="auth-submit" type="submit" disabled={!canSubmitAuth}>
+					{cloudAuth.busy ? 'Working…' : authMode === 'signup' ? 'Create account' : 'Sign in'}
+				</button>
+			</form>
+
+			<button class="auth-apple" type="button" onclick={() => cloudAuth.signInWithApple()}>
+				 Sign in with Apple
+			</button>
+
+			{#if cloudAuth.error}<p class="auth-error" role="alert">{cloudAuth.error}</p>{/if}
+		{/if}
 	</section>
 
 	<section class="card hike-card">
@@ -514,6 +635,115 @@
 	   habits — plus the hike/model cards rendered their text flush to the edge.) */
 	.section-stack .card {
 		padding: 14px;
+	}
+
+	/* Cloud backup (opt-in) */
+	.backup-card {
+		display: grid;
+		gap: 10px;
+	}
+	.backup-head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 10px;
+	}
+	.backup-head h2 {
+		margin-top: 2px;
+		font-family: var(--font-display);
+		font-size: 1.28rem;
+		line-height: 1.08;
+	}
+	.backup-dot {
+		width: 9px;
+		height: 9px;
+		border-radius: 50%;
+		margin-top: 6px;
+		background: var(--moss);
+		box-shadow: 0 0 0 4px var(--moss-soft);
+	}
+	.backup-sub {
+		font-size: 0.86rem;
+		line-height: 1.45;
+		color: var(--muted);
+	}
+	.backup-sub strong {
+		color: var(--ink);
+	}
+	.auth-tabs {
+		display: grid;
+		grid-auto-flow: column;
+		gap: 6px;
+		background: var(--ink-soft);
+		border-radius: var(--radius-control);
+		padding: 4px;
+	}
+	.auth-tab {
+		min-height: 38px;
+		border-radius: var(--radius-xs, 9px);
+		font-weight: 800;
+		font-size: 0.86rem;
+		color: var(--muted);
+	}
+	.auth-tab.active {
+		background: var(--surface-strong);
+		color: var(--forest);
+		box-shadow: var(--shadow-soft);
+	}
+	.auth-form {
+		display: grid;
+		gap: 8px;
+	}
+	.auth-input {
+		min-height: 44px;
+		padding: 0 14px;
+		border-radius: var(--radius-control);
+		border: 1px solid var(--line);
+		background: var(--bg);
+		color: var(--ink);
+		font-size: 0.92rem;
+	}
+	.auth-input:focus-visible {
+		outline: 2px solid var(--forest);
+		outline-offset: 1px;
+	}
+	.auth-submit {
+		min-height: 46px;
+		border-radius: var(--radius-control);
+		background: var(--forest);
+		color: var(--on-accent);
+		font-weight: 800;
+		font-size: 0.95rem;
+	}
+	.auth-submit:disabled {
+		opacity: 0.5;
+	}
+	.auth-apple {
+		min-height: 46px;
+		border-radius: var(--radius-control);
+		background: #000;
+		color: #fff;
+		font-weight: 700;
+		font-size: 0.95rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+	}
+	.auth-error {
+		font-size: 0.82rem;
+		font-weight: 600;
+		color: var(--danger);
+		line-height: 1.4;
+	}
+	.backup-signout {
+		min-height: 44px;
+		border-radius: var(--radius-control);
+		background: var(--ink-soft);
+		color: var(--ink);
+		font-weight: 800;
+		justify-self: start;
+		padding: 0 18px;
 	}
 
 	.profile-card {
