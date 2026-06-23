@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, onDestroy, tick } from 'svelte';
+	import { onMount, onDestroy, tick, untrack } from 'svelte';
 	import type * as LeafletNS from 'leaflet';
 	import 'leaflet/dist/leaflet.css';
 	import { trailAssistant } from '$lib/trailState.svelte';
@@ -748,17 +748,32 @@
 		shelter: '<path d="M2.5 20 12 4.5 21.5 20"/><path d="M2.5 20H21.5"/><path d="M9 20 12 13.5 15 20"/>',
 		town: '<path d="M4 11 12 4.5 20 11V20H4Z"/><path d="M10 20v-5h4v5"/>'
 	};
-	function poiIcon(kind: PoiKind) {
+	// Water coins are shaded by reliability: a faint disc = "unverified", filling to
+	// opaque as it's confirmed flowing. The class drives --shade-alpha (CSS); the
+	// data-wbucket lets a report update the coin's fill in place (no marker rebuild).
+	function waterShadeClass(mile: number): string {
+		const rep = waterReports.latestForBucket(waterBucket(mile));
+		return `water-${rep ? rep.status : 'unverified'}`;
+	}
+	function poiIcon(kind: PoiKind, water?: { shadeClass: string; bucket: number }) {
 		const d = liveZoom >= 12 ? 30 : 26;
+		const body =
+			kind === 'water' && water
+				? `<span class="pp-body ${water.shadeClass}" data-wbucket="${water.bucket}"></span>`
+				: `<span class="pp-body"></span>`;
 		return L!.divIcon({
 			className: `poi-pin pin-${kind}`,
 			iconSize: [d, d],
 			iconAnchor: [d / 2, d / 2], // coin sits centred on the trail point
 			popupAnchor: [0, -Math.round(d / 2) - 2], // popup opens just above the coin
-			html:
-				`<span class="pp-body"></span>` +
-				`<svg class="pp-glyph" viewBox="0 0 24 24" aria-hidden="true">${POI_GLYPH[kind]}</svg>`
+			html: body + `<svg class="pp-glyph" viewBox="0 0 24 24" aria-hidden="true">${POI_GLYPH[kind]}</svg>`
 		});
+	}
+	// Re-shade every on-screen coin for a water bucket in place (after a report).
+	function shadeWaterCoin(bucket: number, status: WaterStatus): void {
+		document
+			.querySelectorAll<HTMLElement>(`.poi-pin .pp-body[data-wbucket="${bucket}"]`)
+			.forEach((el) => (el.className = `pp-body water-${status}`));
 	}
 
 	// You-marker — a Life360-style avatar (trail-name initial in a forest ring
@@ -909,6 +924,7 @@
 				root
 					.querySelectorAll<HTMLButtonElement>('.wbtn')
 					.forEach((b) => b.classList.toggle('active', b.dataset.waterSet === rep.status));
+				shadeWaterCoin(bucket, rep.status); // re-shade the coin in place
 			});
 		});
 	}
@@ -924,7 +940,14 @@
 		poiLayer.clearLayers();
 		if (!showPois) return;
 		for (const lm of visibleLandmarks) {
-			const marker = L.marker(interpAtMile(lm.mile), { icon: poiIcon(lm.kind), keyboard: false })
+			// Read the report state UNTRACKED for the initial shade — the marker effect
+			// must not subscribe to the store (a report would recreate it + close the
+			// open popup); shadeWaterCoin updates the fill in place instead.
+			const water =
+				lm.kind === 'water'
+					? { shadeClass: untrack(() => waterShadeClass(lm.mile)), bucket: waterBucket(lm.mile) }
+					: undefined;
+			const marker = L.marker(interpAtMile(lm.mile), { icon: poiIcon(lm.kind, water), keyboard: false })
 				.bindPopup(poiPopupShell(lm), {
 					// Pan clear of the top strip, the right control stack, and the bottom card.
 					className: 'poi-popup',
@@ -1305,8 +1328,25 @@
 		position: absolute;
 		inset: 0;
 		border-radius: 50%;
-		background: var(--pin-fill);
+		/* --shade-alpha (water only) fades the FILL by reliability; the ring + glyph
+		   stay solid so the coin is always legible/tappable. Non-water = solid. */
+		background: color-mix(in srgb, var(--pin-fill) var(--shade-alpha, 100%), transparent);
 		border: 2px solid var(--surface-strong);
+		transition: background 0.2s ease;
+	}
+	/* Water reliability shading: unverified is faint, filling to opaque as a hiker
+	   confirms it flowing; dry is the faintest (no water to rely on). */
+	:global(.poi-pin .pp-body.water-flowing) {
+		--shade-alpha: 100%;
+	}
+	:global(.poi-pin .pp-body.water-low) {
+		--shade-alpha: 62%;
+	}
+	:global(.poi-pin .pp-body.water-unverified) {
+		--shade-alpha: 42%;
+	}
+	:global(.poi-pin .pp-body.water-dry) {
+		--shade-alpha: 24%;
 	}
 	:global(.poi-pin .pp-glyph) {
 		position: absolute;
