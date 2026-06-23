@@ -21,7 +21,7 @@
 	};
 
 	type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
-	type Variant = 'card' | 'map';
+	type Variant = 'card' | 'map' | 'fab';
 
 	let { label = 'Report conditions', variant = 'card' }: { label?: string; variant?: Variant } = $props();
 
@@ -136,7 +136,25 @@
 	}
 </script>
 
-<button class="report-action {variant}" onclick={openSheet}>{label}</button>
+<button
+	class="report-action {variant}"
+	onclick={openSheet}
+	aria-label={variant === 'fab' ? 'Drop a note here' : undefined}
+>
+	{#if variant === 'fab'}
+		<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+			<path
+				d="M12 5v14M5 12h14"
+				stroke="currentColor"
+				stroke-width="2.4"
+				stroke-linecap="round"
+				fill="none"
+			/>
+		</svg>
+	{:else}
+		{label}
+	{/if}
+</button>
 
 {#if sheetOpen}
 	<div class="sheet-backdrop" role="presentation" onclick={closeSheet}></div>
@@ -222,6 +240,20 @@
 		gap: 7px;
 		border: 1px solid rgba(255, 253, 248, 0.9);
 		background: var(--forest);
+		box-shadow: var(--shadow);
+	}
+
+	/* Compact circular FAB — "drop a note here" on the map. */
+	.report-action.fab {
+		width: 52px;
+		height: 52px;
+		min-height: 52px;
+		padding: 0;
+		border-radius: 50%;
+		display: grid;
+		place-items: center;
+		color: var(--on-accent);
+		border: 1px solid rgba(255, 253, 248, 0.4);
 		box-shadow: var(--shadow);
 	}
 

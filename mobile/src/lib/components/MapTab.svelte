@@ -119,19 +119,18 @@
 	});
 
 	// --- geometry helpers -----------------------------------------------------
+	// Interpolate a position along the SAME line we draw (the high-res centerline
+	// when loaded). Everything — the you-avatar, the measured point, the POIs —
+	// rides this one geometry, so nothing floats off on a parallel 1-mi track.
 	function interpAtMile(mile: number): [number, number] {
-		const a = geo;
-		if (a.length < 2) return [a[0]?.lat ?? 34.6273, a[0]?.lon ?? -84.194];
-		const m = clamp(mile, a[0].m, a[a.length - 1].m);
-		let lo = 0;
-		let hi = a.length - 1;
-		while (hi - lo > 1) {
-			const mid = (lo + hi) >> 1;
-			if (a[mid].m <= m) lo = mid;
-			else hi = mid;
-		}
-		const t = (m - a[lo].m) / Math.max(1e-6, a[hi].m - a[lo].m);
-		return [a[lo].lat + (a[hi].lat - a[lo].lat) * t, a[lo].lon + (a[hi].lon - a[lo].lon) * t];
+		const src = routeSource;
+		if (src.length < 2) return [geo[0]?.lat ?? 34.6273, geo[0]?.lon ?? -84.194];
+		const span = (trailHi - trailLo) || 1;
+		const fi = Math.max(0, Math.min(1, (mile - trailLo) / span)) * (src.length - 1);
+		const lo = Math.floor(fi);
+		const hi = Math.min(src.length - 1, lo + 1);
+		const t = fi - lo;
+		return [src[lo][0] + (src[hi][0] - src[lo][0]) * t, src[lo][1] + (src[hi][1] - src[lo][1]) * t];
 	}
 	const latlngs = $derived<[number, number][]>(geo.map((p) => [p.lat, p.lon]));
 	const splitIdx = $derived.by(() => {
@@ -503,9 +502,10 @@
 		routeLayer.clearLayers();
 		const overview = liveZoom > 0 ? liveZoom < 8 : true;
 		const hires = routeHi.length > 1;
-		// Hug the real path: dense in the corridor, lighter at overview where the
-		// fine bends aren't visible anyway. Falls back to the 1-mi line's steps.
-		const step = overview ? (hires ? 7 : 3) : hires ? 2 : 1;
+		// Full resolution in the corridor so the line hugs every bend AND matches
+		// the measure highlight exactly (no parallel double-line). Lighter only at
+		// overview, where the fine bends aren't visible anyway.
+		const step = overview ? (hires ? 7 : 3) : 1;
 		const src = routeSource;
 		const split = splitIdxRoute;
 		const n = routeCount;
@@ -842,35 +842,22 @@
 		</button>
 	</div>
 
-	<!-- Right-edge controls -->
+	<!-- Top-right: whole-trail + recenter. Zoom is pinch (opens at 10 mi). -->
 	<div class="map-tools">
-		<!-- Whole-trail is a mode, not a corridor width — its own glassy toggle. -->
 		<button
 			class="tool-btn overview"
 			class:on={isOverview}
-			onclick={() => setZoom(OVERVIEW)}
-			aria-label="Whole trail"
+			onclick={() => (isOverview ? setZoom(10) : setZoom(OVERVIEW))}
+			aria-label={isOverview ? 'Back to my corridor' : 'Whole trail'}
 			aria-pressed={isOverview}
 		>
 			<Icon name="map" size={18} stroke={2} />
 		</button>
-		<div class="zoom-stack" role="group" aria-label="Corridor width in miles">
-			{#each [20, 10, 5] as z (z)}
-				<button
-					class="zbtn"
-					class:on={mapZoom === z}
-					onclick={() => setZoom(z as Zoom)}
-					aria-pressed={mapZoom === z}
-					aria-label={`${z} mile view`}
-				>{z}<span class="zb-unit">mi</span></button>
-			{/each}
-		</div>
-		{#if showRecenter || isOverview}
-			<button class="tool-btn recenter" onclick={recenter} aria-label={isOverview ? 'Zoom to my location' : 'Recenter on current mile'}>
-				<Icon name="now" size={20} stroke={2} />
-			</button>
-		{/if}
-		<div class="tool-report"><TrailPulseReportAction variant="map" label="Report conditions" /></div>
+		<button class="tool-btn recenter" onclick={recenter} aria-label="Recenter on current mile">
+			<Icon name="now" size={20} stroke={2} />
+		</button>
+		<!-- Drop a note at the current location. -->
+		<TrailPulseReportAction variant="fab" />
 	</div>
 
 	<!-- Orientation + elevation card -->
@@ -1287,6 +1274,9 @@
 		white-space: nowrap;
 	}
 
+	/* Controls live in the top-right corner — a short, solid stack (globe ·
+	   recenter · drop-note), never floating out toward the middle. Zoom is pinch
+	   now (the map opens at 10 mi). */
 	.map-tools {
 		position: absolute;
 		right: 12px;
@@ -1295,47 +1285,7 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 8px;
-	}
-	/* Solid, consistent chrome. The old translucent "glass" picked up whatever
-	   terrain sat behind it (tan here, dark there) so the buttons never matched —
-	   these are one crisp surface, uniform over any ground. */
-	.zoom-stack {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 2px;
-		padding: 3px;
-		border-radius: 15px;
-		background: var(--surface-strong);
-		border: 1px solid var(--line);
-		box-shadow: var(--shadow);
-	}
-	.zbtn {
-		width: 40px;
-		min-height: 38px;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 0;
-		line-height: 1;
-		border-radius: 11px;
-		font-size: 0.92rem;
-		font-weight: 800;
-		color: var(--muted);
-		font-variant-numeric: tabular-nums;
-	}
-	.zb-unit {
-		font-size: 0.5rem;
-		font-weight: 700;
-		letter-spacing: 0.04em;
-		opacity: 0.65;
-		margin-top: 1px;
-	}
-	.zbtn.on {
-		background: var(--forest);
-		color: var(--on-accent);
+		gap: 9px;
 	}
 	.tool-btn {
 		width: 44px;
@@ -1355,14 +1305,6 @@
 	}
 	.tool-btn.recenter {
 		color: var(--forest);
-	}
-	.tool-report :global(button) {
-		min-width: 44px;
-		min-height: 40px;
-		padding: 0 14px;
-		border-radius: 999px;
-		font-size: 0.74rem;
-		box-shadow: var(--shadow-soft);
 	}
 
 	.elev {
@@ -1560,22 +1502,15 @@
 			background: rgba(22, 29, 20, 0.92);
 		}
 		/* Solid dark chrome — one consistent surface, crisp on any terrain. */
-		.zoom-stack,
 		.tool-btn {
 			background: var(--surface-strong);
 			border-color: var(--line);
-		}
-		.tool-btn,
-		.tool-btn.recenter {
 			color: var(--forest);
 		}
 		.tool-btn.overview.on {
 			background: var(--forest-soft);
 			border-color: var(--forest);
 			color: var(--forest);
-		}
-		.zbtn.on {
-			color: #10160f;
 		}
 	}
 </style>
