@@ -202,6 +202,7 @@
 	let shelterLayer: LeafletNS.LayerGroup | null = null;
 	let measureLayer: LeafletNS.LayerGroup | null = null;
 	let measureMarker: LeafletNS.Marker | null = null;
+	let measureRenderer: LeafletNS.SVG | null = null;
 	let measureDragging = false;
 	let youLayer: LeafletNS.LayerGroup | null = null;
 	let youMarker: LeafletNS.Marker | null = null;
@@ -479,6 +480,16 @@
 			renderer: L.svg({ padding: 0.5 })
 		});
 		map.setView([39, -77], 5);
+
+		// A dedicated pane for the measure highlight, above the route corridor. The
+		// corridor redraws (clearLayers + re-add) on every zoom; in the shared
+		// overlay pane that re-stacks the corridor ON TOP of the highlight and hides
+		// it (you keep the draggable point but lose the line). Its own higher pane
+		// keeps the highlight visible regardless of redraw order.
+		map.createPane('measureHi');
+		const measurePaneEl = map.getPane('measureHi');
+		if (measurePaneEl) measurePaneEl.style.zIndex = '450';
+		measureRenderer = L.svg({ pane: 'measureHi', padding: 0.5 });
 
 		tiles = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
 			maxZoom: 16,
@@ -784,6 +795,9 @@
 				lineCap: 'round',
 				lineJoin: 'round',
 				interactive: false,
+				// Render into the dedicated high pane so a corridor redraw on zoom
+				// can't paint over the highlight.
+				renderer: measureRenderer ?? undefined,
 				className: 'rt rt-measure'
 			}).addTo(measureLayer);
 		}
