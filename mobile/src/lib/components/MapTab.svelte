@@ -86,8 +86,14 @@
 	});
 
 	type PoiKind = 'water' | 'shelter' | 'town';
-	type Landmark = { kind: PoiKind; mile: number; label: string; candidate?: boolean };
+	type WaterReliability = 'reliable' | 'seasonal' | 'thin';
+	type Landmark = { kind: PoiKind; mile: number; label: string; reliability?: WaterReliability };
 	const POI_WORD = { water: 'Water', shelter: 'Shelter', town: 'Town' } as const;
+	const RELIABILITY_WORD: Record<WaterReliability, string> = {
+		reliable: 'reliable',
+		seasonal: 'seasonal',
+		thin: 'thin flow'
+	};
 	function short(name: string): string {
 		const trimmed = name.replace(/ (Memorial )?Shelter$/iu, '');
 		return trimmed.length > 15 ? trimmed.slice(0, 14).trimEnd() + '…' : trimmed;
@@ -100,7 +106,7 @@
 			items.filter((i) => i.mile >= lo && i.mile <= hi).sort((a, b) => a.mile - b.mile);
 		const water = inWin(pack.water)
 			.slice(0, 14)
-			.map((w) => ({ kind: 'water' as const, mile: w.mile, label: short(w.name), candidate: w.reliability !== 'reliable' }));
+			.map((w) => ({ kind: 'water' as const, mile: w.mile, label: short(w.name), reliability: w.reliability }));
 		const shelters = inWin(pack.shelters).map((s) => ({ kind: 'shelter' as const, mile: s.mile, label: short(s.name) }));
 		const towns = inWin(pack.towns).map((t) => ({ kind: 'town' as const, mile: t.mile, label: short(t.name) }));
 		return [...water, ...shelters, ...towns].sort((a, b) => a.mile - b.mile).slice(0, 40);
@@ -719,7 +725,7 @@
 		shelter: '<path d="M2.5 20 12 4.5 21.5 20"/><path d="M2.5 20H21.5"/><path d="M9 20 12 13.5 15 20"/>',
 		town: '<path d="M4 11 12 4.5 20 11V20H4Z"/><path d="M10 20v-5h4v5"/>'
 	};
-	function poiIcon(kind: PoiKind, candidate: boolean) {
+	function poiIcon(kind: PoiKind) {
 		const d = liveZoom >= 12 ? 30 : 26;
 		return L!.divIcon({
 			className: `poi-pin pin-${kind}`,
@@ -728,8 +734,7 @@
 			popupAnchor: [0, -Math.round(d / 2) - 2], // popup opens just above the coin
 			html:
 				`<span class="pp-body"></span>` +
-				`<svg class="pp-glyph" viewBox="0 0 24 24" aria-hidden="true">${POI_GLYPH[kind]}</svg>` +
-				(candidate ? '<span class="pp-cand" aria-hidden="true">?</span>' : '')
+				`<svg class="pp-glyph" viewBox="0 0 24 24" aria-hidden="true">${POI_GLYPH[kind]}</svg>`
 		});
 	}
 
@@ -820,12 +825,14 @@
 		poiLayer.clearLayers();
 		if (!showPois) return;
 		for (const lm of visibleLandmarks) {
-			const cand = lm.kind === 'water' && !!lm.candidate;
+			// Water carries its actual reliability (reliable / seasonal / thin flow)
+			// in the detail line — far more useful than a "?" on every coin.
+			const rel = lm.kind === 'water' && lm.reliability ? ` · ${RELIABILITY_WORD[lm.reliability]}` : '';
 			const ec = elevChangeTo(lm.mile);
-			const marker = L.marker(interpAtMile(lm.mile), { icon: poiIcon(lm.kind, cand), keyboard: false })
+			const marker = L.marker(interpAtMile(lm.mile), { icon: poiIcon(lm.kind), keyboard: false })
 				.bindPopup(
 					`<div class="poi-pop pop-${lm.kind}"><strong class="pp-name">${lm.label}</strong>` +
-						`<span class="pp-meta">${POI_WORD[lm.kind]} · ${distanceLabel(lm.mile)}${cand ? ' · candidate' : ''}</span>` +
+						`<span class="pp-meta">${POI_WORD[lm.kind]} · ${distanceLabel(lm.mile)}${rel}</span>` +
 						`<span class="pp-elev">↑ ${fmt(ec.gain)} ft · ↓ ${fmt(ec.loss)} ft to reach</span></div>`,
 					// Pan clear of the top strip, the right control stack, and the bottom card.
 					{ className: 'poi-popup', closeButton: true, autoPanPaddingTopLeft: [24, 64], autoPanPaddingBottomRight: [70, 300], maxWidth: 240 }
@@ -1228,22 +1235,6 @@
 	}
 	:global(.poi-pin.pin-town) {
 		--pin-fill: var(--clay);
-	}
-	:global(.poi-pin .pp-cand) {
-		position: absolute;
-		top: -3px;
-		right: -3px;
-		width: 14px;
-		height: 14px;
-		display: grid;
-		place-items: center;
-		font-size: 0.52rem;
-		font-weight: 900;
-		line-height: 1;
-		border-radius: 50%;
-		color: var(--clay);
-		background: var(--clay-soft);
-		border: 1.5px solid var(--surface-strong);
 	}
 
 	/* measurement: bright gold highlight on the from→tapped segment + a pin */
