@@ -1,15 +1,9 @@
-import { browser } from '$app/environment';
-import { DbConnection, type ErrorContext, type EventContext } from '../../../apps/openclaw-web/src/lib/module_bindings';
+import { type EventContext } from '../../../apps/openclaw-web/src/lib/module_bindings';
+import { spacetimeEnabled, connect, onSpacetimeConnect } from './spacetime/connection';
 
-// Two-way SpacetimeDB sync for crowdsourced water reports. Mirrors the Trail Pulse
-// publish path and adds a subscription so a hiker also RECEIVES the tramily's
-// reports (Trail Pulse is publish-only today). Disabled (a no-op) until
-// PUBLIC_SPACETIMEDB_HOST / _DB_NAME are configured and the module is deployed.
-
-const host = import.meta.env.PUBLIC_SPACETIMEDB_HOST ?? '';
-const dbName = import.meta.env.PUBLIC_SPACETIMEDB_DB_NAME ?? '';
-const enabled = Boolean(host && dbName);
-const tokenKey = enabled ? `${host}/${dbName}/mobile_auth_token` : 'spacetime/mobile-disabled';
+// Two-way SpacetimeDB sync for crowdsourced water reports, riding the single
+// shared connection (see spacetime/connection.ts). Subscribes so a hiker RECEIVES
+// the tramily's reports; publishes their own. No-op until SpacetimeDB is configured.
 
 /** The fields the client cares about from a remote water_report row. */
 export interface RemoteWaterReport {
@@ -38,10 +32,11 @@ type WaterReportRow = {
 	observedAt: string;
 };
 
-let connectionPromise: Promise<DbConnection | null> | null = null;
-let activeConnection: DbConnection | null = null;
-let subscribed = false;
+// Loosely-typed connection so we don't depend on the exact generated type name.
+type Conn = Awaited<ReturnType<typeof connect>>;
+
 let onRemote: ((report: RemoteWaterReport) => void) | null = null;
+let started = false;
 
 function emit(row: WaterReportRow) {
 	onRemote?.({
@@ -53,9 +48,9 @@ function emit(row: WaterReportRow) {
 	});
 }
 
-function attachSubscription(connection: DbConnection) {
-	if (subscribed) return;
-	subscribed = true;
+// Runs on each (re)connect with the live connection — re-establishes the
+// subscription so reports keep flowing after a reconnect.
+function attachSubscription(connection: NonNullable<Conn>) {
 	try {
 		connection.db.waterReport.onInsert((_ctx: EventContext, row: WaterReportRow) => emit(row));
 		connection
@@ -65,65 +60,28 @@ function attachSubscription(connection: DbConnection) {
 			})
 			.subscribe(['SELECT * FROM water_report']);
 	} catch (error) {
-		subscribed = false;
 		console.warn('Water report subscription unavailable:', error instanceof Error ? error.message : error);
 	}
 }
 
-function connectToSpacetime(): Promise<DbConnection | null> {
-	if (!browser || !enabled) return Promise.resolve(null);
-	if (activeConnection?.isActive) return Promise.resolve(activeConnection);
-
-	connectionPromise ??= new Promise((resolve) => {
-		try {
-			DbConnection.builder()
-				.withUri(host)
-				.withDatabaseName(dbName)
-				.withToken(localStorage.getItem(tokenKey) || undefined)
-				.onConnect((connection, _identity, token) => {
-					localStorage.setItem(tokenKey, token);
-					activeConnection = connection;
-					if (onRemote) attachSubscription(connection);
-					resolve(connection);
-				})
-				.onDisconnect(() => {
-					activeConnection = null;
-					connectionPromise = null;
-					subscribed = false;
-				})
-				.onConnectError((_ctx: ErrorContext, error: Error) => {
-					console.warn('Water report SpacetimeDB connection failed:', error.message);
-					activeConnection = null;
-					connectionPromise = null;
-					resolve(null);
-				})
-				.build();
-		} catch (error) {
-			console.warn('Water report SpacetimeDB is unavailable:', error instanceof Error ? error.message : error);
-			activeConnection = null;
-			connectionPromise = null;
-			resolve(null);
-		}
-	});
-
-	return connectionPromise;
-}
-
-/** Start receiving the tramily's water reports. Safe to call once at startup;
- *  a no-op when the sync isn't configured. */
+/** Start receiving the tramily's water reports. Idempotent; a no-op when the sync
+ *  isn't configured. */
 export function startWaterReportSync(onReport: (report: RemoteWaterReport) => void): void {
-	if (!enabled) return;
+	if (!spacetimeEnabled) return;
 	onRemote = onReport;
-	void connectToSpacetime().then((connection) => {
-		if (connection) attachSubscription(connection);
-	});
+	if (started) return;
+	started = true;
+	onSpacetimeConnect((conn) => attachSubscription(conn));
+	void connect();
 }
 
 /** Publish one report to the shared DB. */
-export async function publishWaterReport(report: WaterReportPayload): Promise<'synced' | 'skipped' | 'failed'> {
-	if (!enabled) return 'skipped';
+export async function publishWaterReport(
+	report: WaterReportPayload
+): Promise<'synced' | 'skipped' | 'failed'> {
+	if (!spacetimeEnabled) return 'skipped';
 
-	const connection = await connectToSpacetime();
+	const connection = await connect();
 	if (!connection) return 'failed';
 
 	await connection.reducers.submitWaterReport({

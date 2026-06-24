@@ -1,21 +1,19 @@
 import { browser } from '$app/environment';
-import { DbConnection, type ErrorContext, type EventContext } from '../../../../apps/openclaw-web/src/lib/module_bindings';
+import type { DbConnection } from '../../../../apps/openclaw-web/src/lib/module_bindings';
+import {
+	spacetimeEnabled,
+	connect,
+	onSpacetimeConnect,
+	onSpacetimeState,
+	isSpacetimeConnected,
+	spacetimeIdentityHex
+} from '../spacetime/connection';
 
-// Phase 3 of "Life360 for the tramily": LIVE group location over SpacetimeDB,
-// kept PRIVATE by the module's design. The group_member / group_position tables
-// are server-private (not in the client bindings at all); a client can only read
-// the sender-scoped views my_group_positions / my_group_members, which the server
-// filters to the groups the caller actually belongs to. So this store can only
-// ever see — and can only ever publish AS — its own identity, within its own
-// groups. Disabled (a no-op) until PUBLIC_SPACETIMEDB_HOST / _DB_NAME are set and
-// the module is deployed; the app stays fully usable with the local-only roster.
-
-const host = import.meta.env.PUBLIC_SPACETIMEDB_HOST ?? '';
-const dbName = import.meta.env.PUBLIC_SPACETIMEDB_DB_NAME ?? '';
-const enabled = Boolean(host && dbName);
-// Shared identity token with the other SpacetimeDB features, so this device is
-// the SAME identity everywhere (its group membership is bound to that identity).
-const tokenKey = enabled ? `${host}/${dbName}/mobile_auth_token` : 'spacetime/mobile-disabled';
+// Phase 3: LIVE group location, riding the single shared SpacetimeDB connection
+// (see spacetime/connection.ts). The group_member / group_position tables are
+// server-private; this store reads only the sender-scoped views
+// my_group_positions / my_group_members, and can only publish AS its own identity
+// within its own groups. No-op until SpacetimeDB is configured.
 
 /** A co-member's live position, as surfaced to the map. */
 export interface LiveMemberPosition {
@@ -36,7 +34,6 @@ export interface LiveMember {
 	isSelf: boolean;
 }
 
-// Loose row shapes (we don't depend on the exact generated binding type names).
 type IdLike = { toHexString?: () => string };
 type PositionRow = {
 	groupCode: string;
@@ -63,91 +60,29 @@ class MemberLocationStore {
 	positions = $state<LiveMemberPosition[]>([]);
 	members = $state<LiveMember[]>([]);
 
-	#connection: DbConnection | null = null;
-	#connecting: Promise<DbConnection | null> | null = null;
-	#subscribed = false;
-	#lifecycleWired = false;
-	#reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-	#reconnectDelay = 2000;
+	#started = false;
 
 	get available(): boolean {
-		return enabled;
+		return spacetimeEnabled;
 	}
 
-	/** Connect + subscribe to the two sender-scoped views. Idempotent; no-op when
-	 *  SpacetimeDB isn't configured. Wires reconnect triggers (online / app resume)
-	 *  on first call — the v2 SDK does NOT auto-reconnect, and without recovery a
-	 *  single signal drop on the trail would silently stop live sharing AND strip
-	 *  "going dark" of its server round-trip until the app was relaunched. */
+	/** Subscribe to the two sender-scoped views over the shared connection.
+	 *  Idempotent; no-op when SpacetimeDB isn't configured. */
 	async start(): Promise<void> {
-		if (!browser || !enabled) return;
-		if (!this.#lifecycleWired) {
-			this.#lifecycleWired = true;
-			window.addEventListener('online', () => void this.#connect());
-			document.addEventListener('visibilitychange', () => {
-				if (document.visibilityState === 'visible') void this.#connect();
+		if (!browser || !spacetimeEnabled) return;
+		if (!this.#started) {
+			this.#started = true;
+			// Re-subscribe on every (re)connect; reflect connect/disconnect in state.
+			onSpacetimeConnect((conn) => this.#subscribe(conn));
+			onSpacetimeState(() => {
+				this.connected = isSpacetimeConnected();
+				this.myIdentityHex = spacetimeIdentityHex();
 			});
 		}
-		await this.#connect();
-	}
-
-	#scheduleReconnect(): void {
-		if (!browser || !enabled || this.#reconnectTimer) return;
-		this.#reconnectTimer = setTimeout(() => {
-			this.#reconnectTimer = null;
-			void this.#connect();
-		}, this.#reconnectDelay);
-		this.#reconnectDelay = Math.min(this.#reconnectDelay * 2, 60_000); // capped backoff
-	}
-
-	#connect(): Promise<DbConnection | null> {
-		if (!browser || !enabled) return Promise.resolve(null);
-		if (this.#connection?.isActive) return Promise.resolve(this.#connection);
-		this.#connecting ??= new Promise((resolve) => {
-			try {
-				DbConnection.builder()
-					.withUri(host)
-					.withDatabaseName(dbName)
-					.withToken(localStorage.getItem(tokenKey) || undefined)
-					.onConnect((connection, identity, token) => {
-						localStorage.setItem(tokenKey, token);
-						this.#connection = connection;
-						this.myIdentityHex = idHex(identity as IdLike);
-						this.connected = true;
-						this.#reconnectDelay = 2000; // recovered — reset backoff
-						this.#subscribe(connection);
-						resolve(connection);
-					})
-					.onDisconnect(() => {
-						this.#connection = null;
-						this.#connecting = null;
-						this.#subscribed = false;
-						this.connected = false;
-						// The SDK won't reconnect itself; drive recovery so a dropped
-						// leave/stop (going dark) and live updates resume within the session.
-						this.#scheduleReconnect();
-					})
-					.onConnectError((_ctx: ErrorContext, error: Error) => {
-						console.warn('Live location SpacetimeDB connection failed:', error.message);
-						this.#connection = null;
-						this.#connecting = null;
-						this.#scheduleReconnect();
-						resolve(null);
-					})
-					.build();
-			} catch (error) {
-				console.warn('Live location SpacetimeDB unavailable:', error instanceof Error ? error.message : error);
-				this.#connection = null;
-				this.#connecting = null;
-				resolve(null);
-			}
-		});
-		return this.#connecting;
+		await connect();
 	}
 
 	#subscribe(connection: DbConnection) {
-		if (this.#subscribed) return;
-		this.#subscribed = true;
 		try {
 			const refreshPositions = () => this.#refreshPositions(connection);
 			const refreshMembers = () => this.#refreshMembers(connection);
@@ -164,7 +99,6 @@ class MemberLocationStore {
 				})
 				.subscribe(['SELECT * FROM my_group_positions', 'SELECT * FROM my_group_members']);
 		} catch (error) {
-			this.#subscribed = false;
 			console.warn('Live location subscription unavailable:', error instanceof Error ? error.message : error);
 		}
 	}
@@ -205,8 +139,7 @@ class MemberLocationStore {
 
 	/** Group codes the SERVER currently has me as a member of (reactive). The
 	 *  coordinator reconciles this against the desired sharing set so revocation is
-	 *  durable across offline toggles and relaunches — not trusted to an in-memory
-	 *  set that a dropped reducer call or a restart would desync. */
+	 *  durable across offline toggles and relaunches. */
 	get myMembershipCodes(): string[] {
 		return this.members.filter((m) => m.isSelf).map((m) => m.groupCode);
 	}
@@ -216,15 +149,15 @@ class MemberLocationStore {
 		return this.positions.filter((p) => p.isSelf).map((p) => p.groupCode);
 	}
 
-	/** Join a group by its shared code (idempotent server-side). */
+	/** Join (or refresh display name in) a group by its shared code. */
 	async joinGroup(groupCode: string, trailName: string): Promise<void> {
-		const connection = await this.#connect();
+		const connection = await connect();
 		if (!connection) return;
 		connection.reducers.joinGroup({ groupCode, trailName });
 	}
 
 	async leaveGroup(groupCode: string): Promise<void> {
-		const connection = await this.#connect();
+		const connection = await connect();
 		if (!connection) return;
 		connection.reducers.leaveGroup({ groupCode });
 	}
@@ -232,14 +165,14 @@ class MemberLocationStore {
 	/** Publish my current mile to every group I'm in (the views scope who sees it). */
 	async publish(mile: number, trailName: string, observedAt?: string): Promise<void> {
 		if (!Number.isFinite(mile) || mile < 0) return;
-		const connection = await this.#connect();
+		const connection = await connect();
 		if (!connection) return;
 		connection.reducers.publishPosition({ mile, trailName, observedAt });
 	}
 
 	/** Stop broadcasting entirely (membership kept; positions cleared). */
 	async stopSharing(): Promise<void> {
-		const connection = await this.#connect();
+		const connection = await connect();
 		if (!connection) return;
 		connection.reducers.stopSharingPosition({ confirm: true });
 	}

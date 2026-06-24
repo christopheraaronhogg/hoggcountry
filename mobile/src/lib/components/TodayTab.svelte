@@ -142,8 +142,16 @@
 		</div>
 		<div class="mile tabular">{from.toFixed(1)}<span class="of"> / {TOTAL_MILES.toLocaleString()} mi</span></div>
 		<div class="splits">
-			<div class="s"><span class="k">Done</span><b class="tabular">{from.toFixed(0)}<span class="u"> mi</span></b></div>
-			<div class="s"><span class="k">To go</span><b class="tabular">{toGo.toFixed(0)}<span class="u"> mi</span></b></div>
+			<div class="s">
+				<span class="k">Done</span>
+				<b class="tabular">{from.toFixed(0)}<span class="u"> mi</span></b>
+				<span class="pct tabular">{pct}%</span>
+			</div>
+			<div class="s">
+				<span class="k">To go</span>
+				<b class="tabular">{toGo.toFixed(0)}<span class="u"> mi</span></b>
+				<span class="pct tabular">{100 - pct}%</span>
+			</div>
 		</div>
 		<div class="bar"><div class="fill" style="width:{pct}%"></div></div>
 		<div class="checkin">
@@ -390,6 +398,12 @@
 		font-family: var(--font-sans);
 		font-size: var(--text-floor);
 		font-weight: 700;
+		color: var(--hud-faint);
+	}
+	.splits .pct {
+		font-size: var(--text-floor);
+		font-weight: 800;
+		letter-spacing: 0.02em;
 		color: var(--hud-faint);
 	}
 	.bar {
