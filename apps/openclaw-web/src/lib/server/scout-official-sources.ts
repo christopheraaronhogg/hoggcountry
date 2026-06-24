@@ -446,6 +446,24 @@ async function fetchAtcTrailUpdates(query: string, state: string | null, limit =
   );
 }
 
+/**
+ * State-scoped ATC Trail Updates for the live-conditions field-pack loop. Unlike
+ * the free-text `checkOfficialTrailSources` tool, this surfaces the closures /
+ * detours / notices tagged for the hiker's current AT state (falling back to the
+ * most recent trail-wide updates when nothing is state-tagged), so a pack built
+ * for a given mile carries the official notices that actually apply to it.
+ */
+export async function fetchAtcTrailUpdatesForState(state: string | null, limit = 6): Promise<AtcTrailUpdateResult[]> {
+  return fetchAtcTrailUpdates('', state ? state.trim().toUpperCase() : null, limit);
+}
+
+/** Test-only: clear the in-memory live-source caches so suites don't cross-contaminate. */
+export function __resetOfficialSourceCachesForTests(): void {
+  cachedAtcList = null;
+  cachedAtcDetails.clear();
+  cachedNws.clear();
+}
+
 function normalizeNwsPeriod(period: NonNullable<NwsForecastResponse['properties']>['periods'][number]): NwsForecastPeriodSummary {
   const temperature = typeof period.temperature === 'number'
     ? `${period.temperature}${textValue(period.temperatureUnit) ? `°${textValue(period.temperatureUnit)}` : '°'}`

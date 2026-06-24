@@ -2,6 +2,11 @@ import { loadScoutAtOpenReferenceOfflineSummary } from '$lib/server/at-open-refe
 import { loadDadPilotSummary, type DadPilotSummary } from '$lib/server/dad';
 import { loadReferencePack } from '$lib/server/map-pack';
 import { fetchNwsWeather, type NwsWeatherResult } from '$lib/server/scout-official-sources';
+import {
+  buildTrailConditionsPack,
+  type TrailConditionItem,
+  type TrailConditionsPack
+} from '$lib/server/scout-trail-conditions';
 import type { TrailMapElevationPoint, TrailMapWaypoint } from '$lib/map-pack-types';
 
 const TOTAL_AT_MILES = 2197.4;
@@ -116,6 +121,14 @@ interface MobileContextPack {
     readonly sourceUrl?: string;
     readonly alertsUrl?: string;
     readonly forecastUpdatedAt?: string | null;
+  } | null;
+  // Live official closures / detours / fire & hazard alerts near the current mile,
+  // ingested per pack build from license-clean sources (ATC + NPS). Null when no
+  // source was reachable; an empty `items` with a note means "checked, none active."
+  readonly conditions: {
+    readonly items: readonly TrailConditionItem[];
+    readonly fetchedAt: string;
+    readonly note: string;
   } | null;
   readonly downloadedRegions: readonly string[];
   readonly generatedAt: string;
@@ -278,6 +291,20 @@ function pilotNotice(dad: DadPilotSummary | null, trailAhead: TrailAheadSlice | 
   return `${locationNote} ${dataNote}`;
 }
 
+function conditionsNotice(conditions: MobileContextPack['conditions']): string {
+  if (!conditions) {
+    return 'Live closure/detour sources were unavailable for this pack; verify current closures and fire orders from an official source before remote or exposed sections.';
+  }
+  if (!conditions.items.length) {
+    return 'No active official closures were found near this mile at pack time; closures change fast, so still verify before remote sections.';
+  }
+  const high = conditions.items.filter((item) => item.severity === 'high').length;
+  const base = `${conditions.items.length} active official trail condition${conditions.items.length === 1 ? '' : 's'} (closures/detours/alerts) are in this pack`;
+  return high
+    ? `${base}, including ${high} high-severity closure or fire alert${high === 1 ? '' : 's'}; confirm each before relying on it.`
+    : `${base}; confirm each before relying on it.`;
+}
+
 function inWindow(startMile: number, endMile: number) {
   return (point: TrailMapWaypoint) => point.mile >= startMile - 0.01 && point.mile <= endMile;
 }
@@ -405,11 +432,20 @@ async function buildTrailAheadSlice(currentMile: number, now: Date, personal = f
   };
 }
 
+function contextConditions(pack: TrailConditionsPack | null): MobileContextPack['conditions'] {
+  // Only surface conditions when at least one source was actually reached, so the
+  // app can tell "checked, none active" (useful, honest) apart from "couldn't
+  // check" (null → the app keeps its own "verify live" framing).
+  if (!pack || pack.sourcesChecked.length === 0) return null;
+  return { items: pack.items, fetchedAt: pack.fetchedAt, note: pack.note };
+}
+
 function buildContextPack(
   now: Date,
   dad: DadPilotSummary | null,
   trailAhead: TrailAheadSlice | null,
   weatherPack: WeatherPack,
+  conditions: TrailConditionsPack | null,
   personalCtx: { personal: boolean; mile: number | null; direction: 'NOBO' | 'SOBO' }
 ): MobileContextPack {
   const generatedAt = now.toISOString();
@@ -527,6 +563,7 @@ function buildContextPack(
             sourceLabel: 'Cached pilot weather'
           }
     ),
+    conditions: contextConditions(conditions),
     downloadedRegions: trailAhead?.downloadedRegions.length
       ? trailAhead.downloadedRegions
       : personal
@@ -536,11 +573,38 @@ function buildContextPack(
   };
 }
 
+function conditionReceipts(conditions: TrailConditionsPack | null): MobileSourceReceipt[] {
+  if (!conditions) return [];
+  const receipts: MobileSourceReceipt[] = [];
+  if (conditions.sourcesChecked.includes('atc')) {
+    receipts.push({
+      id: 'official:atc-trail-updates',
+      title: 'ATC Trail Updates',
+      kind: 'official',
+      citation: `Appalachian Trail Conservancy trail updates, fetched ${conditions.fetchedAt}`,
+      url: 'https://appalachiantrail.org/trail-updates/',
+      generatedAt: conditions.fetchedAt
+    });
+  }
+  if (conditions.sourcesChecked.includes('nps')) {
+    receipts.push({
+      id: 'official:nps-park-alerts',
+      title: 'NPS park alerts',
+      kind: 'official',
+      citation: `National Park Service alerts for AT park units, fetched ${conditions.fetchedAt}`,
+      url: 'https://www.nps.gov/appa/planyourvisit/conditions.htm',
+      generatedAt: conditions.fetchedAt
+    });
+  }
+  return receipts;
+}
+
 function sourceReceipts(
   now: Date,
   contextPack: MobileContextPack,
   trailAhead: TrailAheadSlice | null,
   weatherPack: WeatherPack,
+  conditions: TrailConditionsPack | null,
   personal: boolean
 ): MobileSourceReceipt[] {
   return [
@@ -563,6 +627,7 @@ function sourceReceipts(
         },
     ...(trailAhead?.sourceReceipts ?? []),
     ...(weatherPack.receipt ? [weatherPack.receipt] : []),
+    ...conditionReceipts(conditions),
     {
       id: 'field-guide:water-discipline',
       title: 'Water discipline field-guide excerpt',
@@ -594,17 +659,21 @@ export async function buildPublicMobileFieldPack(now = new Date(), options: Fiel
   ]);
   const centerMile = personal ? (mile as number) : currentMileFromDad(dad);
   const generatedAt = now.toISOString();
-  const [trailAhead, weatherPack] = await Promise.all([
+  const [trailAhead, weatherPack, conditions] = await Promise.all([
     buildTrailAheadSlice(centerMile, now, personal).catch(() => null),
-    buildWeatherPack(centerMile, generatedAt)
+    buildWeatherPack(centerMile, generatedAt),
+    // Live closures/detours/fire alerts ride the pack build (the build is the
+    // cadence); never let a flaky upstream block the pack.
+    buildTrailConditionsPack({ mile: centerMile, now }).catch((): TrailConditionsPack | null => null)
   ]);
-  const contextPack = buildContextPack(now, dad, trailAhead, weatherPack, { personal, mile, direction });
-  const receipts = sourceReceipts(now, contextPack, trailAhead, weatherPack, personal);
+  const contextPack = buildContextPack(now, dad, trailAhead, weatherPack, conditions, { personal, mile, direction });
+  const receipts = sourceReceipts(now, contextPack, trailAhead, weatherPack, conditions, personal);
   const notice = [
     personal ? personalNotice(trailAhead) : pilotNotice(dad, trailAhead),
     weatherPack.error
       ? `NWS weather was not available for this pack (${weatherPack.error}); verify weather from an official source before exposed terrain.`
-      : 'Weather comes from an official NWS point forecast near the current trail mile; refresh before safety-critical decisions.'
+      : 'Weather comes from an official NWS point forecast near the current trail mile; refresh before safety-critical decisions.',
+    conditionsNotice(contextPack.conditions)
   ].join(' ');
 
   return {

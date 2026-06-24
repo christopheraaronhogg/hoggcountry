@@ -141,6 +141,24 @@ export interface CalibratedFrame {
 	source: string;
 }
 
+export interface TrailConditionReference {
+	source: 'nps' | 'atc';
+	sourceLabel: string;
+	category: 'closure' | 'detour' | 'fire' | 'caution' | 'info';
+	title: string;
+	summary: string;
+	url: string | null;
+	area: string | null;
+	severity: 'high' | 'moderate' | 'low';
+	publishedAt: string | null;
+}
+
+export interface TrailConditionsContext {
+	items: TrailConditionReference[];
+	fetchedAt: string;
+	note: string;
+}
+
 export interface ContextPack {
 	frame: CalibratedFrame;
 	hiker: HikerProfile;
@@ -151,6 +169,7 @@ export interface ContextPack {
 	documents?: LocalDocumentReference[];
 	loadout: LoadoutItem[];
 	weather: CachedWeather | null;
+	conditions?: TrailConditionsContext | null;
 	downloadedRegions: string[];
 	generatedAt: string;
 	validUntil?: string;

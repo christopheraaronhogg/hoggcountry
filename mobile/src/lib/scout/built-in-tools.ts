@@ -7,10 +7,14 @@ import type {
 	ToolHandler,
 	ToolInvocationRecord,
 	TownReference,
+	TrailConditionsContext,
 	WaterReference
 } from './types.ts';
 
 const STALE_WEATHER_HOURS = 6;
+// Closures/detours change less often than weather, but a day-old alert still
+// warrants a "re-check" nudge before a hiker commits to a section.
+const STALE_CONDITIONS_HOURS = 24;
 const SOURCE_SEARCH_LIMIT = 6;
 const SOURCE_STOPWORDS = new Set([
 	'about', 'after', 'again', 'also', 'and', 'are', 'before', 'but', 'can', 'for',
@@ -116,6 +120,16 @@ function weatherReceipt(weather: CachedWeather): SourceReceipt {
 	};
 }
 
+function conditionsReceipt(conditions: TrailConditionsContext): SourceReceipt {
+	return {
+		id: 'official:trail-conditions',
+		title: 'Official trail conditions (NPS + ATC)',
+		kind: 'official',
+		citation: 'Live NPS park alerts + ATC Trail Updates ingested into the field pack',
+		generatedAt: conditions.fetchedAt
+	};
+}
+
 function nextOnTrail<T extends { mile: number }>(items: T[], fromMile: number): T | null {
 	const ahead = items
 		.filter((item) => item.mile >= fromMile - 0.01)
@@ -159,6 +173,10 @@ interface UpcomingTerrainArgs {
 
 interface WeatherArgs {
 	fromMile?: number;
+}
+
+interface TrailConditionsArgs {
+	category?: 'closure' | 'detour' | 'fire' | 'caution' | 'info';
 }
 
 interface LoadoutArgs {
@@ -390,6 +408,76 @@ const weatherLookupTool: ToolHandler<WeatherArgs> = {
 	}
 };
 
+const trailConditionsTool: ToolHandler<TrailConditionsArgs> = {
+	id: 'trail_conditions',
+	description:
+		'Return active official closures, detours, fire bans, and hazard alerts near the hiker (from NPS park alerts + ATC Trail Updates). Use for any "is anything closed / detoured / on fire / safe ahead" question.',
+	run(args, ctx) {
+		const conditions = ctx.pack.conditions ?? null;
+
+		// No live conditions loaded, or checked but none active — return the honest
+		// note and a verify-live confirmation; never imply the section is clear.
+		if (!conditions || !conditions.items.length) {
+			return {
+				toolId: 'trail_conditions',
+				args: toolArgs(args),
+				summary:
+					conditions?.note ??
+					'No official closure/alert data is loaded in this pack; verify current closures, detours, and fire orders from NPS, USFS, and ATC before remote or exposed sections.',
+				confidence: conditions ? 'medium' : 'low',
+				receipts: conditions ? [conditionsReceipt(conditions)] : [],
+				confirmations: [
+					{
+						id: 'conditions-verify-live',
+						prompt: 'Closures and detours change fast; verify with the managing agency before relying on this.',
+						reason: 'volatile'
+					}
+				]
+			};
+		}
+
+		const filtered = args.category
+			? conditions.items.filter((item) => item.category === args.category)
+			: conditions.items;
+		const items = (filtered.length ? filtered : conditions.items).slice(0, 6);
+		const stale = hoursSince(conditions.fetchedAt, ctx.now) > STALE_CONDITIONS_HOURS;
+		const high = items.filter((item) => item.severity === 'high');
+
+		const lines = items.map((item) => {
+			const tag = item.severity === 'high' ? '[HIGH] ' : item.severity === 'moderate' ? '[caution] ' : '';
+			const where = item.area ? `, ${item.area}` : '';
+			const link = item.url ? ` ${item.url}` : '';
+			return `${tag}${item.category.toUpperCase()} — ${item.title} (${item.sourceLabel}${where}): ${excerptText(item.summary, 240)}${link}`;
+		});
+
+		return {
+			toolId: 'trail_conditions',
+			args: toolArgs(args),
+			summary: `Active official trail conditions (fetched ${conditions.fetchedAt}). Treat as current-but-unconfirmed:\n${lines.join('\n')}`,
+			confidence: stale ? 'low' : 'medium',
+			receipts: [conditionsReceipt(conditions)],
+			confirmations: [
+				{
+					id: stale ? 'conditions-stale-verify' : 'conditions-verify-live',
+					prompt: stale
+						? 'This conditions data may be stale; re-check NPS/ATC before relying on a closure or detour.'
+						: 'Verify a closure or detour with the managing agency before relying on it.',
+					reason: stale ? 'stale-cache' : 'volatile'
+				}
+			],
+			safetyFlags: high.length
+				? [
+						{
+							id: 'trail-closure-active',
+							severity: 'warn',
+							message: `${high.length} active high-severity closure or fire alert${high.length === 1 ? '' : 's'} near you — confirm an alternate before committing to this section.`
+						}
+					]
+				: undefined
+		};
+	}
+};
+
 const loadoutCheckTool: ToolHandler<LoadoutArgs> = {
 	id: 'loadout_check',
 	description: 'Summarize what the hiker is carrying, optionally filtered by category.',
@@ -556,6 +644,7 @@ export const defaultScoutTools: ToolHandler[] = [
 	nextTownTool,
 	upcomingTerrainTool,
 	weatherLookupTool,
+	trailConditionsTool,
 	loadoutCheckTool,
 	sourceSearchTool,
 	bibleSearchTool
