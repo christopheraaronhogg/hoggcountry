@@ -28,6 +28,20 @@ return [
         'base_url' => rtrim((string) env('OPENAI_BASE_URL', 'https://api.openai.com/v1'), '/'),
         'scripture_model' => env('OPENAI_SCRIPTURE_MODEL', 'gpt-4.1-mini'),
         'scout_model' => env('SCOUT_OPENAI_MODEL', 'gpt-4o-mini'),
+
+        // Spend guard: ONLY these emails may spend the key. Defaults to the launch
+        // invite (Dad). Comma-separated SCOUT_LLM_ALLOWED_EMAILS overrides. When the
+        // list is empty (nothing configured) the gate is inert and any authenticated
+        // user passes — so set SCOUT_LAUNCH_INVITE_EMAIL (or this) on Forge.
+        'allowed_emails' => array_values(array_filter(array_map(
+            static fn (string $email): string => strtolower(trim($email)),
+            explode(',', (string) env('SCOUT_LLM_ALLOWED_EMAILS', (string) env('SCOUT_LAUNCH_INVITE_EMAIL', '')))
+        ))),
+
+        // Cumulative per-account request budget across a rolling 24h, on top of the
+        // per-minute burst throttle. A runaway client or a leaked token can't bill
+        // beyond this. Generous for a one-person app; tune down freely.
+        'daily_limit' => (int) env('SCOUT_LLM_DAILY_LIMIT', 200),
     ],
 
     'resend' => [

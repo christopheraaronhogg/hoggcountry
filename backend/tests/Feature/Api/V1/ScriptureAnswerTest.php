@@ -36,6 +36,27 @@ class ScriptureAnswerTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_only_allowlisted_owner_can_spend_the_key(): void
+    {
+        config([
+            'services.openai.key' => 'sk-test-key',
+            'services.openai.allowed_emails' => ['dad@example.com'],
+        ]);
+        Http::fake(['api.openai.com/*' => Http::response(['choices' => [['message' => ['content' => 'ok']]]], 200)]);
+
+        // Authenticated non-owner is blocked at the spend point.
+        Sanctum::actingAs(User::factory()->create(['email' => 'stranger@example.com']));
+        $this->postJson('/api/v1/scripture/answer', $this->payload)
+            ->assertStatus(403)
+            ->assertJsonPath('error.code', 'not_authorized');
+        Http::assertNothingSent();
+
+        // The owner gets through.
+        Sanctum::actingAs(User::factory()->create(['email' => 'dad@example.com']));
+        $this->postJson('/api/v1/scripture/answer', $this->payload)->assertOk();
+        Http::assertSentCount(1);
+    }
+
     public function test_returns_soft_503_when_no_openai_key_configured(): void
     {
         config(['services.openai.key' => '']);

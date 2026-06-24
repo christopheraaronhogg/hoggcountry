@@ -41,6 +41,11 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm ci
+      # Generate apps/openclaw-web/.svelte-kit/tsconfig.json. Several deterministic
+      # tests import openclaw-web server modules whose tsconfig `extends` that
+      # generated file; without this the suite dies with TSConfckParseError.
+      - name: Sync SvelteKit (openclaw-web) for cross-tree test imports
+        run: npm run check -w @hoggcountry/scout-web
       - name: Scout route grounding eval
         run: npm run eval:scout-grounding
       - name: Scout source-selection eval

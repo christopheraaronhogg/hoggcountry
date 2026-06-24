@@ -74,6 +74,13 @@ class CloudScoutAnswerer
             JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
         ) ?: '{}';
 
+        // Defense-in-depth against input-token cost blowup: the controller already
+        // rejects oversized payloads, but never splice an unbounded string into the
+        // prompt even if that guard is ever bypassed.
+        if (mb_strlen($context) > 18000) {
+            $context = mb_substr($context, 0, 18000)."\n…(context truncated)";
+        }
+
         return <<<PROMPT
         You are Scout, a calm, expert Appalachian Trail field assistant for a 2026 NOBO thru-hiker. You answer in the second person, concise and field-useful — a hiker reads you on a phone, often tired, sometimes in bad weather.
 

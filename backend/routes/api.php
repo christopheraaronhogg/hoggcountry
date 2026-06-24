@@ -131,15 +131,16 @@ Route::prefix('v1')->group(function () use ($buildMeta): void {
             Route::get('/pull', [SyncController::class, 'pull']);
         });
 
-        // Cloud Scout answer lane for the PWA (the iOS app answers on-device via
-        // Gemma instead). Throttled to protect the server-side OpenAI spend.
-        Route::post('/scout/ask', [ScoutAskController::class, 'ask'])->middleware('throttle:20,1');
+        // Paid LLM lanes (PWA only; iOS answers on-device with Gemma). Layered
+        // spend controls: auth:sanctum (group) → llm.spend (owner allowlist +
+        // rolling-24h per-account budget) → throttle:10,1 (per-account burst).
+        // Together: only Dad can spend the key, and neither a leaked token nor a
+        // runaway client can run the bill away.
+        Route::post('/scout/ask', [ScoutAskController::class, 'ask'])
+            ->middleware(['llm.spend', 'throttle:10,1']);
 
-        // Web PWA Scripture Ask — proxies to OpenAI (server-side key). The iOS app
-        // answers on-device with Gemma and never calls this. Auth-gated like
-        // /scout/ask so ONLY invited accounts (Dad) can spend the OpenAI key, and
-        // throttled because each request costs real money.
-        Route::post('/scripture/answer', [ScriptureAnswerController::class, 'answer'])->middleware('throttle:20,1');
+        Route::post('/scripture/answer', [ScriptureAnswerController::class, 'answer'])
+            ->middleware(['llm.spend', 'throttle:10,1']);
 
         Route::prefix('community/trackers')->group(function (): void {
             Route::get('/', [CommunityTrackerController::class, 'index']);

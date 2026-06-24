@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\EnsureLlmSpendAllowed;
 use App\Http\Middleware\HandleInertiaRequests;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -15,6 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             HandleInertiaRequests::class,
+        ]);
+        // Owner-only + daily-budget guard for the paid LLM lanes.
+        $middleware->alias([
+            'llm.spend' => EnsureLlmSpendAllowed::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
