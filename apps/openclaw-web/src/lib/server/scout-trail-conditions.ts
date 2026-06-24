@@ -3,6 +3,7 @@ import {
   fetchAtcTrailUpdatesForState,
   type AtcTrailUpdateResult
 } from '$lib/server/scout-official-sources';
+import { publicApiBase } from '$lib/server/public-api';
 
 /**
  * Live trail-conditions ingestion for the Scout field pack: official closures,
@@ -15,9 +16,11 @@ import {
  *
  *   - **ATC Trail Updates** (no key) — the Appalachian Trail Conservancy's own
  *     closure/detour/notice feed, scoped to the hiker's current AT state.
- *   - **NPS park alerts** (needs a free `NPS_API_KEY`) — alerts for the National
- *     Park units the AT runs through (the trail's own `appa` unit plus GRSM,
- *     Shenandoah, Harpers Ferry, etc.). Skipped gracefully when no key is set.
+ *   - **NPS park alerts** — alerts for the National Park units the AT runs
+ *     through (the trail's own `appa` unit plus GRSM, Shenandoah, Harpers Ferry,
+ *     etc.), fetched through the Laravel NPS proxy (`/api/v1/nps/alerts`) so the
+ *     `NPS_API_KEY` stays server-side in Laravel. Degrades to ATC-only if the
+ *     proxy/key isn't configured. See docs/runbooks/nps-api-key.md.
  *
  * Both are on the allowed side of `docs/trail-data-provenance.md` (NPS API +
  * ATC's own posted notices). This only *adds* timestamped current data labelled
@@ -52,7 +55,11 @@ export interface TrailConditionsPack {
   readonly note: string;
 }
 
-const NPS_ALERTS_ENDPOINT = 'https://developer.nps.gov/api/v1/alerts';
+// NPS is reached through the Laravel proxy (GET /api/v1/nps/alerts), NOT
+// developer.nps.gov directly — the NPS_API_KEY lives only in Laravel (see
+// docs/runbooks/nps-api-key.md). scout-web holds no key; if the proxy isn't
+// configured it returns 503 and conditions degrade to ATC-only.
+const NPS_PROXY_RESOURCE = 'nps/alerts';
 const NPS_CACHE_MS = 10 * 60 * 1000;
 const CONDITIONS_TIMEOUT_MS = 7000;
 const MAX_CONDITION_ITEMS = 8;
@@ -93,6 +100,11 @@ interface NpsAlertsResponse {
     readonly parkCode?: unknown;
     readonly lastIndexedDate?: unknown;
   }>;
+}
+
+// The Laravel NPS proxy wraps the upstream NPS JSON: { data: { payload: <NPS> }, meta }.
+interface NpsProxyEnvelope {
+  readonly data?: { readonly payload?: NpsAlertsResponse };
 }
 
 const cachedNpsByKey = new Map<string, { readonly ts: number; readonly items: TrailConditionItem[] }>();
@@ -174,14 +186,15 @@ function normalizeNpsAlert(
   };
 }
 
-async function fetchNpsConditions(parkCodes: readonly string[], apiKey: string): Promise<TrailConditionItem[]> {
+async function fetchNpsConditions(parkCodes: readonly string[], apiBase: string): Promise<TrailConditionItem[]> {
   const key = parkCodes.join(',');
   const cached = cachedNpsByKey.get(key);
   if (cached && Date.now() - cached.ts < NPS_CACHE_MS) return cached.items;
 
-  const url = `${NPS_ALERTS_ENDPOINT}?parkCode=${encodeURIComponent(key)}&limit=30&api_key=${encodeURIComponent(apiKey)}`;
-  const json = (await fetchJsonWithTimeout(url)) as NpsAlertsResponse;
-  const items = (json.data ?? [])
+  // Through the Laravel proxy — no api_key on the wire; Laravel adds it server-side.
+  const url = `${apiBase.replace(/\/+$/u, '')}/${NPS_PROXY_RESOURCE}?parkCode=${encodeURIComponent(key)}&limit=30`;
+  const envelope = (await fetchJsonWithTimeout(url)) as NpsProxyEnvelope;
+  const items = (envelope.data?.payload?.data ?? [])
     .map(normalizeNpsAlert)
     .filter((item): item is TrailConditionItem => item !== null);
 
@@ -255,7 +268,8 @@ export async function buildTrailConditionsPack(params: {
   readonly mile?: number | null;
   readonly state?: string | null;
   readonly now?: Date;
-  readonly npsApiKey?: string | null;
+  /** Base for the Laravel API (…/api/v1). Defaults to the configured backend. */
+  readonly apiBase?: string;
 }): Promise<TrailConditionsPack> {
   const now = params.now ?? new Date();
   const fetchedAt = now.toISOString();
@@ -275,18 +289,16 @@ export async function buildTrailConditionsPack(params: {
     errors.push(`ATC trail updates failed: ${errorMessage(error)}`);
   }
 
-  // NPS park alerts — needs a free API key; degrade gracefully without one.
-  const npsApiKey = params.npsApiKey ?? process.env.NPS_API_KEY ?? null;
-  if (!npsApiKey) {
-    sourcesSkipped.push('nps (NPS_API_KEY not configured)');
-  } else {
-    const parkCodes = [...NPS_PARKS_ALWAYS, ...(state ? NPS_PARKS_BY_STATE[state] ?? [] : [])];
-    try {
-      collected.push(...(await fetchNpsConditions(parkCodes, npsApiKey)));
-      sourcesChecked.push('nps');
-    } catch (error) {
-      errors.push(`NPS alerts failed: ${errorMessage(error)}`);
-    }
+  // NPS park alerts via the Laravel proxy. scout-web holds no key; if the proxy
+  // (or its NPS_API_KEY) isn't configured the request fails and we degrade to
+  // ATC-only — recorded as an error, never a crash.
+  const apiBase = params.apiBase ?? publicApiBase();
+  const parkCodes = [...NPS_PARKS_ALWAYS, ...(state ? NPS_PARKS_BY_STATE[state] ?? [] : [])];
+  try {
+    collected.push(...(await fetchNpsConditions(parkCodes, apiBase)));
+    sourcesChecked.push('nps');
+  } catch (error) {
+    errors.push(`NPS alerts (proxy) failed: ${errorMessage(error)}`);
   }
 
   // TODO(usfs): wire USFS forest-order / alert pages (public domain, license-clean
@@ -306,4 +318,4 @@ export async function buildTrailConditionsPack(params: {
   };
 }
 
-export const __testing = { ATC_PUBLIC_URL, NPS_ALERTS_ENDPOINT };
+export const __testing = { ATC_PUBLIC_URL, NPS_PROXY_RESOURCE };
