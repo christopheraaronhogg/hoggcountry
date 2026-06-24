@@ -5,11 +5,29 @@ import { browser } from '$app/environment';
 // access. (Upgrading to the iOS Keychain via a secure-storage plugin is a
 // later hardening step; Preferences already keeps it out of the web/JS store.)
 
-async function prefs() {
-	if (!browser) return null;
+type PreferenceStore = {
+	get(options: { key: string }): Promise<{ value: string | null }>;
+	set(options: { key: string; value: string }): Promise<void>;
+	remove(options: { key: string }): Promise<void>;
+};
+
+declare global {
+	interface Window {
+		Capacitor?: {
+			isNativePlatform?: () => boolean;
+		};
+	}
+}
+
+async function prefs(): Promise<PreferenceStore | null> {
+	if (!browser || window.Capacitor?.isNativePlatform?.() !== true) return null;
 	try {
 		const { Preferences } = await import('@capacitor/preferences');
-		return Preferences;
+		return {
+			get: (options) => Preferences.get(options),
+			set: (options) => Preferences.set(options),
+			remove: (options) => Preferences.remove(options)
+		};
 	} catch {
 		return null;
 	}
