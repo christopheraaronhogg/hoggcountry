@@ -109,3 +109,14 @@ git diff --check
 ```
 
 Then smoke the exact Harpers Ferry failure prompt and a few difficulty 1-3 scenarios through `/app-api/claw/reply`. After deploy, repeat through `https://hoggcountry.on-forge.com`.
+
+## Why This Loop Stays Human-Gated
+
+Everything above is Scout's verification loop: Scout produces a plan, the harness plus rubric review score it against the scenario suite, and failures feed back into the next change. That loop is deliberately **open** — we stop one rung short of closing it.
+
+We do **not** run any process that reads the run traces and rewrites Scout's prompt, tools, or planning config on its own. Traces are evidence for a human decision, never the trigger for an automated one. This is a choice, not a missing feature, and it follows directly from the two rules at the top of this repo:
+
+- **"Evidence, not vibes."** A self-tuning loop optimizes whatever the graders measure; the moment the rubric and the real failure mode diverge, it confidently ships the wrong thing and the leaderboard still goes up.
+- **Stale or auto-generated context can be unsafe for hikers.** A wrong corridor, an invented water source, or a dropped caveat shipped unattended is a safety failure, not a metrics regression. The cost of one bad plan in Dad's hands outweighs the convenience of a hands-off loop.
+
+So the return arrow comes back to a person, on purpose. Keep it that way until there is a grader we trust to gate a hiker-safety change without us reading the diff — and we are nowhere near that.
