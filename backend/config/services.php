@@ -53,6 +53,13 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    'nps' => [
+        'api_key' => env('NPS_API_KEY'),
+        'base_url' => rtrim((string) env('NPS_API_BASE_URL', 'https://developer.nps.gov/api/v1'), '/'),
+        'timeout' => (int) env('NPS_API_TIMEOUT', 8),
+        'connect_timeout' => (int) env('NPS_API_CONNECT_TIMEOUT', 3),
+    ],
+
     'scout_web' => [
         'enabled' => filter_var(env('SCOUT_WEB_PROXY_ENABLED', env('OPENCLAW_WEB_PROXY_ENABLED', false)), FILTER_VALIDATE_BOOL),
         'origin' => rtrim((string) env('SCOUT_WEB_PROXY_ORIGIN', env('OPENCLAW_WEB_PROXY_ORIGIN', 'http://127.0.0.1:3000')), '/'),
