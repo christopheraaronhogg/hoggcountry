@@ -511,14 +511,27 @@
 	const fmt = (n: number) => n.toLocaleString('en-US');
 
 	// --- lifecycle ------------------------------------------------------------
+	// Connect the live-data SpacetimeDB feeds (tramily water reports + family
+	// location) OFF the boot/hydration frame. When the app launches straight onto the
+	// Map tab, MapTab.onMount runs during hydration; a SpacetimeDB connect burst there
+	// (identity-token POST + WebSocket build) both froze the iOS WebView and, on a
+	// production build, starved the map's own dynamic import('leaflet') so the chunk
+	// never loaded and the map stayed blank. Deferring it past hydration lets the map
+	// win the boot frame; both calls are idempotent (guarded), so re-opening the Map
+	// never reconnects. See the boot-freeze rule in mobile/README.md.
+	function startLiveDataDeferred() {
+		const go = () => {
+			waterReports.startSync();
+			registerLiveLocation();
+		};
+		if (typeof requestIdleCallback === 'function') requestIdleCallback(go, { timeout: 2000 });
+		else setTimeout(go, 600);
+	}
+
 	onMount(async () => {
-		// Start receiving the tramily's water reports from the shared DB (no-op until
-		// the SpacetimeDB sync is configured + deployed).
-		waterReports.startSync();
-		// Live tramily/family location connects here (on the Map, where it's used) —
-		// NOT at app boot, so its SpacetimeDB connection can't saturate the WebView
-		// during startup hydration. Idempotent (guarded), so re-opening the Map is fine.
-		registerLiveLocation();
+		// Build the map FIRST — its dynamic import('leaflet') + init must win the boot
+		// frame (see startLiveDataDeferred above). The live-data connects are scheduled
+		// at the END of onMount, once the map is up and clear of hydration.
 		const leaflet = await import('leaflet');
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		L = ((leaflet as any).default ?? leaflet) as typeof LeafletNS;
@@ -622,6 +635,9 @@
 			}
 			onMoveEnd();
 		});
+
+		// Map is up — now bring the live SpacetimeDB feeds online, off this frame.
+		startLiveDataDeferred();
 	});
 
 	onDestroy(() => {
