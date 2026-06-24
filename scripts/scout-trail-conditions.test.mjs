@@ -80,7 +80,7 @@ function stubConditionsFetch({ atcList = ATC_LIST_HTML, nps = NPS_ALERTS, weathe
     requests.push(url);
     if (url === 'https://appalachiantrail.org/trail-updates/') return htmlResponse(atcList);
     if (url.startsWith('https://appalachiantrail.org/trail-updates/')) return htmlResponse(ATC_DETAIL_HTML);
-    if (url.includes('developer.nps.gov/api/v1/alerts')) return jsonResponse(nps);
+    if (url.includes('/nps/alerts')) return jsonResponse({ data: { source: 'nps', resource: 'alerts', payload: nps } });
     if (weather && url.includes('/points/')) {
       return jsonResponse({
         properties: {
@@ -120,7 +120,7 @@ test('buildTrailConditionsPack merges NPS + ATC and ranks high-severity first', 
   const originalFetch = globalThis.fetch;
   stubConditionsFetch();
   try {
-    const pack = await buildTrailConditionsPack({ mile: 300, now: fixedNow, npsApiKey: 'TESTKEY' });
+    const pack = await buildTrailConditionsPack({ mile: 300, now: fixedNow, apiBase: 'https://test.local/api/v1' });
 
     assert.deepEqual([...pack.sourcesChecked].sort(), ['atc', 'nps']);
     assert.ok(pack.items.length >= 2, 'expected NPS + ATC items');
@@ -141,24 +141,25 @@ test('buildTrailConditionsPack merges NPS + ATC and ranks high-severity first', 
   }
 });
 
-test('buildTrailConditionsPack reports "checked, none active" when ATC is empty and no NPS key', async () => {
+test('buildTrailConditionsPack reports "checked, none active" when ATC is empty and the NPS proxy is unavailable', async () => {
   const { buildTrailConditionsPack } = await load('src/lib/server/scout-trail-conditions.ts');
   await resetCaches();
   const originalFetch = globalThis.fetch;
-  const originalKey = process.env.NPS_API_KEY;
-  delete process.env.NPS_API_KEY;
-  stubConditionsFetch({ atcList: '<html><body>no updates</body></html>' });
+  globalThis.fetch = async (input) => {
+    const url = String(input);
+    if (url === 'https://appalachiantrail.org/trail-updates/') return htmlResponse('<html><body>no updates</body></html>');
+    if (url.includes('/nps/alerts')) return { ok: false, status: 503, statusText: 'Service Unavailable', async text() { return '{}'; } };
+    throw new Error(`Unexpected fetch in conditions test: ${url}`);
+  };
   try {
-    const pack = await buildTrailConditionsPack({ mile: 300, now: fixedNow });
+    const pack = await buildTrailConditionsPack({ mile: 300, now: fixedNow, apiBase: 'https://test.local/api/v1' });
 
-    assert.deepEqual(pack.sourcesChecked, ['atc']); // ATC reached, returned nothing
+    assert.deepEqual(pack.sourcesChecked, ['atc']); // ATC reached, returned nothing; NPS proxy down
     assert.equal(pack.items.length, 0);
-    assert.ok(pack.sourcesSkipped.some((entry) => entry.startsWith('nps')));
+    assert.ok(pack.errors.some((entry) => /nps/i.test(entry)));
     assert.match(pack.note, /No active official closures/i);
   } finally {
     globalThis.fetch = originalFetch;
-    if (originalKey === undefined) delete process.env.NPS_API_KEY;
-    else process.env.NPS_API_KEY = originalKey;
   }
 });
 
@@ -166,8 +167,8 @@ test('public mobile field pack carries live conditions, receipts, and a notice',
   const { buildPublicMobileFieldPack } = await load('src/lib/server/public-mobile-field-pack.ts');
   await resetCaches();
   const originalFetch = globalThis.fetch;
-  const originalKey = process.env.NPS_API_KEY;
-  process.env.NPS_API_KEY = 'TESTKEY';
+  const originalBase = process.env.PUBLIC_API_BASE_URL;
+  process.env.PUBLIC_API_BASE_URL = 'https://test.local/api/v1';
   stubConditionsFetch();
   try {
     const pack = await buildPublicMobileFieldPack(fixedNow, { personal: true, mile: 300, direction: 'NOBO' });
@@ -183,7 +184,7 @@ test('public mobile field pack carries live conditions, receipts, and a notice',
     assert.match(pack.data.pilot_notice, /active official trail condition/i);
   } finally {
     globalThis.fetch = originalFetch;
-    if (originalKey === undefined) delete process.env.NPS_API_KEY;
-    else process.env.NPS_API_KEY = originalKey;
+    if (originalBase === undefined) delete process.env.PUBLIC_API_BASE_URL;
+    else process.env.PUBLIC_API_BASE_URL = originalBase;
   }
 });

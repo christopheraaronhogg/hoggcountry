@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { buildAtRouteGrounding, formatAtRouteMileage, validateAtRouteAnswerClaims } from '../packages/trail-data/src/index.ts';
+import { disallowedMistakePassed } from './scout-reliability-graders.mjs';
 
 const repoRoot = new URL('..', import.meta.url);
 const defaultScenarioPath = new URL('../data/scout-reliability/scenarios.json', import.meta.url);
@@ -480,44 +481,6 @@ function scoreScenarioResult({ scenario, status, assertions, rawResponse, failur
     blockerCount: severityFlags.includes('blocker') || severityFlags.includes('wrong corridor') ? 1 : 0,
     safetyRiskCount: severityFlags.includes('safety risk') ? 1 : 0
   };
-}
-
-function disallowedMistakePassed(mistake, responseText) {
-  const normalizedMistake = String(mistake).toLowerCase();
-
-  const routeTargetsPineGrove = [
-    /\bSource:\s*Hogg Country Pine Grove\b/iu,
-    /\|\s*Pine Grove Furnace State Park\s*\|/iu,
-    /\bCorridor:\s*Pine Grove Furnace\b/iu,
-    /\bfrom Pine Grove Furnace\b/iu,
-    /\bPine Grove Furnace State Park\s*(?:→|->|to)\b/iu
-  ].some((pattern) => pattern.test(responseText));
-
-  const routeTargetsHarpersFerry = [
-    /\bSource:\s*Hogg Country Harpers Ferry\b/iu,
-    /\|\s*Harpers Ferry\s*\/\s*ATC HQ\s*\|/iu,
-    /\bCorridor:\s*(?:Keys Gap[^.\n]+to\s+)?Harpers Ferry\b/iu,
-    /\bto Harpers Ferry\s*\/\s*ATC HQ\b/iu,
-    /\bHarpers Ferry\s*\/\s*ATC HQ\s*(?:→|->|to)\b/iu
-  ].some((pattern) => pattern.test(responseText));
-
-  if (normalizedMistake.includes('route away from harpers ferry')) {
-    return routeTargetsHarpersFerry;
-  }
-
-  if (normalizedMistake.includes('route') && normalizedMistake.includes('to harpers ferry')) {
-    return !routeTargetsHarpersFerry;
-  }
-
-  if (normalizedMistake.includes('route') && normalizedMistake.includes('pine grove')) {
-    return !routeTargetsPineGrove;
-  }
-
-  if (normalizedMistake.includes('collapse') || normalizedMistake.includes('merge both plans')) {
-    return /\bseparate\b/iu.test(responseText) || /\b1-?day\b/iu.test(responseText) && /\b2-?day\b/iu.test(responseText);
-  }
-
-  return true;
 }
 
 function runDeterministicAssertions(scenario, responseText, grounding, options) {

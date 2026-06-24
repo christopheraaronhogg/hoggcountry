@@ -4,6 +4,7 @@ import type {
 	LocalDocumentReference,
 	ShelterReference,
 	SourceReceipt,
+	ParkServicesContext,
 	ToolHandler,
 	ToolInvocationRecord,
 	TownReference,
@@ -130,6 +131,16 @@ function conditionsReceipt(conditions: TrailConditionsContext): SourceReceipt {
 	};
 }
 
+function parkServicesReceipt(parkServices: ParkServicesContext): SourceReceipt {
+	return {
+		id: 'official:nps-park-facilities',
+		title: 'NPS park facilities',
+		kind: 'official',
+		citation: `National Park Service visitor centers + campgrounds for ${parkServices.parks.join(', ')}`,
+		generatedAt: parkServices.fetchedAt
+	};
+}
+
 function nextOnTrail<T extends { mile: number }>(items: T[], fromMile: number): T | null {
 	const ahead = items
 		.filter((item) => item.mile >= fromMile - 0.01)
@@ -177,6 +188,10 @@ interface WeatherArgs {
 
 interface TrailConditionsArgs {
 	category?: 'closure' | 'detour' | 'fire' | 'caution' | 'info';
+}
+
+interface ParkServicesArgs {
+	kind?: 'visitor-center' | 'campground';
 }
 
 interface LoadoutArgs {
@@ -478,6 +493,48 @@ const trailConditionsTool: ToolHandler<TrailConditionsArgs> = {
 	}
 };
 
+const parkServicesTool: ToolHandler<ParkServicesArgs> = {
+	id: 'park_services',
+	description:
+		'Return NPS visitor centers and developed campgrounds for the regulated park sections the AT crosses (info, permits, resupply, legal bail-out/overnight options — NOT the thru-hiker shelter system). Use for "is there a visitor center / ranger station / legal campground in this park" questions.',
+	run(args, ctx) {
+		const parkServices = ctx.pack.parkServices ?? null;
+		if (!parkServices || !parkServices.items.length) {
+			return {
+				toolId: 'park_services',
+				args: toolArgs(args),
+				summary:
+					parkServices?.note ??
+					"No NPS park-facility data is loaded for this section. If you're in a National Park (Smokies, Shenandoah, Harpers Ferry), check the park's site for visitor-center hours and campground reservations.",
+				confidence: parkServices ? 'medium' : 'low',
+				receipts: parkServices ? [parkServicesReceipt(parkServices)] : []
+			};
+		}
+
+		const items = (args.kind ? parkServices.items.filter((item) => item.kind === args.kind) : parkServices.items).slice(0, 8);
+		const lines = items.map((item) => {
+			const label = item.kind === 'visitor-center' ? 'Visitor center' : 'Campground';
+			const link = item.reservationUrl ?? item.url;
+			return `${label} — ${item.name} (${item.parkLabel}): ${excerptText(item.summary, 200)}${link ? ` ${link}` : ''}`;
+		});
+
+		return {
+			toolId: 'park_services',
+			args: toolArgs(args),
+			summary: `NPS facilities for ${parkServices.parks.join(', ')} (info/permits/resupply + legal overnight options, NOT thru-hiker shelters — confirm hours & reservations):\n${lines.join('\n')}`,
+			confidence: 'medium',
+			receipts: [parkServicesReceipt(parkServices)],
+			confirmations: [
+				{
+					id: 'park-services-verify',
+					prompt: 'Confirm current visitor-center hours and campground reservations with the park before relying on them.',
+					reason: 'volatile'
+				}
+			]
+		};
+	}
+};
+
 const loadoutCheckTool: ToolHandler<LoadoutArgs> = {
 	id: 'loadout_check',
 	description: 'Summarize what the hiker is carrying, optionally filtered by category.',
@@ -645,6 +702,7 @@ export const defaultScoutTools: ToolHandler[] = [
 	upcomingTerrainTool,
 	weatherLookupTool,
 	trailConditionsTool,
+	parkServicesTool,
 	loadoutCheckTool,
 	sourceSearchTool,
 	bibleSearchTool

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CommunityTrackerController;
 use App\Http\Controllers\Api\V1\DeviceController;
+use App\Http\Controllers\Api\V1\NpsController;
 use App\Http\Controllers\Api\V1\ScoutAskController;
 use App\Http\Controllers\Api\V1\SyncController;
 use App\Http\Controllers\Api\V1\TrackerLiveController;
@@ -83,6 +84,10 @@ Route::prefix('v1')->group(function () use ($buildMeta): void {
     Route::prefix('videos')->group(function (): void {
         Route::get('/latest', [VideoFeedController::class, 'latest']);
     });
+
+    Route::get('/nps/{resource}', [NpsController::class, 'show'])
+        ->where('resource', '[A-Za-z0-9-]+')
+        ->middleware('throttle:60,1');
 
     Route::prefix('trail-updates')->group(function (): void {
         Route::options('/{any?}', [TrailUpdateController::class, 'options'])->where('any', '.*');

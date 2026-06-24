@@ -24,11 +24,23 @@ test('defaultToolRegistry exposes the built-in Scout tool set', () => {
 		'next_shelter',
 		'next_town',
 		'next_water',
+		'park_services',
 		'source_search',
 		'trail_conditions',
 		'upcoming_terrain',
 		'weather_lookup'
 	]);
+});
+
+test('runToolsFor routes visitor-center/campground prompts to park_services', async () => {
+	const records = await runToolsFor(
+		'is there a visitor center or ranger station in this national park?',
+		DEFAULT_CONTEXT_PACK,
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	assert.ok(records.some((record) => record.toolId === 'park_services'));
 });
 
 test('runToolsFor routes closure/detour prompts to trail_conditions', async () => {

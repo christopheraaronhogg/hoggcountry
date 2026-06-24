@@ -159,6 +159,24 @@ export interface TrailConditionsContext {
 	note: string;
 }
 
+export interface ParkFacilityReference {
+	kind: 'visitor-center' | 'campground';
+	name: string;
+	parkLabel: string;
+	summary: string;
+	url: string | null;
+	reservationUrl: string | null;
+	lat: number | null;
+	lon: number | null;
+}
+
+export interface ParkServicesContext {
+	items: ParkFacilityReference[];
+	parks: string[];
+	fetchedAt: string;
+	note: string;
+}
+
 export interface ContextPack {
 	frame: CalibratedFrame;
 	hiker: HikerProfile;
@@ -170,6 +188,7 @@ export interface ContextPack {
 	loadout: LoadoutItem[];
 	weather: CachedWeather | null;
 	conditions?: TrailConditionsContext | null;
+	parkServices?: ParkServicesContext | null;
 	downloadedRegions: string[];
 	generatedAt: string;
 	validUntil?: string;

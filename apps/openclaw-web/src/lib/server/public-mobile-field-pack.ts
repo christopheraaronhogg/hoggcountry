@@ -1,12 +1,21 @@
 import { loadScoutAtOpenReferenceOfflineSummary } from '$lib/server/at-open-reference';
 import { loadDadPilotSummary, type DadPilotSummary } from '$lib/server/dad';
 import { loadReferencePack } from '$lib/server/map-pack';
-import { fetchNwsWeather, type NwsWeatherResult } from '$lib/server/scout-official-sources';
+import {
+  fetchNwsWeather,
+  approximateAtStateForMile,
+  type NwsWeatherResult
+} from '$lib/server/scout-official-sources';
 import {
   buildTrailConditionsPack,
   type TrailConditionItem,
   type TrailConditionsPack
 } from '$lib/server/scout-trail-conditions';
+import {
+  buildParkFacilitiesPack,
+  type ParkFacility,
+  type ParkFacilitiesPack
+} from '$lib/server/scout-park-facilities';
 import {
   AWOL_WATER_SOURCES,
   AWOL_WATER_CITATION,
@@ -132,6 +141,15 @@ interface MobileContextPack {
   // source was reachable; an empty `items` with a note means "checked, none active."
   readonly conditions: {
     readonly items: readonly TrailConditionItem[];
+    readonly fetchedAt: string;
+    readonly note: string;
+  } | null;
+  // NPS visitor centers / developed campgrounds for the regulated park sections
+  // the AT crosses (info, permits, resupply, legal bail-out/overnight options).
+  // Null outside park states or when the NPS proxy isn't reachable.
+  readonly parkServices: {
+    readonly items: readonly ParkFacility[];
+    readonly parks: readonly string[];
     readonly fetchedAt: string;
     readonly note: string;
   } | null;
@@ -482,12 +500,19 @@ function contextConditions(pack: TrailConditionsPack | null): MobileContextPack[
   return { items: pack.items, fetchedAt: pack.fetchedAt, note: pack.note };
 }
 
+function contextParkServices(pack: ParkFacilitiesPack | null): MobileContextPack['parkServices'] {
+  // Only when the hiker is in a park state with at least one facility returned.
+  if (!pack || !pack.parks.length || !pack.items.length) return null;
+  return { items: pack.items, parks: pack.parks, fetchedAt: pack.fetchedAt, note: pack.note };
+}
+
 function buildContextPack(
   now: Date,
   dad: DadPilotSummary | null,
   trailAhead: TrailAheadSlice | null,
   weatherPack: WeatherPack,
   conditions: TrailConditionsPack | null,
+  parkServices: ParkFacilitiesPack | null,
   personalCtx: { personal: boolean; mile: number | null; direction: 'NOBO' | 'SOBO' }
 ): MobileContextPack {
   const generatedAt = now.toISOString();
@@ -606,6 +631,7 @@ function buildContextPack(
           }
     ),
     conditions: contextConditions(conditions),
+    parkServices: contextParkServices(parkServices),
     downloadedRegions: trailAhead?.downloadedRegions.length
       ? trailAhead.downloadedRegions
       : personal
@@ -641,12 +667,27 @@ function conditionReceipts(conditions: TrailConditionsPack | null): MobileSource
   return receipts;
 }
 
+function parkServicesReceipts(parkServices: ParkFacilitiesPack | null): MobileSourceReceipt[] {
+  if (!parkServices || !parkServices.items.length) return [];
+  return [
+    {
+      id: 'official:nps-park-facilities',
+      title: 'NPS park facilities',
+      kind: 'official',
+      citation: `National Park Service visitor centers + campgrounds for ${parkServices.parks.join(', ')}, fetched ${parkServices.fetchedAt}`,
+      url: 'https://www.nps.gov/appa/planyourvisit/index.htm',
+      generatedAt: parkServices.fetchedAt
+    }
+  ];
+}
+
 function sourceReceipts(
   now: Date,
   contextPack: MobileContextPack,
   trailAhead: TrailAheadSlice | null,
   weatherPack: WeatherPack,
   conditions: TrailConditionsPack | null,
+  parkServices: ParkFacilitiesPack | null,
   personal: boolean
 ): MobileSourceReceipt[] {
   return [
@@ -670,6 +711,7 @@ function sourceReceipts(
     ...(trailAhead?.sourceReceipts ?? []),
     ...(weatherPack.receipt ? [weatherPack.receipt] : []),
     ...conditionReceipts(conditions),
+    ...parkServicesReceipts(parkServices),
     {
       id: 'field-guide:water-discipline',
       title: 'Water discipline field-guide excerpt',
@@ -701,15 +743,18 @@ export async function buildPublicMobileFieldPack(now = new Date(), options: Fiel
   ]);
   const centerMile = personal ? (mile as number) : currentMileFromDad(dad);
   const generatedAt = now.toISOString();
-  const [trailAhead, weatherPack, conditions] = await Promise.all([
+  const centerState = approximateAtStateForMile(centerMile);
+  const [trailAhead, weatherPack, conditions, parkServices] = await Promise.all([
     buildTrailAheadSlice(centerMile, now, personal).catch(() => null),
     buildWeatherPack(centerMile, generatedAt),
     // Live closures/detours/fire alerts ride the pack build (the build is the
     // cadence); never let a flaky upstream block the pack.
-    buildTrailConditionsPack({ mile: centerMile, now }).catch((): TrailConditionsPack | null => null)
+    buildTrailConditionsPack({ mile: centerMile, now }).catch((): TrailConditionsPack | null => null),
+    // NPS visitor centers / campgrounds for the park sections (empty outside them).
+    buildParkFacilitiesPack({ state: centerState, now }).catch((): ParkFacilitiesPack | null => null)
   ]);
-  const contextPack = buildContextPack(now, dad, trailAhead, weatherPack, conditions, { personal, mile, direction });
-  const receipts = sourceReceipts(now, contextPack, trailAhead, weatherPack, conditions, personal);
+  const contextPack = buildContextPack(now, dad, trailAhead, weatherPack, conditions, parkServices, { personal, mile, direction });
+  const receipts = sourceReceipts(now, contextPack, trailAhead, weatherPack, conditions, parkServices, personal);
   const notice = [
     personal ? personalNotice(trailAhead) : pilotNotice(dad, trailAhead),
     weatherPack.error
