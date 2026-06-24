@@ -1012,6 +1012,19 @@ class TrailAssistantStore {
 		return answer;
 	}
 
+	/**
+	 * On-device scripture generation for the iOS app — Gemma required, like Scout.
+	 * Builds nothing of its own; the caller supplies the grounded persona prompt.
+	 * Throws (model unavailable) so the Bible reader can fall back to verses-only.
+	 */
+	async generateScripture(input: { systemContext: string; prompt: string }): Promise<string> {
+		if (!(await this.#nativeScout.gemmaReady(REQUIRE_GEMMA))) {
+			await this.#nativeScout.startModelDownloadIfUseful();
+			throw new Error('on-device-model-unavailable');
+		}
+		return this.#nativeScout.generateText({ ...input, maxTokens: 512 });
+	}
+
 	async #refreshFieldPackForPrompt(prompt: string): Promise<void> {
 		if (!this.#state.onlineStatus || !this.#state.hikeProfile.calibrated) return;
 		if (!WEATHER_PROMPT_RE.test(prompt)) return;

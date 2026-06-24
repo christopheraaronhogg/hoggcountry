@@ -7,9 +7,26 @@
 		type KjvBook,
 		type KjvChapter
 	} from '../bible/bible-index.ts';
+	import {
+		answerScripture,
+		createCloudScriptureGenerator,
+		type ScriptureGenerator
+	} from '../bible/scripture-answer.ts';
 	import { trailAssistant } from '$lib/trailState.svelte';
-	import type { ScoutAnswer } from '$lib/scout/types';
 	import Icon from './Icon.svelte';
+
+	// iOS (Capacitor) answers on-device with Gemma, required like Scout. The web
+	// PWA has no on-device model, so it answers via the Laravel OpenAI proxy.
+	function isNativePlatform(): boolean {
+		const cap = (globalThis as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
+		return !!cap?.isNativePlatform?.();
+	}
+	function scriptureGenerator(): ScriptureGenerator {
+		if (isNativePlatform()) {
+			return ({ systemContext, prompt }) => trailAssistant.generateScripture({ systemContext, prompt });
+		}
+		return createCloudScriptureGenerator();
+	}
 
 	// Four modes — Browse (canon grid) · Read (scripture) · Search (full-text) ·
 	// Ask (Scout-powered scripture Q&A). Ask always pulls cited verses from the
@@ -139,9 +156,9 @@
 	// ask
 	let askQuestion = $state('');
 	let askState = $state<'idle' | 'asking' | 'answered'>('idle');
-	let askAnswer = $state<ScoutAnswer | null>(null);
+	let askAnswer = $state<string | null>(null);
 	let askVerses = $state<{ reference: string; text: string }[]>([]);
-	let askGrounded = $state(false);
+	let askMode = $state<'on-device' | 'cloud'>('on-device');
 
 	// verse of the day (resolved after load)
 	let votd = $state<{ reference: string; text: string } | null>(null);
@@ -235,14 +252,6 @@
 		highlightVerse = p.verse ?? null;
 		mode = 'read';
 	}
-	function resolveRef(reference: string): { reference: string; text: string } | null {
-		if (!index) return null;
-		const p = parseRef(reference);
-		if (!p || p.verse == null) return null;
-		const v = index.getChapter(p.book, p.chapter)?.verses.find((x) => x.number === p.verse);
-		return v ? { reference: v.reference, text: v.readingText } : null;
-	}
-
 	function runSearch() {
 		if (!index) return;
 		results = index.search(query, 25);
@@ -258,24 +267,21 @@
 		askQuestion = question;
 		askState = 'asking';
 		askAnswer = null;
-		askGrounded = false;
-		// Reliable on-device verse lookup — works even before the model is downloaded.
-		askVerses = index.search(question, 4).map((h) => ({ reference: h.reference, text: h.text }));
+		askMode = isNativePlatform() ? 'on-device' : 'cloud';
+		// Source-backed verse cards from the same search the model is grounded on —
+		// shown even if no model answers (Gemma not installed, or offline on web).
+		askVerses = index.search(question, 5).map((h) => ({ reference: h.reference, text: h.text }));
 		try {
-			// Prefix so Scout's scripture tool reliably triggers and stays grounded.
-			const answer = await trailAssistant.askScout(`In the Bible, ${question}`);
-			askAnswer = answer;
-			askGrounded =
-				!!answer.toolInvocations?.some((t) => t.toolId === 'bible_search') ||
-				!!answer.receipts?.some((r) => r.kind === 'scripture');
-			if (askGrounded) {
-				const cited = answer.receipts
-					.filter((r) => r.kind === 'scripture')
-					.map((r) => resolveRef(r.title))
-					.filter((x): x is { reference: string; text: string } => x !== null);
-				if (cited.length) askVerses = cited;
-			}
+			const result = await answerScripture({
+				question,
+				index,
+				generate: scriptureGenerator(),
+				limit: 5
+			});
+			if (result.verses.length) askVerses = result.verses;
+			askAnswer = result.answer || null;
 		} catch {
+			// Model unavailable / offline — keep the verse cards, drop the prose.
 			askAnswer = null;
 		}
 		askState = 'answered';
@@ -283,10 +289,11 @@
 
 	const searching = $derived(query.trim().length > 0);
 
-	// Only show Scout's prose when a real on-device/cloud model synthesized it.
-	// The verse cards are always the source-backed payload.
-	const synthesized = $derived(askGrounded && !!askAnswer);
-	const modelHint = $derived(!!askAnswer && askAnswer.provider === 'on-device-gemma' && !askGrounded);
+	// Prose shows only when a model actually answered; the verse cards are always
+	// the source-backed payload. The install hint only applies to iOS (on-device)
+	// when Gemma isn't present — on web we fall through to the cloud answer.
+	const synthesized = $derived(!!askAnswer);
+	const modelHint = $derived(askState === 'answered' && !askAnswer && askMode === 'on-device');
 </script>
 
 <div class="bible">
@@ -518,16 +525,16 @@
 				<div class="ask-card">
 					<div class="ask-head">
 						<span class="ask-scout"><Icon name="scout" size={13} stroke={2} /> Scout · Scripture</span>
-						<span class="ask-dev">{trailAssistant.scoutUsesCloud ? 'cloud' : 'on-device'}</span>
+						<span class="ask-dev">{askMode === 'cloud' ? 'cloud' : 'on-device'}</span>
 					</div>
 
 					{#if askState === 'asking'}
-						<p class="ask-working">Scout is reading scripture…</p>
+						<p class="ask-working">Reading scripture…</p>
 					{:else if synthesized && askAnswer}
-						<p class="ask-answer">{askAnswer.answer}</p>
+						<p class="ask-answer">{askAnswer}</p>
 					{:else}
 						<p class="ask-answer muted">
-							Scout searched scripture for your question — here are the closest verses. Tap any to read it in full.{#if modelHint}
+							Here are the closest verses to your question — tap any to read it in full.{#if modelHint}
 								Install Scout's on-device model (Settings → On-device AI) for a written answer too.{/if}
 						</p>
 					{/if}
@@ -544,7 +551,13 @@
 						</div>
 					{/if}
 				</div>
-				<p class="ask-foot">Grounded only in KJV verses Scout can cite · nothing leaves your phone</p>
+				<p class="ask-foot">
+					{#if askMode === 'cloud'}
+						{#if synthesized}Answered in the cloud · grounded only in cited KJV verses, quoted straight from the King James text{:else}Grounded only in cited KJV verses, straight from the King James text{/if}
+					{:else}
+						Grounded only in cited KJV verses · nothing leaves your phone
+					{/if}
+				</p>
 			</div>
 		{/if}
 	{/if}

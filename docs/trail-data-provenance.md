@@ -1,6 +1,7 @@
 # Trail Data Provenance & Licensing Policy
 
-**Status:** Working policy, adopted 2026-06-12.
+**Status:** Working policy, adopted 2026-06-12; licensing section refined
+2026-06-24 after researching AWOL vs FarOut terms (they differ — see §2).
 **Why this exists:** mile-marker data drifted up to ~35 miles from official
 guidebook miles because stale frames were mixed and citations were taken on
 faith. The fix (anchor calibration) and the rules below keep Hogg Country's
@@ -44,9 +45,22 @@ map · tracker banner · Today brief · Scout lookups · shelter/water/town mile
 - **Compilations are thinly protected.** A guidebook's *selection and
   arrangement* — which 3,000 waypoints it includes, its descriptions, icons,
   elevation profiles, layout — IS protected.
-- **Contracts can reach further than copyright.** A purchased PDF's terms of
-  use can forbid database extraction even where copyright wouldn't. Check the
-  purchase terms before any extraction workflow.
+- **Contracts can reach further than copyright.** A purchased PDF or an app's
+  terms of use can forbid extraction even where copyright wouldn't — so a
+  source's *actual* terms matter, not just copyright. We checked the two that
+  matter here (2026-06-24):
+  - **The A.T. Guide ("AWOL," theatguide.com)** publishes **no terms of use and
+    no EULA** — only a standard "Copyright © All rights reserved" notice. Buying
+    the book or PDF binds you to nothing beyond ordinary copyright law, so
+    *Feist* governs cleanly: its **facts are free**; only its selection,
+    arrangement, and prose are protected.
+  - **FarOut (faroutguides.com)** is the opposite: a binding Terms of Use that
+    bans scrapers/automated tools (§9(g)), bans copying any aspect of the Service
+    (§8(c)(i)), and bans building a competing or substantially-similar product
+    from it (§8(c)(vi)). Copyright **plus** contract **plus** an
+    anti-competing-product clause. Off-limits, full stop.
+  - **Lesson:** don't treat all purchased guides the same. AWOL is a
+    copyright-only source (facts extractable); FarOut is contractually fenced.
 
 ### The operating rule: **our selection, their verification**
 - ✅ **Allowed:** curating OUR OWN list of landmarks and recording each one's
@@ -59,11 +73,25 @@ map · tracker banner · Today brief · Scout lookups · shelter/water/town mile
   legitimate use.
 - ✅ **Allowed:** deriving the other 2,197 miles from anchors + geometry. The
   calibrated skeleton is our own work product.
-- ❌ **Forbidden:** wholesale extraction of any guidebook's waypoint tables —
-  all the shelters/waters/towns with their descriptions, symbols, ordering.
-  That reproduces the protected selection/arrangement, likely violates the
-  PDF's terms, and burns trust in the small trail community we serve.
-- ❌ **Forbidden:** scraping FarOut/Guthook or any app's data, ever.
+- ✅ **Allowed:** extracting individual *facts* from AWOL — a spring's location +
+  NOBO mile, and its reliability treated as **cite-and-verify** (a data point we
+  attribute and confirm, not gospel) — and re-expressing them on OUR mile frame
+  with OUR OWN descriptions, each cited to AWOL. Facts aren't copyrightable, and
+  using our own selection, arrangement, and wording keeps us clear of the
+  compilation copyright. For an *exhaustive* set ("every spring AWOL lists for a
+  section") the selection isn't original anyway. This is the `at-mile-anchors`
+  posture extended from miles to water reliability — and AWOL has no contract
+  layer to reach past it (see §2 contracts).
+- ❌ **Forbidden:** reproducing AWOL's table *as arranged* or copying its prose
+  descriptions, symbols, or icons **verbatim**. Take the facts and rewrite; never
+  lift the expression. Selection + arrangement + descriptions are the protected
+  layer — the facts underneath are not.
+- ❌ **Forbidden:** FarOut/Guthook data, ever — its Terms of Use bind every user,
+  ban scraping, and ban building a competing product from it (§2). Copyright
+  might tolerate the bare facts; the contract you agreed to at signup does not.
+- ⚠️ **Good form, not just law:** even where extraction is legal, we serve a
+  small trail community. Prefer our own crowdsourced water layer as the live
+  signal, cite AWOL when we lean on it, and consider just asking (see §3).
 - ❌ **Forbidden:** adding anchor values "from memory" or uncited sources —
   this is how the original ~35-mile drift happened, hidden behind fabricated
   "AWOL 2026" citations.
@@ -74,6 +102,7 @@ map · tracker banner · Today brief · Scout lookups · shelter/water/town mile
 | NPS/ATC ArcGIS `ANST_Centerline` | trail geometry only | public service, geometry has no mileage attributes |
 | OpenStreetMap relation 156553 | dense route (via at-open-reference) | **ODbL — attribution + share-alike obligations; see `data/at-open-reference/license_review.md`** |
 | ATC Data Book values (2024/25/26) republished on atdist.com / traildistance.com | individual anchor facts, our selection | uncopyrightable facts, cited |
+| AWOL "The A.T. Guide" water sources | per-source location/mile/type **facts** → Scout water layer (our wording, our reliability derivation, cited) — `scripts/build-scout-awol-water.mjs` → `generated/awol-water-reference.ts` | facts (Feist); AWOL has no EULA; our selection/wording; reliability is cite-and-verify, attributed |
 | ATC trail-update pages, The Trek, NPS pages, Wikipedia | cross-checks + coordinates | public web, cited |
 | OpenTopoMap tiles | map background | attribution shown on the map |
 
@@ -94,6 +123,12 @@ cost money.
 3. **Annual recalibration playbook:** buy the new AWOL/Data Book → verify the
    ~58 anchors against it (reading + correcting our own facts; ~20 minutes) →
    re-run the pipeline → review the report → ship.
+4. **Ask David Miller (AWOL) directly.** He's an independent author and our
+   product lives in his community — Dad hikes with his guide. A short "may we
+   cite your water-reliability data in a hiker safety app?" is cleaner than
+   leaning on *Feist* alone, buys goodwill, and might yield a richer licensed
+   dataset. Worth a note (theatguide.com/contact) before AWOL water backs a paid
+   feature.
 
 ## 4. Known gaps (as of 2026-06-15)
 

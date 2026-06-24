@@ -137,6 +137,27 @@ export class NativeScoutRuntime {
 		return this.#gemmaBridge.isAvailable().catch(() => false);
 	}
 
+	/**
+	 * Raw on-device generation for callers that build their own prompt and grounding
+	 * (e.g. Scripture Ask), bypassing the trail-companion persona and tool loop.
+	 * Throws if the model is not present so the caller can fall back honestly.
+	 */
+	async generateText(input: { systemContext: string; prompt: string; maxTokens?: number }): Promise<string> {
+		this.ensureNativeWiring();
+		if (!this.#gemmaBridge || !(await this.#gemmaBridge.isAvailable().catch(() => false))) {
+			throw new Error('On-device model is not available.');
+		}
+		const result = await this.#gemmaBridge.generate({
+			prompt: input.prompt,
+			systemContext: input.systemContext,
+			maxTokens: input.maxTokens ?? 512
+		});
+		if (!result.text || !result.text.trim()) {
+			throw new Error('On-device model returned an empty response.');
+		}
+		return result.text;
+	}
+
 	startModelDownloadIfUseful(): Promise<ModelDownloadAutoStart> {
 		return this.downloads.startIfUseful();
 	}
