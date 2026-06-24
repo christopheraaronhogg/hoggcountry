@@ -7,6 +7,11 @@ import {
   type TrailConditionItem,
   type TrailConditionsPack
 } from '$lib/server/scout-trail-conditions';
+import {
+  AWOL_WATER_SOURCES,
+  AWOL_WATER_CITATION,
+  type AwolWaterSource
+} from '$lib/server/generated/awol-water-reference';
 import type { TrailMapElevationPoint, TrailMapWaypoint } from '$lib/map-pack-types';
 
 const TOTAL_AT_MILES = 2197.4;
@@ -345,6 +350,15 @@ function mapWater(point: TrailMapWaypoint): MobileWaterReference {
   };
 }
 
+function mapAwolWater(source: AwolWaterSource): MobileWaterReference {
+  return {
+    name: source.name,
+    mile: source.mile,
+    reliability: source.reliability,
+    note: source.note
+  };
+}
+
 function mapShelter(point: TrailMapWaypoint): MobileShelterReference {
   const detail = point.detail ? `${point.detail}. ` : '';
   return {
@@ -369,8 +383,23 @@ async function buildTrailAheadSlice(currentMile: number, now: Date, personal = f
   const endMile = Math.min(TOTAL_AT_MILES, roundMile(currentMile + TRAIL_AHEAD_MILES));
   const townEndMile = Math.min(TOTAL_AT_MILES, roundMile(currentMile + TOWN_LOOKAHEAD_MILES));
 
-  const waterPoints = reference.waypoints.water
+  // Water layer: AWOL-listed real, named sources (facts from The A.T. Guide,
+  // re-expressed + cited) are the primary list; OSM/USGS hydrography candidates
+  // backfill only genuine gaps (>0.3 mi from any AWOL source), so a hiker sees
+  // real named water instead of "unnamed mapped stream, potability unknown".
+  const awolWaterPoints = AWOL_WATER_SOURCES.filter(
+    (source) => source.mile >= currentMile - 0.01 && source.mile <= endMile
+  );
+  const osmWaterAll = reference.waypoints.water
     .filter(inWindow(currentMile, endMile))
+    .sort((a, b) => a.mile - b.mile);
+  const osmGapFill = osmWaterAll.filter(
+    (osm) => !awolWaterPoints.some((awol) => Math.abs(awol.mile - osm.mile) <= 0.3)
+  );
+  const waterReferences: MobileWaterReference[] = [
+    ...awolWaterPoints.map(mapAwolWater),
+    ...osmGapFill.map(mapWater)
+  ]
     .sort((a, b) => a.mile - b.mile)
     .slice(0, MAX_WATER_POINTS);
 
@@ -388,15 +417,16 @@ async function buildTrailAheadSlice(currentMile: number, now: Date, personal = f
     .sort((a, b) => a.mile - b.mile)
     .slice(0, MAX_TOWNS);
 
-  const allPoints = [...waterPoints, ...shelterPoints, ...townPoints];
-  if (!allPoints.length) return null;
+  if (!waterReferences.length && !shelterPoints.length && !townPoints.length) return null;
 
-  const states = statesFor(allPoints);
+  // statesFor needs waypoints carrying a `state`; the OSM shelter/town/water
+  // points are the canonical state source for the window label.
+  const states = statesFor([...osmWaterAll, ...shelterPoints, ...townPoints]);
 
   return {
     startMile: roundMile(currentMile),
     endMile,
-    water: uniqueByName(waterPoints.map(mapWater)),
+    water: uniqueByName(waterReferences),
     shelters: uniqueByName(shelterPoints.map(mapShelter)),
     towns: uniqueByName(townPoints.map(mapTown)),
     downloadedRegions: [
@@ -414,11 +444,23 @@ async function buildTrailAheadSlice(currentMile: number, now: Date, personal = f
         generatedAt: now.toISOString(),
         miles: { from: roundMile(currentMile), to: endMile }
       },
+      ...(awolWaterPoints.length
+        ? [
+            {
+              id: 'field-guide:awol-water',
+              title: 'AWOL water-source facts',
+              kind: 'field-guide' as const,
+              citation: AWOL_WATER_CITATION,
+              url: 'https://www.theatguide.com/',
+              miles: { from: roundMile(currentMile), to: endMile }
+            }
+          ]
+        : []),
       {
         id: 'derived:usgs-water-candidates',
-        title: 'Mapped water candidates',
+        title: 'Mapped water candidates (gap-fill)',
         kind: 'derived',
-        citation: 'USGS/NHD public hydrography; reliability and potability unknown',
+        citation: 'USGS/NHD public hydrography; used only where AWOL has no nearby source — reliability and potability unknown',
         miles: { from: roundMile(currentMile), to: endMile }
       },
       {
