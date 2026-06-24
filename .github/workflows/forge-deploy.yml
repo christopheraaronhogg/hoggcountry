@@ -104,12 +104,15 @@ jobs:
           FORGE_SITE_PATH: ${{ vars.FORGE_SITE_PATH }}
           GITHUB_SHA: ${{ github.sha }}
           RELEASE: ${{ env.RELEASE }}
+          VAPID_PUBLIC_KEY: ${{ vars.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_SUBJECT: ${{ vars.VAPID_SUBJECT }}
         run: |
           test -n "$FORGE_SSH_HOST"
           test -n "$FORGE_SITE_PATH"
           test -n "$RELEASE"
           ssh -i ~/.ssh/forge_deploy_key -o IdentitiesOnly=yes "${FORGE_SSH_USER:-forge}@${FORGE_SSH_HOST}" \
-            "GITHUB_SHA='$GITHUB_SHA' RELEASE='$RELEASE' FORGE_SITE_PATH='$FORGE_SITE_PATH' bash -s" <<'REMOTE'
+            "GITHUB_SHA='$GITHUB_SHA' RELEASE='$RELEASE' FORGE_SITE_PATH='$FORGE_SITE_PATH' VAPID_PUBLIC_KEY='$VAPID_PUBLIC_KEY' VAPID_PRIVATE_KEY='$VAPID_PRIVATE_KEY' VAPID_SUBJECT='$VAPID_SUBJECT' bash -s" <<'REMOTE'
           set -euo pipefail
 
           APP="$FORGE_SITE_PATH"
@@ -173,6 +176,15 @@ jobs:
           update_env_var SCOUT_CHATGPT_APP_PROXY_ORIGIN "http://127.0.0.1:8788"
           update_env_var SCOUT_CHATGPT_APP_PORT "8788"
           update_env_var SCOUT_CHATGPT_APP_DOMAIN "https://hoggcountry.on-forge.com"
+          if [ -n "${VAPID_PUBLIC_KEY:-}" ]; then
+            update_env_var VAPID_PUBLIC_KEY "$VAPID_PUBLIC_KEY"
+          fi
+          if [ -n "${VAPID_PRIVATE_KEY:-}" ]; then
+            update_env_var VAPID_PRIVATE_KEY "$VAPID_PRIVATE_KEY"
+          fi
+          if [ -n "${VAPID_SUBJECT:-}" ]; then
+            update_env_var VAPID_SUBJECT "$VAPID_SUBJECT"
+          fi
 
           ln -nfs "$REL" "$APP/current"
           cd "$APP/current"
