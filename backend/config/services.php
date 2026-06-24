@@ -18,6 +18,16 @@ return [
         'key' => env('POSTMARK_API_KEY'),
     ],
 
+    // OpenAI — powers the web PWA's Scripture Ask (app.hoggcountry.com). The iOS
+    // app answers on-device with Gemma and never hits this. Key is supplied via
+    // Forge env; with no key the /scripture/answer endpoint returns 503 and the
+    // PWA falls back to showing cited verses only.
+    'openai' => [
+        'key' => env('OPENAI_API_KEY'),
+        'base_url' => rtrim((string) env('OPENAI_BASE_URL', 'https://api.openai.com/v1'), '/'),
+        'scripture_model' => env('OPENAI_SCRIPTURE_MODEL', 'gpt-4.1-mini'),
+    ],
+
     'resend' => [
         'key' => env('RESEND_API_KEY'),
     ],
