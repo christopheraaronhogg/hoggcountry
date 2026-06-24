@@ -1,8 +1,43 @@
-# Hogg Country Mobile Pilot
+# Hogg Country Mobile — the primary product
 
-This is the Father's Day trail assistant pilot app. It is a SvelteKit static app wrapped by Capacitor, with a local Scout runtime and cached field-pack support.
+The Hogg Country app for Dad's 2026 NOBO thru-hike. **One SvelteKit static build, two delivery shells:** native **iOS** (Capacitor → TestFlight) and an installable **PWA** (the same `build/` served over HTTPS). 100% shared code — build once, ship both.
 
-The current pilot target is simple: Dad can open the app, load a trail-ahead field pack, keep using that pack offline, and see Scout answers with receipts and caveats.
+On top of the Scout field-pack core it has: offline-first cloud backup, live tramily/family location, on-device Scout (Gemma), the AT map, field guide, Bible, and gear.
+
+## Architecture
+
+```
+src/lib/
+  trailState.svelte.ts       # the central store (position, profile, checkins, docs, gear…)
+  cloud/                     # cloud backup + restore
+    sync-outbox.ts           #   PURE, unit-tested LWW core (etag dedup, reconcile, restore policy)
+    syncEngine.svelte.ts     #   reactive outbox: drains to /api/v1/sync/push, restore-on-signin gate
+    restore.ts               #   applies pulled docs back into the stores
+    auth.svelte.ts, api.ts   #   Sanctum auth (invite-only), the /api/v1 client
+  spacetime/connection.ts    # the ONE shared SpacetimeDB DbConnection (never build a second)
+  people/                    # live tramily/family location (Life360-style)
+    memberLocation.svelte.ts #   subscribe to sender-scoped views + publish position
+    liveLocation.ts          #   coordinator: reconciles server roster ↔ desired sharing
+  trailPulseSpacetime.ts, waterReportSpacetime.ts   # other features on the shared connection
+src/service-worker.ts        # PWA offline cache (versioned)
+static/manifest.webmanifest  # PWA install manifest + icons
+```
+
+- **Cloud backup + restore** (opt-in, off until sign-in): the outbox decomposes durable state into per-entity docs (profile, position, settings, checkins, loadout, documents, people) and pushes to the Laravel **`/api/v1/sync/*`** API (document-level last-write-wins). Restore pulls `/sync/bootstrap` on sign-in. Accounts are **invite-only** (a shared launch-invite credential; public registration is gated off). The pure LWW + restore logic is unit-tested in `cloud/sync-outbox.test.ts`.
+- **Live tramily/family location**: rides SpacetimeDB. `group_member`/`group_position` are **server-private** tables; clients read only the sender-scoped views `my_group_positions` / `my_group_members` (a non-member sees nothing). Group code = high-entropy bearer secret (invite-link model). Module: `apps/openclaw-web/spacetimedb/src/index.ts`.
+- **PWA**: `manifest.webmanifest` + `service-worker.ts` make the same build installable + offline on the web. Hosted at `app.hoggcountry.com` (HTTPS required).
+
+### Hard rules (each cost a real debugging session)
+
+- **Exactly ONE SpacetimeDB `DbConnection`** for the whole app (`lib/spacetime/connection.ts`). Three separate connections (Trail Pulse, water, live location) was a boot "connection storm." Features register via `onSpacetimeConnect(...)` and call `connect()` for reducers.
+- **Nothing heavy or looping on the boot/hydration path.** A SpacetimeDB connect burst in `+layout` boot saturated the iOS WebView during Svelte hydration → frozen prerendered "Day 1" screen, no taps. Connect lazily from the tab that uses it (live location connects in `MapTab.onMount`).
+- Modal overlays must be `position: fixed` (not `absolute`) under `viewport-fit=cover`, or the sheet mis-anchors off-screen on iOS while its invisible scrim eats every tap. The viewport meta in `app.html` locks zoom (`maximum-scale=1, user-scalable=no`).
+- Native plugins degrade gracefully on web so the PWA works (Preferences → localStorage, StatusBar/Gemma → no-op).
+- `PUBLIC_`-prefixed env only reaches the build because `vite.config.ts` sets `envPrefix: ['VITE_','PUBLIC_']`.
+
+---
+
+The pilot target: Dad opens the app, loads a trail-ahead field pack, keeps using it offline, and sees Scout answers with receipts and caveats.
 
 ## Status
 

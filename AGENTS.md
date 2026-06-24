@@ -2,6 +2,43 @@
 
 Working notes for AI agents in this repository.
 
+## Active Status — `mobile/` is the primary product (2026-06-24)
+
+The center of gravity has moved from the web tree to the **`mobile/` app** (Capacitor +
+SvelteKit). "The app" means `mobile/`. One static build ships two ways: native **iOS**
+(Capacitor → TestFlight) and an installable **PWA** (the same `build/` over HTTPS) — 100%
+shared code. **Read `mobile/README.md` first** when touching app work; it has the
+architecture map and the hard rules below.
+
+Systems live now (all opt-in / privacy-first):
+
+- **Cloud backup + restore** — offline-first outbox in `mobile/src/lib/cloud/` pushing to
+  the Laravel `/api/v1/sync/*` API (document-level last-write-wins). Accounts are
+  **invite-only**. Pure LWW/restore logic is unit-tested (`cloud/sync-outbox.test.ts`).
+- **Live tramily/family location** (Life360-style) — rides **SpacetimeDB**. Tables are
+  server-private; clients read only sender-scoped views (`my_group_positions` /
+  `my_group_members`). Module: `apps/openclaw-web/spacetimedb/src/index.ts`; generated
+  client bindings + the one shared `DbConnection` live in `mobile/src/lib/spacetime/`.
+
+Deployment topology:
+
+- **SpacetimeDB** is **self-hosted** at `stdb.hoggcountry.com` (v2.6, db `hoggcountry`),
+  nginx TLS+WS reverse proxy. Runbook: `docs/runbooks/spacetimedb-self-host.md`. Not on
+  Forge infra; not SpacetimeDB maincloud.
+- **PWA** target is `app.hoggcountry.com` (serve `mobile/build/` over HTTPS).
+- **iOS signed/TestFlight upload is Chris's manual step** — run `cap:sync:ios`, hand off
+  the upload. (CocoaPods needs `LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8`.)
+
+Hard rules (each cost a real debugging session — full detail in `mobile/README.md`):
+
+1. **Exactly ONE SpacetimeDB `DbConnection`** for the whole app
+   (`mobile/src/lib/spacetime/connection.ts`). Features register via
+   `onSpacetimeConnect(...)`; never build a second connection.
+2. **Nothing heavy or looping on the boot/hydration path.** A connect burst in `+layout`
+   boot froze the iOS WebView. Connect lazily from the tab that uses it.
+3. Modal overlays are `position: fixed` (not `absolute`) under `viewport-fit=cover`;
+   the `app.html` viewport meta locks zoom.
+
 ## Trail data — anchor calibration + licensing policy (2026-06-12)
 
 All displayed AT miles come from the anchor-calibration pipeline
