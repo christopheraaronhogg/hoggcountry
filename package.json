@@ -24,7 +24,7 @@
     "build:scout": "npm run build -w @hoggcountry/scout-web",
     "check:scout-app": "npm run check -w @hoggcountry/scout-chatgpt-app",
     "build:openclaw:forge": "npm run build:scout:forge",
-    "build:scout:forge": "npm run prebuild && SCOUT_WEB_ADAPTER=node npm run build -w @hoggcountry/scout-web",
+    "build:scout:forge": "npm run prebuild && SCOUT_WEB_ADAPTER=node npm run build -w @hoggcountry/scout-web && npm --prefix mobile run build",
     "build:game": "cd trailhogg/trailhogg && npm install && cd shared && npm install && npm run build && cd ../client && npm install && npm run build",
     "postbuild": "node scripts/generate-asset-manifest.js",
     "build:pdf": "node scripts/generate-pdf.js",
