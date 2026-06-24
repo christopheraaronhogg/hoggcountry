@@ -13,6 +13,7 @@
  */
 
 import { apiRequest } from '../cloud/api.ts';
+import { cloudAuth } from '../cloud/auth.svelte.ts';
 import type { BibleIndex } from './bible-index.ts';
 import { enforceScriptureCitations } from './scripture-citations.ts';
 
@@ -103,11 +104,23 @@ export async function answerScripture(opts: {
  * which holds the OpenAI key and builds the persona server-side. We deliberately
  * do NOT send a client-authored system prompt — that would turn the key into an
  * open proxy.
+ *
+ * The endpoint is auth-gated so only invited accounts (Dad) can spend the OpenAI
+ * key, so we send the Sanctum token. When signed out we throw before the request
+ * — the caller falls back to showing cited verses without a written answer.
  */
 export function createCloudScriptureGenerator(): ScriptureGenerator {
 	return async ({ prompt, verses }) => {
+		// Restore any saved session (idempotent; off the boot path) so a signed-in
+		// Dad has a token even on a fresh load.
+		await cloudAuth.init();
+		const token = cloudAuth.token;
+		if (!token) {
+			throw new Error('Scripture answers require sign-in.');
+		}
 		const data = await apiRequest<{ answer: string }>('/scripture/answer', {
 			method: 'POST',
+			token,
 			body: { question: prompt, verses }
 		});
 		return data?.answer ?? '';
