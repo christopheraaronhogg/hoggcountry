@@ -1,0 +1,49 @@
+name: Scout CI
+
+# The verification loop, automated: run the DETERMINISTIC Scout safety checks on
+# every change to Scout, its data, or the eval harness — no model calls, no
+# external tokens, so it's cheap enough to gate every push. This is the cheap
+# core of the reliability runbook (route grounding, source selection, the
+# disallowed-mistake graders, field-pack assembly, grounding consistency). The
+# model-calling reliability eval stays a deliberate, human-run step (per the
+# runbook) and is intentionally NOT in CI.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/openclaw-web/**'
+      - 'packages/**'
+      - 'scripts/**'
+      - 'src/data/**'
+      - 'data/scout-reliability/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/scout-ci.yml'
+  pull_request:
+    paths:
+      - 'apps/openclaw-web/**'
+      - 'packages/**'
+      - 'scripts/**'
+      - 'src/data/**'
+      - 'data/scout-reliability/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/scout-ci.yml'
+
+jobs:
+  deterministic-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - name: Scout route grounding eval
+        run: npm run eval:scout-grounding
+      - name: Scout source-selection eval
+        run: npm run eval:scout-sources
+      - name: Deterministic test suite (graders, conditions, water, field pack, grounding consistency)
+        run: npm test
