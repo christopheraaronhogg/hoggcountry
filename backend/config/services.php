@@ -51,4 +51,15 @@ return [
         'origin' => rtrim((string) env('SCOUT_CHATGPT_APP_PROXY_ORIGIN', 'http://127.0.0.1:8788'), '/'),
     ],
 
+    // Cloud Scout answer lane for the PWA (app.hoggcountry.com), where the
+    // on-device Gemma engine is unavailable (no Capacitor native plugin in a
+    // browser). The key lives server-side ONLY — it must never be shipped in
+    // the mobile/PWA bundle. The /api/v1/scout/ask endpoint is auth:sanctum
+    // gated, so this lane only answers for invited accounts (Dad).
+    'openai' => [
+        'key' => env('OPENAI_API_KEY'),
+        'scout_model' => env('SCOUT_OPENAI_MODEL', 'gpt-4o-mini'),
+        'base_url' => rtrim((string) env('OPENAI_BASE_URL', 'https://api.openai.com/v1'), '/'),
+    ],
+
 ];

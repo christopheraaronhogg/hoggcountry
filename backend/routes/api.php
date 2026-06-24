@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CommunityTrackerController;
 use App\Http\Controllers\Api\V1\DeviceController;
+use App\Http\Controllers\Api\V1\ScoutAskController;
 use App\Http\Controllers\Api\V1\SyncController;
 use App\Http\Controllers\Api\V1\TrackerLiveController;
 use App\Http\Controllers\Api\V1\TrailAssistantByosController;
@@ -123,6 +124,10 @@ Route::prefix('v1')->group(function () use ($buildMeta): void {
             Route::post('/push', [SyncController::class, 'push']);
             Route::get('/pull', [SyncController::class, 'pull']);
         });
+
+        // Cloud Scout answer lane for the PWA (the iOS app answers on-device via
+        // Gemma instead). Throttled to protect the server-side OpenAI spend.
+        Route::post('/scout/ask', [ScoutAskController::class, 'ask'])->middleware('throttle:20,1');
 
         Route::prefix('community/trackers')->group(function (): void {
             Route::get('/', [CommunityTrackerController::class, 'index']);

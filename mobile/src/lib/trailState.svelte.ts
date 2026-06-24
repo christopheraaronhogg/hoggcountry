@@ -19,7 +19,11 @@ import type {
 import { publishTrailPulseReport } from './trailPulseSpacetime';
 import { resolveModelPolicy } from './scout/model-policy.ts';
 import { NativeScoutRuntime } from './scout/native-scout-runtime.ts';
+import { NoScoutModelAvailableError } from './scout/model-router.ts';
+import { createCloudScoutBridge } from './scout/cloud-scout-bridge.ts';
+import { isNativePlatform } from './scout/capacitor-gemma-bridge.ts';
 import { deriveModelPhase } from './scout/model-download-phase.ts';
+import { cloudAuth } from './cloud/auth.svelte';
 import {
 	createTrailDocument,
 	limitTrailDocuments,
@@ -109,6 +113,13 @@ const MODEL_POLICY = resolveModelPolicy(
 	Boolean(import.meta.env.DEV)
 );
 const REQUIRE_GEMMA = MODEL_POLICY === 'gemma4-only';
+
+// The PWA (app.hoggcountry.com) can't run on-device Gemma — there's no native
+// plugin in a browser — so it routes Scout prompts to the cloud lane instead
+// (Laravel /scout/ask → OpenAI). The iOS shell stays pure on-device. The cloud
+// endpoint is auth-gated, so this only answers when signed in as an invited
+// account (Dad).
+const CLOUD_SCOUT_ENABLED = browser && !isNativePlatform();
 const WEATHER_PROMPT_RE = /\b(weather|forecast|storm|rain|snow|ice|wind|thunder|lightning|heat|cold|hypothermia|exposed|ridge)\b/iu;
 
 // Dad's NOBO start date (src/data/gear.json startDate). Used as the day-number
@@ -138,6 +149,9 @@ class TrailAssistantStore {
 	#nativeScout = new NativeScoutRuntime({
 		browserAvailable: browser,
 		store: this.#fieldPackStore,
+		createCloudBridge: CLOUD_SCOUT_ENABLED
+			? () => createCloudScoutBridge({ getToken: () => cloudAuth.token })
+			: undefined
 	});
 	#fieldPack = $state.raw<ContextPack>(this.#fieldPackStore.get());
 	#fieldPackStatus = $state<ContextPackStatus>(this.#fieldPackStore.getStatus());
@@ -811,6 +825,44 @@ class TrailAssistantStore {
 		this.#addCoachMessage('assistant', actionCancelledChatText());
 	}
 
+	/**
+	 * On the PWA, the cloud answer lane needs a signed-in account (the "only Dad"
+	 * gate) and a connection. Returns an honest status message when blocked, or
+	 * null when the cloud lane is good to go. Web-only — never called on iOS.
+	 */
+	#cloudScoutBlock(): { message: string } | null {
+		if (!cloudAuth.signedIn) {
+			return {
+				message:
+					"Sign in to use Scout in the web app — Scout's cloud answers are for invited accounts only."
+			};
+		}
+		if (!this.#state.onlineStatus) {
+			return {
+				message:
+					'Scout needs a connection in the web app — reconnect and ask again. (The installed iOS app answers offline.)'
+			};
+		}
+		return null;
+	}
+
+	/** A plain status answer for the web cloud lane — NOT a real model answer, so
+	 *  it carries no confidence/receipts and is never recorded as lastScoutAnswer. */
+	#cloudUnavailableAnswer(message: string): ScoutAnswer {
+		return {
+			answer: message,
+			confidence: 'draft',
+			mode: 'cloud',
+			provider: 'cloud-scout',
+			receipts: [],
+			toolInvocations: [],
+			requiredConfirmations: [],
+			safetyFlags: [],
+			contextUsed: ['cloud-scout-lane'],
+			generatedAt: new Date().toISOString()
+		};
+	}
+
 	async #dispatchScoutReply(prompt: string) {
 		// Self-heal the native wiring in case Capacitor wasn't ready at construction.
 		this.#nativeScout.ensureNativeWiring();
@@ -830,7 +882,17 @@ class TrailAssistantStore {
 		try {
 			await this.#refreshFieldPackForPrompt(prompt);
 
-			if (!(await this.#nativeScout.gemmaReady(REQUIRE_GEMMA))) {
+			if (CLOUD_SCOUT_ENABLED) {
+				// PWA: no on-device model. Restore any saved session (idempotent; kept
+				// off the boot path per the iOS-freeze rule), then block honestly if
+				// signed out / offline, otherwise route to the cloud lane.
+				await cloudAuth.init();
+				const block = this.#cloudScoutBlock();
+				if (block) {
+					this.#addCoachMessage('assistant', block.message);
+					return;
+				}
+			} else if (!(await this.#nativeScout.gemmaReady(REQUIRE_GEMMA))) {
 				// Model unavailable: append a PLAIN status message. Deliberately do
 				// NOT register it as a ScoutAnswer or set lastScoutAnswer — it isn't a
 				// model answer, so the chat shows no confidence badge or source chips.
@@ -845,8 +907,8 @@ class TrailAssistantStore {
 					prompt,
 					onlineStatus: this.#state.onlineStatus,
 					batterySaver: this.#state.trailSettings.batterySaver,
-					allowCloud: false,
-					preferredMode: REQUIRE_GEMMA ? 'on-device' : undefined
+					allowCloud: CLOUD_SCOUT_ENABLED,
+					preferredMode: CLOUD_SCOUT_ENABLED ? undefined : REQUIRE_GEMMA ? 'on-device' : undefined
 				},
 				onToken
 			);
@@ -864,6 +926,17 @@ class TrailAssistantStore {
 				this.#scoutAnswersByMessage.set(message.id, answer);
 			}
 		} catch (error) {
+			// PWA cloud lane went unreachable mid-turn (token died / dropped offline):
+			// the router throws NoScoutModelAvailableError since there's no on-device
+			// fallback in a browser. Surface the same honest block message.
+			if (CLOUD_SCOUT_ENABLED && error instanceof NoScoutModelAvailableError) {
+				const message =
+					this.#cloudScoutBlock()?.message ??
+					'Scout needs a connection in the web app — reconnect and ask again.';
+				if (streamingId !== null) this.#setCoachMessageContent(streamingId, message);
+				else this.#addCoachMessage('assistant', message);
+				return;
+			}
 			// On-device generation failed this turn. Under the Gemma-only policy the
 			// runtime rethrows rather than silently faking an offline answer (the
 			// "acted offline" bug), so handle it honestly: reset the availability
@@ -891,7 +964,13 @@ class TrailAssistantStore {
 	}
 
 	async askScout(prompt: string): Promise<ScoutAnswer> {
-		if (!(await this.#nativeScout.gemmaReady(REQUIRE_GEMMA))) {
+		if (CLOUD_SCOUT_ENABLED) {
+			// PWA cloud lane: restore any saved session, then block honestly (and
+			// without recording) when signed out or offline, otherwise fall through.
+			await cloudAuth.init();
+			const block = this.#cloudScoutBlock();
+			if (block) return this.#cloudUnavailableAnswer(block.message);
+		} else if (!(await this.#nativeScout.gemmaReady(REQUIRE_GEMMA))) {
 			// Return the unavailable STATUS to the caller, but do NOT record it as
 			// lastScoutAnswer — otherwise Today's "last answer" recap would show a
 			// status message with a confidence badge, as if it were a real answer.
@@ -899,13 +978,25 @@ class TrailAssistantStore {
 			return this.#nativeScout.gemmaUnavailableAnswer(autoStart);
 		}
 
-		const answer = await this.#nativeScout.runtime.ask({
-			prompt,
-			onlineStatus: this.#state.onlineStatus,
-			batterySaver: this.#state.trailSettings.batterySaver,
-			allowCloud: false,
-			preferredMode: REQUIRE_GEMMA ? 'on-device' : undefined
-		});
+		let answer: ScoutAnswer;
+		try {
+			answer = await this.#nativeScout.runtime.ask({
+				prompt,
+				onlineStatus: this.#state.onlineStatus,
+				batterySaver: this.#state.trailSettings.batterySaver,
+				allowCloud: CLOUD_SCOUT_ENABLED,
+				preferredMode: CLOUD_SCOUT_ENABLED ? undefined : REQUIRE_GEMMA ? 'on-device' : undefined
+			});
+		} catch (error) {
+			// Web cloud lane unreachable mid-turn → honest status, don't record it.
+			if (CLOUD_SCOUT_ENABLED && error instanceof NoScoutModelAvailableError) {
+				return this.#cloudUnavailableAnswer(
+					this.#cloudScoutBlock()?.message ??
+						'Scout needs a connection in the web app — reconnect and ask again.'
+				);
+			}
+			throw error;
+		}
 		this.#lastScoutAnswer = answer;
 		return answer;
 	}

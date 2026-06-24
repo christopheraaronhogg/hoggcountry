@@ -17,6 +17,7 @@ import type {
 	GemmaTier,
 	OnDeviceGemmaBridge
 } from './providers/on-device-gemma.ts';
+import type { CloudScoutBridge } from './providers/cloud-scout.ts';
 
 export type { ModelDownloadAutoStart } from './model-download-session.svelte.ts';
 
@@ -55,6 +56,7 @@ type NativeScoutRuntimeFactory = (input: {
 	store: ContextPackStore;
 	onDeviceBridge?: OnDeviceGemmaBridge;
 	onDeviceTier: GemmaTier;
+	cloudBridge?: CloudScoutBridge;
 }) => ScoutRuntimeHandle;
 
 export interface NativeScoutRuntimeOptions {
@@ -63,6 +65,11 @@ export interface NativeScoutRuntimeOptions {
 	tier?: GemmaTier;
 	createBridge?: () => OnDeviceGemmaBridge | null;
 	createManager?: () => ScoutModelManager | null;
+	/**
+	 * Cloud answer lane for the PWA. Returns a bridge in a browser (where Gemma
+	 * can't run) and null on iOS (which stays pure on-device). Off by default.
+	 */
+	createCloudBridge?: () => CloudScoutBridge | null;
 	createRuntime?: NativeScoutRuntimeFactory;
 	createDownloadSession?: (input: NativeDownloadSessionInput) => NativeDownloadSession;
 }
@@ -75,6 +82,7 @@ export class NativeScoutRuntime {
 	#createManager: () => ScoutModelManager | null;
 	#createRuntime: NativeScoutRuntimeFactory;
 	#gemmaBridge: OnDeviceGemmaBridge | null;
+	#cloudBridge: CloudScoutBridge | null;
 	#modelManager: ScoutModelManager | null;
 	#scout: ScoutRuntimeHandle;
 
@@ -88,6 +96,7 @@ export class NativeScoutRuntime {
 		this.#createManager = options.createManager ?? createCapacitorModelManager;
 		this.#createRuntime = options.createRuntime ?? createScoutRuntime;
 		this.#gemmaBridge = this.#browserAvailable ? this.#createBridge() : null;
+		this.#cloudBridge = this.#browserAvailable ? (options.createCloudBridge?.() ?? null) : null;
 		this.#modelManager = this.#browserAvailable ? this.#createManager() : null;
 		this.#scout = this.#buildRuntime(this.#gemmaBridge);
 
@@ -144,7 +153,8 @@ export class NativeScoutRuntime {
 		return this.#createRuntime({
 			store: this.#store,
 			onDeviceBridge: onDeviceBridge ?? undefined,
-			onDeviceTier: this.#tier
+			onDeviceTier: this.#tier,
+			cloudBridge: this.#cloudBridge ?? undefined
 		});
 	}
 
