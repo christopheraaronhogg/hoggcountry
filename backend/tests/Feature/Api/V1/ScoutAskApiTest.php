@@ -25,7 +25,7 @@ class ScoutAskApiTest extends TestCase
     public function test_authenticated_hiker_gets_a_cloud_answer(): void
     {
         config(['services.openai.key' => 'test-key', 'services.openai.scout_model' => 'gpt-4o-mini']);
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->create(), ['app', 'llm']);
 
         Http::fake([
             'api.openai.com/*' => Http::response([
@@ -58,7 +58,7 @@ class ScoutAskApiTest extends TestCase
     public function test_returns_503_when_cloud_scout_is_not_configured(): void
     {
         config(['services.openai.key' => '']);
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->create(), ['app', 'llm']);
 
         Http::fake();
 
@@ -72,7 +72,7 @@ class ScoutAskApiTest extends TestCase
     public function test_returns_502_when_openai_fails(): void
     {
         config(['services.openai.key' => 'test-key']);
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->create(), ['app', 'llm']);
 
         Http::fake([
             'api.openai.com/*' => Http::response(['error' => 'overloaded'], 500),
@@ -86,7 +86,7 @@ class ScoutAskApiTest extends TestCase
     public function test_prompt_is_required(): void
     {
         config(['services.openai.key' => 'test-key']);
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->create(), ['app', 'llm']);
 
         Http::fake();
 
@@ -107,14 +107,14 @@ class ScoutAskApiTest extends TestCase
         ], 200)]);
 
         // A non-owner account is authenticated but blocked at the spend point.
-        Sanctum::actingAs(User::factory()->create(['email' => 'stranger@example.com']));
+        Sanctum::actingAs(User::factory()->create(['email' => 'stranger@example.com']), ['app', 'llm']);
         $this->postJson('/api/v1/scout/ask', ['prompt' => 'Where is water?'])
             ->assertStatus(403)
             ->assertJsonPath('error.code', 'not_authorized');
         Http::assertNothingSent();
 
         // The owner (case-insensitive) gets through.
-        Sanctum::actingAs(User::factory()->create(['email' => 'DAD@example.com']));
+        Sanctum::actingAs(User::factory()->create(['email' => 'DAD@example.com']), ['app', 'llm']);
         $this->postJson('/api/v1/scout/ask', ['prompt' => 'Where is water?'])
             ->assertOk();
         Http::assertSentCount(1);
@@ -130,7 +130,7 @@ class ScoutAskApiTest extends TestCase
         Http::fake(['api.openai.com/*' => Http::response([
             'choices' => [['message' => ['content' => 'ok']]],
         ], 200)]);
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->create(), ['app', 'llm']);
 
         $this->postJson('/api/v1/scout/ask', ['prompt' => 'q1'])->assertOk();
         $this->postJson('/api/v1/scout/ask', ['prompt' => 'q2'])->assertOk();
@@ -144,7 +144,7 @@ class ScoutAskApiTest extends TestCase
     public function test_rejects_an_oversized_payload_without_spending(): void
     {
         config(['services.openai.key' => 'test-key']);
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->create(), ['app', 'llm']);
         Http::fake();
 
         $this->postJson('/api/v1/scout/ask', [
@@ -155,5 +155,21 @@ class ScoutAskApiTest extends TestCase
             ->assertJsonPath('error.code', 'payload_too_large');
 
         Http::assertNothingSent();
+    }
+
+    public function test_requires_the_llm_token_ability(): void
+    {
+        config(['services.openai.key' => 'test-key']);
+        Http::fake(['api.openai.com/*' => Http::response(['choices' => [['message' => ['content' => 'ok']]]], 200)]);
+
+        // A token scoped without the 'llm' ability cannot reach the paid lane.
+        Sanctum::actingAs(User::factory()->create(), ['app']);
+        $this->postJson('/api/v1/scout/ask', ['prompt' => 'Where is water?'])
+            ->assertForbidden();
+        Http::assertNothingSent();
+
+        // A token with the ability passes the scope gate.
+        Sanctum::actingAs(User::factory()->create(), ['app', 'llm']);
+        $this->postJson('/api/v1/scout/ask', ['prompt' => 'Where is water?'])->assertOk();
     }
 }

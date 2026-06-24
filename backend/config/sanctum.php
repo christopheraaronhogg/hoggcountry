@@ -47,7 +47,10 @@ return [
     |
     */
 
-    'expiration' => null,
+    // Bound the lifetime of a leaked/stolen token. Default 1 year (525600 min):
+    // long enough not to sign Dad out mid-thru-hike (~6 months, often offline),
+    // short enough that an old leaked token eventually dies. Tune via env.
+    'expiration' => (int) env('SANCTUM_TOKEN_EXPIRATION_MINUTES', 525600),
 
     /*
     |--------------------------------------------------------------------------

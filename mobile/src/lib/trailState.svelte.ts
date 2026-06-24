@@ -857,23 +857,6 @@ class TrailAssistantStore {
 		return null;
 	}
 
-	/** A plain status answer for the web cloud lane — NOT a real model answer, so
-	 *  it carries no confidence/receipts and is never recorded as lastScoutAnswer. */
-	#cloudUnavailableAnswer(message: string): ScoutAnswer {
-		return {
-			answer: message,
-			confidence: 'draft',
-			mode: 'cloud',
-			provider: 'cloud-scout',
-			receipts: [],
-			toolInvocations: [],
-			requiredConfirmations: [],
-			safetyFlags: [],
-			contextUsed: ['cloud-scout-lane'],
-			generatedAt: new Date().toISOString()
-		};
-	}
-
 	async #dispatchScoutReply(prompt: string) {
 		// Self-heal the native wiring in case Capacitor wasn't ready at construction.
 		this.#nativeScout.ensureNativeWiring();
@@ -972,44 +955,6 @@ class TrailAssistantStore {
 		} finally {
 			this.#scoutThinking = false;
 		}
-	}
-
-	async askScout(prompt: string): Promise<ScoutAnswer> {
-		if (CLOUD_SCOUT_ENABLED) {
-			// PWA cloud lane: restore any saved session, then block honestly (and
-			// without recording) when signed out or offline, otherwise fall through.
-			await cloudAuth.init();
-			const block = this.#cloudScoutBlock();
-			if (block) return this.#cloudUnavailableAnswer(block.message);
-		} else if (!(await this.#nativeScout.gemmaReady(REQUIRE_GEMMA))) {
-			// Return the unavailable STATUS to the caller, but do NOT record it as
-			// lastScoutAnswer — otherwise Today's "last answer" recap would show a
-			// status message with a confidence badge, as if it were a real answer.
-			const autoStart = await this.#nativeScout.startModelDownloadIfUseful();
-			return this.#nativeScout.gemmaUnavailableAnswer(autoStart);
-		}
-
-		let answer: ScoutAnswer;
-		try {
-			answer = await this.#nativeScout.runtime.ask({
-				prompt,
-				onlineStatus: this.#state.onlineStatus,
-				batterySaver: this.#state.trailSettings.batterySaver,
-				allowCloud: CLOUD_SCOUT_ENABLED,
-				preferredMode: CLOUD_SCOUT_ENABLED ? undefined : REQUIRE_GEMMA ? 'on-device' : undefined
-			});
-		} catch (error) {
-			// Web cloud lane unreachable mid-turn → honest status, don't record it.
-			if (CLOUD_SCOUT_ENABLED && error instanceof NoScoutModelAvailableError) {
-				return this.#cloudUnavailableAnswer(
-					this.#cloudScoutBlock()?.message ??
-						'Scout needs a connection in the web app — reconnect and ask again.'
-				);
-			}
-			throw error;
-		}
-		this.#lastScoutAnswer = answer;
-		return answer;
 	}
 
 	/**
