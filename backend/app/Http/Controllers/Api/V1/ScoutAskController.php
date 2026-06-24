@@ -14,12 +14,29 @@ use Throwable;
  */
 class ScoutAskController extends ApiController
 {
+    /** Max encoded size of the context payload spliced into the OpenAI prompt. */
+    private const MAX_PAYLOAD_BYTES = 16384;
+
     public function ask(Request $request, CloudScoutAnswerer $answerer): JsonResponse
     {
         $validated = $request->validate([
             'prompt' => ['required', 'string', 'max:4000'],
             'payload' => ['nullable', 'array'],
         ]);
+
+        // The payload is serialized verbatim into the OpenAI system prompt, and
+        // OpenAI bills input tokens — so an unbounded array is an unbounded input
+        // cost. Cap the encoded size (the legitimate field pack is a few KB). This
+        // is the input-side counterpart to the server-fixed max_tokens output cap.
+        $payload = $validated['payload'] ?? [];
+        $encoded = json_encode($payload);
+        if ($encoded === false || strlen($encoded) > self::MAX_PAYLOAD_BYTES) {
+            return $this->fail(
+                'payload_too_large',
+                'Scout context is too large to send.',
+                422
+            );
+        }
 
         if (trim((string) config('services.openai.key')) === '') {
             return $this->fail(
@@ -30,7 +47,7 @@ class ScoutAskController extends ApiController
         }
 
         try {
-            $result = $answerer->answer($validated['prompt'], $validated['payload'] ?? []);
+            $result = $answerer->answer($validated['prompt'], $payload);
         } catch (Throwable $e) {
             report($e);
 

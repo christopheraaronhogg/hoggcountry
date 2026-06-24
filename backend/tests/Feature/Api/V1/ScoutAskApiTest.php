@@ -95,4 +95,65 @@ class ScoutAskApiTest extends TestCase
 
         Http::assertNothingSent();
     }
+
+    public function test_only_allowlisted_owner_can_spend_the_key(): void
+    {
+        config([
+            'services.openai.key' => 'test-key',
+            'services.openai.allowed_emails' => ['dad@example.com'],
+        ]);
+        Http::fake(['api.openai.com/*' => Http::response([
+            'choices' => [['message' => ['content' => 'ok']]],
+        ], 200)]);
+
+        // A non-owner account is authenticated but blocked at the spend point.
+        Sanctum::actingAs(User::factory()->create(['email' => 'stranger@example.com']));
+        $this->postJson('/api/v1/scout/ask', ['prompt' => 'Where is water?'])
+            ->assertStatus(403)
+            ->assertJsonPath('error.code', 'not_authorized');
+        Http::assertNothingSent();
+
+        // The owner (case-insensitive) gets through.
+        Sanctum::actingAs(User::factory()->create(['email' => 'DAD@example.com']));
+        $this->postJson('/api/v1/scout/ask', ['prompt' => 'Where is water?'])
+            ->assertOk();
+        Http::assertSentCount(1);
+    }
+
+    public function test_enforces_a_daily_spend_budget_per_account(): void
+    {
+        config([
+            'services.openai.key' => 'test-key',
+            'services.openai.allowed_emails' => [],
+            'services.openai.daily_limit' => 2,
+        ]);
+        Http::fake(['api.openai.com/*' => Http::response([
+            'choices' => [['message' => ['content' => 'ok']]],
+        ], 200)]);
+        Sanctum::actingAs(User::factory()->create());
+
+        $this->postJson('/api/v1/scout/ask', ['prompt' => 'q1'])->assertOk();
+        $this->postJson('/api/v1/scout/ask', ['prompt' => 'q2'])->assertOk();
+        $this->postJson('/api/v1/scout/ask', ['prompt' => 'q3'])
+            ->assertStatus(429)
+            ->assertJsonPath('error.code', 'daily_limit_reached');
+
+        Http::assertSentCount(2);
+    }
+
+    public function test_rejects_an_oversized_payload_without_spending(): void
+    {
+        config(['services.openai.key' => 'test-key']);
+        Sanctum::actingAs(User::factory()->create());
+        Http::fake();
+
+        $this->postJson('/api/v1/scout/ask', [
+            'prompt' => 'hi',
+            'payload' => ['junk' => str_repeat('x', 20000)],
+        ])
+            ->assertStatus(422)
+            ->assertJsonPath('error.code', 'payload_too_large');
+
+        Http::assertNothingSent();
+    }
 }
