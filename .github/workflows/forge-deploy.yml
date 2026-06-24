@@ -27,6 +27,7 @@ jobs:
         run: |
           npm run build -w @hoggcountry/scout-chatgpt-app
           SCOUT_WEB_ADAPTER=node npm run build -w @hoggcountry/scout-web
+          npm --prefix mobile ci
           npm --prefix mobile run build
 
       - name: Set up SSH
