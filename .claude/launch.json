@@ -16,6 +16,13 @@
       "autoPort": false
     },
     {
+      "name": "scout-mobile-prod",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "mobile", "run", "preview", "--", "--port", "5201", "--strictPort", "--host"],
+      "port": 5201,
+      "autoPort": false
+    },
+    {
       "name": "bakeoff-static",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["-y", "http-server", "docs/design", "-p", "5210", "-c-1"],
