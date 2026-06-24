@@ -10,7 +10,7 @@
 	import PeopleSheet from './PeopleSheet.svelte';
 	import { people, AVATAR_TINTS, personInitial } from '$lib/people/people.svelte';
 	import { memberLocation } from '$lib/people/memberLocation.svelte';
-	import { registerLiveLocation } from '$lib/people/liveLocation';
+	import { registerLiveLocation } from '$lib/people/liveLocation.svelte';
 	import {
 		waterReports,
 		waterBucket,
@@ -245,6 +245,55 @@
 	let youMarker: LeafletNS.Marker | null = null;
 	let youInitial = ''; // tracked so the avatar glyph only re-renders when it changes
 	let atBounds: LeafletNS.LatLngBounds | null = null;
+	let initialFrameReady = false;
+	let routeHiRequested = false;
+
+	function addBasemapTiles(): void {
+		if (!trailAssistant.onlineStatus || !initialFrameReady || !L || !map || tiles) return;
+		tilesOk = false;
+		tileErrored = false;
+		tiles = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+			maxZoom: 16,
+			maxNativeZoom: 16,
+			minZoom: 4,
+			opacity: 0.96,
+			crossOrigin: true,
+			keepBuffer: 2,
+			updateWhenIdle: true,
+			className: 'otm-tiles',
+			errorTileUrl:
+				'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='
+		});
+		tiles.on('tileload', () => {
+			tilesOk = true;
+		});
+		tiles.on('load', () => {
+			tilesOk = true;
+		});
+		tiles.on('tileerror', () => {
+			tileErrored = true;
+		});
+		tiles.addTo(map);
+	}
+
+	function loadRouteHi(): void {
+		if (routeHiRequested) return;
+		routeHiRequested = true;
+		fetch('/trail/route-hi.json')
+			.then((r) => (r.ok ? r.json() : null))
+			.then((d) => {
+				if (d && Array.isArray(d.path) && d.path.length > 1) routeHi = d.path;
+			})
+			.catch(() => {
+				routeHiRequested = false;
+			});
+	}
+
+	function loadRouteHiDeferred(): void {
+		const go = () => loadRouteHi();
+		if (typeof requestIdleCallback === 'function') requestIdleCallback(go, { timeout: 2500 });
+		else setTimeout(go, 1200);
+	}
 
 	function fitWholeTrail(animate = true) {
 		if (!map || !atBounds) return;
@@ -565,27 +614,6 @@
 		if (measurePaneEl) measurePaneEl.style.zIndex = '450';
 		measureRenderer = L.svg({ pane: 'measureHi', padding: 0.5 });
 
-		tiles = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-			maxZoom: 16,
-			maxNativeZoom: 16,
-			minZoom: 4,
-			opacity: 0.96,
-			crossOrigin: true,
-			keepBuffer: 6,
-			updateWhenIdle: true,
-			className: 'otm-tiles',
-			errorTileUrl:
-				'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='
-		});
-		tiles.on('load', () => {
-			tilesOk = true;
-			tileErrored = false;
-		});
-		tiles.on('tileerror', () => {
-			tileErrored = true;
-		});
-		tiles.addTo(map);
-
 		routeLayer = L.layerGroup().addTo(map);
 		shelterLayer = L.layerGroup().addTo(map);
 		poiLayer = L.layerGroup().addTo(map);
@@ -599,14 +627,6 @@
 			.then((r) => (r.ok ? r.json() : null))
 			.then((d) => {
 				if (d && Array.isArray(d.shelters)) trailShelters = d.shelters;
-			})
-			.catch(() => {});
-
-		// Load the high-res centerline (best-effort; falls back to the 1-mi line).
-		fetch('/trail/route-hi.json')
-			.then((r) => (r.ok ? r.json() : null))
-			.then((d) => {
-				if (d && Array.isArray(d.path) && d.path.length > 1) routeHi = d.path;
 			})
 			.catch(() => {});
 
@@ -632,6 +652,9 @@
 				map?.setMaxBounds(atBounds);
 				if (mapZoom === OVERVIEW) fitWholeTrail(false);
 				else flyToCorridor(from, mapZoom as number, false);
+				initialFrameReady = true;
+				addBasemapTiles();
+				loadRouteHiDeferred();
 			}
 			onMoveEnd();
 		});
@@ -655,7 +678,15 @@
 			if (mapZoom === OVERVIEW) fitWholeTrail(false);
 			else flyToCorridor(from, mapZoom as number, false);
 		}
+		initialFrameReady = true;
+		addBasemapTiles();
+		loadRouteHiDeferred();
 		onMoveEnd();
+	});
+
+	$effect(() => {
+		void trailAssistant.onlineStatus;
+		addBasemapTiles();
 	});
 
 	// Build the route, coloured by terrain difficulty so the climbs read straight
