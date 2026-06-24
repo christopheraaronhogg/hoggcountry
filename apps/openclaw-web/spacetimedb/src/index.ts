@@ -238,22 +238,26 @@ const scoutDb = schema({
 });
 
 export const myScoutTurns = scoutDb.view({ name: 'my_scout_turns', public: true }, t.array(scoutTurn.rowType), (ctx) => {
-  return ctx.from.scoutTurn
-    .leftSemijoin(ctx.from.scoutWorkspaceAccess.where((access) => access.identity.eq(ctx.sender)), (turn, access) =>
-      turn.workspaceId.eq(access.workspaceId)
-    )
-    .build();
+  const rows = [];
+  for (const workspaceId of senderWorkspaceIds(ctx)) {
+    for (const turn of ctx.db.scoutTurn.workspaceId.filter(workspaceId)) {
+      rows.push(turn);
+    }
+  }
+  return rows;
 });
 
 export const myScoutTurnEvents = scoutDb.view(
   { name: 'my_scout_turn_events', public: true },
   t.array(scoutTurnEvent.rowType),
   (ctx) => {
-    return ctx.from.scoutTurnEvent
-      .leftSemijoin(ctx.from.scoutWorkspaceAccess.where((access) => access.identity.eq(ctx.sender)), (event, access) =>
-        event.workspaceId.eq(access.workspaceId)
-      )
-      .build();
+    const rows = [];
+    for (const workspaceId of senderWorkspaceIds(ctx)) {
+      for (const event of ctx.db.scoutTurnEvent.workspaceId.filter(workspaceId)) {
+        rows.push(event);
+      }
+    }
+    return rows;
   }
 );
 
@@ -265,12 +269,13 @@ export const myGroupPositions = scoutDb.view(
   { name: 'my_group_positions', public: true },
   t.array(groupPosition.rowType),
   (ctx) => {
-    return ctx.from.groupPosition
-      .leftSemijoin(
-        ctx.from.groupMember.where((member) => member.identity.eq(ctx.sender)),
-        (position, mine) => position.groupCode.eq(mine.groupCode)
-      )
-      .build();
+    const rows = [];
+    for (const groupCode of senderGroupCodes(ctx)) {
+      for (const position of ctx.db.groupPosition.groupCode.filter(groupCode)) {
+        rows.push(position);
+      }
+    }
+    return rows;
   }
 );
 
@@ -281,19 +286,38 @@ export const myGroupMembers = scoutDb.view(
   { name: 'my_group_members', public: true },
   t.array(groupMember.rowType),
   (ctx) => {
-    return ctx.from.groupMember
-      .leftSemijoin(
-        ctx.from.groupMember.where((member) => member.identity.eq(ctx.sender)),
-        (other, mine) => other.groupCode.eq(mine.groupCode)
-      )
-      .build();
+    const rows = [];
+    for (const groupCode of senderGroupCodes(ctx)) {
+      for (const member of ctx.db.groupMember.groupCode.filter(groupCode)) {
+        rows.push(member);
+      }
+    }
+    return rows;
   }
 );
 
 export default scoutDb;
 
+function senderWorkspaceIds(ctx: { db: any; sender: unknown }): Set<string> {
+  const workspaceIds = new Set<string>();
+  for (const access of ctx.db.scoutWorkspaceAccess.identity.filter(ctx.sender)) {
+    workspaceIds.add(access.workspaceId);
+  }
+
+  return workspaceIds;
+}
+
+function senderGroupCodes(ctx: { db: any; sender: unknown }): Set<string> {
+  const groupCodes = new Set<string>();
+  for (const member of ctx.db.groupMember.identity.filter(ctx.sender)) {
+    groupCodes.add(member.groupCode);
+  }
+
+  return groupCodes;
+}
+
 export const init = scoutDb.init((ctx) => {
-  if (ctx.db.publicAnnouncement.count() === 0) {
+  if (ctx.db.publicAnnouncement.count() === 0n) {
     ctx.db.publicAnnouncement.insert({
       id: 0n,
       title: 'Manual-first hiking',

@@ -21,7 +21,7 @@
     "@mariozechner/pi-ai": "^0.67.68",
     "leaflet": "^1.9.4",
     "marked": "^17.0.1",
-    "spacetimedb": "^2.1.0"
+    "spacetimedb": "^2.6.0"
   },
   "devDependencies": {
     "@sveltejs/adapter-node": "^5.5.4",
