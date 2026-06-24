@@ -1,3 +1,10 @@
+<script module lang="ts">
+	// Survives MapTab re-mounts (tab switches destroy + recreate the component): the
+	// 1.46 MB hi-res route is a single immutable static file, so parse it once per
+	// session, not once per Map visit.
+	let routeHiCache: [number, number][] | null = null;
+</script>
+
 <script lang="ts">
 	import { onMount, onDestroy, tick, untrack } from 'svelte';
 	import type * as LeafletNS from 'leaflet';
@@ -45,6 +52,13 @@
 	// elevation-card window (driven by the live map bounds on moveend)
 	let viewStart = $state(0);
 	let viewEnd = $state(0);
+	// The mile window the route layer currently DRAWS — far wider than the viewport
+	// (generous margin), so panning reveals already-drawn trail. Shifted/grown with
+	// hysteresis as you pan/zoom (see updateRouteWindow), so the corridor never draws
+	// the whole 2,197-mi route off-screen. Whole-trail at overview. drawHi<=drawLo means
+	// "not yet clipped" → the route effect draws the whole trail (its original behaviour).
+	let drawLo = $state(0);
+	let drawHi = $state(0);
 	// A tapped trail point → measures distance + climb/descent from the current
 	// mile (the "how far / how much up" tool). null when nothing is being measured.
 	let measureMile = $state<number | null>(null);
@@ -90,6 +104,14 @@
 		return trailShelters.filter((s) => s.mile >= lo && s.mile <= hi);
 	});
 	const showPois = $derived(liveZoom >= 9);
+	// Coarse zoom band for the route layer. The route $effect's only zoom-dependent
+	// choices are the overview gate (<8) and the overview decimation step — both
+	// constant within a band — so depending on the band instead of the raw float skips
+	// redundant whole-route rebuilds during a continuous pinch. Edges are the route
+	// effect's thresholds; liveZoom starts at 0 → 'ov', matching the initial overview.
+	const zoomBucket = $derived(
+		liveZoom < 8 ? 'ov' : liveZoom < 9 ? 'mid' : liveZoom < 11 ? 'corr' : liveZoom < 12 ? 'near' : 'close'
+	);
 
 	// --- chrome data (kept from the schematic version) ------------------------
 	const youLabel = $derived.by(() => {
@@ -247,6 +269,7 @@
 	let atBounds: LeafletNS.LatLngBounds | null = null;
 	let initialFrameReady = false;
 	let routeHiRequested = false;
+	let routeMoveRaf = 0; // rAF handle: keeps the drawn route window ahead of a fast pan
 
 	function addBasemapTiles(): void {
 		if (!trailAssistant.onlineStatus || !initialFrameReady || !L || !map || tiles) return;
@@ -278,11 +301,19 @@
 
 	function loadRouteHi(): void {
 		if (routeHiRequested) return;
+		// Already parsed this session (e.g. a previous Map visit) → reuse, no re-fetch.
+		if (routeHiCache) {
+			routeHi = routeHiCache;
+			return;
+		}
 		routeHiRequested = true;
 		fetch('/trail/route-hi.json')
 			.then((r) => (r.ok ? r.json() : null))
 			.then((d) => {
-				if (d && Array.isArray(d.path) && d.path.length > 1) routeHi = d.path;
+				if (d && Array.isArray(d.path) && d.path.length > 1) {
+					routeHiCache = d.path;
+					routeHi = d.path;
+				}
 			})
 			.catch(() => {
 				routeHiRequested = false;
@@ -361,6 +392,48 @@
 		const span = (trailHi - trailLo) || 1;
 		return trailLo + (bestIdx / (routeHi.length - 1)) * span;
 	}
+	// Seed of the last drag snap (route-hi index), so a drag scans only a window around
+	// the previous point instead of all ~70k points every tick — the hottest gesture
+	// path. -1 = not dragging / unseeded → full scan.
+	let lastSnapIdx = -1;
+	// Drag-only windowed nearest: within one frame the cursor moves a few px, so the
+	// global nearest is always interior to a ±W-index window around the last snap (the
+	// AT never folds back within ~18 mi). If the best lands on a window edge (a tap-set
+	// start, or a hard fling), fall back to a full scan once and reseed. Returns the mile
+	// via the SAME formula as snapMeasureToTrail, so the snapped value is bit-identical.
+	function snapMeasureDrag(lat: number, lon: number): number | null {
+		const n = routeHi.length;
+		if (n < 2) return snapToMile(geo, lat, lon, Number.POSITIVE_INFINITY);
+		const W = 400;
+		const cosLat = Math.cos((lat * Math.PI) / 180);
+		const scan = (i0: number, i1: number) => {
+			let bi = i0;
+			let bd = Infinity;
+			for (let i = i0; i < i1; i++) {
+				const dLat = routeHi[i][0] - lat;
+				const dLon = (routeHi[i][1] - lon) * cosLat;
+				const d = dLat * dLat + dLon * dLon;
+				if (d < bd) {
+					bd = d;
+					bi = i;
+				}
+			}
+			return bi;
+		};
+		let bestIdx: number;
+		if (lastSnapIdx >= 0) {
+			const i0 = Math.max(0, lastSnapIdx - W);
+			const i1 = Math.min(n, lastSnapIdx + W + 1);
+			bestIdx = scan(i0, i1);
+			// Best at a real window edge → the true nearest may be just outside; full scan.
+			if ((bestIdx === i0 && i0 > 0) || (bestIdx === i1 - 1 && i1 < n)) bestIdx = scan(0, n);
+		} else {
+			bestIdx = scan(0, n);
+		}
+		lastSnapIdx = bestIdx;
+		const span = (trailHi - trailLo) || 1;
+		return trailLo + (bestIdx / (n - 1)) * span;
+	}
 	function clearMeasure() {
 		measureMile = null;
 		measureFromPoi = false;
@@ -372,22 +445,66 @@
 		measureFromPoi = true;
 	}
 
-	function onMoveEnd() {
-		if (!map || geo.length < 2) return;
-		liveZoom = map.getZoom();
+	// The mile window in view — min/max trail mile of every geometry point inside the
+	// map bounds. Hoisting the four bound extents and inlining the comparisons avoids
+	// ~34k LatLng allocations per settle vs b.contains([lat,lon]); for non-wrapping
+	// western-hemisphere bounds the result is numerically identical. geo is mile-sorted
+	// but the trail meanders, so we scan it all (no lat/lon early-break would be sound).
+	function viewMileWindow(): { lo: number; hi: number } | null {
+		if (!map || geo.length < 2) return null;
 		const b = map.getBounds();
+		const s = b.getSouth();
+		const n = b.getNorth();
+		const w = b.getWest();
+		const e = b.getEast();
 		let lo = Infinity;
 		let hi = -Infinity;
 		for (const p of geo) {
-			if (b.contains([p.lat, p.lon])) {
+			if (p.lat >= s && p.lat <= n && p.lon >= w && p.lon <= e) {
 				if (p.m < lo) lo = p.m;
 				if (p.m > hi) hi = p.m;
 			}
 		}
-		if (lo <= hi) {
-			viewStart = lo;
-			viewEnd = hi;
+		return lo <= hi ? { lo, hi } : null;
+	}
+
+	// Shift/grow the drawn route window when the view nears its edge (hysteresis), so a
+	// corridor draws only its neighbourhood instead of the whole 2,197-mi route. Whole
+	// trail at overview (it's all on screen there). A cheap no-op when the view is still
+	// comfortably inside the current window — i.e. most pan frames.
+	function updateRouteWindow(win: { lo: number; hi: number } | null) {
+		if (liveZoom > 0 && liveZoom < 8) {
+			if (drawLo !== trailLo || drawHi !== trailHi) {
+				drawLo = trailLo;
+				drawHi = trailHi;
+			}
+			return;
 		}
+		if (!win) return;
+		const margin = Math.max(2 * (win.hi - win.lo), 6);
+		const desiredLo = clamp(win.lo - margin, trailLo, trailHi);
+		const desiredHi = clamp(win.hi + margin, trailLo, trailHi);
+		if (drawHi > drawLo) {
+			// Keep the current window if it still covers the view with headroom (so small
+			// pans don't rebuild) AND isn't far larger than needed (so zooming IN from a
+			// wide view shrinks it back down instead of redrawing the whole trail).
+			const coversWithHeadroom = win.lo >= drawLo + margin * 0.5 && win.hi <= drawHi - margin * 0.5;
+			const oversized = drawHi - drawLo > (desiredHi - desiredLo) * 3;
+			if (coversWithHeadroom && !oversized) return;
+		}
+		drawLo = desiredLo;
+		drawHi = desiredHi;
+	}
+
+	function onMoveEnd() {
+		if (!map || geo.length < 2) return;
+		liveZoom = map.getZoom();
+		const win = viewMileWindow();
+		if (win) {
+			viewStart = win.lo;
+			viewEnd = win.hi;
+		}
+		updateRouteWindow(win);
 		host?.classList.toggle('z-overview', liveZoom < 8.5);
 	}
 
@@ -595,6 +712,12 @@
 			zoomDelta: 0.5,
 			minZoom: 4,
 			maxZoom: 16,
+			// Keep the SVG renderer (NOT canvas). The route's difficulty-band colours
+			// (.rt-band.b0/b1/b2), the cream halo casing, and the gold measure-glow are
+			// per-<path> CSS classes + filters that Leaflet's single-<canvas> renderer
+			// can't carry — switching would be a VISIBLE regression. The cost fix for
+			// thousands of segments is clipping the draw to the viewport (drawLo/drawHi
+			// in the route $effect + updateRouteWindow), not canvas.
 			preferCanvas: false,
 			maxBoundsViscosity: 0.7,
 			// A POI popup is a working surface (water-status buttons) — don't let a
@@ -631,13 +754,25 @@
 			.catch(() => {});
 
 		map.on('zoomend moveend', onMoveEnd);
+		// Keep the route's drawn window ahead of a fast pan/fling — moveend alone can lag
+		// a fling and briefly expose the clipped edge. rAF-throttled; the window only
+		// actually rebuilds when the view crosses the hysteresis margin (most frames no-op).
+		map.on('move', () => {
+			if (routeMoveRaf) return;
+			routeMoveRaf = requestAnimationFrame(() => {
+				routeMoveRaf = 0;
+				updateRouteWindow(viewMileWindow());
+			});
+		});
 		map.on('dragstart zoomstart', () => (userInteracted = true));
 		map.on('click', (e: LeafletNS.LeafletMouseEvent) => onMapClick(e.latlng.lat, e.latlng.lng));
 		// One delegated handler (registered once) re-renders a POI popup from fresh
 		// state on open and wires any water-report buttons — survives the corridor
 		// layer being torn down and rebuilt, where per-marker listeners wouldn't.
+		// Match only data-bearing shells (every POI/shelter popup is a poiPopupShell now)
+		// so a stray .poi-pop without coords can't drive a NaN-mile popup body.
 		map.on('popupopen', (e: LeafletNS.PopupEvent) => {
-			if (e.popup.getElement()?.querySelector('.poi-pop')) {
+			if (e.popup.getElement()?.querySelector('.poi-pop[data-poi-kind]')) {
 				poiPopupOpen = true;
 				renderPoiPopup(e.popup);
 			}
@@ -664,6 +799,7 @@
 	});
 
 	onDestroy(() => {
+		if (routeMoveRaf) cancelAnimationFrame(routeMoveRaf);
 		map?.off();
 		map?.remove();
 		map = null;
@@ -694,11 +830,13 @@
 	$effect(() => {
 		void fromQ;
 		void routeSource;
-		void liveZoom;
+		void zoomBucket;
 		void hasElev;
+		void drawLo;
+		void drawHi;
 		if (!L || !map || !routeLayer || routeCount < 2) return;
 		routeLayer.clearLayers();
-		const overview = liveZoom > 0 ? liveZoom < 8 : true;
+		const overview = zoomBucket === 'ov';
 		const hires = routeHi.length > 1;
 		// Full resolution in the corridor so the line hugs every bend AND matches
 		// the measure highlight exactly (no parallel double-line). Lighter only at
@@ -707,34 +845,53 @@
 		const src = routeSource;
 		const split = splitIdxRoute;
 		const n = routeCount;
+		const span = (trailHi - trailLo) || 1;
+
+		// Clip the corridor draw to the visible mile window (+ generous margin, see
+		// updateRouteWindow): off-screen segments are invisible, so drawing the whole
+		// 2,197-mi route in a ~10-mi corridor was ~5k wasted SVG paths. At overview the
+		// whole trail IS on screen, so draw it all. Band colours key off ABSOLUTE
+		// indices, so a clipped window is byte-identical to the same span unclipped —
+		// only the off-screen tail (which the user can't see) is omitted.
+		const clipping = !overview && drawHi > drawLo;
+		const toIdx = (mile: number) => clamp(Math.round(((mile - trailLo) / span) * (n - 1)), 0, n - 1);
+		const clipLo = clipping ? toIdx(drawLo) : 0;
+		const clipHi = clipping ? toIdx(drawHi) : n - 1;
+		const doneA = Math.max(0, clipLo);
+		const doneB = Math.min(split, clipHi);
+		const remA = Math.max(split, clipLo);
+		const remB = Math.min(n - 1, clipHi);
 
 		// 1) casing/halo — solid under the done portion, dash-matched under the
 		//    remainder, so each coloured dash keeps its outline (no white line
 		//    bleeding through between dashes).
-		L.polyline(decimate(src.slice(0, split + 1), step), {
-			color: '#fffdf8',
-			weight: 6.5,
-			opacity: 0.85,
-			lineCap: 'round',
-			lineJoin: 'round',
-			interactive: false,
-			className: 'rt rt-halo'
-		}).addTo(routeLayer);
-		L.polyline(decimate(src.slice(split), step), {
-			color: '#fffdf8',
-			weight: 6,
-			opacity: 0.8,
-			dashArray: '2 7',
-			lineCap: 'round',
-			lineJoin: 'round',
-			interactive: false,
-			className: 'rt rt-halo'
-		}).addTo(routeLayer);
+		if (doneB > doneA) {
+			L.polyline(decimate(src.slice(doneA, doneB + 1), step), {
+				color: '#fffdf8',
+				weight: 6.5,
+				opacity: 0.85,
+				lineCap: 'round',
+				lineJoin: 'round',
+				interactive: false,
+				className: 'rt rt-halo'
+			}).addTo(routeLayer);
+		}
+		if (remB > remA) {
+			L.polyline(decimate(src.slice(remA, remB + 1), step), {
+				color: '#fffdf8',
+				weight: 6,
+				opacity: 0.8,
+				dashArray: '2 7',
+				lineCap: 'round',
+				lineJoin: 'round',
+				interactive: false,
+				className: 'rt rt-halo'
+			}).addTo(routeLayer);
+		}
 
 		if (hasElev) {
 			// Difficulty band for a stretch of the drawn line, looked up from the
 			// matching 1-mi elevation segment(s).
-			const span = (trailHi - trailLo) || 1;
 			const bandFor = (ra: number, rb: number): 0 | 1 | 2 =>
 				bandAtMile(trailLo + (((ra + rb) / 2) / (routeCount - 1)) * span);
 			// 2) difficulty-banded trail. Done = solid, upcoming remainder = dashed
@@ -772,28 +929,32 @@
 				}
 				flush(idx.length - 1);
 			};
-			drawBanded(0, split, false); // done — solid
-			drawBanded(split, n - 1, true); // remainder — dashed
+			drawBanded(doneA, doneB, false); // done — solid
+			drawBanded(remA, remB, true); // remainder — dashed
 		} else {
 			// No elevation data yet — fall back to honest progress shading, no faked grade.
-			L.polyline(decimate(src.slice(0, split + 1), step), {
-				color: '#2f4b35',
-				weight: 4,
-				opacity: 0.97,
-				lineCap: 'round',
-				lineJoin: 'round',
-				interactive: false,
-				className: 'rt rt-done'
-			}).addTo(routeLayer);
-			L.polyline(decimate(src.slice(split), step), {
-				color: '#8a8475',
-				weight: 2.8,
-				opacity: 0.9,
-				dashArray: '2 7',
-				lineCap: 'round',
-				interactive: false,
-				className: 'rt rt-remain'
-			}).addTo(routeLayer);
+			if (doneB > doneA) {
+				L.polyline(decimate(src.slice(doneA, doneB + 1), step), {
+					color: '#2f4b35',
+					weight: 4,
+					opacity: 0.97,
+					lineCap: 'round',
+					lineJoin: 'round',
+					interactive: false,
+					className: 'rt rt-done'
+				}).addTo(routeLayer);
+			}
+			if (remB > remA) {
+				L.polyline(decimate(src.slice(remA, remB + 1), step), {
+					color: '#8a8475',
+					weight: 2.8,
+					opacity: 0.9,
+					dashArray: '2 7',
+					lineCap: 'round',
+					interactive: false,
+					className: 'rt rt-remain'
+				}).addTo(routeLayer);
+			}
 		}
 	});
 
@@ -918,7 +1079,11 @@
 		void sheltersInView;
 		void liveZoom;
 		void visibleLandmarks;
-		void fromQ;
+		// NOT fromQ: a dot's lat/lon, radius and dedup don't depend on the current mile.
+		// The only mile-dependent text (distance + "to reach" climb/descent) is built
+		// fresh on popupopen from a reactive-free shell — the same pattern the corridor
+		// POI pins use — so position ticks no longer rebuild every shelter dot (nor close
+		// an open shelter popup mid-read).
 		if (!L || !map || !shelterLayer) return;
 		shelterLayer.clearLayers();
 		const pinned = showPois
@@ -931,7 +1096,6 @@
 		const r = liveZoom >= 11 ? 5 : liveZoom >= 8 ? 4 : 3;
 		for (const s of sheltersInView) {
 			if (pinned.has(Math.round(s.mile * 20))) continue; // a corridor pin already shows it
-			const ec = elevChangeTo(s.mile);
 			const dot = L.circleMarker([s.lat, s.lon], {
 				radius: r,
 				weight: 1.8,
@@ -939,12 +1103,13 @@
 				fillColor: '#6a845f',
 				fillOpacity: 1,
 				className: 'poi poi-shelter'
-			}).bindPopup(
-				`<div class="poi-pop pop-shelter"><strong class="pp-name">${s.name}</strong>` +
-					`<span class="pp-meta">Shelter · ${distanceLabel(s.mile)}</span>` +
-					`<span class="pp-elev">↑ ${fmt(ec.gain)} ft · ↓ ${fmt(ec.loss)} ft to reach</span></div>`,
-				{ className: 'poi-popup', closeButton: true, autoPanPaddingTopLeft: [24, 64], autoPanPaddingBottomRight: [70, 300], maxWidth: 240 }
-			);
+			}).bindPopup(poiPopupShell({ kind: 'shelter', mile: s.mile, label: s.name }), {
+				className: 'poi-popup',
+				closeButton: true,
+				autoPanPaddingTopLeft: [24, 64],
+				autoPanPaddingBottomRight: [70, 300],
+				maxWidth: 240
+			});
 			dot.on('click', () => selectPoi(s.mile));
 			dot.addTo(shelterLayer);
 		}
@@ -1005,10 +1170,11 @@
 	// buttons. Reports update the line + active button IN PLACE (no setContent →
 	// no autoPan → the marker effect never re-runs, so the popup stays put).
 	function renderPoiPopup(popup: LeafletNS.Popup): void {
-		const root = popup.getElement()?.querySelector('.poi-pop') as HTMLElement | null;
+		const root = popup.getElement()?.querySelector('.poi-pop[data-poi-kind]') as HTMLElement | null;
 		if (!root) return;
 		const kind = (root.dataset.poiKind as PoiKind) || 'water';
 		const mile = Number(root.dataset.poiMile);
+		if (!Number.isFinite(mile)) return; // no coords → don't clobber into a NaN body
 		const label = root.dataset.poiName ?? '';
 		const reliability = (root.dataset.poiRel as WaterReliability) || undefined;
 		root.innerHTML = poiPopupBody(kind, mile, label, reliability);
@@ -1066,7 +1232,10 @@
 	// a marker or closes an open popup.
 	$effect(() => {
 		void waterReports.all;
-		void visibleLandmarks;
+		// NOT visibleLandmarks: the POI rebuild effect above is declared first, so it
+		// runs first on any visible-set change and already shades each fresh coin via
+		// untrack(waterShadeClass). This effect only needs to re-shade in place when a
+		// report actually lands (waterReports.all), avoiding a full DOM walk per pan tick.
 		if (typeof document === 'undefined') return;
 		document.querySelectorAll<HTMLElement>('.poi-pin .pp-body[data-wbucket]').forEach((el) => {
 			const rep = waterReports.latestForBucket(Number(el.dataset.wbucket));
@@ -1143,16 +1312,28 @@
 				.addTo(map);
 			measureMarker.on('dragstart', () => {
 				measureDragging = true;
+				// Seed the windowed snap from where the dot starts (may be a tap-set mile).
+				const span = (trailHi - trailLo) || 1;
+				lastSnapIdx =
+					measureMile != null && routeHi.length > 1
+						? clamp(
+								Math.round(((clamp(measureMile, trailLo, trailHi) - trailLo) / span) * (routeHi.length - 1)),
+								0,
+								routeHi.length - 1
+							)
+						: -1;
 			});
 			measureMarker.on('drag', (e) => {
 				const p = (e.target as LeafletNS.Marker).getLatLng();
-				// Fine snap (no tolerance) — the point rides the high-res line
-				// smoothly instead of stepping mile to mile.
-				const snapped = snapMeasureToTrail(p.lat, p.lng, Number.POSITIVE_INFINITY);
+				// Fine snap (no tolerance) — the point rides the high-res line smoothly
+				// instead of stepping mile to mile. Windowed around the last snap so each
+				// drag tick scans ~800 points, not all ~70k; bit-identical result.
+				const snapped = snapMeasureDrag(p.lat, p.lng);
 				if (snapped != null) measureMile = snapped;
 			});
 			measureMarker.on('dragend', () => {
 				measureDragging = false;
+				lastSnapIdx = -1;
 				if (measureMile != null) measureMarker?.setLatLng(interpAtMile(clamp(measureMile, trailLo, trailHi)));
 			});
 		} else {
