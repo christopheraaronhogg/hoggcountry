@@ -171,6 +171,7 @@ class TrailAssistantStore {
 	// from static/. Powers the elevation profile and GPS→mile snapping. Empty
 	// until loaded, so UI renders an honest empty state in the meantime.
 	#trailGeo = $state.raw<TrailGeoPoint[]>([]);
+	#geoLoadStarted = false; // lazy one-shot guard for trailGeometry (see the getter)
 	#autoGpsActive = $state(false);
 	// True while the "My hike" calibration sheet is showing. Opened on first run
 	// (when the profile isn't calibrated yet) or from Settings to re-edit.
@@ -208,7 +209,9 @@ class TrailAssistantStore {
 			this.#fieldPackStatus = status;
 		});
 		void this.#bootstrap();
-		void this.#position.loadTrailGeometry();
+		// Trail geometry (1.9 MB fetch + parse) is NOT kicked here — it loads lazily on
+		// the first read of `trailGeometry` (whichever tab needs it), keeping the heavy
+		// parse off the boot/hydration frame. See the getter below.
 		// Re-observe any model download that kept running in the background service
 		// while the app was closed (also refreshes status, which may now be ready).
 		void this.reconcileDownload();
@@ -710,6 +713,15 @@ class TrailAssistantStore {
 
 	/** Real AT route geometry + elevation (1-mi samples), or [] before it loads. */
 	get trailGeometry() {
+		// Lazily fetch+parse the 1.9 MB geometry on first read (whichever tab needs it —
+		// Map or Today), instead of eagerly in the constructor on the boot/hydration
+		// frame. One-shot; trail-geometry.ts yields around the parse so it can't starve
+		// the leaflet import on a cold launch onto the Map. Returns [] until it lands, so
+		// the UI renders its honest empty state in the meantime (unchanged behaviour).
+		if (browser && !this.#geoLoadStarted) {
+			this.#geoLoadStarted = true;
+			void this.#position.loadTrailGeometry();
+		}
 		return this.#trailGeo;
 	}
 

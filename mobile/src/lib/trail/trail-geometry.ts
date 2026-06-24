@@ -29,15 +29,26 @@ const ASSET_URL = '/trail/elevation-100m.json';
 let cache: TrailGeoPoint[] | null = null;
 let inFlight: Promise<TrailGeoPoint[]> | null = null;
 
+/** Yield to a macrotask so a following heavy sync step lands on its own frame. */
+function yieldToMacrotask(): Promise<void> {
+	return new Promise((resolve) => {
+		if (typeof requestIdleCallback === 'function') requestIdleCallback(() => resolve(), { timeout: 200 });
+		else setTimeout(resolve, 0);
+	});
+}
+
 /** Load (and memoize) the trail geometry. Returns [] when unavailable so callers
  * render an honest empty state rather than crashing. */
 export async function loadTrailGeometry(fetchImpl: typeof fetch = fetch): Promise<TrailGeoPoint[]> {
 	if (cache) return cache;
 	if (!browser) return [];
 	inFlight ??= fetchImpl(ASSET_URL)
-		.then((res) => {
+		.then(async (res) => {
 			if (!res.ok) throw new Error(`Trail geometry HTTP ${res.status}`);
-			return res.json() as Promise<TrailGeoPoint[]>;
+			// Yield before the ~1.9 MB synchronous JSON.parse so it can't interleave with
+			// the leaflet import/init on a cold-launch-onto-Map boot frame (iOS freeze).
+			await yieldToMacrotask();
+			return (await res.json()) as TrailGeoPoint[];
 		})
 		.then((points) => {
 			cache = Array.isArray(points) ? points : [];
