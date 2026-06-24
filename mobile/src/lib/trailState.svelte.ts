@@ -21,7 +21,7 @@ import { resolveModelPolicy } from './scout/model-policy.ts';
 import { NativeScoutRuntime } from './scout/native-scout-runtime.ts';
 import { NoScoutModelAvailableError } from './scout/model-router.ts';
 import { createCloudScoutBridge } from './scout/cloud-scout-bridge.ts';
-import { isNativePlatform } from './scout/capacitor-gemma-bridge.ts';
+import { scoutUsesCloud, scoutLaneLabel } from './scout/scout-lane.ts';
 import { deriveModelPhase } from './scout/model-download-phase.ts';
 import { cloudAuth } from './cloud/auth.svelte';
 import {
@@ -118,8 +118,8 @@ const REQUIRE_GEMMA = MODEL_POLICY === 'gemma4-only';
 // plugin in a browser — so it routes Scout prompts to the cloud lane instead
 // (Laravel /scout/ask → OpenAI). The iOS shell stays pure on-device. The cloud
 // endpoint is auth-gated, so this only answers when signed in as an invited
-// account (Dad).
-const CLOUD_SCOUT_ENABLED = browser && !isNativePlatform();
+// account (Dad). Single source of truth lives in scout/scout-lane.ts.
+const CLOUD_SCOUT_ENABLED = scoutUsesCloud;
 const WEATHER_PROMPT_RE = /\b(weather|forecast|storm|rain|snow|ice|wind|thunder|lightning|heat|cold|hypothermia|exposed|ridge)\b/iu;
 
 // Dad's NOBO start date (src/data/gear.json startDate). Used as the day-number
@@ -604,6 +604,17 @@ class TrailAssistantStore {
 
 	get onlineStatus() {
 		return this.#state.onlineStatus;
+	}
+
+	/** True when Scout answers via the cloud lane (the PWA) rather than on-device
+	 *  Gemma (iOS). Drives platform-accurate UI copy. */
+	get scoutUsesCloud(): boolean {
+		return scoutUsesCloud;
+	}
+
+	/** "Cloud Scout" on the PWA, "On-device Scout" on iOS. */
+	get scoutLaneLabel(): string {
+		return scoutLaneLabel;
 	}
 
 	get fieldPack() {

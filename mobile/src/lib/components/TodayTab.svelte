@@ -250,7 +250,7 @@
 	<!-- Ask Scout — calm, opens the real chat -->
 	<section class="ask card">
 		<div class="eyebrow">Ask Scout</div>
-		<p class="greet">Cited, on-device answers — for the trail or the Word.</p>
+		<p class="greet">Cited{trailAssistant.scoutUsesCloud ? '' : ', on-device'} answers — for the trail or the Word.</p>
 		{#each prompts as prompt (prompt)}
 			<button class="prompt-row" onclick={() => ask(prompt)}>
 				<span class="q">›</span><span class="qtext">{prompt}</span><span class="arrow">+</span>

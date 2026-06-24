@@ -518,7 +518,7 @@
 				<div class="ask-card">
 					<div class="ask-head">
 						<span class="ask-scout"><Icon name="scout" size={13} stroke={2} /> Scout · Scripture</span>
-						<span class="ask-dev">on-device</span>
+						<span class="ask-dev">{trailAssistant.scoutUsesCloud ? 'cloud' : 'on-device'}</span>
 					</div>
 
 					{#if askState === 'asking'}

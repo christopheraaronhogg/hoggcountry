@@ -209,7 +209,7 @@
 		<div class="toggle-row">
 			<div class="toggle-copy">
 				<strong>Scout route context</strong>
-				<span>Let on-device Scout factor route position into recommendations.</span>
+				<span>Let Scout factor route position into recommendations.</span>
 			</div>
 			<button
 				class:on={trailAssistant.privacySettings.allowCoachInsights}

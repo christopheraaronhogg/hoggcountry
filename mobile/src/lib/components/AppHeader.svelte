@@ -33,8 +33,16 @@
 		<span
 			class="conn"
 			data-online={trailAssistant.onlineStatus}
-			title={trailAssistant.onlineStatus ? 'Online' : 'Offline — Scout still works on-device'}
-			aria-label={trailAssistant.onlineStatus ? 'Online' : 'Offline ready'}
+			title={trailAssistant.onlineStatus
+				? 'Online'
+				: trailAssistant.scoutUsesCloud
+					? 'Offline — Scout needs a connection'
+					: 'Offline — Scout still works on-device'}
+			aria-label={trailAssistant.onlineStatus
+				? 'Online'
+				: trailAssistant.scoutUsesCloud
+					? 'Offline'
+					: 'Offline ready'}
 		>
 			<span class="conn-dot"></span>
 			{#if !trailAssistant.onlineStatus}<span class="conn-label">Offline</span>{/if}

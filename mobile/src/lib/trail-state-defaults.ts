@@ -7,8 +7,12 @@ export const STARTER_DAY_NUMBER = 1;
 export const STARTER_OFFLINE_REGION = 'Starter pack - set your AT mile';
 export const STARTER_CHECK_IN_NOTE =
 	'Starter position only. Set your AT mile before relying on trail-ahead context.';
+// Engine-neutral wording on purpose: the iOS shell answers on-device (Gemma),
+// the PWA answers via the cloud lane — both answer from the saved field pack, so
+// the greeting shouldn't claim one engine. (This module is imported by node:test,
+// so it can't pull in the platform check from scout-lane.ts.)
 export const SCOUT_STARTER_MESSAGE =
-	"I'm Scout — your on-device trail assistant. Ask me about water, shelters, town, or safety and I'll answer from your saved field pack. Mapped water stays low-confidence until you confirm it from a current source or in the field.";
+	"I'm Scout — your trail assistant. Ask me about water, shelters, town, or safety and I'll answer from your saved field pack. Mapped water stays low-confidence until you confirm it from a current source or in the field.";
 
 type IdFactory = () => string;
 

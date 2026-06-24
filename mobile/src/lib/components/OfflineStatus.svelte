@@ -33,7 +33,7 @@
 <section class="offline-card">
 	<header>
 		<div>
-			<p class="eyebrow">On-device Scout</p>
+			<p class="eyebrow">{trailAssistant.scoutLaneLabel}</p>
 			<strong>{scoutTier}</strong>
 		</div>
 		<span class="status-pill" data-status={status.state}>
