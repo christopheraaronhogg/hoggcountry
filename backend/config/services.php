@@ -74,6 +74,20 @@ return [
         'connect_timeout' => (int) env('NPS_API_CONNECT_TIMEOUT', 3),
     ],
 
+    'webpush' => [
+        'vapid_public' => env('VAPID_PUBLIC_KEY'),
+        'vapid_private' => env('VAPID_PRIVATE_KEY'),
+        'subject' => env('VAPID_SUBJECT'),
+    ],
+
+    'apns' => [
+        'key_id' => env('APNS_KEY_ID'),
+        'team_id' => env('APNS_TEAM_ID'),
+        'bundle_id' => env('APNS_BUNDLE_ID'),
+        'key_path' => env('APNS_KEY_PATH'),
+        'production' => filter_var(env('APNS_PRODUCTION', false), FILTER_VALIDATE_BOOL),
+    ],
+
     'scout_web' => [
         'enabled' => filter_var(env('SCOUT_WEB_PROXY_ENABLED', env('OPENCLAW_WEB_PROXY_ENABLED', false)), FILTER_VALIDATE_BOOL),
         'origin' => rtrim((string) env('SCOUT_WEB_PROXY_ORIGIN', env('OPENCLAW_WEB_PROXY_ORIGIN', 'http://127.0.0.1:3000')), '/'),

@@ -21,12 +21,18 @@ class Device extends Model
         'platform',
         'device_name',
         'last_seen_at',
+        'push_provider',
+        'push_token',
+        'push_subscription',
+        'push_updated_at',
     ];
 
     protected function casts(): array
     {
         return [
             'last_seen_at' => 'datetime',
+            'push_subscription' => 'array',
+            'push_updated_at' => 'datetime',
         ];
     }
 

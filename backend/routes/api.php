@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\CommunityTrackerController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\NpsController;
 use App\Http\Controllers\Api\V1\ScoutAskController;
+use App\Http\Controllers\Api\V1\ScriptureAnswerController;
 use App\Http\Controllers\Api\V1\SyncController;
 use App\Http\Controllers\Api\V1\TrackerLiveController;
 use App\Http\Controllers\Api\V1\TrailAssistantByosController;
@@ -17,7 +18,6 @@ use App\Http\Controllers\Api\V1\TrailAssistantMapVisibilityController;
 use App\Http\Controllers\Api\V1\TrailAssistantPlanController;
 use App\Http\Controllers\Api\V1\TrailAssistantSosController;
 use App\Http\Controllers\Api\V1\TrailAssistantTriageController;
-use App\Http\Controllers\Api\V1\ScriptureAnswerController;
 use App\Http\Controllers\Api\V1\TrailUpdateController;
 use App\Http\Controllers\Api\V1\VideoFeedController;
 use App\Http\Controllers\Api\V1\VideoHoggController;
@@ -121,6 +121,9 @@ Route::prefix('v1')->group(function () use ($buildMeta): void {
 
         Route::prefix('devices')->group(function (): void {
             Route::post('/register', [DeviceController::class, 'register']);
+            Route::post('/push', [DeviceController::class, 'storePush']);
+            Route::delete('/push', [DeviceController::class, 'destroyPush']);
+            Route::post('/push/test', [DeviceController::class, 'testPush']);
             Route::get('/', [DeviceController::class, 'index']);
             Route::delete('/{deviceId}', [DeviceController::class, 'destroy']);
         });
