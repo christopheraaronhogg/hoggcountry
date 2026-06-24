@@ -3,7 +3,7 @@ import {
   fetchAtcTrailUpdatesForState,
   type AtcTrailUpdateResult
 } from '$lib/server/scout-official-sources';
-import { publicApiBase } from '$lib/server/public-api';
+import { scoutBackendApiBase } from '$lib/server/public-api';
 
 /**
  * Live trail-conditions ingestion for the Scout field pack: official closures,
@@ -309,7 +309,7 @@ export async function buildTrailConditionsPack(params: {
   // NPS park alerts via the Laravel proxy. scout-web holds no key; if the proxy
   // (or its NPS_API_KEY) isn't configured the request fails and we degrade to
   // ATC-only — recorded as an error, never a crash.
-  const apiBase = params.apiBase ?? publicApiBase();
+  const apiBase = params.apiBase ?? scoutBackendApiBase();
   const parkCodes = [...NPS_PARKS_ALWAYS, ...(state ? NPS_PARKS_BY_STATE[state] ?? [] : [])];
   try {
     collected.push(...(await fetchNpsConditions(parkCodes, apiBase)));

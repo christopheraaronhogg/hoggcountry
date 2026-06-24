@@ -1,4 +1,4 @@
-import { publicApiBase } from '$lib/server/public-api';
+import { scoutBackendApiBase } from '$lib/server/public-api';
 import { npsParkCodesForState, npsParkLabel } from '$lib/server/scout-trail-conditions';
 
 /**
@@ -154,7 +154,7 @@ export async function buildParkFacilitiesPack(params: {
     return { items: [], parks: [], fetchedAt, note: '' };
   }
 
-  const apiBase = params.apiBase ?? publicApiBase();
+  const apiBase = params.apiBase ?? scoutBackendApiBase();
   const parks = parkCodes.map(npsParkLabel);
   const collected: ParkFacility[] = [];
   try {
