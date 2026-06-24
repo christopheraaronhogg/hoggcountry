@@ -191,7 +191,7 @@
 					</div>
 					<p class="thinking-dots" role="status" aria-label="Scout is thinking">
 						<span></span><span></span><span></span>
-						<em>thinking on-device…</em>
+						<em>thinking{trailAssistant.scoutUsesCloud ? '' : ' on-device'}…</em>
 					</p>
 				</div>
 			{/if}
@@ -241,7 +241,7 @@
 				</button>
 			</div>
 			<div class="composer-meta">
-				<span class="mode-tag" data-online={trailAssistant.onlineStatus}>On-device Scout</span>
+				<span class="mode-tag" data-online={trailAssistant.onlineStatus}>{trailAssistant.scoutLaneLabel}</span>
 				<span class="hint">Sources cited when used</span>
 			</div>
 		</div>

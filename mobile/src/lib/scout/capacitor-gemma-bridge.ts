@@ -144,6 +144,15 @@ type CapacitorWindow = Window & {
 	};
 };
 
+/**
+ * True only inside the Capacitor native shell (iOS). False in a browser — which
+ * is how the PWA at app.hoggcountry.com is detected, since on-device Gemma needs
+ * the native ScoutGemma plugin and the PWA must use the cloud answer lane instead.
+ */
+export function isNativePlatform(win: Window | undefined = typeof window === 'undefined' ? undefined : window): boolean {
+	return (win as CapacitorWindow | undefined)?.Capacitor?.isNativePlatform?.() === true;
+}
+
 export function createCapacitorGemmaBridge(win: Window = window): OnDeviceGemmaBridge | null {
 	const capacitor = (win as CapacitorWindow).Capacitor;
 	if (!capacitor?.isNativePlatform?.()) return null;
