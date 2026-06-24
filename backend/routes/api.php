@@ -132,15 +132,15 @@ Route::prefix('v1')->group(function () use ($buildMeta): void {
         });
 
         // Paid LLM lanes (PWA only; iOS answers on-device with Gemma). Layered
-        // spend controls: auth:sanctum (group) → llm.spend (owner allowlist +
-        // rolling-24h per-account budget) → throttle:10,1 (per-account burst).
-        // Together: only Dad can spend the key, and neither a leaked token nor a
-        // runaway client can run the bill away.
+        // spend controls: auth:sanctum (group) → ability:llm (token scope) →
+        // llm.spend (owner allowlist + rolling-24h per-account budget) →
+        // throttle:10,1 (per-account burst). Together: only Dad can spend the key,
+        // and neither a leaked token nor a runaway client can run the bill away.
         Route::post('/scout/ask', [ScoutAskController::class, 'ask'])
-            ->middleware(['llm.spend', 'throttle:10,1']);
+            ->middleware(['ability:llm', 'llm.spend', 'throttle:10,1']);
 
         Route::post('/scripture/answer', [ScriptureAnswerController::class, 'answer'])
-            ->middleware(['llm.spend', 'throttle:10,1']);
+            ->middleware(['ability:llm', 'llm.spend', 'throttle:10,1']);
 
         Route::prefix('community/trackers')->group(function (): void {
             Route::get('/', [CommunityTrackerController::class, 'index']);

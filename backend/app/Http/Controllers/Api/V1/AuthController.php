@@ -18,6 +18,14 @@ use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends ApiController
 {
+    /**
+     * Abilities granted to client tokens. 'app' covers general authenticated API
+     * access; 'llm' is required by the paid LLM lanes (gated with ability:llm), so
+     * a future restricted token can be minted without it. Scoping tokens away from
+     * the wildcard '*' bounds the blast radius of a leaked token.
+     */
+    private const TOKEN_ABILITIES = ['app', 'llm'];
+
     public function register(Request $request)
     {
         if ($this->registrationIsClosed()) {
@@ -58,7 +66,7 @@ class AuthController extends ApiController
         $user->sendEmailVerificationNotification();
 
         $tokenName = $validated['device_name'] ?? 'web-client';
-        $token = $user->createToken($tokenName)->plainTextToken;
+        $token = $user->createToken($tokenName, self::TOKEN_ABILITIES)->plainTextToken;
 
         return $this->ok([
             'token' => $token,
@@ -88,7 +96,7 @@ class AuthController extends ApiController
         }
 
         $tokenName = $validated['device_name'] ?? 'web-client';
-        $token = $user->createToken($tokenName)->plainTextToken;
+        $token = $user->createToken($tokenName, self::TOKEN_ABILITIES)->plainTextToken;
 
         return $this->ok([
             'token' => $token,
@@ -311,7 +319,7 @@ class AuthController extends ApiController
             return $existingUser;
         });
 
-        $token = $user->createToken('google-oauth')->plainTextToken;
+        $token = $user->createToken("google-oauth", self::TOKEN_ABILITIES)->plainTextToken;
 
         $frontendCallbackUrl = null;
         $state = $request->query('state');
@@ -479,7 +487,7 @@ class AuthController extends ApiController
         });
 
         $tokenName = $validated['device_name'] ?? 'chatgpt-oauth';
-        $token = $user->createToken($tokenName)->plainTextToken;
+        $token = $user->createToken($tokenName, self::TOKEN_ABILITIES)->plainTextToken;
 
         return $this->ok([
             'token' => $token,

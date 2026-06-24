@@ -22,7 +22,9 @@ class ScriptureAnswerTest extends TestCase
 
     private function actingAsInvitedHiker(): void
     {
-        Sanctum::actingAs(User::factory()->create());
+        // Real client tokens carry ['app','llm'] (see AuthController::TOKEN_ABILITIES);
+        // mirror that so the ability:llm gate passes.
+        Sanctum::actingAs(User::factory()->create(), ['app', 'llm']);
     }
 
     public function test_requires_authentication_and_never_spends_the_key(): void
@@ -45,14 +47,14 @@ class ScriptureAnswerTest extends TestCase
         Http::fake(['api.openai.com/*' => Http::response(['choices' => [['message' => ['content' => 'ok']]]], 200)]);
 
         // Authenticated non-owner is blocked at the spend point.
-        Sanctum::actingAs(User::factory()->create(['email' => 'stranger@example.com']));
+        Sanctum::actingAs(User::factory()->create(['email' => 'stranger@example.com']), ['app', 'llm']);
         $this->postJson('/api/v1/scripture/answer', $this->payload)
             ->assertStatus(403)
             ->assertJsonPath('error.code', 'not_authorized');
         Http::assertNothingSent();
 
         // The owner gets through.
-        Sanctum::actingAs(User::factory()->create(['email' => 'dad@example.com']));
+        Sanctum::actingAs(User::factory()->create(['email' => 'dad@example.com']), ['app', 'llm']);
         $this->postJson('/api/v1/scripture/answer', $this->payload)->assertOk();
         Http::assertSentCount(1);
     }
@@ -140,16 +142,20 @@ class ScriptureAnswerTest extends TestCase
             ->assertJsonPath('error.code', 'scripture_model_error');
     }
 
-    public function test_is_reachable_cross_origin_from_the_pwa(): void
+    public function test_allows_the_pwa_origin_but_not_an_arbitrary_one(): void
     {
-        // Cross-origin access is handled by the framework's global CORS (same as
-        // the rest of /api/v1); just prove the PWA origin gets an allow header.
+        // CORS is pinned to known origins (config/cors.php). The PWA origin is
+        // echoed back; an arbitrary attacker origin is not.
         config(['services.openai.key' => 'sk-test-key']);
         $this->actingAsInvitedHiker();
         Http::fake(['api.openai.com/*' => Http::response(['choices' => [['message' => ['content' => 'ok']]]], 200)]);
 
         $this->postJson('/api/v1/scripture/answer', $this->payload, ['Origin' => 'https://app.hoggcountry.com'])
             ->assertOk()
-            ->assertHeader('Access-Control-Allow-Origin');
+            ->assertHeader('Access-Control-Allow-Origin', 'https://app.hoggcountry.com');
+
+        $evil = $this->postJson('/api/v1/scripture/answer', $this->payload, ['Origin' => 'https://evil.example.com']);
+        $this->assertNotSame('https://evil.example.com', $evil->headers->get('Access-Control-Allow-Origin'));
+        $this->assertNotSame('*', $evil->headers->get('Access-Control-Allow-Origin'));
     }
 }
