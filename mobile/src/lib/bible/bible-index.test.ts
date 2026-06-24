@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { buildBibleIndex, tokenize, type KjvData } from './bible-index.ts';
+import { buildBibleIndex, expandQueryToConceptGroups, tokenize, type KjvData } from './bible-index.ts';
 
 // Tiny fixture mirroring the real kjv.json shape so the index logic is tested
 // without loading the 19MB asset.
@@ -100,6 +100,32 @@ test('shipped KJV search finds Acts 16 for salvation wording', async () => {
 	assert.match(hits[0].text, /what must I do to be saved/i);
 	assert.equal(hits[1]?.reference, 'Acts 16:31');
 	assert.match(hits[1]?.text ?? '', /Believe on the Lord Jesus Christ/i);
+});
+
+test('expandQueryToConceptGroups drops framing words and expands to KJV vocabulary', () => {
+	const groups = expandQueryToConceptGroups('what does the bible say about testing');
+	// "what/does/the/about" are base stopwords; "bible"/"say" are query-framing.
+	assert.equal(groups.length, 1, 'only the "testing" concept survives');
+	const [testing] = groups;
+	assert.ok(testing.includes('testing'), 'keeps the literal token');
+	assert.ok(testing.includes('tempt'), 'reaches the KJV word "tempt"');
+	assert.ok(testing.includes('trial'), 'reaches the KJV word "trial"');
+});
+
+test('all-framing query yields no concept groups', () => {
+	assert.deepEqual(expandQueryToConceptGroups('what does the bible say'), []);
+});
+
+test('shipped KJV "testing" question lands on temptation/trial verses, not "say"', async () => {
+	const data = JSON.parse(await readFile(new URL('../../../static/bible/kjv.json', import.meta.url), 'utf8')) as KjvData;
+	const index = buildBibleIndex(data);
+	const hits = index.search('what does the bible say about testing', 5);
+
+	assert.ok(hits.length >= 3, 'returns several candidates');
+	assert.ok(
+		hits.some((hit) => /tempt|trial|trying|tried|prove/i.test(hit.text)),
+		'results are about testing/trial, not generic "say" verses'
+	);
 });
 
 test('shipped KJV search treats exact references as exact references', async () => {

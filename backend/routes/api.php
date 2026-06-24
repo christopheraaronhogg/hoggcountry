@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\TrailAssistantMapVisibilityController;
 use App\Http\Controllers\Api\V1\TrailAssistantPlanController;
 use App\Http\Controllers\Api\V1\TrailAssistantSosController;
 use App\Http\Controllers\Api\V1\TrailAssistantTriageController;
+use App\Http\Controllers\Api\V1\ScriptureAnswerController;
 use App\Http\Controllers\Api\V1\TrailUpdateController;
 use App\Http\Controllers\Api\V1\VideoFeedController;
 use App\Http\Controllers\Api\V1\VideoHoggController;
@@ -81,6 +82,11 @@ Route::prefix('v1')->group(function () use ($buildMeta): void {
     Route::prefix('videos')->group(function (): void {
         Route::get('/latest', [VideoFeedController::class, 'latest']);
     });
+
+    // Web PWA Scripture Ask — proxies to OpenAI (server-side key). The iOS app
+    // answers on-device with Gemma and never calls this. Throttled hard because
+    // it spends real money per request.
+    Route::post('/scripture/answer', [ScriptureAnswerController::class, 'answer'])->middleware('throttle:20,1');
 
     Route::prefix('trail-updates')->group(function (): void {
         Route::options('/{any?}', [TrailUpdateController::class, 'options'])->where('any', '.*');

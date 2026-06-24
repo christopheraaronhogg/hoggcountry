@@ -79,6 +79,95 @@ const STOPWORDS = new Set([
 	'there', 'here', 'been', 'being', 'has', 'our', 'its', 'it'
 ]);
 
+// Words that frame a QUESTION about scripture rather than naming its content.
+// "what does the bible say about X" collapses to just "say" (which is in every
+// other verse) unless we drop the framing. Applied to QUERIES ONLY — verse text
+// keeps every token so the reader and reference lookup are unaffected.
+const QUERY_STOPWORDS = new Set([
+	'bible', 'scripture', 'scriptures', 'verse', 'verses', 'passage', 'passages',
+	'chapter', 'chapters', 'say', 'says', 'said', 'saying', 'tell', 'tells',
+	'told', 'talk', 'talks', 'about', 'mention', 'mentions'
+]);
+
+// Concept → King James vocabulary. A natural-language question uses modern words
+// ("testing", "anxiety") the 1600s text never does ("tempt", "careful"). Each
+// query token expands into a concept GROUP; a verse covers the group if it
+// matches ANY word in it, so coverage still counts distinct concepts (not raw
+// token hits). Extend freely — every entry is a topical question we want to land.
+const CONCEPT_SYNONYMS: Record<string, string[]> = {
+	testing: ['tempt', 'tempted', 'temptation', 'temptations', 'prove', 'proved', 'try', 'tried', 'trying', 'trial', 'trials', 'tribulation'],
+	test: ['tempt', 'tempted', 'temptation', 'prove', 'proved', 'try', 'tried', 'trying', 'trial', 'trials'],
+	tested: ['tempted', 'proved', 'tried', 'trial'],
+	trials: ['tribulation', 'tribulations', 'temptation', 'temptations', 'try', 'tried', 'trying'],
+	anxiety: ['careful', 'carefulness', 'fear', 'afraid', 'troubled', 'trouble', 'cast'],
+	anxious: ['careful', 'carefulness', 'fear', 'afraid', 'troubled', 'trouble'],
+	worry: ['careful', 'carefulness', 'fear', 'afraid', 'troubled', 'thought', 'thoughts'],
+	worried: ['careful', 'fear', 'afraid', 'troubled'],
+	stress: ['careful', 'trouble', 'troubled', 'heavy', 'burden', 'rest'],
+	fear: ['fear', 'afraid', 'feared', 'dread', 'terror'],
+	afraid: ['fear', 'afraid', 'feared', 'dread'],
+	money: ['money', 'riches', 'mammon', 'wealth', 'treasure', 'gold', 'silver', 'covetousness'],
+	wealth: ['riches', 'mammon', 'wealth', 'treasure', 'abundance'],
+	rich: ['riches', 'rich', 'wealth', 'mammon'],
+	poverty: ['poor', 'poverty', 'needy', 'want'],
+	marriage: ['marriage', 'wife', 'husband', 'wedded', 'wedding', 'married'],
+	married: ['marriage', 'wife', 'husband', 'married'],
+	divorce: ['divorce', 'divorced', 'adultery'],
+	forgiveness: ['forgive', 'forgiven', 'forgiveness', 'pardon', 'trespasses', 'trespass'],
+	forgive: ['forgive', 'forgiven', 'forgiveness', 'pardon', 'trespasses'],
+	patience: ['patience', 'patient', 'longsuffering', 'endure', 'endured', 'endureth', 'wait'],
+	patient: ['patience', 'patient', 'longsuffering', 'endure', 'wait'],
+	anger: ['anger', 'angry', 'wrath', 'wroth', 'fury', 'displeased'],
+	angry: ['anger', 'angry', 'wrath', 'wroth'],
+	healing: ['heal', 'healed', 'healeth', 'healing', 'health', 'whole', 'recover'],
+	heal: ['heal', 'healed', 'healeth', 'whole', 'recover'],
+	sickness: ['sick', 'sickness', 'disease', 'diseases', 'infirmity', 'plague'],
+	death: ['death', 'die', 'died', 'dead', 'grave', 'perish'],
+	dying: ['death', 'die', 'died', 'perish'],
+	grief: ['mourn', 'mourning', 'sorrow', 'weep', 'wept', 'grief', 'grieved', 'comfort'],
+	mourning: ['mourn', 'mourning', 'sorrow', 'weep', 'grief', 'comfort'],
+	suffering: ['suffer', 'suffered', 'suffereth', 'affliction', 'afflicted', 'tribulation'],
+	suffer: ['suffer', 'suffered', 'affliction', 'tribulation'],
+	strength: ['strength', 'strong', 'strengthen', 'strengthened', 'mighty', 'power', 'might'],
+	strong: ['strength', 'strong', 'strengthen', 'mighty', 'power'],
+	weakness: ['weak', 'weakness', 'infirmity', 'feeble'],
+	hope: ['hope', 'hoped', 'hopeth', 'trust', 'expectation'],
+	joy: ['joy', 'joyful', 'rejoice', 'rejoiced', 'glad', 'gladness', 'delight'],
+	happiness: ['joy', 'joyful', 'rejoice', 'glad', 'gladness', 'blessed'],
+	happy: ['joy', 'rejoice', 'glad', 'blessed'],
+	peace: ['peace', 'peaceable', 'peacemakers', 'rest', 'quiet', 'quietness'],
+	sin: ['sin', 'sinned', 'sins', 'sinneth', 'transgression', 'transgressions', 'iniquity', 'iniquities', 'trespass'],
+	salvation: ['salvation', 'saved', 'save', 'saveth', 'redeem', 'redeemed', 'redemption', 'deliver', 'delivered'],
+	saved: ['salvation', 'saved', 'save', 'redeemed', 'deliver'],
+	faith: ['faith', 'faithful', 'faithfulness', 'believe', 'believed', 'believeth', 'trust'],
+	belief: ['faith', 'believe', 'believed', 'believeth', 'trust'],
+	love: ['love', 'loved', 'loveth', 'charity', 'beloved', 'lovingkindness'],
+	pride: ['pride', 'proud', 'haughty', 'haughtiness', 'lofty', 'arrogancy'],
+	humility: ['humble', 'humbled', 'humbleth', 'lowly', 'meek', 'meekness', 'lowliness'],
+	humble: ['humble', 'humbled', 'lowly', 'meek', 'meekness'],
+	wisdom: ['wisdom', 'wise', 'prudent', 'prudence', 'understanding', 'knowledge'],
+	wise: ['wisdom', 'wise', 'prudent', 'understanding'],
+	work: ['labour', 'laboured', 'work', 'works', 'worketh', 'toil', 'wrought'],
+	works: ['labour', 'work', 'works', 'worketh', 'wrought'],
+	prayer: ['pray', 'prayed', 'prayer', 'prayers', 'supplication', 'supplications', 'intercession'],
+	pray: ['pray', 'prayed', 'prayer', 'supplication'],
+	fasting: ['fast', 'fasted', 'fasting'],
+	temptation: ['tempt', 'tempted', 'temptation', 'temptations', 'trial', 'trials'],
+	doubt: ['doubt', 'doubted', 'doubtful', 'unbelief', 'wavering'],
+	loneliness: ['alone', 'forsaken', 'desolate', 'comfortless'],
+	lonely: ['alone', 'forsaken', 'desolate', 'comfortless'],
+	enemies: ['enemy', 'enemies', 'foes', 'adversary', 'adversaries'],
+	gratitude: ['thanks', 'thanksgiving', 'thankful', 'praise', 'bless'],
+	thankfulness: ['thanks', 'thanksgiving', 'thankful', 'praise'],
+	generosity: ['give', 'giveth', 'gave', 'bountiful', 'liberal', 'alms', 'cheerful'],
+	giving: ['give', 'giveth', 'gave', 'alms', 'offering'],
+	children: ['children', 'child', 'sons', 'daughters', 'offspring'],
+	family: ['household', 'family', 'father', 'mother', 'children', 'kindred'],
+	hunger: ['hunger', 'hungred', 'famine', 'bread'],
+	judgment: ['judge', 'judged', 'judgment', 'judgement', 'condemn', 'condemnation'],
+	judging: ['judge', 'judged', 'judgment', 'condemn']
+};
+
 const COMMON_BOOK_ALIASES: Record<string, string[]> = {
 	Genesis: ['gen'],
 	Exodus: ['exo', 'exod'],
@@ -142,6 +231,28 @@ export function tokenize(text: string): string[] {
 		.filter((token) => token.length >= 3 && !STOPWORDS.has(token));
 }
 
+/**
+ * Turns a natural-language query into concept GROUPS for search. Each surviving
+ * query token becomes a group of equivalent search tokens (itself + any KJV
+ * synonyms), with question-framing words dropped. A verse covers a group if it
+ * matches ANY token in it — so "testing" reaches verses about "tempt"/"trial"
+ * and coverage still measures distinct CONCEPTS, not raw token hits. Exported
+ * for unit tests.
+ */
+export function expandQueryToConceptGroups(query: string): string[][] {
+	const groups: string[][] = [];
+	const usedTokens = new Set<string>();
+	for (const token of tokenize(query)) {
+		if (QUERY_STOPWORDS.has(token) || usedTokens.has(token)) continue;
+		usedTokens.add(token);
+		const synonyms = CONCEPT_SYNONYMS[token] ?? [];
+		// The literal token first, then synonyms, de-duped within the group.
+		const group = [...new Set([token, ...synonyms])];
+		groups.push(group);
+	}
+	return groups;
+}
+
 function normalizeReferenceText(value: string): string {
 	return value
 		.toLowerCase()
@@ -197,18 +308,36 @@ export function buildBibleIndex(data: KjvData): BibleIndex {
 		const referenceHits = resolveReference(query, limit);
 		if (referenceHits.length) return referenceHits;
 
-		const tokens = [...new Set(tokenize(query))];
-		if (!tokens.length) return [];
+		const groups = expandQueryToConceptGroups(query);
+		if (!groups.length) return [];
 
-		// distinct-token coverage + total hits per candidate verse.
+		// coverage   = distinct CONCEPT groups a verse satisfies (matching two
+		//              synonyms of one concept still counts once);
+		// literalCov = groups matched by the user's ACTUAL word, not a synonym —
+		//              so a verse that uses the queried word outranks one that only
+		//              hits an expansion;
+		// hits       = every token match, the last fine tiebreaker.
 		const coverage = new Map<number, number>();
+		const literalCov = new Map<number, number>();
 		const hits = new Map<number, number>();
-		for (const token of tokens) {
-			const bucket = postings.get(token);
-			if (!bucket) continue;
-			for (const index of bucket) {
+		for (const group of groups) {
+			const literalToken = group[0];
+			const matchedByGroup = new Set<number>();
+			const literalMatched = new Set<number>();
+			for (const token of group) {
+				const bucket = postings.get(token);
+				if (!bucket) continue;
+				for (const index of bucket) {
+					matchedByGroup.add(index);
+					hits.set(index, (hits.get(index) ?? 0) + 1);
+					if (token === literalToken) literalMatched.add(index);
+				}
+			}
+			for (const index of matchedByGroup) {
 				coverage.set(index, (coverage.get(index) ?? 0) + 1);
-				hits.set(index, (hits.get(index) ?? 0) + 1);
+			}
+			for (const index of literalMatched) {
+				literalCov.set(index, (literalCov.get(index) ?? 0) + 1);
 			}
 		}
 		if (!coverage.size) return [];
@@ -216,10 +345,12 @@ export function buildBibleIndex(data: KjvData): BibleIndex {
 		const ranked = [...coverage.keys()].sort((a, b) => {
 			const cov = (coverage.get(b) ?? 0) - (coverage.get(a) ?? 0);
 			if (cov) return cov;
-			const hit = (hits.get(b) ?? 0) - (hits.get(a) ?? 0);
-			if (hit) return hit;
+			const lit = (literalCov.get(b) ?? 0) - (literalCov.get(a) ?? 0);
+			if (lit) return lit;
 			// Prefer the tighter verse — usually the cleaner citation.
-			return verses[a].text.length - verses[b].text.length;
+			const brevity = verses[a].text.length - verses[b].text.length;
+			if (brevity) return brevity;
+			return (hits.get(b) ?? 0) - (hits.get(a) ?? 0);
 		});
 
 		const expanded = expandQuestionAnswerVerses(ranked).slice(0, limit);
