@@ -40,6 +40,10 @@ const TOOL_TRIGGERS: ToolTrigger[] = [
 		keywords: ['closure', 'closed', 'detour', 'reroute', 'fire', 'burn ban', 'washout', 'bridge out', 'blowdown', 'high water', 'alert'],
 		toolId: 'trail_conditions'
 	},
+	{
+		keywords: ['visitor center', 'ranger', 'ranger station', 'campground', 'national park', 'park office', 'wayside', 'permit office'],
+		toolId: 'park_services'
+	},
 	{ keywords: ['miles', 'push', 'hold', 'pace', 'nero', 'zero', 'next 20'], toolId: 'upcoming_terrain' },
 	{ keywords: ['gear', 'pack', 'loadout', 'carry'], toolId: 'loadout_check' },
 	{ keywords: ['where am i', 'current mile', 'how far'], toolId: 'current_mile' },

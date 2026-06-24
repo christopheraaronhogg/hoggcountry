@@ -91,6 +91,23 @@ const NPS_PARK_LABELS: Record<string, string> = {
   dewa: 'Delaware Water Gap NRA'
 };
 
+/** Human label for an NPS park code (shared with the park-facilities loop). */
+export function npsParkLabel(parkCode: string): string {
+  return NPS_PARK_LABELS[parkCode.toLowerCase()] ?? parkCode.toUpperCase();
+}
+
+/**
+ * NPS unit codes relevant to a given AT state — the trail's own `appa` unit plus
+ * the developed parks it crosses. Shared by the conditions loop (alerts) and the
+ * park-facilities loop (visitor centers / campgrounds) so both stay in sync.
+ * Excludes `appa` from the developed-facility set since the trail unit has no
+ * campgrounds/visitor centers of its own — pass `developedOnly` for that.
+ */
+export function npsParkCodesForState(state: string | null, developedOnly = false): string[] {
+  const developed = state ? (NPS_PARKS_BY_STATE[state] ?? []) : [];
+  return developedOnly ? [...developed] : [...NPS_PARKS_ALWAYS, ...developed];
+}
+
 interface NpsAlertsResponse {
   readonly data?: ReadonlyArray<{
     readonly title?: unknown;
