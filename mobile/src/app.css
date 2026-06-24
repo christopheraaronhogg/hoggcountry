@@ -156,6 +156,11 @@ body {
 	min-height: 100%;
 	overflow: hidden;
 	overscroll-behavior: none;
+	/* Native-app feel: no double-tap-to-zoom / 300ms tap delay on the web layer.
+	   (Pairs with user-scalable=no in the viewport meta. Leaflet keeps its own
+	   pinch-zoom on the map — that's JS-driven, not the WebView's.) */
+	touch-action: manipulation;
+	-webkit-text-size-adjust: 100%;
 	background:
 		radial-gradient(circle at top, rgba(198, 167, 122, 0.18), transparent 36%),
 		linear-gradient(180deg, var(--bg) 0%, #efe7d7 100%);
