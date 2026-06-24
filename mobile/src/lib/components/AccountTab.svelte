@@ -9,6 +9,7 @@
 	import { toUiSourceReceipt } from './source-receipts';
 	import { cloudAuth } from '$lib/cloud/auth.svelte';
 	import { syncEngine } from '$lib/cloud/syncEngine.svelte';
+	import { pushManager } from '$lib/push/push.svelte';
 
 	// Opt-in cloud backup (Phase 0). The app stays fully local + offline until the
 	// hiker signs in here.
@@ -72,7 +73,16 @@
 	}
 	onMount(() => {
 		void cloudAuth.init();
+		// Reflect current notification permission/subscription (no prompt, no network
+		// on the critical path) so the toggle shows the right state when opened.
+		void pushManager.resync();
 	});
+
+	async function togglePush() {
+		if (pushManager.busy) return;
+		if (pushManager.enabled) await pushManager.disable();
+		else await pushManager.enable();
+	}
 
 	function fmtBytes(n: number | undefined): string {
 		if (!n || n < 0) return '—';
@@ -219,6 +229,33 @@
 				and people sync to the cloud, so they survive a lost or dead phone and restore on a new one.
 			</p>
 			<button class="backup-signout" type="button" onclick={() => cloudAuth.logout()}>Sign out</button>
+
+			<div class="toggle-row push-row">
+				<div class="toggle-copy">
+					<strong>Trail notifications</strong>
+					<span>
+						{#if pushManager.unavailableReason}
+							{pushManager.unavailableReason}
+						{:else if pushManager.permission === 'denied'}
+							Blocked in your browser settings — re-enable notifications there to turn this on.
+						{:else}
+							Get a ping for conditions and (soon) daily readiness + family check-ins. Off by default.
+						{/if}
+					</span>
+				</div>
+				<button
+					class:on={pushManager.enabled}
+					class="toggle"
+					role="switch"
+					aria-checked={pushManager.enabled}
+					aria-label="Trail notifications"
+					disabled={!pushManager.available || pushManager.busy}
+					onclick={togglePush}
+				></button>
+			</div>
+			{#if pushManager.error}
+				<p class="push-error" role="alert">{pushManager.error}</p>
+			{/if}
 		{:else}
 			<div class="backup-head">
 				<div>

@@ -33,6 +33,47 @@ sw.addEventListener('activate', (event) => {
 	);
 });
 
+// Web Push (PWA): show the pushed notification. Payload is JSON { title, body, url? }
+// sent by the Laravel push sender; we fall back to safe defaults if it's empty.
+sw.addEventListener('push', (event) => {
+	let payload: { title?: string; body?: string; url?: string } = {};
+	try {
+		payload = event.data?.json() ?? {};
+	} catch {
+		const text = event.data?.text();
+		if (text) payload = { body: text };
+	}
+	event.waitUntil(
+		sw.registration.showNotification(payload.title ?? 'Hogg Country', {
+			body: payload.body ?? '',
+			icon: '/icon-192.png',
+			badge: '/icon-192.png',
+			data: { url: payload.url ?? '/' }
+		})
+	);
+});
+
+// Tapping a notification focuses an open app window (or opens one) at its URL.
+sw.addEventListener('notificationclick', (event) => {
+	event.notification.close();
+	const url = (event.notification.data as { url?: string } | undefined)?.url ?? '/';
+	event.waitUntil(
+		(async () => {
+			const clients = (await sw.clients.matchAll({
+				type: 'window',
+				includeUncontrolled: true
+			})) as readonly WindowClient[];
+			const open = clients[0];
+			if (open) {
+				await open.focus();
+				if (url !== '/') await open.navigate(url).catch(() => {});
+				return;
+			}
+			await sw.clients.openWindow(url);
+		})()
+	);
+});
+
 sw.addEventListener('fetch', (event) => {
 	if (event.request.method !== 'GET') return;
 	const url = new URL(event.request.url);
