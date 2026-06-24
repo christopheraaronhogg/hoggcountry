@@ -129,7 +129,11 @@
 
 <style>
 	.scrim {
-		position: absolute;
+		/* fixed (not absolute) so the modal anchors to the viewport — under
+		   viewport-fit=cover on iOS WKWebView an absolute scrim mis-anchors, pushing
+		   the sheet off-screen while still capturing every tap. Matches the other
+		   sheets (PeopleSheet / TrailPulse), which are all position: fixed. */
+		position: fixed;
 		inset: 0;
 		z-index: 60;
 		background: rgba(31, 36, 29, 0.55);

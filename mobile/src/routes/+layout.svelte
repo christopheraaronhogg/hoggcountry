@@ -6,7 +6,6 @@
 	import { cloudAuth } from '$lib/cloud/auth.svelte';
 	import { syncEngine } from '$lib/cloud/syncEngine.svelte';
 	import { registerCloudRestore } from '$lib/cloud/restore';
-	import { registerLiveLocation } from '$lib/people/liveLocation';
 
 	let { children } = $props();
 
@@ -21,10 +20,11 @@
 		registerCloudRestore();
 		void cloudAuth.init();
 		syncEngine.start();
-
-		// Live tramily/family location (Phase 3). No-op until SpacetimeDB is
-		// configured; otherwise joins shared groups + broadcasts the hiker's mile.
-		registerLiveLocation();
+		// NOTE: live tramily/family location (SpacetimeDB) is intentionally NOT started
+		// here. Its connection is kicked off lazily from the Map tab (MapTab.onMount),
+		// the same place water-report sync connects — a SpacetimeDB connection burst at
+		// boot was saturating the WebView during hydration and freezing the UI. Keeping
+		// it off the startup path lets the app boot + hydrate cleanly.
 
 		async function configureNativeChrome() {
 			const [{ Capacitor }, { StatusBar }, { App }] = await Promise.all([

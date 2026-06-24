@@ -10,6 +10,7 @@
 	import PeopleSheet from './PeopleSheet.svelte';
 	import { people, AVATAR_TINTS, personInitial } from '$lib/people/people.svelte';
 	import { memberLocation } from '$lib/people/memberLocation.svelte';
+	import { registerLiveLocation } from '$lib/people/liveLocation';
 	import {
 		waterReports,
 		waterBucket,
@@ -514,6 +515,10 @@
 		// Start receiving the tramily's water reports from the shared DB (no-op until
 		// the SpacetimeDB sync is configured + deployed).
 		waterReports.startSync();
+		// Live tramily/family location connects here (on the Map, where it's used) —
+		// NOT at app boot, so its SpacetimeDB connection can't saturate the WebView
+		// during startup hydration. Idempotent (guarded), so re-opening the Map is fine.
+		registerLiveLocation();
 		const leaflet = await import('leaflet');
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		L = ((leaflet as any).default ?? leaflet) as typeof LeafletNS;
