@@ -15,7 +15,7 @@ test('Trail Pulse report action is reachable from the active Map surface', () =>
 	const map = read('mobile/src/lib/components/MapTab.svelte');
 
 	assert.match(map, /import TrailPulseReportAction from '\.\/TrailPulseReportAction\.svelte';/u);
-	assert.match(map, /<TrailPulseReportAction variant="map" label="Report conditions" \/>/u);
+	assert.match(map, /<TrailPulseReportAction variant="fab" \/>/u);
 });
 
 test('Trail Pulse report sheet states the shared data and raw-coordinate boundary', () => {
