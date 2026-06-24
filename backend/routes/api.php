@@ -84,11 +84,6 @@ Route::prefix('v1')->group(function () use ($buildMeta): void {
         Route::get('/latest', [VideoFeedController::class, 'latest']);
     });
 
-    // Web PWA Scripture Ask — proxies to OpenAI (server-side key). The iOS app
-    // answers on-device with Gemma and never calls this. Throttled hard because
-    // it spends real money per request.
-    Route::post('/scripture/answer', [ScriptureAnswerController::class, 'answer'])->middleware('throttle:20,1');
-
     Route::prefix('trail-updates')->group(function (): void {
         Route::options('/{any?}', [TrailUpdateController::class, 'options'])->where('any', '.*');
         Route::get('/', [TrailUpdateController::class, 'index']);
@@ -134,6 +129,12 @@ Route::prefix('v1')->group(function () use ($buildMeta): void {
         // Cloud Scout answer lane for the PWA (the iOS app answers on-device via
         // Gemma instead). Throttled to protect the server-side OpenAI spend.
         Route::post('/scout/ask', [ScoutAskController::class, 'ask'])->middleware('throttle:20,1');
+
+        // Web PWA Scripture Ask — proxies to OpenAI (server-side key). The iOS app
+        // answers on-device with Gemma and never calls this. Auth-gated like
+        // /scout/ask so ONLY invited accounts (Dad) can spend the OpenAI key, and
+        // throttled because each request costs real money.
+        Route::post('/scripture/answer', [ScriptureAnswerController::class, 'answer'])->middleware('throttle:20,1');
 
         Route::prefix('community/trackers')->group(function (): void {
             Route::get('/', [CommunityTrackerController::class, 'index']);

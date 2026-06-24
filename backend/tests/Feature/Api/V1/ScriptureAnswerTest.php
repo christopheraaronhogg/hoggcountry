@@ -2,11 +2,16 @@
 
 namespace Tests\Feature\Api\V1;
 
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class ScriptureAnswerTest extends TestCase
 {
+    use RefreshDatabase;
+
     private array $payload = [
         'question' => 'What does the Bible say about testing?',
         'verses' => [
@@ -15,9 +20,26 @@ class ScriptureAnswerTest extends TestCase
         ],
     ];
 
+    private function actingAsInvitedHiker(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+    }
+
+    public function test_requires_authentication_and_never_spends_the_key(): void
+    {
+        Http::fake();
+
+        $this->postJson('/api/v1/scripture/answer', $this->payload)
+            ->assertUnauthorized();
+
+        // The key must not be spent for an unauthenticated caller.
+        Http::assertNothingSent();
+    }
+
     public function test_returns_soft_503_when_no_openai_key_configured(): void
     {
         config(['services.openai.key' => '']);
+        $this->actingAsInvitedHiker();
 
         $response = $this->postJson('/api/v1/scripture/answer', $this->payload);
 
@@ -31,6 +53,7 @@ class ScriptureAnswerTest extends TestCase
             'services.openai.key' => 'sk-test-key',
             'services.openai.scripture_model' => 'gpt-4.1-mini',
         ]);
+        $this->actingAsInvitedHiker();
 
         Http::fake([
             'api.openai.com/*' => Http::response([
@@ -58,6 +81,7 @@ class ScriptureAnswerTest extends TestCase
     public function test_never_accepts_a_client_supplied_system_prompt(): void
     {
         config(['services.openai.key' => 'sk-test-key']);
+        $this->actingAsInvitedHiker();
         Http::fake(['api.openai.com/*' => Http::response(['choices' => [['message' => ['content' => 'ok']]]], 200)]);
 
         $this->postJson('/api/v1/scripture/answer', [
@@ -75,6 +99,7 @@ class ScriptureAnswerTest extends TestCase
     public function test_requires_a_question_and_verses(): void
     {
         config(['services.openai.key' => 'sk-test-key']);
+        $this->actingAsInvitedHiker();
 
         $this->postJson('/api/v1/scripture/answer', ['verses' => []])
             ->assertStatus(422);
@@ -86,6 +111,7 @@ class ScriptureAnswerTest extends TestCase
     public function test_surfaces_a_502_when_openai_fails(): void
     {
         config(['services.openai.key' => 'sk-test-key']);
+        $this->actingAsInvitedHiker();
         Http::fake(['api.openai.com/*' => Http::response('upstream boom', 500)]);
 
         $this->postJson('/api/v1/scripture/answer', $this->payload)
@@ -98,6 +124,7 @@ class ScriptureAnswerTest extends TestCase
         // Cross-origin access is handled by the framework's global CORS (same as
         // the rest of /api/v1); just prove the PWA origin gets an allow header.
         config(['services.openai.key' => 'sk-test-key']);
+        $this->actingAsInvitedHiker();
         Http::fake(['api.openai.com/*' => Http::response(['choices' => [['message' => ['content' => 'ok']]]], 200)]);
 
         $this->postJson('/api/v1/scripture/answer', $this->payload, ['Origin' => 'https://app.hoggcountry.com'])
