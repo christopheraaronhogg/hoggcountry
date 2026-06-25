@@ -158,6 +158,26 @@ function sourceSkillQuery(skill: SourceSkillTrigger, prompt: string, pack: Conte
 	].join(' ');
 }
 
+function firstSourceDocumentId(record: ToolInvocationRecord): string | null {
+	return record.sourceDocumentIds?.find((id) => typeof id === 'string' && id.trim().length > 0) ?? null;
+}
+
+async function openFirstSourceDocument(
+	record: ToolInvocationRecord,
+	sourceSkill: string,
+	registry: ToolRegistry,
+	ctx: ToolContext,
+	openedSourceDocuments: Set<string>
+): Promise<ToolInvocationRecord | null> {
+	const documentId = firstSourceDocumentId(record);
+	if (!documentId || openedSourceDocuments.has(documentId)) return null;
+	const openSourceDoc = registry.get('open_source_doc');
+	if (!openSourceDoc) return null;
+
+	openedSourceDocuments.add(documentId);
+	return openSourceDoc.run({ documentId, sourceSkill }, ctx);
+}
+
 export async function runToolsFor(
 	prompt: string,
 	pack: ContextPack,
@@ -168,6 +188,7 @@ export async function runToolsFor(
 	const ctx: ToolContext = { pack, now };
 	const invocations: ToolInvocationRecord[] = [];
 	const fired = new Set<string>();
+	const openedSourceDocuments = new Set<string>();
 
 	for (const trigger of TOOL_TRIGGERS) {
 		if (!trigger.keywords.some((keyword) => lower.includes(keyword)) || fired.has(trigger.toolId)) {
@@ -185,15 +206,23 @@ export async function runToolsFor(
 	if (sourceSearch) {
 		for (const skill of SOURCE_SKILL_TRIGGERS) {
 			if (!skill.keywords.some((keyword) => lower.includes(keyword))) continue;
-			invocations.push(
-				await sourceSearch.run(
-					{
-						query: sourceSkillQuery(skill, prompt, pack),
-						sourceSkill: skill.id
-					},
-					ctx
-				)
+			const sourceRecord = await sourceSearch.run(
+				{
+					query: sourceSkillQuery(skill, prompt, pack),
+					sourceSkill: skill.id
+				},
+				ctx
 			);
+			invocations.push(sourceRecord);
+
+			const openedRecord = await openFirstSourceDocument(
+				sourceRecord,
+				skill.id,
+				registry,
+				ctx,
+				openedSourceDocuments
+			);
+			if (openedRecord) invocations.push(openedRecord);
 		}
 	}
 

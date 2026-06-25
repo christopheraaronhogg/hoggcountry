@@ -43,6 +43,7 @@ export interface ToolInvocationRecord {
 	summary: string;
 	confidence: ScoutConfidence;
 	receipts: SourceReceipt[];
+	sourceDocumentIds?: string[];
 	confirmations?: RequiredConfirmation[];
 	safetyFlags?: SafetyFlag[];
 }

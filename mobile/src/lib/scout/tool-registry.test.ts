@@ -60,6 +60,7 @@ test('defaultToolRegistry exposes the built-in Scout tool set', () => {
 		'next_shelter',
 		'next_town',
 		'next_water',
+		'open_source_doc',
 		'park_services',
 		'source_search',
 		'trail_conditions',
@@ -103,9 +104,13 @@ test('runToolsFor routes keyword prompts to matching built-in tools and source s
 	assert.equal(toolIds.filter((id) => id === 'next_shelter').length, 1);
 	assert.equal(toolIds.filter((id) => id === 'weather_lookup').length, 1);
 	assert.equal(toolIds.filter((id) => id === 'source_search').length, 3);
+	assert.equal(toolIds.filter((id) => id === 'open_source_doc').length, 3);
 	assert.ok(records.some((record) => record.summary.startsWith('Water source skill:')));
 	assert.ok(records.some((record) => record.summary.startsWith('Shelter source skill:')));
 	assert.ok(records.some((record) => record.summary.startsWith('Weather source skill:')));
+	assert.ok(records.some((record) => record.summary.startsWith('Water source skill opened')));
+	assert.ok(records.some((record) => record.summary.startsWith('Shelter source skill opened')));
+	assert.ok(records.some((record) => record.summary.startsWith('Weather source skill opened')));
 });
 
 test('runToolsFor reads the water source skill beside next_water', async () => {
@@ -124,7 +129,7 @@ test('runToolsFor reads the water source skill beside next_water', async () => {
 	);
 
 	const toolIds = records.map((record) => record.toolId);
-	assert.deepEqual(toolIds.slice(0, 2), ['next_water', 'source_search']);
+	assert.deepEqual(toolIds.slice(0, 3), ['next_water', 'source_search', 'open_source_doc']);
 
 	const sourceSkill = records.find(
 		(record) => record.toolId === 'source_search' && record.args.sourceSkill === 'water'
@@ -132,7 +137,16 @@ test('runToolsFor reads the water source skill beside next_water', async () => {
 	assert.ok(sourceSkill);
 	assert.match(sourceSkill.summary, /^Water source skill:/);
 	assert.match(sourceSkill.summary, /Confirm mapped water before committing/);
+	assert.ok(sourceSkill.sourceDocumentIds?.includes('field-guide:pack-water-on-ridges'));
 	assert.ok(sourceSkill.receipts.some((receipt) => receipt.id === 'field-guide:pack-water-on-ridges'));
+
+	const openedSource = records.find(
+		(record) => record.toolId === 'open_source_doc' && record.args.documentId === 'field-guide:pack-water-on-ridges'
+	);
+	assert.ok(openedSource);
+	assert.match(openedSource.summary, /^Water source skill opened Confirm mapped water before committing:/);
+	assert.match(openedSource.summary, /Mapped water candidates are planning prompts, not promises/);
+	assert.ok(openedSource.receipts.some((receipt) => receipt.id === 'field-guide:pack-water-on-ridges'));
 });
 
 test('runToolsFor reads shelter source skill beside next_shelter', async () => {
@@ -151,6 +165,15 @@ test('runToolsFor reads shelter source skill beside next_shelter', async () => {
 	assert.ok(sourceSkill);
 	assert.match(sourceSkill.summary, /^Shelter source skill:/);
 	assert.match(sourceSkill.summary, /Shelter and camping entries need rule checks/);
+	assert.ok(sourceSkill.sourceDocumentIds?.includes('field-guide:shelter-camping-discipline'));
+	assert.ok(
+		records.some(
+			(record) =>
+				record.toolId === 'open_source_doc' &&
+				record.args.documentId === 'field-guide:shelter-camping-discipline' &&
+				/Shelter source skill opened Shelter and camping entries need rule checks/.test(record.summary)
+		)
+	);
 });
 
 test('runToolsFor reads town source skill beside next_town', async () => {
@@ -169,6 +192,15 @@ test('runToolsFor reads town source skill beside next_town', async () => {
 	assert.ok(sourceSkill);
 	assert.match(sourceSkill.summary, /^Town source skill:/);
 	assert.match(sourceSkill.summary, /Town stops are recovery first/);
+	assert.ok(sourceSkill.sourceDocumentIds?.includes('field-guide:town-stop-readiness'));
+	assert.ok(
+		records.some(
+			(record) =>
+				record.toolId === 'open_source_doc' &&
+				record.args.documentId === 'field-guide:town-stop-readiness' &&
+				/Town source skill opened Town stops are recovery first/.test(record.summary)
+		)
+	);
 });
 
 test('runToolsFor reads loadout source skill beside pack contents', async () => {
@@ -187,6 +219,15 @@ test('runToolsFor reads loadout source skill beside pack contents', async () => 
 	assert.ok(sourceSkill);
 	assert.match(sourceSkill.summary, /^Loadout source skill:/);
 	assert.match(sourceSkill.summary, /Read the pack contents before gear advice/);
+	assert.ok(sourceSkill.sourceDocumentIds?.includes('field-guide:loadout-contents-discipline'));
+	assert.ok(
+		records.some(
+			(record) =>
+				record.toolId === 'open_source_doc' &&
+				record.args.documentId === 'field-guide:loadout-contents-discipline' &&
+				/Loadout source skill opened Read the pack contents before gear advice/.test(record.summary)
+		)
+	);
 });
 
 test('runToolsFor reads safety source skill for bailout and injury prompts', async () => {
@@ -203,6 +244,15 @@ test('runToolsFor reads safety source skill for bailout and injury prompts', asy
 	assert.ok(sourceSkill);
 	assert.match(sourceSkill.summary, /^Safety source skill:/);
 	assert.match(sourceSkill.summary, /Safety decisions prefer current checks/);
+	assert.ok(sourceSkill.sourceDocumentIds?.includes('field-guide:safety-risk-discipline'));
+	assert.ok(
+		records.some(
+			(record) =>
+				record.toolId === 'open_source_doc' &&
+				record.args.documentId === 'field-guide:safety-risk-discipline' &&
+				/Safety source skill opened Safety decisions prefer current checks/.test(record.summary)
+		)
+	);
 });
 
 test('next_water answers plain water prompts with nearest water plus better-known follow-up', async () => {

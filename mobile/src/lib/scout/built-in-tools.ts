@@ -1,6 +1,7 @@
 import { loadBibleIndex } from '../bible/bible-index.ts';
 import type {
 	CachedWeather,
+	ContextPack,
 	LocalDocumentReference,
 	ShelterReference,
 	SourceReceipt,
@@ -17,6 +18,18 @@ const STALE_WEATHER_HOURS = 6;
 // warrants a "re-check" nudge before a hiker commits to a section.
 const STALE_CONDITIONS_HOURS = 24;
 const SOURCE_SEARCH_LIMIT = 6;
+const SOURCE_OPEN_MAX_CHARS = 1600;
+const SOURCE_SKILL_TAG_HINTS: Record<string, string[]> = {
+	loadout: ['loadout', 'gear', 'pack'],
+	'park services': ['park', 'ranger', 'visitor', 'campground', 'permit'],
+	safety: ['safety', 'risk', 'bailout', 'injury'],
+	shelter: ['shelter', 'camping', 'campsite', 'tent'],
+	'trail conditions': ['closure', 'detour', 'hazard', 'condition'],
+	town: ['town', 'resupply', 'recovery'],
+	terrain: ['terrain', 'pace', 'mileage', 'daylight'],
+	water: ['water', 'spring', 'creek'],
+	weather: ['weather', 'wind', 'cold', 'rain', 'heat', 'storm']
+};
 const SOURCE_STOPWORDS = new Set([
 	'about', 'after', 'again', 'also', 'and', 'are', 'before', 'but', 'can', 'for',
 	'from', 'has', 'have', 'how', 'into', 'near', 'need', 'not', 'now', 'should',
@@ -179,6 +192,58 @@ function sourceSkillLabel(value: unknown): string | null {
 	return label ? `${label[0].toUpperCase()}${label.slice(1)} source skill` : null;
 }
 
+interface SourceDocument {
+	id: string;
+	rawId: string;
+	title: string;
+	body: string;
+	tags: string[];
+	searchText: string;
+	summaryPrefix: string;
+	receipt: SourceReceipt;
+}
+
+function allSourceDocuments(pack: ContextPack): SourceDocument[] {
+	const guideDocs = pack.guideExcerpts.map((excerpt) => ({
+		id: `field-guide:${excerpt.id}`,
+		rawId: excerpt.id,
+		title: excerpt.title,
+		body: excerpt.body,
+		tags: excerpt.tags,
+		searchText: `${excerpt.title} ${excerpt.body} ${excerpt.tags.join(' ')}`,
+		summaryPrefix: excerpt.title,
+		receipt: fieldGuideReceipt(excerpt.id, excerpt.title, excerpt.citation)
+	}));
+	const hikerDocs = (pack.documents ?? []).map((document) => ({
+		id: `hiker-doc:${document.id}`,
+		rawId: document.id,
+		title: document.title,
+		body: document.body,
+		tags: [],
+		searchText: `${document.title} ${document.body}`,
+		summaryPrefix: `Saved doc - ${document.title}`,
+		receipt: hikerDocumentReceipt(document)
+	}));
+	return [...guideDocs, ...hikerDocs];
+}
+
+function findSourceDocument(pack: ContextPack, documentId: string): SourceDocument | null {
+	const requestedId = documentId.trim();
+	if (!requestedId) return null;
+	return (
+		allSourceDocuments(pack).find((document) => document.id === requestedId || document.rawId === requestedId) ??
+		null
+	);
+}
+
+function sourceSkillTagBoost(document: SourceDocument, sourceSkill: unknown): number {
+	if (typeof sourceSkill !== 'string') return 0;
+	const skill = sourceSkill.trim().toLowerCase();
+	const hints = SOURCE_SKILL_TAG_HINTS[skill] ?? [skill];
+	if (!hints.length || !document.tags.length) return 0;
+	return document.tags.some((tag) => hints.includes(tag.toLowerCase())) ? 8 : 0;
+}
+
 function describeWaterSource(source: WaterReference, fromMile: number): string {
 	const distance = source.mile - fromMile;
 	return `${source.name} at mile ${source.mile.toFixed(1)} (${distance.toFixed(1)} mi ahead, ${source.reliability}).${source.note ? ' ' + source.note : ''}`;
@@ -222,6 +287,12 @@ interface LoadoutArgs {
 interface SourceSearchArgs extends Record<string, unknown> {
 	query: string;
 	sourceSkill?: string;
+}
+
+interface SourceOpenArgs extends Record<string, unknown> {
+	documentId: string;
+	sourceSkill?: string;
+	maxChars?: number;
 }
 
 const currentMileTool: ToolHandler<{ fromMile?: number }> = {
@@ -647,26 +718,16 @@ const sourceSearchTool: ToolHandler<SourceSearchArgs> = {
 			};
 		}
 
-		const matches = ctx.pack.guideExcerpts
-			.map((excerpt) => ({
-				excerpt,
-				score: scoreSource(`${excerpt.title} ${excerpt.body} ${excerpt.tags.join(' ')}`, tokens)
-			}))
-			.filter((match) => match.score > 0)
-			.sort((a, b) => b.score - a.score)
-			.slice(0, SOURCE_SEARCH_LIMIT)
-			.map((match) => match.excerpt);
-		const documentMatches = (ctx.pack.documents ?? [])
+		const matches = allSourceDocuments(ctx.pack)
 			.map((document) => ({
 				document,
-				score: scoreSource(`${document.title} ${document.body}`, tokens)
+				score: scoreSource(document.searchText, tokens) + sourceSkillTagBoost(document, args.sourceSkill)
 			}))
 			.filter((match) => match.score > 0)
 			.sort((a, b) => b.score - a.score)
-			.slice(0, SOURCE_SEARCH_LIMIT)
-			.map((match) => match.document);
+			.slice(0, SOURCE_SEARCH_LIMIT);
 
-		if (!matches.length && !documentMatches.length) {
+		if (!matches.length) {
 			return {
 				toolId: 'source_search',
 				args: toolArgs(args),
@@ -676,21 +737,65 @@ const sourceSearchTool: ToolHandler<SourceSearchArgs> = {
 			};
 		}
 
-		const guideSummary = matches.map((m) => `${m.title}: ${excerptText(m.body)}`);
-		const documentSummary = documentMatches.map(
-			(document) => `Saved doc - ${document.title}: ${excerptText(document.body)}`
-		);
-		const summaryBody = [...guideSummary, ...documentSummary].slice(0, SOURCE_SEARCH_LIMIT).join('\n\n');
+		const documents = matches.map((match) => match.document);
+		const summaryBody = documents
+			.map((document) => `${document.summaryPrefix}: ${excerptText(document.body)}`)
+			.join('\n\n');
 		const summary = skillLabel ? `${skillLabel}:\n${summaryBody}` : summaryBody;
 		return {
 			toolId: 'source_search',
 			args: toolArgs(args),
 			summary,
 			confidence: 'medium',
-			receipts: [
-				...matches.map((m) => fieldGuideReceipt(m.id, m.title, m.citation)),
-				...documentMatches.map((document) => hikerDocumentReceipt(document))
-			]
+			receipts: documents.map((document) => document.receipt),
+			sourceDocumentIds: documents.map((document) => document.id)
+		};
+	}
+};
+
+const openSourceDocTool: ToolHandler<SourceOpenArgs> = {
+	id: 'open_source_doc',
+	description:
+		'Open a loaded field guide excerpt or saved hiker document by id after source_search finds it, so Scout can read the source-skill document instead of relying on a short search snippet.',
+	run(args, ctx) {
+		const documentId = String(args.documentId ?? '').trim();
+		const skillLabel = sourceSkillLabel(args.sourceSkill);
+		if (!documentId) {
+			return {
+				toolId: 'open_source_doc',
+				args: toolArgs(args),
+				summary: `${skillLabel ? `${skillLabel}: ` : ''}No source document id was provided.`,
+				confidence: 'draft',
+				receipts: []
+			};
+		}
+
+		const document = findSourceDocument(ctx.pack, documentId);
+		if (!document) {
+			return {
+				toolId: 'open_source_doc',
+				args: toolArgs(args),
+				summary: `${skillLabel ? `${skillLabel}: ` : ''}Source document ${documentId} is not loaded in this field pack.`,
+				confidence: 'low',
+				receipts: []
+			};
+		}
+
+		const requestedMax = typeof args.maxChars === 'number' && Number.isFinite(args.maxChars)
+			? args.maxChars
+			: SOURCE_OPEN_MAX_CHARS;
+		const maxChars = Math.max(240, Math.min(requestedMax, SOURCE_OPEN_MAX_CHARS));
+		const prefix = skillLabel
+			? `${skillLabel} opened ${document.title}`
+			: `Opened source document ${document.title}`;
+
+		return {
+			toolId: 'open_source_doc',
+			args: toolArgs(args),
+			summary: `${prefix}:\n${excerptText(document.body, maxChars)}`,
+			confidence: 'medium',
+			receipts: [document.receipt],
+			sourceDocumentIds: [document.id]
 		};
 	}
 };
@@ -769,5 +874,6 @@ export const defaultScoutTools: ToolHandler[] = [
 	parkServicesTool,
 	loadoutCheckTool,
 	sourceSearchTool,
+	openSourceDocTool,
 	bibleSearchTool
 ];
