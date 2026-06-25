@@ -111,8 +111,8 @@ The root workspace coordinates the monorepo:
 
 ### Deployment shape
 Current deployment model:
-- public/frontend web surfaces deploy separately from the Laravel backend
-- Astro and SvelteKit web apps are Netlify-oriented
+- public/frontend web surfaces and the Laravel backend deploy through Forge
+- SvelteKit owns production; Astro stays buildable as rollback/archive material
 - Laravel is Forge-oriented
 
 That split is part of the current architecture and also one of the main places drift can happen if public frontend URLs and backend API deployment do not stay aligned.
@@ -127,4 +127,4 @@ That split is part of the current architecture and also one of the main places d
 ### Follow-ups
 - Keep this file aligned as the handoff from `apps/workspace` to `apps/openclaw-web` becomes more final
 - Keep public/frontend docs explicit about which routes still live in Astro versus the newer SvelteKit app
-- Close deploy drift between Netlify-facing surfaces and Forge-backed APIs so the public product flows stay reliable
+- Close deploy drift between public frontend surfaces and Forge-backed APIs so the public product flows stay reliable
