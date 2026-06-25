@@ -53,14 +53,19 @@
 	let authName = $state('');
 	let authEmail = $state('');
 	let authPassword = $state('');
-	const canSubmitAuth = $derived(
-		!cloudAuth.busy &&
-			authEmail.trim().length > 3 &&
-			authPassword.length >= 8 &&
-			(authMode === 'signin' || authName.trim().length > 0)
-	);
+	let authFeedback = $state<string | null>(null);
+	function authValidationError(): string | null {
+		if (!authEmail.trim() || !authPassword) return 'Enter the invite email and password.';
+		if (authMode === 'signup' && !authName.trim()) return 'Enter a name for the account.';
+		if (authMode === 'signup' && authPassword.length < 8) {
+			return 'Create-account passwords need at least 8 characters.';
+		}
+		return null;
+	}
 	async function submitAuth() {
-		if (!canSubmitAuth) return;
+		if (cloudAuth.busy) return;
+		authFeedback = authValidationError();
+		if (authFeedback) return;
 		const ok =
 			authMode === 'signup'
 				? await cloudAuth.register({ name: authName, email: authEmail, password: authPassword })
@@ -299,31 +304,37 @@
 						class="auth-input"
 						bind:value={authName}
 						placeholder="Name"
-						autocomplete="name"
-						aria-label="Name"
-					/>
-				{/if}
-				<input
-					class="auth-input"
-					type="email"
+					autocomplete="name"
+					aria-label="Name"
+					oninput={() => (authFeedback = null)}
+				/>
+			{/if}
+			<input
+				class="auth-input"
+				type="email"
 					inputmode="email"
 					autocomplete="email"
-					bind:value={authEmail}
-					placeholder="Email"
-					aria-label="Email"
-				/>
-				<input
-					class="auth-input"
-					type="password"
-					autocomplete={authMode === 'signup' ? 'new-password' : 'current-password'}
-					bind:value={authPassword}
-					placeholder="Password"
-					aria-label="Password"
-				/>
-				<button class="auth-submit" type="submit" disabled={!canSubmitAuth}>
-					{cloudAuth.busy ? 'Working…' : authMode === 'signup' ? 'Create account' : 'Sign in'}
-				</button>
-			</form>
+				bind:value={authEmail}
+				placeholder="Email"
+				aria-label="Email"
+				required
+				oninput={() => (authFeedback = null)}
+			/>
+			<input
+				class="auth-input"
+				type="password"
+				autocomplete={authMode === 'signup' ? 'new-password' : 'current-password'}
+				bind:value={authPassword}
+				placeholder="Password"
+				aria-label="Password"
+				required
+				minlength={authMode === 'signup' ? 8 : undefined}
+				oninput={() => (authFeedback = null)}
+			/>
+			<button class="auth-submit" type="submit" disabled={cloudAuth.busy}>
+				{cloudAuth.busy ? 'Working…' : authMode === 'signup' ? 'Create account' : 'Sign in'}
+			</button>
+		</form>
 
 			{#if authMode === 'signup'}
 				<p class="auth-note">
@@ -337,7 +348,9 @@
 				 Sign in with Apple
 			</button>
 
-			{#if cloudAuth.error}<p class="auth-error" role="alert">{cloudAuth.error}</p>{/if}
+			{#if authFeedback ?? cloudAuth.error}
+				<p class="auth-error" role="alert">{authFeedback ?? cloudAuth.error}</p>
+			{/if}
 		{/if}
 	</section>
 
