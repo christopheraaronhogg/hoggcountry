@@ -22,6 +22,11 @@ import { NativeScoutRuntime } from './scout/native-scout-runtime.ts';
 import { NoScoutModelAvailableError } from './scout/model-router.ts';
 import { createCloudScoutBridge } from './scout/cloud-scout-bridge.ts';
 import { scoutUsesCloud, scoutLaneLabel } from './scout/scout-lane.ts';
+import {
+	SCOUT_AUTH_WALL_MESSAGE,
+	createPendingScoutAuthPrompt,
+	type PendingScoutAuthPrompt
+} from './scout/scout-auth-resume.ts';
 import { deriveModelPhase } from './scout/model-download-phase.ts';
 import { cloudAuth } from './cloud/auth.svelte';
 import {
@@ -168,6 +173,7 @@ class TrailAssistantStore {
 	// the confirm-before-apply gate for "Do" tools.
 	#pendingAction = $state<ProposedAction | null>(null);
 	#pendingApply: (() => void) | null = null;
+	#pendingScoutAuthPrompt = $state<PendingScoutAuthPrompt | null>(null);
 	// Real AT route geometry + USGS elevation (1-mi NOBO samples), fetched once
 	// from static/. Powers the elevation profile and GPS→mile snapping. Empty
 	// until loaded, so UI renders an honest empty state in the meantime.
@@ -558,6 +564,26 @@ class TrailAssistantStore {
 		return this.#pendingAction;
 	}
 
+	get scoutAuthPrompt(): PendingScoutAuthPrompt | null {
+		return this.#pendingScoutAuthPrompt;
+	}
+
+	openScoutSignIn(): void {
+		this.#settingsReturnTab = 'Scout';
+		this.#state.activeTab = 'Settings';
+	}
+
+	resumePendingScoutPrompt(): boolean {
+		const pending = this.#pendingScoutAuthPrompt;
+		if (!pending || this.#scoutThinking) return false;
+
+		this.#pendingScoutAuthPrompt = null;
+		this.#settingsReturnTab = 'Scout';
+		this.#state.activeTab = 'Scout';
+		void this.#dispatchScoutReply(pending.prompt, pending.userMessageId);
+		return true;
+	}
+
 	get lastCheckIn() {
 		return this.#state.lastCheckIn;
 	}
@@ -854,15 +880,16 @@ class TrailAssistantStore {
 	 * gate) and a connection. Returns an honest status message when blocked, or
 	 * null when the cloud lane is good to go. Web-only — never called on iOS.
 	 */
-	#cloudScoutBlock(): { message: string } | null {
+	#cloudScoutBlock(): { kind: 'signed-out' | 'offline'; message: string } | null {
 		if (!cloudAuth.signedIn) {
 			return {
-				message:
-					"Sign in to use Scout in the web app — Scout's cloud answers are for invited accounts only."
+				kind: 'signed-out',
+				message: SCOUT_AUTH_WALL_MESSAGE
 			};
 		}
 		if (!this.#state.onlineStatus) {
 			return {
+				kind: 'offline',
 				message:
 					'Scout needs a connection in the web app — reconnect and ask again. (The installed iOS app answers offline.)'
 			};
@@ -896,7 +923,14 @@ class TrailAssistantStore {
 				await cloudAuth.init();
 				const block = this.#cloudScoutBlock();
 				if (block) {
-					this.#addCoachMessage('assistant', block.message);
+					const message = this.#addCoachMessage('assistant', block.message);
+					if (block.kind === 'signed-out') {
+						this.#pendingScoutAuthPrompt = createPendingScoutAuthPrompt({
+							prompt,
+							userMessageId: currentMessageId,
+							blockedMessageId: message.id
+						});
+					}
 					return;
 				}
 			} else if (!(await this.#nativeScout.gemmaReady(REQUIRE_GEMMA))) {
@@ -940,11 +974,28 @@ class TrailAssistantStore {
 			// the router throws NoScoutModelAvailableError since there's no on-device
 			// fallback in a browser. Surface the same honest block message.
 			if (CLOUD_SCOUT_ENABLED && error instanceof NoScoutModelAvailableError) {
+				const block = this.#cloudScoutBlock();
 				const message =
-					this.#cloudScoutBlock()?.message ??
-					'Scout needs a connection in the web app — reconnect and ask again.';
-				if (streamingId !== null) this.#setCoachMessageContent(streamingId, message);
-				else this.#addCoachMessage('assistant', message);
+					block?.message ?? 'Scout needs a connection in the web app — reconnect and ask again.';
+				if (streamingId !== null) {
+					this.#setCoachMessageContent(streamingId, message);
+					if (block?.kind === 'signed-out') {
+						this.#pendingScoutAuthPrompt = createPendingScoutAuthPrompt({
+							prompt,
+							userMessageId: currentMessageId,
+							blockedMessageId: streamingId
+						});
+					}
+				} else {
+					const assistantMessage = this.#addCoachMessage('assistant', message);
+					if (block?.kind === 'signed-out') {
+						this.#pendingScoutAuthPrompt = createPendingScoutAuthPrompt({
+							prompt,
+							userMessageId: currentMessageId,
+							blockedMessageId: assistantMessage.id
+						});
+					}
+				}
 				return;
 			}
 			// On-device generation failed this turn. Under the Gemma-only policy the

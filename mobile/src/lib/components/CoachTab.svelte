@@ -12,6 +12,7 @@
 	import ConfidenceBadge from './ConfidenceBadge.svelte';
 	import Icon from './Icon.svelte';
 	import ScoutModelStatusBubble from './ScoutModelStatusBubble.svelte';
+	import { isScoutAuthResumeMessage } from '$lib/scout/scout-auth-resume';
 
 	let draft = $state('');
 	let logRef = $state<HTMLDivElement | null>(null);
@@ -64,6 +65,10 @@
 	function usePrompt(prompt: string) {
 		trailAssistant.runQuickPrompt(prompt);
 		scrollToBottom(true);
+	}
+
+	function startScoutSignIn() {
+		trailAssistant.openScoutSignIn();
 	}
 
 	// Re-runs on every message/token/state change. Only auto-sticks when pinned;
@@ -143,6 +148,16 @@
 					{/if}
 
 					<p>{message.content}</p>
+
+					{#if message.role === 'assistant' && isScoutAuthResumeMessage(message.id, trailAssistant.scoutAuthPrompt)}
+						<div class="auth-wall-actions" role="group" aria-label="Scout sign-in actions">
+							<button class="auth-wall-button" type="button" onclick={startScoutSignIn}>
+								<span aria-hidden="true"><Icon name="scout" size={15} stroke={2} /></span>
+								Sign in and send
+							</button>
+							<span class="auth-wall-note">Scout will return here and retry your question.</span>
+						</div>
+					{/if}
 
 					{#if message.role === 'assistant' && meta}
 						{#if meta.receipts.length}
@@ -348,6 +363,32 @@
 	.message p {
 		font-size: var(--text-base);
 		line-height: 1.45;
+	}
+
+	.auth-wall-actions {
+		display: grid;
+		gap: 6px;
+		justify-items: start;
+	}
+	.auth-wall-button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 7px;
+		min-height: 44px;
+		padding: 8px 12px;
+		border-radius: var(--radius-control);
+		background: var(--forest);
+		color: #fffdf8;
+		font-size: var(--text-sm);
+		font-weight: 900;
+		line-height: 1.1;
+	}
+	.auth-wall-note {
+		max-width: 24ch;
+		color: var(--muted);
+		font-size: var(--text-xs);
+		line-height: 1.25;
 	}
 
 	.message-head {

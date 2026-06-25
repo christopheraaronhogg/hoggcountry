@@ -74,6 +74,7 @@
 			authName = '';
 			authEmail = '';
 			authPassword = '';
+			trailAssistant.resumePendingScoutPrompt();
 		}
 	}
 	onMount(() => {
