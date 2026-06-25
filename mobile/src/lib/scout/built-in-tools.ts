@@ -173,6 +173,12 @@ function toolArgs(args: object): Record<string, unknown> {
 	return { ...args };
 }
 
+function sourceSkillLabel(value: unknown): string | null {
+	if (typeof value !== 'string') return null;
+	const label = value.trim().replace(/\s+/g, ' ');
+	return label ? `${label[0].toUpperCase()}${label.slice(1)} source skill` : null;
+}
+
 function describeWaterSource(source: WaterReference, fromMile: number): string {
 	const distance = source.mile - fromMile;
 	return `${source.name} at mile ${source.mile.toFixed(1)} (${distance.toFixed(1)} mi ahead, ${source.reliability}).${source.note ? ' ' + source.note : ''}`;
@@ -215,6 +221,7 @@ interface LoadoutArgs {
 
 interface SourceSearchArgs extends Record<string, unknown> {
 	query: string;
+	sourceSkill?: string;
 }
 
 const currentMileTool: ToolHandler<{ fromMile?: number }> = {
@@ -615,14 +622,15 @@ const loadoutCheckTool: ToolHandler<LoadoutArgs> = {
 
 const sourceSearchTool: ToolHandler<SourceSearchArgs> = {
 	id: 'source_search',
-	description: 'Search the loaded field guide excerpts and saved hiker documents for relevant guidance.',
+	description: 'Search the loaded field guide excerpts and saved hiker documents for relevant source-skill guidance.',
 	run(args, ctx) {
 		const query = String(args.query ?? '').trim().toLowerCase();
+		const skillLabel = sourceSkillLabel(args.sourceSkill);
 		if (!query) {
 			return {
 				toolId: 'source_search',
 				args: toolArgs(args),
-				summary: 'Empty query.',
+				summary: `${skillLabel ? `${skillLabel}: ` : ''}Empty query.`,
 				confidence: 'draft',
 				receipts: []
 			};
@@ -633,7 +641,7 @@ const sourceSearchTool: ToolHandler<SourceSearchArgs> = {
 			return {
 				toolId: 'source_search',
 				args: toolArgs(args),
-				summary: 'Search query did not include enough specific terms.',
+				summary: `${skillLabel ? `${skillLabel}: ` : ''}Search query did not include enough specific terms.`,
 				confidence: 'draft',
 				receipts: []
 			};
@@ -662,7 +670,7 @@ const sourceSearchTool: ToolHandler<SourceSearchArgs> = {
 			return {
 				toolId: 'source_search',
 				args: toolArgs(args),
-				summary: 'No field guide excerpts or saved hiker documents match this query in the loaded pack.',
+				summary: `${skillLabel ? `${skillLabel}: ` : ''}No field guide excerpts or saved hiker documents match this query in the loaded pack.`,
 				confidence: 'low',
 				receipts: []
 			};
@@ -672,7 +680,8 @@ const sourceSearchTool: ToolHandler<SourceSearchArgs> = {
 		const documentSummary = documentMatches.map(
 			(document) => `Saved doc - ${document.title}: ${excerptText(document.body)}`
 		);
-		const summary = [...guideSummary, ...documentSummary].slice(0, SOURCE_SEARCH_LIMIT).join('\n\n');
+		const summaryBody = [...guideSummary, ...documentSummary].slice(0, SOURCE_SEARCH_LIMIT).join('\n\n');
+		const summary = skillLabel ? `${skillLabel}:\n${summaryBody}` : summaryBody;
 		return {
 			toolId: 'source_search',
 			args: toolArgs(args),

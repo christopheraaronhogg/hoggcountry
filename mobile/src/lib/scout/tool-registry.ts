@@ -31,6 +31,12 @@ interface ToolTrigger {
 	args?: Record<string, unknown>;
 }
 
+interface SourceSkillTrigger {
+	id: string;
+	keywords: string[];
+	queryHints: string[];
+}
+
 const TOOL_TRIGGERS: ToolTrigger[] = [
 	{ keywords: ['water', 'spring', 'creek'], toolId: 'next_water' },
 	{ keywords: ['shelter', 'camp', 'tent site'], toolId: 'next_shelter' },
@@ -77,6 +83,57 @@ const TOOL_TRIGGERS: ToolTrigger[] = [
 	}
 ];
 
+const SOURCE_SKILL_TRIGGERS: SourceSkillTrigger[] = [
+	{
+		id: 'water',
+		keywords: ['water', 'spring', 'creek', 'flow', 'filter', 'hydrate'],
+		queryHints: [
+			'water discipline',
+			'current flow',
+			'reliability',
+			'mapped candidate',
+			'seasonal spring',
+			'top off',
+			'treat filter'
+		]
+	},
+	{
+		id: 'shelter',
+		keywords: ['shelter', 'camp', 'tent site'],
+		queryHints: ['shelter discipline', 'camping', 'capacity', 'rules', 'verify current status']
+	},
+	{
+		id: 'town',
+		keywords: ['town', 'resupply', 'hostel', 'shuttle', 'laundry', 'groceries'],
+		queryHints: ['town discipline', 'resupply', 'recovery', 'services', 'access']
+	},
+	{
+		id: 'weather',
+		keywords: ['weather', 'wind', 'cold', 'rain', 'storm', 'forecast', 'heat'],
+		queryHints: ['weather discipline', 'exposure', 'wind', 'cold', 'rain', 'storm', 'verify forecast']
+	},
+	{
+		id: 'trail conditions',
+		keywords: ['closure', 'closed', 'detour', 'reroute', 'fire', 'burn ban', 'washout', 'bridge out', 'blowdown', 'high water', 'alert'],
+		queryHints: ['trail conditions', 'closures', 'detours', 'hazards', 'official source', 'verify live']
+	},
+	{
+		id: 'park services',
+		keywords: ['visitor center', 'ranger', 'ranger station', 'campground', 'national park', 'park office', 'wayside', 'permit office'],
+		queryHints: ['park services', 'visitor center', 'ranger station', 'campground', 'permits', 'hours']
+	},
+	{
+		id: 'terrain',
+		keywords: ['miles', 'push', 'hold', 'pace', 'nero', 'zero', 'next 20'],
+		queryHints: ['terrain discipline', 'pace', 'mileage', 'terrain', 'decision point']
+	},
+	{
+		id: 'loadout',
+		keywords: ['gear', 'pack', 'loadout', 'carry'],
+		queryHints: ['loadout', 'gear', 'carried items', 'weight', 'safety gear']
+	}
+];
+
 function argsForTrigger(trigger: ToolTrigger, prompt: string): Record<string, unknown> {
 	if (trigger.toolId === 'bible_search') return { query: prompt };
 	if (trigger.toolId === 'next_water') {
@@ -84,6 +141,16 @@ function argsForTrigger(trigger: ToolTrigger, prompt: string): Record<string, un
 		return wantsReliable ? { reliabilityPreference: 'reliable' } : {};
 	}
 	return trigger.args ?? {};
+}
+
+function sourceSkillQuery(skill: SourceSkillTrigger, prompt: string, pack: ContextPack): string {
+	return [
+		prompt,
+		...skill.queryHints,
+		`current mile ${pack.hiker.currentMile.toFixed(1)}`,
+		pack.hiker.direction,
+		`day ${pack.hiker.dayNumber}`
+	].join(' ');
 }
 
 export async function runToolsFor(
@@ -109,11 +176,26 @@ export async function runToolsFor(
 		fired.add(trigger.toolId);
 	}
 
+	const sourceSearch = registry.get('source_search');
+	if (sourceSearch) {
+		for (const skill of SOURCE_SKILL_TRIGGERS) {
+			if (!skill.keywords.some((keyword) => lower.includes(keyword))) continue;
+			invocations.push(
+				await sourceSearch.run(
+					{
+						query: sourceSkillQuery(skill, prompt, pack),
+						sourceSkill: skill.id
+					},
+					ctx
+				)
+			);
+		}
+	}
+
 	if (!invocations.length) {
 		const currentMile = registry.get('current_mile');
 		if (currentMile) invocations.push(await currentMile.run({}, ctx));
 
-		const sourceSearch = registry.get('source_search');
 		if (sourceSearch) invocations.push(await sourceSearch.run({ query: prompt }, ctx));
 	}
 

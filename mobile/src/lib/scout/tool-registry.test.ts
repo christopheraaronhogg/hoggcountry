@@ -62,7 +62,7 @@ test('runToolsFor routes closure/detour prompts to trail_conditions', async () =
 	assert.ok(records.some((record) => record.toolId === 'trail_conditions'));
 });
 
-test('runToolsFor routes keyword prompts to the matching built-in tools once', async () => {
+test('runToolsFor routes keyword prompts to matching built-in tools and source skills', async () => {
 	const records = await runToolsFor(
 		'water water shelter and weather ahead',
 		DEFAULT_CONTEXT_PACK,
@@ -70,10 +70,41 @@ test('runToolsFor routes keyword prompts to the matching built-in tools once', a
 		FIXED_NOW
 	);
 
-	assert.deepEqual(
-		records.map((record) => record.toolId),
-		['next_water', 'next_shelter', 'weather_lookup']
+	const toolIds = records.map((record) => record.toolId);
+	assert.equal(toolIds.filter((id) => id === 'next_water').length, 1);
+	assert.equal(toolIds.filter((id) => id === 'next_shelter').length, 1);
+	assert.equal(toolIds.filter((id) => id === 'weather_lookup').length, 1);
+	assert.equal(toolIds.filter((id) => id === 'source_search').length, 3);
+	assert.ok(records.some((record) => record.summary.startsWith('Water source skill:')));
+	assert.ok(records.some((record) => record.summary.startsWith('Shelter source skill:')));
+	assert.ok(records.some((record) => record.summary.startsWith('Weather source skill:')));
+});
+
+test('runToolsFor reads the water source skill beside next_water', async () => {
+	const records = await runToolsFor(
+		'what is my next reliable water source?',
+		packWithWater([
+			{
+				name: 'Unnamed mapped stream',
+				mile: 1531.9,
+				reliability: 'thin',
+				note: 'Mapped water candidate; confirm current flow.'
+			}
+		]),
+		defaultToolRegistry(),
+		FIXED_NOW
 	);
+
+	const toolIds = records.map((record) => record.toolId);
+	assert.deepEqual(toolIds.slice(0, 2), ['next_water', 'source_search']);
+
+	const sourceSkill = records.find(
+		(record) => record.toolId === 'source_search' && record.args.sourceSkill === 'water'
+	);
+	assert.ok(sourceSkill);
+	assert.match(sourceSkill.summary, /^Water source skill:/);
+	assert.match(sourceSkill.summary, /Confirm mapped water before committing/);
+	assert.ok(sourceSkill.receipts.some((receipt) => receipt.id === 'field-guide:pack-water-on-ridges'));
 });
 
 test('next_water answers plain water prompts with nearest water plus better-known follow-up', async () => {

@@ -97,4 +97,5 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /Do not use Markdown headings, bold markers, tables, or long bullet lists/);
 	assert.match(systemContext, /Never turn candidate water, shelters, towns, or weather into guarantees/);
 	assert.match(systemContext, /For water questions, use the next_water tool finding as the answer's spine/);
+	assert.match(systemContext, /When a source_search finding is labeled as a source skill/);
 });

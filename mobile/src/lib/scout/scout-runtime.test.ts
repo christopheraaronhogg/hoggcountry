@@ -231,6 +231,10 @@ test('cloud Scout payload includes water hierarchy and caveats from tools', asyn
 	assert.equal(tools[0]?.toolId, 'next_water');
 	assert.match(tools[0]?.summary ?? '', /Best loaded water source: Riga Shelter/);
 	assert.ok(
+		tools.some((tool) => tool.toolId === 'source_search' && /Water source skill:/.test(tool.summary)),
+		'cloud payload should carry the water source skill companion search'
+	);
+	assert.ok(
 		tools[0]?.safetyFlags.some((flag) => flag.id === 'water-seasonal-confirm-flow'),
 		'cloud payload should carry low-confidence water caveats'
 	);

@@ -66,7 +66,8 @@ class ScoutAskApiTest extends TestCase
                 && ! array_key_exists('max_tokens', $data)
                 && ! array_key_exists('temperature', $data)
                 && str_contains($systemPrompt, 'Use plain text only')
-                && str_contains($systemPrompt, 'For water questions, use the next_water tool finding');
+                && str_contains($systemPrompt, 'For water questions, use the next_water tool finding')
+                && str_contains($systemPrompt, 'When a source_search finding is labeled as a source skill');
         });
     }
 
