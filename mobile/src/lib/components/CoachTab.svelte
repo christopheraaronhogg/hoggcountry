@@ -145,19 +145,15 @@
 					<p>{message.content}</p>
 
 					{#if message.role === 'assistant' && meta}
-						{#if meta.tools.length}
-							<div class="message-tools">
-								{#each meta.tools as tool (tool)}
-									<span class="tool-tag">⌬ {tool}</span>
-								{/each}
-							</div>
-						{/if}
 						{#if meta.receipts.length}
-							<div class="message-receipts">
-								{#each meta.receipts as receipt (receipt.id)}
-									<SourceChip source={receipt} />
-								{/each}
-							</div>
+							<details class="message-sources">
+								<summary>{meta.receipts.length} {meta.receipts.length === 1 ? 'source' : 'sources'}</summary>
+								<div class="message-receipts">
+									{#each meta.receipts as receipt (receipt.id)}
+										<SourceChip source={receipt} />
+									{/each}
+								</div>
+							</details>
 						{/if}
 						{#if meta.confirmations.length || meta.safetyFlags.length}
 							<div class="message-caveats">
@@ -373,25 +369,37 @@
 		color: var(--forest);
 	}
 
-	.message-tools {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 4px;
+	.message-sources {
+		align-self: flex-start;
+		max-width: 100%;
 	}
-	.tool-tag {
-		font-family: var(--font-mono);
+	.message-sources > summary {
+		cursor: pointer;
+		list-style: none;
 		font-size: var(--text-2xs);
 		font-weight: 700;
-		color: var(--sky);
-		padding: 3px 6px;
-		border-radius: 6px;
-		background: var(--sky-soft);
+		color: var(--muted);
 		letter-spacing: 0.02em;
+		padding: 1px 0;
+		user-select: none;
+	}
+	.message-sources > summary::-webkit-details-marker {
+		display: none;
+	}
+	.message-sources > summary::before {
+		content: '▸';
+		display: inline-block;
+		margin-right: 5px;
+		color: var(--muted);
+	}
+	.message-sources[open] > summary::before {
+		content: '▾';
 	}
 	.message-receipts {
 		display: flex;
 		gap: 4px;
 		flex-wrap: wrap;
+		margin-top: 6px;
 	}
 	.message-caveats {
 		display: grid;
