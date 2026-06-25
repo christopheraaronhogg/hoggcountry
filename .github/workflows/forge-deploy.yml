@@ -107,12 +107,16 @@ jobs:
           VAPID_PUBLIC_KEY: ${{ vars.VAPID_PUBLIC_KEY }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           VAPID_SUBJECT: ${{ vars.VAPID_SUBJECT }}
+          SCOUT_MODEL: ${{ vars.SCOUT_MODEL }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          SCOUT_OPENAI_MODEL: ${{ vars.SCOUT_OPENAI_MODEL }}
+          OPENAI_SCRIPTURE_MODEL: ${{ vars.OPENAI_SCRIPTURE_MODEL }}
         run: |
           test -n "$FORGE_SSH_HOST"
           test -n "$FORGE_SITE_PATH"
           test -n "$RELEASE"
           ssh -i ~/.ssh/forge_deploy_key -o IdentitiesOnly=yes "${FORGE_SSH_USER:-forge}@${FORGE_SSH_HOST}" \
-            "GITHUB_SHA='$GITHUB_SHA' RELEASE='$RELEASE' FORGE_SITE_PATH='$FORGE_SITE_PATH' VAPID_PUBLIC_KEY='$VAPID_PUBLIC_KEY' VAPID_PRIVATE_KEY='$VAPID_PRIVATE_KEY' VAPID_SUBJECT='$VAPID_SUBJECT' bash -s" <<'REMOTE'
+            "GITHUB_SHA='$GITHUB_SHA' RELEASE='$RELEASE' FORGE_SITE_PATH='$FORGE_SITE_PATH' VAPID_PUBLIC_KEY='$VAPID_PUBLIC_KEY' VAPID_PRIVATE_KEY='$VAPID_PRIVATE_KEY' VAPID_SUBJECT='$VAPID_SUBJECT' SCOUT_MODEL='$SCOUT_MODEL' OPENAI_MODEL='$OPENAI_MODEL' SCOUT_OPENAI_MODEL='$SCOUT_OPENAI_MODEL' OPENAI_SCRIPTURE_MODEL='$OPENAI_SCRIPTURE_MODEL' bash -s" <<'REMOTE'
           set -euo pipefail
 
           APP="$FORGE_SITE_PATH"
@@ -184,6 +188,18 @@ jobs:
           fi
           if [ -n "${VAPID_SUBJECT:-}" ]; then
             update_env_var VAPID_SUBJECT "$VAPID_SUBJECT"
+          fi
+          if [ -n "${SCOUT_MODEL:-}" ]; then
+            update_env_var SCOUT_MODEL "$SCOUT_MODEL"
+          fi
+          if [ -n "${OPENAI_MODEL:-}" ]; then
+            update_env_var OPENAI_MODEL "$OPENAI_MODEL"
+          fi
+          if [ -n "${SCOUT_OPENAI_MODEL:-}" ]; then
+            update_env_var SCOUT_OPENAI_MODEL "$SCOUT_OPENAI_MODEL"
+          fi
+          if [ -n "${OPENAI_SCRIPTURE_MODEL:-}" ]; then
+            update_env_var OPENAI_SCRIPTURE_MODEL "$OPENAI_SCRIPTURE_MODEL"
           fi
 
           ln -nfs "$REL" "$APP/current"
