@@ -3,7 +3,9 @@ import type { WorkspaceSnapshot } from '$lib/server/workspace-store';
 export const OPENAI_CODEX_PROVIDER_ID = 'openai-codex';
 export const OPENAI_API_PROVIDER_ID = 'openai';
 export const OPENCODE_GO_PROVIDER_ID = 'opencode-go';
-export const OPENAI_CODEX_MODEL = 'gpt-5.4';
+export const OPENAI_CODEX_MODEL = 'gpt-5.5';
+// BYOK / api-provider default stays a current "mini" — there is no gpt-5.5-mini.
+// The house Scout runs gpt-5.5 via the SCOUT_MODEL / OPENAI_MODEL env override.
 export const DEFAULT_OPENAI_API_MODEL = 'gpt-5.4-mini';
 export const DEFAULT_OPENCODE_GO_MODEL = 'deepseek-v4-pro';
 

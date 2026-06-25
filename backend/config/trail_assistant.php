@@ -182,7 +182,7 @@ return [
                 'enabled' => true,
                 'auth_mode' => 'scout_local_bridge',
                 'funding_model' => 'user_subscription_local_companion',
-                'available_models' => ['openai-codex/gpt-5.4'],
+                'available_models' => ['openai-codex/gpt-5.5'],
                 'notes' => 'Supported as the first practical connector lane. Requires a local Scout companion logged into ChatGPT/Codex and a loopback bridge process.',
             ],
             'openai_api_key' => [
@@ -191,7 +191,7 @@ return [
                 'auth_mode' => 'api_key',
                 'funding_model' => 'user_api_payg',
                 'api_key_prefix' => 'sk-',
-                'available_models' => ['gpt-4.1-mini', 'gpt-4.1'],
+                'available_models' => ['gpt-5.5', 'gpt-5.4-mini'],
                 'notes' => 'Supported now. User provides their own API key through secure settings.',
             ],
             'chatgpt_subscription_passthrough' => [

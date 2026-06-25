@@ -31,7 +31,7 @@ class CloudScoutAnswerer
         }
 
         $baseUrl = (string) config('services.openai.base_url', 'https://api.openai.com/v1');
-        $model = (string) config('services.openai.scout_model', 'gpt-4o-mini');
+        $model = (string) config('services.openai.scout_model', 'gpt-5.5');
         $contextUsed = $this->contextSections($payload);
 
         $response = Http::withToken($key)
