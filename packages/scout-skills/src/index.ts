@@ -49,6 +49,188 @@ export interface ScoutSkillSearchHit {
 
 export const BUILTIN_SCOUT_SKILLS: readonly ScoutSkill[] = [
   {
+    id: 'water-source-skill',
+    title: 'Water Source Skill',
+    description: 'Use the current mile, loaded water layer, water-specific field-guide docs, user reports, and official/current checks before answering water questions.',
+    category: 'trail-reference',
+    enabledByDefault: true,
+    userToggleable: true,
+    accessLevel: 'mixed',
+    resourceIds: ['mobile:context-pack.water', 'field-guide:water-discipline', 'workspace:water-notes'],
+    corpusIds: ['hogg-country-field-guide', 'at-open-reference'],
+    sourceManifestIds: ['hogg-country-corpus'],
+    triggerKeywords: ['water', 'spring', 'stream', 'creek', 'flow', 'dry', 'filter', 'potable', 'hydrate', 'top off'],
+    triggerIntents: ['next-water-check', 'water-reliability-check', 'water-carry-planning', 'water-treatment-advice'],
+    retrievalStrategy: 'corpus-search',
+    citationTemplate: 'Water source skill — {title}',
+    promptInstructions: [
+      'For water prompts, first compare the hiker current mile and direction to the loaded water layer.',
+      'Then read the water source-skill/field-guide docs and any saved hiker water notes before answering.',
+      'Keep mapped water low-confidence unless a current source, user report, or field confirmation supports it.',
+      'Mention closer unconfirmed candidates separately from better-known or reliable sources.'
+    ],
+    caveats: ['Mapped water is not proof of current flow or potability; recent/current confirmation still matters.'],
+    safetyRules: ['Disabled means Scout should not inject water-specific source-skill instructions or rely on water-specific bundled source docs.'],
+    version: '2026-06-25',
+    updatedAt: '2026-06-25'
+  },
+  {
+    id: 'shelter-camping-skill',
+    title: 'Shelter and Camping Skill',
+    description: 'Use shelter/campsite candidates, camping-rule docs, land-manager rules, and recent private/current reports for where to sleep.',
+    category: 'trail-reference',
+    enabledByDefault: true,
+    userToggleable: true,
+    accessLevel: 'mixed',
+    resourceIds: ['mobile:context-pack.shelters', 'field-guide:shelter-discipline', 'workspace:camping-notes'],
+    corpusIds: ['hogg-country-field-guide', 'at-open-reference'],
+    sourceManifestIds: ['hogg-country-corpus'],
+    triggerKeywords: ['shelter', 'camp', 'camping', 'campsite', 'tent site', 'lean-to', 'hut', 'privy', 'where sleep', 'overnight'],
+    triggerIntents: ['next-shelter-check', 'camping-legality-check', 'shelter-condition-check', 'overnight-plan'],
+    retrievalStrategy: 'corpus-search',
+    citationTemplate: 'Shelter and camping skill — {title}',
+    promptInstructions: [
+      'For shelter/camping prompts, compare current mile and direction to the loaded shelter/campsite layer.',
+      'Read shelter/camping field-guide docs and applicable land-manager rule sources before recommending an overnight plan.',
+      'Do not treat open-data shelter/campsite candidates as current, legal, available, uncrowded, or fee-free without confirmation.',
+      'For regulated areas, fail closed: name the rule source that must be checked before committing.'
+    ],
+    caveats: ['Shelter status, crowding, water, fees, permits, and legal camping rules can change quickly.'],
+    safetyRules: ['Disabled means Scout should not inject shelter/camping source-skill instructions or retrieve shelter-specific bundled docs.'],
+    version: '2026-06-25',
+    updatedAt: '2026-06-25'
+  },
+  {
+    id: 'town-resupply-skill',
+    title: 'Town and Resupply Skill',
+    description: 'Use town/resupply candidates, saved plan docs, current web checks, and user-owned guide imports for services and town logistics.',
+    category: 'trail-reference',
+    enabledByDefault: true,
+    userToggleable: true,
+    accessLevel: 'mixed',
+    resourceIds: ['mobile:context-pack.towns', 'workspace:documents/resupply-plan', 'workspace:resources/town-services'],
+    corpusIds: ['hogg-country-field-guide', 'at-open-reference'],
+    sourceManifestIds: ['hogg-country-corpus'],
+    triggerKeywords: ['town', 'resupply', 'hostel', 'shuttle', 'outfitter', 'laundry', 'groceries', 'mail drop', 'motel', 'restaurant'],
+    triggerIntents: ['next-town-check', 'resupply-plan', 'town-service-research', 'shuttle-hostel-logistics'],
+    retrievalStrategy: 'corpus-search',
+    citationTemplate: 'Town and resupply skill — {title}',
+    promptInstructions: [
+      'For town/resupply prompts, compare current mile and direction to loaded town candidates and the hiker current plan.',
+      'Read town/resupply source-skill docs, saved resupply docs, and relevant private resources before answering.',
+      'Use live public/web checks when enabled and available for same-day hours, shuttle, hostel, outfitter, reservation, or pricing claims.',
+      'Separate recovery priorities from logistics: food, feet, sleep, laundry/charge/resupply, then departure plan.'
+    ],
+    caveats: ['Town services, hours, shuttles, lodging, and prices change; same-day logistics require current confirmation.'],
+    safetyRules: ['Disabled means Scout should not inject town/resupply source-skill instructions or claim current town-service research.'],
+    version: '2026-06-25',
+    updatedAt: '2026-06-25'
+  },
+  {
+    id: 'pack-loadout-skill',
+    title: 'Pack and Loadout Skill',
+    description: 'Use the hiker loadout, gear/body notes, weather, and terrain context to answer what is packed, missing, too heavy, or condition-critical.',
+    category: 'private-workspace',
+    enabledByDefault: true,
+    userToggleable: true,
+    accessLevel: 'workspace-private',
+    resourceIds: ['mobile:context-pack.loadout', 'workspace:documents/gear-body-notes', 'workspace:loadout'],
+    corpusIds: ['hogg-country-field-guide'],
+    sourceManifestIds: ['hogg-country-corpus'],
+    triggerKeywords: ['pack', 'loadout', 'gear', 'base weight', 'carry', 'packed', 'rain gear', 'first aid', 'food carry', 'stove', 'quilt', 'tent'],
+    triggerIntents: ['loadout-check', 'pack-contents-check', 'gear-gap-check', 'condition-specific-gear-plan'],
+    retrievalStrategy: 'workspace-search',
+    citationTemplate: 'Pack/loadout skill — {title}',
+    promptInstructions: [
+      'For pack/loadout prompts, read the current loadout and Gear + Body Notes before giving gear advice.',
+      'Compare carried items against weather, terrain, water carry, shelter choice, and town/resupply timing.',
+      'If the pack contents are unknown or stale, say what Scout cannot see and ask for the specific missing item/category.',
+      'Do not invent carried gear from a starter/demo pack when answering for the hiker.'
+    ],
+    caveats: ['Loadout can be stale after town stops, mail drops, swaps, or lost/broken gear.'],
+    safetyRules: ['Disabled means Scout should not retrieve private loadout or saved gear/body docs through this skill.'],
+    version: '2026-06-25',
+    updatedAt: '2026-06-25'
+  },
+  {
+    id: 'weather-risk-skill',
+    title: 'Weather Risk Skill',
+    description: 'Use cached weather, NWS/official checks, elevation/exposure, and safety docs for weather-sensitive trail decisions.',
+    category: 'official-sources',
+    enabledByDefault: true,
+    userToggleable: true,
+    accessLevel: 'official-live',
+    resourceIds: ['mobile:context-pack.weather', 'field-guide:weather-risk'],
+    corpusIds: ['hogg-country-field-guide'],
+    sourceManifestIds: ['hogg-country-corpus'],
+    triggerKeywords: ['weather', 'forecast', 'storm', 'rain', 'snow', 'ice', 'wind', 'heat', 'cold', 'lightning', 'exposure'],
+    triggerIntents: ['weather-safety-check', 'exposure-risk-check', 'weather-mileage-adjustment'],
+    retrievalStrategy: 'live-source-check',
+    citationTemplate: 'Weather risk skill — {title}',
+    promptInstructions: [
+      'For weather prompts, use cached pack weather only with its timestamp and staleness caveat.',
+      'Use NWS/official weather tools for current decisions when official-source tools are enabled and available.',
+      'Combine weather with exposure, elevation, daylight, body condition, and bailout options.',
+      'Never claim live weather certainty unless a weather source was fetched or supplied this turn.'
+    ],
+    caveats: ['Weather and exposure risk change fast; stale cached weather is a planning prompt, not a go/no-go authority.'],
+    safetyRules: ['Disabled means Scout should not inject weather-risk instructions or claim weather-source checks.'],
+    version: '2026-06-25',
+    updatedAt: '2026-06-25'
+  },
+  {
+    id: 'trail-safety-conditions-skill',
+    title: 'Trail Safety and Conditions Skill',
+    description: 'Use official alerts, trail condition packs, safety docs, and hiker notes for closures, hazards, injury, bailout, and emergency-adjacent decisions.',
+    category: 'official-sources',
+    enabledByDefault: true,
+    userToggleable: true,
+    accessLevel: 'mixed',
+    resourceIds: ['mobile:context-pack.conditions', 'field-guide:safety-risk', 'workspace:documents/safety-risk-brief'],
+    corpusIds: ['hogg-country-field-guide', 'at-open-reference'],
+    sourceManifestIds: ['hogg-country-corpus'],
+    triggerKeywords: ['safety', 'closure', 'detour', 'hazard', 'injury', 'hurt', 'blister', 'bear', 'fire', 'flood', 'ford', 'bailout', 'emergency'],
+    triggerIntents: ['current-condition-check', 'hazard-check', 'bailout-plan', 'body-risk-check', 'emergency-adjacent-planning'],
+    retrievalStrategy: 'live-source-check',
+    citationTemplate: 'Trail safety and conditions skill — {title}',
+    promptInstructions: [
+      'For safety, closure, hazard, body-risk, or bailout prompts, read the safety/risk source-skill docs and current condition sources.',
+      'Use official alerts/land-manager checks when official-source tools are enabled and the answer depends on closures, fires, floods, fords, legal access, or emergency risk.',
+      'Keep emergency boundaries clear: Scout can help plan and communicate, but is not emergency dispatch.',
+      'Escalate uncertainty by choosing the safer stop, lower mileage, or live verification path.'
+    ],
+    caveats: ['Active hazards and body-risk facts can change faster than cached packs; official/current checks matter.'],
+    safetyRules: ['Disabled means Scout should not inject safety/conditions source-skill instructions or claim current alert checks.'],
+    version: '2026-06-25',
+    updatedAt: '2026-06-25'
+  },
+  {
+    id: 'terrain-pace-skill',
+    title: 'Terrain and Pace Skill',
+    description: 'Use route, elevation, nearby landmarks, daylight, weather, and current plan docs for push/hold/nero/zero mileage decisions.',
+    category: 'trail-reference',
+    enabledByDefault: true,
+    userToggleable: true,
+    accessLevel: 'mixed',
+    resourceIds: ['mobile:context-pack.landmarks', 'public/at-mileposts.json', 'workspace:documents/current-plan'],
+    corpusIds: ['at-route-validator', 'at-open-reference', 'hogg-country-field-guide'],
+    sourceManifestIds: ['hogg-country-corpus'],
+    triggerKeywords: ['pace', 'push', 'hold', 'miles', 'terrain', 'climb', 'descent', 'elevation', 'nero', 'zero', 'next 20', 'daylight'],
+    triggerIntents: ['terrain-window-check', 'pace-decision', 'push-hold-decision', 'nero-zero-planning'],
+    retrievalStrategy: 'route-validator',
+    citationTemplate: 'Terrain and pace skill — {title}',
+    promptInstructions: [
+      'For mileage decisions, compare current mile and direction to upcoming landmarks, terrain, weather, daylight, water, shelter, and town options.',
+      'Read current plan and terrain/pace source-skill docs before recommending a push, hold, nero, or zero.',
+      'Use route validators when the AT mile/route skill is enabled for route order and impossible-leg checks, but do not turn approximate route data into exact guidebook mile claims.',
+      'Prefer body-preserving recommendations when water, shelter, daylight, weather, or pain context is uncertain.'
+    ],
+    caveats: ['Generated route/elevation/landmark data is a planning screen; exact miles and current conditions still need confirmation.'],
+    safetyRules: ['Disabled means Scout should not inject terrain/pace source-skill instructions or use route validators for mileage decisions.'],
+    version: '2026-06-25',
+    updatedAt: '2026-06-25'
+  },
+  {
     id: 'kjv-pce-scripture',
     title: 'KJV PCE Scripture',
     description: 'Use the bundled King James Version Pure Cambridge Edition corpus for scripture quotation, reference lookup, and phrase search.',
@@ -285,6 +467,8 @@ export function buildScoutSkillPromptContext(settings: ScoutSkillSettings): stri
     ...skills.flatMap((skill) => [
       `- ${skill.title} (${skill.id}; ${skill.retrievalStrategy}; ${skill.accessLevel})`,
       `  - Use for: ${skill.triggerIntents.join(', ')}`,
+      `  - Triggers: ${skill.triggerKeywords.join(', ')}`,
+      `  - Resources: ${skill.resourceIds.length ? skill.resourceIds.join(', ') : 'configured source manifests/tools'}`,
       `  - Citation: ${skill.citationTemplate}`,
       `  - Instructions: ${skill.promptInstructions.join(' ')}`,
       `  - Caveats: ${[...skill.caveats, ...skill.safetyRules].join(' ')}`
@@ -297,10 +481,13 @@ export function skillOwnsSourceManifest(skill: ScoutSkill, sourceManifestId: str
   return skill.sourceManifestIds.includes(sourceManifestId);
 }
 
+export function scoutSkillsOwningSourceManifest(sourceManifestId: string): ScoutSkill[] {
+  return BUILTIN_SCOUT_SKILLS.filter((skill) => skillOwnsSourceManifest(skill, sourceManifestId));
+}
+
 export function disabledScoutSkillOwnsSourceManifest(settings: ScoutSkillSettings, sourceManifestId: string): boolean {
-  return BUILTIN_SCOUT_SKILLS.some((skill) => (
-    !scoutSkillEnabled(settings, skill.id) && skillOwnsSourceManifest(skill, sourceManifestId)
-  ));
+  const owners = scoutSkillsOwningSourceManifest(sourceManifestId);
+  return owners.length > 0 && owners.every((skill) => !scoutSkillEnabled(settings, skill.id));
 }
 
 export function createScoutSkillSearchHit(input: {

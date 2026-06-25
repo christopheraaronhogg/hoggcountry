@@ -39,8 +39,8 @@ interface SourceSkillTrigger {
 
 const TOOL_TRIGGERS: ToolTrigger[] = [
 	{ keywords: ['water', 'spring', 'creek'], toolId: 'next_water' },
-	{ keywords: ['shelter', 'camp', 'tent site'], toolId: 'next_shelter' },
-	{ keywords: ['town', 'resupply', 'hostel', 'shuttle'], toolId: 'next_town' },
+	{ keywords: ['shelter', 'camp', 'camping', 'campsite', 'tent site', 'lean-to', 'where sleep'], toolId: 'next_shelter' },
+	{ keywords: ['town', 'resupply', 'hostel', 'shuttle', 'outfitter', 'laundry', 'groceries', 'mail drop'], toolId: 'next_town' },
 	{ keywords: ['weather', 'wind', 'cold', 'rain', 'storm', 'forecast'], toolId: 'weather_lookup' },
 	{
 		keywords: ['closure', 'closed', 'detour', 'reroute', 'fire', 'burn ban', 'washout', 'bridge out', 'blowdown', 'high water', 'alert'],
@@ -50,8 +50,8 @@ const TOOL_TRIGGERS: ToolTrigger[] = [
 		keywords: ['visitor center', 'ranger', 'ranger station', 'campground', 'national park', 'park office', 'wayside', 'permit office'],
 		toolId: 'park_services'
 	},
-	{ keywords: ['miles', 'push', 'hold', 'pace', 'nero', 'zero', 'next 20'], toolId: 'upcoming_terrain' },
-	{ keywords: ['gear', 'pack', 'loadout', 'carry'], toolId: 'loadout_check' },
+	{ keywords: ['miles', 'push', 'hold', 'pace', 'nero', 'zero', 'next 20', 'terrain', 'climb', 'descent', 'elevation'], toolId: 'upcoming_terrain' },
+	{ keywords: ['gear', 'pack', 'loadout', 'carry', 'packed', 'base weight', 'rain gear', 'first aid', 'food carry'], toolId: 'loadout_check' },
 	{ keywords: ['where am i', 'current mile', 'how far'], toolId: 'current_mile' },
 	{
 		keywords: [
@@ -99,13 +99,13 @@ const SOURCE_SKILL_TRIGGERS: SourceSkillTrigger[] = [
 	},
 	{
 		id: 'shelter',
-		keywords: ['shelter', 'camp', 'tent site'],
-		queryHints: ['shelter discipline', 'camping', 'capacity', 'rules', 'verify current status']
+		keywords: ['shelter', 'camp', 'camping', 'campsite', 'tent site', 'lean-to', 'hut', 'privy', 'where sleep'],
+		queryHints: ['shelter discipline', 'camping', 'capacity', 'rules', 'legal overnight', 'verify current status']
 	},
 	{
 		id: 'town',
-		keywords: ['town', 'resupply', 'hostel', 'shuttle', 'laundry', 'groceries'],
-		queryHints: ['town discipline', 'resupply', 'recovery', 'services', 'access']
+		keywords: ['town', 'resupply', 'hostel', 'shuttle', 'laundry', 'groceries', 'outfitter', 'mail drop', 'motel', 'restaurant'],
+		queryHints: ['town discipline', 'resupply', 'recovery', 'services', 'access', 'same day confirmation']
 	},
 	{
 		id: 'weather',
@@ -118,19 +118,24 @@ const SOURCE_SKILL_TRIGGERS: SourceSkillTrigger[] = [
 		queryHints: ['trail conditions', 'closures', 'detours', 'hazards', 'official source', 'verify live']
 	},
 	{
+		id: 'safety',
+		keywords: ['safety', 'injury', 'hurt', 'pain', 'blister', 'medical', 'sick', 'bear', 'bailout', 'emergency', 'ford', 'flood'],
+		queryHints: ['safety discipline', 'body risk', 'bailout', 'emergency boundaries', 'official source', 'choose safer stop']
+	},
+	{
 		id: 'park services',
 		keywords: ['visitor center', 'ranger', 'ranger station', 'campground', 'national park', 'park office', 'wayside', 'permit office'],
 		queryHints: ['park services', 'visitor center', 'ranger station', 'campground', 'permits', 'hours']
 	},
 	{
 		id: 'terrain',
-		keywords: ['miles', 'push', 'hold', 'pace', 'nero', 'zero', 'next 20'],
-		queryHints: ['terrain discipline', 'pace', 'mileage', 'terrain', 'decision point']
+		keywords: ['miles', 'push', 'hold', 'pace', 'nero', 'zero', 'next 20', 'terrain', 'climb', 'descent', 'elevation'],
+		queryHints: ['terrain discipline', 'pace', 'mileage', 'terrain', 'decision point', 'daylight']
 	},
 	{
 		id: 'loadout',
-		keywords: ['gear', 'pack', 'loadout', 'carry'],
-		queryHints: ['loadout', 'gear', 'carried items', 'weight', 'safety gear']
+		keywords: ['gear', 'pack', 'loadout', 'carry', 'packed', 'base weight', 'rain gear', 'first aid', 'food carry'],
+		queryHints: ['loadout', 'gear', 'pack contents', 'carried items', 'weight', 'safety gear']
 	}
 ];
 

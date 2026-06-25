@@ -5,9 +5,11 @@ import {
   buildScoutSkillPromptContext,
   createScoutSkillSearchHit,
   defaultScoutSkillSettings,
+  disabledScoutSkillOwnsSourceManifest,
   enabledScoutSkills,
   normalizeScoutSkillSettings,
   scoutSkillEnabled,
+  scoutSkillsOwningSourceManifest,
   setScoutSkillEnabled,
 } from '@hoggcountry/scout-skills';
 
@@ -39,6 +41,65 @@ describe('Scout skill settings', () => {
     assert.match(context, /KJV PCE Scripture/u);
     assert.match(context, /KJV PCE — \{reference\}/u);
     assert.match(context, /Do not invent verse wording/u);
+  });
+
+  it('exposes practical trail domain skills for Scout source routing', () => {
+    const requiredSkills = [
+      'water-source-skill',
+      'shelter-camping-skill',
+      'town-resupply-skill',
+      'pack-loadout-skill',
+      'weather-risk-skill',
+      'trail-safety-conditions-skill',
+      'terrain-pace-skill',
+    ];
+
+    for (const skillId of requiredSkills) {
+      const skill = BUILTIN_SCOUT_SKILLS.find((item) => item.id === skillId);
+      assert.ok(skill, `${skillId} exists`);
+      assert.equal(skill.enabledByDefault, true);
+      assert.ok(skill.triggerKeywords.length >= 5, `${skillId} has natural prompt triggers`);
+      assert.match(skill.promptInstructions.join(' '), /current mile|current|read|compare|source/iu);
+    }
+
+    const context = buildScoutSkillPromptContext(defaultScoutSkillSettings());
+    assert.match(context, /Water Source Skill/u);
+    assert.match(context, /Shelter and Camping Skill/u);
+    assert.match(context, /Town and Resupply Skill/u);
+    assert.match(context, /Pack and Loadout Skill/u);
+    assert.match(context, /Trail Safety and Conditions Skill/u);
+  });
+
+  it('keeps shared source manifests available while any owning skill stays enabled', () => {
+    const owners = scoutSkillsOwningSourceManifest('hogg-country-corpus').map((skill) => skill.id);
+    assert.ok(owners.includes('water-source-skill'));
+    assert.ok(owners.includes('shelter-camping-skill'));
+    assert.ok(owners.includes('town-resupply-skill'));
+
+    let settings = setScoutSkillEnabled(
+      defaultScoutSkillSettings('2026-06-25T00:00:00.000Z'),
+      'water-source-skill',
+      false,
+      '2026-06-25T00:01:00.000Z',
+    );
+    assert.equal(disabledScoutSkillOwnsSourceManifest(settings, 'hogg-country-corpus'), false);
+
+    for (const ownerId of owners) {
+      settings = setScoutSkillEnabled(settings, ownerId, false, '2026-06-25T00:02:00.000Z');
+    }
+    assert.equal(disabledScoutSkillOwnsSourceManifest(settings, 'hogg-country-corpus'), true);
+  });
+
+  it('keeps broad access-lane toggles authoritative', () => {
+    const settings = setScoutSkillEnabled(
+      defaultScoutSkillSettings('2026-06-25T00:00:00.000Z'),
+      'web-research',
+      false,
+      '2026-06-25T00:01:00.000Z',
+    );
+
+    assert.equal(disabledScoutSkillOwnsSourceManifest(settings, 'web-research'), true);
+    assert.equal(scoutSkillsOwningSourceManifest('web-research').map((skill) => skill.id).join(','), 'web-research');
   });
 
   it('keeps private workspace skill scoped to workspace-only resources', () => {

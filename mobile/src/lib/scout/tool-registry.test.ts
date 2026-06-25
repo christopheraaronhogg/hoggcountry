@@ -19,6 +19,34 @@ function packWithWater(water: WaterReference[]): ContextPack {
 	};
 }
 
+function packWithTrailPlanningContext(): ContextPack {
+	return {
+		...DEFAULT_CONTEXT_PACK,
+		hiker: { ...DEFAULT_CONTEXT_PACK.hiker, currentMile: 1530 },
+		shelters: [
+			{
+				name: 'Riga Shelter',
+				mile: 1534.4,
+				capacity: 8,
+				note: 'open-data mapped candidate; confirm current status and rules.'
+			}
+		],
+		towns: [
+			{
+				name: 'Salisbury',
+				mile: 1537.1,
+				access: 'open-data road access candidate',
+				servicesNote: 'Resupply, laundry, and lodging require same-day confirmation.'
+			}
+		],
+		loadout: [
+			{ name: 'Rain jacket', category: 'clothing', weightOz: 6, carried: true },
+			{ name: 'First aid kit', category: 'safety', weightOz: 4, carried: true },
+			{ name: 'Tent', category: 'shelter', weightOz: 20, carried: true }
+		]
+	};
+}
+
 test('defaultToolRegistry exposes the built-in Scout tool set', () => {
 	const toolIds = defaultToolRegistry()
 		.list()
@@ -105,6 +133,76 @@ test('runToolsFor reads the water source skill beside next_water', async () => {
 	assert.match(sourceSkill.summary, /^Water source skill:/);
 	assert.match(sourceSkill.summary, /Confirm mapped water before committing/);
 	assert.ok(sourceSkill.receipts.some((receipt) => receipt.id === 'field-guide:pack-water-on-ridges'));
+});
+
+test('runToolsFor reads shelter source skill beside next_shelter', async () => {
+	const records = await runToolsFor(
+		'where should I sleep tonight, shelter or tent site?',
+		packWithTrailPlanningContext(),
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	const toolIds = records.map((record) => record.toolId);
+	assert.ok(toolIds.includes('next_shelter'));
+	const sourceSkill = records.find(
+		(record) => record.toolId === 'source_search' && record.args.sourceSkill === 'shelter'
+	);
+	assert.ok(sourceSkill);
+	assert.match(sourceSkill.summary, /^Shelter source skill:/);
+	assert.match(sourceSkill.summary, /Shelter and camping entries need rule checks/);
+});
+
+test('runToolsFor reads town source skill beside next_town', async () => {
+	const records = await runToolsFor(
+		'what is the next town for resupply and laundry?',
+		packWithTrailPlanningContext(),
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	const toolIds = records.map((record) => record.toolId);
+	assert.ok(toolIds.includes('next_town'));
+	const sourceSkill = records.find(
+		(record) => record.toolId === 'source_search' && record.args.sourceSkill === 'town'
+	);
+	assert.ok(sourceSkill);
+	assert.match(sourceSkill.summary, /^Town source skill:/);
+	assert.match(sourceSkill.summary, /Town stops are recovery first/);
+});
+
+test('runToolsFor reads loadout source skill beside pack contents', async () => {
+	const records = await runToolsFor(
+		'what is in my pack contents, especially rain gear and first aid?',
+		packWithTrailPlanningContext(),
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	const toolIds = records.map((record) => record.toolId);
+	assert.ok(toolIds.includes('loadout_check'));
+	const sourceSkill = records.find(
+		(record) => record.toolId === 'source_search' && record.args.sourceSkill === 'loadout'
+	);
+	assert.ok(sourceSkill);
+	assert.match(sourceSkill.summary, /^Loadout source skill:/);
+	assert.match(sourceSkill.summary, /Read the pack contents before gear advice/);
+});
+
+test('runToolsFor reads safety source skill for bailout and injury prompts', async () => {
+	const records = await runToolsFor(
+		'is this a safe bailout if my knee hurts?',
+		packWithTrailPlanningContext(),
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	const sourceSkill = records.find(
+		(record) => record.toolId === 'source_search' && record.args.sourceSkill === 'safety'
+	);
+	assert.ok(sourceSkill);
+	assert.match(sourceSkill.summary, /^Safety source skill:/);
+	assert.match(sourceSkill.summary, /Safety decisions prefer current checks/);
 });
 
 test('next_water answers plain water prompts with nearest water plus better-known follow-up', async () => {
