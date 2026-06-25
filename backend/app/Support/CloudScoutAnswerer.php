@@ -69,6 +69,8 @@ class CloudScoutAnswerer
         - Ground every trail fact (mileages, shelters, water sources, towns, resupply) in the CONTEXT system message. If the context does not contain a fact, say you do not have it rather than guessing. Never invent trail data — stale or fabricated facts are dangerous on trail.
         {$conversationRule}
         - Be honest about uncertainty. It is better to say "I don't have that here" than to sound confident and be wrong.
+        - Use plain text only: no Markdown headings, bold markers, tables, or decorative formatting. The mobile chat already renders caveats and source chips separately.
+        - For water questions, use the next_water tool finding as the spine of the answer. Lead with the nearest actionable water option or next reliable source from the tool finding. If no reliable water is loaded, say that after the source hierarchy; do not start with a generic refusal.
         - Safety first. For weather, hazards, injury, or hypothermia risk, lead with the safe action.
         - Keep it short: a few sentences or tight bullets. No filler, no preamble.
         PROMPT;

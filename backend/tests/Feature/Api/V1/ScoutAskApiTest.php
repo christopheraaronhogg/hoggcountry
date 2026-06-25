@@ -57,13 +57,16 @@ class ScoutAskApiTest extends TestCase
 
         Http::assertSent(function ($request): bool {
             $data = $request->data();
+            $systemPrompt = (string) ($data['messages'][0]['content'] ?? '');
 
             return str_contains($request->url(), 'api.openai.com')
                 && $request->hasHeader('Authorization', 'Bearer test-key')
                 && ($data['model'] ?? null) === 'gpt-4o-mini'
                 && ($data['max_completion_tokens'] ?? null) === 700
                 && ! array_key_exists('max_tokens', $data)
-                && ! array_key_exists('temperature', $data);
+                && ! array_key_exists('temperature', $data)
+                && str_contains($systemPrompt, 'Use plain text only')
+                && str_contains($systemPrompt, 'For water questions, use the next_water tool finding');
         });
     }
 

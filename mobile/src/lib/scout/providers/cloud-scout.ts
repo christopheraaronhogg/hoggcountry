@@ -53,7 +53,9 @@ export class CloudScoutProvider implements ScoutProvider {
 			toolInvocations: request.toolInvocations.map((invocation) => ({
 				toolId: invocation.toolId,
 				summary: invocation.summary,
-				confidence: invocation.confidence
+				confidence: invocation.confidence,
+				confirmations: invocation.confirmations ?? [],
+				safetyFlags: invocation.safetyFlags ?? []
 			})),
 			conversationHistory: [...(request.conversationHistory ?? [])],
 			weather: request.pack.weather

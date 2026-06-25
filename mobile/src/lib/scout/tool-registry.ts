@@ -79,6 +79,10 @@ const TOOL_TRIGGERS: ToolTrigger[] = [
 
 function argsForTrigger(trigger: ToolTrigger, prompt: string): Record<string, unknown> {
 	if (trigger.toolId === 'bible_search') return { query: prompt };
+	if (trigger.toolId === 'next_water') {
+		const wantsReliable = /\b(reliable|confirmed|dependable|depend on|count on|trust)\b/iu.test(prompt);
+		return wantsReliable ? { reliabilityPreference: 'reliable' } : {};
+	}
 	return trigger.args ?? {};
 }
 

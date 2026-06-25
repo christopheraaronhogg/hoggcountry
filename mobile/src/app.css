@@ -213,8 +213,10 @@ p {
 	width: min(100vw, var(--app-width));
 	max-width: 100%;
 	margin: 0 auto;
+	height: 100vh;
+	height: 100svh;
 	height: 100dvh;
-	min-height: 100vh;
+	min-height: 0;
 	background: linear-gradient(180deg, rgba(255, 253, 248, 0.97), rgba(249, 244, 235, 0.99));
 	box-shadow: 0 0 0 1px rgba(139, 108, 61, 0.08);
 	position: relative;

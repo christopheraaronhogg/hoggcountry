@@ -185,3 +185,53 @@ test('cloud Scout payload includes recent conversation history', async () => {
 		}
 	]);
 });
+
+test('cloud Scout payload includes water hierarchy and caveats from tools', async () => {
+	let seenPayload: Record<string, unknown> = {};
+	const bridge: CloudScoutBridge = {
+		isReachable: async () => true,
+		ask: async (input) => {
+			seenPayload = input.payload;
+			return {
+				answer: 'Closest mapped water is 1.9 miles ahead; best loaded source is Riga Shelter spring.',
+				confidence: 'medium',
+				contextUsed: ['toolInvocations']
+			};
+		}
+	};
+	const pack = cloneDefaultContextPack();
+	pack.hiker.currentMile = 1530;
+	pack.water = [
+		{
+			name: 'Unnamed mapped stream',
+			mile: 1531.9,
+			reliability: 'thin',
+			note: 'Mapped water candidate; confirm current flow.'
+		},
+		{
+			name: 'Riga Shelter',
+			mile: 1534.4,
+			reliability: 'seasonal',
+			note: 'AWOL-listed spring; confirm current flow.'
+		}
+	];
+
+	const { runtime } = createScoutRuntime({ initialPack: pack, cloudBridge: bridge });
+	await runtime.ask({
+		prompt: 'what is my next reliable water source?',
+		onlineStatus: true,
+		allowCloud: true
+	});
+
+	const tools = seenPayload.toolInvocations as Array<{
+		toolId: string;
+		summary: string;
+		safetyFlags: Array<{ id: string }>;
+	}>;
+	assert.equal(tools[0]?.toolId, 'next_water');
+	assert.match(tools[0]?.summary ?? '', /Best loaded water source: Riga Shelter/);
+	assert.ok(
+		tools[0]?.safetyFlags.some((flag) => flag.id === 'water-seasonal-confirm-flow'),
+		'cloud payload should carry low-confidence water caveats'
+	);
+});

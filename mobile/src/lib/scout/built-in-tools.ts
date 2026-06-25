@@ -35,6 +35,15 @@ function trailPackReceipt(title: string, miles?: { from: number; to?: number }):
 
 function openWaterSafetyFlag(source: WaterReference): ToolInvocationRecord['safetyFlags'] {
 	if (source.reliability === 'reliable') return undefined;
+	if (source.reliability === 'seasonal') {
+		return [
+			{
+				id: 'water-seasonal-confirm-flow',
+				severity: 'warn',
+				message: 'This water source is seasonal; confirm current flow before relying on it, and treat/filter before drinking.'
+			}
+		];
+	}
 	return [
 		{
 			id: 'water-candidate-unverified',
@@ -164,9 +173,15 @@ function toolArgs(args: object): Record<string, unknown> {
 	return { ...args };
 }
 
+function describeWaterSource(source: WaterReference, fromMile: number): string {
+	const distance = source.mile - fromMile;
+	return `${source.name} at mile ${source.mile.toFixed(1)} (${distance.toFixed(1)} mi ahead, ${source.reliability}).${source.note ? ' ' + source.note : ''}`;
+}
+
 interface NextWaterArgs {
 	fromMile?: number;
 	includeSeasonal?: boolean;
+	reliabilityPreference?: 'any' | 'reliable';
 }
 
 interface NextShelterArgs {
@@ -226,14 +241,27 @@ const nextWaterTool: ToolHandler<NextWaterArgs> = {
 	description: 'Return the next loaded water source or mapped candidate ahead of the hiker.',
 	run(args, ctx) {
 		const fromMile = args.fromMile ?? ctx.pack.hiker.currentMile;
+		const wantsReliable = args.reliabilityPreference === 'reliable';
 		const includeSeasonal = args.includeSeasonal ?? false;
-		const preferredCandidates = ctx.pack.water.filter(
-			(source) => includeSeasonal || source.reliability === 'reliable'
+		const nextAny = nextOnTrail(ctx.pack.water, fromMile);
+		const nextReliable = nextOnTrail(
+			ctx.pack.water.filter((source) => source.reliability === 'reliable'),
+			fromMile
 		);
+		const nextSeasonal = nextOnTrail(
+			ctx.pack.water.filter((source) => source.reliability === 'seasonal'),
+			fromMile
+		);
+		const nextPreferred = wantsReliable
+			? nextReliable ?? nextSeasonal ?? nextAny
+			: includeSeasonal
+				? nextOnTrail(
+						ctx.pack.water.filter((source) => source.reliability !== 'thin'),
+						fromMile
+					) ?? nextAny
+				: nextAny;
 
-		const next = nextOnTrail(preferredCandidates, fromMile) ?? nextOnTrail(ctx.pack.water, fromMile);
-
-		if (!next) {
+		if (!nextPreferred) {
 			return {
 				toolId: 'next_water',
 				args: toolArgs(args),
@@ -250,15 +278,42 @@ const nextWaterTool: ToolHandler<NextWaterArgs> = {
 			};
 		}
 
-		const distance = next.mile - fromMile;
-		const candidateOnly = next.reliability !== 'reliable';
+		const parts: string[] = [];
+		if (wantsReliable && nextReliable) {
+			parts.push(`Next reliable water loaded: ${describeWaterSource(nextReliable, fromMile)}`);
+			if (nextAny && nextAny.mile < nextReliable.mile && nextAny.reliability !== 'reliable') {
+				parts.push(`Closer unconfirmed water before that: ${describeWaterSource(nextAny, fromMile)}`);
+			}
+		} else if (wantsReliable && !nextReliable) {
+			if (nextSeasonal) {
+				parts.push(`Best loaded water source: ${describeWaterSource(nextSeasonal, fromMile)}`);
+				if (nextAny && nextAny.mile < nextSeasonal.mile) {
+					parts.push(`Closer mapped candidate before that: ${describeWaterSource(nextAny, fromMile)}`);
+				}
+				parts.push('No reliable water source is loaded ahead in the current field pack.');
+			} else {
+				parts.push(`Nearest mapped candidate: ${describeWaterSource(nextPreferred, fromMile)}`);
+				parts.push('No reliable or seasonal water source is loaded ahead in the current field pack.');
+			}
+		} else {
+			parts.push(`Next loaded water: ${describeWaterSource(nextPreferred, fromMile)}`);
+			if (
+				nextPreferred.reliability === 'thin' &&
+				nextSeasonal &&
+				nextSeasonal.mile > nextPreferred.mile
+			) {
+				parts.push(`Next better-known source after that: ${describeWaterSource(nextSeasonal, fromMile)}`);
+			}
+		}
+
+		const candidateOnly = nextPreferred.reliability !== 'reliable';
 		return {
 			toolId: 'next_water',
 			args: toolArgs(args),
-			summary: `${next.name} at mile ${next.mile.toFixed(1)} (${distance.toFixed(1)} mi ahead, ${next.reliability}).${next.note ? ' ' + next.note : ''}`,
-			confidence: next.reliability === 'reliable' ? 'high' : candidateOnly ? 'low' : 'medium',
-			receipts: [trailPackReceipt(`Water: ${next.name}`, { from: next.mile })],
-			safetyFlags: openWaterSafetyFlag(next)
+			summary: parts.join(' '),
+			confidence: nextPreferred.reliability === 'reliable' ? 'high' : candidateOnly ? 'low' : 'medium',
+			receipts: [trailPackReceipt(`Water: ${nextPreferred.name}`, { from: nextPreferred.mile })],
+			safetyFlags: openWaterSafetyFlag(nextPreferred)
 		};
 	}
 };
