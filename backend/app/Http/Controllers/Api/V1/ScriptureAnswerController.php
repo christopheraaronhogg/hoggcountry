@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Support\OpenAIChatClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 
 /**
  * Web PWA Scripture Ask proxy.
@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Http;
  */
 class ScriptureAnswerController extends ApiController
 {
-    public function answer(Request $request): JsonResponse
+    public function answer(Request $request, OpenAIChatClient $openAI): JsonResponse
     {
         $validated = $request->validate([
             'question' => ['required', 'string', 'min:2', 'max:500'],
@@ -44,30 +44,12 @@ class ScriptureAnswerController extends ApiController
             ->implode("\n");
 
         try {
-            $response = Http::withToken($apiKey)
-                ->timeout(20)
-                ->connectTimeout(5)
-                ->retry(1, 300)
-                ->post(config('services.openai.base_url').'/chat/completions', [
-                    'model' => (string) config('services.openai.scripture_model'),
-                    'temperature' => 0.4,
-                    'max_tokens' => 400,
-                    'messages' => [
-                        ['role' => 'system', 'content' => $this->personaPrompt($verseList)],
-                        ['role' => 'user', 'content' => $question],
-                    ],
-                ]);
+            $answer = $openAI->complete([
+                ['role' => 'system', 'content' => $this->personaPrompt($verseList)],
+                ['role' => 'user', 'content' => $question],
+            ], (string) config('services.openai.scripture_model'), 400, 20);
         } catch (\Throwable) {
             return $this->fail('scripture_model_error', 'Could not reach the scripture model.', 502);
-        }
-
-        if (! $response->successful()) {
-            return $this->fail('scripture_model_error', 'The scripture model returned an error.', 502);
-        }
-
-        $answer = trim((string) $response->json('choices.0.message.content', ''));
-        if ($answer === '') {
-            return $this->fail('scripture_model_empty', 'The scripture model returned no answer.', 502);
         }
 
         return $this->ok(['answer' => $answer]);

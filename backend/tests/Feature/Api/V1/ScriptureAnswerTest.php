@@ -20,6 +20,13 @@ class ScriptureAnswerTest extends TestCase
         ],
     ];
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['services.openai.allowed_emails' => []]);
+    }
+
     private function actingAsInvitedHiker(): void
     {
         // Real client tokens carry ['app','llm'] (see AuthController::TOKEN_ABILITIES);
@@ -94,6 +101,9 @@ class ScriptureAnswerTest extends TestCase
 
             return $request->url() === 'https://api.openai.com/v1/chat/completions'
                 && ($data['model'] ?? null) === 'gpt-4.1-mini'
+                && ($data['max_completion_tokens'] ?? null) === 400
+                && ! array_key_exists('max_tokens', $data)
+                && ! array_key_exists('temperature', $data)
                 // Persona + verses are the system message; the user message is just the question.
                 && str_contains($data['messages'][0]['content'] ?? '', 'worketh patience')
                 && ($data['messages'][1]['content'] ?? null) === 'What does the Bible say about testing?'

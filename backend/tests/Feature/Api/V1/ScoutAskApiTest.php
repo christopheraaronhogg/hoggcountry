@@ -12,6 +12,13 @@ class ScoutAskApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['services.openai.allowed_emails' => []]);
+    }
+
     public function test_scout_ask_requires_authentication(): void
     {
         Http::fake();
@@ -49,10 +56,41 @@ class ScoutAskApiTest extends TestCase
             ->assertJsonPath('data.contextUsed', ['hiker', 'weather']);
 
         Http::assertSent(function ($request): bool {
+            $data = $request->data();
+
             return str_contains($request->url(), 'api.openai.com')
                 && $request->hasHeader('Authorization', 'Bearer test-key')
-                && $request['model'] === 'gpt-4o-mini';
+                && ($data['model'] ?? null) === 'gpt-4o-mini'
+                && ($data['max_completion_tokens'] ?? null) === 700
+                && ! array_key_exists('max_tokens', $data)
+                && ! array_key_exists('temperature', $data);
         });
+    }
+
+    public function test_falls_back_when_configured_model_is_not_available(): void
+    {
+        config([
+            'services.openai.key' => 'test-key',
+            'services.openai.scout_model' => 'gpt-5.5',
+            'services.openai.fallback_model' => 'gpt-5.4',
+        ]);
+        Sanctum::actingAs(User::factory()->create(), ['app', 'llm']);
+
+        Http::fake([
+            'api.openai.com/*' => Http::sequence()
+                ->push(['error' => ['code' => 'model_not_found', 'message' => 'The model is unavailable.']], 404)
+                ->push(['choices' => [['message' => ['content' => 'Fallback Scout is live.']]]], 200),
+        ]);
+
+        $this->postJson('/api/v1/scout/ask', ['prompt' => 'testing 123'])
+            ->assertOk()
+            ->assertJsonPath('data.answer', 'Fallback Scout is live.');
+
+        Http::assertSentCount(2);
+        $models = Http::recorded()
+            ->map(fn (array $record): ?string => $record[0]->data()['model'] ?? null)
+            ->all();
+        $this->assertSame(['gpt-5.5', 'gpt-5.4'], $models);
     }
 
     public function test_returns_503_when_cloud_scout_is_not_configured(): void

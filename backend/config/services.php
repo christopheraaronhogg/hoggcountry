@@ -28,6 +28,7 @@ return [
         'base_url' => rtrim((string) env('OPENAI_BASE_URL', 'https://api.openai.com/v1'), '/'),
         'scripture_model' => env('OPENAI_SCRIPTURE_MODEL', 'gpt-5.5'),
         'scout_model' => env('SCOUT_OPENAI_MODEL', 'gpt-5.5'),
+        'fallback_model' => env('OPENAI_FALLBACK_MODEL', 'gpt-5.4'),
 
         // Spend guard: ONLY these emails may spend the key. Defaults to the launch
         // invite (Dad). Comma-separated SCOUT_LLM_ALLOWED_EMAILS overrides. When the

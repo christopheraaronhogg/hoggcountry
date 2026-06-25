@@ -2,7 +2,6 @@
 
 namespace App\Support;
 
-use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 /**
@@ -19,6 +18,10 @@ use RuntimeException;
  */
 class CloudScoutAnswerer
 {
+    public function __construct(private readonly OpenAIChatClient $openAI)
+    {
+    }
+
     /**
      * @param  array<string,mixed>  $payload  The Scout context pack (hiker, frame, weather, toolInvocations).
      * @return array{answer:string,confidence:string,contextUsed:array<int,string>}
@@ -30,32 +33,13 @@ class CloudScoutAnswerer
             throw new RuntimeException('Cloud Scout is not configured (missing OPENAI_API_KEY).');
         }
 
-        $baseUrl = (string) config('services.openai.base_url', 'https://api.openai.com/v1');
         $model = (string) config('services.openai.scout_model', 'gpt-5.5');
         $contextUsed = $this->contextSections($payload);
 
-        $response = Http::withToken($key)
-            ->acceptJson()
-            ->asJson()
-            ->timeout(30)
-            ->post($baseUrl.'/chat/completions', [
-                'model' => $model,
-                'temperature' => 0.3,
-                'max_tokens' => 700,
-                'messages' => [
-                    ['role' => 'system', 'content' => $this->systemPrompt($payload)],
-                    ['role' => 'user', 'content' => $prompt],
-                ],
-            ]);
-
-        if ($response->failed()) {
-            throw new RuntimeException('OpenAI request failed: HTTP '.$response->status());
-        }
-
-        $answer = trim((string) data_get($response->json(), 'choices.0.message.content', ''));
-        if ($answer === '') {
-            throw new RuntimeException('OpenAI returned an empty answer.');
-        }
+        $answer = $this->openAI->complete([
+            ['role' => 'system', 'content' => $this->systemPrompt($payload)],
+            ['role' => 'user', 'content' => $prompt],
+        ], $model, 700, 30);
 
         return [
             'answer' => $answer,
