@@ -1,8 +1,8 @@
 <script>
-  import { resolve } from '$app/paths';
   import { slide } from 'svelte/transition';
   import gearData from '../data/gear.json';
   import gearRecommendations from '../data/gearRecommendations.json';
+  import { resolve } from '../lib/route-paths';
   import { loadCharacter, character, updateCharacter } from '../stores/character.svelte';
 
   let { trailContext = {} } = $props();

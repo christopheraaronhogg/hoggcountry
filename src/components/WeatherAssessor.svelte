@@ -1,5 +1,4 @@
 <script>
-  import { resolve } from '$app/paths';
   import { fade } from 'svelte/transition';
   import {
     CHILL_ROWS,
@@ -11,6 +10,7 @@
     latitudeForMile,
     terrainMultiplierFor
   } from '../lib/weather-assessor';
+  import { resolve } from '../lib/route-paths';
   import StormWarningFieldStation from './StormWarningFieldStation.svelte';
 
 

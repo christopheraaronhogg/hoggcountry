@@ -3,8 +3,8 @@
   // WPA poster aesthetic inspired by 1930s-40s national park posters
   // OFFICIAL TRAIL GUIDE prepared by C. Hogg for J. "HoggCountry" Hogg
 
-  import { resolve } from "$app/paths";
   import { onMount } from "svelte";
+  import { resolve } from "../../lib/route-paths";
   import WaitlistSignup from "../../../apps/openclaw-web/src/lib/components/WaitlistSignup.svelte";
 
   const API_BASE = (import.meta.env.PUBLIC_API_BASE_URL || "https://hoggcountry.on-forge.com/api/v1").replace(/\/+$/, "");

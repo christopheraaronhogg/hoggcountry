@@ -1,8 +1,8 @@
-# LEGACY: Netlify serves the Astro build of hoggcountry.com only until the
-# Netlify -> Forge cutover (docs/runbooks/netlify-to-forge-cutover-checklist.md).
-# The SvelteKit app in apps/openclaw-web is the site going forward; this build
-# is intentionally pinned to the Astro-only path so root build changes can't
-# break the live site.
+# LEGACY: Netlify preserves the frozen Astro rollback/archive build after the
+# completed Forge cutover (docs/runbooks/netlify-to-forge-cutover-checklist.md).
+# The SvelteKit app in apps/openclaw-web owns the live site; this build remains
+# intentionally pinned to the Astro-only path so root build changes can't break
+# the rollback target.
 [build]
   command = "npm run build:netlify"
   publish = "dist"

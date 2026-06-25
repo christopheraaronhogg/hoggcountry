@@ -1408,15 +1408,12 @@
 
   /* Shared stroke icon styling across every control. */
   .circle-btn svg,
-  .zoom-pill svg,
-  .status-text svg,
   .seg button svg,
   .layers-refresh svg,
   .layers-close svg,
   .metric-label svg,
   .ahead-strip svg,
-  .next-head svg,
-  .diff-chip svg {
+  .next-head svg {
     width: 1rem;
     height: 1rem;
     fill: none;
