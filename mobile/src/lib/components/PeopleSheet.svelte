@@ -4,6 +4,9 @@
 	import {
 		people,
 		AVATAR_TINTS,
+		buildPeopleInviteSmsHref,
+		buildPeopleInviteText,
+		buildPeopleInviteUrl,
 		personInitial,
 		personStatus,
 		dialString,
@@ -15,13 +18,31 @@
 	// Live location sharing (Phase 3) for the active group.
 	const activeGroup = $derived(people.activeGroup);
 	const liveCount = $derived(memberLocation.positionsForGroup(activeGroup.shareCode).length);
+	const inviteUrl = $derived(
+		activeGroup.shareCode
+			? buildPeopleInviteUrl({ groupId: activeGroup.id, shareCode: activeGroup.shareCode })
+			: ''
+	);
 	let joinOpen = $state(false);
 	let joinCode = $state('');
 	let copied = $state(false);
-	function copyCode() {
-		const code = activeGroup.shareCode;
-		if (!code || !navigator.clipboard) return;
-		navigator.clipboard.writeText(code).then(
+	let shared = $state(false);
+
+	function ensureInvite(): { url: string; text: string } | null {
+		if (!activeGroup.sharing) people.setSharing(activeGroup.id, true);
+		const code = people.ensureShareCode(activeGroup.id);
+		if (!code) return null;
+		const url = buildPeopleInviteUrl({ groupId: activeGroup.id, shareCode: code });
+		return {
+			url,
+			text: buildPeopleInviteText({ groupName: activeGroup.name, shareCode: code, inviteUrl: url })
+		};
+	}
+
+	function copyInviteLink() {
+		const invite = ensureInvite();
+		if (!invite || !navigator.clipboard) return;
+		navigator.clipboard.writeText(invite.url).then(
 			() => {
 				copied = true;
 				setTimeout(() => (copied = false), 1500);
@@ -29,6 +50,29 @@
 			() => {}
 		);
 	}
+
+	async function shareInvite() {
+		const invite = ensureInvite();
+		if (!invite) return;
+		if (navigator.share) {
+			try {
+				await navigator.share({ title: `${activeGroup.name} map invite`, text: invite.text, url: invite.url });
+				shared = true;
+				setTimeout(() => (shared = false), 1500);
+				return;
+			} catch {
+				// Share cancellation is a normal user choice; leave the sheet as-is.
+			}
+		}
+		copyInviteLink();
+	}
+
+	function textInvite(phone?: string) {
+		const invite = ensureInvite();
+		if (!invite) return;
+		window.location.href = buildPeopleInviteSmsHref({ phone, message: invite.text });
+	}
+
 	function submitJoin() {
 		if (people.joinWithCode(activeGroup.id, joinCode)) {
 			joinCode = '';
@@ -134,11 +178,18 @@
 
 			{#if activeGroup.sharing && activeGroup.shareCode}
 				<div class="invite-code">
-					<div class="ic-label">Invite code — text it to {activeGroup.name.toLowerCase()}</div>
-					<div class="ic-row">
-						<code>{activeGroup.shareCode}</code>
-						<button class="ic-copy" type="button" onclick={copyCode}>{copied ? 'Copied' : 'Copy'}</button>
+					<div class="ic-label">Invite link — send it to {activeGroup.name.toLowerCase()}</div>
+					<div class="ic-row invite-link">
+						<code>{inviteUrl}</code>
 					</div>
+					<div class="invite-actions">
+						<button class="ic-copy" type="button" onclick={shareInvite}>{shared ? 'Shared' : 'Share'}</button>
+						<button class="ic-copy secondary" type="button" onclick={copyInviteLink}>
+							{copied ? 'Copied' : 'Copy link'}
+						</button>
+						<button class="ic-copy secondary" type="button" onclick={() => textInvite()}>Text</button>
+					</div>
+					<div class="manual-code">Code: <code>{activeGroup.shareCode}</code></div>
 				</div>
 			{/if}
 
@@ -201,11 +252,14 @@
 										href="tel:{dialString(m.phone)}"
 										aria-label={`Call ${m.name}`}><Icon name="phone" size={16} stroke={2} /></a
 									>
-									<a
+									<button
 										class="contact-btn msg"
-										href="sms:{dialString(m.phone)}"
-										aria-label={`Text ${m.name}`}><Icon name="message" size={16} stroke={2} /></a
+										type="button"
+										onclick={() => textInvite(m.phone)}
+										aria-label={`Text map invite to ${m.name}`}
 									>
+										<Icon name="message" size={16} stroke={2} />
+									</button>
 								{:else if !m.self}
 									<button class="contact-btn add" type="button" onclick={() => startEditPhone(m)}>
 										+ number
@@ -272,6 +326,7 @@
 		left: 50%;
 		bottom: 0;
 		transform: translateX(-50%);
+		box-sizing: border-box;
 		width: min(100vw, var(--app-width));
 		z-index: 41;
 		display: grid;
@@ -280,6 +335,7 @@
 		border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 		background: var(--surface-strong);
 		box-shadow: var(--shadow-ridge);
+		overflow-x: hidden;
 		animation: people-rise var(--dur-slow) var(--ease-spring) both;
 	}
 	@keyframes people-rise {
@@ -328,6 +384,7 @@
 	.live-share {
 		display: grid;
 		gap: 10px;
+		min-width: 0;
 		padding: 12px;
 		border-radius: var(--radius-control, 12px);
 		background: var(--forest-soft);
@@ -382,6 +439,9 @@
 	.invite-code {
 		display: grid;
 		gap: 5px;
+		min-width: 0;
+		width: 100%;
+		overflow: hidden;
 	}
 	.ic-label {
 		font-size: 0.72rem;
@@ -392,10 +452,14 @@
 		display: flex;
 		align-items: stretch;
 		gap: 8px;
+		min-width: 0;
+		width: 100%;
 	}
 	.ic-row code {
 		flex: 1;
 		min-width: 0;
+		width: 100%;
+		box-sizing: border-box;
 		padding: 9px 12px;
 		border-radius: var(--radius-control, 10px);
 		background: var(--surface-strong);
@@ -407,14 +471,39 @@
 		overflow-x: auto;
 		white-space: nowrap;
 	}
+	.invite-link code {
+		font-size: 0.74rem;
+		letter-spacing: 0;
+	}
+	.invite-actions {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 8px;
+		min-width: 0;
+		width: 100%;
+	}
 	.ic-copy {
 		flex: none;
-		padding: 0 14px;
+		min-height: 38px;
+		padding: 0 12px;
 		border-radius: var(--radius-control, 10px);
 		background: var(--forest);
 		color: var(--on-accent);
 		font-weight: 800;
 		font-size: 0.82rem;
+	}
+	.ic-copy.secondary {
+		background: var(--surface-strong);
+		border: 1px solid var(--line);
+		color: var(--forest);
+	}
+	.manual-code {
+		font-size: 0.72rem;
+		color: var(--muted);
+	}
+	.manual-code code {
+		font-family: ui-monospace, monospace;
+		color: var(--ink);
 	}
 	.join-toggle {
 		justify-self: start;
@@ -469,6 +558,7 @@
 		grid-template-columns: auto 1fr auto;
 		align-items: center;
 		gap: 12px;
+		min-width: 0;
 		padding: 9px 11px;
 		border-radius: 14px;
 		background: var(--bg);

@@ -1,5 +1,25 @@
 import { browser } from '$app/environment';
 import { syncEngine } from '../cloud/syncEngine.svelte';
+import {
+	dialString,
+	normalizeShareCode,
+	normalizeInviteGroupId,
+	parsePeopleInviteUrl,
+	type PeopleInviteGroupId
+} from './invite';
+
+export {
+	PEOPLE_INVITE_APP_URL,
+	PEOPLE_INVITE_CODE_PARAM,
+	PEOPLE_INVITE_GROUP_PARAM,
+	buildPeopleInviteSmsHref,
+	buildPeopleInviteText,
+	buildPeopleInviteUrl,
+	dialString,
+	normalizeShareCode,
+	parsePeopleInviteUrl,
+	stripPeopleInviteUrl
+} from './invite';
 
 // Phase 1 of "Life360 for the tramily". A person is a member of a group; only
 // members who are actively sharing a live position get a map avatar. Right now
@@ -18,13 +38,6 @@ export interface Person {
 	lastSeen: string | null; // ISO timestamp of the last position, when shared
 	phone?: string; // for one-tap call / text via the phone's own apps
 	self?: boolean; // the device owner
-}
-
-/** Digits (+ leading '+') only — a tel:/sms: target the OS will accept. */
-export function dialString(phone: string): string {
-	const trimmed = phone.trim();
-	const plus = trimmed.startsWith('+') ? '+' : '';
-	return plus + trimmed.replace(/[^0-9]/g, '');
 }
 
 export interface PeopleGroup {
@@ -57,11 +70,6 @@ export function generateShareCode(): string {
 	let code = '';
 	for (const b of bytes) code += base32[b & 31];
 	return `hc-${code}`;
-}
-
-/** Accept a code a family member shared (trim, lower-case, strip stray spaces). */
-export function normalizeShareCode(raw: string): string {
-	return raw.trim().toLowerCase().replace(/\s+/g, '');
 }
 
 // Avatar ring colours, mode-agnostic (read on both themes).
@@ -211,6 +219,18 @@ class PeopleStore {
 		group.sharing = true;
 		this.#persist();
 		return true;
+	}
+
+	/** Consume a share link from SMS/Web Share and open this device into the same
+	 *  private group. The link only carries the group bearer code; server membership
+	 *  is still created by this device's own SpacetimeDB identity. */
+	acceptInviteLink(rawUrl: string): boolean {
+		const invite = parsePeopleInviteUrl(rawUrl);
+		if (!invite) return false;
+		const groupId: PeopleInviteGroupId = normalizeInviteGroupId(invite.groupId);
+		const accepted = this.joinWithCode(groupId, invite.shareCode);
+		if (accepted) this.activeGroupId = groupId;
+		return accepted;
 	}
 
 	setActiveGroup(id: string): void {

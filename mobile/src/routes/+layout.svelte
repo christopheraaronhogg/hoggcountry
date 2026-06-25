@@ -6,11 +6,18 @@
 	import { cloudAuth } from '$lib/cloud/auth.svelte';
 	import { syncEngine } from '$lib/cloud/syncEngine.svelte';
 	import { registerCloudRestore } from '$lib/cloud/restore';
+	import { people, stripPeopleInviteUrl } from '$lib/people/people.svelte';
 
 	let { children } = $props();
 
 	onMount(() => {
 		let removeResume: (() => void) | undefined;
+
+		if (people.acceptInviteLink(window.location.href)) {
+			trailAssistant.activeTab = 'Map';
+			people.openSheet();
+			history.replaceState(history.state, '', stripPeopleInviteUrl(window.location.href));
+		}
 
 		// Opt-in cloud backup: register the restore applier, then restore any saved
 		// session and start the outbox engine app-wide, so a signed-in hike keeps
