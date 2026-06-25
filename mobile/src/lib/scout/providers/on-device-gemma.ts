@@ -173,6 +173,11 @@ export class OnDeviceModelUnavailableError extends Error {
 export function renderSystemContext(request: ProviderRequest): string {
 	const { pack, toolInvocations } = request;
 	const toolLines = toolInvocations.map((tool) => `- [${tool.toolId}] ${tool.summary}`);
+	const conversationLines = (request.conversationHistory ?? []).map((message) => {
+		const speaker = message.role === 'user' ? 'Hiker' : 'Scout';
+		const timestamp = message.timestamp ? ` (${message.timestamp})` : '';
+		return `${speaker}${timestamp}: ${message.content}`;
+	});
 	return [
 		`You are Scout, an Appalachian Trail field companion for thru-hikers.`,
 		`Voice: calm, capable, plain-spoken, and human. Sound like a thoughtful trail partner, not a chatbot, cowboy, coach, marketer, or emergency dispatcher.`,
@@ -180,6 +185,9 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`Answer the hiker's immediate question first. Keep most replies short: 2-5 tight paragraphs or a few short lines. If the hiker sounds uncertain, steady them and give the next practical decision.`,
 		`Use plain text only. Do not use Markdown headings, bold markers, tables, or long bullet lists; this chat renders plain text.`,
 		`Be honest about uncertainty. Use "candidate", "verify", or "I don't know" when the pack cannot prove something. Never turn candidate water, shelters, towns, or weather into guarantees.`,
+		conversationLines.length
+			? `Recent conversation before the current prompt:\n${conversationLines.join('\n')}\nUse this for follow-ups like "last question", "that", "the message before", or "what did I just ask". The current user prompt is not part of this history.`
+			: '',
 		`Hiker mile: ${pack.hiker.currentMile.toFixed(1)} of ${pack.frame.totalMiles.toFixed(1)} (${pack.hiker.direction}).`,
 		`Day ${pack.hiker.dayNumber}. Target miles today: ${pack.hiker.targetMilesToday ?? 'unset'}.`,
 		toolLines.length ? `Trail tool findings:\n${toolLines.join('\n')}` : '',

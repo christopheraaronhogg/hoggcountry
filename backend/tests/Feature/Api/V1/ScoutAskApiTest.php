@@ -67,6 +67,51 @@ class ScoutAskApiTest extends TestCase
         });
     }
 
+    public function test_recent_conversation_history_is_sent_as_model_messages(): void
+    {
+        config(['services.openai.key' => 'test-key', 'services.openai.scout_model' => 'gpt-4o-mini']);
+        Sanctum::actingAs(User::factory()->create(), ['app', 'llm']);
+
+        Http::fake([
+            'api.openai.com/*' => Http::response([
+                'choices' => [
+                    ['message' => ['role' => 'assistant', 'content' => 'Your previous question was testing 123.']],
+                ],
+            ], 200),
+        ]);
+
+        $response = $this->postJson('/api/v1/scout/ask', [
+            'prompt' => 'what was my last question?',
+            'payload' => [
+                'hiker' => ['trailName' => 'Hogg'],
+                'conversationHistory' => [
+                    ['role' => 'user', 'content' => 'testing 123', 'timestamp' => '2026-06-25T17:54:00.000Z'],
+                    ['role' => 'assistant', 'content' => 'I am here, Hogg.', 'timestamp' => '2026-06-25T17:54:05.000Z'],
+                ],
+            ],
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.answer', 'Your previous question was testing 123.')
+            ->assertJsonPath('data.contextUsed', ['hiker', 'conversationHistory']);
+
+        Http::assertSent(function ($request): bool {
+            $messages = $request->data()['messages'] ?? [];
+
+            return ($messages[0]['role'] ?? null) === 'system'
+                && str_contains($messages[0]['content'] ?? '', 'Prior user/assistant turns are supplied as message history')
+                && ($messages[1]['role'] ?? null) === 'system'
+                && str_contains($messages[1]['content'] ?? '', 'CONTEXT (JSON; may be partial):')
+                && ! str_contains($messages[1]['content'] ?? '', 'conversationHistory')
+                && ($messages[2]['role'] ?? null) === 'user'
+                && ($messages[2]['content'] ?? null) === 'testing 123'
+                && ($messages[3]['role'] ?? null) === 'assistant'
+                && ($messages[3]['content'] ?? null) === 'I am here, Hogg.'
+                && ($messages[4]['role'] ?? null) === 'user'
+                && ($messages[4]['content'] ?? null) === 'what was my last question?';
+        });
+    }
+
     public function test_falls_back_when_configured_model_is_not_available(): void
     {
         config([

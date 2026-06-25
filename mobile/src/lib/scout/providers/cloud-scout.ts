@@ -55,6 +55,7 @@ export class CloudScoutProvider implements ScoutProvider {
 				summary: invocation.summary,
 				confidence: invocation.confidence
 			})),
+			conversationHistory: [...(request.conversationHistory ?? [])],
 			weather: request.pack.weather
 		};
 

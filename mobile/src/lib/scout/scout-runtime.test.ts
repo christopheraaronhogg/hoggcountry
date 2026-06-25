@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createScoutRuntime, cloneDefaultContextPack } from './index.ts';
+import type { CloudScoutBridge } from './providers/cloud-scout.ts';
 import type { OnDeviceGemmaBridge } from './providers/on-device-gemma.ts';
 
 const okBridge: OnDeviceGemmaBridge = {
@@ -103,4 +104,84 @@ test('offline source search includes saved hiker documents with receipts', async
 		ans.receipts.some((receipt) => receipt.kind === 'hiker-input' && receipt.title === 'Foot care note'),
 		'saved docs should be cited as hiker-input'
 	);
+});
+
+test('on-device Scout receives recent conversation in system context', async () => {
+	let seenPrompt = '';
+	let seenSystemContext = '';
+	const bridge: OnDeviceGemmaBridge = {
+		isAvailable: async () => true,
+		describeModel: async () => null,
+		generate: async (input) => {
+			seenPrompt = input.prompt;
+			seenSystemContext = input.systemContext;
+			return { text: 'Your previous question was testing 123.', truncated: false };
+		}
+	};
+
+	const { runtime } = createScoutRuntime({ initialPack: cloneDefaultContextPack(), onDeviceBridge: bridge });
+	await runtime.ask({
+		prompt: 'what was my last question?',
+		onlineStatus: false,
+		conversationHistory: [
+			{
+				role: 'user',
+				content: 'testing 123',
+				timestamp: '2026-06-25T17:54:00.000Z'
+			},
+			{
+				role: 'assistant',
+				content: 'I am here, Hogg. Send the trail question when ready.',
+				timestamp: '2026-06-25T17:54:05.000Z'
+			}
+		]
+	});
+
+	assert.equal(seenPrompt, 'what was my last question?');
+	assert.match(seenSystemContext, /Recent conversation before the current prompt/);
+	assert.match(seenSystemContext, /Hiker \(2026-06-25T17:54:00\.000Z\): testing 123/);
+	assert.match(seenSystemContext, /The current user prompt is not part of this history/);
+});
+
+test('cloud Scout payload includes recent conversation history', async () => {
+	let seenPrompt = '';
+	let seenPayload: Record<string, unknown> = {};
+	const bridge: CloudScoutBridge = {
+		isReachable: async () => true,
+		ask: async (input) => {
+			seenPrompt = input.prompt;
+			seenPayload = input.payload;
+			return {
+				answer: 'Your previous question was testing 123.',
+				confidence: 'medium',
+				contextUsed: ['conversationHistory']
+			};
+		}
+	};
+
+	const { runtime } = createScoutRuntime({
+		initialPack: cloneDefaultContextPack(),
+		cloudBridge: bridge
+	});
+	await runtime.ask({
+		prompt: 'what was my last question?',
+		onlineStatus: true,
+		allowCloud: true,
+		conversationHistory: [
+			{
+				role: 'user',
+				content: 'testing 123',
+				timestamp: '2026-06-25T17:54:00.000Z'
+			}
+		]
+	});
+
+	assert.equal(seenPrompt, 'what was my last question?');
+	assert.deepEqual(seenPayload.conversationHistory, [
+		{
+			role: 'user',
+			content: 'testing 123',
+			timestamp: '2026-06-25T17:54:00.000Z'
+		}
+	]);
 });

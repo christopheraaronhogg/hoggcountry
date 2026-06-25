@@ -6,6 +6,7 @@ import {
 	actionRecordedChatText,
 	appendAssistantStreamChunk,
 	appendChatMessage,
+	buildScoutConversationHistory,
 	createChatMessage,
 	setChatMessageContent
 } from './chat-transcript.ts';
@@ -95,4 +96,67 @@ test('setChatMessageContent replaces only the targeted message', () => {
 test('action status text stays centralized and plain', () => {
 	assert.equal(actionRecordedChatText('Check-in'), 'Done — check-in recorded. ✓');
 	assert.equal(actionCancelledChatText(), `No problem — I didn't record anything.`);
+});
+
+test('buildScoutConversationHistory excludes the current prompt and keeps recent context', () => {
+	const messages = [
+		createChatMessage('assistant', 'Welcome', {
+			id: 'seed',
+			now: '2026-06-20T11:00:00.000Z'
+		}),
+		createChatMessage('user', 'testing 123', {
+			id: 'previous-user',
+			now: '2026-06-20T11:01:00.000Z'
+		}),
+		createChatMessage('assistant', 'I am here.', {
+			id: 'previous-assistant',
+			now: '2026-06-20T11:02:00.000Z'
+		}),
+		createChatMessage('user', 'what was my last question?', {
+			id: 'current-user',
+			now: '2026-06-20T11:03:00.000Z'
+		})
+	];
+
+	const history = buildScoutConversationHistory(messages, {
+		excludeMessageId: 'current-user'
+	});
+
+	assert.deepEqual(history.map((message) => message.content), [
+		'Welcome',
+		'testing 123',
+		'I am here.'
+	]);
+	assert.equal(history.at(-1)?.role, 'assistant');
+});
+
+test('buildScoutConversationHistory bounds messages', () => {
+	const messages = [
+		createChatMessage('user', 'old one', { id: 'old', now: '2026-06-20T11:00:00.000Z' }),
+		createChatMessage('user', 'middle two', { id: 'middle', now: '2026-06-20T11:01:00.000Z' }),
+		createChatMessage('user', 'newest three words', { id: 'newest', now: '2026-06-20T11:02:00.000Z' })
+	];
+
+	const history = buildScoutConversationHistory(messages, {
+		maxMessages: 2,
+		maxChars: 100
+	});
+
+	assert.deepEqual(history.map((message) => message.content), ['middle two', 'newest three words']);
+});
+
+test('buildScoutConversationHistory clips long recent text', () => {
+	const messages = [
+		createChatMessage('user', 'newest three words', {
+			id: 'newest',
+			now: '2026-06-20T11:02:00.000Z'
+		})
+	];
+
+	const history = buildScoutConversationHistory(messages, {
+		maxMessages: 1,
+		maxChars: 9
+	});
+
+	assert.equal(history[0]?.content, 'newest...');
 });

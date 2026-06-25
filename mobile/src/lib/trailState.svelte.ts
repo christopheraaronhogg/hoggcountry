@@ -101,6 +101,7 @@ import {
 	actionRecordedChatText,
 	appendAssistantStreamChunk,
 	appendChatMessage,
+	buildScoutConversationHistory,
 	setChatMessageContent
 } from './chat-transcript';
 
@@ -775,7 +776,7 @@ class TrailAssistantStore {
 		const trimmed = content.trim();
 		if (!trimmed) return;
 
-		this.#addCoachMessage('user', trimmed);
+		const userMessage = this.#addCoachMessage('user', trimmed);
 
 		// "Do" tools: if the message is a write-action intent, Scout PROPOSES the
 		// action (a confirm card) instead of just chatting. Nothing is written
@@ -788,7 +789,7 @@ class TrailAssistantStore {
 			return;
 		}
 
-		void this.#dispatchScoutReply(trimmed);
+		void this.#dispatchScoutReply(trimmed, userMessage.id);
 	}
 
 	/**
@@ -869,7 +870,7 @@ class TrailAssistantStore {
 		return null;
 	}
 
-	async #dispatchScoutReply(prompt: string) {
+	async #dispatchScoutReply(prompt: string, currentMessageId: string) {
 		// Self-heal the native wiring in case Capacitor wasn't ready at construction.
 		this.#nativeScout.ensureNativeWiring();
 		if (REQUIRE_GEMMA) await this.refreshModelStatus();
@@ -911,6 +912,9 @@ class TrailAssistantStore {
 			const answer = await this.#nativeScout.runtime.ask(
 				{
 					prompt,
+					conversationHistory: buildScoutConversationHistory(this.#state.coachMessages, {
+						excludeMessageId: currentMessageId
+					}),
 					onlineStatus: this.#state.onlineStatus,
 					batterySaver: this.#state.trailSettings.batterySaver,
 					allowCloud: CLOUD_SCOUT_ENABLED,

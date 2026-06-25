@@ -23,7 +23,7 @@ class CloudScoutAnswerer
     }
 
     /**
-     * @param  array<string,mixed>  $payload  The Scout context pack (hiker, frame, weather, toolInvocations).
+     * @param  array<string,mixed>  $payload  The Scout context pack (hiker, frame, weather, toolInvocations, conversationHistory).
      * @return array{answer:string,confidence:string,contextUsed:array<int,string>}
      */
     public function answer(string $prompt, array $payload): array
@@ -35,9 +35,14 @@ class CloudScoutAnswerer
 
         $model = (string) config('services.openai.scout_model', 'gpt-5.5');
         $contextUsed = $this->contextSections($payload);
+        $conversationMessages = $this->conversationMessages($payload['conversationHistory'] ?? null);
+        $contextPayload = $payload;
+        unset($contextPayload['conversationHistory']);
 
         $answer = $this->openAI->complete([
-            ['role' => 'system', 'content' => $this->systemPrompt($payload)],
+            ['role' => 'system', 'content' => $this->instructionPrompt($conversationMessages !== [])],
+            ['role' => 'system', 'content' => $this->contextPrompt($contextPayload)],
+            ...$conversationMessages,
             ['role' => 'user', 'content' => $prompt],
         ], $model, 700, 30);
 
@@ -51,7 +56,28 @@ class CloudScoutAnswerer
     /**
      * @param  array<string,mixed>  $payload
      */
-    private function systemPrompt(array $payload): string
+    private function instructionPrompt(bool $hasConversationHistory): string
+    {
+        $conversationRule = $hasConversationHistory
+            ? '- Prior user/assistant turns are supplied as message history before the current user prompt. Use them for follow-ups like "last question", "that", "the message before", or "what did I just ask". The current user prompt is the final user message.'
+            : '- If no prior user/assistant turns are supplied, do not claim to remember earlier chat turns. Answer from the current prompt and context only.';
+
+        return <<<PROMPT
+        You are Scout, a calm, expert Appalachian Trail field assistant for a 2026 NOBO thru-hiker. You answer in the second person, concise and field-useful — a hiker reads you on a phone, often tired, sometimes in bad weather.
+
+        Hard rules:
+        - Ground every trail fact (mileages, shelters, water sources, towns, resupply) in the CONTEXT system message. If the context does not contain a fact, say you do not have it rather than guessing. Never invent trail data — stale or fabricated facts are dangerous on trail.
+        {$conversationRule}
+        - Be honest about uncertainty. It is better to say "I don't have that here" than to sound confident and be wrong.
+        - Safety first. For weather, hazards, injury, or hypothermia risk, lead with the safe action.
+        - Keep it short: a few sentences or tight bullets. No filler, no preamble.
+        PROMPT;
+    }
+
+    /**
+     * @param  array<string,mixed>  $payload
+     */
+    private function contextPrompt(array $payload): string
     {
         $context = json_encode(
             $payload,
@@ -66,17 +92,40 @@ class CloudScoutAnswerer
         }
 
         return <<<PROMPT
-        You are Scout, a calm, expert Appalachian Trail field assistant for a 2026 NOBO thru-hiker. You answer in the second person, concise and field-useful — a hiker reads you on a phone, often tired, sometimes in bad weather.
-
-        Hard rules:
-        - Ground every trail fact (mileages, shelters, water sources, towns, resupply) in the CONTEXT below. If the context does not contain a fact, say you do not have it rather than guessing. Never invent trail data — stale or fabricated facts are dangerous on trail.
-        - Be honest about uncertainty. It is better to say "I don't have that here" than to sound confident and be wrong.
-        - Safety first. For weather, hazards, injury, or hypothermia risk, lead with the safe action.
-        - Keep it short: a few sentences or tight bullets. No filler, no preamble.
-
         CONTEXT (JSON; may be partial):
         {$context}
         PROMPT;
+    }
+
+    /**
+     * @return array<int,array{role:string,content:string}>
+     */
+    private function conversationMessages(mixed $history): array
+    {
+        if (! is_array($history)) {
+            return [];
+        }
+
+        $messages = [];
+        foreach (array_slice($history, -12) as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $role = $item['role'] ?? null;
+            $content = trim((string) ($item['content'] ?? ''));
+            if (! in_array($role, ['user', 'assistant'], true) || $content === '') {
+                continue;
+            }
+
+            if (mb_strlen($content) > 1200) {
+                $content = rtrim(mb_substr($content, 0, 1197)).'...';
+            }
+
+            $messages[] = ['role' => $role, 'content' => $content];
+        }
+
+        return $messages;
     }
 
     /**
@@ -89,7 +138,7 @@ class CloudScoutAnswerer
     private function contextSections(array $payload): array
     {
         $sections = [];
-        foreach (['hiker', 'frame', 'weather', 'toolInvocations'] as $section) {
+        foreach (['hiker', 'frame', 'weather', 'toolInvocations', 'conversationHistory'] as $section) {
             $value = $payload[$section] ?? null;
             $present = is_array($value) ? $value !== [] : ($value !== null && $value !== '');
             if ($present) {

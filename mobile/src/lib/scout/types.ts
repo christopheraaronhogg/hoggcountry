@@ -234,8 +234,15 @@ export interface ProviderCapabilities {
 	maxContextChars: number;
 }
 
+export interface ScoutConversationMessage {
+	role: 'user' | 'assistant';
+	content: string;
+	timestamp?: string;
+}
+
 export interface ProviderRequest {
 	prompt: string;
+	conversationHistory?: readonly ScoutConversationMessage[];
 	pack: ContextPack;
 	toolInvocations: ToolInvocationRecord[];
 	now: Date;
@@ -287,6 +294,7 @@ export interface ScoutRuntimeOptions {
 
 export interface ScoutAskInput {
 	prompt: string;
+	conversationHistory?: readonly ScoutConversationMessage[];
 	onlineStatus: boolean;
 	batterySaver?: boolean;
 	allowCloud?: boolean;

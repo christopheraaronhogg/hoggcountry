@@ -40,7 +40,13 @@ export class DefaultScoutRuntime implements ScoutRuntime {
 		let providerResponse;
 		try {
 			providerResponse = await decision.provider.generate(
-				{ prompt: input.prompt, pack, toolInvocations, now },
+				{
+					prompt: input.prompt,
+					conversationHistory: [...(input.conversationHistory ?? [])],
+					pack,
+					toolInvocations,
+					now
+				},
 				onToken
 			);
 		} catch (error) {
