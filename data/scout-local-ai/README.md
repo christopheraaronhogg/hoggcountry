@@ -33,3 +33,11 @@ Proof lanes stay separate:
 - `scaffold-not-model`: tool/source-routing smoke only.
 - `external-local-model-command`: local model bridge proof, useful before device automation.
 - `real TestFlight/iPhone`: final Dad-readiness proof.
+
+The installed mobile app reads the suite from `mobile/static/scout/dad-local-ai-100.json`. After editing the canonical suite, run:
+
+```sh
+npm run sync:scout-local-ai-suite
+```
+
+The suite test fails if the embedded mobile copy drifts.

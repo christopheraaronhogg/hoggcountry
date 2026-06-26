@@ -2,6 +2,7 @@
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import AccountTab from './AccountTab.svelte';
 	import SafetyTab from './SafetyTab.svelte';
+	import ScoutEvalLab from './ScoutEvalLab.svelte';
 
 	// Settings is reached from the header gear, not the bottom nav. It gathers the
 	// infrequent surfaces that used to be their own tabs: account + the on-device
@@ -26,6 +27,7 @@
 	<section class="group">
 		<h2 class="group-title">Account &amp; on-device AI</h2>
 		<AccountTab />
+		<ScoutEvalLab />
 	</section>
 
 	<section class="group">

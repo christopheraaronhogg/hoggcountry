@@ -70,6 +70,12 @@ import {
 import { detectTrailActionIntent } from './scout/action-intents.ts';
 import { cloneDefaultContextPack } from './scout/default-pack.ts';
 import {
+	runScoutLocalAiEval,
+	type ScoutLocalAiEvalProgress,
+	type ScoutLocalAiEvalRun,
+	type ScoutLocalAiEvalSuite
+} from './scout/local-ai-eval.ts';
+import {
 	loadOfflineSourceDocs,
 	mergeOfflineSourceDocs
 } from './scout/offline-source-docs.ts';
@@ -1035,6 +1041,45 @@ class TrailAssistantStore {
 			throw new Error('on-device-model-unavailable');
 		}
 		return this.#nativeScout.generateText({ ...input, maxTokens: 512 });
+	}
+
+	async runLocalAiEvalSuite(input: {
+		suite: ScoutLocalAiEvalSuite;
+		limit?: number;
+		onProgress?: (progress: ScoutLocalAiEvalProgress) => void;
+	}): Promise<ScoutLocalAiEvalRun> {
+		if (CLOUD_SCOUT_ENABLED) {
+			throw new Error('The local-AI eval must run in the installed iOS app, not the web cloud lane.');
+		}
+		this.#nativeScout.ensureNativeWiring();
+		if (!(await this.#nativeScout.gemmaReady(true))) {
+			await this.#nativeScout.startModelDownloadIfUseful();
+			throw new Error('Scout local AI is not ready on this device yet.');
+		}
+
+		return runScoutLocalAiEval({
+			suite: input.suite,
+			limit: input.limit,
+			evidenceLane: 'device-on-device-gemma',
+			runContext: {
+				surface: 'mobile-settings-scout-eval-lab',
+				scoutLane: scoutLaneLabel,
+				modelState: this.#modelDownloads.status?.state ?? null,
+				modelId: this.#modelDownloads.status?.modelId ?? null,
+				runtimeConfigured: this.#modelDownloads.status?.runtimeConfigured ?? null,
+				userAgent: browser ? navigator.userAgent : null
+			},
+			onProgress: input.onProgress,
+			ask: ({ testCase, pack, conversationHistory }) =>
+				this.#nativeScout.askWithContextPack(pack, {
+					prompt: testCase.prompt,
+					conversationHistory,
+					onlineStatus: false,
+					batterySaver: this.#state.trailSettings.batterySaver,
+					allowCloud: false,
+					preferredMode: 'on-device'
+				})
+		});
 	}
 
 	async #refreshFieldPackForPrompt(prompt: string): Promise<void> {

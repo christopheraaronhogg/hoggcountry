@@ -186,3 +186,36 @@ test('native runtime catches transient availability probe failures', async () =>
 
 	assert.equal(await runtime.gemmaReady(true), false);
 });
+
+test('native runtime asks with an isolated context pack for device evals', async () => {
+	const evalPack = cloneDefaultContextPack();
+	evalPack.hiker.currentMile = 501.8;
+	let seenMile: number | null = null;
+
+	const runtime = new NativeScoutRuntime({
+		browserAvailable: true,
+		store: contextStore(),
+		createBridge: () => bridge(true),
+		createManager: () => manager(),
+		createRuntime: (input) => ({
+			runtime: {
+				ask: async (_input: ScoutAskInput, _onToken?: TokenSink) => {
+					await input.store.load();
+					seenMile = input.store.get().hiker.currentMile;
+					return answer();
+				}
+			},
+			onDeviceProvider: undefined
+		}),
+		createDownloadSession: downloadSession
+	});
+
+	await runtime.askWithContextPack(evalPack, {
+		prompt: 'What water is ahead?',
+		onlineStatus: false,
+		allowCloud: false,
+		preferredMode: 'on-device'
+	});
+
+	assert.equal(seenMile, 501.8);
+});

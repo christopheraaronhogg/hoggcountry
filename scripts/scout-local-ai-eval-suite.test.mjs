@@ -8,6 +8,7 @@ import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
 const SUITE_PATH = new URL('../data/scout-local-ai/dad-local-ai-100.json', import.meta.url);
+const MOBILE_SUITE_PATH = new URL('../mobile/static/scout/dad-local-ai-100.json', import.meta.url);
 const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
 const execFileAsync = promisify(execFile);
 const VALID_PHASES = new Set(['pre-trail', 'on-trail']);
@@ -105,6 +106,12 @@ test('Dad local AI eval suite has 100 complete, reviewable cases', async () => {
 	for (const category of suite.failureCategories) {
 		assert.ok(VALID_FAILURES.has(category), `unknown failure category ${category}`);
 	}
+});
+
+test('mobile embedded Dad local AI eval suite matches canonical suite', async () => {
+	const canonical = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const mobile = JSON.parse(await readFile(MOBILE_SUITE_PATH, 'utf8'));
+	assert.deepEqual(mobile, canonical);
 });
 
 test('Dad local AI eval suite routes every case through expected Scout tools', async () => {

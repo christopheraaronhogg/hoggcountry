@@ -4,14 +4,18 @@ import {
 	createCapacitorModelManager,
 	type ScoutModelManager
 } from './capacitor-gemma-bridge.ts';
+import { InMemoryContextPackStore } from './context-pack-store.ts';
 import {
 	ScoutModelDownloadSession,
 	type ModelDownloadAutoStart
 } from './model-download-session.svelte.ts';
 import type {
 	ContextPackStore,
+	ContextPack,
+	ScoutAskInput,
 	ScoutRuntime,
-	ScoutAnswer
+	ScoutAnswer,
+	TokenSink
 } from './types.ts';
 import type {
 	GemmaTier,
@@ -112,6 +116,21 @@ export class NativeScoutRuntime {
 
 	get runtime(): ScoutRuntime {
 		return this.#scout.runtime;
+	}
+
+	async askWithContextPack(
+		pack: ContextPack,
+		input: ScoutAskInput,
+		onToken?: TokenSink
+	): Promise<ScoutAnswer> {
+		this.ensureNativeWiring();
+		const evalRuntime = this.#createRuntime({
+			store: new InMemoryContextPackStore({ initial: pack }),
+			onDeviceBridge: this.#gemmaBridge ?? undefined,
+			onDeviceTier: this.#tier,
+			cloudBridge: this.#cloudBridge ?? undefined
+		});
+		return evalRuntime.runtime.ask(input, onToken);
 	}
 
 	ensureNativeWiring(): void {

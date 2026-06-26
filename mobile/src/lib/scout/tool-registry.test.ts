@@ -381,7 +381,7 @@ test('runToolsFor recognizes salvation phrasing as scripture search', async () =
 
 test('runToolsFor falls back to current mile plus source search for unmatched prompts', async () => {
 	const records = await runToolsFor(
-		'what should I keep in mind tonight?',
+		'tell me something useful about trail mindset',
 		DEFAULT_CONTEXT_PACK,
 		defaultToolRegistry(),
 		FIXED_NOW
