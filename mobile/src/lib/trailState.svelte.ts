@@ -1047,6 +1047,8 @@ class TrailAssistantStore {
 		suite: ScoutLocalAiEvalSuite;
 		limit?: number;
 		onProgress?: (progress: ScoutLocalAiEvalProgress) => void;
+		onSnapshot?: (run: ScoutLocalAiEvalRun) => void;
+		previousRun?: ScoutLocalAiEvalRun | null;
 	}): Promise<ScoutLocalAiEvalRun> {
 		if (CLOUD_SCOUT_ENABLED) {
 			throw new Error('The local-AI eval must run in the installed iOS app, not the web cloud lane.');
@@ -1070,6 +1072,8 @@ class TrailAssistantStore {
 				userAgent: browser ? navigator.userAgent : null
 			},
 			onProgress: input.onProgress,
+			onSnapshot: input.onSnapshot,
+			previousRun: input.previousRun,
 			ask: ({ testCase, pack, conversationHistory }) =>
 				this.#nativeScout.askWithContextPack(pack, {
 					prompt: testCase.prompt,

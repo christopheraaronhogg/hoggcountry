@@ -114,6 +114,8 @@ export async function runScoutLocalAiEval(input: {
 	limit?: number;
 	now?: Date;
 	onProgress?: (progress: ScoutLocalAiEvalProgress) => void;
+	onSnapshot?: (run: ScoutLocalAiEvalRun) => void;
+	previousRun?: ScoutLocalAiEvalRun | null;
 	runContext?: Record<string, unknown>;
 	ask: (input: {
 		testCase: ScoutLocalAiEvalCase;
@@ -123,11 +125,32 @@ export async function runScoutLocalAiEval(input: {
 }): Promise<ScoutLocalAiEvalRun> {
 	const now = input.now ?? new Date();
 	const selectedCases = input.limit ? input.suite.cases.slice(0, input.limit) : input.suite.cases;
-	const runId = input.runId ?? `device-local-ai-${compactTimestamp(now)}`;
+	const previousRun = validateReusablePreviousRun(input.previousRun, input.suite, input.evidenceLane);
+	const runId = input.runId ?? previousRun?.runId ?? `device-local-ai-${compactTimestamp(now)}`;
+	const generatedAt = previousRun?.generatedAt ?? now.toISOString();
+	const priorResults = new Map((previousRun?.results ?? []).map((result) => [result.caseId, result]));
 	const results: ScoutLocalAiEvalResult[] = [];
+	const snapshot = () =>
+		createScoutLocalAiEvalRun({
+			suite: input.suite,
+			runId,
+			generatedAt,
+			evidenceLane: input.evidenceLane,
+			runContext: input.runContext ?? previousRun?.runContext,
+			limit: input.limit,
+			results
+		});
 
 	for (const [index, testCase] of selectedCases.entries()) {
 		input.onProgress?.({ caseId: testCase.id, index: index + 1, total: selectedCases.length, completed: results.length });
+		const priorResult = priorResults.get(testCase.id);
+		if (priorResult && canReusePriorResult(priorResult, testCase, input.evidenceLane)) {
+			results.push(reusePriorResult(priorResult, testCase, index + 1));
+			input.onSnapshot?.(snapshot());
+			input.onProgress?.({ caseId: testCase.id, index: index + 1, total: selectedCases.length, completed: results.length });
+			continue;
+		}
+
 		const pack = buildScoutLocalAiEvalPack(testCase, now);
 		const startedAt = Date.now();
 
@@ -166,20 +189,33 @@ export async function runScoutLocalAiEval(input: {
 			results.push(failedResult(testCase, index + 1, input.evidenceLane, now, Date.now() - startedAt, error));
 		}
 
+		input.onSnapshot?.(snapshot());
 		input.onProgress?.({ caseId: testCase.id, index: index + 1, total: selectedCases.length, completed: results.length });
 	}
 
+	return snapshot();
+}
+
+function createScoutLocalAiEvalRun(input: {
+	suite: ScoutLocalAiEvalSuite;
+	runId: string;
+	generatedAt: string;
+	evidenceLane: ScoutLocalAiEvidenceLane;
+	runContext?: Record<string, unknown>;
+	limit?: number;
+	results: ScoutLocalAiEvalResult[];
+}): ScoutLocalAiEvalRun {
 	return {
 		schemaVersion: 1,
-		runId,
+		runId: input.runId,
 		suiteId: input.suite.suiteId,
 		suiteTitle: input.suite.title,
 		suitePath: 'mobile/static/scout/dad-local-ai-100.json',
-		generatedAt: now.toISOString(),
+		generatedAt: input.generatedAt,
 		evidenceLane: input.evidenceLane,
 		modelCommand: null,
 		runContext: input.runContext,
-		caseCount: results.length,
+		caseCount: input.results.length,
 		totalSuiteCases: input.suite.cases.length,
 		filters: {
 			id: null,
@@ -189,8 +225,8 @@ export async function runScoutLocalAiEval(input: {
 		},
 		ratingScale: input.suite.ratingScale,
 		failureCategories: input.suite.failureCategories,
-		summary: summarizeScoutLocalAiEvalResults(results),
-		results
+		summary: summarizeScoutLocalAiEvalResults(input.results),
+		results: [...input.results]
 	};
 }
 
@@ -405,6 +441,51 @@ function compactCase(testCase: ScoutLocalAiEvalCase): ScoutLocalAiEvalCase {
 	};
 }
 
+function validateReusablePreviousRun(
+	previousRun: ScoutLocalAiEvalRun | null | undefined,
+	suite: ScoutLocalAiEvalSuite,
+	evidenceLane: ScoutLocalAiEvidenceLane
+): ScoutLocalAiEvalRun | null {
+	if (!previousRun) return null;
+	if (previousRun.suiteId !== suite.suiteId) {
+		throw new Error(`Saved eval run is for ${previousRun.suiteId}, not ${suite.suiteId}.`);
+	}
+	if (previousRun.evidenceLane !== evidenceLane) {
+		throw new Error(`Saved eval run is ${previousRun.evidenceLane}, not ${evidenceLane}.`);
+	}
+	return previousRun;
+}
+
+function canReusePriorResult(
+	result: ScoutLocalAiEvalResult,
+	testCase: ScoutLocalAiEvalCase,
+	evidenceLane: ScoutLocalAiEvidenceLane
+): boolean {
+	if (result.caseId !== testCase.id) return false;
+	if (result.answerOrigin !== evidenceLane) return false;
+	if (!result.answer || result.error) return false;
+	if (result.case?.prompt !== testCase.prompt) return false;
+	if (!sameStringArray(result.case?.requiredTools, testCase.requiredTools)) return false;
+	return true;
+}
+
+function reusePriorResult(
+	result: ScoutLocalAiEvalResult,
+	testCase: ScoutLocalAiEvalCase,
+	index: number
+): ScoutLocalAiEvalResult {
+	const toolExpectations =
+		result.toolExpectations ?? evaluateToolExpectations(testCase.requiredTools, result.toolInvocations ?? []);
+	return {
+		...result,
+		index,
+		caseId: testCase.id,
+		case: compactCase(testCase),
+		toolExpectations,
+		suggestedFailureCategories: result.suggestedFailureCategories ?? suggestedFailures(toolExpectations)
+	};
+}
+
 function conversationHistoryFor(
 	testCase: ScoutLocalAiEvalCase,
 	priorResults: ScoutLocalAiEvalResult[]
@@ -470,4 +551,10 @@ function suggestedFailures(expectations: ScoutLocalAiToolExpectations): string[]
 
 function compactTimestamp(date: Date): string {
 	return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/u, 'Z');
+}
+
+function sameStringArray(left: unknown, right: string[]): boolean {
+	if (!Array.isArray(left)) return false;
+	if (left.length !== right.length) return false;
+	return left.every((value, index) => value === right[index]);
 }

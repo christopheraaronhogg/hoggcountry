@@ -8,30 +8,55 @@
 	} from '$lib/scout/local-ai-eval';
 
 	const SUITE_URL = '/scout/dad-local-ai-100.json';
+	const SAVED_RUN_KEY = 'hoggcountry:scout-local-ai-eval:last-run:v1';
 
-	let suite = $state<ScoutLocalAiEvalSuite | null>(null);
-	let run = $state<ScoutLocalAiEvalRun | null>(null);
+	let suite = $state.raw<ScoutLocalAiEvalSuite | null>(null);
+	let run = $state.raw<ScoutLocalAiEvalRun | null>(null);
+	let savedRun = $state.raw<ScoutLocalAiEvalRun | null>(null);
 	let progress = $state<ScoutLocalAiEvalProgress | null>(null);
 	let loading = $state(false);
 	let running = $state(false);
 	let error = $state<string | null>(null);
+	let saveWarning = $state<string | null>(null);
 
 	const modelReady = $derived(
 		trailAssistant.modelStatus?.state === 'ready' &&
 			trailAssistant.modelStatus.runtimeConfigured !== false
 	);
+	const activeRun = $derived(run ?? savedRun);
+	const savedRunTarget = $derived(savedRun ? (savedRun.filters?.limit ?? savedRun.totalSuiteCases) : 0);
 	const canRun = $derived(Boolean(suite && modelReady && !running && !trailAssistant.scoutUsesCloud));
-	const exportText = $derived(run ? JSON.stringify(run, null, 2) : '');
+	const canResume = $derived(
+		Boolean(
+			canRun &&
+				suite &&
+				savedRun &&
+				savedRun.suiteId === suite.suiteId &&
+				savedRun.evidenceLane === 'device-on-device-gemma' &&
+				savedRun.caseCount < savedRunTarget
+		)
+	);
+	const exportText = $derived(activeRun ? JSON.stringify(activeRun, null, 2) : '');
 	const progressLabel = $derived(
-		progress ? `${progress.completed}/${progress.total} · ${progress.caseId}` : suite ? `${suite.cases.length} cases` : 'loading'
+		progress
+				? `${progress.completed}/${progress.total} · ${progress.caseId}`
+			: activeRun
+				? `${activeRun.caseCount}/${activeRun.filters?.limit ?? activeRun.totalSuiteCases} done`
+				: suite
+					? `${suite.cases.length} cases`
+					: 'loading'
 	);
 	const summaryLabel = $derived(
-		run
-			? `${run.summary.toolExpectationComplete}/${run.caseCount} routed · ${run.summary.missingToolCases} misses`
+		activeRun
+			? `${activeRun.summary.toolExpectationComplete}/${activeRun.caseCount} routed · ${activeRun.summary.missingToolCases} misses`
 			: 'No device run yet'
+	);
+	const savedRunLabel = $derived(
+		savedRun ? `${savedRun.caseCount}/${savedRunTarget} saved · ${savedRun.runId}` : 'No saved run'
 	);
 
 	onMount(() => {
+		loadSavedRun();
 		void loadSuite();
 	});
 
@@ -49,19 +74,28 @@
 		}
 	}
 
-	async function runEval(limit?: number) {
+	async function runEval(limit?: number, resume = false) {
 		if (!suite || running) return;
+		const previousRun = resume ? savedRun : null;
+		const runLimit = resume ? (previousRun?.filters?.limit ?? undefined) : limit;
 		running = true;
 		error = null;
+		saveWarning = null;
 		progress = null;
+		if (!resume) run = null;
 		try {
 			run = await trailAssistant.runLocalAiEvalSuite({
 				suite,
-				limit,
+				limit: runLimit,
+				previousRun,
 				onProgress: (next) => {
 					progress = next;
+				},
+				onSnapshot: (snapshot) => {
+					saveRunSnapshot(snapshot);
 				}
 			});
+			saveRunSnapshot(run);
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Scout eval failed.';
 		} finally {
@@ -70,14 +104,59 @@
 	}
 
 	function downloadRun() {
-		if (!run) return;
-		const blob = new Blob([JSON.stringify(run, null, 2)], { type: 'application/json' });
+		const currentRun = activeRun;
+		if (!currentRun) return;
+		const blob = new Blob([JSON.stringify(currentRun, null, 2)], { type: 'application/json' });
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement('a');
 		link.href = url;
-		link.download = `${run.runId}.json`;
+		link.download = `${currentRun.runId}.json`;
 		link.click();
 		URL.revokeObjectURL(url);
+	}
+
+	function loadSavedRun() {
+		try {
+			const text = localStorage.getItem(SAVED_RUN_KEY);
+			const parsed = text ? parseSavedRun(text) : null;
+			if (!parsed) return;
+			savedRun = parsed;
+			run = parsed;
+		} catch {
+			saveWarning = 'Saved eval run could not be loaded on this device.';
+		}
+	}
+
+	function saveRunSnapshot(snapshot: ScoutLocalAiEvalRun) {
+		run = snapshot;
+		savedRun = snapshot;
+		try {
+			localStorage.setItem(SAVED_RUN_KEY, JSON.stringify(snapshot));
+		} catch {
+			saveWarning = 'Eval autosave failed. Export before leaving this screen.';
+		}
+	}
+
+	function clearSavedRun() {
+		try {
+			localStorage.removeItem(SAVED_RUN_KEY);
+		} catch {
+			saveWarning = 'Saved eval run could not be cleared on this device.';
+		}
+		savedRun = null;
+		if (!running) {
+			run = null;
+			progress = null;
+		}
+	}
+
+	function parseSavedRun(text: string): ScoutLocalAiEvalRun | null {
+		const parsed = JSON.parse(text) as Partial<ScoutLocalAiEvalRun>;
+		if (parsed.schemaVersion !== 1) return null;
+		if (typeof parsed.runId !== 'string') return null;
+		if (parsed.evidenceLane !== 'device-on-device-gemma') return null;
+		if (!Array.isArray(parsed.results)) return null;
+		return parsed as ScoutLocalAiEvalRun;
 	}
 </script>
 
@@ -106,6 +185,10 @@
 		<p class="eval-error" role="alert">{error}</p>
 	{/if}
 
+	{#if saveWarning}
+		<p class="eval-warning" role="status">{saveWarning}</p>
+	{/if}
+
 	<div class="eval-actions">
 		<button class="outline-button compact" type="button" onclick={() => runEval(3)} disabled={!canRun}>
 			Run 3
@@ -113,12 +196,20 @@
 		<button class="cta-button compact" type="button" onclick={() => runEval()} disabled={!canRun}>
 			{running ? 'Running…' : 'Run 100'}
 		</button>
-		<button class="outline-button compact" type="button" onclick={downloadRun} disabled={!run}>
+		<button class="outline-button compact" type="button" onclick={() => runEval(undefined, true)} disabled={!canResume}>
+			Resume
+		</button>
+		<button class="outline-button compact" type="button" onclick={downloadRun} disabled={!activeRun}>
 			Export
+		</button>
+		<button class="outline-button compact" type="button" onclick={clearSavedRun} disabled={!savedRun || running}>
+			Clear
 		</button>
 	</div>
 
-	{#if run}
+	<p class="eval-save">{savedRunLabel}</p>
+
+	{#if activeRun}
 		<textarea readonly value={exportText} aria-label="Scout eval run JSON"></textarea>
 	{/if}
 </section>
@@ -209,7 +300,8 @@
 		line-height: 1.25;
 	}
 
-	.eval-error {
+	.eval-error,
+	.eval-warning {
 		border-radius: 12px;
 		padding: 10px 12px;
 		background: color-mix(in srgb, var(--danger) 10%, var(--surface));
@@ -219,9 +311,14 @@
 		line-height: 1.35;
 	}
 
+	.eval-warning {
+		background: var(--warn-soft);
+		color: var(--ink);
+	}
+
 	.eval-actions {
 		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
 		gap: 8px;
 	}
 
@@ -232,6 +329,15 @@
 
 	.eval-actions button:disabled {
 		opacity: 0.5;
+	}
+
+	.eval-save {
+		min-width: 0;
+		overflow-wrap: anywhere;
+		color: var(--muted);
+		font-size: 0.76rem;
+		font-weight: 700;
+		line-height: 1.3;
 	}
 
 	textarea {
@@ -249,8 +355,7 @@
 	}
 
 	@media (max-width: 390px) {
-		.eval-metrics,
-		.eval-actions {
+		.eval-metrics {
 			grid-template-columns: 1fr;
 		}
 	}

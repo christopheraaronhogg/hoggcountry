@@ -114,6 +114,81 @@ test('runScoutLocalAiEval preserves prior answer context for DLA-097 follow-ups'
 	assert.equal(histories[1][1]?.role, 'assistant');
 });
 
+test('runScoutLocalAiEval resumes from a saved partial run and snapshots progress', async () => {
+	let asks = 0;
+	const cases = [
+		evalCase({ id: 'DLA-001', prompt: 'What water is ahead?' }),
+		evalCase({ id: 'DLA-002', prompt: 'Where should I sleep tonight?', requiredTools: ['next_shelter'] }),
+		evalCase({ id: 'DLA-003', prompt: 'How should I handle this storm?', requiredTools: ['weather_check'] })
+	];
+	const firstRun = await runScoutLocalAiEval({
+		suite: suite(cases),
+		evidenceLane: 'device-on-device-gemma',
+		limit: 2,
+		now: new Date('2026-06-26T12:00:00.000Z'),
+		ask: ({ testCase }) => {
+			asks += 1;
+			return Promise.resolve(answer(testCase.prompt));
+		}
+	});
+	const snapshots: number[] = [];
+
+	const resumed = await runScoutLocalAiEval({
+		suite: suite(cases),
+		evidenceLane: 'device-on-device-gemma',
+		previousRun: firstRun,
+		now: new Date('2026-06-26T12:30:00.000Z'),
+		onSnapshot: (snapshot) => {
+			snapshots.push(snapshot.caseCount);
+		},
+		ask: ({ testCase }) => {
+			asks += 1;
+			return Promise.resolve(answer(testCase.prompt));
+		}
+	});
+
+	assert.equal(asks, 3);
+	assert.equal(resumed.runId, firstRun.runId);
+	assert.equal(resumed.generatedAt, firstRun.generatedAt);
+	assert.equal(resumed.caseCount, 3);
+	assert.deepEqual(resumed.results.map((result) => result.caseId), ['DLA-001', 'DLA-002', 'DLA-003']);
+	assert.deepEqual(snapshots, [1, 2, 3]);
+});
+
+test('runScoutLocalAiEval retries prior provider errors during resume', async () => {
+	let asks = 0;
+	const testSuite = suite([
+		evalCase({ id: 'DLA-001', prompt: 'What water is ahead?' }),
+		evalCase({ id: 'DLA-002', prompt: 'Where should I sleep tonight?', requiredTools: ['next_shelter'] })
+	]);
+	const failed = await runScoutLocalAiEval({
+		suite: testSuite,
+		evidenceLane: 'device-on-device-gemma',
+		limit: 1,
+		now: new Date('2026-06-26T12:00:00.000Z'),
+		ask: () => {
+			asks += 1;
+			return Promise.reject(new Error('model stopped'));
+		}
+	});
+
+	const resumed = await runScoutLocalAiEval({
+		suite: testSuite,
+		evidenceLane: 'device-on-device-gemma',
+		previousRun: failed,
+		now: new Date('2026-06-26T12:30:00.000Z'),
+		ask: ({ testCase }) => {
+			asks += 1;
+			return Promise.resolve(answer(testCase.prompt));
+		}
+	});
+
+	assert.equal(asks, 3);
+	assert.equal(resumed.caseCount, 2);
+	assert.equal(resumed.results[0].error, undefined);
+	assert.match(resumed.results[0].answer, /What water is ahead/);
+});
+
 test('buildScoutLocalAiEvalPack creates isolated eval context for a case mile', () => {
 	const pack = buildScoutLocalAiEvalPack(evalCase({ mile: 501.8 }), new Date('2026-06-26T12:00:00.000Z'));
 

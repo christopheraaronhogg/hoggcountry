@@ -59,6 +59,11 @@ they hold raw model transcripts and human review notes.
 For a quick `Run 3` smoke export, add `--allow-partial`. Do not use partial runs
 as final proof.
 
+The in-app Eval Lab autosaves each completed question locally on the phone. If a
+100-question run is interrupted, reopen Settings, tap Resume, and export after it
+finishes. Export also works after reopening the app because the last device run
+is restored from local storage.
+
 After filling the review JSON ratings and tasks:
 
 ```sh
