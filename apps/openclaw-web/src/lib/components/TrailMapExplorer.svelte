@@ -1644,29 +1644,6 @@
               <span>{selectedDifficulty ? displayLabel(selectedDifficulty.label) : 'difficulty'}</span>
             </span>
           </div>
-
-          <div class="ahead-strip" aria-label="What's ahead">
-            <button type="button" onclick={() => nextShelter && map?.setView([nextShelter.lat, nextShelter.lon], 13)}>
-              <svg aria-hidden="true"><use href="#trail-map-icon-shelter"></use></svg>
-              <em>{distanceAhead(nextShelter)}</em>
-              <small>Shelter</small>
-            </button>
-            <button type="button" onclick={() => nextWater && map?.setView([nextWater.lat, nextWater.lon], 13)}>
-              <svg aria-hidden="true"><use href="#trail-map-icon-water"></use></svg>
-              <em>{distanceAhead(nextWater)}</em>
-              <small>Water</small>
-            </button>
-            <button type="button" onclick={() => nextTown && map?.setView([nextTown.lat, nextTown.lon], 12)}>
-              <svg aria-hidden="true"><use href="#trail-map-icon-town"></use></svg>
-              <em>{distanceAhead(nextTown)}</em>
-              <small>Town</small>
-            </button>
-            <button type="button" onclick={() => nextRoad && map?.setView([nextRoad.lat, nextRoad.lon], 13)}>
-              <svg aria-hidden="true"><use href="#trail-map-icon-road"></use></svg>
-              <em>{distanceAhead(nextRoad)}</em>
-              <small>Road</small>
-            </button>
-          </div>
         {/if}
       {/if}
     </div>
@@ -1888,7 +1865,6 @@
   .layers-refresh svg,
   .layers-close svg,
   .metric-label svg,
-  .ahead-strip svg,
   .next-head svg {
     width: 1rem;
     height: 1rem;
@@ -2697,53 +2673,6 @@
     text-transform: uppercase;
   }
 
-  .ahead-strip {
-    display: grid;
-    flex: 0 0 auto;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.5rem;
-    padding: 0 1.05rem 0.7rem;
-  }
-
-  .ahead-strip button {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.16rem;
-    border: 1px solid rgba(255, 253, 248, 0.1);
-    border-radius: 12px;
-    background: rgba(255, 253, 248, 0.06);
-    color: #fffdf8;
-    cursor: pointer;
-    padding: 0.5rem 0.3rem;
-    transition: background 130ms ease, border-color 130ms ease;
-  }
-
-  .ahead-strip button:active {
-    background: rgba(255, 253, 248, 0.12);
-  }
-
-  .ahead-strip svg {
-    width: 1.05rem;
-    height: 1.05rem;
-    color: rgba(217, 249, 157, 0.85);
-  }
-
-  .ahead-strip em {
-    font-size: 0.92rem;
-    font-style: normal;
-    font-weight: 800;
-  }
-
-  .ahead-strip small {
-    color: rgba(255, 253, 248, 0.56);
-    font-family: Oswald, Impact, sans-serif;
-    font-size: 0.58rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-
   /* ---- Expanded body -------------------------------------------------- */
   .sheet-body {
     display: grid;
@@ -3247,10 +3176,6 @@
   @media (max-width: 420px) {
     .status-text strong {
       font-size: 0.96rem;
-    }
-
-    .ahead-strip small {
-      font-size: 0.54rem;
     }
 
     .next-grid {
