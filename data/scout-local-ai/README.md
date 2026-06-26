@@ -41,9 +41,13 @@ npm run status:scout-local-ai
 ```
 
 This checks the canonical suite, embedded mobile suite copy, current saved
-runs/reviews, strict device-proof candidates, and the exact next action. Use it
-after every import/review/iteration pass so scaffold routing runs, partial
-reviews, and missing TestFlight/iPhone proof stay visually separate.
+runs/reviews, strict device-proof candidates, objective coverage across the
+requested hiker situations, and the exact next action. Use it after every
+import/review/iteration pass so scaffold routing runs, partial reviews, and
+missing TestFlight/iPhone proof stay visually separate. The coverage gate fails
+if the suite stops covering trail prep, daily hiking decisions, water, shelters,
+weather, resupply, safety, gear, Bible/spiritual support, offline/local-model
+use, or confusing edge cases at the expected minimum depth.
 
 Before handing the phone to Dad or sending Chris the next TestFlight steps,
 generate the current one-page phone/run/review checklist:

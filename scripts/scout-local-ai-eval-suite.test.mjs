@@ -7,6 +7,7 @@ import { test } from 'node:test';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { summarizeRunSourceEvidence } from './lib/scout-local-ai-source-evidence.mjs';
+import { summarizeScoutLocalAiSuiteCoverage } from './lib/scout-local-ai-suite-coverage.mjs';
 import { scoutLocalAiSuiteHash } from './lib/scout-local-ai-suite.mjs';
 
 const SUITE_PATH = new URL('../data/scout-local-ai/dad-local-ai-100.json', import.meta.url);
@@ -118,6 +119,38 @@ test('Dad local AI eval suite has 100 complete, reviewable cases', async () => {
 	}
 });
 
+test('Dad local AI eval suite covers requested hiker objective areas', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const coverage = summarizeScoutLocalAiSuiteCoverage(suite);
+	const byId = Object.fromEntries(coverage.areas.map((area) => [area.id, area]));
+
+	assert.equal(coverage.ok, true, coverage.errors.join('\n'));
+	assert.equal(coverage.errors.length, 0);
+	assert.ok(byId['trail-prep'].count >= 25);
+	assert.ok(byId['daily-hiking-decisions'].count >= 45);
+	assert.ok(byId.water.count >= 10);
+	assert.ok(byId.shelter.count >= 10);
+	assert.ok(byId.weather.count >= 10);
+	assert.ok(byId.resupply.count >= 10);
+	assert.ok(byId.safety.count >= 20);
+	assert.ok(byId.gear.count >= 10);
+	assert.ok(byId['bible-spiritual-support'].count >= 5);
+	assert.ok(byId['offline-local-ai-use'].count >= 10);
+	assert.ok(byId['confusing-edge-cases'].count >= 10);
+});
+
+test('objective coverage summary fails when a requested objective area disappears', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const weakened = {
+		...suite,
+		cases: suite.cases.filter((testCase) => testCase.domain !== 'spiritual-offline-edge')
+	};
+	const coverage = summarizeScoutLocalAiSuiteCoverage(weakened);
+
+	assert.equal(coverage.ok, false);
+	assert.match(coverage.errors.join('\n'), /Bible and spiritual support coverage/u);
+});
+
 test('mobile embedded Dad local AI eval suite matches canonical suite', async () => {
 	const canonical = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const mobile = JSON.parse(await readFile(MOBILE_SUITE_PATH, 'utf8'));
@@ -171,7 +204,9 @@ test('status command keeps routing proof separate from missing device proof', as
 	const gates = Object.fromEntries(status.gates.map((gate) => [gate.id, gate]));
 
 	assert.equal(status.suite.caseCount, 100);
+	assert.equal(status.suite.coverage.ok, true);
 	assert.equal(gates.suite.ok, true);
+	assert.equal(gates.coverage.ok, true);
 	assert.equal(gates.routing.ok, true);
 	assert.equal(gates['device-run'].ok, false);
 	assert.equal(status.runs.currentFullRoutingRuns.length, 1);

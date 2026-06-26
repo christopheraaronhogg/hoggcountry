@@ -12,6 +12,9 @@ import {
 	summarizeRunSourceEvidence
 } from './lib/scout-local-ai-source-evidence.mjs';
 import {
+	summarizeScoutLocalAiSuiteCoverage
+} from './lib/scout-local-ai-suite-coverage.mjs';
+import {
 	scoutLocalAiSuiteIdentity
 } from './lib/scout-local-ai-suite.mjs';
 
@@ -53,6 +56,7 @@ async function buildStatus(paths) {
 	const mobileSuite = await readOptionalJson(paths.mobileSuitePath);
 	const suiteIdentity = scoutLocalAiSuiteIdentity(suite);
 	const suiteErrors = validateSuite(suite, mobileSuite, suiteIdentity);
+	const suiteCoverage = summarizeScoutLocalAiSuiteCoverage(suite);
 	const runs = await loadJsonFiles(paths.runsDir);
 	const deviceRuns = await loadJsonFiles(paths.deviceRunsDir);
 	const reviews = await loadJsonFiles(paths.reviewsDir);
@@ -118,6 +122,7 @@ async function buildStatus(paths) {
 	const strictDeviceProofPasses = strictDeviceProofs.filter((proof) => proof.ok);
 	const gates = createGates({
 		suiteErrors,
+		suiteCoverage,
 		suite,
 		suiteIdentity,
 		currentFullRoutingRuns,
@@ -137,6 +142,7 @@ async function buildStatus(paths) {
 			hash: suiteIdentity.suiteHash,
 			caseCount: Array.isArray(suite.cases) ? suite.cases.length : 0,
 			mobileCopyMatches: mobileSuite ? stableJson(mobileSuite) === stableJson(suite) : false,
+			coverage: suiteCoverage,
 			errors: suiteErrors
 		},
 		paths: {
@@ -197,6 +203,7 @@ function validateSuite(suite, mobileSuite, suiteIdentity) {
 
 function createGates(input) {
 	const suiteOk = input.suiteErrors.length === 0;
+	const coverageOk = input.suiteCoverage.ok;
 	const routingOk = input.currentFullRoutingRuns.length > 0 || input.currentFullToolCompleteRuns.length > 0;
 	const deviceOk = input.currentFullDeviceRuns.length > 0;
 	const reviewOk = input.completeFiveStarDeviceReviews.length > 0;
@@ -210,6 +217,14 @@ function createGates(input) {
 			evidence: suiteOk
 				? `${input.suite.cases.length} cases, version ${input.suite.version}, hash ${input.suiteIdentity.suiteHash}`
 				: input.suiteErrors.join('; ')
+		},
+		{
+			id: 'coverage',
+			label: 'Objective coverage across hiker situations',
+			ok: coverageOk,
+			evidence: coverageOk
+				? input.suiteCoverage.areas.map((area) => `${area.id}=${area.count}`).join(', ')
+				: input.suiteCoverage.errors.join('; ')
 		},
 		{
 			id: 'routing',
@@ -260,6 +275,12 @@ function nextActionFor(gates, currentFullDeviceRuns, completeFiveStarDeviceRevie
 		return {
 			kind: 'fix-suite',
 			text: 'Fix the canonical suite/mobile copy drift, then run npm run sync:scout-local-ai-suite and the suite test.'
+		};
+	}
+	if (!gate('coverage')?.ok) {
+		return {
+			kind: 'fix-suite-coverage',
+			text: 'Add or restore objective coverage in data/scout-local-ai/dad-local-ai-100.json, sync the mobile copy, then rerun the Scout local-AI suite test.'
 		};
 	}
 	if (!gate('routing')?.ok) {
@@ -465,6 +486,11 @@ function createStatusMarkdown(status) {
 		`- Version/hash: \`${status.suite.version}\` / \`${status.suite.hash}\``,
 		`- Cases: ${status.suite.caseCount}`,
 		`- Mobile copy matches: ${status.suite.mobileCopyMatches ? 'yes' : 'no'}`,
+		`- Objective coverage: ${status.suite.coverage.ok ? 'yes' : 'no'}`,
+		'',
+		'Coverage areas:',
+		'',
+		...status.suite.coverage.areas.map((area) => `- ${area.ok ? '[x]' : '[ ]'} ${area.label}: ${area.count}/${area.minCases}`),
 		'',
 		'## TestFlight Target',
 		'',
