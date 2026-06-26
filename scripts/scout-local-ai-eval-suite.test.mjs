@@ -1548,6 +1548,64 @@ test('iteration verifier passes when rerun resolves planned regression cases', a
 	assert.match(markdown, /Run strict device proof only after a full device review is 100\/100 at 5\/5/u);
 });
 
+test('iteration verifier rejects 5-star reruns that conflict with run evidence', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-iteration-evidence-invalid-'));
+	const plan = {
+		schemaVersion: 1,
+		planId: 'device-iteration-evidence-invalid',
+		sourceBacklogs: [
+			{
+				path: 'data/scout-local-ai/backlog/source.backlog.json',
+				runId: 'source-run',
+				suiteId: suite.suiteId,
+				suiteVersion: suite.version,
+				suiteHash: scoutLocalAiSuiteHash(suite),
+				evidenceLane: 'device-on-device-gemma'
+			}
+		],
+		regressionCaseIds: [suite.cases[0].id]
+	};
+	const rerun = deviceRunForCases(suite, suite.cases.slice(0, 1), {
+		runId: 'device-iteration-evidence-invalid'
+	});
+	const review = reviewForRun(rerun, { rating: 5 });
+	const planPath = join(outputDir, 'device-iteration-evidence-invalid.iteration.json');
+	const rerunPath = join(outputDir, 'device-iteration-evidence-invalid.json');
+	const reviewPath = join(outputDir, 'device-iteration-evidence-invalid.review.json');
+	const resolutionDir = join(outputDir, 'resolutions');
+	await writeFile(planPath, `${JSON.stringify(plan, null, 2)}\n`);
+	await writeFile(rerunPath, `${JSON.stringify(rerun, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/verify-scout-local-ai-iteration.mjs',
+				'--plan',
+				planPath,
+				'--run',
+				rerunPath,
+				'--review',
+				reviewPath,
+				'--output-dir',
+				resolutionDir,
+				'--resolution-id',
+				'device-iteration-evidence-invalid'
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /Scout local AI iteration verification failed validation/u);
+			assert.match(error.stderr, /5-star rating conflicts with run evidence/u);
+			assert.match(error.stderr, /missing required tools/u);
+			assert.match(error.stderr, /actual toolInvocations missed required tools/u);
+			return true;
+		}
+	);
+});
+
 test('iteration verifier rejects non-device reruns unless explicitly allowed', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-iteration-non-device-verify-'));

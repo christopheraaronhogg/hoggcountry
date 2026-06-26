@@ -3,6 +3,8 @@ import { basename, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
 	parseCliArgs,
+	reviewRunAlignmentProblems,
+	reviewRunEvidenceProblems,
 	summarizeReview
 } from './lib/scout-local-ai-review.mjs';
 
@@ -132,7 +134,9 @@ function validateInputs({ plan, run, review, allowNonDevice, requireFullSuite })
 	}
 
 	const summary = Array.isArray(review.cases) ? summarizeReview(review) : { invalid: [], unrated: 0 };
+	errors.push(...reviewRunAlignmentProblems(run, review));
 	errors.push(...summary.invalid);
+	errors.push(...reviewRunEvidenceProblems(run, review));
 	if (summary.unrated) errors.push(`review must be complete before closing an iteration; ${summary.unrated} cases are unrated.`);
 
 	return errors;
