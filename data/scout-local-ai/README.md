@@ -41,3 +41,28 @@ npm run sync:scout-local-ai-suite
 ```
 
 The suite test fails if the embedded mobile copy drifts.
+
+## Dad TestFlight / iPhone intake
+
+When Dad exports a real device run from the in-app Eval Lab, import it before rating:
+
+```sh
+npm run intake:scout-local-ai-device-run -- --run ~/Downloads/<device-run>.json
+```
+
+That command verifies the export is `device-on-device-gemma` evidence, copies it
+to `data/scout-local-ai/device-runs/`, creates a JSON review file in
+`data/scout-local-ai/reviews/`, and creates a readable review packet in
+`data/scout-local-ai/review-packets/`. These folders are ignored by git because
+they hold raw model transcripts and human review notes.
+
+For a quick `Run 3` smoke export, add `--allow-partial`. Do not use partial runs
+as final proof.
+
+After filling the review JSON ratings and tasks:
+
+```sh
+npm run review:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json
+```
+
+That writes a backlog item for every answer rated below 5.

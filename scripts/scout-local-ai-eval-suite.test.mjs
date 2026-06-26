@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { mkdtemp, readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -137,6 +137,71 @@ test('Dad local AI eval suite routes every case through expected Scout tools', a
 	assert.deepEqual(run.summary.missingToolCounts, {});
 });
 
+test('device run intake validates exports and creates review packet', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-intake-'));
+	const inputPath = join(outputDir, 'device-export.json');
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 2));
+	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
+
+	await execFileAsync(
+		process.execPath,
+		[
+			'scripts/import-scout-local-ai-device-run.mjs',
+			'--run',
+			inputPath,
+			'--allow-partial',
+			'--device-run-dir',
+			join(outputDir, 'device-runs'),
+			'--review-dir',
+			join(outputDir, 'reviews'),
+			'--packet-dir',
+			join(outputDir, 'review-packets')
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+
+	const imported = JSON.parse(await readFile(join(outputDir, 'device-runs', `${run.runId}.json`), 'utf8'));
+	const review = JSON.parse(await readFile(join(outputDir, 'reviews', `${run.runId}.review.json`), 'utf8'));
+	const packet = await readFile(join(outputDir, 'review-packets', `${run.runId}.review.md`), 'utf8');
+
+	assert.equal(imported.evidenceLane, 'device-on-device-gemma');
+	assert.equal(review.cases.length, 2);
+	assert.equal(review.cases[0].caseId, suite.cases[0].id);
+	assert.match(review.cases[0].answerPreview, /device answer for/);
+	assert.match(packet, /Scout local AI device review/u);
+	assert.match(packet, new RegExp(suite.cases[0].id, 'u'));
+	assert.match(packet, /Rating:/u);
+});
+
+test('device run intake rejects scaffold runs by default', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-intake-reject-'));
+	const inputPath = join(outputDir, 'scaffold-export.json');
+	const run = {
+		...deviceRunForCases(suite, suite.cases.slice(0, 1)),
+		evidenceLane: 'scaffold-not-model'
+	};
+	run.results[0].answerOrigin = 'scaffold-not-model';
+	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/import-scout-local-ai-device-run.mjs',
+				'--run',
+				inputPath,
+				'--allow-partial',
+				'--device-run-dir',
+				join(outputDir, 'device-runs')
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 }
+		),
+		/evidenceLane must be device-on-device-gemma/u
+	);
+});
+
 function assertNonEmptyStringArray(value, label) {
 	assert.ok(Array.isArray(value), `${label} must be an array`);
 	assert.ok(value.length > 0, `${label} must not be empty`);
@@ -157,4 +222,57 @@ function assertValidToolExpectation(expectation, caseId) {
 		);
 		assert.ok(VALID_SOURCE_SKILLS.has(sourceSkill), `${caseId} has unknown source skill ${sourceSkill}`);
 	}
+}
+
+function deviceRunForCases(suite, cases) {
+	const results = cases.map((testCase, index) => ({
+		caseId: testCase.id,
+		index: index + 1,
+		case: testCase,
+		answer: `device answer for ${testCase.id}`,
+		answerOrigin: 'device-on-device-gemma',
+		confidence: 'medium',
+		mode: 'on-device',
+		provider: 'on-device-gemma',
+		generatedAt: '2026-06-26T12:00:00.000Z',
+		durationMs: 1200 + index,
+		contextUsed: ['on-device-gemma'],
+		receipts: [],
+		requiredConfirmations: [],
+		safetyFlags: [],
+		toolInvocations: [],
+		toolExpectations: {
+			required: testCase.requiredTools,
+			hit: [],
+			missing: testCase.requiredTools
+		},
+		bridge: null,
+		rating: null,
+		reviewerNotes: '',
+		failureMode: null,
+		suggestedFailureCategories: ['bad-routing', 'weak-tool'],
+		improvementTask: null
+	}));
+	return {
+		schemaVersion: 1,
+		runId: 'device-smoke-run',
+		suiteId: suite.suiteId,
+		suiteTitle: suite.title,
+		suitePath: 'mobile/static/scout/dad-local-ai-100.json',
+		generatedAt: '2026-06-26T12:00:00.000Z',
+		evidenceLane: 'device-on-device-gemma',
+		modelCommand: null,
+		runContext: { surface: 'testflight-ios' },
+		caseCount: results.length,
+		totalSuiteCases: suite.cases.length,
+		filters: { id: null, domain: null, phase: null, limit: results.length },
+		ratingScale: suite.ratingScale,
+		failureCategories: suite.failureCategories,
+		summary: {
+			toolExpectationComplete: 0,
+			missingToolCases: results.length,
+			missingToolCounts: {}
+		},
+		results
+	};
 }
