@@ -5,6 +5,9 @@ import {
 	createReviewTemplate,
 	parseCliArgs
 } from './lib/scout-local-ai-review.mjs';
+import {
+	validateScoutLocalAiSuiteIdentity
+} from './lib/scout-local-ai-suite.mjs';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
@@ -79,6 +82,7 @@ function validateDeviceRun(run, suite, options) {
 	if (run.schemaVersion !== 1) errors.push('run.schemaVersion must be 1');
 	if (!run.runId || typeof run.runId !== 'string') errors.push('run.runId must be a string');
 	if (run.suiteId !== suite.suiteId) errors.push(`run.suiteId ${run.suiteId ?? '<missing>'} does not match ${suite.suiteId}`);
+	validateScoutLocalAiSuiteIdentity({ suite, run, errors });
 	if (!Array.isArray(run.results)) errors.push('run.results must be an array');
 	if (!run.failureCategories?.length) errors.push('run.failureCategories must be present');
 	if (!run.ratingScale || typeof run.ratingScale !== 'object') errors.push('run.ratingScale must be present');
@@ -146,6 +150,8 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath) {
 		`Imported run: \`${relative(REPO_ROOT, importedRunPath)}\``,
 		`Review JSON: \`${relative(REPO_ROOT, reviewPath)}\``,
 		`Evidence lane: \`${run.evidenceLane}\``,
+		`Suite version: \`${run.suiteVersion ?? '<missing>'}\``,
+		`Suite hash: \`${run.suiteHash ?? '<missing>'}\``,
 		`Cases: ${run.caseCount}/${run.totalSuiteCases}`,
 		`Required-tool complete: ${run.summary?.toolExpectationComplete ?? 0}/${run.caseCount}`,
 		'',

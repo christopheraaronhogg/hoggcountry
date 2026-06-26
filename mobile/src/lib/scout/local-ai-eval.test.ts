@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import {
 	buildScoutLocalAiEvalPack,
 	runScoutLocalAiEval,
+	scoutLocalAiSuiteHash,
 	type ScoutLocalAiEvalCase,
 	type ScoutLocalAiEvalSuite
 } from './local-ai-eval.ts';
@@ -29,6 +30,7 @@ function suite(cases: ScoutLocalAiEvalCase[]): ScoutLocalAiEvalSuite {
 		schemaVersion: 1,
 		suiteId: 'dad-local-ai-100',
 		title: 'Dad Local AI 100-question Scout evaluation',
+		version: '2026-06-26.1',
 		createdAt: '2026-06-26',
 		successTarget: 'all 5/5',
 		ratingScale: { '5': 'Dad-ready' },
@@ -81,6 +83,8 @@ test('runScoutLocalAiEval records on-device answers and tool expectations', asyn
 
 	assert.equal(run.evidenceLane, 'device-on-device-gemma');
 	assert.deepEqual(run.runContext, { surface: 'test-device' });
+	assert.equal(run.suiteVersion, '2026-06-26.1');
+	assert.equal(run.suiteHash, scoutLocalAiSuiteHash(suite([evalCase()])));
 	assert.equal(run.caseCount, 1);
 	assert.equal(run.summary.toolExpectationComplete, 1);
 	assert.equal(run.results[0].answerOrigin, 'device-on-device-gemma');
@@ -153,6 +157,36 @@ test('runScoutLocalAiEval resumes from a saved partial run and snapshots progres
 	assert.equal(resumed.caseCount, 3);
 	assert.deepEqual(resumed.results.map((result) => result.caseId), ['DLA-001', 'DLA-002', 'DLA-003']);
 	assert.deepEqual(snapshots, [1, 2, 3]);
+});
+
+test('runScoutLocalAiEval rejects stale saved runs from a different suite version', async () => {
+	const cases = [
+		evalCase({ id: 'DLA-001', prompt: 'What water is ahead?' }),
+		evalCase({ id: 'DLA-002', prompt: 'Where should I sleep tonight?', requiredTools: ['next_shelter'] })
+	];
+	const oldSuite = suite(cases);
+	const firstRun = await runScoutLocalAiEval({
+		suite: oldSuite,
+		evidenceLane: 'device-on-device-gemma',
+		limit: 1,
+		now: new Date('2026-06-26T12:00:00.000Z'),
+		ask: ({ testCase }) => Promise.resolve(answer(testCase.prompt))
+	});
+	const nextSuite = {
+		...oldSuite,
+		version: '2026-06-27.1'
+	};
+
+	await assert.rejects(
+		runScoutLocalAiEval({
+			suite: nextSuite,
+			evidenceLane: 'device-on-device-gemma',
+			previousRun: firstRun,
+			now: new Date('2026-06-26T12:30:00.000Z'),
+			ask: ({ testCase }) => Promise.resolve(answer(testCase.prompt))
+		}),
+		/different 100-question suite|suite version/u
+	);
 });
 
 test('runScoutLocalAiEval retries prior provider errors during resume', async () => {

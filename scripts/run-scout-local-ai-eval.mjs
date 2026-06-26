@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createScoutRuntime, cloneDefaultContextPack } from '../mobile/src/lib/scout/index.ts';
+import { scoutLocalAiSuiteIdentity } from './lib/scout-local-ai-suite.mjs';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
@@ -21,6 +22,7 @@ const command = String(cli.command ?? process.env.SCOUT_LOCAL_AI_COMMAND ?? '');
 const timeoutMs = Number(cli.timeoutMs ?? process.env.SCOUT_LOCAL_AI_TIMEOUT_MS ?? 120_000);
 
 const suite = JSON.parse(await readFile(suitePath, 'utf8'));
+const suiteIdentity = scoutLocalAiSuiteIdentity(suite);
 const selectedCases = filterCases(suite.cases, cli);
 const caseRef = { current: null };
 const bridgeDiagnostics = new Map();
@@ -105,6 +107,8 @@ const run = {
 	runId,
 	suiteId: suite.suiteId,
 	suiteTitle: suite.title,
+	suiteVersion: suiteIdentity.suiteVersion,
+	suiteHash: suiteIdentity.suiteHash,
 	suitePath: relative(REPO_ROOT, suitePath),
 	generatedAt: now.toISOString(),
 	evidenceLane: bridgeMode === 'command' ? 'external-local-model-command' : 'scaffold-not-model',

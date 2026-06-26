@@ -1,5 +1,6 @@
 import { relative } from 'node:path';
 import { summarizeReview } from './scout-local-ai-review.mjs';
+import { validateScoutLocalAiSuiteIdentity } from './scout-local-ai-suite.mjs';
 
 export const DEVICE_EVIDENCE_LANE = 'device-on-device-gemma';
 export const DEVICE_SURFACE = 'mobile-settings-scout-eval-lab';
@@ -11,6 +12,7 @@ export function verifyScoutLocalAiDeviceProof({ suite, run, review }) {
 
 	if (suite.schemaVersion !== 1) errors.push('suite.schemaVersion must be 1.');
 	if (suite.suiteId !== 'dad-local-ai-100') errors.push(`suite.suiteId must be dad-local-ai-100, got ${suite.suiteId ?? '<missing>'}.`);
+	validateScoutLocalAiSuiteIdentity({ suite, run, review, errors });
 	if (!Array.isArray(suite.cases) || suite.cases.length !== 100) {
 		errors.push(`suite must contain exactly 100 cases, got ${suite.cases?.length ?? '<missing>'}.`);
 	}
@@ -133,6 +135,8 @@ export function createDeviceProofMarkdown({ suite, run, summary, suitePath, runP
 		`- Device run: \`${relative(repoRoot, runPath)}\``,
 		`- Review: \`${relative(repoRoot, reviewPath)}\``,
 		`- Suite id: \`${suite.suiteId}\``,
+		`- Suite version: \`${suite.version ?? '<missing>'}\``,
+		`- Suite hash: \`${run.suiteHash ?? '<missing>'}\``,
 		`- Evidence lane: \`${run.evidenceLane}\``,
 		`- Device surface: \`${run.runContext?.surface}\``,
 		`- Native platform: \`${run.runContext?.native?.platform ?? '<missing>'}\``,

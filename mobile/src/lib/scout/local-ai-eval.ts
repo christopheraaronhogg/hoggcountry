@@ -33,6 +33,7 @@ export interface ScoutLocalAiEvalSuite {
 	schemaVersion: number;
 	suiteId: string;
 	title: string;
+	version: string;
 	createdAt: string;
 	successTarget: string;
 	ratingScale: Record<string, string>;
@@ -77,6 +78,8 @@ export interface ScoutLocalAiEvalRun {
 	runId: string;
 	suiteId: string;
 	suiteTitle: string;
+	suiteVersion: string;
+	suiteHash: string;
 	suitePath: string;
 	generatedAt: string;
 	evidenceLane: ScoutLocalAiEvidenceLane;
@@ -125,7 +128,8 @@ export async function runScoutLocalAiEval(input: {
 }): Promise<ScoutLocalAiEvalRun> {
 	const now = input.now ?? new Date();
 	const selectedCases = input.limit ? input.suite.cases.slice(0, input.limit) : input.suite.cases;
-	const previousRun = validateReusablePreviousRun(input.previousRun, input.suite, input.evidenceLane);
+	const suiteHash = scoutLocalAiSuiteHash(input.suite);
+	const previousRun = validateReusablePreviousRun(input.previousRun, input.suite, suiteHash, input.evidenceLane);
 	const runId = input.runId ?? previousRun?.runId ?? `device-local-ai-${compactTimestamp(now)}`;
 	const generatedAt = previousRun?.generatedAt ?? now.toISOString();
 	const priorResults = new Map((previousRun?.results ?? []).map((result) => [result.caseId, result]));
@@ -136,6 +140,7 @@ export async function runScoutLocalAiEval(input: {
 			runId,
 			generatedAt,
 			evidenceLane: input.evidenceLane,
+			suiteHash,
 			runContext: input.runContext ?? previousRun?.runContext,
 			limit: input.limit,
 			results
@@ -201,6 +206,7 @@ function createScoutLocalAiEvalRun(input: {
 	runId: string;
 	generatedAt: string;
 	evidenceLane: ScoutLocalAiEvidenceLane;
+	suiteHash: string;
 	runContext?: Record<string, unknown>;
 	limit?: number;
 	results: ScoutLocalAiEvalResult[];
@@ -210,6 +216,8 @@ function createScoutLocalAiEvalRun(input: {
 		runId: input.runId,
 		suiteId: input.suite.suiteId,
 		suiteTitle: input.suite.title,
+		suiteVersion: input.suite.version,
+		suiteHash: input.suiteHash,
 		suitePath: 'mobile/static/scout/dad-local-ai-100.json',
 		generatedAt: input.generatedAt,
 		evidenceLane: input.evidenceLane,
@@ -275,6 +283,10 @@ export function buildScoutLocalAiEvalPack(testCase: ScoutLocalAiEvalCase, now: D
 	pack.documents = evalDocuments(now);
 	pack.pilotNotice = 'Eval pack for Dad local-AI review. Use it to exercise Scout tools; verify volatile facts before relying on them.';
 	return pack;
+}
+
+export function scoutLocalAiSuiteHash(suite: ScoutLocalAiEvalSuite): string {
+	return `fnv1a32:${fnv1a32(stableJson(suite))}`;
 }
 
 export function evaluateToolExpectations(
@@ -444,11 +456,18 @@ function compactCase(testCase: ScoutLocalAiEvalCase): ScoutLocalAiEvalCase {
 function validateReusablePreviousRun(
 	previousRun: ScoutLocalAiEvalRun | null | undefined,
 	suite: ScoutLocalAiEvalSuite,
+	currentSuiteHash: string,
 	evidenceLane: ScoutLocalAiEvidenceLane
 ): ScoutLocalAiEvalRun | null {
 	if (!previousRun) return null;
 	if (previousRun.suiteId !== suite.suiteId) {
 		throw new Error(`Saved eval run is for ${previousRun.suiteId}, not ${suite.suiteId}.`);
+	}
+	if (previousRun.suiteVersion !== suite.version) {
+		throw new Error(`Saved eval run is for suite version ${previousRun.suiteVersion ?? '<missing>'}, not ${suite.version}. Clear the saved run and start a fresh eval.`);
+	}
+	if (previousRun.suiteHash !== currentSuiteHash) {
+		throw new Error('Saved eval run is from a different 100-question suite. Clear the saved run and start a fresh eval.');
 	}
 	if (previousRun.evidenceLane !== evidenceLane) {
 		throw new Error(`Saved eval run is ${previousRun.evidenceLane}, not ${evidenceLane}.`);
@@ -557,4 +576,22 @@ function sameStringArray(left: unknown, right: string[]): boolean {
 	if (!Array.isArray(left)) return false;
 	if (left.length !== right.length) return false;
 	return left.every((value, index) => value === right[index]);
+}
+
+function stableJson(value: unknown): string {
+	if (Array.isArray(value)) return `[${value.map((item) => stableJson(item)).join(',')}]`;
+	if (value && typeof value === 'object') {
+		const record = value as Record<string, unknown>;
+		return `{${Object.keys(record).sort().map((key) => `${JSON.stringify(key)}:${stableJson(record[key])}`).join(',')}}`;
+	}
+	return JSON.stringify(value) ?? 'null';
+}
+
+function fnv1a32(text: string): string {
+	let hash = 0x811c9dc5;
+	for (let index = 0; index < text.length; index += 1) {
+		hash ^= text.charCodeAt(index);
+		hash = Math.imul(hash, 0x01000193);
+	}
+	return (hash >>> 0).toString(16).padStart(8, '0');
 }

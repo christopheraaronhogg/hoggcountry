@@ -138,6 +138,8 @@ function createStabilityProofMarkdown({ suite, suitePath, records, minRuns, perC
 		'',
 		`- Suite: \`${relative(REPO_ROOT, suitePath)}\``,
 		`- Suite id: \`${suite.suiteId}\``,
+		`- Suite version: \`${suite.version ?? '<missing>'}\``,
+		`- Suite hash: \`${records[0]?.run.suiteHash ?? '<missing>'}\``,
 		`- Required runs: ${minRuns}`,
 		`- Reviewed runs: ${records.length}`,
 		'',

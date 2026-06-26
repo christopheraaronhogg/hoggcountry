@@ -34,7 +34,7 @@ Proof lanes stay separate:
 - `external-local-model-command`: local model bridge proof, useful before device automation.
 - `real TestFlight/iPhone`: final Dad-readiness proof.
 
-The installed mobile app reads the suite from `mobile/static/scout/dad-local-ai-100.json`. After editing the canonical suite, run:
+The installed mobile app reads the suite from `mobile/static/scout/dad-local-ai-100.json`. The suite carries a version and every run export carries a deterministic suite hash, so stale iPhone exports fail intake/final proof instead of being mixed with the current 100-question set. After editing the canonical suite, bump the top-level `version` and run:
 
 ```sh
 npm run sync:scout-local-ai-suite
@@ -118,11 +118,11 @@ npm run verify:scout-local-ai-device-proof -- --run data/scout-local-ai/device-r
 ```
 
 This fails unless the run is a full 100-case `device-on-device-gemma` Eval Lab
-run, every required tool expectation was hit, every review case is rated `5`,
-native iOS app metadata is present (`com.hoggcountry.trailassistant`, app
-version/build, `native.platform = ios`, runtime configured), and no stale failure
-categories or improvement tasks remain. Passing writes an ignored proof summary
-under `data/scout-local-ai/final-proof/`.
+run from the current suite version/hash, every required tool expectation was hit,
+every review case is rated `5`, native iOS app metadata is present
+(`com.hoggcountry.trailassistant`, app version/build, `native.platform = ios`,
+runtime configured), and no stale failure categories or improvement tasks remain.
+Passing writes an ignored proof summary under `data/scout-local-ai/final-proof/`.
 
 For final consistency proof, require at least two separate full TestFlight/iPhone
 runs to pass the same strict gate:

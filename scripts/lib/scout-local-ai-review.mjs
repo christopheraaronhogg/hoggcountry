@@ -37,6 +37,8 @@ export function createReviewTemplate(run, runPath, repoRoot) {
 		schemaVersion: 1,
 		runId: run.runId,
 		suiteId: run.suiteId,
+		suiteVersion: run.suiteVersion,
+		suiteHash: run.suiteHash,
 		runPath: relative(repoRoot, runPath),
 		evidenceLane: run.evidenceLane,
 		reviewInstructions: [
@@ -164,6 +166,8 @@ export function createBacklog(run, review, summary) {
 		schemaVersion: 1,
 		runId: run.runId,
 		suiteId: run.suiteId,
+		suiteVersion: run.suiteVersion,
+		suiteHash: run.suiteHash,
 		evidenceLane: run.evidenceLane,
 		sourceReview: `data/scout-local-ai/reviews/${basename(run.runId)}.review.json`,
 		generatedAt: new Date().toISOString(),

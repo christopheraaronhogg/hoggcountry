@@ -80,6 +80,12 @@ function validateInputs({ plan, run, review, requireFullSuite }) {
 	if (review.schemaVersion !== 1) errors.push('review.schemaVersion must be 1.');
 	if (review.runId !== run.runId) errors.push(`review.runId ${review.runId ?? '<missing>'} does not match ${run.runId ?? '<missing>'}.`);
 	if (review.suiteId !== run.suiteId) errors.push(`review.suiteId ${review.suiteId ?? '<missing>'} does not match ${run.suiteId ?? '<missing>'}.`);
+	if (review.suiteVersion !== run.suiteVersion) {
+		errors.push(`review.suiteVersion ${review.suiteVersion ?? '<missing>'} does not match ${run.suiteVersion ?? '<missing>'}.`);
+	}
+	if (review.suiteHash !== run.suiteHash) {
+		errors.push(`review.suiteHash ${review.suiteHash ?? '<missing>'} does not match ${run.suiteHash ?? '<missing>'}.`);
+	}
 	if (!Array.isArray(review.cases)) errors.push('review.cases must be an array.');
 
 	const sourceSuiteIds = new Set((plan.sourceBacklogs ?? []).map((backlog) => backlog.suiteId).filter(Boolean));
@@ -87,6 +93,18 @@ function validateInputs({ plan, run, review, requireFullSuite }) {
 	const expectedSuiteId = [...sourceSuiteIds][0] ?? plan.suiteId;
 	if (expectedSuiteId && run.suiteId !== expectedSuiteId) {
 		errors.push(`run.suiteId ${run.suiteId ?? '<missing>'} does not match plan suite ${expectedSuiteId}.`);
+	}
+	const sourceSuiteVersions = new Set((plan.sourceBacklogs ?? []).map((backlog) => backlog.suiteVersion).filter(Boolean));
+	if (sourceSuiteVersions.size > 1) errors.push(`plan source backlogs disagree on suiteVersion: ${[...sourceSuiteVersions].join(', ')}.`);
+	const expectedSuiteVersion = [...sourceSuiteVersions][0] ?? plan.suiteVersion;
+	if (expectedSuiteVersion && run.suiteVersion !== expectedSuiteVersion) {
+		errors.push(`run.suiteVersion ${run.suiteVersion ?? '<missing>'} does not match plan suite version ${expectedSuiteVersion}.`);
+	}
+	const sourceSuiteHashes = new Set((plan.sourceBacklogs ?? []).map((backlog) => backlog.suiteHash).filter(Boolean));
+	if (sourceSuiteHashes.size > 1) errors.push(`plan source backlogs disagree on suiteHash: ${[...sourceSuiteHashes].join(', ')}.`);
+	const expectedSuiteHash = [...sourceSuiteHashes][0] ?? plan.suiteHash;
+	if (expectedSuiteHash && run.suiteHash !== expectedSuiteHash) {
+		errors.push(`run.suiteHash ${run.suiteHash ?? '<missing>'} does not match plan suite hash ${expectedSuiteHash}.`);
 	}
 	if (requireFullSuite && run.caseCount !== run.totalSuiteCases) {
 		errors.push(`--require-full-suite needs run.caseCount to equal run.totalSuiteCases; got ${run.caseCount}/${run.totalSuiteCases}.`);
@@ -165,6 +183,8 @@ function createResolution({ plan, run, review, planPath, runPath, reviewPath, re
 			reviewPath: relative(REPO_ROOT, reviewPath),
 			runId: run.runId,
 			suiteId: run.suiteId,
+			suiteVersion: run.suiteVersion,
+			suiteHash: run.suiteHash,
 			evidenceLane: run.evidenceLane,
 			caseCount: run.caseCount,
 			totalSuiteCases: run.totalSuiteCases

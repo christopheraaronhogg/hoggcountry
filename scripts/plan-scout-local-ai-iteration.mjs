@@ -153,6 +153,8 @@ function createIterationPlan({ planId, loaded }) {
 			path: relative(REPO_ROOT, path),
 			runId: backlog.runId,
 			suiteId: backlog.suiteId,
+			suiteVersion: backlog.suiteVersion,
+			suiteHash: backlog.suiteHash,
 			evidenceLane: backlog.evidenceLane,
 			generatedAt: backlog.generatedAt,
 			rated: backlog.summary?.rated ?? 0,

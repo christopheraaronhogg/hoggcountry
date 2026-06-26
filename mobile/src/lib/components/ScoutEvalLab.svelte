@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { trailAssistant } from '$lib/trailState.svelte';
-	import type {
-		ScoutLocalAiEvalProgress,
-		ScoutLocalAiEvalRun,
-		ScoutLocalAiEvalSuite
+	import {
+		scoutLocalAiSuiteHash,
+		type ScoutLocalAiEvalProgress,
+		type ScoutLocalAiEvalRun,
+		type ScoutLocalAiEvalSuite
 	} from '$lib/scout/local-ai-eval';
 
 	const SUITE_URL = '/scout/dad-local-ai-100.json';
@@ -36,6 +37,8 @@
 				suite &&
 				savedRun &&
 				savedRun.suiteId === suite.suiteId &&
+				savedRun.suiteVersion === suite.version &&
+				savedRun.suiteHash === scoutLocalAiSuiteHash(suite) &&
 				savedRun.evidenceLane === 'device-on-device-gemma' &&
 				savedRun.caseCount < savedRunTarget
 		)

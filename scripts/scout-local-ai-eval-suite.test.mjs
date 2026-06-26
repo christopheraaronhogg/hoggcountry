@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
+import { scoutLocalAiSuiteHash } from './lib/scout-local-ai-suite.mjs';
 
 const SUITE_PATH = new URL('../data/scout-local-ai/dad-local-ai-100.json', import.meta.url);
 const MOBILE_SUITE_PATH = new URL('../mobile/static/scout/dad-local-ai-100.json', import.meta.url);
@@ -64,6 +65,7 @@ test('Dad local AI eval suite has 100 complete, reviewable cases', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	assert.equal(suite.schemaVersion, 1);
 	assert.equal(suite.suiteId, 'dad-local-ai-100');
+	assert.match(suite.version, /^\d{4}-\d{2}-\d{2}\.\d+$/u);
 	assert.equal(suite.cases.length, 100);
 
 	const ids = new Set();
@@ -126,6 +128,7 @@ test('mobile Eval Lab exposes resilient iPhone export paths', async () => {
 });
 
 test('Dad local AI eval suite routes every case through expected Scout tools', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-routing-'));
 	await execFileAsync(
 		process.execPath,
@@ -144,6 +147,8 @@ test('Dad local AI eval suite routes every case through expected Scout tools', a
 	const run = JSON.parse(await readFile(join(outputDir, 'routing-regression.json'), 'utf8'));
 	assert.equal(run.caseCount, 100);
 	assert.equal(run.evidenceLane, 'scaffold-not-model');
+	assert.equal(run.suiteVersion, suite.version);
+	assert.equal(run.suiteHash, scoutLocalAiSuiteHash(suite));
 	assert.equal(run.summary.toolExpectationComplete, 100);
 	assert.deepEqual(run.summary.missingToolCounts, {});
 });
@@ -177,12 +182,47 @@ test('device run intake validates exports and creates review packet', async () =
 	const packet = await readFile(join(outputDir, 'review-packets', `${run.runId}.review.md`), 'utf8');
 
 	assert.equal(imported.evidenceLane, 'device-on-device-gemma');
+	assert.equal(imported.suiteVersion, suite.version);
+	assert.equal(imported.suiteHash, scoutLocalAiSuiteHash(suite));
 	assert.equal(review.cases.length, 2);
+	assert.equal(review.suiteVersion, suite.version);
+	assert.equal(review.suiteHash, scoutLocalAiSuiteHash(suite));
 	assert.equal(review.cases[0].caseId, suite.cases[0].id);
 	assert.match(review.cases[0].answerPreview, /device answer for/);
 	assert.match(packet, /Scout local AI device review/u);
 	assert.match(packet, new RegExp(suite.cases[0].id, 'u'));
 	assert.match(packet, /Rating:/u);
+});
+
+test('device run intake rejects stale suite fingerprints', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-intake-stale-'));
+	const inputPath = join(outputDir, 'stale-device-export.json');
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 2), {
+		suiteVersion: '2026-06-25.1',
+		suiteHash: 'fnv1a32:00000000'
+	});
+	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/import-scout-local-ai-device-run.mjs',
+				'--run',
+				inputPath,
+				'--allow-partial',
+				'--device-run-dir',
+				join(outputDir, 'device-runs')
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 }
+		),
+		(error) => {
+			assert.match(error.stderr, /run\.suiteVersion/u);
+			assert.match(error.stderr, /run\.suiteHash/u);
+			return true;
+		}
+	);
 });
 
 test('review workflow writes actionable JSON and Markdown iteration backlog', async () => {
@@ -710,6 +750,8 @@ test('strict device proof accepts a full 5-star device review', async () => {
 	assert.match(result.stdout, /Scout local AI device proof passed/u);
 	assert.match(result.stdout, /5\/5: 100\/100/u);
 	assert.match(proof, /Ratings of 5: 100\/100/u);
+	assert.ok(proof.includes(`Suite version: \`${suite.version}\``));
+	assert.match(proof, /Suite hash: `fnv1a32:[0-9a-f]{8}`/u);
 	assert.match(proof, /Required-tool complete: 100\/100/u);
 	assert.match(proof, /App version\/build: `1\.0 \(9\)`/u);
 });
@@ -778,6 +820,41 @@ test('strict device proof rejects final reviews without native app metadata', as
 			assert.match(error.stderr, /native\.platform must be ios/u);
 			assert.match(error.stderr, /app\.build is required/u);
 			assert.match(error.stderr, /runtimeConfigured must be true/u);
+			return true;
+		}
+	);
+});
+
+test('strict device proof rejects stale suite fingerprints', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-proof-stale-'));
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-final-proof-stale-suite',
+		completeTools: true,
+		runContext: finalDeviceRunContext(),
+		suiteHash: 'fnv1a32:00000000'
+	});
+	const review = reviewForRun(run, { rating: 5 });
+	const runPath = join(outputDir, 'device-final-proof-stale-suite.json');
+	const reviewPath = join(outputDir, 'device-final-proof-stale-suite.review.json');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/verify-scout-local-ai-device-proof.mjs',
+				'--run',
+				runPath,
+				'--review',
+				reviewPath
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /run\.suiteHash/u);
+			assert.match(error.stderr, /review\.suiteHash/u);
 			return true;
 		}
 	);
@@ -948,6 +1025,8 @@ function deviceRunForCases(suite, cases, options = {}) {
 		runId: options.runId ?? 'device-smoke-run',
 		suiteId: suite.suiteId,
 		suiteTitle: suite.title,
+		suiteVersion: options.suiteVersion ?? suite.version,
+		suiteHash: options.suiteHash ?? scoutLocalAiSuiteHash(suite),
 		suitePath: 'mobile/static/scout/dad-local-ai-100.json',
 		generatedAt: '2026-06-26T12:00:00.000Z',
 		evidenceLane: 'device-on-device-gemma',
@@ -972,6 +1051,8 @@ function reviewForRun(run, options = {}) {
 		schemaVersion: 1,
 		runId: run.runId,
 		suiteId: run.suiteId,
+		suiteVersion: run.suiteVersion,
+		suiteHash: run.suiteHash,
 		runPath: `${run.runId}.json`,
 		evidenceLane: run.evidenceLane,
 		ratingScale: run.ratingScale,
