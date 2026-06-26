@@ -346,6 +346,7 @@ export function createBacklog(run, review, summary) {
 	const unratedItems = [];
 	for (const entry of review.cases) {
 		const result = runResultsByCaseId.get(entry.caseId);
+		const sourceEvidenceGaps = sourceEvidenceGapsForResult(result);
 		if (entry.rating === null || entry.rating === undefined || entry.rating === '') {
 			unratedItems.push({
 				caseId: entry.caseId,
@@ -355,6 +356,7 @@ export function createBacklog(run, review, summary) {
 				requiredTools: result?.toolExpectations?.required ?? [],
 				hitTools: result?.toolExpectations?.hit ?? [],
 				missingTools: result?.toolExpectations?.missing ?? [],
+				sourceEvidenceGaps,
 				confidence: result?.confidence ?? null,
 				failureMode: result?.failureMode ?? null,
 				answerPreview: entry.answerPreview,
@@ -390,6 +392,7 @@ export function createBacklog(run, review, summary) {
 			requiredTools: result?.toolExpectations?.required ?? [],
 			hitTools: result?.toolExpectations?.hit ?? [],
 			missingTools: result?.toolExpectations?.missing ?? [],
+			sourceEvidenceGaps,
 			confidence: result?.confidence ?? null,
 			failureMode: result?.failureMode ?? null,
 			requiredConfirmations: result?.requiredConfirmations ?? [],
@@ -477,6 +480,7 @@ export function createBacklogMarkdown(backlog) {
 			`- Missing tools: ${item.missingTools.join(', ') || 'none'}`,
 			`- Required tools: ${item.requiredTools.join(', ') || 'none'}`,
 			`- Hit tools: ${item.hitTools.join(', ') || 'none'}`,
+			`- Source evidence gaps: ${formatSourceEvidenceGapSummary(item.sourceEvidenceGaps)}`,
 			`- Confidence: ${item.confidence ?? 'missing'}`,
 			`- Failure mode: ${item.failureMode ?? 'none'}`,
 			'',
@@ -515,6 +519,9 @@ export function createBacklogMarkdown(backlog) {
 			'Recorded tool evidence:',
 			...(item.toolInvocations?.length ? item.toolInvocations.map(formatToolEvidence) : ['- none recorded']),
 			'',
+			'Source evidence gaps:',
+			...formatSourceEvidenceGaps(item.sourceEvidenceGaps),
+			'',
 			'Source receipts:',
 			...(item.receipts?.length ? item.receipts.map(formatReceiptEvidence) : ['- none recorded']),
 			''
@@ -530,6 +537,7 @@ export function createBacklogMarkdown(backlog) {
 				`- Required tools: ${item.requiredTools.join(', ') || 'none'}`,
 				`- Hit tools: ${item.hitTools.join(', ') || 'none'}`,
 				`- Missing tools: ${item.missingTools.join(', ') || 'none'}`,
+				`- Source evidence gaps: ${formatSourceEvidenceGapSummary(item.sourceEvidenceGaps)}`,
 				`- Confidence: ${item.confidence ?? 'missing'}`,
 				`- Failure mode: ${item.failureMode ?? 'none'}`,
 				'',
@@ -560,6 +568,16 @@ export function inferOwnerLayer(categories, result) {
 	if (categories.includes('poor-ux')) return 'ui';
 	if (categories.includes('local-model-limitation')) return 'local-model';
 	return 'unknown';
+}
+
+function sourceEvidenceGapsForResult(result) {
+	return sourceEvidenceProblems(
+		result?.case?.requiredTools ?? result?.toolExpectations?.required ?? [],
+		result?.toolInvocations ?? []
+	).map((problem) => ({
+		expectation: problem.expectation,
+		message: problem.message
+	}));
 }
 
 function createRubricChecks(values) {
@@ -700,4 +718,14 @@ function formatReceiptEvidence(receipt) {
 		receipt?.url ?? null
 	].filter(Boolean);
 	return `- ${bits.join(' - ')}`;
+}
+
+function formatSourceEvidenceGapSummary(gaps) {
+	if (!Array.isArray(gaps) || !gaps.length) return 'none';
+	return gaps.map((gap) => gap.expectation ?? 'unknown').join(', ');
+}
+
+function formatSourceEvidenceGaps(gaps) {
+	if (!Array.isArray(gaps) || !gaps.length) return ['- none'];
+	return gaps.map((gap) => `- ${gap.expectation ?? 'unknown'}: ${gap.message ?? 'missing source evidence'}`);
 }

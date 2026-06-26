@@ -141,6 +141,10 @@ npm run review:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.
 
 That writes a machine-readable backlog item for every answer rated below 5 and
 a Markdown iteration backlog grouped for the next data/tool/prompt/UI fix pass.
+Backlog items keep source-evidence gaps as first-class fields when a source-backed
+tool was called without a receipt or source document id, so the next iteration can
+fix the retrieval/evidence layer instead of rediscovering the gap from raw
+transcripts.
 The review command fails instead of writing backlog files if any below-5 rating
 is missing failure categories or a concrete improvement task. A concrete task
 needs enough detail for the next iteration and an action verb such as add, fix,
@@ -163,14 +167,14 @@ npm run plan:scout-local-ai-iteration -- --backlog data/scout-local-ai/backlog/<
 
 That writes an ignored JSON/Markdown iteration plan under
 `data/scout-local-ai/iterations/`, groups misses by responsible layer, gives the
-regression case command to rerun, and fails if a below-5 item is uncategorized or
-lacks a concrete improvement task. It also requires `device-on-device-gemma`
-backlogs by default so scaffold routing smoke data cannot masquerade as Dad
-local-AI iteration proof. Add `--allow-non-device` only for deliberate
-routing/local-lab experiments outside final Dad proof. Use the plan to fix the
-data, tool routing, prompt, safety wording, UI recovery state, or local-model
-lane named by the backlog; do not close an iteration by changing expected answer
-wording only.
+regression case command to rerun, summarizes missing tools and source-evidence
+gaps, and fails if a below-5 item is uncategorized or lacks a concrete improvement
+task. It also requires `device-on-device-gemma` backlogs by default so scaffold
+routing smoke data cannot masquerade as Dad local-AI iteration proof. Add
+`--allow-non-device` only for deliberate routing/local-lab experiments outside
+final Dad proof. Use the plan to fix the data, tool routing, prompt, safety
+wording, UI recovery state, or local-model lane named by the backlog; do not
+close an iteration by changing expected answer wording only.
 
 After applying a fix and rerunning the plan's regression cases, verify that the
 iteration really closed:

@@ -1401,6 +1401,85 @@ test('review workflow rejects 5-star ratings when source-backed tools lack evide
 	);
 });
 
+test('review workflow carries source evidence gaps into backlog and iteration plan', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const sourceCase = suite.cases.find((testCase) => testCase.requiredTools.some((expectation) => expectation.includes(':')));
+	assert.ok(sourceCase, 'suite should contain source-backed tool expectations');
+	const sourceExpectation = sourceCase.requiredTools.find((expectation) => expectation.includes(':'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-source-gap-plan-'));
+	const run = deviceRunForCases(suite, [sourceCase], {
+		runId: 'device-source-gap-plan',
+		completeTools: true
+	});
+	for (const invocation of run.results[0].toolInvocations) {
+		if (String(invocation.args?.sourceSkill ?? '').trim()) {
+			invocation.receipts = [];
+			invocation.sourceDocumentIds = [];
+		}
+	}
+	run.results[0].receipts = run.results[0].toolInvocations.flatMap((record) => record.receipts ?? []);
+	run.summary = {
+		...run.summary,
+		...summarizeRunSourceEvidence(run.results)
+	};
+	const review = reviewForRun(run);
+	review.cases[0].rating = 4;
+	review.cases[0].failureCategories = ['weak-tool'];
+	review.cases[0].improvementTask = 'Fix source evidence receipts so required source-backed tools record proof.';
+
+	const runPath = join(outputDir, 'device-source-gap-plan.json');
+	const reviewPath = join(outputDir, 'device-source-gap-plan.review.json');
+	const backlogDir = join(outputDir, 'backlog');
+	const iterationDir = join(outputDir, 'iterations');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await execFileAsync(
+		process.execPath,
+		[
+			'scripts/review-scout-local-ai-eval.mjs',
+			'--run',
+			runPath,
+			'--review',
+			reviewPath,
+			'--backlog-dir',
+			backlogDir
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const backlogPath = join(backlogDir, 'device-source-gap-plan.backlog.json');
+	const backlog = JSON.parse(await readFile(backlogPath, 'utf8'));
+	const backlogMarkdown = await readFile(join(backlogDir, 'device-source-gap-plan.backlog.md'), 'utf8');
+
+	assert.equal(backlog.items.length, 1);
+	assert.equal(backlog.items[0].ownerLayer, 'tool-routing');
+	assert.ok(backlog.items[0].sourceEvidenceGaps.some((gap) => gap.expectation === sourceExpectation));
+	assert.match(backlogMarkdown, /Source evidence gaps:/u);
+	assert.match(backlogMarkdown, new RegExp(sourceExpectation.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+
+	await execFileAsync(
+		process.execPath,
+		[
+			'scripts/plan-scout-local-ai-iteration.mjs',
+			'--backlog',
+			backlogPath,
+			'--output-dir',
+			iterationDir,
+			'--plan-id',
+			'device-source-gap-plan-pass'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const plan = JSON.parse(await readFile(join(iterationDir, 'device-source-gap-plan-pass.iteration.json'), 'utf8'));
+	const planMarkdown = await readFile(join(iterationDir, 'device-source-gap-plan-pass.iteration.md'), 'utf8');
+
+	assert.equal(plan.summary.bySourceEvidenceGap[sourceExpectation], 1);
+	assert.ok(plan.workstreams[0].sourceEvidenceGaps.includes(sourceExpectation));
+	assert.ok(plan.workstreams[0].items[0].sourceEvidenceGaps.some((gap) => gap.expectation === sourceExpectation));
+	assert.match(planMarkdown, /Source evidence gaps:/u);
+	assert.match(planMarkdown, new RegExp(sourceExpectation.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+});
+
 test('iteration planner groups completed review backlog by responsible layer', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-iteration-plan-'));

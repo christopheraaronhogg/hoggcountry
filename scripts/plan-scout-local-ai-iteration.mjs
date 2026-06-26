@@ -175,6 +175,7 @@ function createIterationPlan({ planId, loaded }) {
 			byOwnerLayer: Object.fromEntries(countBy(sortedItems, (item) => item.ownerLayer)),
 			byFailureCategory: Object.fromEntries(countBy(sortedItems.flatMap((item) => item.failureCategories), (item) => item)),
 			byDomain: Object.fromEntries(countBy(sortedItems, (item) => item.domain)),
+			bySourceEvidenceGap: Object.fromEntries(countBy(sortedItems.flatMap(sourceEvidenceGapExpectations), (item) => item)),
 			byEvidenceLane: Object.fromEntries(countBy(loaded.map(({ backlog }) => backlog.evidenceLane ?? 'unknown'), (item) => item))
 		},
 		regressionCaseIds,
@@ -200,6 +201,7 @@ function createWorkstream(ownerLayer, items) {
 		regressionCaseIds: [...new Set(sorted.map((item) => item.caseId))],
 		failureCategories: [...new Set(sorted.flatMap((item) => item.failureCategories))].sort(),
 		missingTools: [...new Set(sorted.flatMap((item) => item.missingTools ?? []))].sort(),
+		sourceEvidenceGaps: [...new Set(sorted.flatMap(sourceEvidenceGapExpectations))].sort(),
 		requiredTools: [...new Set(sorted.flatMap((item) => item.requiredTools ?? []))].sort(),
 		items: sorted.map((item) => ({
 			runId: item.runId,
@@ -211,6 +213,7 @@ function createWorkstream(ownerLayer, items) {
 			improvementTask: item.improvementTask,
 			notes: item.notes,
 			missingTools: item.missingTools ?? [],
+			sourceEvidenceGaps: item.sourceEvidenceGaps ?? [],
 			requiredTools: item.requiredTools ?? [],
 			prompt: item.prompt,
 			expectedTraits: item.expectedTraits ?? [],
@@ -249,6 +252,10 @@ function createIterationPlanMarkdown(plan) {
 	for (const [owner, count] of Object.entries(plan.summary.byOwnerLayer)) lines.push(`- ${owner}: ${count}`);
 	lines.push('', 'Failure categories:', '');
 	for (const [category, count] of Object.entries(plan.summary.byFailureCategory)) lines.push(`- ${category}: ${count}`);
+	if (Object.keys(plan.summary.bySourceEvidenceGap).length) {
+		lines.push('', 'Source evidence gaps:', '');
+		for (const [expectation, count] of Object.entries(plan.summary.bySourceEvidenceGap)) lines.push(`- ${expectation}: ${count}`);
+	}
 	lines.push(
 		'',
 		'## Regression commands',
@@ -277,6 +284,7 @@ function createIterationPlanMarkdown(plan) {
 			`- Items: ${workstream.itemCount}`,
 			`- Regression cases: ${workstream.regressionCaseIds.join(', ')}`,
 			`- Missing tools: ${workstream.missingTools.join(', ') || 'none'}`,
+			`- Source evidence gaps: ${workstream.sourceEvidenceGaps.join(', ') || 'none'}`,
 			'',
 			'Items:',
 			''
@@ -289,6 +297,7 @@ function createIterationPlanMarkdown(plan) {
 				`- Source backlog: \`${item.sourceBacklog}\``,
 				`- Required tools: ${item.requiredTools.join(', ') || 'none'}`,
 				`- Missing tools: ${item.missingTools.join(', ') || 'none'}`,
+				`- Source evidence gaps: ${sourceEvidenceGapExpectations(item).join(', ') || 'none'}`,
 				'',
 				'Improvement task:',
 				'',
@@ -327,6 +336,12 @@ function countBy(items, keyFor) {
 		counts.set(key, (counts.get(key) ?? 0) + 1);
 	}
 	return [...counts.entries()].sort(([left], [right]) => String(left).localeCompare(String(right)));
+}
+
+function sourceEvidenceGapExpectations(item) {
+	return (item.sourceEvidenceGaps ?? [])
+		.map((gap) => String(gap?.expectation ?? '').trim())
+		.filter(Boolean);
 }
 
 function groupBy(items, keyFor) {
