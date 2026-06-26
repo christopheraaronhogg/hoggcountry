@@ -157,7 +157,7 @@ test('device run intake validates exports and creates review packet', async () =
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-intake-'));
 	const inputPath = join(outputDir, 'device-export.json');
-	const run = deviceRunForCases(suite, suite.cases.slice(0, 2));
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 2), { completeTools: true });
 	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
 
 	await execFileAsync(
@@ -188,9 +188,15 @@ test('device run intake validates exports and creates review packet', async () =
 	assert.equal(review.suiteVersion, suite.version);
 	assert.equal(review.suiteHash, scoutLocalAiSuiteHash(suite));
 	assert.equal(review.cases[0].caseId, suite.cases[0].id);
+	assert.equal(review.cases[0].confidence, 'medium');
+	assert.equal(review.cases[0].toolInvocationCount, suite.cases[0].requiredTools.length);
 	assert.match(review.cases[0].answerPreview, /device answer for/);
 	assert.match(packet, /Scout local AI device review/u);
 	assert.match(packet, new RegExp(suite.cases[0].id, 'u'));
+	assert.match(packet, /Confidence: `medium`/u);
+	assert.match(packet, /Tool invocations:/u);
+	assert.match(packet, /Source receipts:/u);
+	assert.match(packet, /Failure mode: `none`/u);
 	assert.match(packet, /Rating:/u);
 });
 
@@ -789,6 +795,44 @@ test('strict device proof rejects 5-star reviews with missing required tool hits
 	);
 });
 
+test('strict device proof rejects summary-only tool hits without invocation evidence', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-proof-summary-only-'));
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-final-proof-summary-only',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	for (const result of run.results) {
+		result.toolInvocations = [];
+		result.receipts = [];
+	}
+	const review = reviewForRun(run, { rating: 5 });
+	const runPath = join(outputDir, 'device-final-proof-summary-only.json');
+	const reviewPath = join(outputDir, 'device-final-proof-summary-only.review.json');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/verify-scout-local-ai-device-proof.mjs',
+				'--run',
+				runPath,
+				'--review',
+				reviewPath
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /actual toolInvocations missed required tools/u);
+			assert.match(error.stderr, /toolExpectations\.hit does not match actual toolInvocations/u);
+			return true;
+		}
+	);
+});
+
 test('strict device proof rejects final reviews without native app metadata', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-proof-metadata-fail-'));
@@ -985,34 +1029,37 @@ function finalDeviceRunContext(patch = {}) {
 }
 
 function deviceRunForCases(suite, cases, options = {}) {
-	const results = cases.map((testCase, index) => ({
-		caseId: testCase.id,
-		index: index + 1,
-		case: testCase,
-		answer: `device answer for ${testCase.id}`,
-		answerOrigin: 'device-on-device-gemma',
-		confidence: 'medium',
-		mode: 'on-device',
-		provider: 'on-device-gemma',
-		generatedAt: '2026-06-26T12:00:00.000Z',
-		durationMs: 1200 + index,
-		contextUsed: ['on-device-gemma'],
-		receipts: [],
-		requiredConfirmations: [],
-		safetyFlags: [],
-		toolInvocations: [],
-		toolExpectations: {
-			required: testCase.requiredTools,
-			hit: options.completeTools ? testCase.requiredTools : [],
-			missing: options.completeTools ? [] : testCase.requiredTools
-		},
-		bridge: null,
-		rating: null,
-		reviewerNotes: '',
-		failureMode: null,
-		suggestedFailureCategories: ['bad-routing', 'weak-tool'],
-		improvementTask: null
-	}));
+	const results = cases.map((testCase, index) => {
+		const toolInvocations = options.completeTools ? toolInvocationsFor(testCase) : [];
+		return {
+			caseId: testCase.id,
+			index: index + 1,
+			case: testCase,
+			answer: `device answer for ${testCase.id}`,
+			answerOrigin: 'device-on-device-gemma',
+			confidence: 'medium',
+			mode: 'on-device',
+			provider: 'on-device-gemma',
+			generatedAt: '2026-06-26T12:00:00.000Z',
+			durationMs: 1200 + index,
+			contextUsed: ['on-device-gemma'],
+			receipts: toolInvocations.flatMap((record) => record.receipts),
+			requiredConfirmations: [],
+			safetyFlags: [],
+			toolInvocations,
+			toolExpectations: {
+				required: testCase.requiredTools,
+				hit: options.completeTools ? testCase.requiredTools : [],
+				missing: options.completeTools ? [] : testCase.requiredTools
+			},
+			bridge: null,
+			rating: null,
+			reviewerNotes: '',
+			failureMode: null,
+			suggestedFailureCategories: ['bad-routing', 'weak-tool'],
+			improvementTask: null
+		};
+	});
 	const toolExpectationComplete = results.filter((result) => result.toolExpectations.missing.length === 0).length;
 	const missingToolCounts = {};
 	for (const result of results) {
@@ -1044,6 +1091,26 @@ function deviceRunForCases(suite, cases, options = {}) {
 		},
 		results
 	};
+}
+
+function toolInvocationsFor(testCase) {
+	return testCase.requiredTools.map((expectation) => {
+		const [toolId, sourceSkill] = expectation.split(':');
+		const receipt = {
+			id: `test-receipt:${testCase.id}:${expectation}`,
+			title: `Fixture receipt for ${expectation}`,
+			kind: sourceSkill ? 'field-guide' : 'trail-pack',
+			citation: `Fixture citation for ${testCase.id}`
+		};
+		return {
+			toolId,
+			args: sourceSkill ? { sourceSkill } : {},
+			summary: `Fixture tool invocation for ${expectation}`,
+			confidence: 'medium',
+			receipts: [receipt],
+			sourceDocumentIds: sourceSkill ? [`fixture-doc:${sourceSkill}`] : undefined
+		};
+	});
 }
 
 function reviewForRun(run, options = {}) {

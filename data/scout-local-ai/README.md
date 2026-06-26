@@ -54,7 +54,10 @@ That command verifies the export is `device-on-device-gemma` evidence, copies it
 to `data/scout-local-ai/device-runs/`, creates a JSON review file in
 `data/scout-local-ai/reviews/`, and creates a readable review packet in
 `data/scout-local-ai/review-packets/`. These folders are ignored by git because
-they hold raw model transcripts and human review notes.
+they hold raw model transcripts and human review notes. Use the review packet
+while rating: every case lists the full answer plus confidence, mode/provider,
+required tool hits, actual tool invocations, receipts, required confirmations,
+safety flags, context used, and failure mode.
 
 For a quick `Run 3` smoke export, add `--allow-partial`. Do not use partial runs
 as final proof.
@@ -119,10 +122,12 @@ npm run verify:scout-local-ai-device-proof -- --run data/scout-local-ai/device-r
 
 This fails unless the run is a full 100-case `device-on-device-gemma` Eval Lab
 run from the current suite version/hash, every required tool expectation was hit,
-every review case is rated `5`, native iOS app metadata is present
-(`com.hoggcountry.trailassistant`, app version/build, `native.platform = ios`,
-runtime configured), and no stale failure categories or improvement tasks remain.
-Passing writes an ignored proof summary under `data/scout-local-ai/final-proof/`.
+the required tools are backed by actual recorded `toolInvocations` rather than
+summary-only flags, every review case is rated `5`, native iOS app metadata is
+present (`com.hoggcountry.trailassistant`, app version/build,
+`native.platform = ios`, runtime configured), and no stale failure categories or
+improvement tasks remain. Passing writes an ignored proof summary under
+`data/scout-local-ai/final-proof/`.
 
 For final consistency proof, require at least two separate full TestFlight/iPhone
 runs to pass the same strict gate:

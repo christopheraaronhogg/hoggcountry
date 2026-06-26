@@ -104,6 +104,25 @@ export function verifyScoutLocalAiDeviceProof({ suite, run, review }) {
 		} else if (runResult.toolExpectations.missing.length) {
 			errors.push(`${testCase.id}: missing required tools: ${runResult.toolExpectations.missing.join(', ')}.`);
 		}
+		if (!Array.isArray(runResult.toolInvocations)) {
+			errors.push(`${testCase.id}: toolInvocations must be recorded for final proof.`);
+		} else {
+			const actualExpectations = evaluateToolExpectations(testCase.requiredTools, runResult.toolInvocations);
+			if (actualExpectations.missing.length) {
+				errors.push(`${testCase.id}: actual toolInvocations missed required tools: ${actualExpectations.missing.join(', ')}.`);
+			}
+			if (!sameStringArray(runResult.toolExpectations?.hit, actualExpectations.hit)) {
+				errors.push(`${testCase.id}: toolExpectations.hit does not match actual toolInvocations.`);
+			}
+			if (!sameStringArray(runResult.toolExpectations?.missing, actualExpectations.missing)) {
+				errors.push(`${testCase.id}: toolExpectations.missing does not match actual toolInvocations.`);
+			}
+		}
+		if (!Array.isArray(runResult.receipts)) errors.push(`${testCase.id}: receipts must be recorded for final proof.`);
+		if (!Array.isArray(runResult.safetyFlags)) errors.push(`${testCase.id}: safetyFlags must be recorded for final proof.`);
+		if (!Array.isArray(runResult.requiredConfirmations)) {
+			errors.push(`${testCase.id}: requiredConfirmations must be recorded for final proof.`);
+		}
 		if (reviewCase?.answerOrigin !== DEVICE_EVIDENCE_LANE) {
 			errors.push(`${testCase.id}: review answerOrigin must be ${DEVICE_EVIDENCE_LANE}, got ${reviewCase?.answerOrigin ?? '<missing>'}.`);
 		}
@@ -180,4 +199,24 @@ function sameStringArray(left, right) {
 	if (!Array.isArray(left) || !Array.isArray(right)) return false;
 	if (left.length !== right.length) return false;
 	return left.every((value, index) => value === right[index]);
+}
+
+function evaluateToolExpectations(requiredTools, invocations) {
+	const hit = [];
+	const missing = [];
+	for (const expectation of requiredTools) {
+		if (invocations.some((record) => matchesToolExpectation(expectation, record))) {
+			hit.push(expectation);
+		} else {
+			missing.push(expectation);
+		}
+	}
+	return { hit, missing };
+}
+
+function matchesToolExpectation(expectation, record) {
+	const [toolId, sourceSkill] = expectation.split(':');
+	if (record?.toolId !== toolId) return false;
+	if (!sourceSkill) return true;
+	return String(record.args?.sourceSkill ?? '').toLowerCase() === sourceSkill.toLowerCase();
 }

@@ -178,7 +178,10 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath) {
 			`Phase: \`${result.case.phase}\`  `,
 			`Mile: \`${result.case.mile}\`  `,
 			`Answer origin: \`${result.answerOrigin}\`  `,
+			`Confidence: \`${result.confidence ?? '<missing>'}\`  `,
+			`Mode/provider: \`${result.mode ?? '<missing>'} / ${result.provider ?? '<missing>'}\`  `,
 			`Duration: \`${result.durationMs}ms\``,
+			`Failure mode: \`${result.failureMode ?? 'none'}\``,
 			'',
 			'Prompt:',
 			'',
@@ -194,6 +197,21 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath) {
 			`- Required: ${(result.toolExpectations?.required ?? []).join(', ') || 'none'}`,
 			`- Hit: ${(result.toolExpectations?.hit ?? []).join(', ') || 'none'}`,
 			`- Missing: ${(result.toolExpectations?.missing ?? []).join(', ') || 'none'}`,
+			'',
+			'Tool invocations:',
+			...formatToolInvocations(result.toolInvocations),
+			'',
+			'Source receipts:',
+			...formatReceipts(result.receipts),
+			'',
+			'Required confirmations:',
+			...formatConfirmations(result.requiredConfirmations),
+			'',
+			'Safety flags:',
+			...formatSafetyFlags(result.safetyFlags),
+			'',
+			'Context used:',
+			...formatStringList(result.contextUsed),
 			'',
 			'Answer:',
 			'',
@@ -211,6 +229,57 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath) {
 	}
 
 	return `${lines.join('\n')}\n`;
+}
+
+function formatToolInvocations(invocations) {
+	if (!Array.isArray(invocations) || !invocations.length) return ['- none recorded'];
+	return invocations.flatMap((record, index) => {
+		const lines = [
+			`- ${index + 1}. \`${record.toolId ?? '<missing>'}\` (${record.confidence ?? 'unknown'}): ${record.summary ?? '(no summary)'}`,
+			`  - Args: \`${compactJson(record.args ?? {})}\``
+		];
+		if (record.sourceDocumentIds?.length) lines.push(`  - Source docs: ${record.sourceDocumentIds.join(', ')}`);
+		if (record.receipts?.length) lines.push(`  - Receipts: ${record.receipts.map(formatReceiptInline).join(' | ')}`);
+		if (record.confirmations?.length) lines.push(`  - Confirmations: ${record.confirmations.map((item) => item.id ?? item.reason ?? 'confirmation').join(', ')}`);
+		if (record.safetyFlags?.length) lines.push(`  - Safety flags: ${record.safetyFlags.map((item) => item.id ?? item.severity ?? 'flag').join(', ')}`);
+		return lines;
+	});
+}
+
+function formatReceipts(receipts) {
+	if (!Array.isArray(receipts) || !receipts.length) return ['- none recorded'];
+	return receipts.map((receipt) => `- ${formatReceiptInline(receipt)}`);
+}
+
+function formatReceiptInline(receipt) {
+	const bits = [
+		receipt.id ?? '<missing-id>',
+		receipt.kind ? `kind=${receipt.kind}` : null,
+		receipt.title ?? null,
+		receipt.citation ?? null,
+		receipt.url ?? null
+	].filter(Boolean);
+	return bits.join(' - ');
+}
+
+function formatConfirmations(confirmations) {
+	if (!Array.isArray(confirmations) || !confirmations.length) return ['- none'];
+	return confirmations.map((confirmation) => `- ${confirmation.id ?? '<missing>'}: ${confirmation.prompt ?? '(no prompt)'} (${confirmation.reason ?? 'reason unknown'})`);
+}
+
+function formatSafetyFlags(flags) {
+	if (!Array.isArray(flags) || !flags.length) return ['- none'];
+	return flags.map((flag) => `- ${flag.severity ?? 'unknown'}: ${flag.message ?? flag.id ?? '(no message)'}`);
+}
+
+function formatStringList(items) {
+	if (!Array.isArray(items) || !items.length) return ['- none recorded'];
+	return items.map((item) => `- ${item}`);
+}
+
+function compactJson(value) {
+	const text = JSON.stringify(value);
+	return text.length > 500 ? `${text.slice(0, 497)}...` : text;
 }
 
 function quoteBlock(text) {
