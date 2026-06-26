@@ -60,18 +60,25 @@ export function createReviewTemplate(run, runPath, repoRoot) {
 			mode: result.mode,
 			provider: result.provider,
 			contextUsed: result.contextUsed ?? [],
+			generatedAt: result.generatedAt ?? '',
+			durationMs: result.durationMs ?? null,
 			expectedTraits: result.case.expectedTraits ?? [],
 			safetyCaveats: result.case.safetyCaveats ?? [],
 			traitChecks: createRubricChecks(result.case.expectedTraits),
 			safetyCaveatChecks: createRubricChecks(result.case.safetyCaveats),
+			receipts: result.receipts ?? [],
 			receiptCount: result.receipts?.length ?? 0,
+			toolInvocations: result.toolInvocations ?? [],
 			toolInvocationCount: result.toolInvocations?.length ?? 0,
 			toolExpectations: result.toolExpectations,
 			safetyFlags: result.safetyFlags,
 			requiredConfirmations: result.requiredConfirmations,
+			bridge: result.bridge ?? null,
 			failureMode: result.failureMode,
 			error: result.error ?? '',
-			answerPreview: result.answer.slice(0, 900),
+			answer: result.answer ?? '',
+			answerLength: String(result.answer ?? '').length,
+			answerPreview: String(result.answer ?? '').slice(0, 900),
 			rating: null,
 			notes: '',
 			failureCategories: result.suggestedFailureCategories ?? [],
@@ -158,6 +165,14 @@ export function createBacklog(run, review, summary) {
 				confidence: result?.confidence ?? null,
 				failureMode: result?.failureMode ?? null,
 				answerPreview: entry.answerPreview,
+				answer: entry.answer ?? result?.answer ?? '',
+				answerLength: entry.answerLength ?? String(entry.answer ?? result?.answer ?? '').length,
+				toolInvocations: entry.toolInvocations ?? result?.toolInvocations ?? [],
+				receipts: entry.receipts ?? result?.receipts ?? [],
+				requiredConfirmations: entry.requiredConfirmations ?? result?.requiredConfirmations ?? [],
+				safetyFlags: entry.safetyFlags ?? result?.safetyFlags ?? [],
+				contextUsed: entry.contextUsed ?? result?.contextUsed ?? [],
+				bridge: entry.bridge ?? result?.bridge ?? null,
 				answerOrigin: entry.answerOrigin,
 				evidenceLane: run.evidenceLane
 			});
@@ -187,6 +202,12 @@ export function createBacklog(run, review, summary) {
 			requiredConfirmations: result?.requiredConfirmations ?? [],
 			safetyFlags: result?.safetyFlags ?? [],
 			answerPreview: entry.answerPreview,
+			answer: entry.answer ?? result?.answer ?? '',
+			answerLength: entry.answerLength ?? String(entry.answer ?? result?.answer ?? '').length,
+			toolInvocations: entry.toolInvocations ?? result?.toolInvocations ?? [],
+			receipts: entry.receipts ?? result?.receipts ?? [],
+			contextUsed: entry.contextUsed ?? result?.contextUsed ?? [],
+			bridge: entry.bridge ?? result?.bridge ?? null,
 			answerOrigin: entry.answerOrigin,
 			evidenceLane: run.evidenceLane
 		});
@@ -293,6 +314,16 @@ export function createBacklogMarkdown(backlog) {
 			'Answer preview:',
 			'',
 			quoteBlock(item.answerPreview || '(empty)'),
+			'',
+			'Full answer:',
+			'',
+			quoteBlock(item.answer || '(empty)'),
+			'',
+			'Recorded tool evidence:',
+			...(item.toolInvocations?.length ? item.toolInvocations.map(formatToolEvidence) : ['- none recorded']),
+			'',
+			'Source receipts:',
+			...(item.receipts?.length ? item.receipts.map(formatReceiptEvidence) : ['- none recorded']),
 			''
 		);
 	}
@@ -316,6 +347,10 @@ export function createBacklogMarkdown(backlog) {
 				'Answer preview:',
 				'',
 				quoteBlock(item.answerPreview || '(empty)'),
+				'',
+				'Full answer:',
+				'',
+				quoteBlock(item.answer || '(empty)'),
 				''
 			);
 		}
@@ -382,4 +417,23 @@ function quoteBlock(value) {
 		.split('\n')
 		.map((line) => `> ${line}`)
 		.join('\n');
+}
+
+function formatToolEvidence(record) {
+	const toolId = record?.toolId ?? '<missing-tool>';
+	const confidence = record?.confidence ?? 'unknown';
+	const summary = record?.summary ?? '(no summary)';
+	const sourceDocs = record?.sourceDocumentIds?.length ? `; source docs: ${record.sourceDocumentIds.join(', ')}` : '';
+	return `- ${toolId} (${confidence}): ${summary}${sourceDocs}`;
+}
+
+function formatReceiptEvidence(receipt) {
+	const bits = [
+		receipt?.id ?? '<missing-id>',
+		receipt?.kind ? `kind=${receipt.kind}` : null,
+		receipt?.title ?? null,
+		receipt?.citation ?? null,
+		receipt?.url ?? null
+	].filter(Boolean);
+	return `- ${bits.join(' - ')}`;
 }

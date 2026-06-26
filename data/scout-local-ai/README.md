@@ -54,11 +54,14 @@ That command verifies the export is `device-on-device-gemma` evidence, copies it
 to `data/scout-local-ai/device-runs/`, creates a JSON review file in
 `data/scout-local-ai/reviews/`, and creates a readable review packet in
 `data/scout-local-ai/review-packets/`. These folders are ignored by git because
-they hold raw model transcripts and human review notes. Use the review packet
-while rating: every case lists the full answer plus confidence, mode/provider,
-required tool hits, actual tool invocations, receipts, required confirmations,
-safety flags, context used, failure mode, and the expected-trait / safety-caveat
-checklists that must be marked before a 5/5 rating is valid.
+they hold raw model transcripts and human review notes. The review JSON is
+self-contained for scoring: every case keeps the full answer plus confidence,
+mode/provider, required tool hits, actual tool invocations, receipts, required
+confirmations, safety flags, context used, failure mode, bridge diagnostics, and
+the expected-trait / safety-caveat checklists that must be marked before a 5/5
+rating is valid. Use the Markdown review packet as the easier reading surface
+for device exports, but rate from the full evidence rather than the short answer
+preview.
 
 For a quick `Run 3` smoke export, add `--allow-partial`. Do not use partial runs
 as final proof.
