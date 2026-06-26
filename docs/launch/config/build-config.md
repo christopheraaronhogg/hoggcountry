@@ -1,6 +1,6 @@
 # Build & version config — submission readiness
 
-Snapshot of the native build config as of 2026-06-20. Account-bound store
+Snapshot of the native build config as of 2026-06-26. Account-bound store
 records, iOS signing/upload, and physical-device smoke proof are still separate.
 Branch: `main`.
 
@@ -13,7 +13,7 @@ Branch: `main`.
 | Setting | Value | Status |
 |---|---|---|
 | MARKETING_VERSION | `1.0` | ✓ ready |
-| CURRENT_PROJECT_VERSION (build) | `8` | ✓ ready |
+| CURRENT_PROJECT_VERSION (build) | `10` | ✓ ready for the next TestFlight upload |
 | Deployment target | iOS 15.0 | ✓ required by LiteRT-LM Swift |
 | TARGETED_DEVICE_FAMILY | `1` (iPhone-only) | ✓ set tonight (was `1,2`; reversible decision) |
 | NSLocationWhenInUseUsageDescription | present | ✓ |
@@ -21,11 +21,11 @@ Branch: `main`.
 | PrivacyInfo.xcprivacy | created at `App/PrivacyInfo.xcprivacy` | ✓ referenced by the App target resource build phase |
 | AppIcon (1024, no alpha) | brand emblem | ✓ generated |
 | Launch screen / splash | brand emblem | ✓ generated |
-| CODE_SIGN_STYLE | Automatic | — needs DEVELOPMENT_TEAM (Chris's account) |
-| DEVELOPMENT_TEAM | unset | ⛔ **Chris** (Apple Developer account) |
+| CODE_SIGN_STYLE | Debug automatic; Release manual App Store Connect profile | ✓ configured |
+| DEVELOPMENT_TEAM | `3CFU9J87A5` | ✓ configured for Release uploads |
 | Shared scheme for archiving | `xcshareddata/xcschemes/App.xcscheme` | ✓ `xcodebuild -list` shows the App scheme |
 | LiteRT-LM Swift package (so Scout AI runs on iOS) | local `LiteRTLMVendor` wrapper linked into App | ✓ simulator build required before release |
-| Local Xcode platform | iOS Simulator 26.2 available | ✓ simulator build/run verified |
+| Local Xcode platform | iOS Simulator 26.3.1 available | ✓ simulator build/run verified |
 
 ## Android (`mobile/android`)
 | Setting | Value | Status |
@@ -43,5 +43,5 @@ Branch: `main`.
 | Location permission | `ACCESS_COARSE_LOCATION` + `ACCESS_FINE_LOCATION`, no background location | ✓ foreground, user-initiated GPS-to-mile snapping; raw GPS stays on-device |
 
 ## What this means
-- **iOS** project-file blockers are cleared for the privacy manifest, shared scheme, and LiteRT-LM package wiring. It archives once Chris sets the Apple Developer team. Scout AI still needs model-download/runtime smoke proof on a real device before submission claims.
+- **iOS** project-file blockers are cleared for the privacy manifest, shared scheme, LiteRT-LM package wiring, Release signing, and TestFlight archive/upload lane. Build `9` is live in Dad Pilot; the current source lane is prepared as build `10` for the next TestFlight upload. Scout AI still needs model-download/runtime smoke proof on a real TestFlight iPhone before Dad-ready claims.
 - **Android** can build a signed release AAB with the local upload keystore proof already recorded. Gemma and foreground GPS are wired in the native Android lane, but still need physical-device smoke proof before submission.

@@ -5,17 +5,29 @@ without publishing publicly in the App Store.
 
 ## Current State
 
-- Native code path is ready for the signing lane: mobile check/test, Capacitor
-  iOS sync, simulator build/run, and unsigned device Release compile have passed.
-- `npm run ios:testflight -- --archive-only` currently stops at Apple signing:
-  this Mac has no valid code-signing identity, no provisioning profiles, and no
-  `DEVELOPMENT_TEAM` selected for the iOS App target.
-- Xcode account preferences currently show no usable Apple Developer account.
-- The repeatable upload command exists:
+- Dad Pilot is live through external TestFlight at
+  `https://testflight.apple.com/join/BagBCrzf`.
+- App Store Connect app id `6782505691` and bundle id
+  `com.hoggcountry.trailassistant` are verified.
+- Build `1.0 (9)` is in Dad Pilot and approved for external testing, but it was
+  archived before the latest Scout Eval Lab final-proof gates on `main`.
+- The iOS project is now prepared as build `1.0 (10)` for the next TestFlight
+  upload. Use build `10` for the next Dad Eval Lab pass.
+- iOS Release signing is configured with team `3CFU9J87A5` and the
+  `Hoggcountry App Store Connect` provisioning profile.
+- The repeatable upload command is:
 
 ```bash
-npm run ios:testflight -- --upload --team-id <TEAMID>
+npm run ios:testflight -- --upload \
+  --team-id 3CFU9J87A5 \
+  --asc-key-path ~/.appstoreconnect/private_keys/AuthKey_T272T83N98.p8 \
+  --asc-key-id T272T83N98 \
+  --asc-issuer-id <issuer-id>
 ```
+
+Per the repo working notes, the signed TestFlight upload itself remains Chris's
+manual/account-bound step. Run `npm --prefix mobile run cap:sync:ios` before
+archiving if web/mobile source changed after this handoff.
 
 ## Correct TestFlight Path
 
@@ -29,44 +41,44 @@ call Dad an internal tester in the launch plan.
 
 ## Account Steps
 
-1. Enroll or sign in to the Apple Developer Program.
-2. In Xcode, add the Apple ID under Settings > Accounts.
-3. In `mobile/ios/App/App.xcworkspace`, select the `App` target and choose the
-   Chris-owned Team under Signing & Capabilities.
-4. Confirm the team is now visible:
+1. Confirm the current source is clean and the build number is still higher
+   than the latest TestFlight build:
 
 ```bash
-xcodebuild -workspace mobile/ios/App/App.xcworkspace -scheme App -showBuildSettings | rg -n "DEVELOPMENT_TEAM|CODE_SIGN_STYLE|PROVISIONING_PROFILE|PRODUCT_BUNDLE_IDENTIFIER"
+git status --short
+xcodebuild -showBuildSettings -workspace mobile/ios/App/App.xcworkspace -scheme App -configuration Release | rg -n "MARKETING_VERSION|CURRENT_PROJECT_VERSION|DEVELOPMENT_TEAM|CODE_SIGN_STYLE|PROVISIONING_PROFILE_SPECIFIER"
 ```
 
-5. Upload the build:
+2. Run the local gates and sync web assets into iOS:
 
 ```bash
-npm run ios:testflight -- --upload --team-id <TEAMID>
+npm --prefix mobile run check
+npm --prefix mobile test
+npm --prefix mobile run cap:sync:ios
 ```
 
-6. In App Store Connect, create or verify the app record for bundle
-   `com.hoggcountry.trailassistant`.
-7. In TestFlight, create the required internal testing group, then create an
-   external group named `Dad Field Pilot`.
-8. Add the uploaded build to the external group, fill What to Test, and submit
-   it for TestFlight App Review.
-9. After approval, invite Dad by email or create a public link with tester limit
-   `1`, copy that link, and send it to Chris.
+3. Upload build `10` with the repeatable TestFlight command above.
+4. In App Store Connect, wait for build `1.0 (10)` to reach `VALID`.
+5. Attach build `10` to the existing `Dad Pilot` external group and remove the
+   older build so Dad sees only the latest.
+6. If Apple asks for Beta App Review again, submit the build and wait for
+   approval. Later TestFlight builds often skip a full review, but do not assume
+   that until App Store Connect says the build is available.
+7. Ask Dad to update/install through the public TestFlight link, open Settings,
+   verify the Eval Lab shows `TestFlight ready`, run `Run 100`, and Share the
+   JSON export back for import/review.
 
 ## Proof To Capture
 
 - Signing proof: selected team id, `security find-identity` result, and
   `DEVELOPMENT_TEAM` build setting.
 - Upload proof: `docs/launch/proof/ios-testflight-attempt-*.md` from the
-  successful `--upload` run.
-- App Store Connect proof: app record exists, bundle id matches, TestFlight build
-  processed, external group exists, and Dad email or limited public link is
-  available.
-- Release ledger proof: mark `apple-archive-upload` only after upload/processing
-  is proven, and mark `dad-testflight-invite` only after the actual invite or
-  limited public link exists.
-- Dad-ready proof: Dad can install from the TestFlight link and the physical
-  iPhone smoke pass covers first-run setup, model missing/download path, GPS
-  allowed/denied, offline kill/relaunch, and one Scout answer if store copy
-  claims on-device AI.
+  successful `--upload` run plus a build-state proof like
+  `docs/launch/proof/ios-testflight-build-10-2026-06-26.md`.
+- App Store Connect proof: build `10` processed, beta review state, Dad Pilot
+  membership, public link enabled, and older build removal if applicable.
+- Release ledger proof: update `docs/launch/release-evidence.json` only after
+  upload/processing and Dad Pilot attachment are proven.
+- Dad-ready proof: Dad can install/update from the TestFlight link, the Eval Lab
+  preflight says `TestFlight ready`, the model downloads/runs locally, the full
+  100-question export imports cleanly, and every reviewed answer reaches 5/5.

@@ -73,9 +73,9 @@
     },
     "apple-archive-upload": {
       "status": "verified",
-      "verifiedAt": "2026-06-26T18:00:47Z",
+      "verifiedAt": "2026-06-26T18:19:17Z",
       "verifiedBy": "Codex on Chris Hogg's local checkout plus App Store Connect API",
-      "summary": "Uploaded Hoggcountry iOS version 1.0 build 8 from the mobile source lane captured at repo SHA 757a7f4fef22fbdedef0cd2c128b86d99780cf23 plus CURRENT_PROJECT_VERSION=8. Xcode archived and uploaded the App Store Connect package with API-key auth. Apple processed build id 56eb8af9-20e9-409c-972d-b131b404ccb2 to processingState VALID; the build is attached to Dad Pilot and is IN_BETA_TESTING.",
+      "summary": "Uploaded Hoggcountry iOS version 1.0 build 9 from the mobile source lane captured at repo SHA 136e218e8bb2591c01af730bdd3bd0903f1d9229 plus CURRENT_PROJECT_VERSION=9. Xcode archived and uploaded the App Store Connect package with API-key auth. Apple processed build id 5d4dd206-4fd1-452b-9a07-e742fac83f8e to processingState VALID; the build is attached to Dad Pilot and is IN_BETA_TESTING. Current main is prepared as build 10 for the next upload.",
       "files": [
         "docs/launch/proof/ios-testflight-upload-2026-06-21.md",
         "docs/launch/proof/ios-testflight-attempt-2026-06-21T14-36-45-831Z.md",
@@ -89,21 +89,22 @@
         "docs/launch/proof/ios-testflight-attempt-2026-06-26T17-19-30-564Z.md",
         "docs/launch/proof/ios-testflight-build-7-2026-06-26.md",
         "docs/launch/proof/ios-testflight-attempt-2026-06-26T17-52-16-552Z.md",
-        "docs/launch/proof/ios-testflight-build-8-2026-06-26.md"
+        "docs/launch/proof/ios-testflight-build-8-2026-06-26.md",
+        "docs/launch/proof/ios-testflight-build-9-2026-06-26.md"
       ],
       "commands": [
         "npm run ios:testflight -- --upload --team-id 3CFU9J87A5 --asc-key-path ~/.appstoreconnect/private_keys/AuthKey_T272T83N98.p8 --asc-key-id T272T83N98 --asc-issuer-id <issuer>",
-        "GET https://api.appstoreconnect.apple.com/v1/builds?filter[app]=6782505691&filter[version]=8&include=buildBetaDetail,betaGroups,preReleaseVersion",
+        "GET https://api.appstoreconnect.apple.com/v1/builds?filter[app]=6782505691&filter[version]=9&include=buildBetaDetail,betaGroups,preReleaseVersion",
         "POST https://api.appstoreconnect.apple.com/v1/betaGroups/fc963396-a087-44c6-b56b-29847da31cd4/relationships/builds",
         "POST https://api.appstoreconnect.apple.com/v1/betaAppReviewSubmissions",
-        "DELETE https://api.appstoreconnect.apple.com/v1/betaGroups/fc963396-a087-44c6-b56b-29847da31cd4/relationships/builds for build 7"
+        "DELETE https://api.appstoreconnect.apple.com/v1/betaGroups/fc963396-a087-44c6-b56b-29847da31cd4/relationships/builds for build 8"
       ]
     },
     "dad-testflight-invite": {
       "status": "verified",
-      "verifiedAt": "2026-06-26T18:00:47Z",
+      "verifiedAt": "2026-06-26T18:19:17Z",
       "verifiedBy": "Codex via App Store Connect API",
-      "summary": "Dad Pilot is attached to Hoggcountry iOS build 1.0 (8), the public TestFlight link is enabled with limit 5, and App Store Connect reports build 8 externalBuildState IN_BETA_TESTING with beta review APPROVED. Build 7 was removed from Dad Pilot so the group now lists only build 8.",
+      "summary": "Dad Pilot is attached to Hoggcountry iOS build 1.0 (9), the public TestFlight link is enabled with limit 5, and App Store Connect reports build 9 externalBuildState IN_BETA_TESTING with beta review APPROVED. Build 8 was removed from Dad Pilot so the group now lists only build 9. Current main is prepared as build 10 for the next Dad Eval Lab upload.",
       "files": [
         "docs/launch/proof/ios-testflight-upload-2026-06-21.md",
         "docs/launch/proof/ios-testflight-build-3-2026-06-21.md",
@@ -111,7 +112,8 @@
         "docs/launch/proof/ios-testflight-build-5-2026-06-21.md",
         "docs/launch/proof/ios-testflight-build-6-2026-06-26.md",
         "docs/launch/proof/ios-testflight-build-7-2026-06-26.md",
-        "docs/launch/proof/ios-testflight-build-8-2026-06-26.md"
+        "docs/launch/proof/ios-testflight-build-8-2026-06-26.md",
+        "docs/launch/proof/ios-testflight-build-9-2026-06-26.md"
       ],
       "publicLink": "https://testflight.apple.com/join/BagBCrzf"
     },
