@@ -71,3 +71,15 @@ npm run review:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.
 ```
 
 That writes a backlog item for every answer rated below 5.
+
+When a full device run has been reviewed and every case is honestly 5/5, run the
+strict final gate:
+
+```sh
+npm run verify:scout-local-ai-device-proof -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json
+```
+
+This fails unless the run is a full 100-case `device-on-device-gemma` Eval Lab
+run, every required tool expectation was hit, every review case is rated `5`,
+and no stale failure categories or improvement tasks remain. Passing writes an
+ignored proof summary under `data/scout-local-ai/final-proof/`.

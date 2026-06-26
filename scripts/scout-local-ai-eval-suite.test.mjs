@@ -202,6 +202,75 @@ test('device run intake rejects scaffold runs by default', async () => {
 	);
 });
 
+test('strict device proof accepts a full 5-star device review', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-proof-pass-'));
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-final-proof-pass',
+		completeTools: true,
+		runContext: { surface: 'mobile-settings-scout-eval-lab' }
+	});
+	const review = reviewForRun(run, { rating: 5 });
+	const runPath = join(outputDir, 'device-final-proof-pass.json');
+	const reviewPath = join(outputDir, 'device-final-proof-pass.review.json');
+	const proofPath = join(outputDir, 'device-final-proof-pass.proof.md');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/verify-scout-local-ai-device-proof.mjs',
+			'--run',
+			runPath,
+			'--review',
+			reviewPath,
+			'--proof-out',
+			proofPath
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const proof = await readFile(proofPath, 'utf8');
+
+	assert.match(result.stdout, /Scout local AI device proof passed/u);
+	assert.match(result.stdout, /5\/5: 100\/100/u);
+	assert.match(proof, /Ratings of 5: 100\/100/u);
+	assert.match(proof, /Required-tool complete: 100\/100/u);
+});
+
+test('strict device proof rejects 5-star reviews with missing required tool hits', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-proof-fail-'));
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-final-proof-fail',
+		runContext: { surface: 'mobile-settings-scout-eval-lab' }
+	});
+	const review = reviewForRun(run, { rating: 5 });
+	const runPath = join(outputDir, 'device-final-proof-fail.json');
+	const reviewPath = join(outputDir, 'device-final-proof-fail.review.json');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/verify-scout-local-ai-device-proof.mjs',
+				'--run',
+				runPath,
+				'--review',
+				reviewPath
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /run.summary.toolExpectationComplete must be 100/u);
+			assert.match(error.stderr, /missing required tools/u);
+			return true;
+		}
+	);
+});
+
 function assertNonEmptyStringArray(value, label) {
 	assert.ok(Array.isArray(value), `${label} must be an array`);
 	assert.ok(value.length > 0, `${label} must not be empty`);
@@ -224,7 +293,7 @@ function assertValidToolExpectation(expectation, caseId) {
 	}
 }
 
-function deviceRunForCases(suite, cases) {
+function deviceRunForCases(suite, cases, options = {}) {
 	const results = cases.map((testCase, index) => ({
 		caseId: testCase.id,
 		index: index + 1,
@@ -243,8 +312,8 @@ function deviceRunForCases(suite, cases) {
 		toolInvocations: [],
 		toolExpectations: {
 			required: testCase.requiredTools,
-			hit: [],
-			missing: testCase.requiredTools
+			hit: options.completeTools ? testCase.requiredTools : [],
+			missing: options.completeTools ? [] : testCase.requiredTools
 		},
 		bridge: null,
 		rating: null,
@@ -253,26 +322,61 @@ function deviceRunForCases(suite, cases) {
 		suggestedFailureCategories: ['bad-routing', 'weak-tool'],
 		improvementTask: null
 	}));
+	const toolExpectationComplete = results.filter((result) => result.toolExpectations.missing.length === 0).length;
+	const missingToolCounts = {};
+	for (const result of results) {
+		for (const missing of result.toolExpectations.missing) {
+			missingToolCounts[missing] = (missingToolCounts[missing] ?? 0) + 1;
+		}
+	}
 	return {
 		schemaVersion: 1,
-		runId: 'device-smoke-run',
+		runId: options.runId ?? 'device-smoke-run',
 		suiteId: suite.suiteId,
 		suiteTitle: suite.title,
 		suitePath: 'mobile/static/scout/dad-local-ai-100.json',
 		generatedAt: '2026-06-26T12:00:00.000Z',
 		evidenceLane: 'device-on-device-gemma',
 		modelCommand: null,
-		runContext: { surface: 'testflight-ios' },
+		runContext: options.runContext ?? { surface: 'testflight-ios' },
 		caseCount: results.length,
 		totalSuiteCases: suite.cases.length,
 		filters: { id: null, domain: null, phase: null, limit: results.length },
 		ratingScale: suite.ratingScale,
 		failureCategories: suite.failureCategories,
 		summary: {
-			toolExpectationComplete: 0,
-			missingToolCases: results.length,
-			missingToolCounts: {}
+			toolExpectationComplete,
+			missingToolCases: results.length - toolExpectationComplete,
+			missingToolCounts
 		},
 		results
+	};
+}
+
+function reviewForRun(run, options = {}) {
+	return {
+		schemaVersion: 1,
+		runId: run.runId,
+		suiteId: run.suiteId,
+		runPath: `${run.runId}.json`,
+		evidenceLane: run.evidenceLane,
+		ratingScale: run.ratingScale,
+		failureCategories: run.failureCategories,
+		cases: run.results.map((result) => ({
+			caseId: result.caseId,
+			domain: result.case.domain,
+			phase: result.case.phase,
+			prompt: result.case.prompt,
+			answerOrigin: result.answerOrigin,
+			toolExpectations: result.toolExpectations,
+			safetyFlags: result.safetyFlags,
+			requiredConfirmations: result.requiredConfirmations,
+			answerPreview: result.answer.slice(0, 900),
+			rating: options.rating ?? null,
+			notes: '',
+			failureCategories: [],
+			improvementTask: '',
+			ownerLayer: ''
+		}))
 	};
 }

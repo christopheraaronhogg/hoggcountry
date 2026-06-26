@@ -42,6 +42,7 @@
     "review:scout-model": "node scripts/review-scout-model-responses.mjs",
     "review:scout-local-ai": "node scripts/review-scout-local-ai-eval.mjs",
     "intake:scout-local-ai-device-run": "node scripts/import-scout-local-ai-device-run.mjs",
+    "verify:scout-local-ai-device-proof": "node scripts/verify-scout-local-ai-device-proof.mjs",
     "sync:scout-local-ai-suite": "mkdir -p mobile/static/scout && cp data/scout-local-ai/dad-local-ai-100.json mobile/static/scout/dad-local-ai-100.json",
     "check:mileage": "node scripts/check-mileage-consistency.js",
     "check:water": "node scripts/validate-water-sources.js",
