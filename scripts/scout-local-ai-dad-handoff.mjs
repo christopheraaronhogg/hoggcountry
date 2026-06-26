@@ -40,6 +40,8 @@ async function loadStatus(args) {
 	if (args.runsDir) statusArgs.push('--runs-dir', String(args.runsDir));
 	if (args.deviceRunsDir) statusArgs.push('--device-runs-dir', String(args.deviceRunsDir));
 	if (args.reviewsDir) statusArgs.push('--reviews-dir', String(args.reviewsDir));
+	if (args.xcodeProject) statusArgs.push('--xcode-project', String(args.xcodeProject));
+	if (args.releaseEvidence) statusArgs.push('--release-evidence', String(args.releaseEvidence));
 	const result = await execFileAsync(process.execPath, statusArgs, {
 		cwd: REPO_ROOT,
 		maxBuffer: 1024 * 1024 * 4

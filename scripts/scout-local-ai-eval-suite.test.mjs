@@ -292,6 +292,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	const runsDir = join(outputDir, 'runs');
 	const deviceRunsDir = join(outputDir, 'device-runs');
 	const reviewsDir = join(outputDir, 'reviews');
+	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
 	await mkdir(runsDir, { recursive: true });
 	const routingRun = deviceRunForCases(suite, suite.cases, {
 		runId: 'routing-handoff-proof',
@@ -301,6 +302,16 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	routingRun.runContext = null;
 	for (const result of routingRun.results) result.answerOrigin = 'scaffold-not-model';
 	await writeFile(join(runsDir, 'routing-handoff-proof.json'), `${JSON.stringify(routingRun, null, 2)}\n`);
+	await writeFile(releaseEvidencePath, `${JSON.stringify({
+		schemaVersion: 1,
+		items: {
+			'dad-testflight-invite': {
+				status: 'verified',
+				summary: 'Dad Pilot is attached to Hoggcountry iOS build 1.0 (10), and build 11 is not attached yet.',
+				publicLink: 'https://testflight.apple.com/join/BagBCrzf'
+			}
+		}
+	}, null, 2)}\n`);
 
 	const result = await execFileAsync(
 		process.execPath,
@@ -311,7 +322,9 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 			'--device-runs-dir',
 			deviceRunsDir,
 			'--reviews-dir',
-			reviewsDir
+			reviewsDir,
+			'--release-evidence',
+			releaseEvidencePath
 		],
 		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
 	);
@@ -321,6 +334,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Recorded Dad Pilot build: `1\.0 \(10\)`/u);
 	assert.match(result.stdout, /https:\/\/testflight\.apple\.com\/join\/BagBCrzf/u);
 	assert.match(result.stdout, /recorded Dad Pilot build is not the target build/u);
+	assert.match(result.stdout, /Upload and attach target iOS build 1\.0 \(11\)/u);
 	assert.match(result.stdout, /use `Run 100` for real proof/u);
 	assert.match(result.stdout, /npm run intake:scout-local-ai-device-run/u);
 	assert.match(result.stdout, /npm run apply-review:scout-local-ai/u);
