@@ -6,22 +6,10 @@ export const DEVICE_EVIDENCE_LANE = 'device-on-device-gemma';
 export const DEVICE_SURFACE = 'mobile-settings-scout-eval-lab';
 export const DEVICE_BUNDLE_ID = 'com.hoggcountry.trailassistant';
 
-export function verifyScoutLocalAiDeviceProof({ suite, run, review }) {
+export function validateScoutLocalAiDeviceRunContext({ suite, run }) {
 	const errors = [];
-	const summary = summarizeReview(review);
 	const finalProof = getFinalProofRequirements(suite, errors);
 
-	if (suite.schemaVersion !== 1) errors.push('suite.schemaVersion must be 1.');
-	if (suite.suiteId !== 'dad-local-ai-100') errors.push(`suite.suiteId must be dad-local-ai-100, got ${suite.suiteId ?? '<missing>'}.`);
-	validateScoutLocalAiSuiteIdentity({ suite, run, review, errors });
-	if (!Array.isArray(suite.cases) || suite.cases.length !== 100) {
-		errors.push(`suite must contain exactly 100 cases, got ${suite.cases?.length ?? '<missing>'}.`);
-	}
-
-	if (run.schemaVersion !== 1) errors.push('run.schemaVersion must be 1.');
-	if (run.evidenceLane !== DEVICE_EVIDENCE_LANE) {
-		errors.push(`run.evidenceLane must be ${DEVICE_EVIDENCE_LANE}, got ${run.evidenceLane ?? '<missing>'}.`);
-	}
 	if (run.runContext?.surface !== DEVICE_SURFACE) {
 		errors.push(`run.runContext.surface must be ${DEVICE_SURFACE} for final TestFlight/iPhone proof, got ${run.runContext?.surface ?? '<missing>'}.`);
 	}
@@ -60,6 +48,26 @@ export function verifyScoutLocalAiDeviceProof({ suite, run, review }) {
 	if (!String(run.runContext?.modelId ?? '').trim()) {
 		errors.push('run.runContext.modelId is required for final TestFlight/iPhone proof.');
 	}
+
+	return errors;
+}
+
+export function verifyScoutLocalAiDeviceProof({ suite, run, review }) {
+	const errors = [];
+	const summary = summarizeReview(review);
+
+	if (suite.schemaVersion !== 1) errors.push('suite.schemaVersion must be 1.');
+	if (suite.suiteId !== 'dad-local-ai-100') errors.push(`suite.suiteId must be dad-local-ai-100, got ${suite.suiteId ?? '<missing>'}.`);
+	validateScoutLocalAiSuiteIdentity({ suite, run, review, errors });
+	if (!Array.isArray(suite.cases) || suite.cases.length !== 100) {
+		errors.push(`suite must contain exactly 100 cases, got ${suite.cases?.length ?? '<missing>'}.`);
+	}
+
+	if (run.schemaVersion !== 1) errors.push('run.schemaVersion must be 1.');
+	if (run.evidenceLane !== DEVICE_EVIDENCE_LANE) {
+		errors.push(`run.evidenceLane must be ${DEVICE_EVIDENCE_LANE}, got ${run.evidenceLane ?? '<missing>'}.`);
+	}
+	errors.push(...validateScoutLocalAiDeviceRunContext({ suite, run }));
 	if (run.suiteId !== suite.suiteId) errors.push(`run.suiteId ${run.suiteId ?? '<missing>'} does not match ${suite.suiteId}.`);
 	if (!Array.isArray(run.results)) errors.push('run.results must be an array.');
 	if (run.caseCount !== suite.cases.length) errors.push(`run.caseCount ${run.caseCount ?? '<missing>'} must equal ${suite.cases.length}.`);

@@ -76,7 +76,13 @@ That command verifies the export is `device-on-device-gemma` evidence, copies it
 to `data/scout-local-ai/device-runs/`, creates a JSON review file in
 `data/scout-local-ai/reviews/`, and creates a readable review packet in
 `data/scout-local-ai/review-packets/`. These folders are ignored by git because
-they hold raw model transcripts and human review notes. The review JSON is
+they hold raw model transcripts and human review notes. Full `Run 100` intake
+also validates the native proof context before any review work is created:
+Settings Eval Lab surface, iOS native shell, `com.hoggcountry.trailassistant`,
+TestFlight install source, suite-required app version/build, configured runtime,
+and model id. If Dad shares an old build, debug install, web/PWA run, or otherwise
+wrong-lane export, intake should fail before anyone rates 100 unusable answers.
+The review JSON is
 self-contained for scoring: every case keeps the full answer plus confidence,
 mode/provider, required tool hits, actual tool invocations, receipts, required
 confirmations, safety flags, context used, failure mode, bridge diagnostics, and
@@ -91,7 +97,8 @@ npm run apply-review:scout-local-ai -- --packet data/scout-local-ai/review-packe
 ```
 
 For a quick `Run 3` smoke export, add `--allow-partial`. Do not use partial runs
-as final proof.
+as final proof. Partial intake can warn about missing final-proof context without
+blocking the smoke packet.
 
 The in-app Eval Lab autosaves each completed question locally on the phone. If a
 100-question run is interrupted, reopen Settings, tap Resume, and export after it

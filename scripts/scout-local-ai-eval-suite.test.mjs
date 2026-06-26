@@ -532,6 +532,52 @@ test('device run intake rejects stale suite fingerprints', async () => {
 	);
 });
 
+test('device run intake rejects full exports without current TestFlight proof context', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-intake-context-'));
+	const inputPath = join(outputDir, 'wrong-build-device-export.json');
+	const badContext = finalDeviceRunContext();
+	badContext.app = { ...badContext.app, build: '9' };
+	badContext.installSource = {
+		type: 'debug',
+		platform: 'ios',
+		detectedBy: 'ios-app-store-receipt',
+		receiptPresent: false,
+		debugBuild: true,
+		buildConfiguration: 'debug'
+	};
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-intake-wrong-build',
+		completeTools: true,
+		runContext: badContext
+	});
+	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/import-scout-local-ai-device-run.mjs',
+				'--run',
+				inputPath,
+				'--device-run-dir',
+				join(outputDir, 'device-runs'),
+				'--review-dir',
+				join(outputDir, 'reviews'),
+				'--packet-dir',
+				join(outputDir, 'review-packets')
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /installSource\.type must be testflight/u);
+			assert.match(error.stderr, /app\.build must be >= 10/u);
+			assert.match(error.stderr, /got 9/u);
+			return true;
+		}
+	);
+});
+
 test('review workflow writes actionable JSON and Markdown iteration backlog', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-'));

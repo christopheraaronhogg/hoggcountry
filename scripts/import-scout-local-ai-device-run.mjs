@@ -8,6 +8,9 @@ import {
 import {
 	validateScoutLocalAiSuiteIdentity
 } from './lib/scout-local-ai-suite.mjs';
+import {
+	validateScoutLocalAiDeviceRunContext
+} from './lib/scout-local-ai-device-proof.mjs';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
@@ -138,6 +141,17 @@ function validateDeviceRun(run, suite, options) {
 	const recomputedComplete = run.results.filter((result) => result.toolExpectations?.missing?.length === 0).length;
 	if (run.summary?.toolExpectationComplete !== recomputedComplete) {
 		warnings.push(`summary.toolExpectationComplete ${run.summary?.toolExpectationComplete ?? '<missing>'} differs from recomputed ${recomputedComplete}`);
+	}
+
+	const contextProblems = validateScoutLocalAiDeviceRunContext({ suite, run });
+	if (run.evidenceLane === DEVICE_EVIDENCE_LANE && contextProblems.length) {
+		if (options.allowPartial) {
+			for (const problem of contextProblems) {
+				warnings.push(`partial smoke export is not final Dad proof: ${problem}`);
+			}
+		} else if (!options.allowNonDevice) {
+			errors.push(...contextProblems);
+		}
 	}
 
 	return { errors, warnings };
