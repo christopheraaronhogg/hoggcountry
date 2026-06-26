@@ -72,7 +72,12 @@ confirmations, safety flags, context used, failure mode, bridge diagnostics, and
 the expected-trait / safety-caveat checklists that must be marked before a 5/5
 rating is valid. Use the Markdown review packet as the easier reading surface
 for device exports, but rate from the full evidence rather than the short answer
-preview.
+preview. You can fill the checklist `passed:` values and Reviewer fields in the
+Markdown packet, then apply them back to the machine-readable review JSON:
+
+```sh
+npm run apply-review:scout-local-ai -- --packet data/scout-local-ai/review-packets/<run-id>.review.md --review data/scout-local-ai/reviews/<run-id>.review.json
+```
 
 For a quick `Run 3` smoke export, add `--allow-partial`. Do not use partial runs
 as final proof.

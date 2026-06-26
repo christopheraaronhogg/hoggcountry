@@ -302,7 +302,100 @@ test('device run intake validates exports and creates review packet', async () =
 	assert.match(packet, /Tool invocations:/u);
 	assert.match(packet, /Source receipts:/u);
 	assert.match(packet, /Failure mode: `none`/u);
+	assert.match(packet, /npm run apply-review:scout-local-ai/u);
 	assert.match(packet, /Rating:/u);
+});
+
+test('review packet ratings can be applied back into review JSON', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-packet-apply-'));
+	const inputPath = join(outputDir, 'device-export.json');
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 2), {
+		runId: 'device-packet-apply',
+		completeTools: true
+	});
+	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
+
+	await execFileAsync(
+		process.execPath,
+		[
+			'scripts/import-scout-local-ai-device-run.mjs',
+			'--run',
+			inputPath,
+			'--allow-partial',
+			'--device-run-dir',
+			join(outputDir, 'device-runs'),
+			'--review-dir',
+			join(outputDir, 'reviews'),
+			'--packet-dir',
+			join(outputDir, 'review-packets')
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+
+	const packetPath = join(outputDir, 'review-packets', 'device-packet-apply.review.md');
+	const reviewPath = join(outputDir, 'reviews', 'device-packet-apply.review.json');
+	const backlogDir = join(outputDir, 'backlog');
+	let packet = await readFile(packetPath, 'utf8');
+	packet = packet.replaceAll('- passed: null |', '- passed: true |');
+	packet = replaceReviewerFields(packet, run.results[0].caseId, {
+		rating: '5',
+		notes: 'Dad-ready answer.',
+		failureCategories: '',
+		ownerLayer: '',
+		improvementTask: ''
+	});
+	packet = replaceReviewerFields(packet, run.results[1].caseId, {
+		rating: '3',
+		notes: 'Needs a safer exit-first answer.',
+		failureCategories: 'unsafe-wording, poor-ux',
+		ownerLayer: 'safety-prompt',
+		improvementTask: 'Lead with the lower-risk bailout and remove casual mileage pressure.'
+	});
+	await writeFile(packetPath, packet);
+
+	const applyResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/apply-scout-local-ai-review-packet.mjs',
+			'--packet',
+			packetPath,
+			'--review',
+			reviewPath
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const review = JSON.parse(await readFile(reviewPath, 'utf8'));
+
+	assert.match(applyResult.stdout, /Scout local AI review JSON updated from packet/u);
+	assert.match(applyResult.stdout, /Updated cases: 2/u);
+	assert.equal(review.cases[0].rating, 5);
+	assert.equal(review.cases[0].traitChecks.every((check) => check.passed === true), true);
+	assert.equal(review.cases[0].safetyCaveatChecks.every((check) => check.passed === true), true);
+	assert.equal(review.cases[1].rating, 3);
+	assert.deepEqual(review.cases[1].failureCategories, ['unsafe-wording', 'poor-ux']);
+	assert.equal(review.cases[1].ownerLayer, 'safety-prompt');
+	assert.match(review.cases[1].improvementTask, /lower-risk bailout/u);
+
+	const reviewResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/review-scout-local-ai-eval.mjs',
+			'--run',
+			join(outputDir, 'device-runs', 'device-packet-apply.json'),
+			'--review',
+			reviewPath,
+			'--backlog-dir',
+			backlogDir
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const backlog = JSON.parse(await readFile(join(backlogDir, 'device-packet-apply.backlog.json'), 'utf8'));
+
+	assert.match(reviewResult.stdout, /Iteration backlog written/u);
+	assert.equal(backlog.items.length, 1);
+	assert.equal(backlog.items[0].caseId, run.results[1].caseId);
+	assert.equal(backlog.items[0].ownerLayer, 'safety-prompt');
 });
 
 test('device run intake rejects stale suite fingerprints', async () => {
@@ -1392,4 +1485,21 @@ function rubricChecksFor(items) {
 		passed: true,
 		notes: ''
 	}));
+}
+
+function replaceReviewerFields(packet, caseId, fields) {
+	const headingPattern = new RegExp(`^## ${caseId} - .*$`, 'mu');
+	const match = packet.match(headingPattern);
+	assert.ok(match?.index !== undefined, `packet should contain ${caseId}`);
+	const start = match.index;
+	const nextHeading = packet.slice(start + match[0].length).search(/\n## DLA-\d{3} - /u);
+	const end = nextHeading === -1 ? packet.length : start + match[0].length + nextHeading;
+	let block = packet.slice(start, end);
+	block = block
+		.replace(/^- Rating:.*$/mu, `- Rating: ${fields.rating}`)
+		.replace(/^- Notes:.*$/mu, `- Notes: ${fields.notes}`)
+		.replace(/^- Failure categories:.*$/mu, `- Failure categories: ${fields.failureCategories}`)
+		.replace(/^- Owner layer:.*$/mu, `- Owner layer: ${fields.ownerLayer}`)
+		.replace(/^- Improvement task:.*$/mu, `- Improvement task: ${fields.improvementTask}`);
+	return `${packet.slice(0, start)}${block}${packet.slice(end)}`;
 }

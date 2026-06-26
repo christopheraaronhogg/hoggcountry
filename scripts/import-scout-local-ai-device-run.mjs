@@ -55,7 +55,7 @@ await writeJson(importedRunPath, run, { force });
 
 const review = createReviewTemplate(run, importedRunPath, REPO_ROOT);
 const reviewWritten = await writeJson(reviewPath, review, { force, skipExisting: true });
-const packetWritten = await writeText(packetPath, createReviewPacket(run, validation, importedRunPath, reviewPath), {
+const packetWritten = await writeText(packetPath, createReviewPacket(run, validation, importedRunPath, reviewPath, packetPath), {
 	force,
 	skipExisting: true
 });
@@ -143,7 +143,7 @@ function validateDeviceRun(run, suite, options) {
 	return { errors, warnings };
 }
 
-function createReviewPacket(run, validation, importedRunPath, reviewPath) {
+function createReviewPacket(run, validation, importedRunPath, reviewPath, packetPath) {
 	const lines = [
 		`# Scout local AI device review: ${run.runId}`,
 		'',
@@ -155,9 +155,15 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath) {
 		`Cases: ${run.caseCount}/${run.totalSuiteCases}`,
 		`Required-tool complete: ${run.summary?.toolExpectationComplete ?? 0}/${run.caseCount}`,
 		'',
-		'Use this packet for human reading. Put the actual 1-5 ratings, notes, failure categories, owner layer, and improvement task in the review JSON.',
+		'Use this packet for human reading. Fill the checklist passed values and Reviewer fields here, then apply it back into the review JSON before running the review/backlog command.',
 		'',
-		'After rating, run:',
+		'After filling this packet, run:',
+		'',
+		'```sh',
+		`npm run apply-review:scout-local-ai -- --packet ${relative(REPO_ROOT, packetPath)} --review ${relative(REPO_ROOT, reviewPath)}`,
+		'```',
+		'',
+		'Then validate ratings and create the iteration backlog:',
 		'',
 		'```sh',
 		`npm run review:scout-local-ai -- --run ${relative(REPO_ROOT, importedRunPath)} --review ${relative(REPO_ROOT, reviewPath)}`,
