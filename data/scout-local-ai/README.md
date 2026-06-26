@@ -95,6 +95,21 @@ lacks a concrete improvement task. Use the plan to fix the data, tool routing,
 prompt, safety wording, UI recovery state, or local-model lane named by the
 backlog; do not close an iteration by changing expected answer wording only.
 
+After applying a fix and rerunning the plan's regression cases, verify that the
+iteration really closed:
+
+```sh
+npm run verify:scout-local-ai-iteration -- --plan data/scout-local-ai/iterations/<plan-id>.iteration.json --run data/scout-local-ai/runs/<rerun-id>.json --review data/scout-local-ai/reviews/<rerun-id>.review.json
+```
+
+That writes an ignored resolution report under `data/scout-local-ai/iterations/`
+and fails if any planned case is still below 5, any planned case still missed a
+required tool, any below-5 review item remains, or a 5/5 case still carries stale
+failure metadata. Add `--require-full-suite` when the rerun is meant to prove
+the full 100-case pass. A passing iteration resolution is useful progress, not
+final Dad readiness; final readiness still requires the strict device gates
+below.
+
 When a full device run has been reviewed and every case is honestly 5/5, run the
 strict final gate:
 

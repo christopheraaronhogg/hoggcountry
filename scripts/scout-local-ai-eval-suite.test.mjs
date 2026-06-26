@@ -414,6 +414,159 @@ test('iteration planner rejects incomplete or uncategorized backlog work', async
 	);
 });
 
+test('iteration verifier passes when rerun resolves planned regression cases', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-iteration-verify-pass-'));
+	const sourceRun = deviceRunForCases(suite, suite.cases.slice(0, 3), {
+		runId: 'device-iteration-source',
+		completeTools: true
+	});
+	const sourceReview = reviewForRun(sourceRun);
+	sourceReview.cases[0].rating = 4;
+	sourceReview.cases[0].failureCategories = ['missing-data'];
+	sourceReview.cases[0].improvementTask = 'Add a current-section water reliability source document.';
+	sourceReview.cases[1].rating = 5;
+	sourceReview.cases[2].rating = 2;
+	sourceReview.cases[2].failureCategories = ['weak-tool', 'bad-routing'];
+	sourceReview.cases[2].improvementTask = 'Fix source routing for the local safety document.';
+	const sourceRunPath = join(outputDir, 'device-iteration-source.json');
+	const sourceReviewPath = join(outputDir, 'device-iteration-source.review.json');
+	const backlogDir = join(outputDir, 'backlog');
+	const iterationDir = join(outputDir, 'iterations');
+	await writeFile(sourceRunPath, `${JSON.stringify(sourceRun, null, 2)}\n`);
+	await writeFile(sourceReviewPath, `${JSON.stringify(sourceReview, null, 2)}\n`);
+	await execFileAsync(
+		process.execPath,
+		[
+			'scripts/review-scout-local-ai-eval.mjs',
+			'--run',
+			sourceRunPath,
+			'--review',
+			sourceReviewPath,
+			'--backlog-dir',
+			backlogDir
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	await execFileAsync(
+		process.execPath,
+		[
+			'scripts/plan-scout-local-ai-iteration.mjs',
+			'--backlog',
+			join(backlogDir, 'device-iteration-source.backlog.json'),
+			'--output-dir',
+			iterationDir,
+			'--plan-id',
+			'device-iteration-resolution-pass'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+
+	const rerunCases = [suite.cases[2], suite.cases[0]];
+	const rerun = deviceRunForCases(suite, rerunCases, {
+		runId: 'device-iteration-rerun-pass',
+		completeTools: true
+	});
+	const rerunReview = reviewForRun(rerun, { rating: 5 });
+	const rerunPath = join(outputDir, 'device-iteration-rerun-pass.json');
+	const rerunReviewPath = join(outputDir, 'device-iteration-rerun-pass.review.json');
+	await writeFile(rerunPath, `${JSON.stringify(rerun, null, 2)}\n`);
+	await writeFile(rerunReviewPath, `${JSON.stringify(rerunReview, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/verify-scout-local-ai-iteration.mjs',
+			'--plan',
+			join(iterationDir, 'device-iteration-resolution-pass.iteration.json'),
+			'--run',
+			rerunPath,
+			'--review',
+			rerunReviewPath,
+			'--output-dir',
+			iterationDir,
+			'--resolution-id',
+			'device-iteration-resolution-pass'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const resolution = JSON.parse(await readFile(join(iterationDir, 'device-iteration-resolution-pass.resolution.json'), 'utf8'));
+	const markdown = await readFile(join(iterationDir, 'device-iteration-resolution-pass.resolution.md'), 'utf8');
+
+	assert.match(result.stdout, /Scout local AI iteration verification passed/u);
+	assert.equal(resolution.status, 'passed');
+	assert.equal(resolution.summary.resolvedPlannedCases, 2);
+	assert.equal(resolution.summary.unresolvedPlannedCases, 0);
+	assert.equal(resolution.summary.belowFive, 0);
+	assert.match(markdown, /Resolved planned cases: 2\/2/u);
+	assert.match(markdown, /Run strict device proof only after a full device review is 100\/100 at 5\/5/u);
+});
+
+test('iteration verifier rejects reruns with unresolved planned cases', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-iteration-verify-fail-'));
+	const plan = {
+		schemaVersion: 1,
+		planId: 'device-iteration-resolution-fail',
+		sourceBacklogs: [
+			{
+				path: 'data/scout-local-ai/backlog/source.backlog.json',
+				runId: 'source-run',
+				suiteId: suite.suiteId,
+				evidenceLane: 'device-on-device-gemma'
+			}
+		],
+		regressionCaseIds: [suite.cases[0].id, suite.cases[1].id]
+	};
+	const rerun = deviceRunForCases(suite, suite.cases.slice(0, 2), {
+		runId: 'device-iteration-rerun-fail',
+		completeTools: true
+	});
+	const rerunReview = reviewForRun(rerun, { rating: 5 });
+	rerunReview.cases[1].rating = 4;
+	rerunReview.cases[1].failureCategories = ['unsafe-wording'];
+	rerunReview.cases[1].improvementTask = 'Still needs safer wording.';
+	const planPath = join(outputDir, 'device-iteration-resolution-fail.iteration.json');
+	const rerunPath = join(outputDir, 'device-iteration-rerun-fail.json');
+	const rerunReviewPath = join(outputDir, 'device-iteration-rerun-fail.review.json');
+	await writeFile(planPath, `${JSON.stringify(plan, null, 2)}\n`);
+	await writeFile(rerunPath, `${JSON.stringify(rerun, null, 2)}\n`);
+	await writeFile(rerunReviewPath, `${JSON.stringify(rerunReview, null, 2)}\n`);
+
+	let thrown;
+	try {
+		await execFileAsync(
+			process.execPath,
+			[
+				'scripts/verify-scout-local-ai-iteration.mjs',
+				'--plan',
+				planPath,
+				'--run',
+				rerunPath,
+				'--review',
+				rerunReviewPath,
+				'--output-dir',
+				outputDir,
+				'--resolution-id',
+				'device-iteration-resolution-fail'
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		);
+	} catch (error) {
+		thrown = error;
+	}
+	assert.ok(thrown, 'iteration verifier should fail unresolved planned cases');
+	assert.match(thrown.stderr, /Scout local AI iteration verification failed/u);
+	assert.match(thrown.stderr, /Unresolved planned cases: 1/u);
+	assert.match(thrown.stderr, /Below-5 review cases: 1/u);
+	const resolution = JSON.parse(await readFile(join(outputDir, 'device-iteration-resolution-fail.resolution.json'), 'utf8'));
+	assert.equal(resolution.status, 'failed');
+	assert.equal(resolution.summary.resolvedPlannedCases, 1);
+	assert.equal(resolution.summary.unresolvedPlannedCases, 1);
+	assert.equal(resolution.unresolvedItems[0].caseId, suite.cases[1].id);
+	assert.match(resolution.unresolvedItems[0].problems.join(' '), /rating is 4, not 5/u);
+});
+
 test('review workflow rejects unrated cases by default', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-unrated-'));
