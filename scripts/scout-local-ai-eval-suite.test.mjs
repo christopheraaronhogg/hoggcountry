@@ -1072,6 +1072,87 @@ test('iteration planner rejects incomplete or uncategorized backlog work', async
 	);
 });
 
+test('iteration planner rejects non-device backlogs unless explicitly allowed', async () => {
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-iteration-non-device-'));
+	const backlogPath = join(outputDir, 'scaffold.backlog.json');
+	const iterationDir = join(outputDir, 'iterations');
+	const backlog = {
+		schemaVersion: 1,
+		runId: 'scaffold-iteration-backlog',
+		suiteId: 'dad-local-ai-100',
+		suiteVersion: '2026-06-26.2',
+		suiteHash: 'fnv1a32:f2e9772b',
+		evidenceLane: 'scaffold-not-model',
+		generatedAt: '2026-06-26T12:00:00.000Z',
+		summary: {
+			rated: 1,
+			total: 1,
+			belowFive: 1,
+			unrated: 0,
+			ratingCounts: {'4': 1}
+		},
+		unratedItems: [],
+		items: [
+			{
+				id: 'scaffold-iteration-backlog:DLA-001',
+				caseId: 'DLA-001',
+				domain: 'water',
+				phase: 'on-trail',
+				rating: 4,
+				prompt: 'Where is the next reliable water?',
+				failureCategories: ['weak-tool'],
+				ownerLayer: 'tool-routing',
+				improvementTask: 'Fix source routing so water prompts open the local water document.',
+				requiredTools: ['source_search:water', 'open_source_doc:water'],
+				hitTools: ['source_search:water'],
+				missingTools: ['open_source_doc:water'],
+				answerPreview: 'Not enough detail.'
+			}
+		]
+	};
+	await writeFile(backlogPath, `${JSON.stringify(backlog, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/plan-scout-local-ai-iteration.mjs',
+				'--backlog',
+				backlogPath,
+				'--output-dir',
+				iterationDir
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /Scout local AI iteration plan failed validation/u);
+			assert.match(error.stderr, /evidenceLane must be device-on-device-gemma/u);
+			assert.match(error.stderr, /--allow-non-device/u);
+			return true;
+		}
+	);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/plan-scout-local-ai-iteration.mjs',
+			'--backlog',
+			backlogPath,
+			'--output-dir',
+			iterationDir,
+			'--plan-id',
+			'scaffold-iteration-plan',
+			'--allow-non-device'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const plan = JSON.parse(await readFile(join(iterationDir, 'scaffold-iteration-plan.iteration.json'), 'utf8'));
+
+	assert.match(result.stdout, /Scout local AI iteration plan written/u);
+	assert.equal(plan.summary.byEvidenceLane['scaffold-not-model'], 1);
+	assert.equal(plan.sourceBacklogs[0].evidenceLane, 'scaffold-not-model');
+});
+
 test('iteration verifier passes when rerun resolves planned regression cases', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-iteration-verify-pass-'));

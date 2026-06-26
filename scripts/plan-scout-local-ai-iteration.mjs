@@ -11,6 +11,7 @@ import {
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
 const DEFAULT_OUTPUT_DIR = 'data/scout-local-ai/iterations';
+const DEVICE_EVIDENCE_LANE = 'device-on-device-gemma';
 const VALID_FAILURES = new Set(VALID_FAILURE_CATEGORIES);
 const VALID_OWNER_LAYERS = new Set(REVIEW_OWNER_LAYERS);
 const OWNER_GUIDANCE = {
@@ -27,12 +28,14 @@ const backlogPaths = await resolveBacklogPaths(cli);
 const outputDir = resolveInputPath(cli.outputDir ?? DEFAULT_OUTPUT_DIR);
 const planId = safeFileName(String(cli.planId ?? `scout-local-ai-iteration-${compactTimestamp(new Date())}`));
 const allowUnrated = Boolean(cli.allowUnrated);
+const allowNonDevice = Boolean(cli.allowNonDevice);
 
 if (!backlogPaths.length) {
 	throw new Error([
 		'Usage: npm run plan:scout-local-ai-iteration -- --backlog data/scout-local-ai/backlog/<run-id>.backlog.json',
 		'Optional: --backlogs a.json,b.json --backlog-dir data/scout-local-ai/backlog --output-dir data/scout-local-ai/iterations --plan-id pass-1',
-		'Use --allow-unrated only for a partial status plan, not a fix iteration.'
+		'Use --allow-unrated only for a partial status plan, not a fix iteration.',
+		'Use --allow-non-device only for routing/local-lab experiments outside final Dad proof.'
 	].join('\n'));
 }
 
@@ -40,7 +43,7 @@ const loaded = [];
 const errors = [];
 for (const path of backlogPaths) {
 	const backlog = JSON.parse(await readFile(path, 'utf8'));
-	validateBacklog(backlog, path, { allowUnrated, errors });
+	validateBacklog(backlog, path, { allowNonDevice, allowUnrated, errors });
 	loaded.push({ path, backlog });
 }
 
@@ -89,6 +92,11 @@ function validateBacklog(backlog, path, options) {
 	if (backlog.schemaVersion !== 1) options.errors.push(`${label}: schemaVersion must be 1.`);
 	if (!backlog.runId) options.errors.push(`${label}: runId is required.`);
 	if (!Array.isArray(backlog.items)) options.errors.push(`${label}: items must be an array.`);
+	if (!options.allowNonDevice && backlog.evidenceLane !== DEVICE_EVIDENCE_LANE) {
+		options.errors.push(
+			`${label}: evidenceLane must be ${DEVICE_EVIDENCE_LANE} for a fix iteration plan; got ${backlog.evidenceLane ?? '<missing>'}. Use --allow-non-device only for routing/local-lab experiments outside final Dad proof.`
+		);
+	}
 	if (!options.allowUnrated && (backlog.summary?.unrated ?? 0) > 0) {
 		options.errors.push(`${label}: iteration planning requires a completed review; ${backlog.summary.unrated} cases are unrated.`);
 	}

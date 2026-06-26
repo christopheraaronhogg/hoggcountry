@@ -160,9 +160,13 @@ npm run plan:scout-local-ai-iteration -- --backlog data/scout-local-ai/backlog/<
 That writes an ignored JSON/Markdown iteration plan under
 `data/scout-local-ai/iterations/`, groups misses by responsible layer, gives the
 regression case command to rerun, and fails if a below-5 item is uncategorized or
-lacks a concrete improvement task. Use the plan to fix the data, tool routing,
-prompt, safety wording, UI recovery state, or local-model lane named by the
-backlog; do not close an iteration by changing expected answer wording only.
+lacks a concrete improvement task. It also requires `device-on-device-gemma`
+backlogs by default so scaffold routing smoke data cannot masquerade as Dad
+local-AI iteration proof. Add `--allow-non-device` only for deliberate
+routing/local-lab experiments outside final Dad proof. Use the plan to fix the
+data, tool routing, prompt, safety wording, UI recovery state, or local-model
+lane named by the backlog; do not close an iteration by changing expected answer
+wording only.
 
 After applying a fix and rerunning the plan's regression cases, verify that the
 iteration really closed:
