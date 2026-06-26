@@ -156,8 +156,8 @@ const checks = [
     expectStatus: 302,
     validate(result) {
       const location = result.headers.location || '';
-      if (location !== 'https://share.garmin.com/hoggcountry') {
-        return `expected Garmin MapShare redirect, got ${location || 'none'}`;
+      if (location !== '/at-map') {
+        return `expected primary AT map redirect, got ${location || 'none'}`;
       }
       return null;
     }
