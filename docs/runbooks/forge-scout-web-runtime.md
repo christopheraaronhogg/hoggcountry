@@ -230,7 +230,7 @@ These should pass when the bridge is healthy:
 - `https://hoggcountry.on-forge.com/guide/quick/layering`
 - `https://hoggcountry.on-forge.com/tools`
 - `https://hoggcountry.on-forge.com/at-map`
-- `https://hoggcountry.on-forge.com/track` (Garmin MapShare handoff)
+- `https://hoggcountry.on-forge.com/track` (302 Garmin MapShare redirect)
 - `https://hoggcountry.on-forge.com/track/map-pack`
 - `https://hoggcountry.on-forge.com/login`
 - `https://hoggcountry.on-forge.com/manifest.webmanifest`
@@ -240,7 +240,7 @@ These should pass when the bridge is healthy:
 - `https://hoggcountry.on-forge.com/api/v1/health`
 
 The SvelteKit beta owns `/track`, `/videos`, and `/at-map` directly. `/track`
-hands viewers to Garmin MapShare for daily progress; `/at-map` keeps the richer
+redirects viewers to Garmin MapShare for daily progress; `/at-map` keeps the richer
 HoggCountry trail explorer. They are not expected to redirect to `/dad/*`.
 
 Trips, Blog, and Tags are not cutover blockers for the Forge beta and should stay out of public navigation, the service-worker runtime list, and smoke-test requirements.

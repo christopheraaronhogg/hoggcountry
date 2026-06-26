@@ -153,11 +153,11 @@ const checks = [
   {
     label: 'track',
     path: '/track',
-    expectStatus: 200,
+    expectStatus: 302,
     validate(result) {
-      if (!hasHtml(result)) return 'expected track HTML response';
-      if (!/Opening Garmin MapShare|share\.garmin\.com\/hoggcountry|Open Garmin MapShare/i.test(result.text)) {
-        return 'expected Garmin MapShare handoff markers';
+      const location = result.headers.location || '';
+      if (location !== 'https://share.garmin.com/hoggcountry') {
+        return `expected Garmin MapShare redirect, got ${location || 'none'}`;
       }
       return null;
     }
