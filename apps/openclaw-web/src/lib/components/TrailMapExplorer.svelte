@@ -73,8 +73,9 @@
   // map stays visible instead of a full-bleed sheet burying it. Mobile keeps
   // the draggable bottom sheet untouched.
   let isWide = $state(false);
-  // Bottom-sheet snap state: 0 = peek (glanceable summary), 1 = half, 2 = full.
-  let sheetSnap = $state<0 | 1 | 2>(0);
+  // Bottom-sheet snap state: 0 = peek (glanceable summary), 1 = full. Two rest
+  // positions only — no in-between half-snap.
+  let sheetSnap = $state<0 | 1>(0);
   let shellEl = $state<HTMLElement | null>(null);
   let capEl = $state<HTMLElement | null>(null);
   let capHeight = $state(170);
@@ -86,12 +87,12 @@
   const detailsOpen = $derived(sheetSnap >= 1);
 
   // Snap to explicit sheet heights rather than translating a full-height
-  // panel: peek shows exactly the measured header, half/full are viewport
-  // fractions. Setting height directly keeps the collapsed state pinned to
+  // panel: peek shows exactly the measured header, full is a viewport
+  // fraction. Setting height directly keeps the collapsed state pinned to
   // the header no matter how the detail body reflows after data loads.
-  function snapHeights(): [number, number, number] {
+  function snapHeights(): [number, number] {
     const vh = viewHeight || shellEl?.clientHeight || 800;
-    return [capHeight, Math.round(vh * 0.5), Math.round(vh * 0.86)];
+    return [capHeight, Math.round(vh * 0.86)];
   }
 
   const sheetHeight = $derived.by(() => {
@@ -114,7 +115,7 @@
     if (!dragging) return;
     const heights = snapHeights();
     // Dragging up (clientY decreases) grows the sheet.
-    dragHeight = clamp(dragStartHeight + (dragStartY - event.clientY), heights[0], heights[2]);
+    dragHeight = clamp(dragStartHeight + (dragStartY - event.clientY), heights[0], heights[1]);
   }
 
   function endSheetDrag() {
@@ -122,13 +123,13 @@
     dragging = false;
     const heights = snapHeights();
     const current = dragHeight ?? heights[sheetSnap];
-    let best: 0 | 1 | 2 = 0;
+    let best: 0 | 1 = 0;
     let bestDist = Infinity;
     heights.forEach((height, index) => {
       const dist = Math.abs(height - current);
       if (dist < bestDist) {
         bestDist = dist;
-        best = index as 0 | 1 | 2;
+        best = index as 0 | 1;
       }
     });
     sheetSnap = best;
@@ -136,7 +137,7 @@
   }
 
   function cycleSheet() {
-    sheetSnap = sheetSnap === 2 ? 0 : ((sheetSnap + 1) as 0 | 1 | 2);
+    sheetSnap = sheetSnap === 1 ? 0 : 1;
   }
 
   function zoomBy(delta: number) {
@@ -1277,9 +1278,9 @@
     const exact = nearestRoutePosition(lat, lon);
     inspectedMile = exact ? Math.round(exact.mile * 10) / 10 : Math.round(milepostMile(best) * 10) / 10;
     dismissScrubHint();
-    // Surface the detail when a hiker taps a mile, but don't yank a sheet
-    // they've deliberately pulled all the way up.
-    if (sheetSnap === 0) sheetSnap = 1;
+    // The peek updates with the tapped mile; leave the sheet where it is so a
+    // tap on the map never covers the spot the hiker just tapped. They can pull
+    // up for the full per-mile detail.
   }
 
   onMount(async () => {
@@ -1355,7 +1356,7 @@
   });
 
   // Track header height (peek size) and the shell's height (the basis for the
-  // half/full snaps) so the snap math reflects the live layout. offsetHeight
+  // full snap) so the snap math reflects the live layout. offsetHeight
   // is not reactive, so observe both with a ResizeObserver.
   $effect(() => {
     if (!capEl || !shellEl) return;
@@ -1371,7 +1372,7 @@
   });
 </script>
 
-<section class="trail-map-shell" class:publicRoute class:appMode class:wide={isWide} class:sheet-full={sheetSnap === 2} aria-label={title} bind:this={shellEl} style:--sheet-h={`${sheetHeight}px`}>
+<section class="trail-map-shell" class:publicRoute class:appMode class:wide={isWide} class:sheet-full={sheetSnap === 1} aria-label={title} bind:this={shellEl} style:--sheet-h={`${sheetHeight}px`}>
   <div class="map-host" bind:this={host}></div>
   <div class="map-shade" aria-hidden="true"></div>
   <svg class="icon-sprite" aria-hidden="true" focusable="false">
