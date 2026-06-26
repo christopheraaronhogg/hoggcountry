@@ -82,6 +82,19 @@ case is unrated so an unfinished review cannot look like a clean 5/5 run. Use
 `--allow-unrated` only when deliberately producing a partial status packet; the
 result will include explicit unrated case entries.
 
+Plan the next fix pass from one or more completed backlogs:
+
+```sh
+npm run plan:scout-local-ai-iteration -- --backlog data/scout-local-ai/backlog/<run-id>.backlog.json
+```
+
+That writes an ignored JSON/Markdown iteration plan under
+`data/scout-local-ai/iterations/`, groups misses by responsible layer, gives the
+regression case command to rerun, and fails if a below-5 item is uncategorized or
+lacks a concrete improvement task. Use the plan to fix the data, tool routing,
+prompt, safety wording, UI recovery state, or local-model lane named by the
+backlog; do not close an iteration by changing expected answer wording only.
+
 When a full device run has been reviewed and every case is honestly 5/5, run the
 strict final gate:
 

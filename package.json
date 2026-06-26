@@ -41,6 +41,7 @@
     "eval:scout-holdout": "node --experimental-strip-types --experimental-transform-types scripts/eval-scout-reliability.mjs --scenario-file data/scout-reliability/holdout-scenarios.json --suite-name holdout-generalization-2026-05-07",
     "review:scout-model": "node scripts/review-scout-model-responses.mjs",
     "review:scout-local-ai": "node scripts/review-scout-local-ai-eval.mjs",
+    "plan:scout-local-ai-iteration": "node scripts/plan-scout-local-ai-iteration.mjs",
     "intake:scout-local-ai-device-run": "node scripts/import-scout-local-ai-device-run.mjs",
     "verify:scout-local-ai-device-proof": "node scripts/verify-scout-local-ai-device-proof.mjs",
     "verify:scout-local-ai-stability-proof": "node scripts/verify-scout-local-ai-stability-proof.mjs",

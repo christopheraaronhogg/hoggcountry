@@ -283,6 +283,137 @@ test('review workflow rejects below-5 ratings without concrete improvement tasks
 	);
 });
 
+test('iteration planner groups completed review backlog by responsible layer', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-iteration-plan-'));
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 4), {
+		runId: 'device-iteration-plan',
+		completeTools: true
+	});
+	const review = reviewForRun(run);
+	review.cases[0].rating = 4;
+	review.cases[0].failureCategories = ['missing-data'];
+	review.cases[0].improvementTask = 'Add a current-section water reliability source document.';
+	review.cases[1].rating = 5;
+	review.cases[2].rating = 2;
+	review.cases[2].failureCategories = ['weak-tool', 'bad-routing'];
+	review.cases[2].improvementTask = 'Fix source skill routing so this prompt opens the right local document.';
+	review.cases[3].rating = 3;
+	review.cases[3].failureCategories = ['unsafe-wording'];
+	review.cases[3].improvementTask = 'Tighten the safety response so it pushes lower-risk choices first.';
+
+	const runPath = join(outputDir, 'device-iteration-plan.json');
+	const reviewPath = join(outputDir, 'device-iteration-plan.review.json');
+	const backlogDir = join(outputDir, 'backlog');
+	const iterationDir = join(outputDir, 'iterations');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await execFileAsync(
+		process.execPath,
+		[
+			'scripts/review-scout-local-ai-eval.mjs',
+			'--run',
+			runPath,
+			'--review',
+			reviewPath,
+			'--backlog-dir',
+			backlogDir
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const backlogPath = join(backlogDir, 'device-iteration-plan.backlog.json');
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/plan-scout-local-ai-iteration.mjs',
+			'--backlog',
+			backlogPath,
+			'--output-dir',
+			iterationDir,
+			'--plan-id',
+			'device-iteration-plan-pass'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const plan = JSON.parse(await readFile(join(iterationDir, 'device-iteration-plan-pass.iteration.json'), 'utf8'));
+	const markdown = await readFile(join(iterationDir, 'device-iteration-plan-pass.iteration.md'), 'utf8');
+
+	assert.match(result.stdout, /Scout local AI iteration plan written/u);
+	assert.equal(plan.summary.itemCount, 3);
+	assert.equal(plan.summary.regressionCaseCount, 3);
+	assert.equal(plan.summary.byOwnerLayer.data, 1);
+	assert.equal(plan.summary.byOwnerLayer['tool-routing'], 1);
+	assert.equal(plan.summary.byOwnerLayer['safety-prompt'], 1);
+	assert.deepEqual(plan.regressionCaseIds, [
+		review.cases[2].caseId,
+		review.cases[3].caseId,
+		review.cases[0].caseId
+	]);
+	assert.match(plan.rerunCommand, new RegExp(`--id ${review.cases[2].caseId},${review.cases[3].caseId},${review.cases[0].caseId}`, 'u'));
+	assert.match(markdown, /Do not close this iteration by changing expected wording only/u);
+	assert.match(markdown, /### tool-routing/u);
+	assert.match(markdown, /### safety-prompt/u);
+	assert.match(markdown, /Fix source skill routing/u);
+});
+
+test('iteration planner rejects incomplete or uncategorized backlog work', async () => {
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-iteration-invalid-'));
+	const backlogPath = join(outputDir, 'invalid.backlog.json');
+	const backlog = {
+		schemaVersion: 1,
+		runId: 'invalid-iteration-backlog',
+		suiteId: 'dad-local-ai-100',
+		evidenceLane: 'device-on-device-gemma',
+		generatedAt: '2026-06-26T12:00:00.000Z',
+		summary: {
+			rated: 1,
+			total: 2,
+			belowFive: 1,
+			unrated: 1,
+			ratingCounts: {'4': 1}
+		},
+		unratedItems: [{caseId: 'DLA-002'}],
+		items: [
+			{
+				id: 'invalid-iteration-backlog:DLA-001',
+				caseId: 'DLA-001',
+				domain: 'water',
+				phase: 'on-trail',
+				rating: 4,
+				prompt: 'Where is the next reliable water?',
+				failureCategories: ['missing-data'],
+				ownerLayer: 'unknown',
+				improvementTask: 'Add better water data.',
+				requiredTools: ['next_water'],
+				hitTools: [],
+				missingTools: ['next_water'],
+				answerPreview: 'Not enough detail.'
+			}
+		]
+	};
+	await writeFile(backlogPath, `${JSON.stringify(backlog, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/plan-scout-local-ai-iteration.mjs',
+				'--backlog',
+				backlogPath
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /Scout local AI iteration plan failed validation/u);
+			assert.match(error.stderr, /requires a completed review/u);
+			assert.match(error.stderr, /contains unratedItems/u);
+			assert.match(error.stderr, /ownerLayer must be one of/u);
+			return true;
+		}
+	);
+});
+
 test('review workflow rejects unrated cases by default', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-unrated-'));
