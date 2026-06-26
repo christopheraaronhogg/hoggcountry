@@ -178,10 +178,12 @@ npm run verify:scout-local-ai-iteration -- --plan data/scout-local-ai/iterations
 That writes an ignored resolution report under `data/scout-local-ai/iterations/`
 and fails if any planned case is still below 5, any planned case still missed a
 required tool, any below-5 review item remains, or a 5/5 case still carries stale
-failure metadata. Add `--require-full-suite` when the rerun is meant to prove
-the full 100-case pass. A passing iteration resolution is useful progress, not
-final Dad readiness; final readiness still requires the strict device gates
-below.
+failure metadata. It also requires the rerun/review evidence lane to match the
+plan and defaults to `device-on-device-gemma`; use `--allow-non-device` only for
+routing/local-lab experiments outside final Dad proof. Add `--require-full-suite`
+when the rerun is meant to prove the full 100-case pass. A passing iteration
+resolution is useful progress, not final Dad readiness; final readiness still
+requires the strict device gates below.
 
 When a full device run has been reviewed and every case is honestly 5/5, run the
 strict final gate:

@@ -9,12 +9,14 @@ import {
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
 const DEFAULT_OUTPUT_DIR = 'data/scout-local-ai/iterations';
+const DEVICE_EVIDENCE_LANE = 'device-on-device-gemma';
 
 const cli = parseCliArgs(process.argv.slice(2));
 if (!cli.plan || !cli.run || !cli.review) {
 	throw new Error([
 		'Usage: npm run verify:scout-local-ai-iteration -- --plan data/scout-local-ai/iterations/<plan>.iteration.json --run data/scout-local-ai/runs/<rerun>.json --review data/scout-local-ai/reviews/<rerun>.review.json',
-		'Optional: --require-full-suite --output-dir data/scout-local-ai/iterations --resolution-id pass-1-resolution'
+		'Optional: --require-full-suite --output-dir data/scout-local-ai/iterations --resolution-id pass-1-resolution',
+		'Use --allow-non-device only for routing/local-lab experiments outside final Dad proof.'
 	].join('\n'));
 }
 
@@ -23,11 +25,12 @@ const runPath = resolveInputPath(cli.run);
 const reviewPath = resolveInputPath(cli.review);
 const outputDir = resolveInputPath(cli.outputDir ?? DEFAULT_OUTPUT_DIR);
 const requireFullSuite = Boolean(cli.requireFullSuite);
+const allowNonDevice = Boolean(cli.allowNonDevice);
 
 const plan = JSON.parse(await readFile(planPath, 'utf8'));
 const run = JSON.parse(await readFile(runPath, 'utf8'));
 const review = JSON.parse(await readFile(reviewPath, 'utf8'));
-const validationErrors = validateInputs({ plan, run, review, requireFullSuite });
+const validationErrors = validateInputs({ plan, run, review, allowNonDevice, requireFullSuite });
 if (validationErrors.length) {
 	console.error('Scout local AI iteration verification failed validation:');
 	for (const error of validationErrors.slice(0, 80)) console.error(`- ${error}`);
@@ -66,7 +69,7 @@ console.log(`Markdown: ${relative(REPO_ROOT, markdownPath)}`);
 console.log(`Resolved planned cases: ${resolution.summary.resolvedPlannedCases}/${resolution.summary.plannedCases}`);
 console.log(`Below-5 review cases: ${resolution.summary.belowFive}`);
 
-function validateInputs({ plan, run, review, requireFullSuite }) {
+function validateInputs({ plan, run, review, allowNonDevice, requireFullSuite }) {
 	const errors = [];
 	if (plan.schemaVersion !== 1) errors.push('plan.schemaVersion must be 1.');
 	if (!plan.planId) errors.push('plan.planId is required.');
@@ -76,6 +79,9 @@ function validateInputs({ plan, run, review, requireFullSuite }) {
 	if (run.schemaVersion !== 1) errors.push('run.schemaVersion must be 1.');
 	if (!Array.isArray(run.results)) errors.push('run.results must be an array.');
 	if (run.caseCount !== run.results?.length) errors.push(`run.caseCount ${run.caseCount ?? '<missing>'} does not match results length ${run.results?.length ?? '<missing>'}.`);
+	if (!allowNonDevice && run.evidenceLane !== DEVICE_EVIDENCE_LANE) {
+		errors.push(`run.evidenceLane must be ${DEVICE_EVIDENCE_LANE} for iteration closure; got ${run.evidenceLane ?? '<missing>'}. Use --allow-non-device only for routing/local-lab experiments outside final Dad proof.`);
+	}
 
 	if (review.schemaVersion !== 1) errors.push('review.schemaVersion must be 1.');
 	if (review.runId !== run.runId) errors.push(`review.runId ${review.runId ?? '<missing>'} does not match ${run.runId ?? '<missing>'}.`);
@@ -85,6 +91,9 @@ function validateInputs({ plan, run, review, requireFullSuite }) {
 	}
 	if (review.suiteHash !== run.suiteHash) {
 		errors.push(`review.suiteHash ${review.suiteHash ?? '<missing>'} does not match ${run.suiteHash ?? '<missing>'}.`);
+	}
+	if (review.evidenceLane !== run.evidenceLane) {
+		errors.push(`review.evidenceLane ${review.evidenceLane ?? '<missing>'} does not match run.evidenceLane ${run.evidenceLane ?? '<missing>'}.`);
 	}
 	if (!Array.isArray(review.cases)) errors.push('review.cases must be an array.');
 
@@ -105,6 +114,15 @@ function validateInputs({ plan, run, review, requireFullSuite }) {
 	const expectedSuiteHash = [...sourceSuiteHashes][0] ?? plan.suiteHash;
 	if (expectedSuiteHash && run.suiteHash !== expectedSuiteHash) {
 		errors.push(`run.suiteHash ${run.suiteHash ?? '<missing>'} does not match plan suite hash ${expectedSuiteHash}.`);
+	}
+	const sourceEvidenceLanes = new Set((plan.sourceBacklogs ?? []).map((backlog) => backlog.evidenceLane).filter(Boolean));
+	if (sourceEvidenceLanes.size > 1) errors.push(`plan source backlogs disagree on evidenceLane: ${[...sourceEvidenceLanes].join(', ')}.`);
+	const expectedEvidenceLane = [...sourceEvidenceLanes][0] ?? plan.evidenceLane;
+	if (!allowNonDevice && expectedEvidenceLane && expectedEvidenceLane !== DEVICE_EVIDENCE_LANE) {
+		errors.push(`plan evidenceLane must be ${DEVICE_EVIDENCE_LANE} for iteration closure; got ${expectedEvidenceLane}. Use --allow-non-device only for routing/local-lab experiments outside final Dad proof.`);
+	}
+	if (expectedEvidenceLane && run.evidenceLane !== expectedEvidenceLane) {
+		errors.push(`run.evidenceLane ${run.evidenceLane ?? '<missing>'} does not match plan evidenceLane ${expectedEvidenceLane}.`);
 	}
 	if (requireFullSuite && run.caseCount !== run.totalSuiteCases) {
 		errors.push(`--require-full-suite needs run.caseCount to equal run.totalSuiteCases; got ${run.caseCount}/${run.totalSuiteCases}.`);

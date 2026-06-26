@@ -1241,6 +1241,91 @@ test('iteration verifier passes when rerun resolves planned regression cases', a
 	assert.match(markdown, /Run strict device proof only after a full device review is 100\/100 at 5\/5/u);
 });
 
+test('iteration verifier rejects non-device reruns unless explicitly allowed', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-iteration-non-device-verify-'));
+	const plan = {
+		schemaVersion: 1,
+		planId: 'scaffold-iteration-resolution',
+		sourceBacklogs: [
+			{
+				path: 'data/scout-local-ai/backlog/scaffold.backlog.json',
+				runId: 'scaffold-source-run',
+				suiteId: suite.suiteId,
+				suiteVersion: suite.version,
+				suiteHash: scoutLocalAiSuiteHash(suite),
+				evidenceLane: 'scaffold-not-model'
+			}
+		],
+		regressionCaseIds: [suite.cases[0].id]
+	};
+	const rerun = deviceRunForCases(suite, suite.cases.slice(0, 1), {
+		runId: 'scaffold-iteration-rerun-pass',
+		completeTools: true
+	});
+	rerun.evidenceLane = 'scaffold-not-model';
+	for (const result of rerun.results) result.answerOrigin = 'scaffold-not-model';
+	const review = reviewForRun(rerun, { rating: 5 });
+	const planPath = join(outputDir, 'scaffold-iteration-resolution.iteration.json');
+	const rerunPath = join(outputDir, 'scaffold-iteration-rerun-pass.json');
+	const reviewPath = join(outputDir, 'scaffold-iteration-rerun-pass.review.json');
+	const resolutionDir = join(outputDir, 'resolutions');
+	await writeFile(planPath, `${JSON.stringify(plan, null, 2)}\n`);
+	await writeFile(rerunPath, `${JSON.stringify(rerun, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/verify-scout-local-ai-iteration.mjs',
+				'--plan',
+				planPath,
+				'--run',
+				rerunPath,
+				'--review',
+				reviewPath,
+				'--output-dir',
+				resolutionDir,
+				'--resolution-id',
+				'scaffold-iteration-resolution'
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /Scout local AI iteration verification failed validation/u);
+			assert.match(error.stderr, /run\.evidenceLane must be device-on-device-gemma/u);
+			assert.match(error.stderr, /plan evidenceLane must be device-on-device-gemma/u);
+			assert.match(error.stderr, /--allow-non-device/u);
+			return true;
+		}
+	);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/verify-scout-local-ai-iteration.mjs',
+			'--plan',
+			planPath,
+			'--run',
+			rerunPath,
+			'--review',
+			reviewPath,
+			'--output-dir',
+			resolutionDir,
+			'--resolution-id',
+			'scaffold-iteration-resolution',
+			'--allow-non-device'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const resolution = JSON.parse(await readFile(join(resolutionDir, 'scaffold-iteration-resolution.resolution.json'), 'utf8'));
+
+	assert.match(result.stdout, /Scout local AI iteration verification passed/u);
+	assert.equal(resolution.status, 'passed');
+	assert.equal(resolution.rerun.evidenceLane, 'scaffold-not-model');
+});
+
 test('iteration verifier rejects reruns with unresolved planned cases', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-iteration-verify-fail-'));
