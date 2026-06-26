@@ -185,6 +185,62 @@ test('device run intake validates exports and creates review packet', async () =
 	assert.match(packet, /Rating:/u);
 });
 
+test('review workflow writes actionable JSON and Markdown iteration backlog', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-'));
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 3), {
+		runId: 'device-review-backlog',
+		completeTools: true
+	});
+	const review = reviewForRun(run);
+	review.cases[0].rating = 4;
+	review.cases[0].failureCategories = ['missing-data'];
+	review.cases[0].notes = 'Needs more local water context.';
+	review.cases[0].improvementTask = 'Add current-section water reliability source docs.';
+	review.cases[1].rating = 5;
+	review.cases[2].rating = 2;
+	review.cases[2].failureCategories = ['weak-tool', 'bad-routing'];
+	review.cases[2].notes = 'Used the wrong source lane.';
+	review.cases[2].improvementTask = 'Route onboarding/offline setup prompts through the safety source docs.';
+
+	const runPath = join(outputDir, 'device-review-backlog.json');
+	const reviewPath = join(outputDir, 'device-review-backlog.review.json');
+	const backlogDir = join(outputDir, 'backlog');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/review-scout-local-ai-eval.mjs',
+			'--run',
+			runPath,
+			'--review',
+			reviewPath,
+			'--backlog-dir',
+			backlogDir
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const backlog = JSON.parse(await readFile(join(backlogDir, 'device-review-backlog.backlog.json'), 'utf8'));
+	const markdown = await readFile(join(backlogDir, 'device-review-backlog.backlog.md'), 'utf8');
+
+	assert.match(result.stdout, /Iteration backlog written/u);
+	assert.equal(backlog.evidenceLane, 'device-on-device-gemma');
+	assert.equal(backlog.items.length, 2);
+	assert.equal(backlog.items[0].ownerLayer, 'data');
+	assert.equal(backlog.items[0].expectedTraits.length > 0, true);
+	assert.equal(backlog.items[1].ownerLayer, 'tool-routing');
+	assert.equal(backlog.summary.belowFive, 2);
+	assert.match(markdown, /# Scout local AI iteration backlog: device-review-backlog/u);
+	assert.match(markdown, /Owner layers/u);
+	assert.match(markdown, /data: 1/u);
+	assert.match(markdown, /tool-routing: 1/u);
+	assert.match(markdown, /Add current-section water reliability source docs/u);
+	assert.match(markdown, /Route onboarding\/offline setup prompts through the safety source docs/u);
+	assert.doesNotMatch(markdown, new RegExp(`### ${review.cases[1].caseId}`, 'u'));
+});
+
 test('device run intake rejects scaffold runs by default', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-intake-reject-'));

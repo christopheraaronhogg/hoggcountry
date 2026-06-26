@@ -130,11 +130,16 @@ export function createBacklog(run, review, summary) {
 			phase: entry.phase,
 			rating: entry.rating,
 			prompt: entry.prompt,
+			expectedTraits: result?.case?.expectedTraits ?? [],
+			safetyCaveats: result?.case?.safetyCaveats ?? [],
 			failureCategories: entry.failureCategories ?? [],
 			ownerLayer: entry.ownerLayer || inferOwnerLayer(entry.failureCategories ?? [], result),
 			improvementTask: entry.improvementTask,
 			notes: entry.notes,
+			requiredTools: result?.toolExpectations?.required ?? [],
+			hitTools: result?.toolExpectations?.hit ?? [],
 			missingTools: result?.toolExpectations?.missing ?? [],
+			answerPreview: entry.answerPreview,
 			answerOrigin: entry.answerOrigin,
 			evidenceLane: run.evidenceLane
 		});
@@ -143,11 +148,89 @@ export function createBacklog(run, review, summary) {
 		schemaVersion: 1,
 		runId: run.runId,
 		suiteId: run.suiteId,
+		evidenceLane: run.evidenceLane,
 		sourceReview: `data/scout-local-ai/reviews/${basename(run.runId)}.review.json`,
 		generatedAt: new Date().toISOString(),
 		summary,
 		items
 	};
+}
+
+export function createBacklogMarkdown(backlog) {
+	const ratingCounts = Object.entries(backlog.summary.ratingCounts)
+		.sort(([left], [right]) => Number(left) - Number(right))
+		.map(([rating, count]) => `- ${rating}/5: ${count}`);
+	const ownerCounts = countBy(backlog.items, (item) => item.ownerLayer || 'unknown');
+	const failureCounts = countBy(
+		backlog.items.flatMap((item) => item.failureCategories.length ? item.failureCategories : ['uncategorized']),
+		(item) => item
+	);
+	const lines = [
+		`# Scout local AI iteration backlog: ${backlog.runId}`,
+		'',
+		`Generated at: ${backlog.generatedAt}`,
+		`Evidence lane: \`${backlog.evidenceLane ?? backlog.items[0]?.evidenceLane ?? 'n/a'}\``,
+		'',
+		'## Review summary',
+		'',
+		`- Rated: ${backlog.summary.rated}/${backlog.summary.total}`,
+		`- 5/5: ${backlog.summary.ratingCounts['5'] ?? 0}`,
+		`- Below 5: ${backlog.summary.belowFive}`,
+		`- Unrated: ${backlog.summary.unrated}`,
+		'',
+		'Rating counts:',
+		'',
+		...(ratingCounts.length ? ratingCounts : ['- none yet']),
+		''
+	];
+
+	if (!backlog.items.length) {
+		lines.push('## Items', '', 'All reviewed answers are currently 5/5. Re-run the strict device proof gate for final readiness.', '');
+		return `${lines.join('\n')}\n`;
+	}
+
+	lines.push('## Owner layers', '');
+	for (const [owner, count] of ownerCounts) lines.push(`- ${owner}: ${count}`);
+	lines.push('', '## Failure categories', '');
+	for (const [category, count] of failureCounts) lines.push(`- ${category}: ${count}`);
+	lines.push('', '## Items', '');
+
+	for (const item of backlog.items) {
+		lines.push(
+			`### ${item.caseId} - ${item.domain} - ${item.rating}/5`,
+			'',
+			`- Owner layer: ${item.ownerLayer || 'unknown'}`,
+			`- Failure categories: ${item.failureCategories.join(', ') || 'none'}`,
+			`- Missing tools: ${item.missingTools.join(', ') || 'none'}`,
+			`- Required tools: ${item.requiredTools.join(', ') || 'none'}`,
+			`- Hit tools: ${item.hitTools.join(', ') || 'none'}`,
+			'',
+			'Improvement task:',
+			'',
+			quoteBlock(item.improvementTask || '(missing improvement task)'),
+			'',
+			'Reviewer notes:',
+			'',
+			quoteBlock(item.notes || '(none)'),
+			'',
+			'Prompt:',
+			'',
+			quoteBlock(item.prompt),
+			'',
+			'Expected traits:',
+			...item.expectedTraits.map((trait) => `- ${trait}`),
+			'',
+			'Safety caveats:',
+			...item.safetyCaveats.map((caveat) => `- ${caveat}`),
+			'',
+			'Answer preview:',
+			'',
+			quoteBlock(item.answerPreview || '(empty)'),
+			''
+		);
+	}
+
+	return `${lines.join('\n')}\n`;
 }
 
 export function inferOwnerLayer(categories, result) {
@@ -158,4 +241,20 @@ export function inferOwnerLayer(categories, result) {
 	if (categories.includes('poor-ux')) return 'ui';
 	if (categories.includes('local-model-limitation')) return 'local-model';
 	return 'unknown';
+}
+
+function countBy(items, keyFor) {
+	const counts = new Map();
+	for (const item of items) {
+		const key = keyFor(item);
+		counts.set(key, (counts.get(key) ?? 0) + 1);
+	}
+	return [...counts.entries()].sort(([left], [right]) => left.localeCompare(right));
+}
+
+function quoteBlock(value) {
+	return String(value ?? '')
+		.split('\n')
+		.map((line) => `> ${line}`)
+		.join('\n');
 }

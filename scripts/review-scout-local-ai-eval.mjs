@@ -3,6 +3,7 @@ import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
 	createBacklog,
+	createBacklogMarkdown,
 	createReviewTemplate,
 	parseCliArgs,
 	summarizeReview
@@ -20,6 +21,7 @@ if (!cli.run) {
 const runPath = resolve(REPO_ROOT, String(cli.run));
 const run = JSON.parse(await readFile(runPath, 'utf8'));
 const reviewPath = resolve(REPO_ROOT, String(cli.review ?? `data/scout-local-ai/reviews/${run.runId}.review.json`));
+const backlogDir = resolveInputPath(cli.backlogDir ?? BACKLOG_DIR);
 
 let review;
 try {
@@ -39,12 +41,15 @@ try {
 
 const summary = summarizeReview(review);
 const backlog = createBacklog(run, review, summary);
-await mkdir(BACKLOG_DIR, { recursive: true });
-const backlogPath = resolve(BACKLOG_DIR, `${run.runId}.backlog.json`);
+await mkdir(backlogDir, { recursive: true });
+const backlogPath = resolve(backlogDir, `${run.runId}.backlog.json`);
+const backlogMarkdownPath = resolve(backlogDir, `${run.runId}.backlog.md`);
 await writeFile(backlogPath, `${JSON.stringify(backlog, null, 2)}\n`);
+await writeFile(backlogMarkdownPath, createBacklogMarkdown(backlog));
 
 console.log(`Review loaded: ${relative(REPO_ROOT, reviewPath)}`);
 console.log(`Backlog written: ${relative(REPO_ROOT, backlogPath)}`);
+console.log(`Iteration backlog written: ${relative(REPO_ROOT, backlogMarkdownPath)}`);
 console.log(`Rated: ${summary.rated}/${summary.total}`);
 console.log(`5/5: ${summary.ratingCounts['5'] ?? 0}`);
 console.log(`Below 5: ${summary.belowFive}`);
@@ -52,4 +57,11 @@ console.log(`Unrated: ${summary.unrated}`);
 if (summary.invalid.length) {
 	console.log(`Invalid review entries: ${summary.invalid.length}`);
 	for (const issue of summary.invalid.slice(0, 8)) console.log(`- ${issue}`);
+}
+
+function resolveInputPath(value) {
+	const text = String(value);
+	if (text === '~') return process.env.HOME ?? text;
+	if (text.startsWith('~/')) return resolve(process.env.HOME ?? REPO_ROOT, text.slice(2));
+	return resolve(REPO_ROOT, text);
 }

@@ -74,7 +74,8 @@ After filling the review JSON ratings and tasks:
 npm run review:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json
 ```
 
-That writes a backlog item for every answer rated below 5.
+That writes a machine-readable backlog item for every answer rated below 5 and
+a Markdown iteration backlog grouped for the next data/tool/prompt/UI fix pass.
 
 When a full device run has been reviewed and every case is honestly 5/5, run the
 strict final gate:
