@@ -9,6 +9,7 @@ const {
   TRAIL_TIME_ZONE,
   dayKeyFor,
   relativeDayLabel,
+  shortDayLabel,
   listTrackedDays,
   buildDayOptions,
   pointsForDay,
@@ -42,6 +43,13 @@ test('relativeDayLabel: today/yesterday/N days ago/weekday', () => {
   assert.equal(relativeDayLabel('2026-04-11', '2026-04-14'), '3 days ago');
   // 7+ days back falls through to a stable weekday+date label.
   assert.equal(relativeDayLabel('2026-04-06', '2026-04-14'), 'Mon, Apr 6');
+});
+
+test('shortDayLabel: compact Today/Yest/weekday-day for the rail', () => {
+  assert.equal(shortDayLabel('2026-04-14', '2026-04-14'), 'Today');
+  assert.equal(shortDayLabel('2026-04-13', '2026-04-14'), 'Yest');
+  // 2+ days back → "Wkd D" (e.g. "Wed 8"); assert the shape, not the weekday.
+  assert.match(shortDayLabel('2026-04-08', '2026-04-14'), /^[A-Z][a-z]{2} \d{1,2}$/);
 });
 
 test('listTrackedDays returns unique Eastern days newest-first', () => {

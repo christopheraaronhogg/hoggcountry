@@ -68,7 +68,7 @@
     </dl>
 
     <div class="hero-links">
-      <a class="btn btn--primary" href="/track">Live map</a>
+      <a class="btn btn--primary" href="/at-map">Live map</a>
       <a class="btn" href="/updates">Trail updates</a>
       <a class="btn" href="/guide">Field guide</a>
     </div>

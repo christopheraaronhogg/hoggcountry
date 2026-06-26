@@ -20,6 +20,7 @@
     listTrackedDays,
     pointsForDay,
     relativeDayLabel,
+    shortDayLabel,
     summarizeDay,
     type DayElevationSample,
     type DayOption,
@@ -492,6 +493,9 @@
   });
   const todayKey = $derived.by(() => dayKeyFor(new Date().toISOString(), TRAIL_TIME_ZONE) ?? '');
   const trackedDays = $derived.by(() => listTrackedDays(history, TRAIL_TIME_ZONE));
+  // The most recent days for the always-visible browse rail; older/arbitrary
+  // days stay reachable through the calendar sheet.
+  const dayStripDays = $derived.by(() => trackedDays.slice(0, 14));
   const dayOptions = $derived.by<DayOption[]>(() =>
     history.length ? buildDayOptions(history, todayKey, TRAIL_TIME_ZONE, 10) : []
   );
@@ -1219,7 +1223,10 @@
     daysOpen = false;
     inspectedMile = null;
     dismissScrubHint();
-    if (sheetSnap === 0) sheetSnap = 1;
+    // Keep the current snap: tapping a day in the rail leaves the map + rail
+    // visible (the peek shows the day's summary line) so browsing stays fluid;
+    // the full stats are a pull-up away. Auto-expanding to full would cover the
+    // map and, on short screens, the rail itself.
     addTrackerLayer(false);
     fitDay();
   }
@@ -1476,6 +1483,20 @@
     </button>
   </div>
 
+  <!-- Day browse rail: one-tap Live + recent days (older dates via calendar) -->
+  {#if history.length}
+    <div class="day-rail" aria-label="Browse days">
+      <button class="day-pill" class:active={viewMode === 'live'} type="button" onclick={backToLive}>
+        <span class="rail-dot" class:live={signalState === 'live'} class:stale={signalState === 'stale'}></span>Live
+      </button>
+      {#each dayStripDays as key (key)}
+        <button class="day-pill" class:active={viewMode === 'day' && selectedDay === key} type="button" onclick={() => enterDay(key)}>
+          {shortDayLabel(key, todayKey)}
+        </button>
+      {/each}
+    </div>
+  {/if}
+
   <!-- Right edge: floating map tools -->
   <div class="edge-tools">
     <button class="circle-btn" class:on={viewMode === 'day' || daysOpen} type="button" aria-expanded={daysOpen} aria-controls="map-days-sheet" onclick={() => { daysOpen = !daysOpen; if (daysOpen) layersOpen = false; }} aria-label="Replay a day" disabled={!history.length}>
@@ -1494,18 +1515,13 @@
     </div>
   </div>
 
-  <!-- Floating context chip -->
-  {#if viewMode === 'day'}
-    <button class="floating-chip day" type="button" onclick={backToLive}>
-      <span>Day: {selectedDayLabel}</span>
-      <strong>Back to live</strong>
-    </button>
-  {:else if inspectedMile !== null}
+  <!-- Floating context chip (day browsing lives in the day rail above) -->
+  {#if inspectedMile !== null}
     <button class="floating-chip inspect" type="button" onclick={clearInspect}>
       <span>Scouting mi {fmt(inspectedMile, 1)}</span>
       <strong>Back to live</strong>
     </button>
-  {:else if scrubHintVisible}
+  {:else if scrubHintVisible && viewMode === 'live'}
     <button class="floating-chip hint" type="button" onclick={dismissScrubHint}>
       <span>Tap the trail to scout any mile — drag the dot to glide</span>
       <strong>Got it</strong>
@@ -2192,11 +2208,84 @@
     background: rgba(255, 253, 248, 0.18);
   }
 
+  /* ---- Day browse rail ------------------------------------------------ */
+  .day-rail {
+    position: absolute;
+    z-index: 5;
+    top: calc(max(0.7rem, env(safe-area-inset-top)) + 3.55rem);
+    left: max(0.7rem, env(safe-area-inset-left));
+    right: max(0.7rem, env(safe-area-inset-right));
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.1rem 0.05rem;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .day-rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* On phones the full sheet rises over the rail; fade it out like the edge
+     tools (collapse the sheet to browse days again). Desktop keeps it — the
+     sheet is a left panel there, not a full-screen cover. */
+  .trail-map-shell.sheet-full:not(.wide) .day-rail {
+    opacity: 0;
+    transform: translateY(-0.4rem);
+    pointer-events: none;
+  }
+
+  .day-pill {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 0.32rem;
+    height: 2rem;
+    padding: 0 0.7rem;
+    border: 1px solid rgba(255, 253, 248, 0.16);
+    border-radius: 999px;
+    background: rgba(18, 26, 20, 0.82);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    color: rgba(255, 253, 248, 0.86);
+    cursor: pointer;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+  }
+
+  .day-pill.active {
+    border-color: rgba(56, 189, 248, 0.6);
+    background: rgba(56, 189, 248, 0.22);
+    color: #e0f2fe;
+  }
+
+  .rail-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    flex: 0 0 auto;
+    border-radius: 999px;
+    background: #64748b;
+  }
+
+  .rail-dot.live {
+    background: #22c55e;
+  }
+
+  .rail-dot.stale {
+    background: #f59e0b;
+  }
+
   /* ---- Floating chip -------------------------------------------------- */
   .floating-chip {
     position: absolute;
     z-index: 4;
-    top: calc(max(0.7rem, env(safe-area-inset-top)) + 3.7rem);
+    top: calc(max(0.7rem, env(safe-area-inset-top)) + 6.3rem);
     left: 50%;
     display: flex;
     align-items: center;
@@ -2238,11 +2327,6 @@
   .floating-chip.inspect strong {
     background: rgba(249, 115, 22, 0.2);
     color: #fdba74;
-  }
-
-  .floating-chip.day strong {
-    background: rgba(56, 189, 248, 0.2);
-    color: #bae6fd;
   }
 
   /* ---- Layers sheet --------------------------------------------------- */
@@ -3258,6 +3342,13 @@
     left: auto;
     right: 1rem;
     transform: none;
+  }
+
+  /* Day rail sits along the top of the map area, clear of the left panel. */
+  .trail-map-shell.wide .day-rail {
+    top: 1rem;
+    left: calc(25rem + 2rem);
+    right: 1rem;
   }
 
   @media (prefers-reduced-motion: reduce) {

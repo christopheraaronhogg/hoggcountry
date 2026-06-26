@@ -127,6 +127,21 @@ export function relativeDayLabel(dateKey: string, todayKey: string): string {
   }).format(new Date(t));
 }
 
+// Compact label for the day-browse rail: "Today" / "Yest" / "Wed 24".
+// Built piece-by-piece (not a single Intl call) so the weekday+day format is
+// stable across runtimes; UTC so the calendar date can't slip.
+export function shortDayLabel(dateKey: string, todayKey: string): string {
+  const delta = dayDelta(todayKey, dateKey);
+  if (delta === 0) return 'Today';
+  if (delta === 1) return 'Yest';
+  const t = Date.parse(`${dateKey}T12:00:00Z`);
+  if (!Number.isFinite(t)) return dateKey;
+  const date = new Date(t);
+  const weekday = new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'short' }).format(date);
+  const day = new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', day: 'numeric' }).format(date);
+  return `${weekday} ${day}`;
+}
+
 // Unique day keys that have at least one usable fix, newest first.
 export function listTrackedDays(
   points: readonly DayReplayPoint[],

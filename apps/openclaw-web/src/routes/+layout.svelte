@@ -5,7 +5,6 @@
   import { page } from '$app/state';
   import { initSpacetimeProvider } from '$lib/spacetime';
   import WaitlistSignup from '$lib/components/WaitlistSignup.svelte';
-  import { LIVE_TRACKING_URL } from '../../../../src/lib/config';
   import type { LayoutData } from './$types';
 
   const { data, children } = $props<{ data: LayoutData; children: import('svelte').Snippet }>();
@@ -152,14 +151,13 @@
             </a>
 
             <a
-              href={LIVE_TRACKING_URL}
+              href="/at-map"
               class="live-link live-link--header"
-              title="Track Me on Garmin"
-              target="_blank"
-              rel="noopener noreferrer"
+              class:is-active={page.url.pathname === '/at-map' || page.url.pathname === '/track'}
+              title="Live AT map — follow Dad"
             >
               <span class="live-dot"></span>
-              <span class="live-text">Track Me</span>
+              <span class="live-text">Live Map</span>
             </a>
           </div>
 
@@ -203,15 +201,14 @@
 
         <div class="mobile-links">
           <a
-            href={LIVE_TRACKING_URL}
+            href="/at-map"
             class="live-link mobile-live"
-            title="Track Me on Garmin"
-            target="_blank"
-            rel="noopener noreferrer"
+            class:is-active={page.url.pathname === '/at-map' || page.url.pathname === '/track'}
+            title="Live AT map — follow Dad"
             onclick={closeTools}
           >
             <span class="live-dot"></span>
-            <span class="live-text">Track Me</span>
+            <span class="live-text">Live Map</span>
           </a>
 
           {#each publicToolsLinks as link}
@@ -610,9 +607,10 @@
     padding: 0 12px;
   }
 
-  .live-link:hover {
+  .live-link:hover,
+  .live-link.is-active {
     background: rgba(220, 38, 38, 0.14);
-    border-color: rgba(220, 38, 38, 0.35);
+    border-color: rgba(220, 38, 38, 0.4);
   }
 
   .live-dot {
