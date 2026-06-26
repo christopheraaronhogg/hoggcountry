@@ -51,7 +51,8 @@
 			modelReady,
 			scoutUsesCloud: trailAssistant.scoutUsesCloud,
 			running,
-			native: nativePreflight
+			native: nativePreflight,
+			finalProof: suite?.finalProof ?? null
 		})
 	);
 	const savedRunIsFullTarget = $derived(Boolean(suite && savedRunTarget >= suite.cases.length));
@@ -115,7 +116,7 @@
 			return;
 		}
 		if (fullRun && !proofStatus.canRunFinal) {
-			error = 'Run 100 final proof needs the TestFlight iPhone install. Run 3 is available for smoke.';
+			error = 'Run 100 final proof needs the required TestFlight iPhone build. Run 3 is available for smoke.';
 			return;
 		}
 		const previousRun = resume ? savedRun : null;
@@ -367,7 +368,7 @@
 	{#if nativePreflight.metadataError}
 		<p class="eval-warning" role="status">Native proof check failed: {nativePreflight.metadataError}</p>
 	{:else if proofStatus.canRunSmoke && !proofStatus.canRunFinal}
-		<p class="eval-warning" role="status">Run 3 is available for smoke. Run 100 final proof needs TestFlight.</p>
+		<p class="eval-warning" role="status">Run 3 is available for smoke. Run 100 final proof needs the required TestFlight build.</p>
 	{/if}
 
 	{#if error}

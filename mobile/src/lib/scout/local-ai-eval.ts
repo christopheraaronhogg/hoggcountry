@@ -29,6 +29,13 @@ export interface ScoutLocalAiEvalCase {
 	improvementTags: string[];
 }
 
+export interface ScoutLocalAiFinalProofRequirements {
+	nativePlatform?: string;
+	installSource?: string;
+	minAppVersion?: string;
+	minAppBuild?: number;
+}
+
 export interface ScoutLocalAiEvalSuite {
 	schemaVersion: number;
 	suiteId: string;
@@ -38,6 +45,7 @@ export interface ScoutLocalAiEvalSuite {
 	successTarget: string;
 	ratingScale: Record<string, string>;
 	failureCategories: string[];
+	finalProof?: ScoutLocalAiFinalProofRequirements;
 	cases: ScoutLocalAiEvalCase[];
 }
 

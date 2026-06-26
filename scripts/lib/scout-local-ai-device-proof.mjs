@@ -9,6 +9,7 @@ export const DEVICE_BUNDLE_ID = 'com.hoggcountry.trailassistant';
 export function verifyScoutLocalAiDeviceProof({ suite, run, review }) {
 	const errors = [];
 	const summary = summarizeReview(review);
+	const finalProof = getFinalProofRequirements(suite, errors);
 
 	if (suite.schemaVersion !== 1) errors.push('suite.schemaVersion must be 1.');
 	if (suite.suiteId !== 'dad-local-ai-100') errors.push(`suite.suiteId must be dad-local-ai-100, got ${suite.suiteId ?? '<missing>'}.`);
@@ -27,20 +28,31 @@ export function verifyScoutLocalAiDeviceProof({ suite, run, review }) {
 	if (run.runContext?.native?.isNativePlatform !== true) {
 		errors.push('run.runContext.native.isNativePlatform must be true for final TestFlight/iPhone proof.');
 	}
-	if (run.runContext?.native?.platform !== 'ios') {
-		errors.push(`run.runContext.native.platform must be ios, got ${run.runContext?.native?.platform ?? '<missing>'}.`);
+	if (run.runContext?.native?.platform !== finalProof.nativePlatform) {
+		errors.push(`run.runContext.native.platform must be ${finalProof.nativePlatform}, got ${run.runContext?.native?.platform ?? '<missing>'}.`);
 	}
 	if (run.runContext?.app?.id !== DEVICE_BUNDLE_ID) {
 		errors.push(`run.runContext.app.id must be ${DEVICE_BUNDLE_ID}, got ${run.runContext?.app?.id ?? '<missing>'}.`);
 	}
-	if (run.runContext?.installSource?.type !== 'testflight') {
-		errors.push(`run.runContext.installSource.type must be testflight for final Dad proof, got ${run.runContext?.installSource?.type ?? '<missing>'}.`);
+	if (run.runContext?.installSource?.type !== finalProof.installSource) {
+		errors.push(`run.runContext.installSource.type must be ${finalProof.installSource} for final Dad proof, got ${run.runContext?.installSource?.type ?? '<missing>'}.`);
 	}
 	if (!String(run.runContext?.app?.version ?? '').trim()) {
 		errors.push('run.runContext.app.version is required for final TestFlight/iPhone proof.');
 	}
 	if (!String(run.runContext?.app?.build ?? '').trim()) {
 		errors.push('run.runContext.app.build is required for final TestFlight/iPhone proof.');
+	}
+	if (finalProof.minAppVersion && String(run.runContext?.app?.version ?? '') !== finalProof.minAppVersion) {
+		errors.push(`run.runContext.app.version must be ${finalProof.minAppVersion} for final Dad proof, got ${run.runContext?.app?.version ?? '<missing>'}.`);
+	}
+	if (finalProof.minAppBuild !== null) {
+		const runBuild = Number(String(run.runContext?.app?.build ?? ''));
+		if (!Number.isFinite(runBuild)) {
+			errors.push(`run.runContext.app.build must be a numeric build >= ${finalProof.minAppBuild} for final Dad proof, got ${run.runContext?.app?.build ?? '<missing>'}.`);
+		} else if (runBuild < finalProof.minAppBuild) {
+			errors.push(`run.runContext.app.build must be >= ${finalProof.minAppBuild} for final Dad proof, got ${runBuild}.`);
+		}
 	}
 	if (run.runContext?.runtimeConfigured !== true) {
 		errors.push(`run.runContext.runtimeConfigured must be true, got ${run.runContext?.runtimeConfigured ?? '<missing>'}.`);
@@ -165,6 +177,7 @@ export function createDeviceProofMarkdown({ suite, run, summary, suitePath, runP
 		`- Native platform: \`${run.runContext?.native?.platform ?? '<missing>'}\``,
 		`- App bundle: \`${run.runContext?.app?.id ?? '<missing>'}\``,
 		`- App version/build: \`${run.runContext?.app?.version ?? '<missing>'} (${run.runContext?.app?.build ?? '<missing>'})\``,
+		`- Required app version/build: \`${requiredAppLabel(suite)}\``,
 		`- Install source: \`${run.runContext?.installSource?.type ?? '<missing>'}\``,
 		`- Model id: \`${run.runContext?.modelId ?? '<missing>'}\``,
 		'',
@@ -185,6 +198,38 @@ export function createDeviceProofMarkdown({ suite, run, summary, suitePath, runP
 		'This proof only covers the reviewed local Scout eval run from the installed iOS Eval Lab. Keep TestFlight/App Store Connect build proof, simulator/browser proof, and any future production release proof separate.'
 	];
 	return `${lines.join('\n')}\n`;
+}
+
+function getFinalProofRequirements(suite, errors) {
+	const raw = suite?.finalProof ?? {};
+	if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
+		errors.push('suite.finalProof must be an object when present.');
+		return {
+			nativePlatform: 'ios',
+			installSource: 'testflight',
+			minAppVersion: '',
+			minAppBuild: null
+		};
+	}
+	const minAppBuild = raw.minAppBuild === undefined || raw.minAppBuild === null
+		? null
+		: Number(raw.minAppBuild);
+	if (minAppBuild !== null && (!Number.isInteger(minAppBuild) || minAppBuild <= 0)) {
+		errors.push(`suite.finalProof.minAppBuild must be a positive integer, got ${raw.minAppBuild}.`);
+	}
+	return {
+		nativePlatform: String(raw.nativePlatform ?? 'ios').trim() || 'ios',
+		installSource: String(raw.installSource ?? 'testflight').trim() || 'testflight',
+		minAppVersion: String(raw.minAppVersion ?? '').trim(),
+		minAppBuild: Number.isInteger(minAppBuild) && minAppBuild > 0 ? minAppBuild : null
+	};
+}
+
+export function requiredAppLabel(suite) {
+	const finalProof = getFinalProofRequirements(suite, []);
+	const version = finalProof.minAppVersion || '<any>';
+	const build = finalProof.minAppBuild === null ? '<any>' : `>= ${finalProof.minAppBuild}`;
+	return `${version} (${build})`;
 }
 
 function mapByCaseId(items, label, errors) {

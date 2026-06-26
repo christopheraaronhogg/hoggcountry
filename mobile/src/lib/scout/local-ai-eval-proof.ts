@@ -9,16 +9,24 @@ export type ScoutLocalAiEvalNativePreflight = {
 	appBuild?: string | null;
 };
 
+export type ScoutLocalAiEvalFinalProofRequirement = {
+	nativePlatform?: string;
+	installSource?: string;
+	minAppVersion?: string;
+	minAppBuild?: number;
+};
+
 export type ScoutLocalAiEvalProofStatusInput = {
 	suiteLoaded: boolean;
 	modelReady: boolean;
 	scoutUsesCloud: boolean;
 	running: boolean;
 	native: ScoutLocalAiEvalNativePreflight;
+	finalProof?: ScoutLocalAiEvalFinalProofRequirement | null;
 };
 
 export type ScoutLocalAiEvalProofCheck = {
-	id: 'suite' | 'model' | 'lane' | 'shell' | 'install';
+	id: 'suite' | 'model' | 'lane' | 'shell' | 'install' | 'build';
 	label: string;
 	value: string;
 	ok: boolean;
@@ -37,10 +45,13 @@ export function scoutLocalAiEvalProofStatus(
 	const suiteOk = input.suiteLoaded;
 	const modelOk = input.modelReady;
 	const laneOk = !input.scoutUsesCloud;
-	const shellOk = input.native.isNativePlatform === true && input.native.platform === 'ios';
-	const installOk = input.native.installSourceType === 'testflight';
+	const nativePlatform = input.finalProof?.nativePlatform ?? 'ios';
+	const installSource = input.finalProof?.installSource ?? 'testflight';
+	const shellOk = input.native.isNativePlatform === true && input.native.platform === nativePlatform;
+	const installOk = input.native.installSourceType === installSource;
+	const buildOk = appBuildMeetsRequirement(input.native, input.finalProof);
 	const canRunSmoke = suiteOk && modelOk && laneOk && shellOk && !input.running;
-	const canRunFinal = canRunSmoke && installOk;
+	const canRunFinal = canRunSmoke && installOk && buildOk;
 	const checks: ScoutLocalAiEvalProofCheck[] = [
 		{
 			id: 'suite',
@@ -71,11 +82,17 @@ export function scoutLocalAiEvalProofStatus(
 			label: 'Install',
 			value: input.native.metadataLoaded ? input.native.installSourceLabel : 'Checking',
 			ok: installOk
+		},
+		{
+			id: 'build',
+			label: 'Build',
+			value: appBuildLabel(input.native),
+			ok: buildOk
 		}
 	];
 
 	return {
-		statusLabel: statusLabel({ input, canRunSmoke, canRunFinal, shellOk, installOk }),
+		statusLabel: statusLabel({ input, canRunSmoke, canRunFinal, shellOk, installOk, buildOk }),
 		canRunSmoke,
 		canRunFinal,
 		checks
@@ -95,6 +112,7 @@ function statusLabel(input: {
 	canRunFinal: boolean;
 	shellOk: boolean;
 	installOk: boolean;
+	buildOk: boolean;
 }): string {
 	if (input.input.running) return 'Running';
 	if (input.canRunFinal) return 'TestFlight ready';
@@ -103,5 +121,26 @@ function statusLabel(input: {
 	if (input.input.scoutUsesCloud) return 'Web lane';
 	if (!input.shellOk) return 'iOS app only';
 	if (input.canRunSmoke && !input.installOk) return 'Smoke only';
+	if (input.canRunSmoke && !input.buildOk) return 'Build too old';
 	return 'Checking';
+}
+
+function appBuildMeetsRequirement(
+	native: ScoutLocalAiEvalNativePreflight,
+	finalProof: ScoutLocalAiEvalFinalProofRequirement | null | undefined
+): boolean {
+	const requiredVersion = String(finalProof?.minAppVersion ?? '').trim();
+	const requiredBuild = finalProof?.minAppBuild;
+	if (!requiredVersion && !requiredBuild) return true;
+	if (requiredVersion && native.appVersion !== requiredVersion) return false;
+	if (!requiredBuild) return true;
+	const appBuild = Number(native.appBuild);
+	return Number.isFinite(appBuild) && appBuild >= requiredBuild;
+}
+
+function appBuildLabel(native: ScoutLocalAiEvalNativePreflight): string {
+	if (!native.metadataLoaded) return 'Checking';
+	const version = native.appVersion || '?';
+	const build = native.appBuild || '?';
+	return `${version} (${build})`;
 }

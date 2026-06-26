@@ -66,6 +66,12 @@ test('Dad local AI eval suite has 100 complete, reviewable cases', async () => {
 	assert.equal(suite.schemaVersion, 1);
 	assert.equal(suite.suiteId, 'dad-local-ai-100');
 	assert.match(suite.version, /^\d{4}-\d{2}-\d{2}\.\d+$/u);
+	assert.deepEqual(suite.finalProof, {
+		nativePlatform: 'ios',
+		installSource: 'testflight',
+		minAppVersion: '1.0',
+		minAppBuild: 10
+	});
 	assert.equal(suite.cases.length, 100);
 
 	const ids = new Set();
@@ -1043,7 +1049,8 @@ test('strict device proof accepts a full 5-star device review', async () => {
 	assert.ok(proof.includes(`Suite version: \`${suite.version}\``));
 	assert.match(proof, /Suite hash: `fnv1a32:[0-9a-f]{8}`/u);
 	assert.match(proof, /Required-tool complete: 100\/100/u);
-	assert.match(proof, /App version\/build: `1\.0 \(9\)`/u);
+	assert.match(proof, /App version\/build: `1\.0 \(10\)`/u);
+	assert.match(proof, /Required app version\/build: `1\.0 \(>= 10\)`/u);
 	assert.match(proof, /Install source: `testflight`/u);
 });
 
@@ -1232,6 +1239,42 @@ test('strict device proof rejects non-TestFlight iPhone installs', async () => {
 	);
 });
 
+test('strict device proof rejects stale TestFlight app builds', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-proof-stale-build-'));
+	const staleRunContext = finalDeviceRunContext();
+	staleRunContext.app = { ...staleRunContext.app, build: '9' };
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-final-proof-stale-build',
+		completeTools: true,
+		runContext: staleRunContext
+	});
+	const review = reviewForRun(run, { rating: 5 });
+	const runPath = join(outputDir, 'device-final-proof-stale-build.json');
+	const reviewPath = join(outputDir, 'device-final-proof-stale-build.review.json');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/verify-scout-local-ai-device-proof.mjs',
+				'--run',
+				runPath,
+				'--review',
+				reviewPath
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /app\.build must be >= 10/u);
+			assert.match(error.stderr, /got 9/u);
+			return true;
+		}
+	);
+});
+
 test('strict device proof rejects stale suite fingerprints', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-proof-stale-'));
@@ -1312,7 +1355,8 @@ test('stability proof accepts two full 5-star device reviews', async () => {
 	assert.match(proof, /Run 1: device-stability-pass-a/u);
 	assert.match(proof, /Run 2: device-stability-pass-b/u);
 	assert.match(proof, /Install source: `testflight`/u);
-	assert.match(proof, /App version\/build: `1\.0 \(9\)`/u);
+	assert.match(proof, /Required app version\/build: `1\.0 \(>= 10\)`/u);
+	assert.match(proof, /App version\/build: `1\.0 \(10\)`/u);
 	assert.match(proof, /Per-case repeated 5\/5: 100\/100/u);
 });
 
@@ -1386,7 +1430,7 @@ function finalDeviceRunContext(patch = {}) {
 			id: 'com.hoggcountry.trailassistant',
 			name: 'Hoggcountry',
 			version: '1.0',
-			build: '9'
+			build: '10'
 		},
 		installSource: {
 			type: 'testflight',

@@ -56,7 +56,7 @@ It combines the eval status with the recorded Dad Pilot/TestFlight build truth
 so build `9`, build `10`, scaffold routing proof, and final iPhone proof do not
 get blended.
 
-The installed mobile app reads the suite from `mobile/static/scout/dad-local-ai-100.json`. The suite carries a version and every run export carries a deterministic suite hash, so stale iPhone exports fail intake/final proof instead of being mixed with the current 100-question set. After editing the canonical suite, bump the top-level `version` and run:
+The installed mobile app reads the suite from `mobile/static/scout/dad-local-ai-100.json`. The suite carries a version, a deterministic hash, and the final app build requirement, so stale iPhone exports fail intake/final proof instead of being mixed with the current 100-question set. After editing the canonical suite, bump the top-level `version` and run:
 
 ```sh
 npm run sync:scout-local-ai-suite
@@ -161,7 +161,8 @@ npm run verify:scout-local-ai-device-proof -- --run data/scout-local-ai/device-r
 ```
 
 This fails unless the run is a full 100-case `device-on-device-gemma` Eval Lab
-run from the current suite version/hash, every required tool expectation was hit,
+run from the current suite version/hash and suite-declared minimum app build,
+every required tool expectation was hit,
 the required tools are backed by actual recorded `toolInvocations` rather than
 summary-only flags, every review case is rated `5`, native iOS app metadata is
 present (`com.hoggcountry.trailassistant`, app version/build,

@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+	requiredAppLabel,
 	verifyScoutLocalAiDeviceProof
 } from './lib/scout-local-ai-device-proof.mjs';
 import {
@@ -140,6 +141,7 @@ function createStabilityProofMarkdown({ suite, suitePath, records, minRuns, perC
 		`- Suite id: \`${suite.suiteId}\``,
 		`- Suite version: \`${suite.version ?? '<missing>'}\``,
 		`- Suite hash: \`${records[0]?.run.suiteHash ?? '<missing>'}\``,
+		`- Required app version/build: \`${requiredAppLabel(suite)}\``,
 		`- Required runs: ${minRuns}`,
 		`- Reviewed runs: ${records.length}`,
 		'',
