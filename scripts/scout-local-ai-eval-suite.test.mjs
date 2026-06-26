@@ -435,6 +435,96 @@ test('device run intake validates exports and creates review packet', async () =
 	assert.match(packet, /Rating:/u);
 });
 
+test('device run intake rejects full exports with summary-only tool evidence', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-intake-summary-only-'));
+	const inputPath = join(outputDir, 'summary-only-device-export.json');
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-intake-summary-only',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	run.results[0].toolInvocations = [];
+	run.results[0].receipts = [];
+	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/import-scout-local-ai-device-run.mjs',
+				'--run',
+				inputPath,
+				'--device-run-dir',
+				join(outputDir, 'device-runs'),
+				'--review-dir',
+				join(outputDir, 'reviews'),
+				'--packet-dir',
+				join(outputDir, 'review-packets')
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /Device run import failed validation/u);
+			assert.match(error.stderr, /actual toolInvocations missed required tools/u);
+			assert.match(error.stderr, /toolExpectations\.hit does not match actual toolInvocations/u);
+			assert.match(error.stderr, /toolExpectations\.missing does not match actual toolInvocations/u);
+			return true;
+		}
+	);
+});
+
+test('device run intake rejects full exports with missing source receipts', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-intake-source-missing-'));
+	const inputPath = join(outputDir, 'source-missing-device-export.json');
+	const sourceCase = suite.cases.find((testCase) => testCase.requiredTools.some((expectation) => expectation.includes(':')));
+	assert.ok(sourceCase, 'suite should contain source-backed tool expectations');
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-intake-source-missing',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	const result = run.results.find((entry) => entry.caseId === sourceCase.id);
+	assert.ok(result, 'fixture run should include the source-backed case');
+	for (const invocation of result.toolInvocations) {
+		if (String(invocation.args?.sourceSkill ?? '').trim()) {
+			invocation.receipts = [];
+			invocation.sourceDocumentIds = [];
+		}
+	}
+	result.receipts = result.toolInvocations.flatMap((record) => record.receipts ?? []);
+	run.summary = {
+		...run.summary,
+		...summarizeRunSourceEvidence(run.results)
+	};
+	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/import-scout-local-ai-device-run.mjs',
+				'--run',
+				inputPath,
+				'--device-run-dir',
+				join(outputDir, 'device-runs'),
+				'--review-dir',
+				join(outputDir, 'reviews'),
+				'--packet-dir',
+				join(outputDir, 'review-packets')
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /Device run import failed validation/u);
+			assert.match(error.stderr, /source-backed required tool/u);
+			assert.match(error.stderr, /must record at least one receipt or sourceDocumentId/u);
+			return true;
+		}
+	);
+});
+
 test('review packet ratings can be applied back into review JSON', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-packet-apply-'));

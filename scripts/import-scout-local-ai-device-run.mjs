@@ -129,6 +129,11 @@ function validateDeviceRun(run, suite, options) {
 		if (!result.toolExpectations || !Array.isArray(result.toolExpectations.missing)) {
 			errors.push(`${result.caseId}: toolExpectations.missing must be present`);
 		}
+		const evidenceProblems = resultEvidenceProblems(result, expectedCase);
+		for (const problem of evidenceProblems) {
+			if (options.allowPartial) warnings.push(`partial smoke export is not final Dad proof: ${result.caseId}: ${problem}`);
+			else errors.push(`${result.caseId}: ${problem}`);
+		}
 	}
 
 	if (run.caseCount !== run.results.length) {
@@ -175,6 +180,49 @@ function validateDeviceRun(run, suite, options) {
 	}
 
 	return { errors, warnings };
+}
+
+function resultEvidenceProblems(result, expectedCase) {
+	const problems = [];
+	const invocations = result.toolInvocations;
+	if (!Array.isArray(invocations)) {
+		problems.push('toolInvocations must be recorded for device proof');
+		return problems;
+	}
+	const actualExpectations = evaluateToolExpectations(expectedCase.requiredTools, invocations);
+	if (actualExpectations.missing.length) {
+		problems.push(`actual toolInvocations missed required tools: ${actualExpectations.missing.join(', ')}`);
+	}
+	if (!sameStringArray(result.toolExpectations?.hit, actualExpectations.hit)) {
+		problems.push('toolExpectations.hit does not match actual toolInvocations');
+	}
+	if (!sameStringArray(result.toolExpectations?.missing, actualExpectations.missing)) {
+		problems.push('toolExpectations.missing does not match actual toolInvocations');
+	}
+	for (const problem of sourceEvidenceProblems(expectedCase.requiredTools, invocations)) {
+		problems.push(problem.message);
+	}
+	return problems;
+}
+
+function evaluateToolExpectations(requiredTools, invocations) {
+	const hit = [];
+	const missing = [];
+	for (const expectation of requiredTools ?? []) {
+		if ((invocations ?? []).some((record) => matchesToolExpectation(expectation, record))) {
+			hit.push(expectation);
+		} else {
+			missing.push(expectation);
+		}
+	}
+	return { hit, missing };
+}
+
+function matchesToolExpectation(expectation, record) {
+	const [toolId, sourceSkill] = String(expectation).split(':');
+	if (record?.toolId !== toolId) return false;
+	if (!sourceSkill) return true;
+	return String(record.args?.sourceSkill ?? '').toLowerCase() === sourceSkill.toLowerCase();
 }
 
 function createReviewPacket(run, validation, importedRunPath, reviewPath, packetPath) {
