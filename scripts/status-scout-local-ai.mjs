@@ -20,6 +20,8 @@ const DEFAULT_MOBILE_SUITE = 'mobile/static/scout/dad-local-ai-100.json';
 const DEFAULT_RUNS_DIR = 'data/scout-local-ai/runs';
 const DEFAULT_DEVICE_RUNS_DIR = 'data/scout-local-ai/device-runs';
 const DEFAULT_REVIEWS_DIR = 'data/scout-local-ai/reviews';
+const DEFAULT_XCODE_PROJECT = 'mobile/ios/App/App.xcodeproj/project.pbxproj';
+const DEFAULT_RELEASE_EVIDENCE = 'docs/launch/release-evidence.json';
 
 const DEVICE_EVIDENCE_LANE = 'device-on-device-gemma';
 const SCAFFOLD_EVIDENCE_LANE = 'scaffold-not-model';
@@ -31,7 +33,9 @@ const status = await buildStatus({
 	mobileSuitePath: resolveInputPath(cli.mobileSuite ?? DEFAULT_MOBILE_SUITE),
 	runsDir: resolveInputPath(cli.runsDir ?? DEFAULT_RUNS_DIR),
 	deviceRunsDir: resolveInputPath(cli.deviceRunsDir ?? DEFAULT_DEVICE_RUNS_DIR),
-	reviewsDir: resolveInputPath(cli.reviewsDir ?? DEFAULT_REVIEWS_DIR)
+	reviewsDir: resolveInputPath(cli.reviewsDir ?? DEFAULT_REVIEWS_DIR),
+	xcodeProjectPath: resolveInputPath(cli.xcodeProject ?? DEFAULT_XCODE_PROJECT),
+	releaseEvidencePath: resolveInputPath(cli.releaseEvidence ?? DEFAULT_RELEASE_EVIDENCE)
 });
 
 if (cli.json) {
@@ -49,6 +53,9 @@ async function buildStatus(paths) {
 	const runs = await loadJsonFiles(paths.runsDir);
 	const deviceRuns = await loadJsonFiles(paths.deviceRunsDir);
 	const reviews = await loadJsonFiles(paths.reviewsDir);
+	const iosBuild = await readOptionalIosBuildSettings(paths.xcodeProjectPath);
+	const releaseEvidence = await readOptionalJson(paths.releaseEvidencePath);
+	const testflight = summarizeTestFlightTarget({ iosBuild, releaseEvidence, paths });
 	const allRuns = [...runs, ...deviceRuns];
 	const reviewsByRunId = new Map(reviews.map((entry) => [entry.value.runId, entry]));
 	const currentRuns = allRuns.filter((entry) => isCurrentRun(entry.value, suite, suiteIdentity));
@@ -132,8 +139,11 @@ async function buildStatus(paths) {
 		paths: {
 			runsDir: relative(REPO_ROOT, paths.runsDir),
 			deviceRunsDir: relative(REPO_ROOT, paths.deviceRunsDir),
-			reviewsDir: relative(REPO_ROOT, paths.reviewsDir)
+			reviewsDir: relative(REPO_ROOT, paths.reviewsDir),
+			xcodeProject: relative(REPO_ROOT, paths.xcodeProjectPath),
+			releaseEvidence: relative(REPO_ROOT, paths.releaseEvidencePath)
 		},
+		testflight,
 		runs: {
 			totalLoaded: allRuns.length,
 			currentSuiteRuns: currentRuns.length,
@@ -161,7 +171,7 @@ async function buildStatus(paths) {
 		},
 		strictDeviceProofs,
 		gates,
-		nextAction: nextActionFor(gates, currentFullDeviceRuns, completeFiveStarDeviceReviews, strictDeviceProofs)
+		nextAction: nextActionFor(gates, currentFullDeviceRuns, completeFiveStarDeviceReviews, strictDeviceProofs, testflight)
 	};
 }
 
@@ -241,7 +251,7 @@ function createGates(input) {
 	];
 }
 
-function nextActionFor(gates, currentFullDeviceRuns, completeFiveStarDeviceReviews, strictDeviceProofs) {
+function nextActionFor(gates, currentFullDeviceRuns, completeFiveStarDeviceReviews, strictDeviceProofs, testflight) {
 	const gate = (id) => gates.find((item) => item.id === id);
 	if (!gate('suite')?.ok) {
 		return {
@@ -256,6 +266,12 @@ function nextActionFor(gates, currentFullDeviceRuns, completeFiveStarDeviceRevie
 		};
 	}
 	if (!gate('device-run')?.ok) {
+		if (testflight?.targetBuild && testflight.recordedDadPilotBuild && !testflight.targetBuildReadyForDad) {
+			return {
+				kind: 'publish-target-build',
+				text: `Upload and attach target iOS build ${testflight.targetBuild} to Dad Pilot first; release evidence currently records Dad Pilot on ${testflight.recordedDadPilotBuild}. After App Store Connect shows the target build through the TestFlight link, update the iPhone, open Settings > Scout Eval Lab, run Run 100, Share the JSON, then import it with npm run intake:scout-local-ai-device-run.`
+			};
+		}
 		return {
 			kind: 'get-device-run',
 			text: 'Install the latest TestFlight build on Dad/Chris iPhone, open Settings > Scout Eval Lab, run Run 100, Share the JSON, then import it with npm run intake:scout-local-ai-device-run.'
@@ -300,6 +316,57 @@ function summarizeRunList(entries) {
 		toolExpectationComplete: entry.value.summary?.toolExpectationComplete ?? 0,
 		missingToolCases: entry.value.summary?.missingToolCases ?? 0
 	}));
+}
+
+async function readOptionalIosBuildSettings(path) {
+	const text = await readOptionalText(path);
+	if (!text) return null;
+	return {
+		projectPath: relative(REPO_ROOT, path),
+		marketingVersion: uniqueBuildSetting(text, 'MARKETING_VERSION') ?? '<missing>',
+		buildNumber: uniqueBuildSetting(text, 'CURRENT_PROJECT_VERSION') ?? '<missing>',
+		teamId: uniqueBuildSetting(text, 'DEVELOPMENT_TEAM') ?? '<missing>',
+		releaseProfile: uniqueBuildSetting(text, 'PROVISIONING_PROFILE_SPECIFIER') ?? '<missing>'
+	};
+}
+
+function uniqueBuildSetting(text, name) {
+	const matches = [...text.matchAll(new RegExp(`${name}\\s*=\\s*([^;]+);`, 'gu'))]
+		.map((match) => match[1].trim())
+		.filter(Boolean);
+	const unique = [...new Set(matches)];
+	if (unique.length === 1) return unique[0];
+	if (unique.length > 1) return unique.join(' / ');
+	return null;
+}
+
+function summarizeTestFlightTarget({ iosBuild, releaseEvidence, paths }) {
+	const dadTestFlightEvidence = releaseEvidenceItem(releaseEvidence, 'dad-testflight-invite');
+	const targetBuild = iosBuild ? `${iosBuild.marketingVersion} (${iosBuild.buildNumber})` : null;
+	const recordedDadPilotBuild = extractRecordedDadBuild(releaseEvidence);
+	return {
+		targetBuild,
+		recordedDadPilotBuild,
+		targetBuildReadyForDad: Boolean(targetBuild && recordedDadPilotBuild && targetBuild === recordedDadPilotBuild),
+		publicLink: dadTestFlightEvidence?.publicLink ?? null,
+		xcodeProject: relative(REPO_ROOT, paths.xcodeProjectPath),
+		releaseEvidence: relative(REPO_ROOT, paths.releaseEvidencePath)
+	};
+}
+
+function extractRecordedDadBuild(releaseEvidence) {
+	const summary = releaseEvidenceItem(releaseEvidence, 'dad-testflight-invite')?.summary ?? '';
+	const match = String(summary).match(/build\s+(\d+(?:\.\d+)*)\s+\((\d+)\)/iu);
+	if (match) return `${match[1]} (${match[2]})`;
+	return null;
+}
+
+function releaseEvidenceItem(releaseEvidence, key) {
+	return releaseEvidence?.items?.[key] ??
+		releaseEvidence?.evidence?.[key] ??
+		releaseEvidence?.gates?.[key] ??
+		releaseEvidence?.[key] ??
+		null;
 }
 
 function isCurrentRun(run, suite, suiteIdentity) {
@@ -349,6 +416,11 @@ async function readOptionalJson(path) {
 	return readJson(path);
 }
 
+async function readOptionalText(path) {
+	if (!(await exists(path))) return null;
+	return readFile(path, 'utf8');
+}
+
 async function exists(path) {
 	try {
 		await access(path);
@@ -380,6 +452,13 @@ function createStatusMarkdown(status) {
 		`- Version/hash: \`${status.suite.version}\` / \`${status.suite.hash}\``,
 		`- Cases: ${status.suite.caseCount}`,
 		`- Mobile copy matches: ${status.suite.mobileCopyMatches ? 'yes' : 'no'}`,
+		'',
+		'## TestFlight Target',
+		'',
+		`- Target iOS build: \`${status.testflight.targetBuild ?? '<unknown>'}\``,
+		`- Recorded Dad Pilot build: \`${status.testflight.recordedDadPilotBuild ?? '<unknown>'}\``,
+		`- Target build ready for Dad: ${status.testflight.targetBuildReadyForDad ? 'yes' : 'no'}`,
+		`- Dad TestFlight link: ${status.testflight.publicLink ?? '<unknown>'}`,
 		'',
 		'## Gates',
 		''

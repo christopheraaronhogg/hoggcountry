@@ -175,8 +175,12 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(gates['device-run'].ok, false);
 	assert.equal(status.runs.currentFullRoutingRuns.length, 1);
 	assert.equal(status.strictDeviceProofs.length, 0);
-	assert.equal(status.nextAction.kind, 'get-device-run');
-	assert.match(status.nextAction.text, /TestFlight build/u);
+	assert.equal(status.testflight.targetBuild, '1.0 (10)');
+	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (9)');
+	assert.equal(status.testflight.targetBuildReadyForDad, false);
+	assert.equal(status.nextAction.kind, 'publish-target-build');
+	assert.match(status.nextAction.text, /Upload and attach target iOS build 1\.0 \(10\)/u);
+	assert.match(status.nextAction.text, /Dad Pilot on 1\.0 \(9\)/u);
 });
 
 test('status command recognizes repeated strict TestFlight iPhone proof candidates', async () => {
@@ -263,6 +267,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Target iOS build for Dad Eval Lab: `1\.0 \(10\)`/u);
 	assert.match(result.stdout, /Recorded Dad Pilot build: `1\.0 \(9\)`/u);
 	assert.match(result.stdout, /https:\/\/testflight\.apple\.com\/join\/BagBCrzf/u);
+	assert.match(result.stdout, /Upload and attach target iOS build 1\.0 \(10\)/u);
 	assert.match(result.stdout, /use `Run 100` for real proof/u);
 	assert.match(result.stdout, /npm run intake:scout-local-ai-device-run/u);
 	assert.match(result.stdout, /npm run apply-review:scout-local-ai/u);
