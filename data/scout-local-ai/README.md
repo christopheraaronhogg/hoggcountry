@@ -106,6 +106,10 @@ Packet apply expects every case in the review JSON to be present in the Markdown
 packet by default. If the packet was truncated or a case heading was accidentally
 deleted, apply fails before writing review JSON. Add `--allow-partial` only when
 you are intentionally applying an incremental packet or a smoke-run subset.
+The review/backlog command also checks that the review JSON belongs to the exact
+run being reviewed: run id, suite version/hash, evidence lane, case ids, prompts,
+rubric traits, safety caveats, and required tool expectations must line up before
+an iteration backlog is written.
 
 For a quick `Run 3` smoke export, add `--allow-partial`. Do not use partial runs
 as final proof. Partial intake can warn about missing final-proof context without

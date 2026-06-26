@@ -207,6 +207,63 @@ export function reviewRunEvidenceProblems(run, review) {
 	return problems;
 }
 
+export function reviewRunAlignmentProblems(run, review) {
+	const problems = [];
+	if (!run || typeof run !== 'object') return ['run JSON must be an object.'];
+	if (!review || typeof review !== 'object') return ['review JSON must be an object.'];
+	if (review.runId !== run.runId) {
+		problems.push(`review.runId ${review.runId ?? '<missing>'} does not match run.runId ${run.runId ?? '<missing>'}.`);
+	}
+	if (review.suiteId !== run.suiteId) {
+		problems.push(`review.suiteId ${review.suiteId ?? '<missing>'} does not match run.suiteId ${run.suiteId ?? '<missing>'}.`);
+	}
+	if (review.suiteVersion !== run.suiteVersion) {
+		problems.push(`review.suiteVersion ${review.suiteVersion ?? '<missing>'} does not match run.suiteVersion ${run.suiteVersion ?? '<missing>'}.`);
+	}
+	if (review.suiteHash !== run.suiteHash) {
+		problems.push(`review.suiteHash ${review.suiteHash ?? '<missing>'} does not match run.suiteHash ${run.suiteHash ?? '<missing>'}.`);
+	}
+	if (review.evidenceLane !== run.evidenceLane) {
+		problems.push(`review.evidenceLane ${review.evidenceLane ?? '<missing>'} does not match run.evidenceLane ${run.evidenceLane ?? '<missing>'}.`);
+	}
+	if (!Array.isArray(run.results)) problems.push('run.results must be an array.');
+	if (!Array.isArray(review.cases)) problems.push('review.cases must be an array.');
+	if (!Array.isArray(run.results) || !Array.isArray(review.cases)) return problems;
+
+	const runById = mapByCaseId(run.results, 'run.results', problems);
+	const reviewById = mapByCaseId(review.cases, 'review.cases', problems);
+	const missingReviewCases = [...runById.keys()].filter((caseId) => !reviewById.has(caseId));
+	const extraReviewCases = [...reviewById.keys()].filter((caseId) => !runById.has(caseId));
+	if (missingReviewCases.length) {
+		problems.push(`review is missing ${missingReviewCases.length} run case(s): ${formatCaseList(missingReviewCases)}.`);
+	}
+	if (extraReviewCases.length) {
+		problems.push(`review has ${extraReviewCases.length} case(s) not found in run results: ${formatCaseList(extraReviewCases)}.`);
+	}
+
+	for (const [caseId, result] of runById) {
+		const reviewCase = reviewById.get(caseId);
+		if (!reviewCase) continue;
+		if (reviewCase.prompt !== result.case?.prompt) problems.push(`${caseId}: review prompt does not match run prompt.`);
+		if (reviewCase.domain !== result.case?.domain) problems.push(`${caseId}: review domain does not match run domain.`);
+		if (reviewCase.phase !== result.case?.phase) problems.push(`${caseId}: review phase does not match run phase.`);
+		if (reviewCase.answerOrigin !== result.answerOrigin) {
+			problems.push(`${caseId}: review answerOrigin ${reviewCase.answerOrigin ?? '<missing>'} does not match run answerOrigin ${result.answerOrigin ?? '<missing>'}.`);
+		}
+		if (!sameStringArray(reviewCase.expectedTraits, result.case?.expectedTraits ?? [])) {
+			problems.push(`${caseId}: review expectedTraits do not match run case expectedTraits.`);
+		}
+		if (!sameStringArray(reviewCase.safetyCaveats, result.case?.safetyCaveats ?? [])) {
+			problems.push(`${caseId}: review safetyCaveats do not match run case safetyCaveats.`);
+		}
+		if (!sameStringArray(reviewCase.toolExpectations?.required, result.toolExpectations?.required)) {
+			problems.push(`${caseId}: review required tool expectations do not match run result.`);
+		}
+	}
+
+	return problems;
+}
+
 export function improvementTaskProblems(task) {
 	const text = String(task ?? '').trim();
 	if (!text) return ['ratings below 5 need an improvementTask.'];
@@ -532,6 +589,25 @@ function sameStringArray(left, right) {
 	if (!Array.isArray(left) || !Array.isArray(right)) return false;
 	if (left.length !== right.length) return false;
 	return left.every((value, index) => value === right[index]);
+}
+
+function mapByCaseId(items, label, problems) {
+	const mapped = new Map();
+	for (const item of items) {
+		if (!item?.caseId) {
+			problems.push(`${label}: item missing caseId.`);
+			continue;
+		}
+		if (mapped.has(item.caseId)) problems.push(`${label}: duplicate case ${item.caseId}.`);
+		mapped.set(item.caseId, item);
+	}
+	return mapped;
+}
+
+function formatCaseList(caseIds) {
+	const preview = caseIds.slice(0, 10).join(', ');
+	const suffix = caseIds.length > 10 ? `, and ${caseIds.length - 10} more` : '';
+	return `${preview}${suffix}`;
 }
 
 function countBy(items, keyFor) {

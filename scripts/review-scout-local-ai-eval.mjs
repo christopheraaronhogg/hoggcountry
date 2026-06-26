@@ -6,6 +6,7 @@ import {
 	createBacklogMarkdown,
 	createReviewTemplate,
 	parseCliArgs,
+	reviewRunAlignmentProblems,
 	reviewRunEvidenceProblems,
 	summarizeReview
 } from './lib/scout-local-ai-review.mjs';
@@ -41,8 +42,12 @@ try {
 	process.exit(0);
 }
 
-const summary = summarizeReview(review);
+const alignmentProblems = reviewRunAlignmentProblems(run, review);
+const summary = Array.isArray(review?.cases)
+	? summarizeReview(review)
+	: emptyReviewSummary();
 const invalidEntries = [
+	...alignmentProblems,
 	...summary.invalid,
 	...reviewRunEvidenceProblems(run, review)
 ];
@@ -81,4 +86,16 @@ function resolveInputPath(value) {
 	if (text === '~') return process.env.HOME ?? text;
 	if (text.startsWith('~/')) return resolve(process.env.HOME ?? REPO_ROOT, text.slice(2));
 	return resolve(REPO_ROOT, text);
+}
+
+function emptyReviewSummary() {
+	return {
+		total: 0,
+		rated: 0,
+		unrated: 0,
+		belowFive: 0,
+		ratingCounts: {},
+		byDomain: {},
+		invalid: []
+	};
 }

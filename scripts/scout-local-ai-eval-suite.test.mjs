@@ -728,6 +728,54 @@ test('review workflow writes actionable JSON and Markdown iteration backlog', as
 	assert.doesNotMatch(markdown, new RegExp(`### ${review.cases[1].caseId}`, 'u'));
 });
 
+test('review workflow rejects mismatched run and review JSON before creating a backlog', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-mismatch-'));
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 2), {
+		runId: 'device-review-current',
+		completeTools: true
+	});
+	const staleRun = deviceRunForCases(suite, suite.cases.slice(0, 2), {
+		runId: 'device-review-old',
+		completeTools: true,
+		suiteVersion: '2026-06-25.1',
+		suiteHash: 'fnv1a32:00000000'
+	});
+	const review = reviewForRun(staleRun, { rating: 5 });
+	review.runId = staleRun.runId;
+	review.cases[0].prompt = 'Old prompt from a different packet.';
+
+	const runPath = join(outputDir, 'device-review-current.json');
+	const reviewPath = join(outputDir, 'device-review-old.review.json');
+	const backlogDir = join(outputDir, 'backlog');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/review-scout-local-ai-eval.mjs',
+				'--run',
+				runPath,
+				'--review',
+				reviewPath,
+				'--backlog-dir',
+				backlogDir
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /Review has invalid entries/u);
+			assert.match(error.stderr, /review\.runId device-review-old does not match run\.runId device-review-current/u);
+			assert.match(error.stderr, /review\.suiteVersion 2026-06-25\.1 does not match run\.suiteVersion/u);
+			assert.match(error.stderr, /review\.suiteHash fnv1a32:00000000 does not match run\.suiteHash/u);
+			assert.match(error.stderr, /review prompt does not match run prompt/u);
+			return true;
+		}
+	);
+});
+
 test('review workflow rejects below-5 ratings without concrete improvement tasks', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-invalid-'));
