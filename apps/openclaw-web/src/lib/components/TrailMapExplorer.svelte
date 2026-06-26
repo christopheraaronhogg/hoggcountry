@@ -498,6 +498,10 @@
     trackedDays.length ? { min: trackedDays[trackedDays.length - 1], max: trackedDays[0] } : { min: '', max: '' }
   );
   const selectedDayLabel = $derived.by(() => (selectedDay ? relativeDayLabel(selectedDay, todayKey) : ''));
+  // Step through days that actually have fixes (trackedDays is newest-first).
+  const selectedDayIndex = $derived.by(() => (selectedDay ? trackedDays.indexOf(selectedDay) : -1));
+  const canStepOlder = $derived(selectedDayIndex >= 0 && selectedDayIndex < trackedDays.length - 1);
+  const canStepNewer = $derived(selectedDayIndex > 0);
   const daySubLabel = $derived.by(() => {
     if (!daySummary) return '';
     const fixes = `${daySummary.pointCount} fix${daySummary.pointCount === 1 ? '' : 'es'}`;
@@ -1110,10 +1114,30 @@
     scrubbing = false;
   }
 
+  // fitBounds padding that reserves the desktop left panel so the focus point
+  // / day track land in the visible map area, not behind the docked sheet.
+  function boundsPadding(mobilePad = 60): Record<string, unknown> {
+    return isWide
+      ? { paddingTopLeft: [430, 48], paddingBottomRight: [60, 60] }
+      : { padding: [mobilePad, mobilePad] };
+  }
+
+  // Center a single point, panel-aware on desktop. Mobile keeps the simple
+  // setView behavior; desktop fits a zero-size bounds with left padding so the
+  // pin clears the panel.
+  function focusPoint(lat: number, lon: number, zoom: number, animate = true) {
+    if (!map || !L) return;
+    if (!isWide) {
+      map.setView([lat, lon], zoom, animate ? { animate: true, duration: 0.28 } : undefined);
+      return;
+    }
+    map.fitBounds(L.latLngBounds([[lat, lon], [lat, lon]]), { ...boundsPadding(), maxZoom: zoom, animate });
+  }
+
   function fitInitialView() {
     if (!map || !L || !pack) return;
     if (currentPoint) {
-      map.setView([currentPoint.lat, currentPoint.lon], 11);
+      focusPoint(currentPoint.lat, currentPoint.lon, 11, false);
       return;
     }
 
@@ -1121,7 +1145,7 @@
     for (const segment of pack.route.segments) {
       for (const point of segment) bounds.extend(point);
     }
-    if (bounds.isValid()) map.fitBounds(bounds, { padding: [28, 28] });
+    if (bounds.isValid()) map.fitBounds(bounds, boundsPadding(28));
   }
 
   function renderAll(recenter = false) {
@@ -1163,10 +1187,7 @@
 
   function recenterOnSelected() {
     if (!displayedSelection || !map) return;
-    map.setView([displayedSelection.lat, displayedSelection.lon], Math.max(map.getZoom(), 12), {
-      animate: true,
-      duration: 0.25
-    });
+    focusPoint(displayedSelection.lat, displayedSelection.lon, Math.max(map.getZoom(), 12));
   }
 
   function clearInspect() {
@@ -1176,10 +1197,7 @@
 
   function recenterOnLive() {
     if (!currentPoint || !map) return;
-    map.setView([currentPoint.lat, currentPoint.lon], Math.max(map.getZoom(), 11), {
-      animate: true,
-      duration: 0.25
-    });
+    focusPoint(currentPoint.lat, currentPoint.lon, Math.max(map.getZoom(), 11));
   }
 
   function fitDay() {
@@ -1187,11 +1205,11 @@
     const points = dayPoints.filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lon));
     if (!points.length) return;
     if (points.length === 1) {
-      map.setView([points[0].lat, points[0].lon], Math.max(map.getZoom(), 12), { animate: true, duration: 0.3 });
+      focusPoint(points[0].lat, points[0].lon, Math.max(map.getZoom(), 12));
       return;
     }
     const bounds = L.latLngBounds(points.map((point) => [point.lat, point.lon]));
-    if (bounds.isValid()) map.fitBounds(bounds, { padding: [60, 60], maxZoom: 14, animate: true });
+    if (bounds.isValid()) map.fitBounds(bounds, { ...boundsPadding(), maxZoom: 14, animate: true });
   }
 
   function enterDay(dateKey: string) {
@@ -1215,6 +1233,16 @@
   function onDatePick(event: Event) {
     const value = (event.currentTarget as HTMLInputElement).value;
     if (value) enterDay(value);
+  }
+
+  // Step to the adjacent day that has fixes (trackedDays is newest-first, so
+  // older = higher index, newer = lower index).
+  function olderDay() {
+    if (canStepOlder) enterDay(trackedDays[selectedDayIndex + 1]);
+  }
+
+  function newerDay() {
+    if (canStepNewer) enterDay(trackedDays[selectedDayIndex - 1]);
   }
 
   // Tapping near the trail inspects that mile's terrain, even where Dad
@@ -1647,8 +1675,12 @@
     {:else if viewMode === 'day' && daySummary}
       <div class="sheet-body">
         <div class="day-head">
-          <strong>{dateHeading(daySummary.dateKey)}</strong>
-          <span class={`day-conf day-conf--${daySummary.confidence}`}>{confidenceWord(daySummary.confidence)}</span>
+          <button class="day-step" type="button" onclick={olderDay} disabled={!canStepOlder} aria-label="Previous tracked day">‹</button>
+          <div class="day-head-mid">
+            <strong>{dateHeading(daySummary.dateKey)}</strong>
+            <span class={`day-conf day-conf--${daySummary.confidence}`}>{confidenceWord(daySummary.confidence)}</span>
+          </div>
+          <button class="day-step" type="button" onclick={newerDay} disabled={!canStepNewer} aria-label="Next tracked day">›</button>
         </div>
 
         <div class="metric-row">
@@ -2852,7 +2884,16 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.6rem;
+    gap: 0.5rem;
+  }
+
+  .day-head-mid {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
   }
 
   .day-head strong {
@@ -2860,6 +2901,31 @@
     font-size: 1.1rem;
     font-weight: 700;
     letter-spacing: 0.01em;
+  }
+
+  .day-step {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    border: 1px solid rgba(255, 253, 248, 0.16);
+    border-radius: 999px;
+    background: rgba(255, 253, 248, 0.08);
+    color: #fffdf8;
+    cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 1;
+    padding-bottom: 0.12rem;
+  }
+
+  .day-step:active {
+    background: rgba(255, 253, 248, 0.16);
+  }
+
+  .day-step:disabled {
+    opacity: 0.35;
+    cursor: default;
   }
 
   .day-conf {
