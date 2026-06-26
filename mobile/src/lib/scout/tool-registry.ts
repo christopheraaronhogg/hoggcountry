@@ -38,26 +38,29 @@ interface SourceSkillTrigger {
 }
 
 const TOOL_TRIGGERS: ToolTrigger[] = [
-	{ keywords: ['water', 'spring', 'creek'], toolId: 'next_water' },
-	{ keywords: ['shelter', 'camp', 'camping', 'campsite', 'tent site', 'lean-to', 'where sleep'], toolId: 'next_shelter' },
-	{ keywords: ['town', 'resupply', 'hostel', 'shuttle', 'outfitter', 'laundry', 'groceries', 'mail drop'], toolId: 'next_town' },
-	{ keywords: ['weather', 'wind', 'cold', 'rain', 'storm', 'forecast'], toolId: 'weather_lookup' },
+	{ keywords: ['water', 'spring', 'creek', 'source', 'seasonal', 'dry stretch', 'camel up', 'hydrate', 'filter', 'questionable', 'hot', 'heat', 'dizzy', 'big climb', 'too tired', 'keep going'], toolId: 'next_water' },
+	{ keywords: ['shelter', 'camp', 'camping', 'campsite', 'tent site', 'lean-to', 'where sleep', 'sleep', 'overnight', 'tonight', 'after dark', 'dark', 'full when i arrive', 'bear activity', 'big climb', 'stop before', 'too tired', 'keep going', 'safe plan'], toolId: 'next_shelter' },
+	{ keywords: ['town', 'resupply', 'hostel', 'shuttle', 'outfitter', 'laundry', 'groceries', 'mail drop', 'road crossing', 'bailout', 'exit', 'nero', 'zero', 'food', 'lodging', 'unsafe', 'overdue', 'ankle'], toolId: 'next_town' },
+	{ keywords: ['weather', 'wind', 'cold', 'rain', 'storm', 'forecast', 'heat', 'hot', 'thunder', 'lightning', 'hypothermia', 'freez', 'dizzy', 'ridge', 'push past', 'stop there', 'dry gear', 'bad weather', 'tomorrow', 'dry stretch', 'smoke', 'fire', 'zero', 'nero', 'stop hiking'], toolId: 'weather_lookup' },
 	{
-		keywords: ['closure', 'closed', 'detour', 'reroute', 'fire', 'burn ban', 'washout', 'bridge out', 'blowdown', 'high water', 'alert'],
+		keywords: ['closure', 'closed', 'detour', 'reroute', 'fire', 'smoke', 'burn ban', 'washout', 'bridge out', 'blowdown', 'high water', 'alert', 'bear activity', 'bear reports'],
 		toolId: 'trail_conditions'
 	},
 	{
-		keywords: ['visitor center', 'ranger', 'ranger station', 'campground', 'national park', 'park office', 'wayside', 'permit office'],
+		keywords: ['visitor center', 'ranger', 'ranger station', 'campground', 'national park', 'park office', 'wayside', 'permit office', 'hostel is full', 'hostel full', 'backup lodging', 'legal public'],
 		toolId: 'park_services'
 	},
-	{ keywords: ['miles', 'push', 'hold', 'pace', 'nero', 'zero', 'next 20', 'terrain', 'climb', 'descent', 'elevation'], toolId: 'upcoming_terrain' },
-	{ keywords: ['gear', 'pack', 'loadout', 'carry', 'packed', 'base weight', 'rain gear', 'first aid', 'food carry'], toolId: 'loadout_check' },
-	{ keywords: ['where am i', 'current mile', 'how far'], toolId: 'current_mile' },
+	{ keywords: ['miles', 'mileage', 'push', 'hold', 'pace', 'nero', 'zero', 'next 20', 'terrain', 'climb', 'descent', 'elevation', 'ridge', 'first week', 'overdoing', 'dry stretch', 'road crossing', 'bailout', 'next stretch', 'resupply point', 'tired early', "today's hike"], toolId: 'upcoming_terrain' },
+	{ keywords: ['gear', 'pack', 'loadout', 'carry', 'packed', 'base weight', 'rain gear', 'rain pants', 'first aid', 'first-aid', 'food carry', 'shakedown', 'clothes', 'dry', 'filter', 'battery bank', 'camp shoes', 'kit'], toolId: 'loadout_check' },
+	{ keywords: ['where am i', 'current mile', 'trail mile', 'my mile', 'set my mile', 'mile manually', 'wrong trail mile', 'wrong mile', 'gps', 'bailout', 'update in scout', 'offline', 'stealth camp', 'map', 'basemap', 'cell signal', 'off trail', 'junction', 'ankle', 'sos', 'support circle', 'signal', 'overdue', 'too tired', 'keep going'], toolId: 'current_mile' },
 	{
 		keywords: [
 			'bible',
 			'scripture',
 			'verse',
+			'john ',
+			'john 3:16',
+			'romans',
 			'psalm',
 			'gospel',
 			'jesus',
@@ -86,7 +89,7 @@ const TOOL_TRIGGERS: ToolTrigger[] = [
 const SOURCE_SKILL_TRIGGERS: SourceSkillTrigger[] = [
 	{
 		id: 'water',
-		keywords: ['water', 'spring', 'creek', 'flow', 'filter', 'hydrate'],
+		keywords: ['water', 'spring', 'creek', 'flow', 'filter', 'hydrate', 'seasonal', 'dry stretch', 'camel up', 'hot', 'heat', 'dizzy', 'questionable', 'source'],
 		queryHints: [
 			'water discipline',
 			'current flow',
@@ -99,27 +102,27 @@ const SOURCE_SKILL_TRIGGERS: SourceSkillTrigger[] = [
 	},
 	{
 		id: 'shelter',
-		keywords: ['shelter', 'camp', 'camping', 'campsite', 'tent site', 'lean-to', 'hut', 'privy', 'where sleep'],
+		keywords: ['shelter', 'camp', 'camping', 'campsite', 'tent site', 'lean-to', 'hut', 'privy', 'where sleep', 'sleep', 'overnight', 'tonight', 'after dark', 'dark', 'stealth'],
 		queryHints: ['shelter discipline', 'camping', 'capacity', 'rules', 'legal overnight', 'verify current status']
 	},
 	{
 		id: 'town',
-		keywords: ['town', 'resupply', 'hostel', 'shuttle', 'laundry', 'groceries', 'outfitter', 'mail drop', 'motel', 'restaurant'],
+		keywords: ['town', 'resupply', 'hostel', 'shuttle', 'laundry', 'groceries', 'outfitter', 'mail drop', 'motel', 'restaurant', 'road crossing', 'bailout', 'exit', 'nero', 'zero', 'food', 'charge', 'download', 'lodging'],
 		queryHints: ['town discipline', 'resupply', 'recovery', 'services', 'access', 'same day confirmation']
 	},
 	{
 		id: 'weather',
-		keywords: ['weather', 'wind', 'cold', 'rain', 'storm', 'forecast', 'heat'],
+		keywords: ['weather', 'wind', 'cold', 'rain', 'storm', 'forecast', 'heat', 'hot', 'thunder', 'lightning', 'hypothermia', 'freez', 'dizzy', 'ridge', 'dry gear', 'bad weather', 'tomorrow', 'zero', 'nero', 'stop hiking'],
 		queryHints: ['weather discipline', 'exposure', 'wind', 'cold', 'rain', 'storm', 'verify forecast']
 	},
 	{
 		id: 'trail conditions',
-		keywords: ['closure', 'closed', 'detour', 'reroute', 'fire', 'burn ban', 'washout', 'bridge out', 'blowdown', 'high water', 'alert'],
+		keywords: ['closure', 'closed', 'detour', 'reroute', 'fire', 'smoke', 'burn ban', 'washout', 'bridge out', 'blowdown', 'high water', 'alert', 'bear activity', 'bear reports'],
 		queryHints: ['trail conditions', 'closures', 'detours', 'hazards', 'official source', 'verify live']
 	},
 	{
 		id: 'safety',
-		keywords: ['safety', 'injury', 'hurt', 'pain', 'blister', 'medical', 'sick', 'bear', 'bailout', 'emergency', 'ford', 'flood'],
+		keywords: ['safety', 'safe', 'unsafe', 'injury', 'hurt', 'pain', 'knee', 'ankle', 'rolled', 'dizzy', 'symptoms', 'blister', 'medical', 'sick', 'bear', 'bailout', 'emergency', 'sos', 'support circle', 'signal', 'cell service', 'airplane mode', 'offline', 'stale', 'trust', 'wrong trail mile', 'wrong mile', 'documents', 'screenshot', 'check-ins', 'check ins', 'family', 'miss one', 'stealth', 'exhausted', 'after dark', 'dark', 'lost', 'off trail', 'gps', 'junction', 'overdue', 'smoke', 'fire', 'scared', 'alone', 'tired', 'hypothermia', 'lightning', 'charge', 'refresh', 'download', 'update in scout', 'stop hiking', 'make miles', 'download failed', 'model download failed', 'ford', 'flood'],
 		queryHints: ['safety discipline', 'body risk', 'bailout', 'emergency boundaries', 'official source', 'choose safer stop']
 	},
 	{
@@ -129,12 +132,12 @@ const SOURCE_SKILL_TRIGGERS: SourceSkillTrigger[] = [
 	},
 	{
 		id: 'terrain',
-		keywords: ['miles', 'push', 'hold', 'pace', 'nero', 'zero', 'next 20', 'terrain', 'climb', 'descent', 'elevation'],
+		keywords: ['miles', 'mileage', 'push', 'hold', 'pace', 'nero', 'zero', 'next 20', 'terrain', 'climb', 'descent', 'elevation', 'ridge', 'first week', 'trail prep', 'springer', 'overdoing', 'road crossing', 'bailout', 'next stretch', 'resupply point', 'guidebook', 'trail sign'],
 		queryHints: ['terrain discipline', 'pace', 'mileage', 'terrain', 'decision point', 'daylight']
 	},
 	{
 		id: 'loadout',
-		keywords: ['gear', 'pack', 'loadout', 'carry', 'packed', 'base weight', 'rain gear', 'first aid', 'food carry'],
+		keywords: ['gear', 'pack', 'loadout', 'carry', 'packed', 'base weight', 'rain gear', 'rain pants', 'first aid', 'first-aid', 'food carry', 'shakedown', 'clothes', 'dry', 'filter', 'battery bank', 'camp shoes', 'kit'],
 		queryHints: ['loadout', 'gear', 'pack contents', 'carried items', 'weight', 'safety gear']
 	}
 ];
@@ -223,6 +226,10 @@ export async function runToolsFor(
 				openedSourceDocuments
 			);
 			if (openedRecord) invocations.push(openedRecord);
+		}
+
+		if (invocations.length && !invocations.some((record) => record.toolId === 'source_search')) {
+			invocations.push(await sourceSearch.run({ query: prompt }, ctx));
 		}
 	}
 

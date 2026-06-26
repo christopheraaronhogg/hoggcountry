@@ -1,8 +1,15 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { mkdtemp, readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { test } from 'node:test';
+import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
 
 const SUITE_PATH = new URL('../data/scout-local-ai/dad-local-ai-100.json', import.meta.url);
+const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
+const execFileAsync = promisify(execFile);
 const VALID_PHASES = new Set(['pre-trail', 'on-trail']);
 const VALID_TOOL_IDS = new Set([
 	'current_mile',
@@ -98,6 +105,29 @@ test('Dad local AI eval suite has 100 complete, reviewable cases', async () => {
 	for (const category of suite.failureCategories) {
 		assert.ok(VALID_FAILURES.has(category), `unknown failure category ${category}`);
 	}
+});
+
+test('Dad local AI eval suite routes every case through expected Scout tools', async () => {
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-routing-'));
+	await execFileAsync(
+		process.execPath,
+		[
+			'--experimental-strip-types',
+			'--experimental-transform-types',
+			'scripts/run-scout-local-ai-eval.mjs',
+			'--run-id',
+			'routing-regression',
+			'--output-dir',
+			outputDir
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 4 }
+	);
+
+	const run = JSON.parse(await readFile(join(outputDir, 'routing-regression.json'), 'utf8'));
+	assert.equal(run.caseCount, 100);
+	assert.equal(run.evidenceLane, 'scaffold-not-model');
+	assert.equal(run.summary.toolExpectationComplete, 100);
+	assert.deepEqual(run.summary.missingToolCounts, {});
 });
 
 function assertNonEmptyStringArray(value, label) {
