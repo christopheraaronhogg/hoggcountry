@@ -71,6 +71,11 @@ The in-app Eval Lab autosaves each completed question locally on the phone. If a
 finishes. Export also works after reopening the app because the last device run
 is restored from local storage.
 
+The Eval Lab shows a final-proof preflight before Dad runs the suite. `Run 3`
+stays available as an iOS smoke check once the local model is ready, but `Run
+100` is reserved for a ready on-device iOS TestFlight install so a debug or web
+run cannot be mistaken for final Dad proof.
+
 On iPhone, use Share first so the JSON can be sent through the native share
 sheet. If that is unavailable, use Copy and paste the JSON into a file or note.
 Download remains available as a browser fallback.

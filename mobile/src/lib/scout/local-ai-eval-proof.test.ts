@@ -1,0 +1,102 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+
+import { scoutLocalAiEvalProofStatus, type ScoutLocalAiEvalNativePreflight } from './local-ai-eval-proof.ts';
+
+const testflightNative: ScoutLocalAiEvalNativePreflight = {
+	metadataLoaded: true,
+	isNativePlatform: true,
+	platform: 'ios',
+	installSourceType: 'testflight',
+	installSourceLabel: 'TestFlight',
+	appVersion: '1.0',
+	appBuild: '9'
+};
+
+test('Scout Eval Lab proof status unlocks the full run only for TestFlight iOS', () => {
+	const status = scoutLocalAiEvalProofStatus({
+		suiteLoaded: true,
+		modelReady: true,
+		scoutUsesCloud: false,
+		running: false,
+		native: testflightNative
+	});
+
+	assert.equal(status.canRunSmoke, true);
+	assert.equal(status.canRunFinal, true);
+	assert.equal(status.statusLabel, 'TestFlight ready');
+	assert.equal(status.checks.find((check) => check.id === 'install')?.ok, true);
+});
+
+test('Scout Eval Lab proof status allows smoke but blocks final 100 on debug installs', () => {
+	const status = scoutLocalAiEvalProofStatus({
+		suiteLoaded: true,
+		modelReady: true,
+		scoutUsesCloud: false,
+		running: false,
+		native: {
+			...testflightNative,
+			installSourceType: 'debug',
+			installSourceLabel: 'Debug'
+		}
+	});
+
+	assert.equal(status.canRunSmoke, true);
+	assert.equal(status.canRunFinal, false);
+	assert.equal(status.statusLabel, 'Smoke only');
+	assert.deepEqual(
+		status.checks.map((check) => [check.id, check.ok]),
+		[
+			['suite', true],
+			['model', true],
+			['lane', true],
+			['shell', true],
+			['install', false]
+		]
+	);
+});
+
+test('Scout Eval Lab proof status blocks web or cloud lanes', () => {
+	const status = scoutLocalAiEvalProofStatus({
+		suiteLoaded: true,
+		modelReady: true,
+		scoutUsesCloud: true,
+		running: false,
+		native: {
+			metadataLoaded: true,
+			isNativePlatform: false,
+			platform: 'web',
+			installSourceType: null,
+			installSourceLabel: 'Unknown'
+		}
+	});
+
+	assert.equal(status.canRunSmoke, false);
+	assert.equal(status.canRunFinal, false);
+	assert.equal(status.statusLabel, 'Web lane');
+	assert.equal(status.checks.find((check) => check.id === 'lane')?.value, 'Cloud');
+	assert.equal(status.checks.find((check) => check.id === 'shell')?.value, 'Web/PWA');
+});
+
+test('Scout Eval Lab proof status blocks while running or while the model is missing', () => {
+	const running = scoutLocalAiEvalProofStatus({
+		suiteLoaded: true,
+		modelReady: true,
+		scoutUsesCloud: false,
+		running: true,
+		native: testflightNative
+	});
+	const missingModel = scoutLocalAiEvalProofStatus({
+		suiteLoaded: true,
+		modelReady: false,
+		scoutUsesCloud: false,
+		running: false,
+		native: testflightNative
+	});
+
+	assert.equal(running.canRunSmoke, false);
+	assert.equal(running.canRunFinal, false);
+	assert.equal(running.statusLabel, 'Running');
+	assert.equal(missingModel.canRunSmoke, false);
+	assert.equal(missingModel.statusLabel, 'Needs model');
+});

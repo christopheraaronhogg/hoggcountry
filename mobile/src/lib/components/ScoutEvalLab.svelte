@@ -7,6 +7,14 @@
 		type ScoutLocalAiEvalRun,
 		type ScoutLocalAiEvalSuite
 	} from '$lib/scout/local-ai-eval';
+	import {
+		scoutLocalAiEvalProofStatus,
+		type ScoutLocalAiEvalNativePreflight
+	} from '$lib/scout/local-ai-eval-proof';
+	import {
+		getCapacitorScoutInstallSource,
+		type ScoutInstallSource
+	} from '$lib/scout/capacitor-gemma-bridge';
 
 	const SUITE_URL = '/scout/dad-local-ai-100.json';
 	const SAVED_RUN_KEY = 'hoggcountry:scout-local-ai-eval:last-run:v1';
@@ -23,6 +31,13 @@
 	let exportMessage = $state<string | null>(null);
 	let exportTextarea = $state<HTMLTextAreaElement | null>(null);
 	let exportStatusTimer: ReturnType<typeof setTimeout> | null = null;
+	let nativePreflight = $state.raw<ScoutLocalAiEvalNativePreflight>({
+		metadataLoaded: false,
+		isNativePlatform: null,
+		platform: null,
+		installSourceType: null,
+		installSourceLabel: 'Checking'
+	});
 
 	const modelReady = $derived(
 		trailAssistant.modelStatus?.state === 'ready' &&
@@ -30,17 +45,27 @@
 	);
 	const activeRun = $derived(run ?? savedRun);
 	const savedRunTarget = $derived(savedRun ? (savedRun.filters?.limit ?? savedRun.totalSuiteCases) : 0);
-	const canRun = $derived(Boolean(suite && modelReady && !running && !trailAssistant.scoutUsesCloud));
+	const proofStatus = $derived(
+		scoutLocalAiEvalProofStatus({
+			suiteLoaded: Boolean(suite),
+			modelReady,
+			scoutUsesCloud: trailAssistant.scoutUsesCloud,
+			running,
+			native: nativePreflight
+		})
+	);
+	const savedRunIsFullTarget = $derived(Boolean(suite && savedRunTarget >= suite.cases.length));
 	const canResume = $derived(
 		Boolean(
-			canRun &&
+			proofStatus.canRunSmoke &&
 				suite &&
 				savedRun &&
 				savedRun.suiteId === suite.suiteId &&
 				savedRun.suiteVersion === suite.version &&
 				savedRun.suiteHash === scoutLocalAiSuiteHash(suite) &&
 				savedRun.evidenceLane === 'device-on-device-gemma' &&
-				savedRun.caseCount < savedRunTarget
+				savedRun.caseCount < savedRunTarget &&
+				(!savedRunIsFullTarget || proofStatus.canRunFinal)
 		)
 	);
 	const exportText = $derived(activeRun ? JSON.stringify(activeRun, null, 2) : '');
@@ -65,6 +90,7 @@
 	onMount(() => {
 		loadSavedRun();
 		void loadSuite();
+		void loadNativePreflight();
 	});
 
 	async function loadSuite() {
@@ -83,6 +109,15 @@
 
 	async function runEval(limit?: number, resume = false) {
 		if (!suite || running) return;
+		const fullRun = !limit || (resume && savedRunIsFullTarget);
+		if (!proofStatus.canRunSmoke) {
+			error = 'Scout local AI is not ready for an iOS Eval Lab run yet.';
+			return;
+		}
+		if (fullRun && !proofStatus.canRunFinal) {
+			error = 'Run 100 final proof needs the TestFlight iPhone install. Run 3 is available for smoke.';
+			return;
+		}
 		const previousRun = resume ? savedRun : null;
 		const runLimit = resume ? (previousRun?.filters?.limit ?? undefined) : limit;
 		running = true;
@@ -105,9 +140,73 @@
 			saveRunSnapshot(run);
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Scout eval failed.';
+			void loadNativePreflight();
 		} finally {
 			running = false;
 		}
+	}
+
+	async function loadNativePreflight() {
+		nativePreflight = {
+			...nativePreflight,
+			metadataLoaded: false,
+			metadataError: null,
+			installSourceLabel: 'Checking'
+		};
+		try {
+			const [{ Capacitor }, { App }] = await Promise.all([
+				import('@capacitor/core'),
+				import('@capacitor/app')
+			]);
+			const isNativePlatform = Capacitor.isNativePlatform();
+			const platform = Capacitor.getPlatform();
+			let installSource: ScoutInstallSource | null = null;
+			let appVersion: string | null = null;
+			let appBuild: string | null = null;
+
+			if (isNativePlatform) {
+				const [source, appInfo] = await Promise.all([
+					getCapacitorScoutInstallSource().catch((err) => ({
+						type: 'unknown',
+						detectedBy: 'scoutgemma-install-source-error',
+						error: err instanceof Error ? err.message : String(err)
+					})),
+					App.getInfo()
+				]);
+				installSource = source;
+				appVersion = appInfo.version;
+				appBuild = appInfo.build;
+			}
+
+			nativePreflight = {
+				metadataLoaded: true,
+				isNativePlatform,
+				platform,
+				installSourceType: installSource?.type ?? null,
+				installSourceLabel: installSourceLabel(installSource),
+				appVersion,
+				appBuild
+			};
+		} catch (err) {
+			nativePreflight = {
+				metadataLoaded: true,
+				metadataError: err instanceof Error ? err.message : String(err),
+				isNativePlatform: null,
+				platform: null,
+				installSourceType: null,
+				installSourceLabel: 'Unknown'
+			};
+		}
+	}
+
+	function installSourceLabel(source: ScoutInstallSource | null): string {
+		const type = source?.type ?? 'unknown';
+		if (type === 'testflight') return 'TestFlight';
+		if (type === 'debug') return 'Debug';
+		if (type === 'app-store') return 'App Store';
+		if (type === 'google-play') return 'Google Play';
+		if (type === 'android-installer') return 'Android installer';
+		return 'Unknown';
 	}
 
 	function downloadRun() {
@@ -239,7 +338,7 @@
 		<p class="eyebrow">Scout Eval · local AI</p>
 		<div class="heading-row">
 			<h2>Device run</h2>
-			<span class="status-pill" data-ready={canRun}>{trailAssistant.scoutUsesCloud ? 'iOS only' : modelReady ? 'Ready' : 'Needs model'}</span>
+			<span class="status-pill" data-ready={proofStatus.canRunFinal}>{proofStatus.statusLabel}</span>
 		</div>
 		<p class="eval-copy">100 hiker questions, isolated field packs, on-device Scout answers.</p>
 	</div>
@@ -255,6 +354,22 @@
 		</div>
 	</div>
 
+	<div class="proof-checks" aria-label="Scout Eval Lab final proof readiness">
+		{#each proofStatus.checks as check (check.id)}
+			<div class="proof-check" data-ready={check.ok}>
+				<span>{check.ok ? 'OK' : 'Wait'}</span>
+				<strong>{check.label}</strong>
+				<em>{check.value}</em>
+			</div>
+		{/each}
+	</div>
+
+	{#if nativePreflight.metadataError}
+		<p class="eval-warning" role="status">Native proof check failed: {nativePreflight.metadataError}</p>
+	{:else if proofStatus.canRunSmoke && !proofStatus.canRunFinal}
+		<p class="eval-warning" role="status">Run 3 is available for smoke. Run 100 final proof needs TestFlight.</p>
+	{/if}
+
 	{#if error}
 		<p class="eval-error" role="alert">{error}</p>
 	{/if}
@@ -264,10 +379,10 @@
 	{/if}
 
 	<div class="eval-actions">
-		<button class="outline-button compact" type="button" onclick={() => runEval(3)} disabled={!canRun}>
+		<button class="outline-button compact" type="button" onclick={() => runEval(3)} disabled={!proofStatus.canRunSmoke}>
 			Run 3
 		</button>
-		<button class="cta-button compact" type="button" onclick={() => runEval()} disabled={!canRun}>
+		<button class="cta-button compact" type="button" onclick={() => runEval()} disabled={!proofStatus.canRunFinal}>
 			{running ? 'Running…' : 'Run 100'}
 		</button>
 		<button class="outline-button compact" type="button" onclick={() => runEval(undefined, true)} disabled={!canResume}>
@@ -382,6 +497,60 @@
 		overflow-wrap: anywhere;
 		font-size: 0.82rem;
 		line-height: 1.25;
+	}
+
+	.proof-checks {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+		gap: 7px;
+	}
+
+	.proof-check {
+		min-width: 0;
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: 2px 6px;
+		align-items: baseline;
+		border: 1px solid var(--line);
+		border-radius: 10px;
+		background: var(--surface);
+		padding: 8px;
+	}
+
+	.proof-check[data-ready='true'] {
+		border-color: color-mix(in srgb, var(--forest) 35%, var(--line));
+		background: var(--forest-soft);
+	}
+
+	.proof-check span {
+		font-size: 0.62rem;
+		font-weight: 900;
+		text-transform: uppercase;
+		color: var(--muted);
+	}
+
+	.proof-check[data-ready='true'] span {
+		color: var(--forest);
+	}
+
+	.proof-check strong,
+	.proof-check em {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 0.72rem;
+		line-height: 1.2;
+	}
+
+	.proof-check strong {
+		font-weight: 900;
+	}
+
+	.proof-check em {
+		grid-column: 1 / -1;
+		font-style: normal;
+		color: var(--muted);
 	}
 
 	.eval-error,
