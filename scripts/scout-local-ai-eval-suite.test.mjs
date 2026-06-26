@@ -241,6 +241,48 @@ test('review workflow writes actionable JSON and Markdown iteration backlog', as
 	assert.doesNotMatch(markdown, new RegExp(`### ${review.cases[1].caseId}`, 'u'));
 });
 
+test('review workflow rejects below-5 ratings without concrete improvement tasks', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-invalid-'));
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 2), {
+		runId: 'device-review-invalid',
+		completeTools: true
+	});
+	const review = reviewForRun(run);
+	review.cases[0].rating = 4;
+	review.cases[0].failureCategories = [];
+	review.cases[0].improvementTask = '';
+	review.cases[1].rating = 5;
+
+	const runPath = join(outputDir, 'device-review-invalid.json');
+	const reviewPath = join(outputDir, 'device-review-invalid.review.json');
+	const backlogDir = join(outputDir, 'backlog');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/review-scout-local-ai-eval.mjs',
+				'--run',
+				runPath,
+				'--review',
+				reviewPath,
+				'--backlog-dir',
+				backlogDir
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /Review has invalid entries/u);
+			assert.match(error.stderr, /ratings below 5 need an improvementTask/u);
+			assert.match(error.stderr, /ratings below 5 need at least one failure category/u);
+			return true;
+		}
+	);
+});
+
 test('device run intake rejects scaffold runs by default', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-intake-reject-'));

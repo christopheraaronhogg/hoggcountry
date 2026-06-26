@@ -76,6 +76,8 @@ npm run review:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.
 
 That writes a machine-readable backlog item for every answer rated below 5 and
 a Markdown iteration backlog grouped for the next data/tool/prompt/UI fix pass.
+The review command fails instead of writing backlog files if any below-5 rating
+is missing failure categories or an improvement task.
 
 When a full device run has been reviewed and every case is honestly 5/5, run the
 strict final gate:

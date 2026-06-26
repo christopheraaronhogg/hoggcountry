@@ -40,6 +40,13 @@ try {
 }
 
 const summary = summarizeReview(review);
+if (summary.invalid.length) {
+	console.error('Review has invalid entries. Fix these before creating an iteration backlog:');
+	for (const issue of summary.invalid.slice(0, 20)) console.error(`- ${issue}`);
+	if (summary.invalid.length > 20) console.error(`- ... ${summary.invalid.length - 20} more`);
+	process.exit(1);
+}
+
 const backlog = createBacklog(run, review, summary);
 await mkdir(backlogDir, { recursive: true });
 const backlogPath = resolve(backlogDir, `${run.runId}.backlog.json`);
@@ -54,10 +61,6 @@ console.log(`Rated: ${summary.rated}/${summary.total}`);
 console.log(`5/5: ${summary.ratingCounts['5'] ?? 0}`);
 console.log(`Below 5: ${summary.belowFive}`);
 console.log(`Unrated: ${summary.unrated}`);
-if (summary.invalid.length) {
-	console.log(`Invalid review entries: ${summary.invalid.length}`);
-	for (const issue of summary.invalid.slice(0, 8)) console.log(`- ${issue}`);
-}
 
 function resolveInputPath(value) {
 	const text = String(value);
