@@ -818,16 +818,29 @@ test('review workflow rejects below-5 ratings without concrete improvement tasks
 	overfitReview.cases[0].rating = 2;
 	overfitReview.cases[0].failureCategories = ['bad-prompt'];
 	overfitReview.cases[0].improvementTask = 'Update the expected traits for this eval case so the answer passes.';
+	const ownerRun = deviceRunForCases(suite, suite.cases.slice(0, 1), {
+		runId: 'device-review-owner-invalid',
+		completeTools: true
+	});
+	const ownerReview = reviewForRun(ownerRun);
+	ownerReview.cases[0].rating = 4;
+	ownerReview.cases[0].failureCategories = ['missing-data'];
+	ownerReview.cases[0].ownerLayer = 'prompt';
+	ownerReview.cases[0].improvementTask = 'Add current-section water reliability source docs.';
 
 	const runPath = join(outputDir, 'device-review-invalid.json');
 	const reviewPath = join(outputDir, 'device-review-invalid.review.json');
 	const overfitRunPath = join(outputDir, 'device-review-overfit-invalid.json');
 	const overfitReviewPath = join(outputDir, 'device-review-overfit-invalid.review.json');
+	const ownerRunPath = join(outputDir, 'device-review-owner-invalid.json');
+	const ownerReviewPath = join(outputDir, 'device-review-owner-invalid.review.json');
 	const backlogDir = join(outputDir, 'backlog');
 	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
 	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
 	await writeFile(overfitRunPath, `${JSON.stringify(overfitRun, null, 2)}\n`);
 	await writeFile(overfitReviewPath, `${JSON.stringify(overfitReview, null, 2)}\n`);
+	await writeFile(ownerRunPath, `${JSON.stringify(ownerRun, null, 2)}\n`);
+	await writeFile(ownerReviewPath, `${JSON.stringify(ownerReview, null, 2)}\n`);
 
 	await assert.rejects(
 		execFileAsync(
@@ -870,6 +883,28 @@ test('review workflow rejects below-5 ratings without concrete improvement tasks
 		(error) => {
 			assert.match(error.stderr, /Review has invalid entries/u);
 			assert.match(error.stderr, /rather than weakening the eval rubric/u);
+			return true;
+		}
+	);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/review-scout-local-ai-eval.mjs',
+				'--run',
+				ownerRunPath,
+				'--review',
+				ownerReviewPath,
+				'--backlog-dir',
+				backlogDir
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /Review has invalid entries/u);
+			assert.match(error.stderr, /ownerLayer prompt does not match failureCategories missing-data/u);
+			assert.match(error.stderr, /expected one of data/u);
 			return true;
 		}
 	);
@@ -1129,13 +1164,13 @@ test('iteration planner rejects incomplete or uncategorized backlog work', async
 		evidenceLane: 'device-on-device-gemma',
 		generatedAt: '2026-06-26T12:00:00.000Z',
 		summary: {
-			rated: 2,
-			total: 3,
-			belowFive: 2,
+			rated: 3,
+			total: 4,
+			belowFive: 3,
 			unrated: 1,
-			ratingCounts: {'3': 1, '4': 1}
+			ratingCounts: {'2': 1, '3': 1, '4': 1}
 		},
-		unratedItems: [{caseId: 'DLA-003'}],
+		unratedItems: [{caseId: 'DLA-004'}],
 		items: [
 			{
 				id: 'invalid-iteration-backlog:DLA-001',
@@ -1166,6 +1201,21 @@ test('iteration planner rejects incomplete or uncategorized backlog work', async
 				hitTools: ['weather_lookup'],
 				missingTools: [],
 				answerPreview: 'Storm answer was too thin.'
+			},
+			{
+				id: 'invalid-iteration-backlog:DLA-003',
+				caseId: 'DLA-003',
+				domain: 'safety',
+				phase: 'on-trail',
+				rating: 2,
+				prompt: 'I am dizzy and it is hot. What should I do?',
+				failureCategories: ['unsafe-wording'],
+				ownerLayer: 'ui',
+				improvementTask: 'Tighten heat illness escalation wording before any mileage advice.',
+				requiredTools: ['weather_lookup', 'source_search:safety'],
+				hitTools: ['weather_lookup', 'source_search:safety'],
+				missingTools: [],
+				answerPreview: 'The answer put interface guidance before the safety escalation.'
 			}
 		]
 	};
@@ -1188,6 +1238,8 @@ test('iteration planner rejects incomplete or uncategorized backlog work', async
 			assert.match(error.stderr, /ownerLayer must be one of/u);
 			assert.match(error.stderr, /improvementTask must be concrete enough/u);
 			assert.match(error.stderr, /rather than weakening the eval rubric/u);
+			assert.match(error.stderr, /ownerLayer ui does not match failureCategories unsafe-wording/u);
+			assert.match(error.stderr, /expected one of safety-prompt/u);
 			return true;
 		}
 	);

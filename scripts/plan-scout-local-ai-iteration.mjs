@@ -3,6 +3,7 @@ import { basename, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
 	improvementTaskProblems,
+	ownerLayerProblems,
 	parseCliArgs,
 	VALID_FAILURE_CATEGORIES,
 	VALID_OWNER_LAYERS as REVIEW_OWNER_LAYERS
@@ -122,6 +123,9 @@ function validateBacklog(backlog, path, options) {
 		} else {
 			for (const category of item.failureCategories) {
 				if (!VALID_FAILURES.has(category)) options.errors.push(`${itemLabel}: unknown failure category "${category}".`);
+			}
+			for (const problem of ownerLayerProblems(item.failureCategories, item.ownerLayer)) {
+				options.errors.push(`${itemLabel}: ${problem}`);
 			}
 		}
 		if (!String(item.improvementTask ?? '').trim()) {

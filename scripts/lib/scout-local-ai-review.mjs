@@ -24,6 +24,15 @@ export const VALID_OWNER_LAYERS = [
 ];
 
 const VALID_FAILURES = new Set(VALID_FAILURE_CATEGORIES);
+const FAILURE_CATEGORY_OWNER_LAYERS = {
+	'missing-data': ['data'],
+	'weak-tool': ['tool-routing'],
+	'bad-routing': ['tool-routing'],
+	'bad-prompt': ['prompt'],
+	'unsafe-wording': ['safety-prompt'],
+	'poor-ux': ['ui'],
+	'local-model-limitation': ['local-model']
+};
 const IMPROVEMENT_ACTION_RE =
 	/\b(add|adjust|build|cache|change|create|expose|fix|generate|improve|investigate|lead|record|refactor|remove|route|surface|teach|test|tighten|update|wire)\b/iu;
 const VAGUE_IMPROVEMENT_TASKS = new Set([
@@ -159,6 +168,10 @@ export function summarizeReview(review) {
 			}
 			if (!Array.isArray(entry.failureCategories) || !entry.failureCategories.length) {
 				invalid.push(`${entry.caseId}: ratings below 5 need at least one failure category.`);
+			} else {
+				for (const problem of ownerLayerProblems(entry.failureCategories, entry.ownerLayer)) {
+					invalid.push(`${entry.caseId}: ${problem}`);
+				}
 			}
 		}
 		if (rating === 5) {
@@ -290,6 +303,20 @@ export function improvementTaskProblems(task) {
 		problems.push('improvementTask must target Scout behavior, data, tools, prompts, UI, or local-model runtime rather than weakening the eval rubric.');
 	}
 	return problems;
+}
+
+export function ownerLayerProblems(failureCategories, ownerLayer) {
+	const normalizedOwner = String(ownerLayer ?? '').trim();
+	if (!normalizedOwner) return [];
+	const categories = Array.isArray(failureCategories)
+		? failureCategories.filter((category) => VALID_FAILURES.has(category))
+		: [];
+	if (!categories.length) return [];
+	const expectedLayers = [...new Set(categories.flatMap((category) => FAILURE_CATEGORY_OWNER_LAYERS[category] ?? []))];
+	if (!expectedLayers.length || expectedLayers.includes(normalizedOwner)) return [];
+	return [
+		`ownerLayer ${normalizedOwner} does not match failureCategories ${categories.join(', ')}; expected one of ${expectedLayers.join(', ')}.`
+	];
 }
 
 export function createBacklog(run, review, summary) {
