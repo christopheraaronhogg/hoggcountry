@@ -33,6 +33,13 @@ async function main() {
 	const result = applyPacketToReview(review, parsed, { allowPartial: Boolean(cli.allowPartial) });
 	const summary = summarizeReview(review);
 
+	if (summary.invalid.length) {
+		console.error('Review packet would create invalid review JSON. Fix the packet before applying:');
+		for (const issue of summary.invalid.slice(0, 20)) console.error(`- ${issue}`);
+		if (summary.invalid.length > 20) console.error(`- ... ${summary.invalid.length - 20} more`);
+		process.exit(1);
+	}
+
 	await writeFile(outPath, `${JSON.stringify(review, null, 2)}\n`);
 
 	console.log('Scout local AI review JSON updated from packet.');
@@ -46,9 +53,6 @@ async function main() {
 	console.log(`5/5: ${summary.ratingCounts['5'] ?? 0}`);
 	console.log(`Below 5: ${summary.belowFive}`);
 	console.log(`Unrated: ${summary.unrated}`);
-	if (summary.invalid.length) {
-		console.log(`Review still has ${summary.invalid.length} validation issue(s). Run npm run review:scout-local-ai for the full list.`);
-	}
 }
 
 export function parseReviewPacket(markdown) {

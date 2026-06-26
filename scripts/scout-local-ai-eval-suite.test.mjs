@@ -527,6 +527,77 @@ test('review packet ratings can be applied back into review JSON', async () => {
 	assert.equal(backlog.items[0].ownerLayer, 'safety-prompt');
 });
 
+test('review packet apply rejects invalid reviewer fields before writing JSON', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-packet-invalid-'));
+	const inputPath = join(outputDir, 'device-export.json');
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 2), {
+		runId: 'device-packet-invalid',
+		completeTools: true
+	});
+	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
+
+	await execFileAsync(
+		process.execPath,
+		[
+			'scripts/import-scout-local-ai-device-run.mjs',
+			'--run',
+			inputPath,
+			'--allow-partial',
+			'--device-run-dir',
+			join(outputDir, 'device-runs'),
+			'--review-dir',
+			join(outputDir, 'reviews'),
+			'--packet-dir',
+			join(outputDir, 'review-packets')
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+
+	const packetPath = join(outputDir, 'review-packets', 'device-packet-invalid.review.md');
+	const reviewPath = join(outputDir, 'reviews', 'device-packet-invalid.review.json');
+	let packet = await readFile(packetPath, 'utf8');
+	packet = packet.replaceAll('- passed: null |', '- passed: true |');
+	packet = replaceReviewerFields(packet, run.results[0].caseId, {
+		rating: '4',
+		notes: 'Needs the data fix, but the reviewer picked the wrong owner layer.',
+		failureCategories: 'missing-data',
+		ownerLayer: 'prompt',
+		improvementTask: 'Add current-section water reliability source docs.'
+	});
+	packet = replaceReviewerFields(packet, run.results[1].caseId, {
+		rating: '5',
+		notes: 'Dad-ready answer.',
+		failureCategories: '',
+		ownerLayer: '',
+		improvementTask: ''
+	});
+	await writeFile(packetPath, packet);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/apply-scout-local-ai-review-packet.mjs',
+				'--packet',
+				packetPath,
+				'--review',
+				reviewPath
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /Review packet would create invalid review JSON/u);
+			assert.match(error.stderr, /ownerLayer prompt does not match failureCategories missing-data/u);
+			return true;
+		}
+	);
+
+	const review = JSON.parse(await readFile(reviewPath, 'utf8'));
+	assert.equal(review.cases[0].rating, null);
+	assert.equal(review.cases[1].rating, null);
+});
+
 test('review packet apply rejects truncated packets unless partial is explicit', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-packet-truncated-'));
