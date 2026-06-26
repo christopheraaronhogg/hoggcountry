@@ -69,6 +69,10 @@
   let daysOpen = $state(false);
   let viewMode = $state<'live' | 'day'>('live');
   let selectedDay = $state<string | null>(null);
+  // Desktop docks the bottom sheet as a left side panel (maps-app style) so the
+  // map stays visible instead of a full-bleed sheet burying it. Mobile keeps
+  // the draggable bottom sheet untouched.
+  let isWide = $state(false);
   // Bottom-sheet snap state: 0 = peek (glanceable summary), 1 = half, 2 = full.
   let sheetSnap = $state<0 | 1 | 2>(0);
   let shellEl = $state<HTMLElement | null>(null);
@@ -144,6 +148,7 @@
   let lastRenderedPlaceMode: PlaceMode | null = null;
   let lastRenderedMile = -1;
 
+  let mediaCleanup: (() => void) | null = null;
   let L: any = null;
   // $state so the render effects below stay subscribed: their `!map || !pack`
   // guard short-circuits on map while it is still null, and a non-reactive
@@ -1250,6 +1255,16 @@
   }
 
   onMount(async () => {
+    // Track wide viewports so the sheet can dock as a left panel on desktop.
+    const wideQuery = window.matchMedia('(min-width: 1024px)');
+    isWide = wideQuery.matches;
+    const onWideChange = (event: MediaQueryListEvent) => {
+      isWide = event.matches;
+      if (map) setTimeout(() => map.invalidateSize(), 60);
+    };
+    wideQuery.addEventListener('change', onWideChange);
+    mediaCleanup = () => wideQuery.removeEventListener('change', onWideChange);
+
     const leaflet = await import('leaflet');
     L = leaflet.default ?? leaflet;
     if (!host) return;
@@ -1279,6 +1294,7 @@
   });
 
   onDestroy(() => {
+    mediaCleanup?.();
     if (map) {
       map.remove();
       map = null;
@@ -1327,7 +1343,7 @@
   });
 </script>
 
-<section class="trail-map-shell" class:publicRoute class:appMode class:sheet-full={sheetSnap === 2} aria-label={title} bind:this={shellEl} style:--sheet-h={`${sheetHeight}px`}>
+<section class="trail-map-shell" class:publicRoute class:appMode class:wide={isWide} class:sheet-full={sheetSnap === 2} aria-label={title} bind:this={shellEl} style:--sheet-h={`${sheetHeight}px`}>
   <div class="map-host" bind:this={host}></div>
   <div class="map-shade" aria-hidden="true"></div>
   <svg class="icon-sprite" aria-hidden="true" focusable="false">
@@ -1556,7 +1572,7 @@
   <section
     class="sheet"
     class:dragging
-    style:height={`${sheetHeight}px`}
+    style:height={isWide ? undefined : `${sheetHeight}px`}
     style:--difficulty-accent={colorForDifficulty(selectedDifficulty?.score ?? 0)}
     aria-label="Trail detail"
   >
@@ -3192,6 +3208,64 @@
     .top-bar {
       justify-content: flex-start;
     }
+  }
+
+  /* ---- Desktop: dock the sheet as a left panel (maps-app style) -------- */
+  /* Gated on the `wide` class (matchMedia ≥1024px) so the inline sheet height
+     is dropped in JS first — otherwise it would beat these rules. */
+  .trail-map-shell.wide .sheet {
+    left: max(1rem, env(safe-area-inset-left));
+    right: auto;
+    top: 5rem;
+    bottom: 1rem;
+    width: 25rem;
+    height: auto;
+    border-radius: 20px;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+    transition: none;
+  }
+
+  .trail-map-shell.wide .sheet::before {
+    left: 1.2rem;
+    right: 1.2rem;
+  }
+
+  /* No drag-to-resize on desktop; the panel is a fixed-height scroller. */
+  .trail-map-shell.wide .sheet-grab {
+    height: 0.9rem;
+    cursor: default;
+  }
+
+  .trail-map-shell.wide .sheet-grab .grab-bar {
+    display: none;
+  }
+
+  /* Keep the map controls bottom-right of the map, not pinned above a sheet
+     that no longer spans the width — and never hide them on desktop. */
+  .trail-map-shell.wide .edge-tools,
+  .trail-map-shell.wide.sheet-full .edge-tools {
+    bottom: 1rem;
+    right: max(1rem, env(safe-area-inset-right));
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+
+  /* Layers / day-replay sheets become left-docked cards too. */
+  .trail-map-shell.wide .layers-sheet {
+    left: max(1rem, env(safe-area-inset-left));
+    right: auto;
+    bottom: 1rem;
+    width: 25rem;
+    border-radius: 20px;
+  }
+
+  /* The floating context chip clears the left panel instead of centering
+     over it. */
+  .trail-map-shell.wide .floating-chip {
+    left: auto;
+    right: 1rem;
+    transform: none;
   }
 
   @media (prefers-reduced-motion: reduce) {

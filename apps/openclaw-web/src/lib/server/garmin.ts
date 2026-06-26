@@ -119,8 +119,19 @@ export function normalizeGarminFeed(kml: string, sourceUrl: string): GarminFeatu
   };
 }
 
-export async function fetchGarminTrack(shareId: string, options?: { readonly signal?: AbortSignal }): Promise<GarminFeatureCollection> {
-  const sourceUrl = `https://explore.garmin.com/Feed/Share/${encodeURIComponent(shareId)}`;
+export async function fetchGarminTrack(
+  shareId: string,
+  options?: { readonly signal?: AbortSignal; readonly sinceDaysAgo?: number }
+): Promise<GarminFeatureCollection> {
+  const base = `https://explore.garmin.com/Feed/Share/${encodeURIComponent(shareId)}`;
+  // Garmin's Feed/Share returns ONLY the single latest fix unless a start date
+  // (d1) is supplied; with d1 it returns every fix from then through now. The
+  // value is sent minute-precision and unencoded (the format Garmin accepts).
+  let sourceUrl = base;
+  if (options?.sinceDaysAgo && options.sinceDaysAgo > 0) {
+    const since = new Date(Date.now() - options.sinceDaysAgo * 86_400_000).toISOString().slice(0, 16);
+    sourceUrl = `${base}?d1=${since}Z`;
+  }
   const response = await fetch(sourceUrl, {
     signal: options?.signal,
     headers: {

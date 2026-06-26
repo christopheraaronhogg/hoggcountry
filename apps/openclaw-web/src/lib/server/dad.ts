@@ -65,9 +65,11 @@ export const DEFAULT_TRACK_POINT = {
 
 const TRAIL_UPDATES_CACHE_MS = 60 * 1000;
 const TRACK_CACHE_MS = 60 * 1000;
+const TRACK_HISTORY_CACHE_MS = 5 * 60 * 1000;
 const VIDEOS_CACHE_MS = 5 * 60 * 1000;
 let cachedTrailUpdates: { readonly items: DadTrailUpdateSummary[]; readonly ts: number } | null = null;
 let cachedTrack: { readonly track: GarminFeatureCollection; readonly ts: number } | null = null;
+let cachedTrackHistory: { readonly track: GarminFeatureCollection; readonly ts: number; readonly days: number } | null = null;
 let cachedVideos: { readonly items: YtVideo[]; readonly ts: number } | null = null;
 
 export async function loadDadVideos(limit = 8): Promise<YtVideo[]> {
@@ -192,6 +194,43 @@ export async function loadDadTrack(): Promise<GarminFeatureCollection> {
   } catch {
     const fallback = cachedTrack?.track ?? await attachTrailLocation(previewTrack());
     return fallback;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+// How many days of Garmin history the map pulls for the completed path + day
+// replay. Garmin's feed needs an explicit start date or it returns only the
+// latest fix, so without this the map can't show "what did Dad do yesterday".
+// Override on Forge with GARMIN_HISTORY_DAYS.
+function garminHistoryDays(): number {
+  const raw = Number(process.env.GARMIN_HISTORY_DAYS);
+  return Number.isFinite(raw) && raw > 0 ? Math.min(400, Math.floor(raw)) : 45;
+}
+
+// Windowed Garmin track for the map (current point + multi-day history),
+// cached separately and longer than the live point: the history tail changes
+// slowly and the windowed feed is much larger than the latest-only fetch, so
+// the homepage/journey path keeps using the light loadDadTrack() above.
+export async function loadDadTrackHistory(): Promise<GarminFeatureCollection> {
+  const days = garminHistoryDays();
+  if (cachedTrackHistory && cachedTrackHistory.days === days && Date.now() - cachedTrackHistory.ts < TRACK_HISTORY_CACHE_MS) {
+    return cachedTrackHistory.track;
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const shareId = LIVE_TRACKING_URL.split('/').filter(Boolean).at(-1) ?? 'hoggcountry';
+    const track = await attachTrailLocation(
+      await fetchGarminTrack(shareId, { signal: controller.signal, sinceDaysAgo: days })
+    );
+    cachedTrackHistory = { track, ts: Date.now(), days };
+    return track;
+  } catch {
+    // Keep the map alive: prefer the last good window, else the latest-only track.
+    return cachedTrackHistory?.track ?? (await loadDadTrack());
   } finally {
     clearTimeout(timeoutId);
   }

@@ -14,7 +14,7 @@ import {
   type TrailMapTerrainSegment,
   type TrailMapWaypoint
 } from '$lib/map-pack-types';
-import { loadDadTrack } from './dad';
+import { loadDadTrackHistory } from './dad';
 import { nearestAtMilepost } from './at-location';
 
 const OFFICIAL_DISPLAY_MILES = 2197.4;
@@ -641,7 +641,7 @@ async function fetchBackendTracker(fetcher: FetchLike, requestOrigin: string, hi
   };
 }
 
-function extractGarminPoints(track: Awaited<ReturnType<typeof loadDadTrack>>): TrailMapPoint[] {
+function extractGarminPoints(track: Awaited<ReturnType<typeof loadDadTrackHistory>>): TrailMapPoint[] {
   const points: TrailMapPoint[] = [];
   const features = Array.isArray(track.features) ? track.features as GenericRecord[] : [];
 
@@ -668,7 +668,7 @@ function extractGarminPoints(track: Awaited<ReturnType<typeof loadDadTrack>>): T
 }
 
 async function fallbackTrackerFromGarmin(): Promise<TrailMapPack['tracker']> {
-  const track = await loadDadTrack();
+  const track = await loadDadTrackHistory();
   const latestPoint = track.properties?.latestPoint as { readonly coords?: [number, number]; readonly when?: string } | undefined;
   const history = await Promise.all(extractGarminPoints(track).map(enrichPoint));
   const current = latestPoint?.coords
