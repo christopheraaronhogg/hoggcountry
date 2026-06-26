@@ -38,6 +38,7 @@ const suite = JSON.parse(await readFile(suitePath, 'utf8'));
 const records = [];
 const errors = [];
 const seenRunIds = new Map();
+const seenRunFingerprints = new Map();
 
 if (pairs.length < minRuns) {
 	errors.push(`stability proof requires at least ${minRuns} distinct full device runs, got ${pairs.length}.`);
@@ -55,6 +56,12 @@ for (const [index, pair] of pairs.entries()) {
 		errors.push(`${label}: duplicate runId ${run.runId}; previous pair was ${seenRunIds.get(run.runId)}.`);
 	} else {
 		seenRunIds.set(run.runId, `pair ${index + 1}`);
+	}
+	const fingerprint = stabilityRunFingerprint(run);
+	if (seenRunFingerprints.has(fingerprint)) {
+		errors.push(`${label}: duplicate run execution fingerprint; previous pair was ${seenRunFingerprints.get(fingerprint)}. Stability proof needs separate Eval Lab executions, not a copied export with a new runId.`);
+	} else {
+		seenRunFingerprints.set(fingerprint, `pair ${index + 1}`);
 	}
 	if (result.errors.length) {
 		for (const error of result.errors) errors.push(`${label}: ${error}`);
@@ -167,6 +174,7 @@ function createStabilityProofMarkdown({ suite, suitePath, records, minRuns, perC
 			'',
 			`- Device run: \`${relative(REPO_ROOT, record.runPath)}\``,
 			`- Review: \`${relative(REPO_ROOT, record.reviewPath)}\``,
+			`- Run generated at: \`${record.run.generatedAt ?? '<missing>'}\``,
 			`- Evidence lane: \`${record.run.evidenceLane}\``,
 			`- Device surface: \`${record.run.runContext?.surface}\``,
 			`- Native platform: \`${record.run.runContext?.native?.platform ?? '<missing>'}\``,
@@ -189,6 +197,40 @@ function createStabilityProofMarkdown({ suite, suitePath, records, minRuns, perC
 	return `${lines.join('\n')}\n`;
 }
 
+function stabilityRunFingerprint(run) {
+	return stableJson({
+		generatedAt: run.generatedAt ?? null,
+		evidenceLane: run.evidenceLane ?? null,
+		suiteId: run.suiteId ?? null,
+		suiteVersion: run.suiteVersion ?? null,
+		suiteHash: run.suiteHash ?? null,
+		runContext: {
+			surface: run.runContext?.surface ?? null,
+			scoutLane: run.runContext?.scoutLane ?? null,
+			modelId: run.runContext?.modelId ?? null,
+			runtimeConfigured: run.runContext?.runtimeConfigured ?? null,
+			native: {
+				platform: run.runContext?.native?.platform ?? null,
+				isNativePlatform: run.runContext?.native?.isNativePlatform ?? null
+			},
+			app: {
+				id: run.runContext?.app?.id ?? null,
+				version: run.runContext?.app?.version ?? null,
+				build: run.runContext?.app?.build ?? null
+			},
+			installSource: {
+				type: run.runContext?.installSource?.type ?? null,
+				debugBuild: run.runContext?.installSource?.debugBuild ?? null,
+				buildConfiguration: run.runContext?.installSource?.buildConfiguration ?? null
+			}
+		},
+		caseCount: run.caseCount ?? null,
+		totalSuiteCases: run.totalSuiteCases ?? null,
+		firstResultGeneratedAt: run.results?.[0]?.generatedAt ?? null,
+		lastResultGeneratedAt: run.results?.at?.(-1)?.generatedAt ?? run.results?.[run.results.length - 1]?.generatedAt ?? null
+	});
+}
+
 function resolveInputPath(value) {
 	const text = String(value);
 	if (text === '~') return process.env.HOME ?? text;
@@ -202,4 +244,12 @@ function compactTimestamp(date) {
 
 function safeFileName(value) {
 	return String(value).replace(/[^A-Za-z0-9._-]/g, '-');
+}
+
+function stableJson(value) {
+	if (Array.isArray(value)) return `[${value.map((item) => stableJson(item)).join(',')}]`;
+	if (value && typeof value === 'object') {
+		return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableJson(value[key])}`).join(',')}}`;
+	}
+	return JSON.stringify(value) ?? 'null';
 }

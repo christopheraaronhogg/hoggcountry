@@ -2522,6 +2522,7 @@ test('stability proof accepts two full 5-star device reviews', async () => {
 		completeTools: true,
 		runContext: finalDeviceRunContext()
 	});
+	runB.generatedAt = '2026-06-26T12:10:00.000Z';
 	const reviewA = reviewForRun(runA, { rating: 5 });
 	const reviewB = reviewForRun(runB, { rating: 5 });
 	const runAPath = join(outputDir, 'device-stability-pass-a.json');
@@ -2553,6 +2554,7 @@ test('stability proof accepts two full 5-star device reviews', async () => {
 	assert.match(proof, /Reviewed runs: 2/u);
 	assert.match(proof, /Run 1: device-stability-pass-a/u);
 	assert.match(proof, /Run 2: device-stability-pass-b/u);
+	assert.match(proof, /Run generated at: `2026-06-26T12:10:00\.000Z`/u);
 	assert.match(proof, /Install source: `testflight`/u);
 	assert.match(proof, /Required app version\/build: `1\.0 \(>= 11\)`/u);
 	assert.match(proof, /App version\/build: `1\.0 \(11\)`/u);
@@ -2585,6 +2587,45 @@ test('stability proof rejects a single perfect device review', async () => {
 		),
 		(error) => {
 			assert.match(error.stderr, /stability proof requires at least 2 distinct full device runs/u);
+			return true;
+		}
+	);
+});
+
+test('stability proof rejects copied exports with new run ids', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-stability-copy-'));
+	const runA = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-stability-copy-a',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	const runB = JSON.parse(JSON.stringify(runA));
+	runB.runId = 'device-stability-copy-b';
+	const reviewA = reviewForRun(runA, { rating: 5 });
+	const reviewB = reviewForRun(runB, { rating: 5 });
+	const runAPath = join(outputDir, 'device-stability-copy-a.json');
+	const runBPath = join(outputDir, 'device-stability-copy-b.json');
+	const reviewAPath = join(outputDir, 'device-stability-copy-a.review.json');
+	const reviewBPath = join(outputDir, 'device-stability-copy-b.review.json');
+	await writeFile(runAPath, `${JSON.stringify(runA, null, 2)}\n`);
+	await writeFile(runBPath, `${JSON.stringify(runB, null, 2)}\n`);
+	await writeFile(reviewAPath, `${JSON.stringify(reviewA, null, 2)}\n`);
+	await writeFile(reviewBPath, `${JSON.stringify(reviewB, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/verify-scout-local-ai-stability-proof.mjs',
+				'--pairs',
+				`${runAPath}:${reviewAPath},${runBPath}:${reviewBPath}`
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /duplicate run execution fingerprint/u);
+			assert.match(error.stderr, /separate Eval Lab executions/u);
 			return true;
 		}
 	);

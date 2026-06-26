@@ -225,4 +225,6 @@ npm run verify:scout-local-ai-stability-proof -- --pairs data/scout-local-ai/dev
 ```
 
 That fails unless every case is 5/5 in each run, every run is from the installed
-iOS Eval Lab device lane, and every run hit all required tool expectations.
+iOS Eval Lab device lane, every run hit all required tool expectations, and the
+runs have distinct execution fingerprints. A copied JSON export with a new
+`runId` is not enough for stability proof.
