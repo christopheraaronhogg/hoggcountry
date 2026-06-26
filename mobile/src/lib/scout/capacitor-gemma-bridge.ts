@@ -65,6 +65,8 @@ type ScoutGemmaPlugin = {
 	getDownloadState?: () => Promise<DownloadState>;
 	/** Active network type + metered flag, for Wi-Fi-aware downloads. */
 	getNetworkStatus?: () => Promise<NetworkStatus>;
+	/** Native install-source diagnostics for release/TestFlight proof gates. */
+	getInstallSource?: () => Promise<ScoutInstallSource>;
 	checkNotificationsPermission?: () => Promise<{ granted: boolean }>;
 	requestNotificationsPermission?: () => Promise<{ granted: boolean }>;
 	addListener?: {
@@ -100,6 +102,18 @@ export type NetworkStatus = {
 	/** True on cellular / hotspot — surface a cost warning before a big download. */
 	metered: boolean;
 	type: 'wifi' | 'cellular' | 'ethernet' | 'other' | 'none';
+};
+
+export type ScoutInstallSource = {
+	type: string;
+	platform?: string;
+	detectedBy?: string;
+	receiptPresent?: boolean;
+	receiptLastPathComponent?: string | null;
+	installerPackage?: string | null;
+	debugBuild?: boolean;
+	buildConfiguration?: string;
+	error?: string;
 };
 
 export type DownloadState = {
@@ -189,6 +203,21 @@ export function createCapacitorGemmaBridge(win: Window = window): OnDeviceGemmaB
 				await handle?.remove();
 			}
 		}
+	};
+}
+
+export async function getCapacitorScoutInstallSource(win: Window = window): Promise<ScoutInstallSource | null> {
+	const capacitor = (win as CapacitorWindow).Capacitor;
+	if (!capacitor?.isNativePlatform?.()) return null;
+
+	const source = await capacitor.Plugins?.ScoutGemma?.getInstallSource?.();
+	if (!source || typeof source !== 'object') return null;
+	return {
+		...source,
+		type: typeof source.type === 'string' && source.type ? source.type : 'unknown',
+		receiptLastPathComponent:
+			typeof source.receiptLastPathComponent === 'string' ? source.receiptLastPathComponent : null,
+		installerPackage: typeof source.installerPackage === 'string' ? source.installerPackage : null
 	};
 }
 

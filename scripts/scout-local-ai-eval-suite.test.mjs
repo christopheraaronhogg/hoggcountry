@@ -803,6 +803,7 @@ test('strict device proof accepts a full 5-star device review', async () => {
 	assert.match(proof, /Suite hash: `fnv1a32:[0-9a-f]{8}`/u);
 	assert.match(proof, /Required-tool complete: 100\/100/u);
 	assert.match(proof, /App version\/build: `1\.0 \(9\)`/u);
+	assert.match(proof, /Install source: `testflight`/u);
 });
 
 test('strict device proof rejects 5-star reviews with missing required tool hits', async () => {
@@ -939,8 +940,52 @@ test('strict device proof rejects final reviews without native app metadata', as
 		(error) => {
 			assert.match(error.stderr, /native\.isNativePlatform must be true/u);
 			assert.match(error.stderr, /native\.platform must be ios/u);
+			assert.match(error.stderr, /installSource\.type must be testflight/u);
 			assert.match(error.stderr, /app\.build is required/u);
 			assert.match(error.stderr, /runtimeConfigured must be true/u);
+			return true;
+		}
+	);
+});
+
+test('strict device proof rejects non-TestFlight iPhone installs', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-proof-install-source-fail-'));
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-final-proof-debug-install',
+		completeTools: true,
+		runContext: finalDeviceRunContext({
+			installSource: {
+				type: 'debug',
+				platform: 'ios',
+				detectedBy: 'ios-app-store-receipt',
+				receiptPresent: false,
+				debugBuild: true,
+				buildConfiguration: 'debug'
+			}
+		})
+	});
+	const review = reviewForRun(run, { rating: 5 });
+	const runPath = join(outputDir, 'device-final-proof-debug-install.json');
+	const reviewPath = join(outputDir, 'device-final-proof-debug-install.review.json');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/verify-scout-local-ai-device-proof.mjs',
+				'--run',
+				runPath,
+				'--review',
+				reviewPath
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /installSource\.type must be testflight/u);
+			assert.match(error.stderr, /got debug/u);
 			return true;
 		}
 	);
@@ -1025,6 +1070,7 @@ test('stability proof accepts two full 5-star device reviews', async () => {
 	assert.match(proof, /Reviewed runs: 2/u);
 	assert.match(proof, /Run 1: device-stability-pass-a/u);
 	assert.match(proof, /Run 2: device-stability-pass-b/u);
+	assert.match(proof, /Install source: `testflight`/u);
 	assert.match(proof, /App version\/build: `1\.0 \(9\)`/u);
 	assert.match(proof, /Per-case repeated 5\/5: 100\/100/u);
 });
@@ -1100,6 +1146,15 @@ function finalDeviceRunContext(patch = {}) {
 			name: 'Hoggcountry',
 			version: '1.0',
 			build: '9'
+		},
+		installSource: {
+			type: 'testflight',
+			platform: 'ios',
+			detectedBy: 'ios-app-store-receipt',
+			receiptPresent: true,
+			receiptLastPathComponent: 'sandboxReceipt',
+			debugBuild: false,
+			buildConfiguration: 'release'
 		},
 		...patch
 	};

@@ -2,6 +2,8 @@ package com.hoggcountry.trailassistant.scout;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
@@ -335,6 +337,33 @@ public class ScoutGemmaPlugin extends Plugin {
         call.resolve(result);
     }
 
+    @PluginMethod
+    public void getInstallSource(PluginCall call) {
+        JSObject result = new JSObject();
+        boolean debugBuild =
+                (getContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        String installerPackage = null;
+        try {
+            PackageManager packageManager = getContext().getPackageManager();
+            String packageName = getContext().getPackageName();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                installerPackage =
+                        packageManager.getInstallSourceInfo(packageName).getInstallingPackageName();
+            } else {
+                installerPackage = packageManager.getInstallerPackageName(packageName);
+            }
+        } catch (Exception ignored) {
+            installerPackage = null;
+        }
+
+        result.put("type", installSourceType(debugBuild, installerPackage));
+        result.put("platform", "android");
+        result.put("detectedBy", "android-package-manager");
+        result.put("installerPackage", installerPackage);
+        result.put("debugBuild", debugBuild);
+        call.resolve(result);
+    }
+
     /**
      * Reports whether the OS will let us show the download-progress notification.
      * On API &lt; 33 notifications need no runtime grant, so this is always granted.
@@ -376,6 +405,19 @@ public class ScoutGemmaPlugin extends Plugin {
             return true;
         }
         return getPermissionState("notifications") == PermissionState.GRANTED;
+    }
+
+    private String installSourceType(boolean debugBuild, String installerPackage) {
+        if (debugBuild) {
+            return "debug";
+        }
+        if (installerPackage == null || installerPackage.trim().isEmpty()) {
+            return "unknown";
+        }
+        if ("com.android.vending".equals(installerPackage)) {
+            return "google-play";
+        }
+        return "android-installer";
     }
 
     ScoutGemmaEngine createEngine() {

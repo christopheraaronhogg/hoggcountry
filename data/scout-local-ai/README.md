@@ -130,10 +130,11 @@ run from the current suite version/hash, every required tool expectation was hit
 the required tools are backed by actual recorded `toolInvocations` rather than
 summary-only flags, every review case is rated `5`, native iOS app metadata is
 present (`com.hoggcountry.trailassistant`, app version/build,
-`native.platform = ios`, runtime configured), and no stale failure categories or
-improvement tasks remain. It also requires every expected-trait and safety-caveat
-rubric item to be explicitly checked as passed. Passing writes an ignored proof
-summary under `data/scout-local-ai/final-proof/`.
+`native.platform = ios`, `installSource.type = testflight`, runtime configured),
+and no stale failure categories or improvement tasks remain. It also requires
+every expected-trait and safety-caveat rubric item to be explicitly checked as
+passed. Passing writes an ignored proof summary under
+`data/scout-local-ai/final-proof/`.
 
 For final consistency proof, require at least two separate full TestFlight/iPhone
 runs to pass the same strict gate:

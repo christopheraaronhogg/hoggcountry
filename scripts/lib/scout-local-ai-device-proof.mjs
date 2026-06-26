@@ -33,6 +33,9 @@ export function verifyScoutLocalAiDeviceProof({ suite, run, review }) {
 	if (run.runContext?.app?.id !== DEVICE_BUNDLE_ID) {
 		errors.push(`run.runContext.app.id must be ${DEVICE_BUNDLE_ID}, got ${run.runContext?.app?.id ?? '<missing>'}.`);
 	}
+	if (run.runContext?.installSource?.type !== 'testflight') {
+		errors.push(`run.runContext.installSource.type must be testflight for final Dad proof, got ${run.runContext?.installSource?.type ?? '<missing>'}.`);
+	}
 	if (!String(run.runContext?.app?.version ?? '').trim()) {
 		errors.push('run.runContext.app.version is required for final TestFlight/iPhone proof.');
 	}
@@ -162,6 +165,7 @@ export function createDeviceProofMarkdown({ suite, run, summary, suitePath, runP
 		`- Native platform: \`${run.runContext?.native?.platform ?? '<missing>'}\``,
 		`- App bundle: \`${run.runContext?.app?.id ?? '<missing>'}\``,
 		`- App version/build: \`${run.runContext?.app?.version ?? '<missing>'} (${run.runContext?.app?.build ?? '<missing>'})\``,
+		`- Install source: \`${run.runContext?.installSource?.type ?? '<missing>'}\``,
 		`- Model id: \`${run.runContext?.modelId ?? '<missing>'}\``,
 		'',
 		'## Result',

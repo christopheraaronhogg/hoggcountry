@@ -29,7 +29,8 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "startModelDownload", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "cancelModelDownload", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getDownloadState", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "getNetworkStatus", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "getNetworkStatus", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getInstallSource", returnType: CAPPluginReturnPromise)
     ]
 
     private let store = ScoutModelStore()
@@ -226,6 +227,10 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 
+    @objc func getInstallSource(_ call: CAPPluginCall) {
+        call.resolve(installSourcePayload())
+    }
+
     /// Clears the active downloader + progress under the state queue.
     private func clearDownload() {
         stateQueue.sync {
@@ -271,5 +276,47 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
             "metered": path.isExpensive,
             "type": type
         ]
+    }
+
+    private func installSourcePayload() -> [String: Any] {
+        let receiptURL = Bundle.main.appStoreReceiptURL
+        let receiptLastPathComponent = receiptURL?.lastPathComponent
+        let debugBuild: Bool
+        let buildConfiguration: String
+        #if DEBUG
+        debugBuild = true
+        buildConfiguration = "debug"
+        #else
+        debugBuild = false
+        buildConfiguration = "release"
+        #endif
+
+        let type: String
+        #if DEBUG
+        type = "debug"
+        #else
+        if receiptLastPathComponent == "sandboxReceipt" {
+            type = "testflight"
+        } else if receiptURL != nil {
+            type = "app-store"
+        } else {
+            type = "unknown"
+        }
+        #endif
+
+        var payload: [String: Any] = [
+            "type": type,
+            "platform": "ios",
+            "detectedBy": "ios-app-store-receipt",
+            "receiptPresent": receiptURL != nil,
+            "debugBuild": debugBuild,
+            "buildConfiguration": buildConfiguration
+        ]
+        if let receiptLastPathComponent = receiptLastPathComponent {
+            payload["receiptLastPathComponent"] = receiptLastPathComponent
+        } else {
+            payload["receiptLastPathComponent"] = NSNull()
+        }
+        return payload
     }
 }

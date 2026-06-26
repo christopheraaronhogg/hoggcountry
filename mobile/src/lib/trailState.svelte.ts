@@ -19,6 +19,7 @@ import type {
 import { publishTrailPulseReport } from './trailPulseSpacetime';
 import { resolveModelPolicy } from './scout/model-policy.ts';
 import { NativeScoutRuntime } from './scout/native-scout-runtime.ts';
+import { getCapacitorScoutInstallSource } from './scout/capacitor-gemma-bridge.ts';
 import { NoScoutModelAvailableError } from './scout/model-router.ts';
 import { createCloudScoutBridge } from './scout/cloud-scout-bridge.ts';
 import { scoutUsesCloud, scoutLaneLabel } from './scout/scout-lane.ts';
@@ -1107,6 +1108,18 @@ class TrailAssistantStore {
 					version: appInfo.version,
 					build: appInfo.build
 				};
+				try {
+					context.installSource = await getCapacitorScoutInstallSource() ?? {
+						type: 'unknown',
+						detectedBy: 'scoutgemma-install-source-unavailable'
+					};
+				} catch (error) {
+					context.installSource = {
+						type: 'unknown',
+						detectedBy: 'scoutgemma-install-source-error',
+						error: error instanceof Error ? error.message : String(error)
+					};
+				}
 			}
 		} catch (error) {
 			context.nativeMetadataError = error instanceof Error ? error.message : String(error);
