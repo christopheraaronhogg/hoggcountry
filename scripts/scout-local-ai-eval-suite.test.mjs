@@ -598,6 +598,69 @@ test('review packet apply rejects invalid reviewer fields before writing JSON', 
 	assert.equal(review.cases[1].rating, null);
 });
 
+test('review packet apply rejects 5-star ratings that conflict with run evidence', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-packet-evidence-invalid-'));
+	const inputPath = join(outputDir, 'device-export.json');
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 1), {
+		runId: 'device-packet-evidence-invalid'
+	});
+	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
+
+	await execFileAsync(
+		process.execPath,
+		[
+			'scripts/import-scout-local-ai-device-run.mjs',
+			'--run',
+			inputPath,
+			'--allow-partial',
+			'--device-run-dir',
+			join(outputDir, 'device-runs'),
+			'--review-dir',
+			join(outputDir, 'reviews'),
+			'--packet-dir',
+			join(outputDir, 'review-packets')
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+
+	const packetPath = join(outputDir, 'review-packets', 'device-packet-evidence-invalid.review.md');
+	const reviewPath = join(outputDir, 'reviews', 'device-packet-evidence-invalid.review.json');
+	let packet = await readFile(packetPath, 'utf8');
+	packet = packet.replaceAll('- passed: null |', '- passed: true |');
+	packet = replaceReviewerFields(packet, run.results[0].caseId, {
+		rating: '5',
+		notes: 'Looks good from the text alone.',
+		failureCategories: '',
+		ownerLayer: '',
+		improvementTask: ''
+	});
+	await writeFile(packetPath, packet);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/apply-scout-local-ai-review-packet.mjs',
+				'--packet',
+				packetPath,
+				'--review',
+				reviewPath
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /Review packet would create invalid review JSON/u);
+			assert.match(error.stderr, /5-star rating conflicts with run evidence/u);
+			assert.match(error.stderr, /missing required tools/u);
+			return true;
+		}
+	);
+
+	const review = JSON.parse(await readFile(reviewPath, 'utf8'));
+	assert.equal(review.cases[0].rating, null);
+});
+
 test('review packet apply rejects truncated packets unless partial is explicit', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-packet-truncated-'));

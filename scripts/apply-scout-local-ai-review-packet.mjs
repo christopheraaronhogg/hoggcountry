@@ -3,6 +3,8 @@ import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
 	parseCliArgs,
+	reviewRunAlignmentProblems,
+	reviewRunEvidenceProblems,
 	summarizeReview
 } from './lib/scout-local-ai-review.mjs';
 
@@ -19,6 +21,7 @@ async function main() {
 	if (!cli.packet || !cli.review) {
 		throw new Error([
 			'Usage: npm run apply-review:scout-local-ai -- --packet data/scout-local-ai/review-packets/<run>.review.md --review data/scout-local-ai/reviews/<run>.review.json',
+			'Optional: --run data/scout-local-ai/device-runs/<run>.json when review.runPath is unavailable',
 			'Optional: --out data/scout-local-ai/reviews/<run>.review.json',
 			'Optional: --allow-partial for intentional smoke or incremental packet updates'
 		].join('\n'));
@@ -29,14 +32,20 @@ async function main() {
 	const outPath = cli.out ? resolveInputPath(cli.out) : reviewPath;
 	const packet = await readFile(packetPath, 'utf8');
 	const review = JSON.parse(await readFile(reviewPath, 'utf8'));
+	const run = await loadRunForReview(cli, review);
 	const parsed = parseReviewPacket(packet);
 	const result = applyPacketToReview(review, parsed, { allowPartial: Boolean(cli.allowPartial) });
 	const summary = summarizeReview(review);
+	const invalidEntries = [
+		...reviewRunAlignmentProblems(run, review),
+		...summary.invalid,
+		...reviewRunEvidenceProblems(run, review)
+	];
 
-	if (summary.invalid.length) {
+	if (invalidEntries.length) {
 		console.error('Review packet would create invalid review JSON. Fix the packet before applying:');
-		for (const issue of summary.invalid.slice(0, 20)) console.error(`- ${issue}`);
-		if (summary.invalid.length > 20) console.error(`- ... ${summary.invalid.length - 20} more`);
+		for (const issue of invalidEntries.slice(0, 20)) console.error(`- ${issue}`);
+		if (invalidEntries.length > 20) console.error(`- ... ${invalidEntries.length - 20} more`);
 		process.exit(1);
 	}
 
@@ -53,6 +62,14 @@ async function main() {
 	console.log(`5/5: ${summary.ratingCounts['5'] ?? 0}`);
 	console.log(`Below 5: ${summary.belowFive}`);
 	console.log(`Unrated: ${summary.unrated}`);
+}
+
+async function loadRunForReview(cli, review) {
+	const runInput = cli.run ?? review.runPath;
+	if (!runInput) {
+		throw new Error('Review JSON is missing runPath. Pass --run <run.json> so 5-star ratings can be checked against run evidence.');
+	}
+	return JSON.parse(await readFile(resolveInputPath(runInput), 'utf8'));
 }
 
 export function parseReviewPacket(markdown) {
