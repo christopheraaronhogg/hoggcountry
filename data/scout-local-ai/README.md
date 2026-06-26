@@ -90,3 +90,13 @@ This fails unless the run is a full 100-case `device-on-device-gemma` Eval Lab
 run, every required tool expectation was hit, every review case is rated `5`,
 and no stale failure categories or improvement tasks remain. Passing writes an
 ignored proof summary under `data/scout-local-ai/final-proof/`.
+
+For final consistency proof, require at least two separate full TestFlight/iPhone
+runs to pass the same strict gate:
+
+```sh
+npm run verify:scout-local-ai-stability-proof -- --pairs data/scout-local-ai/device-runs/<run-a>.json:data/scout-local-ai/reviews/<run-a>.review.json,data/scout-local-ai/device-runs/<run-b>.json:data/scout-local-ai/reviews/<run-b>.review.json
+```
+
+That fails unless every case is 5/5 in each run, every run is from the installed
+iOS Eval Lab device lane, and every run hit all required tool expectations.

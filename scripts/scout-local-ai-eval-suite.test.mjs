@@ -380,6 +380,84 @@ test('strict device proof rejects 5-star reviews with missing required tool hits
 	);
 });
 
+test('stability proof accepts two full 5-star device reviews', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-stability-pass-'));
+	const runA = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-stability-pass-a',
+		completeTools: true,
+		runContext: { surface: 'mobile-settings-scout-eval-lab' }
+	});
+	const runB = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-stability-pass-b',
+		completeTools: true,
+		runContext: { surface: 'mobile-settings-scout-eval-lab' }
+	});
+	const reviewA = reviewForRun(runA, { rating: 5 });
+	const reviewB = reviewForRun(runB, { rating: 5 });
+	const runAPath = join(outputDir, 'device-stability-pass-a.json');
+	const runBPath = join(outputDir, 'device-stability-pass-b.json');
+	const reviewAPath = join(outputDir, 'device-stability-pass-a.review.json');
+	const reviewBPath = join(outputDir, 'device-stability-pass-b.review.json');
+	const proofPath = join(outputDir, 'device-stability.proof.md');
+	await writeFile(runAPath, `${JSON.stringify(runA, null, 2)}\n`);
+	await writeFile(runBPath, `${JSON.stringify(runB, null, 2)}\n`);
+	await writeFile(reviewAPath, `${JSON.stringify(reviewA, null, 2)}\n`);
+	await writeFile(reviewBPath, `${JSON.stringify(reviewB, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/verify-scout-local-ai-stability-proof.mjs',
+			'--pairs',
+			`${runAPath}:${reviewAPath},${runBPath}:${reviewBPath}`,
+			'--proof-out',
+			proofPath
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const proof = await readFile(proofPath, 'utf8');
+
+	assert.match(result.stdout, /Scout local AI stability proof passed/u);
+	assert.match(result.stdout, /Runs: 2/u);
+	assert.match(result.stdout, /Per-case repeated 5\/5: 100\/100/u);
+	assert.match(proof, /Reviewed runs: 2/u);
+	assert.match(proof, /Run 1: device-stability-pass-a/u);
+	assert.match(proof, /Run 2: device-stability-pass-b/u);
+	assert.match(proof, /Per-case repeated 5\/5: 100\/100/u);
+});
+
+test('stability proof rejects a single perfect device review', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-stability-fail-'));
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-stability-fail-one-run',
+		completeTools: true,
+		runContext: { surface: 'mobile-settings-scout-eval-lab' }
+	});
+	const review = reviewForRun(run, { rating: 5 });
+	const runPath = join(outputDir, 'device-stability-fail-one-run.json');
+	const reviewPath = join(outputDir, 'device-stability-fail-one-run.review.json');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/verify-scout-local-ai-stability-proof.mjs',
+				'--pairs',
+				`${runPath}:${reviewPath}`
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /stability proof requires at least 2 distinct full device runs/u);
+			return true;
+		}
+	);
+});
+
 function assertNonEmptyStringArray(value, label) {
 	assert.ok(Array.isArray(value), `${label} must be an array`);
 	assert.ok(value.length > 0, `${label} must not be empty`);
