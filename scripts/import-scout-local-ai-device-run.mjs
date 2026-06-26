@@ -13,6 +13,10 @@ import {
 import {
 	validateScoutLocalAiDeviceRunContext
 } from './lib/scout-local-ai-device-proof.mjs';
+import {
+	sourceEvidenceProblems,
+	summarizeRunSourceEvidence
+} from './lib/scout-local-ai-source-evidence.mjs';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
@@ -71,6 +75,8 @@ console.log(`Review packet ${packetWritten ? 'created' : 'already exists'}: ${re
 console.log(`Evidence lane: ${run.evidenceLane}`);
 console.log(`Cases: ${run.caseCount}/${run.totalSuiteCases}`);
 console.log(`Required-tool complete: ${run.summary?.toolExpectationComplete ?? 0}/${run.caseCount}`);
+const sourceEvidenceSummary = summarizeRunSourceEvidence(run.results);
+console.log(`Source-evidence complete: ${sourceEvidenceSummary.sourceEvidenceComplete}/${run.caseCount}`);
 if (validation.warnings.length) {
 	console.log(`Warnings: ${validation.warnings.length}`);
 	for (const warning of validation.warnings.slice(0, 8)) console.log(`- ${warning}`);
@@ -144,6 +150,18 @@ function validateDeviceRun(run, suite, options) {
 	if (run.summary?.toolExpectationComplete !== recomputedComplete) {
 		warnings.push(`summary.toolExpectationComplete ${run.summary?.toolExpectationComplete ?? '<missing>'} differs from recomputed ${recomputedComplete}`);
 	}
+	const sourceEvidenceSummary = summarizeRunSourceEvidence(run.results);
+	if (
+		run.summary?.sourceEvidenceComplete !== undefined &&
+		run.summary.sourceEvidenceComplete !== sourceEvidenceSummary.sourceEvidenceComplete
+	) {
+		warnings.push(`summary.sourceEvidenceComplete ${run.summary.sourceEvidenceComplete} differs from recomputed ${sourceEvidenceSummary.sourceEvidenceComplete}`);
+	}
+	if (sourceEvidenceSummary.missingSourceEvidenceCases) {
+		warnings.push(
+			`source evidence missing for ${sourceEvidenceSummary.missingSourceEvidenceCases} case(s): ${formatSourceEvidenceCounts(sourceEvidenceSummary.missingSourceEvidenceCounts)}`
+		);
+	}
 
 	const contextProblems = validateScoutLocalAiDeviceRunContext({ suite, run });
 	if (run.evidenceLane === DEVICE_EVIDENCE_LANE && contextProblems.length) {
@@ -160,6 +178,7 @@ function validateDeviceRun(run, suite, options) {
 }
 
 function createReviewPacket(run, validation, importedRunPath, reviewPath, packetPath) {
+	const sourceEvidenceSummary = summarizeRunSourceEvidence(run.results);
 	const lines = [
 		`# Scout local AI device review: ${run.runId}`,
 		'',
@@ -170,6 +189,7 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 		`Suite hash: \`${run.suiteHash ?? '<missing>'}\``,
 		`Cases: ${run.caseCount}/${run.totalSuiteCases}`,
 		`Required-tool complete: ${run.summary?.toolExpectationComplete ?? 0}/${run.caseCount}`,
+		`Source-evidence complete: ${sourceEvidenceSummary.sourceEvidenceComplete}/${run.caseCount}`,
 		'',
 		'Use this packet for human reading. Fill the checklist passed values and Reviewer fields here, then apply it back into the review JSON before running the review/backlog command.',
 		'',
@@ -207,6 +227,7 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 	for (const result of run.results) {
 		const suggestedFailureCategories = result.suggestedFailureCategories ?? [];
 		const suggestedOwnerLayer = inferOwnerLayer(suggestedFailureCategories, result);
+		const sourceEvidenceGaps = sourceEvidenceProblems(result.case?.requiredTools ?? [], result.toolInvocations ?? []);
 		lines.push(
 			`## ${result.caseId} - ${result.case.domain}`,
 			'',
@@ -244,6 +265,9 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 			'Tool invocations:',
 			...formatToolInvocations(result.toolInvocations),
 			'',
+			'Source evidence gaps:',
+			...(sourceEvidenceGaps.length ? sourceEvidenceGaps.map((problem) => `- ${problem.message}`) : ['- none']),
+			'',
 			'Source receipts:',
 			...formatReceipts(result.receipts),
 			'',
@@ -272,6 +296,12 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 	}
 
 	return `${lines.join('\n')}\n`;
+}
+
+function formatSourceEvidenceCounts(counts) {
+	const entries = Object.entries(counts ?? {}).sort(([left], [right]) => left.localeCompare(right));
+	if (!entries.length) return 'none';
+	return entries.map(([expectation, count]) => `${expectation}=${count}`).join(', ');
 }
 
 function formatRatingScale(ratingScale) {

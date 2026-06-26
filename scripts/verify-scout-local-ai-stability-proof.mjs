@@ -8,6 +8,9 @@ import {
 import {
 	parseCliArgs
 } from './lib/scout-local-ai-review.mjs';
+import {
+	summarizeRunSourceEvidence
+} from './lib/scout-local-ai-source-evidence.mjs';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
@@ -91,6 +94,7 @@ console.log(`Runs: ${records.length}`);
 console.log(`Suite: ${relative(REPO_ROOT, suitePath)}`);
 console.log(`Proof: ${relative(REPO_ROOT, proofOut)}`);
 console.log(`Per-case repeated 5/5: ${perCaseRepeatedFive}/${suite.cases.length}`);
+console.log(`Source-evidence complete in every run: ${records.every((record) => summarizeRunSourceEvidence(record.run.results ?? []).missingSourceEvidenceCases === 0) ? 'yes' : 'no'}`);
 
 function parsePairs(args) {
 	if (args.pairs) {
@@ -150,12 +154,14 @@ function createStabilityProofMarkdown({ suite, suitePath, records, minRuns, perC
 		`- Per-case repeated 5/5: ${perCaseRepeatedFive}/${suite.cases.length}`,
 		`- Full device runs passing strict gate: ${records.length}/${records.length}`,
 		`- Required-tool complete in every run: ${records.every((record) => record.run.summary?.toolExpectationComplete === suite.cases.length) ? 'yes' : 'no'}`,
+		`- Source-evidence complete in every run: ${records.every((record) => summarizeRunSourceEvidence(record.run.results ?? []).missingSourceEvidenceCases === 0) ? 'yes' : 'no'}`,
 		'',
 		'## Runs',
 		''
 	];
 
 	for (const [index, record] of records.entries()) {
+		const sourceEvidenceSummary = summarizeRunSourceEvidence(record.run.results ?? []);
 		lines.push(
 			`### Run ${index + 1}: ${record.run.runId}`,
 			'',
@@ -169,6 +175,7 @@ function createStabilityProofMarkdown({ suite, suitePath, records, minRuns, perC
 			`- Cases: ${record.run.caseCount}/${record.run.totalSuiteCases}`,
 			`- Ratings of 5: ${record.result.summary.ratingCounts['5'] ?? 0}/${record.result.summary.total}`,
 			`- Required-tool complete: ${record.run.summary?.toolExpectationComplete ?? 0}/${record.run.caseCount}`,
+			`- Source-evidence complete: ${sourceEvidenceSummary.sourceEvidenceComplete}/${record.run.caseCount}`,
 			''
 		);
 	}

@@ -9,6 +9,9 @@ import {
 	summarizeReview
 } from './lib/scout-local-ai-review.mjs';
 import {
+	summarizeRunSourceEvidence
+} from './lib/scout-local-ai-source-evidence.mjs';
+import {
 	scoutLocalAiSuiteIdentity
 } from './lib/scout-local-ai-suite.mjs';
 
@@ -62,10 +65,10 @@ async function buildStatus(paths) {
 	const currentDeviceRuns = currentRuns.filter((entry) => entry.value.evidenceLane === DEVICE_EVIDENCE_LANE);
 	const currentFullDeviceRuns = currentDeviceRuns.filter((entry) => isFullRun(entry.value, suite));
 	const currentFullToolCompleteRuns = currentRuns.filter(
-		(entry) => isFullRun(entry.value, suite) && hasCompleteToolExpectations(entry.value, suite)
+		(entry) => isFullRun(entry.value, suite) && hasCompleteToolExpectations(entry.value, suite) && hasCompleteSourceEvidence(entry.value)
 	);
 	const currentFullRoutingRuns = currentRuns.filter(
-		(entry) => entry.value.evidenceLane === SCAFFOLD_EVIDENCE_LANE && isFullRun(entry.value, suite) && hasCompleteToolExpectations(entry.value, suite)
+		(entry) => entry.value.evidenceLane === SCAFFOLD_EVIDENCE_LANE && isFullRun(entry.value, suite) && hasCompleteToolExpectations(entry.value, suite) && hasCompleteSourceEvidence(entry.value)
 	);
 	const reviewSummaries = reviews.map((entry) => ({
 		path: entry.path,
@@ -213,8 +216,8 @@ function createGates(input) {
 			label: 'Full-suite tool routing proof',
 			ok: routingOk,
 			evidence: routingOk
-				? `${input.currentFullToolCompleteRuns.length} current full run(s) with all required tools hit`
-				: 'No current full 100-case run has complete required-tool hits'
+				? `${input.currentFullToolCompleteRuns.length} current full run(s) with all required tools hit and source evidence recorded`
+				: 'No current full 100-case run has complete required-tool hits and source evidence'
 		},
 		{
 			id: 'device-run',
@@ -306,16 +309,21 @@ function nextActionFor(gates, currentFullDeviceRuns, completeFiveStarDeviceRevie
 }
 
 function summarizeRunList(entries) {
-	return entries.map((entry) => ({
-		runId: entry.value.runId ?? '<missing>',
-		path: relative(REPO_ROOT, entry.path),
-		evidenceLane: entry.value.evidenceLane ?? '<missing>',
-		generatedAt: entry.value.generatedAt ?? '<missing>',
-		caseCount: entry.value.caseCount ?? 0,
-		totalSuiteCases: entry.value.totalSuiteCases ?? 0,
-		toolExpectationComplete: entry.value.summary?.toolExpectationComplete ?? 0,
-		missingToolCases: entry.value.summary?.missingToolCases ?? 0
-	}));
+	return entries.map((entry) => {
+		const sourceEvidence = summarizeRunSourceEvidence(entry.value.results ?? []);
+		return {
+			runId: entry.value.runId ?? '<missing>',
+			path: relative(REPO_ROOT, entry.path),
+			evidenceLane: entry.value.evidenceLane ?? '<missing>',
+			generatedAt: entry.value.generatedAt ?? '<missing>',
+			caseCount: entry.value.caseCount ?? 0,
+			totalSuiteCases: entry.value.totalSuiteCases ?? 0,
+			toolExpectationComplete: entry.value.summary?.toolExpectationComplete ?? 0,
+			missingToolCases: entry.value.summary?.missingToolCases ?? 0,
+			sourceEvidenceComplete: entry.value.summary?.sourceEvidenceComplete ?? sourceEvidence.sourceEvidenceComplete,
+			missingSourceEvidenceCases: entry.value.summary?.missingSourceEvidenceCases ?? sourceEvidence.missingSourceEvidenceCases
+		};
+	});
 }
 
 async function readOptionalIosBuildSettings(path) {
@@ -382,6 +390,11 @@ function isFullRun(run, suite) {
 function hasCompleteToolExpectations(run, suite) {
 	return run.summary?.toolExpectationComplete === suite.cases.length &&
 		(run.summary?.missingToolCases ?? 0) === 0;
+}
+
+function hasCompleteSourceEvidence(run) {
+	const sourceEvidence = summarizeRunSourceEvidence(run.results ?? []);
+	return sourceEvidence.missingSourceEvidenceCases === 0;
 }
 
 async function loadJsonFiles(dir) {

@@ -5,6 +5,7 @@ import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createScoutRuntime, cloneDefaultContextPack } from '../mobile/src/lib/scout/index.ts';
 import { scoutLocalAiSuiteIdentity } from './lib/scout-local-ai-suite.mjs';
+import { summarizeRunSourceEvidence } from './lib/scout-local-ai-source-evidence.mjs';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
@@ -132,6 +133,7 @@ console.log(`Cases: ${run.caseCount}/${run.totalSuiteCases}`);
 console.log(`Evidence lane: ${run.evidenceLane}`);
 console.log(`Required-tool complete: ${summary.toolExpectationComplete}/${run.caseCount}`);
 console.log(`Missing required tool hits: ${summary.missingToolCases}`);
+console.log(`Source-evidence complete: ${summary.sourceEvidenceComplete}/${run.caseCount}`);
 if (run.evidenceLane === 'scaffold-not-model') {
 	console.log('Note: scaffold answers are not local-model proof. Re-run with SCOUT_LOCAL_AI_COMMAND or a device bridge before scoring release readiness.');
 }
@@ -579,7 +581,8 @@ function summarizeResults(results) {
 	return {
 		toolExpectationComplete,
 		missingToolCases: results.length - toolExpectationComplete,
-		missingToolCounts
+		missingToolCounts,
+		...summarizeRunSourceEvidence(results)
 	};
 }
 

@@ -8,6 +8,9 @@ import {
 import {
 	parseCliArgs
 } from './lib/scout-local-ai-review.mjs';
+import {
+	summarizeRunSourceEvidence
+} from './lib/scout-local-ai-source-evidence.mjs';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
@@ -30,6 +33,7 @@ const suite = JSON.parse(await readFile(suitePath, 'utf8'));
 const run = JSON.parse(await readFile(runPath, 'utf8'));
 const review = JSON.parse(await readFile(reviewPath, 'utf8'));
 const result = verifyScoutLocalAiDeviceProof({ suite, run, review });
+const sourceEvidenceSummary = summarizeRunSourceEvidence(run.results ?? []);
 
 if (result.errors.length) {
 	console.error('Scout local AI device proof failed:');
@@ -61,6 +65,7 @@ console.log(`Review: ${relative(REPO_ROOT, reviewPath)}`);
 console.log(`Proof: ${relative(REPO_ROOT, proofOut)}`);
 console.log(`5/5: ${result.summary.ratingCounts['5'] ?? 0}/${result.summary.total}`);
 console.log(`Required-tool complete: ${run.summary?.toolExpectationComplete ?? 0}/${run.caseCount}`);
+console.log(`Source-evidence complete: ${sourceEvidenceSummary.sourceEvidenceComplete}/${run.caseCount}`);
 
 function resolveInputPath(value) {
 	const text = String(value);

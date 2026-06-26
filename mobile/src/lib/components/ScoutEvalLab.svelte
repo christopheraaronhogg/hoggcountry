@@ -81,7 +81,7 @@
 	);
 	const summaryLabel = $derived(
 		activeRun
-			? `${activeRun.summary.toolExpectationComplete}/${activeRun.caseCount} routed · ${activeRun.summary.missingToolCases} misses`
+			? `${activeRun.summary.toolExpectationComplete}/${activeRun.caseCount} routed · ${activeRun.summary.missingSourceEvidenceCases ?? 0} source gaps`
 			: 'No device run yet'
 	);
 	const savedRunLabel = $derived(

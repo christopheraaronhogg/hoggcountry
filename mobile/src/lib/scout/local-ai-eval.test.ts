@@ -39,7 +39,8 @@ function suite(cases: ScoutLocalAiEvalCase[]): ScoutLocalAiEvalSuite {
 	};
 }
 
-function answer(prompt: string): ScoutAnswer {
+function answer(prompt: string, options: { sourceEvidence?: boolean } = {}): ScoutAnswer {
+	const sourceEvidence = options.sourceEvidence ?? true;
 	return {
 		answer: `answer for ${prompt}`,
 		confidence: 'medium',
@@ -59,7 +60,17 @@ function answer(prompt: string): ScoutAnswer {
 				args: { sourceSkill: 'water' },
 				summary: 'Water source skill.',
 				confidence: 'medium',
-				receipts: []
+				receipts: sourceEvidence
+					? [
+						{
+							id: 'receipt:water-source',
+							title: 'Water source skill',
+							kind: 'field-guide',
+							citation: 'Eval water source'
+						}
+					]
+					: [],
+				sourceDocumentIds: sourceEvidence ? ['eval-water-discipline'] : []
 			}
 		],
 		requiredConfirmations: [],
@@ -87,9 +98,25 @@ test('runScoutLocalAiEval records on-device answers and tool expectations', asyn
 	assert.equal(run.suiteHash, scoutLocalAiSuiteHash(suite([evalCase()])));
 	assert.equal(run.caseCount, 1);
 	assert.equal(run.summary.toolExpectationComplete, 1);
+	assert.equal(run.summary.sourceEvidenceComplete, 1);
+	assert.equal(run.summary.missingSourceEvidenceCases, 0);
 	assert.equal(run.results[0].answerOrigin, 'device-on-device-gemma');
 	assert.deepEqual(run.results[0].toolExpectations.missing, []);
 	assert.equal(run.results[0].rating, null);
+});
+
+test('runScoutLocalAiEval summarizes source-backed tool hits without evidence', async () => {
+	const run = await runScoutLocalAiEval({
+		suite: suite([evalCase()]),
+		evidenceLane: 'device-on-device-gemma',
+		now: new Date('2026-06-26T12:00:00.000Z'),
+		ask: ({ testCase }) => Promise.resolve(answer(testCase.prompt, { sourceEvidence: false }))
+	});
+
+	assert.equal(run.summary.toolExpectationComplete, 1);
+	assert.equal(run.summary.sourceEvidenceComplete, 0);
+	assert.equal(run.summary.missingSourceEvidenceCases, 1);
+	assert.deepEqual(run.summary.missingSourceEvidenceCounts, { 'source_search:water': 1 });
 });
 
 test('runScoutLocalAiEval preserves prior answer context for DLA-097 follow-ups', async () => {

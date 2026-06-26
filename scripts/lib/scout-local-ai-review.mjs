@@ -1,4 +1,8 @@
 import { basename, relative } from 'node:path';
+import {
+	matchesToolExpectation,
+	sourceEvidenceProblems
+} from './scout-local-ai-source-evidence.mjs';
 
 export const VALID_FAILURE_CATEGORIES = [
 	'missing-data',
@@ -554,6 +558,9 @@ function fiveStarRunEvidenceProblems(result) {
 			if (actualExpectations.missing.length) {
 				problems.push(`actual toolInvocations missed required tools: ${actualExpectations.missing.join(', ')}`);
 			}
+			for (const problem of sourceEvidenceProblems(requiredTools, result.toolInvocations)) {
+				problems.push(problem.message);
+			}
 			if (
 				Array.isArray(result.toolExpectations?.hit) &&
 				!sameStringArray(result.toolExpectations.hit, actualExpectations.hit)
@@ -576,13 +583,6 @@ function evaluateToolExpectations(requiredTools, invocations) {
 		}
 	}
 	return { hit, missing };
-}
-
-function matchesToolExpectation(expectation, record) {
-	const [toolId, sourceSkill] = expectation.split(':');
-	if (record?.toolId !== toolId) return false;
-	if (!sourceSkill) return true;
-	return String(record.args?.sourceSkill ?? '').toLowerCase() === sourceSkill.toLowerCase();
 }
 
 function sameStringArray(left, right) {

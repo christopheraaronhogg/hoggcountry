@@ -1,5 +1,10 @@
 import { relative } from 'node:path';
 import { summarizeReview } from './scout-local-ai-review.mjs';
+import {
+	matchesToolExpectation,
+	sourceEvidenceProblems,
+	summarizeRunSourceEvidence
+} from './scout-local-ai-source-evidence.mjs';
 import { validateScoutLocalAiSuiteIdentity } from './scout-local-ai-suite.mjs';
 
 export const DEVICE_EVIDENCE_LANE = 'device-on-device-gemma';
@@ -135,7 +140,7 @@ export function verifyScoutLocalAiDeviceProof({ suite, run, review }) {
 				errors.push(`${testCase.id}: actual toolInvocations missed required tools: ${actualExpectations.missing.join(', ')}.`);
 			}
 			for (const problem of sourceEvidenceProblems(testCase.requiredTools, runResult.toolInvocations)) {
-				errors.push(`${testCase.id}: ${problem}`);
+				errors.push(`${testCase.id}: ${problem.message}`);
 			}
 			if (!sameStringArray(runResult.toolExpectations?.hit, actualExpectations.hit)) {
 				errors.push(`${testCase.id}: toolExpectations.hit does not match actual toolInvocations.`);
@@ -167,6 +172,7 @@ export function verifyScoutLocalAiDeviceProof({ suite, run, review }) {
 
 export function createDeviceProofMarkdown({ suite, run, summary, suitePath, runPath, reviewPath, repoRoot }) {
 	const checkedAt = new Date().toISOString();
+	const sourceEvidenceSummary = summarizeRunSourceEvidence(run.results ?? []);
 	const domainLines = Object.entries(summary.byDomain)
 		.sort(([left], [right]) => left.localeCompare(right))
 		.map(([domain, stats]) => `- ${domain}: ${stats.rated} rated, average ${stats.average}, below 5 ${stats.belowFive}`);
@@ -199,6 +205,7 @@ export function createDeviceProofMarkdown({ suite, run, summary, suitePath, runP
 		`- Below 5: ${summary.belowFive}`,
 		`- Unrated: ${summary.unrated}`,
 		`- Required-tool complete: ${run.summary?.toolExpectationComplete ?? 0}/${run.caseCount}`,
+		`- Source-evidence complete: ${sourceEvidenceSummary.sourceEvidenceComplete}/${run.caseCount}`,
 		'',
 		'## Domain summary',
 		'',
@@ -273,38 +280,6 @@ function evaluateToolExpectations(requiredTools, invocations) {
 		}
 	}
 	return { hit, missing };
-}
-
-function sourceEvidenceProblems(requiredTools, invocations) {
-	const problems = [];
-	for (const expectation of requiredTools) {
-		const [, sourceSkill] = expectation.split(':');
-		if (!sourceSkill) continue;
-		const matching = invocations.find((record) => matchesToolExpectation(expectation, record));
-		if (!matching) continue;
-		if (!hasSourceEvidence(matching)) {
-			problems.push(`source-backed required tool ${expectation} must record at least one receipt or sourceDocumentId for final proof.`);
-		}
-	}
-	return problems;
-}
-
-function hasSourceEvidence(record) {
-	return (
-		(Array.isArray(record?.receipts) && record.receipts.some(hasReceiptIdentity)) ||
-		(Array.isArray(record?.sourceDocumentIds) && record.sourceDocumentIds.some((id) => String(id ?? '').trim()))
-	);
-}
-
-function hasReceiptIdentity(receipt) {
-	return Boolean(String(receipt?.id ?? receipt?.citation ?? receipt?.title ?? '').trim());
-}
-
-function matchesToolExpectation(expectation, record) {
-	const [toolId, sourceSkill] = expectation.split(':');
-	if (record?.toolId !== toolId) return false;
-	if (!sourceSkill) return true;
-	return String(record.args?.sourceSkill ?? '').toLowerCase() === sourceSkill.toLowerCase();
 }
 
 function validatePassedRubricChecks(reviewCase, testCase, errors) {

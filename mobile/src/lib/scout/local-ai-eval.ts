@@ -107,6 +107,9 @@ export interface ScoutLocalAiEvalRun {
 		toolExpectationComplete: number;
 		missingToolCases: number;
 		missingToolCounts: Record<string, number>;
+		sourceEvidenceComplete: number;
+		missingSourceEvidenceCases: number;
+		missingSourceEvidenceCounts: Record<string, number>;
 	};
 	results: ScoutLocalAiEvalResult[];
 }
@@ -315,7 +318,9 @@ export function evaluateToolExpectations(
 
 export function summarizeScoutLocalAiEvalResults(results: ScoutLocalAiEvalResult[]) {
 	const missingToolCounts: Record<string, number> = {};
+	const missingSourceEvidenceCounts: Record<string, number> = {};
 	let toolExpectationComplete = 0;
+	let sourceEvidenceComplete = 0;
 	for (const result of results) {
 		if (!result.toolExpectations.missing.length) {
 			toolExpectationComplete += 1;
@@ -323,12 +328,44 @@ export function summarizeScoutLocalAiEvalResults(results: ScoutLocalAiEvalResult
 		for (const tool of result.toolExpectations.missing) {
 			missingToolCounts[tool] = (missingToolCounts[tool] ?? 0) + 1;
 		}
+		const sourceEvidenceMissing = sourceEvidenceProblems(
+			result.case?.requiredTools ?? result.toolExpectations.required,
+			result.toolInvocations
+		);
+		if (!sourceEvidenceMissing.length) {
+			sourceEvidenceComplete += 1;
+		}
+		for (const expectation of sourceEvidenceMissing) {
+			missingSourceEvidenceCounts[expectation] = (missingSourceEvidenceCounts[expectation] ?? 0) + 1;
+		}
 	}
 	return {
 		toolExpectationComplete,
 		missingToolCases: results.length - toolExpectationComplete,
-		missingToolCounts
+		missingToolCounts,
+		sourceEvidenceComplete,
+		missingSourceEvidenceCases: results.length - sourceEvidenceComplete,
+		missingSourceEvidenceCounts
 	};
+}
+
+function sourceEvidenceProblems(requiredTools: string[], invocations: ToolInvocationRecord[]): string[] {
+	const missing: string[] = [];
+	for (const expectation of requiredTools) {
+		const [, sourceSkill] = expectation.split(':');
+		if (!sourceSkill) continue;
+		const matching = invocations.find((record) => matchesToolExpectation(expectation, record));
+		if (!matching) continue;
+		if (!hasSourceEvidence(matching)) missing.push(expectation);
+	}
+	return missing;
+}
+
+function hasSourceEvidence(record: ToolInvocationRecord): boolean {
+	return (
+		record.receipts.some((receipt) => Boolean(String(receipt.id ?? receipt.citation ?? receipt.title ?? '').trim())) ||
+		Boolean(record.sourceDocumentIds?.some((id) => String(id ?? '').trim()))
+	);
 }
 
 function weatherFor(mile: number, prompt: string, now: Date): CachedWeather {

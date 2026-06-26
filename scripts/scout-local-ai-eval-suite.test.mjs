@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
+import { summarizeRunSourceEvidence } from './lib/scout-local-ai-source-evidence.mjs';
 import { scoutLocalAiSuiteHash } from './lib/scout-local-ai-suite.mjs';
 
 const SUITE_PATH = new URL('../data/scout-local-ai/dad-local-ai-100.json', import.meta.url);
@@ -350,6 +351,8 @@ test('Dad local AI eval suite routes every case through expected Scout tools', a
 	assert.equal(run.suiteHash, scoutLocalAiSuiteHash(suite));
 	assert.equal(run.summary.toolExpectationComplete, 100);
 	assert.deepEqual(run.summary.missingToolCounts, {});
+	assert.equal(run.summary.sourceEvidenceComplete, 100);
+	assert.equal(run.summary.missingSourceEvidenceCases, 0);
 });
 
 test('device run intake validates exports and creates review packet', async () => {
@@ -403,6 +406,7 @@ test('device run intake validates exports and creates review packet', async () =
 	assert.match(packet, /Trait checklist to fill in review JSON:/u);
 	assert.match(packet, /Safety caveat checklist to fill in review JSON:/u);
 	assert.match(packet, /Tool invocations:/u);
+	assert.match(packet, /Source evidence gaps:/u);
 	assert.match(packet, /Source receipts:/u);
 	assert.match(packet, /Failure mode: `none`/u);
 	assert.match(packet, /## Rating scale/u);
@@ -935,6 +939,58 @@ test('review workflow rejects 5-star ratings when run evidence missed required t
 			assert.match(error.stderr, /5-star rating conflicts with run evidence/u);
 			assert.match(error.stderr, /missing required tools/u);
 			assert.match(error.stderr, /actual toolInvocations missed required tools/u);
+			return true;
+		}
+	);
+});
+
+test('review workflow rejects 5-star ratings when source-backed tools lack evidence', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const sourceCase = suite.cases.find((testCase) => testCase.requiredTools.some((expectation) => expectation.includes(':')));
+	assert.ok(sourceCase, 'suite should contain source-backed tool expectations');
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-source-evidence-invalid-'));
+	const run = deviceRunForCases(suite, [sourceCase], {
+		runId: 'device-review-source-evidence-invalid',
+		completeTools: true
+	});
+	for (const invocation of run.results[0].toolInvocations) {
+		if (String(invocation.args?.sourceSkill ?? '').trim()) {
+			invocation.receipts = [];
+			invocation.sourceDocumentIds = [];
+		}
+	}
+	run.results[0].receipts = run.results[0].toolInvocations.flatMap((record) => record.receipts ?? []);
+	run.summary = {
+		...run.summary,
+		...summarizeRunSourceEvidence(run.results)
+	};
+	const review = reviewForRun(run, { rating: 5 });
+
+	const runPath = join(outputDir, 'device-review-source-evidence-invalid.json');
+	const reviewPath = join(outputDir, 'device-review-source-evidence-invalid.review.json');
+	const backlogDir = join(outputDir, 'backlog');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/review-scout-local-ai-eval.mjs',
+				'--run',
+				runPath,
+				'--review',
+				reviewPath,
+				'--backlog-dir',
+				backlogDir
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /Review has invalid entries/u);
+			assert.match(error.stderr, /5-star rating conflicts with run evidence/u);
+			assert.match(error.stderr, /source-backed required tool/u);
+			assert.match(error.stderr, /must record at least one receipt or sourceDocumentId/u);
 			return true;
 		}
 	);
@@ -2037,7 +2093,8 @@ function deviceRunForCases(suite, cases, options = {}) {
 		summary: {
 			toolExpectationComplete,
 			missingToolCases: results.length - toolExpectationComplete,
-			missingToolCounts
+			missingToolCounts,
+			...summarizeRunSourceEvidence(results)
 		},
 		results
 	};
