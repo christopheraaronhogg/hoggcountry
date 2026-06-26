@@ -5,6 +5,7 @@
   import { page } from '$app/state';
   import { initSpacetimeProvider } from '$lib/spacetime';
   import WaitlistSignup from '$lib/components/WaitlistSignup.svelte';
+  import { LIVE_TRACKING_URL } from '../../../../src/lib/config';
   import type { LayoutData } from './$types';
 
   const { data, children } = $props<{ data: LayoutData; children: import('svelte').Snippet }>();
@@ -151,9 +152,11 @@
             </a>
 
             <a
-              href="/track"
+              href={LIVE_TRACKING_URL}
               class="live-link live-link--header"
-              title="Track Me"
+              title="Track Me on Garmin"
+              target="_blank"
+              rel="noopener noreferrer"
             >
               <span class="live-dot"></span>
               <span class="live-text">Track Me</span>
@@ -200,9 +203,11 @@
 
         <div class="mobile-links">
           <a
-            href="/track"
+            href={LIVE_TRACKING_URL}
             class="live-link mobile-live"
-            title="Track Me"
+            title="Track Me on Garmin"
+            target="_blank"
+            rel="noopener noreferrer"
             onclick={closeTools}
           >
             <span class="live-dot"></span>

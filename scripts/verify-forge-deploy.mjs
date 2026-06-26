@@ -156,7 +156,9 @@ const checks = [
     expectStatus: 200,
     validate(result) {
       if (!hasHtml(result)) return 'expected track HTML response';
-      if (!/Live Trail Map|Track|TrailMapExplorer|map/i.test(result.text)) return 'expected live tracking page markers';
+      if (!/Opening Garmin MapShare|share\.garmin\.com\/hoggcountry|Open Garmin MapShare/i.test(result.text)) {
+        return 'expected Garmin MapShare handoff markers';
+      }
       return null;
     }
   },
