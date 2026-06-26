@@ -1,0 +1,588 @@
+import { createHash } from 'node:crypto';
+import { spawn } from 'node:child_process';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createScoutRuntime, cloneDefaultContextPack } from '../mobile/src/lib/scout/index.ts';
+
+const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = resolve(SCRIPT_DIR, '..');
+const DEFAULT_SUITE = 'data/scout-local-ai/dad-local-ai-100.json';
+const DEFAULT_OUTPUT_DIR = 'data/scout-local-ai/runs';
+const FAILURE_CATEGORIES = ['missing-data', 'weak-tool', 'bad-routing', 'bad-prompt', 'unsafe-wording', 'poor-ux', 'local-model-limitation'];
+
+const cli = parseArgs(process.argv.slice(2));
+const suitePath = resolve(REPO_ROOT, String(cli.suite ?? DEFAULT_SUITE));
+const outputDir = resolve(REPO_ROOT, String(cli.outputDir ?? DEFAULT_OUTPUT_DIR));
+const now = new Date();
+const runId = String(cli.runId ?? `dad-local-ai-${compactTimestamp(now)}`);
+const bridgeMode = String(cli.mode ?? (process.env.SCOUT_LOCAL_AI_COMMAND ? 'command' : 'scaffold'));
+const command = String(cli.command ?? process.env.SCOUT_LOCAL_AI_COMMAND ?? '');
+const timeoutMs = Number(cli.timeoutMs ?? process.env.SCOUT_LOCAL_AI_TIMEOUT_MS ?? 120_000);
+
+const suite = JSON.parse(await readFile(suitePath, 'utf8'));
+const selectedCases = filterCases(suite.cases, cli);
+const caseRef = { current: null };
+const bridgeDiagnostics = new Map();
+const bridge = createEvalBridge({ mode: bridgeMode, command, timeoutMs, caseRef, bridgeDiagnostics });
+const results = [];
+
+for (const [index, testCase] of selectedCases.entries()) {
+	caseRef.current = testCase;
+	const pack = buildEvalPack(testCase, now);
+	const { runtime } = createScoutRuntime({ initialPack: pack, onDeviceBridge: bridge, onDeviceTier: 'balanced' });
+	const startedAt = new Date();
+
+	try {
+		const answer = await runtime.ask({
+			prompt: testCase.prompt,
+			onlineStatus: false,
+			allowCloud: false,
+			preferredMode: 'on-device',
+			conversationHistory: conversationHistoryFor(testCase, results)
+		});
+		const expectations = evaluateToolExpectations(testCase.requiredTools, answer.toolInvocations);
+		results.push({
+			caseId: testCase.id,
+			index: index + 1,
+			case: compactCase(testCase),
+			answer: answer.answer,
+			answerOrigin: bridgeMode === 'command' ? 'external-local-model-command' : 'scaffold-not-model',
+			confidence: answer.confidence,
+			mode: answer.mode,
+			provider: answer.provider,
+			generatedAt: answer.generatedAt,
+			durationMs: new Date().getTime() - startedAt.getTime(),
+			contextUsed: answer.contextUsed,
+			receipts: answer.receipts,
+			requiredConfirmations: answer.requiredConfirmations,
+			safetyFlags: answer.safetyFlags,
+			toolInvocations: answer.toolInvocations,
+			toolExpectations: expectations,
+			bridge: bridgeDiagnostics.get(testCase.id) ?? null,
+			rating: null,
+			reviewerNotes: '',
+			failureMode: null,
+			suggestedFailureCategories: suggestedFailures(expectations),
+			improvementTask: null
+		});
+	} catch (error) {
+		results.push({
+			caseId: testCase.id,
+			index: index + 1,
+			case: compactCase(testCase),
+			answer: '',
+			answerOrigin: bridgeMode === 'command' ? 'external-local-model-command' : 'scaffold-not-model',
+			confidence: 'low',
+			mode: 'on-device',
+			provider: 'on-device-gemma',
+			generatedAt: now.toISOString(),
+			durationMs: new Date().getTime() - startedAt.getTime(),
+			contextUsed: [],
+			receipts: [],
+			requiredConfirmations: [],
+			safetyFlags: [],
+			toolInvocations: [],
+			toolExpectations: {
+				required: testCase.requiredTools,
+				hit: [],
+				missing: testCase.requiredTools
+			},
+			bridge: bridgeDiagnostics.get(testCase.id) ?? null,
+			error: error instanceof Error ? error.message : String(error),
+			rating: null,
+			reviewerNotes: '',
+			failureMode: 'provider-error',
+			suggestedFailureCategories: ['local-model-limitation'],
+			improvementTask: null
+		});
+	}
+}
+caseRef.current = null;
+
+const run = {
+	schemaVersion: 1,
+	runId,
+	suiteId: suite.suiteId,
+	suiteTitle: suite.title,
+	suitePath: relative(REPO_ROOT, suitePath),
+	generatedAt: now.toISOString(),
+	evidenceLane: bridgeMode === 'command' ? 'external-local-model-command' : 'scaffold-not-model',
+	modelCommand: bridgeMode === 'command' ? redactCommand(command) : null,
+	caseCount: results.length,
+	totalSuiteCases: suite.cases.length,
+	filters: filterSummary(cli),
+	ratingScale: suite.ratingScale,
+	failureCategories: suite.failureCategories ?? FAILURE_CATEGORIES,
+	summary: summarizeResults(results),
+	results
+};
+
+await mkdir(outputDir, { recursive: true });
+const runPath = resolve(outputDir, `${runId}.json`);
+await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+
+const summary = run.summary;
+console.log(`Scout local-AI eval run saved: ${relative(REPO_ROOT, runPath)}`);
+console.log(`Cases: ${run.caseCount}/${run.totalSuiteCases}`);
+console.log(`Evidence lane: ${run.evidenceLane}`);
+console.log(`Required-tool complete: ${summary.toolExpectationComplete}/${run.caseCount}`);
+console.log(`Missing required tool hits: ${summary.missingToolCases}`);
+if (run.evidenceLane === 'scaffold-not-model') {
+	console.log('Note: scaffold answers are not local-model proof. Re-run with SCOUT_LOCAL_AI_COMMAND or a device bridge before scoring release readiness.');
+}
+
+function parseArgs(argv) {
+	const parsed = {};
+	for (let i = 0; i < argv.length; i += 1) {
+		const arg = argv[i];
+		if (!arg.startsWith('--')) continue;
+		const [rawKey, inlineValue] = arg.slice(2).split('=', 2);
+		const key = rawKey.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
+		if (inlineValue !== undefined) {
+			parsed[key] = inlineValue;
+			continue;
+		}
+		const next = argv[i + 1];
+		if (next && !next.startsWith('--')) {
+			parsed[key] = next;
+			i += 1;
+		} else {
+			parsed[key] = true;
+		}
+	}
+	return parsed;
+}
+
+function filterCases(cases, options) {
+	let selected = [...cases];
+	if (options.id) {
+		const ids = new Set(String(options.id).split(',').map((value) => value.trim()).filter(Boolean));
+		selected = selected.filter((testCase) => ids.has(testCase.id));
+	}
+	if (options.domain) {
+		const domains = new Set(String(options.domain).split(',').map((value) => value.trim()));
+		selected = selected.filter((testCase) => domains.has(testCase.domain));
+	}
+	if (options.phase) {
+		const phases = new Set(String(options.phase).split(',').map((value) => value.trim()));
+		selected = selected.filter((testCase) => phases.has(testCase.phase));
+	}
+	if (options.limit) selected = selected.slice(0, Number(options.limit));
+	if (!selected.length) throw new Error('No eval cases matched the provided filters.');
+	return selected;
+}
+
+function filterSummary(options) {
+	return {
+		id: options.id ?? null,
+		domain: options.domain ?? null,
+		phase: options.phase ?? null,
+		limit: options.limit ? Number(options.limit) : null
+	};
+}
+
+function compactTimestamp(date) {
+	return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+}
+
+function compactCase(testCase) {
+	return {
+		id: testCase.id,
+		phase: testCase.phase,
+		domain: testCase.domain,
+		prompt: testCase.prompt,
+		mile: testCase.mile,
+		requiredTools: testCase.requiredTools,
+		expectedTraits: testCase.expectedTraits,
+		safetyCaveats: testCase.safetyCaveats,
+		improvementTags: testCase.improvementTags
+	};
+}
+
+function createEvalBridge({ mode, command, timeoutMs, caseRef, bridgeDiagnostics }) {
+	if (mode === 'command' && !command) {
+		throw new Error('Command bridge selected, but no --command or SCOUT_LOCAL_AI_COMMAND was provided.');
+	}
+	if (!['scaffold', 'command'].includes(mode)) {
+		throw new Error(`Unsupported bridge mode "${mode}". Use "scaffold" or "command".`);
+	}
+
+	return {
+		async isAvailable() {
+			return true;
+		},
+		async describeModel() {
+			return {
+				tier: 'balanced',
+				modelId: mode === 'command' ? `command:${hashText(command)}` : 'eval-scaffold-not-a-model',
+				maxContextTokens: 4096
+			};
+		},
+		async generate(input, onToken) {
+			const testCase = caseRef.current;
+			const caseId = testCase?.id ?? 'unknown-case';
+			const diagnostics = {
+				caseId,
+				mode,
+				promptChars: input.prompt.length,
+				systemContextChars: input.systemContext.length,
+				systemContext: input.systemContext
+			};
+
+			if (mode === 'command') {
+				const payload = {
+					caseId,
+					prompt: input.prompt,
+					systemContext: input.systemContext,
+					maxTokens: input.maxTokens,
+					case: testCase ? compactCase(testCase) : null
+				};
+				const result = await runCommandBridge(command, payload, timeoutMs);
+				bridgeDiagnostics.set(caseId, {
+					...diagnostics,
+					commandHash: hashText(command),
+					stdoutChars: result.rawStdout.length,
+					stderrPreview: result.stderrPreview
+				});
+				if (onToken) onToken(result.text);
+				return { text: result.text, truncated: result.truncated };
+			}
+
+			const text = scaffoldAnswer(input);
+			bridgeDiagnostics.set(caseId, diagnostics);
+			if (onToken) onToken(text);
+			return { text, truncated: false };
+		}
+	};
+}
+
+function scaffoldAnswer(input) {
+	const toolLines = extractToolLines(input.systemContext);
+	const firstToolLine = toolLines[0] ?? 'No Scout tool finding was present in the model context.';
+	return [
+		'EVAL SCAFFOLD ONLY - this is not Dad local AI proof.',
+		`Question: ${input.prompt}`,
+		`First Scout finding: ${firstToolLine.replace(/^- /, '')}`,
+		toolLines.length > 1 ? `Other findings seen: ${toolLines.slice(1, 4).map((line) => line.replace(/^- /, '')).join(' | ')}` : '',
+		'Reviewer action: run this suite through the real TestFlight/on-device model or SCOUT_LOCAL_AI_COMMAND before assigning a release-readiness rating.'
+	].filter(Boolean).join('\n');
+}
+
+function extractToolLines(systemContext) {
+	const match = systemContext.match(/Trail tool findings:\n([\s\S]*?)\n\nCite sources/u);
+	if (!match) return [];
+	return match[1].split('\n').map((line) => line.trim()).filter(Boolean);
+}
+
+function runCommandBridge(command, payload, timeoutMs) {
+	return new Promise((resolvePromise, rejectPromise) => {
+		const child = spawn(command, [], {
+			cwd: REPO_ROOT,
+			env: process.env,
+			shell: true,
+			stdio: ['pipe', 'pipe', 'pipe']
+		});
+		let stdout = '';
+		let stderr = '';
+		let finished = false;
+		const timer = setTimeout(() => {
+			if (finished) return;
+			finished = true;
+			child.kill('SIGTERM');
+			rejectPromise(new Error(`SCOUT_LOCAL_AI_COMMAND timed out after ${timeoutMs}ms.`));
+		}, timeoutMs);
+
+		child.stdout.setEncoding('utf8');
+		child.stderr.setEncoding('utf8');
+		child.stdout.on('data', (chunk) => {
+			stdout += chunk;
+		});
+		child.stderr.on('data', (chunk) => {
+			stderr += chunk;
+		});
+		child.on('error', (error) => {
+			if (finished) return;
+			finished = true;
+			clearTimeout(timer);
+			rejectPromise(error);
+		});
+		child.on('close', (code) => {
+			if (finished) return;
+			finished = true;
+			clearTimeout(timer);
+			if (code !== 0) {
+				rejectPromise(new Error(`SCOUT_LOCAL_AI_COMMAND exited ${code}: ${stderr.slice(0, 800)}`));
+				return;
+			}
+			try {
+				resolvePromise(parseCommandOutput(stdout, stderr));
+			} catch (error) {
+				rejectPromise(error);
+			}
+		});
+		child.stdin.end(`${JSON.stringify(payload)}\n`);
+	});
+}
+
+function parseCommandOutput(stdout, stderr) {
+	const trimmed = stdout.trim();
+	if (!trimmed) throw new Error('SCOUT_LOCAL_AI_COMMAND returned empty stdout.');
+	try {
+		const parsed = JSON.parse(trimmed);
+		const text = String(parsed.text ?? parsed.answer ?? '').trim();
+		if (!text) throw new Error('SCOUT_LOCAL_AI_COMMAND JSON did not include text or answer.');
+		return {
+			text,
+			truncated: Boolean(parsed.truncated),
+			rawStdout: stdout,
+			stderrPreview: stderr.slice(0, 1000)
+		};
+	} catch (error) {
+		if (error instanceof SyntaxError) {
+			return {
+				text: trimmed,
+				truncated: false,
+				rawStdout: stdout,
+				stderrPreview: stderr.slice(0, 1000)
+			};
+		}
+		throw error;
+	}
+}
+
+function buildEvalPack(testCase, now) {
+	const prompt = testCase.prompt.toLowerCase();
+	const mile = Number(testCase.mile ?? 0);
+	const generatedAt = now.toISOString();
+	const pack = cloneDefaultContextPack();
+	pack.hiker = {
+		...pack.hiker,
+		currentMile: mile,
+		dayNumber: Math.max(1, Math.round(mile / 12) + 1),
+		targetMilesToday: prompt.includes('tired') || prompt.includes('injury') ? 8 : 12
+	};
+	pack.generatedAt = generatedAt;
+	pack.validUntil = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
+	pack.downloadedRegions = [`Eval field pack around mile ${mile.toFixed(1)}`];
+	pack.water = waterFor(mile, prompt);
+	pack.shelters = sheltersFor(mile);
+	pack.towns = townsFor(mile);
+	pack.weather = weatherFor(mile, prompt, now);
+	pack.conditions = conditionsFor(prompt, now);
+	pack.parkServices = parkServicesFor(now);
+	pack.loadout = loadoutFor(prompt);
+	pack.guideExcerpts = [...pack.guideExcerpts, ...evalGuideExcerpts()];
+	pack.documents = evalDocuments(now);
+	pack.pilotNotice = 'Eval pack for Dad local-AI review. Use it to exercise Scout tools; verify volatile facts before relying on them.';
+	return pack;
+}
+
+function waterFor(mile, prompt) {
+	const heatNote = prompt.includes('heat') || prompt.includes('hot') ? 'Hot-day carry: top off unless the next source is confirmed flowing.' : 'Treat/filter before drinking.';
+	return [
+		{name: 'Last known spring behind', mile: Math.max(0, mile - 2.4), reliability: 'reliable', note: 'Behind you; useful only if you turn back.'},
+		{name: 'Seasonal seep ahead', mile: mile + 1.8, reliability: 'seasonal', note: 'Seasonal open-reference candidate; confirm current flow.'},
+		{name: 'Reliable creek crossing', mile: mile + 6.2, reliability: 'reliable', note: heatNote},
+		{name: 'Thin mapped branch', mile: mile + 11.4, reliability: 'thin', note: 'Mapped candidate with unknown current flow.'}
+	];
+}
+
+function sheltersFor(mile) {
+	return [
+		{name: 'Near Ridge Shelter', mile: mile + 3.4, capacity: 8, note: 'Open-data candidate; verify current status, water, and crowding.'},
+		{name: 'Pine Gap Campsite', mile: mile + 8.9, capacity: 10, note: 'Tent sites reported near trail; check land-manager rules.'},
+		{name: 'Long Hollow Shelter', mile: mile + 14.2, capacity: 12, note: 'Water may require a side trail; verify before counting on it.'}
+	];
+}
+
+function townsFor(mile) {
+	return [
+		{name: 'Pilot Gap Road', mile: mile + 4.8, access: 'road crossing; emergency exit candidate, confirm shuttle or pickup', servicesNote: 'No guaranteed services at the crossing.'},
+		{name: 'Trail Town Market', mile: mile + 18.6, access: '0.7 mi road walk from crossing', servicesNote: 'Open-data services candidate: groceries, laundry, charging, and lodging must be confirmed same day.'},
+		{name: 'Next Resupply Town', mile: mile + 37.5, access: 'shuttle-dependent road access', servicesNote: 'Good resupply candidate if hours and lodging are confirmed.'}
+	];
+}
+
+function weatherFor(mile, prompt, now) {
+	const lower = prompt.toLowerCase();
+	const stale = lower.includes('stale');
+	const storm = /storm|thunder|lightning|heavy rain|rain/.test(lower);
+	const cold = /cold|35 degrees|wind|hypothermia|freez/.test(lower);
+	const hot = /hot|heat|dizzy/.test(lower);
+	return {
+		mile,
+		summary: storm ? 'showers and possible thunderstorms' : cold ? 'cold wind and wet exposure' : hot ? 'hot, humid afternoon' : 'partly cloudy with changing mountain conditions',
+		highF: hot ? 88 : cold ? 42 : 67,
+		lowF: cold ? 28 : 51,
+		windMph: storm || cold ? 22 : 9,
+		riskNote: storm ? 'Lightning and wet-cold exposure are possible; verify live before exposed terrain.' : hot ? 'Heat illness risk increases if water or shade is limited.' : cold ? 'Wet wind can turn fatigue into hypothermia risk.' : 'Mountain weather changes quickly; refresh before safety-critical choices.',
+		generatedAt: new Date(now.getTime() - (stale ? 9 : 1) * 60 * 60 * 1000).toISOString(),
+		source: 'cached-pilot',
+		sourceLabel: 'Eval cached weather',
+		forecastUpdatedAt: new Date(now.getTime() - (stale ? 9 : 1) * 60 * 60 * 1000).toISOString()
+	};
+}
+
+function conditionsFor(prompt, now) {
+	const lower = prompt.toLowerCase();
+	const items = [];
+	if (/closure|closed|detour|reroute/.test(lower)) {
+		items.push({
+			source: 'atc',
+			sourceLabel: 'ATC Trail Updates',
+			category: 'closure',
+			title: 'Eval closure near current section',
+			summary: 'A short official closure/detour example is loaded so Scout must say to verify the current managing-agency route before committing.',
+			url: 'https://appalachiantrail.org/trail-updates/',
+			area: 'Eval section',
+			severity: 'high',
+			publishedAt: now.toISOString()
+		});
+	}
+	if (/fire|smoke|burn/.test(lower)) {
+		items.push({
+			source: 'nps',
+			sourceLabel: 'NPS Alerts',
+			category: 'fire',
+			title: 'Eval fire/smoke caution',
+			summary: 'Smoke or fire reports should trigger an official alert check and a safer route/exit decision.',
+			url: 'https://www.nps.gov/appa/planyourvisit/conditions.htm',
+			area: 'Eval section',
+			severity: 'high',
+			publishedAt: now.toISOString()
+		});
+	}
+	if (/bear/.test(lower)) {
+		items.push({
+			source: 'nps',
+			sourceLabel: 'NPS Alerts',
+			category: 'caution',
+			title: 'Eval bear activity caution',
+			summary: 'Bear activity reports are volatile; confirm current local guidance and use proper food storage.',
+			url: 'https://www.nps.gov/appa/planyourvisit/safety.htm',
+			area: 'Eval shelter area',
+			severity: 'moderate',
+			publishedAt: now.toISOString()
+		});
+	}
+	return {
+		items,
+		fetchedAt: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(),
+		note: items.length ? 'Eval official condition examples loaded.' : 'No active official closure, detour, fire, or bear alert examples are loaded for this eval case; verify live before relying on it.'
+	};
+}
+
+function parkServicesFor(now) {
+	return {
+		parks: ['Appalachian National Scenic Trail'],
+		fetchedAt: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(),
+		note: 'Eval NPS facilities data.',
+		items: [
+			{kind: 'visitor-center', name: 'Eval Visitor Contact Station', parkLabel: 'Appalachian Trail', summary: 'Information, current conditions, and permit/ranger questions; verify hours before relying on it.', url: 'https://www.nps.gov/appa/index.htm', reservationUrl: null, lat: null, lon: null},
+			{kind: 'campground', name: 'Eval Developed Campground', parkLabel: 'Appalachian Trail', summary: 'Legal developed camping example for backup planning; reservations and seasonal status must be confirmed.', url: 'https://www.nps.gov/appa/index.htm', reservationUrl: 'https://www.recreation.gov/', lat: null, lon: null}
+		]
+	};
+}
+
+function loadoutFor(prompt) {
+	const cold = /cold|rain|hypothermia|freez/.test(prompt);
+	return [
+		{name: 'Shelter and stakes', category: 'shelter', weightOz: 32, carried: true, note: 'Required sleep shelter.'},
+		{name: 'Quilt and dry sleep base layer', category: 'sleep', weightOz: 38, carried: true, note: 'Protect from moisture.'},
+		{name: 'Rain jacket', category: 'clothing', weightOz: 9, carried: true, note: 'Keep accessible.'},
+		{name: 'Rain pants', category: 'clothing', weightOz: 7, carried: cold, note: cold ? 'Useful in cold rain/wind.' : 'Optional candidate, decide from forecast and warmth.'},
+		{name: 'Water filter', category: 'kitchen', weightOz: 3, carried: true, note: 'Protect from freezing.'},
+		{name: 'Backup water tablets', category: 'safety', weightOz: 1, carried: true, note: 'Backup treatment if filter fails.'},
+		{name: 'First aid and blister kit', category: 'safety', weightOz: 5, carried: true, note: 'Blister care, tape, usual meds.'},
+		{name: 'Phone and battery bank', category: 'electronics', weightOz: 14, carried: true, note: 'Charge in town and conserve offline.'},
+		{name: 'Camp shoes', category: 'clothing', weightOz: 9, carried: /camp shoes/.test(prompt), note: 'Comfort item; evaluate after shakedown.'}
+	];
+}
+
+function evalGuideExcerpts() {
+	return [
+		{id: 'eval-terrain-mileage-discipline', title: 'Terrain and mileage discipline', body: 'Mileage decisions start with body condition, daylight, elevation, water, weather, and next legal stop. Early trail success comes from conservative targets and repeatable recovery, not heroic pushes.', tags: ['terrain', 'pace', 'mileage', 'daylight'], citation: 'Dad Local AI eval source skill: terrain'},
+		{id: 'eval-water-discipline', title: 'Water discipline', body: 'Water answers must lead with the nearest loaded source, reliability, distance, and uncertainty. Seasonal and mapped candidates are not promises. If current flow is unknown, recommend a safer carry or verified stop.', tags: ['water', 'spring', 'creek', 'flow'], citation: 'Dad Local AI eval source skill: water'},
+		{id: 'eval-shelter-discipline', title: 'Shelter and camping discipline', body: 'Sleep decisions need legal camping rules, daylight, fatigue, weather, water, crowding, and backup options. A tired hiker should be steered to the safer legal stop rather than extra miles for pride.', tags: ['shelter', 'camping', 'campsite', 'rules'], citation: 'Dad Local AI eval source skill: shelter'},
+		{id: 'eval-weather-discipline', title: 'Weather discipline', body: 'Weather is volatile. Stale cached weather can guide caution but must not be treated as live proof. Thunderstorms, heat, cold rain, wind, flooding, and exposed ridges require current checks when possible.', tags: ['weather', 'wind', 'cold', 'rain', 'heat', 'storm'], citation: 'Dad Local AI eval source skill: weather'},
+		{id: 'eval-town-discipline', title: 'Town discipline', body: 'Town stops are recovery first: eat, shower, laundry, foot care, sleep, charge, download, then logistics. Services, hostels, shuttles, mail, and store hours need same-day confirmation.', tags: ['town', 'resupply', 'recovery', 'hostel', 'laundry'], citation: 'Dad Local AI eval source skill: town'},
+		{id: 'eval-loadout-discipline', title: 'Loadout discipline', body: 'Gear advice starts from actual carried items. Cut duplicate comfort weight before rain protection, insulation, water treatment, first aid, battery, navigation, or sleep safety.', tags: ['loadout', 'gear', 'pack', 'weight'], citation: 'Dad Local AI eval source skill: loadout'},
+		{id: 'eval-safety-discipline', title: 'Safety discipline', body: 'For injury, heat illness, hypothermia, lightning, unsafe people, lost/off-trail, fire, or severe fatigue, Scout should choose lower-risk stops, exits, or help. It must not diagnose or replace emergency services.', tags: ['safety', 'risk', 'injury', 'bailout', 'emergency'], citation: 'Dad Local AI eval source skill: safety'},
+		{id: 'eval-trail-conditions-discipline', title: 'Trail conditions discipline', body: 'Closures, detours, fires, burn bans, bridge outs, washouts, and bear activity require current official verification. Scout can summarize loaded alerts but must not invent alternate routes.', tags: ['closure', 'detour', 'hazard', 'condition', 'fire'], citation: 'Dad Local AI eval source skill: trail conditions'},
+		{id: 'eval-park-services-discipline', title: 'Park services discipline', body: 'Visitor centers, ranger stations, permit offices, and developed campgrounds are official-service candidates, not thru-hiker shelter guarantees. Verify hours, reservations, and seasonal access.', tags: ['park', 'ranger', 'visitor', 'campground', 'permit'], citation: 'Dad Local AI eval source skill: park services'}
+	];
+}
+
+function evalDocuments(now) {
+	const timestamp = now.toISOString();
+	return [
+		{id: 'dad-offline-setup', title: 'Dad offline setup checklist', source: 'manual', createdAt: timestamp, updatedAt: timestamp, body: 'Before leaving town: charge phone and battery, refresh field pack, confirm current mile, download local AI model on Wi-Fi and power, download offline maps or references, verify Bible text if needed, turn on airplane mode, relaunch, and ask Scout a water question.'},
+		{id: 'dad-family-checkins', title: 'Dad family check-in expectations', source: 'manual', createdAt: timestamp, updatedAt: timestamp, body: 'Family check-ins should include current mile or location, destination, how Dad feels, and next expected contact. Missed check-ins can happen from dead zones, but a repeated miss with bad weather or health concern should escalate to direct calls and emergency contacts.'}
+	];
+}
+
+function conversationHistoryFor(testCase, priorResults) {
+	if (testCase.id !== 'DLA-097') return [];
+	const previous = [...priorResults].reverse().find((result) => result.answer);
+	if (!previous) return [];
+	return [
+		{role: 'user', content: previous.case.prompt, timestamp: previous.generatedAt},
+		{role: 'assistant', content: previous.answer, timestamp: previous.generatedAt}
+	];
+}
+
+function evaluateToolExpectations(requiredTools, invocations) {
+	const hit = [];
+	const missing = [];
+	for (const expectation of requiredTools) {
+		if (invocations.some((record) => matchesToolExpectation(expectation, record))) {
+			hit.push(expectation);
+		} else {
+			missing.push(expectation);
+		}
+	}
+	return { required: requiredTools, hit, missing };
+}
+
+function matchesToolExpectation(expectation, record) {
+	const [toolId, sourceSkill] = expectation.split(':');
+	if (record.toolId !== toolId) return false;
+	if (!sourceSkill) return true;
+	return String(record.args?.sourceSkill ?? '').toLowerCase() === sourceSkill.toLowerCase();
+}
+
+function suggestedFailures(expectations) {
+	const categories = new Set();
+	if (expectations.missing.length) {
+		categories.add('bad-routing');
+		categories.add('weak-tool');
+	}
+	return Array.from(categories);
+}
+
+function summarizeResults(results) {
+	const missingToolCounts = {};
+	let toolExpectationComplete = 0;
+	for (const result of results) {
+		if (!result.toolExpectations.missing.length) {
+			toolExpectationComplete += 1;
+		}
+		for (const tool of result.toolExpectations.missing) {
+			missingToolCounts[tool] = (missingToolCounts[tool] ?? 0) + 1;
+		}
+	}
+	return {
+		toolExpectationComplete,
+		missingToolCases: results.length - toolExpectationComplete,
+		missingToolCounts
+	};
+}
+
+function hashText(text) {
+	return createHash('sha256').update(text).digest('hex').slice(0, 12);
+}
+
+function redactCommand(commandText) {
+	return commandText.replace(/(sk-[A-Za-z0-9_-]+)/g, 'sk-redacted').replace(/([A-Za-z0-9_]*TOKEN[A-Za-z0-9_]*=)[^\s]+/giu, '$1redacted');
+}
