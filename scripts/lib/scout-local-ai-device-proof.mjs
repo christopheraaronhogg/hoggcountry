@@ -134,6 +134,9 @@ export function verifyScoutLocalAiDeviceProof({ suite, run, review }) {
 			if (actualExpectations.missing.length) {
 				errors.push(`${testCase.id}: actual toolInvocations missed required tools: ${actualExpectations.missing.join(', ')}.`);
 			}
+			for (const problem of sourceEvidenceProblems(testCase.requiredTools, runResult.toolInvocations)) {
+				errors.push(`${testCase.id}: ${problem}`);
+			}
 			if (!sameStringArray(runResult.toolExpectations?.hit, actualExpectations.hit)) {
 				errors.push(`${testCase.id}: toolExpectations.hit does not match actual toolInvocations.`);
 			}
@@ -270,6 +273,31 @@ function evaluateToolExpectations(requiredTools, invocations) {
 		}
 	}
 	return { hit, missing };
+}
+
+function sourceEvidenceProblems(requiredTools, invocations) {
+	const problems = [];
+	for (const expectation of requiredTools) {
+		const [, sourceSkill] = expectation.split(':');
+		if (!sourceSkill) continue;
+		const matching = invocations.find((record) => matchesToolExpectation(expectation, record));
+		if (!matching) continue;
+		if (!hasSourceEvidence(matching)) {
+			problems.push(`source-backed required tool ${expectation} must record at least one receipt or sourceDocumentId for final proof.`);
+		}
+	}
+	return problems;
+}
+
+function hasSourceEvidence(record) {
+	return (
+		(Array.isArray(record?.receipts) && record.receipts.some(hasReceiptIdentity)) ||
+		(Array.isArray(record?.sourceDocumentIds) && record.sourceDocumentIds.some((id) => String(id ?? '').trim()))
+	);
+}
+
+function hasReceiptIdentity(receipt) {
+	return Boolean(String(receipt?.id ?? receipt?.citation ?? receipt?.title ?? '').trim());
 }
 
 function matchesToolExpectation(expectation, record) {

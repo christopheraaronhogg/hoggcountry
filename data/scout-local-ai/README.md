@@ -196,7 +196,8 @@ This fails unless the run is a full 100-case `device-on-device-gemma` Eval Lab
 run from the current suite version/hash and suite-declared minimum app build,
 every required tool expectation was hit,
 the required tools are backed by actual recorded `toolInvocations` rather than
-summary-only flags, every review case is rated `5`, native iOS app metadata is
+summary-only flags, source-backed tool invocations include at least one recorded
+source receipt or source document id, every review case is rated `5`, native iOS app metadata is
 present (`com.hoggcountry.trailassistant`, app version/build,
 `native.platform = ios`, `installSource.type = testflight`, runtime configured),
 and no stale failure categories or improvement tasks remain. It also requires

@@ -1613,6 +1613,51 @@ test('strict device proof rejects summary-only tool hits without invocation evid
 	);
 });
 
+test('strict device proof rejects source-backed tool hits without source evidence', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-proof-source-evidence-'));
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-final-proof-source-evidence',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	const sourceCase = suite.cases.find((testCase) => testCase.requiredTools.some((expectation) => expectation.includes(':')));
+	assert.ok(sourceCase, 'suite should contain source-backed tool expectations');
+	const sourceResult = run.results.find((result) => result.caseId === sourceCase.id);
+	assert.ok(sourceResult, `run should contain ${sourceCase.id}`);
+	for (const invocation of sourceResult.toolInvocations) {
+		if (String(invocation.args?.sourceSkill ?? '').trim()) {
+			invocation.receipts = [];
+			invocation.sourceDocumentIds = [];
+		}
+	}
+	sourceResult.receipts = sourceResult.toolInvocations.flatMap((record) => record.receipts ?? []);
+	const review = reviewForRun(run, { rating: 5 });
+	const runPath = join(outputDir, 'device-final-proof-source-evidence.json');
+	const reviewPath = join(outputDir, 'device-final-proof-source-evidence.review.json');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/verify-scout-local-ai-device-proof.mjs',
+				'--run',
+				runPath,
+				'--review',
+				reviewPath
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, new RegExp(`${sourceCase.id}: source-backed required tool`, 'u'));
+			assert.match(error.stderr, /must record at least one receipt or sourceDocumentId/u);
+			return true;
+		}
+	);
+});
+
 test('strict device proof rejects 5-star reviews with unchecked rubric items', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-proof-rubric-fail-'));
