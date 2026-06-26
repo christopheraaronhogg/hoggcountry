@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -128,6 +128,99 @@ test('mobile Eval Lab exposes resilient iPhone export paths', async () => {
 	assert.match(component, />\s*Share\s*</u, 'Share action should be visible when a run exists');
 	assert.match(component, />\s*Copy\s*</u, 'Copy action should be visible when a run exists');
 	assert.match(component, />\s*Download\s*</u, 'Download action should remain available');
+});
+
+test('status command keeps routing proof separate from missing device proof', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-routing-'));
+	const runsDir = join(outputDir, 'runs');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	await mkdir(runsDir, { recursive: true });
+	const routingRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'routing-status-proof',
+		completeTools: true
+	});
+	routingRun.evidenceLane = 'scaffold-not-model';
+	routingRun.runContext = null;
+	for (const result of routingRun.results) result.answerOrigin = 'scaffold-not-model';
+	await writeFile(join(runsDir, 'routing-status-proof.json'), `${JSON.stringify(routingRun, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai.mjs',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const status = JSON.parse(result.stdout);
+	const gates = Object.fromEntries(status.gates.map((gate) => [gate.id, gate]));
+
+	assert.equal(status.suite.caseCount, 100);
+	assert.equal(gates.suite.ok, true);
+	assert.equal(gates.routing.ok, true);
+	assert.equal(gates['device-run'].ok, false);
+	assert.equal(status.runs.currentFullRoutingRuns.length, 1);
+	assert.equal(status.strictDeviceProofs.length, 0);
+	assert.equal(status.nextAction.kind, 'get-device-run');
+	assert.match(status.nextAction.text, /TestFlight build/u);
+});
+
+test('status command recognizes repeated strict TestFlight iPhone proof candidates', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-device-'));
+	const runsDir = join(outputDir, 'runs');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	await mkdir(deviceRunsDir, { recursive: true });
+	await mkdir(reviewsDir, { recursive: true });
+	const runA = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-status-pass-a',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	const runB = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-status-pass-b',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	const reviewA = reviewForRun(runA, { rating: 5 });
+	const reviewB = reviewForRun(runB, { rating: 5 });
+	await writeFile(join(deviceRunsDir, 'device-status-pass-a.json'), `${JSON.stringify(runA, null, 2)}\n`);
+	await writeFile(join(deviceRunsDir, 'device-status-pass-b.json'), `${JSON.stringify(runB, null, 2)}\n`);
+	await writeFile(join(reviewsDir, 'device-status-pass-a.review.json'), `${JSON.stringify(reviewA, null, 2)}\n`);
+	await writeFile(join(reviewsDir, 'device-status-pass-b.review.json'), `${JSON.stringify(reviewB, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai.mjs',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const status = JSON.parse(result.stdout);
+	const gates = Object.fromEntries(status.gates.map((gate) => [gate.id, gate]));
+
+	assert.equal(gates['device-run'].ok, true);
+	assert.equal(gates.review.ok, true);
+	assert.equal(gates['strict-device-proof'].ok, true);
+	assert.equal(gates.stability.ok, true);
+	assert.equal(status.strictDeviceProofs.filter((proof) => proof.ok).length, 2);
+	assert.equal(status.nextAction.kind, 'stability-ready');
 });
 
 test('Dad local AI eval suite routes every case through expected Scout tools', async () => {

@@ -34,6 +34,17 @@ Proof lanes stay separate:
 - `external-local-model-command`: local model bridge proof, useful before device automation.
 - `real TestFlight/iPhone`: final Dad-readiness proof.
 
+To see the current loop state without blending those lanes, run:
+
+```sh
+npm run status:scout-local-ai
+```
+
+This checks the canonical suite, embedded mobile suite copy, current saved
+runs/reviews, strict device-proof candidates, and the exact next action. Use it
+after every import/review/iteration pass so scaffold routing runs, partial
+reviews, and missing TestFlight/iPhone proof stay visually separate.
+
 The installed mobile app reads the suite from `mobile/static/scout/dad-local-ai-100.json`. The suite carries a version and every run export carries a deterministic suite hash, so stale iPhone exports fail intake/final proof instead of being mixed with the current 100-question set. After editing the canonical suite, bump the top-level `version` and run:
 
 ```sh
