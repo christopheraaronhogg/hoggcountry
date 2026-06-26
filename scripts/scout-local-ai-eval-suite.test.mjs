@@ -223,6 +223,47 @@ test('status command recognizes repeated strict TestFlight iPhone proof candidat
 	assert.equal(status.nextAction.kind, 'stability-ready');
 });
 
+test('Dad handoff command summarizes current TestFlight/iPhone eval next steps', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-dad-handoff-'));
+	const runsDir = join(outputDir, 'runs');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	await mkdir(runsDir, { recursive: true });
+	const routingRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'routing-handoff-proof',
+		completeTools: true
+	});
+	routingRun.evidenceLane = 'scaffold-not-model';
+	routingRun.runContext = null;
+	for (const result of routingRun.results) result.answerOrigin = 'scaffold-not-model';
+	await writeFile(join(runsDir, 'routing-handoff-proof.json'), `${JSON.stringify(routingRun, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/scout-local-ai-dad-handoff.mjs',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--reviews-dir',
+			reviewsDir
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+
+	assert.match(result.stdout, /# Dad Scout local AI Eval Lab handoff/u);
+	assert.match(result.stdout, /Target iOS build for Dad Eval Lab: `1\.0 \(10\)`/u);
+	assert.match(result.stdout, /Recorded Dad Pilot build: `1\.0 \(9\)`/u);
+	assert.match(result.stdout, /https:\/\/testflight\.apple\.com\/join\/BagBCrzf/u);
+	assert.match(result.stdout, /use `Run 100` for real proof/u);
+	assert.match(result.stdout, /npm run intake:scout-local-ai-device-run/u);
+	assert.match(result.stdout, /npm run apply-review:scout-local-ai/u);
+	assert.match(result.stdout, /npm run verify:scout-local-ai-stability-proof/u);
+	assert.match(result.stdout, /Final readiness still requires a full current-suite TestFlight\/iPhone/u);
+});
+
 test('Dad local AI eval suite routes every case through expected Scout tools', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-routing-'));

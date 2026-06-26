@@ -45,6 +45,17 @@ runs/reviews, strict device-proof candidates, and the exact next action. Use it
 after every import/review/iteration pass so scaffold routing runs, partial
 reviews, and missing TestFlight/iPhone proof stay visually separate.
 
+Before handing the phone to Dad or sending Chris the next TestFlight steps,
+generate the current one-page phone/run/review checklist:
+
+```sh
+npm run handoff:scout-local-ai-dad
+```
+
+It combines the eval status with the recorded Dad Pilot/TestFlight build truth
+so build `9`, build `10`, scaffold routing proof, and final iPhone proof do not
+get blended.
+
 The installed mobile app reads the suite from `mobile/static/scout/dad-local-ai-100.json`. The suite carries a version and every run export carries a deterministic suite hash, so stale iPhone exports fail intake/final proof instead of being mixed with the current 100-question set. After editing the canonical suite, bump the top-level `version` and run:
 
 ```sh
