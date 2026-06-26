@@ -683,7 +683,7 @@ test('strict device proof accepts a full 5-star device review', async () => {
 	const run = deviceRunForCases(suite, suite.cases, {
 		runId: 'device-final-proof-pass',
 		completeTools: true,
-		runContext: { surface: 'mobile-settings-scout-eval-lab' }
+		runContext: finalDeviceRunContext()
 	});
 	const review = reviewForRun(run, { rating: 5 });
 	const runPath = join(outputDir, 'device-final-proof-pass.json');
@@ -711,6 +711,7 @@ test('strict device proof accepts a full 5-star device review', async () => {
 	assert.match(result.stdout, /5\/5: 100\/100/u);
 	assert.match(proof, /Ratings of 5: 100\/100/u);
 	assert.match(proof, /Required-tool complete: 100\/100/u);
+	assert.match(proof, /App version\/build: `1\.0 \(9\)`/u);
 });
 
 test('strict device proof rejects 5-star reviews with missing required tool hits', async () => {
@@ -718,7 +719,7 @@ test('strict device proof rejects 5-star reviews with missing required tool hits
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-proof-fail-'));
 	const run = deviceRunForCases(suite, suite.cases, {
 		runId: 'device-final-proof-fail',
-		runContext: { surface: 'mobile-settings-scout-eval-lab' }
+		runContext: finalDeviceRunContext()
 	});
 	const review = reviewForRun(run, { rating: 5 });
 	const runPath = join(outputDir, 'device-final-proof-fail.json');
@@ -746,18 +747,54 @@ test('strict device proof rejects 5-star reviews with missing required tool hits
 	);
 });
 
+test('strict device proof rejects final reviews without native app metadata', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-proof-metadata-fail-'));
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-final-proof-metadata-fail',
+		completeTools: true,
+		runContext: { surface: 'mobile-settings-scout-eval-lab' }
+	});
+	const review = reviewForRun(run, { rating: 5 });
+	const runPath = join(outputDir, 'device-final-proof-metadata-fail.json');
+	const reviewPath = join(outputDir, 'device-final-proof-metadata-fail.review.json');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/verify-scout-local-ai-device-proof.mjs',
+				'--run',
+				runPath,
+				'--review',
+				reviewPath
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /native\.isNativePlatform must be true/u);
+			assert.match(error.stderr, /native\.platform must be ios/u);
+			assert.match(error.stderr, /app\.build is required/u);
+			assert.match(error.stderr, /runtimeConfigured must be true/u);
+			return true;
+		}
+	);
+});
+
 test('stability proof accepts two full 5-star device reviews', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-stability-pass-'));
 	const runA = deviceRunForCases(suite, suite.cases, {
 		runId: 'device-stability-pass-a',
 		completeTools: true,
-		runContext: { surface: 'mobile-settings-scout-eval-lab' }
+		runContext: finalDeviceRunContext()
 	});
 	const runB = deviceRunForCases(suite, suite.cases, {
 		runId: 'device-stability-pass-b',
 		completeTools: true,
-		runContext: { surface: 'mobile-settings-scout-eval-lab' }
+		runContext: finalDeviceRunContext()
 	});
 	const reviewA = reviewForRun(runA, { rating: 5 });
 	const reviewB = reviewForRun(runB, { rating: 5 });
@@ -790,6 +827,7 @@ test('stability proof accepts two full 5-star device reviews', async () => {
 	assert.match(proof, /Reviewed runs: 2/u);
 	assert.match(proof, /Run 1: device-stability-pass-a/u);
 	assert.match(proof, /Run 2: device-stability-pass-b/u);
+	assert.match(proof, /App version\/build: `1\.0 \(9\)`/u);
 	assert.match(proof, /Per-case repeated 5\/5: 100\/100/u);
 });
 
@@ -799,7 +837,7 @@ test('stability proof rejects a single perfect device review', async () => {
 	const run = deviceRunForCases(suite, suite.cases, {
 		runId: 'device-stability-fail-one-run',
 		completeTools: true,
-		runContext: { surface: 'mobile-settings-scout-eval-lab' }
+		runContext: finalDeviceRunContext()
 	});
 	const review = reviewForRun(run, { rating: 5 });
 	const runPath = join(outputDir, 'device-stability-fail-one-run.json');
@@ -844,6 +882,29 @@ function assertValidToolExpectation(expectation, caseId) {
 		);
 		assert.ok(VALID_SOURCE_SKILLS.has(sourceSkill), `${caseId} has unknown source skill ${sourceSkill}`);
 	}
+}
+
+function finalDeviceRunContext(patch = {}) {
+	return {
+		surface: 'mobile-settings-scout-eval-lab',
+		scoutLane: 'ios-on-device-gemma',
+		modelState: 'ready',
+		modelId: 'gemma-3n-E4B-it-int4',
+		runtimeConfigured: true,
+		svelteKitVersion: 'test-version',
+		userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X)',
+		native: {
+			isNativePlatform: true,
+			platform: 'ios'
+		},
+		app: {
+			id: 'com.hoggcountry.trailassistant',
+			name: 'Hoggcountry',
+			version: '1.0',
+			build: '9'
+		},
+		...patch
+	};
 }
 
 function deviceRunForCases(suite, cases, options = {}) {

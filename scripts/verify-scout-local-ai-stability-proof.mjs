@@ -159,6 +159,8 @@ function createStabilityProofMarkdown({ suite, suitePath, records, minRuns, perC
 			`- Review: \`${relative(REPO_ROOT, record.reviewPath)}\``,
 			`- Evidence lane: \`${record.run.evidenceLane}\``,
 			`- Device surface: \`${record.run.runContext?.surface}\``,
+			`- Native platform: \`${record.run.runContext?.native?.platform ?? '<missing>'}\``,
+			`- App version/build: \`${record.run.runContext?.app?.version ?? '<missing>'} (${record.run.runContext?.app?.build ?? '<missing>'})\``,
 			`- Cases: ${record.run.caseCount}/${record.run.totalSuiteCases}`,
 			`- Ratings of 5: ${record.result.summary.ratingCounts['5'] ?? 0}/${record.result.summary.total}`,
 			`- Required-tool complete: ${record.run.summary?.toolExpectationComplete ?? 0}/${record.run.caseCount}`,

@@ -119,8 +119,10 @@ npm run verify:scout-local-ai-device-proof -- --run data/scout-local-ai/device-r
 
 This fails unless the run is a full 100-case `device-on-device-gemma` Eval Lab
 run, every required tool expectation was hit, every review case is rated `5`,
-and no stale failure categories or improvement tasks remain. Passing writes an
-ignored proof summary under `data/scout-local-ai/final-proof/`.
+native iOS app metadata is present (`com.hoggcountry.trailassistant`, app
+version/build, `native.platform = ios`, runtime configured), and no stale failure
+categories or improvement tasks remain. Passing writes an ignored proof summary
+under `data/scout-local-ai/final-proof/`.
 
 For final consistency proof, require at least two separate full TestFlight/iPhone
 runs to pass the same strict gate:

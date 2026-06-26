@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser, version as svelteKitVersion } from '$app/environment';
 
 import type {
 	ChatMessage,
@@ -1063,14 +1063,7 @@ class TrailAssistantStore {
 			suite: input.suite,
 			limit: input.limit,
 			evidenceLane: 'device-on-device-gemma',
-			runContext: {
-				surface: 'mobile-settings-scout-eval-lab',
-				scoutLane: scoutLaneLabel,
-				modelState: this.#modelDownloads.status?.state ?? null,
-				modelId: this.#modelDownloads.status?.modelId ?? null,
-				runtimeConfigured: this.#modelDownloads.status?.runtimeConfigured ?? null,
-				userAgent: browser ? navigator.userAgent : null
-			},
+			runContext: await this.#buildLocalAiEvalRunContext(),
 			onProgress: input.onProgress,
 			onSnapshot: input.onSnapshot,
 			previousRun: input.previousRun,
@@ -1084,6 +1077,41 @@ class TrailAssistantStore {
 					preferredMode: 'on-device'
 				})
 		});
+	}
+
+	async #buildLocalAiEvalRunContext(): Promise<Record<string, unknown>> {
+		const context: Record<string, unknown> = {
+			surface: 'mobile-settings-scout-eval-lab',
+			scoutLane: scoutLaneLabel,
+			modelState: this.#modelDownloads.status?.state ?? null,
+			modelId: this.#modelDownloads.status?.modelId ?? null,
+			runtimeConfigured: this.#modelDownloads.status?.runtimeConfigured ?? null,
+			svelteKitVersion,
+			userAgent: browser ? navigator.userAgent : null
+		};
+		if (!browser) return context;
+		try {
+			const [{ Capacitor }, { App }] = await Promise.all([
+				import('@capacitor/core'),
+				import('@capacitor/app')
+			]);
+			context.native = {
+				isNativePlatform: Capacitor.isNativePlatform(),
+				platform: Capacitor.getPlatform()
+			};
+			if (Capacitor.isNativePlatform()) {
+				const appInfo = await App.getInfo();
+				context.app = {
+					id: appInfo.id,
+					name: appInfo.name,
+					version: appInfo.version,
+					build: appInfo.build
+				};
+			}
+		} catch (error) {
+			context.nativeMetadataError = error instanceof Error ? error.message : String(error);
+		}
+		return context;
 	}
 
 	async #refreshFieldPackForPrompt(prompt: string): Promise<void> {

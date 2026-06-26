@@ -3,6 +3,7 @@ import { summarizeReview } from './scout-local-ai-review.mjs';
 
 export const DEVICE_EVIDENCE_LANE = 'device-on-device-gemma';
 export const DEVICE_SURFACE = 'mobile-settings-scout-eval-lab';
+export const DEVICE_BUNDLE_ID = 'com.hoggcountry.trailassistant';
 
 export function verifyScoutLocalAiDeviceProof({ suite, run, review }) {
 	const errors = [];
@@ -20,6 +21,27 @@ export function verifyScoutLocalAiDeviceProof({ suite, run, review }) {
 	}
 	if (run.runContext?.surface !== DEVICE_SURFACE) {
 		errors.push(`run.runContext.surface must be ${DEVICE_SURFACE} for final TestFlight/iPhone proof, got ${run.runContext?.surface ?? '<missing>'}.`);
+	}
+	if (run.runContext?.native?.isNativePlatform !== true) {
+		errors.push('run.runContext.native.isNativePlatform must be true for final TestFlight/iPhone proof.');
+	}
+	if (run.runContext?.native?.platform !== 'ios') {
+		errors.push(`run.runContext.native.platform must be ios, got ${run.runContext?.native?.platform ?? '<missing>'}.`);
+	}
+	if (run.runContext?.app?.id !== DEVICE_BUNDLE_ID) {
+		errors.push(`run.runContext.app.id must be ${DEVICE_BUNDLE_ID}, got ${run.runContext?.app?.id ?? '<missing>'}.`);
+	}
+	if (!String(run.runContext?.app?.version ?? '').trim()) {
+		errors.push('run.runContext.app.version is required for final TestFlight/iPhone proof.');
+	}
+	if (!String(run.runContext?.app?.build ?? '').trim()) {
+		errors.push('run.runContext.app.build is required for final TestFlight/iPhone proof.');
+	}
+	if (run.runContext?.runtimeConfigured !== true) {
+		errors.push(`run.runContext.runtimeConfigured must be true, got ${run.runContext?.runtimeConfigured ?? '<missing>'}.`);
+	}
+	if (!String(run.runContext?.modelId ?? '').trim()) {
+		errors.push('run.runContext.modelId is required for final TestFlight/iPhone proof.');
 	}
 	if (run.suiteId !== suite.suiteId) errors.push(`run.suiteId ${run.suiteId ?? '<missing>'} does not match ${suite.suiteId}.`);
 	if (!Array.isArray(run.results)) errors.push('run.results must be an array.');
@@ -113,6 +135,10 @@ export function createDeviceProofMarkdown({ suite, run, summary, suitePath, runP
 		`- Suite id: \`${suite.suiteId}\``,
 		`- Evidence lane: \`${run.evidenceLane}\``,
 		`- Device surface: \`${run.runContext?.surface}\``,
+		`- Native platform: \`${run.runContext?.native?.platform ?? '<missing>'}\``,
+		`- App bundle: \`${run.runContext?.app?.id ?? '<missing>'}\``,
+		`- App version/build: \`${run.runContext?.app?.version ?? '<missing>'} (${run.runContext?.app?.build ?? '<missing>'})\``,
+		`- Model id: \`${run.runContext?.modelId ?? '<missing>'}\``,
 		'',
 		'## Result',
 		'',
