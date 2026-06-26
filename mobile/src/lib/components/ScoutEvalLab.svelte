@@ -18,6 +18,10 @@
 	let running = $state(false);
 	let error = $state<string | null>(null);
 	let saveWarning = $state<string | null>(null);
+	let exportStatus = $state<'idle' | 'copied' | 'shared' | 'downloaded' | 'failed'>('idle');
+	let exportMessage = $state<string | null>(null);
+	let exportTextarea = $state<HTMLTextAreaElement | null>(null);
+	let exportStatusTimer: ReturnType<typeof setTimeout> | null = null;
 
 	const modelReady = $derived(
 		trailAssistant.modelStatus?.state === 'ready' &&
@@ -111,8 +115,75 @@
 		const link = document.createElement('a');
 		link.href = url;
 		link.download = `${currentRun.runId}.json`;
+		document.body.append(link);
 		link.click();
-		URL.revokeObjectURL(url);
+		link.remove();
+		setTimeout(() => URL.revokeObjectURL(url), 1000);
+		setExportStatus('downloaded', 'Download started.');
+	}
+
+	async function copyRun() {
+		if (!activeRun || !exportText) return;
+		try {
+			if (navigator.clipboard) {
+				await navigator.clipboard.writeText(exportText);
+			} else if (exportTextarea) {
+				exportTextarea.focus();
+				exportTextarea.select();
+				const copied = document.execCommand('copy');
+				if (!copied) throw new Error('Fallback copy failed.');
+			} else {
+				throw new Error('Copy is not available.');
+			}
+			setExportStatus('copied', 'Run copied.');
+		} catch {
+			setExportStatus('failed', 'Copy failed. Select the JSON below.');
+		}
+	}
+
+	async function shareRun() {
+		const currentRun = activeRun;
+		if (!currentRun || !exportText) return;
+		if (!navigator.share) {
+			await copyRun();
+			return;
+		}
+		const file = new File([exportText], `${currentRun.runId}.json`, { type: 'application/json' });
+		const fileShare: ShareData = {
+			title: 'Scout local AI eval run',
+			text: currentRun.runId,
+			files: [file]
+		};
+		const textShare: ShareData = {
+			title: 'Scout local AI eval run',
+			text: exportText
+		};
+		try {
+			if (!navigator.canShare || navigator.canShare(fileShare)) {
+				await navigator.share(fileShare);
+			} else {
+				await navigator.share(textShare);
+			}
+			setExportStatus('shared', 'Share sheet opened.');
+		} catch (err) {
+			if (err instanceof DOMException && err.name === 'AbortError') return;
+			await copyRun();
+		}
+	}
+
+	function setExportStatus(
+		nextStatus: 'idle' | 'copied' | 'shared' | 'downloaded' | 'failed',
+		nextMessage: string | null
+	) {
+		exportStatus = nextStatus;
+		exportMessage = nextMessage;
+		if (exportStatusTimer) clearTimeout(exportStatusTimer);
+		if (!nextMessage) return;
+		exportStatusTimer = setTimeout(() => {
+			exportStatus = 'idle';
+			exportMessage = null;
+			exportStatusTimer = null;
+		}, 2400);
 	}
 
 	function loadSavedRun() {
@@ -199,18 +270,28 @@
 		<button class="outline-button compact" type="button" onclick={() => runEval(undefined, true)} disabled={!canResume}>
 			Resume
 		</button>
+		<button class="outline-button compact" type="button" onclick={shareRun} disabled={!activeRun}>
+			Share
+		</button>
+		<button class="outline-button compact" type="button" onclick={copyRun} disabled={!activeRun}>
+			Copy
+		</button>
 		<button class="outline-button compact" type="button" onclick={downloadRun} disabled={!activeRun}>
-			Export
+			Download
 		</button>
 		<button class="outline-button compact" type="button" onclick={clearSavedRun} disabled={!savedRun || running}>
 			Clear
 		</button>
 	</div>
 
+	{#if exportMessage}
+		<p class="eval-export-status" data-state={exportStatus} role="status">{exportMessage}</p>
+	{/if}
+
 	<p class="eval-save">{savedRunLabel}</p>
 
 	{#if activeRun}
-		<textarea readonly value={exportText} aria-label="Scout eval run JSON"></textarea>
+		<textarea bind:this={exportTextarea} readonly value={exportText} aria-label="Scout eval run JSON"></textarea>
 	{/if}
 </section>
 
@@ -301,7 +382,8 @@
 	}
 
 	.eval-error,
-	.eval-warning {
+	.eval-warning,
+	.eval-export-status {
 		border-radius: 12px;
 		padding: 10px 12px;
 		background: color-mix(in srgb, var(--danger) 10%, var(--surface));
@@ -312,6 +394,16 @@
 	}
 
 	.eval-warning {
+		background: var(--warn-soft);
+		color: var(--ink);
+	}
+
+	.eval-export-status {
+		background: var(--forest-soft);
+		color: var(--forest);
+	}
+
+	.eval-export-status[data-state='failed'] {
 		background: var(--warn-soft);
 		color: var(--ink);
 	}

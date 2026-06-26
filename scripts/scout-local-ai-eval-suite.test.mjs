@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const SUITE_PATH = new URL('../data/scout-local-ai/dad-local-ai-100.json', import.meta.url);
 const MOBILE_SUITE_PATH = new URL('../mobile/static/scout/dad-local-ai-100.json', import.meta.url);
+const MOBILE_EVAL_LAB_PATH = new URL('../mobile/src/lib/components/ScoutEvalLab.svelte', import.meta.url);
 const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
 const execFileAsync = promisify(execFile);
 const VALID_PHASES = new Set(['pre-trail', 'on-trail']);
@@ -112,6 +113,16 @@ test('mobile embedded Dad local AI eval suite matches canonical suite', async ()
 	const canonical = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const mobile = JSON.parse(await readFile(MOBILE_SUITE_PATH, 'utf8'));
 	assert.deepEqual(mobile, canonical);
+});
+
+test('mobile Eval Lab exposes resilient iPhone export paths', async () => {
+	const component = await readFile(MOBILE_EVAL_LAB_PATH, 'utf8');
+	assert.match(component, /navigator\.share/u, 'Eval Lab needs native Share Sheet export');
+	assert.match(component, /navigator\.clipboard\.writeText/u, 'Eval Lab needs clipboard export');
+	assert.match(component, /document\.execCommand\('copy'\)/u, 'Eval Lab needs a textarea copy fallback');
+	assert.match(component, />\s*Share\s*</u, 'Share action should be visible when a run exists');
+	assert.match(component, />\s*Copy\s*</u, 'Copy action should be visible when a run exists');
+	assert.match(component, />\s*Download\s*</u, 'Download action should remain available');
 });
 
 test('Dad local AI eval suite routes every case through expected Scout tools', async () => {

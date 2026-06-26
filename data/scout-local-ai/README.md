@@ -64,6 +64,10 @@ The in-app Eval Lab autosaves each completed question locally on the phone. If a
 finishes. Export also works after reopening the app because the last device run
 is restored from local storage.
 
+On iPhone, use Share first so the JSON can be sent through the native share
+sheet. If that is unavailable, use Copy and paste the JSON into a file or note.
+Download remains available as a browser fallback.
+
 After filling the review JSON ratings and tasks:
 
 ```sh
