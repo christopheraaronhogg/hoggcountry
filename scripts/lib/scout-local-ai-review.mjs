@@ -120,9 +120,25 @@ export function summarizeReview(review) {
 export function createBacklog(run, review, summary) {
 	const runResultsByCaseId = new Map(run.results.map((result) => [result.caseId, result]));
 	const items = [];
+	const unratedItems = [];
 	for (const entry of review.cases) {
-		if (!Number.isInteger(entry.rating) || entry.rating >= 5) continue;
 		const result = runResultsByCaseId.get(entry.caseId);
+		if (entry.rating === null || entry.rating === undefined || entry.rating === '') {
+			unratedItems.push({
+				caseId: entry.caseId,
+				domain: entry.domain,
+				phase: entry.phase,
+				prompt: entry.prompt,
+				requiredTools: result?.toolExpectations?.required ?? [],
+				hitTools: result?.toolExpectations?.hit ?? [],
+				missingTools: result?.toolExpectations?.missing ?? [],
+				answerPreview: entry.answerPreview,
+				answerOrigin: entry.answerOrigin,
+				evidenceLane: run.evidenceLane
+			});
+			continue;
+		}
+		if (!Number.isInteger(entry.rating) || entry.rating >= 5) continue;
 		items.push({
 			id: `${run.runId}:${entry.caseId}`,
 			caseId: entry.caseId,
@@ -152,6 +168,7 @@ export function createBacklog(run, review, summary) {
 		sourceReview: `data/scout-local-ai/reviews/${basename(run.runId)}.review.json`,
 		generatedAt: new Date().toISOString(),
 		summary,
+		unratedItems,
 		items
 	};
 }
@@ -184,16 +201,25 @@ export function createBacklogMarkdown(backlog) {
 		''
 	];
 
-	if (!backlog.items.length) {
-		lines.push('## Items', '', 'All reviewed answers are currently 5/5. Re-run the strict device proof gate for final readiness.', '');
+	if (!backlog.items.length && backlog.summary.unrated === 0) {
+		lines.push('## Items', '', 'All rated answers are currently 5/5. Re-run the strict device proof gate for final readiness.', '');
 		return `${lines.join('\n')}\n`;
 	}
 
-	lines.push('## Owner layers', '');
-	for (const [owner, count] of ownerCounts) lines.push(`- ${owner}: ${count}`);
-	lines.push('', '## Failure categories', '');
-	for (const [category, count] of failureCounts) lines.push(`- ${category}: ${count}`);
-	lines.push('', '## Items', '');
+	if (backlog.items.length) {
+		lines.push('## Owner layers', '');
+		for (const [owner, count] of ownerCounts) lines.push(`- ${owner}: ${count}`);
+		lines.push('', '## Failure categories', '');
+		for (const [category, count] of failureCounts) lines.push(`- ${category}: ${count}`);
+		lines.push('', '## Items', '');
+	} else {
+		lines.push(
+			'## Items',
+			'',
+			'No below-5 improvement tasks are available yet because the review is incomplete. Finish rating every case before treating this run as clean.',
+			''
+		);
+	}
 
 	for (const item of backlog.items) {
 		lines.push(
@@ -228,6 +254,28 @@ export function createBacklogMarkdown(backlog) {
 			quoteBlock(item.answerPreview || '(empty)'),
 			''
 		);
+	}
+
+	if (backlog.unratedItems?.length) {
+		lines.push('## Unrated cases', '');
+		for (const item of backlog.unratedItems) {
+			lines.push(
+				`### ${item.caseId} - ${item.domain}`,
+				'',
+				`- Required tools: ${item.requiredTools.join(', ') || 'none'}`,
+				`- Hit tools: ${item.hitTools.join(', ') || 'none'}`,
+				`- Missing tools: ${item.missingTools.join(', ') || 'none'}`,
+				'',
+				'Prompt:',
+				'',
+				quoteBlock(item.prompt),
+				'',
+				'Answer preview:',
+				'',
+				quoteBlock(item.answerPreview || '(empty)'),
+				''
+			);
+		}
 	}
 
 	return `${lines.join('\n')}\n`;

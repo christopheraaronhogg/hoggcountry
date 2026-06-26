@@ -22,6 +22,7 @@ const runPath = resolve(REPO_ROOT, String(cli.run));
 const run = JSON.parse(await readFile(runPath, 'utf8'));
 const reviewPath = resolve(REPO_ROOT, String(cli.review ?? `data/scout-local-ai/reviews/${run.runId}.review.json`));
 const backlogDir = resolveInputPath(cli.backlogDir ?? BACKLOG_DIR);
+const allowUnrated = Boolean(cli.allowUnrated);
 
 let review;
 try {
@@ -44,6 +45,14 @@ if (summary.invalid.length) {
 	console.error('Review has invalid entries. Fix these before creating an iteration backlog:');
 	for (const issue of summary.invalid.slice(0, 20)) console.error(`- ${issue}`);
 	if (summary.invalid.length > 20) console.error(`- ... ${summary.invalid.length - 20} more`);
+	process.exit(1);
+}
+if (summary.unrated && !allowUnrated) {
+	console.error('Review is incomplete. Rate every case 1-5 before creating an iteration backlog.');
+	const unrated = review.cases.filter((entry) => entry.rating === null || entry.rating === undefined || entry.rating === '');
+	for (const entry of unrated.slice(0, 20)) console.error(`- ${entry.caseId}: missing rating`);
+	if (unrated.length > 20) console.error(`- ... ${unrated.length - 20} more`);
+	console.error('Use --allow-unrated only for a deliberately partial review status report.');
 	process.exit(1);
 }
 

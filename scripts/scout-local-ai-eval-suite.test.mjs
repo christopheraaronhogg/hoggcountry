@@ -283,6 +283,88 @@ test('review workflow rejects below-5 ratings without concrete improvement tasks
 	);
 });
 
+test('review workflow rejects unrated cases by default', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-unrated-'));
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 2), {
+		runId: 'device-review-unrated',
+		completeTools: true
+	});
+	const review = reviewForRun(run);
+	review.cases[0].rating = 5;
+
+	const runPath = join(outputDir, 'device-review-unrated.json');
+	const reviewPath = join(outputDir, 'device-review-unrated.review.json');
+	const backlogDir = join(outputDir, 'backlog');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/review-scout-local-ai-eval.mjs',
+				'--run',
+				runPath,
+				'--review',
+				reviewPath,
+				'--backlog-dir',
+				backlogDir
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /Review is incomplete/u);
+			assert.match(error.stderr, new RegExp(`${review.cases[1].caseId}: missing rating`, 'u'));
+			assert.match(error.stderr, /--allow-unrated/u);
+			return true;
+		}
+	);
+});
+
+test('partial review status keeps unrated cases explicit when allowed', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-partial-'));
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 3), {
+		runId: 'device-review-partial',
+		completeTools: true
+	});
+	const review = reviewForRun(run);
+	review.cases[0].rating = 5;
+
+	const runPath = join(outputDir, 'device-review-partial.json');
+	const reviewPath = join(outputDir, 'device-review-partial.review.json');
+	const backlogDir = join(outputDir, 'backlog');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/review-scout-local-ai-eval.mjs',
+			'--run',
+			runPath,
+			'--review',
+			reviewPath,
+			'--backlog-dir',
+			backlogDir,
+			'--allow-unrated'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const backlog = JSON.parse(await readFile(join(backlogDir, 'device-review-partial.backlog.json'), 'utf8'));
+	const markdown = await readFile(join(backlogDir, 'device-review-partial.backlog.md'), 'utf8');
+
+	assert.match(result.stdout, /Unrated: 2/u);
+	assert.equal(backlog.summary.unrated, 2);
+	assert.equal(backlog.items.length, 0);
+	assert.equal(backlog.unratedItems.length, 2);
+	assert.match(markdown, /No below-5 improvement tasks are available yet because the review is incomplete/u);
+	assert.match(markdown, /## Unrated cases/u);
+	assert.match(markdown, new RegExp(`### ${review.cases[1].caseId}`, 'u'));
+	assert.doesNotMatch(markdown, /strict device proof gate for final readiness/u);
+});
+
 test('device run intake rejects scaffold runs by default', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-intake-reject-'));
