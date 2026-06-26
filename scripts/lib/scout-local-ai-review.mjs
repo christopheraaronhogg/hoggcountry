@@ -39,6 +39,12 @@ const VAGUE_IMPROVEMENT_TASKS = new Set([
 	'needs work',
 	'bad answer'
 ]);
+const OVERFITTING_IMPROVEMENT_PATTERNS = [
+	/\b(?:change|adjust|update|rewrite|edit|relax|loosen|remove|weaken)\b.{0,60}\b(?:expected\s+traits?|expectedtraits|safety\s+caveats?|rubric|rating\s+scale|review\s+checklist)\b/iu,
+	/\b(?:change|adjust|update|rewrite|edit|relax|loosen|remove|weaken)\b.{0,60}\b(?:eval\s+(?:suite|case|question)|test\s+case|question\s+wording)\b/iu,
+	/\b(?:mark|rate|accept)\b.{0,40}\b(?:answer|case|review)\b.{0,40}\b(?:5|five|passing|pass)\b/iu,
+	/\bignore\b.{0,50}\b(?:missing\s+tools?|source\s+evidence|receipts?|unchecked\s+traits?|failed\s+caveats?)\b/iu
+];
 
 export function parseCliArgs(argv) {
 	const parsed = {};
@@ -279,6 +285,9 @@ export function improvementTaskProblems(task) {
 	}
 	if (!IMPROVEMENT_ACTION_RE.test(text)) {
 		problems.push('improvementTask must include an action verb such as add, fix, route, tighten, investigate, or improve.');
+	}
+	if (OVERFITTING_IMPROVEMENT_PATTERNS.some((pattern) => pattern.test(text))) {
+		problems.push('improvementTask must target Scout behavior, data, tools, prompts, UI, or local-model runtime rather than weakening the eval rubric.');
 	}
 	return problems;
 }

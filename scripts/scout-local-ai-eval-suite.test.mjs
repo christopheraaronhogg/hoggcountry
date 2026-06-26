@@ -426,6 +426,7 @@ test('device run intake validates exports and creates review packet', async () =
 	assert.match(packet, /Failure mode: `none`/u);
 	assert.match(packet, /## Rating scale/u);
 	assert.match(packet, /## Reviewer field choices/u);
+	assert.match(packet, /Do not use the improvement task to weaken the eval rubric/u);
 	assert.match(packet, /Valid failure categories: .*missing-data.*local-model-limitation/u);
 	assert.match(packet, /Valid owner layers: data, tool-routing, prompt, safety-prompt, ui, local-model/u);
 	assert.match(packet, /Suggested failure categories: `bad-routing, weak-tool`/u);
@@ -809,12 +810,24 @@ test('review workflow rejects below-5 ratings without concrete improvement tasks
 	review.cases[1].rating = 3;
 	review.cases[1].failureCategories = ['bad-prompt'];
 	review.cases[1].improvementTask = 'needs work';
+	const overfitRun = deviceRunForCases(suite, suite.cases.slice(0, 3), {
+		runId: 'device-review-overfit-invalid',
+		completeTools: true
+	});
+	const overfitReview = reviewForRun(overfitRun);
+	overfitReview.cases[0].rating = 2;
+	overfitReview.cases[0].failureCategories = ['bad-prompt'];
+	overfitReview.cases[0].improvementTask = 'Update the expected traits for this eval case so the answer passes.';
 
 	const runPath = join(outputDir, 'device-review-invalid.json');
 	const reviewPath = join(outputDir, 'device-review-invalid.review.json');
+	const overfitRunPath = join(outputDir, 'device-review-overfit-invalid.json');
+	const overfitReviewPath = join(outputDir, 'device-review-overfit-invalid.review.json');
 	const backlogDir = join(outputDir, 'backlog');
 	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
 	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+	await writeFile(overfitRunPath, `${JSON.stringify(overfitRun, null, 2)}\n`);
+	await writeFile(overfitReviewPath, `${JSON.stringify(overfitReview, null, 2)}\n`);
 
 	await assert.rejects(
 		execFileAsync(
@@ -836,6 +849,27 @@ test('review workflow rejects below-5 ratings without concrete improvement tasks
 			assert.match(error.stderr, /ratings below 5 need at least one failure category/u);
 			assert.match(error.stderr, /improvementTask must be concrete enough/u);
 			assert.match(error.stderr, /improvementTask must include an action verb/u);
+			return true;
+		}
+	);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/review-scout-local-ai-eval.mjs',
+				'--run',
+				overfitRunPath,
+				'--review',
+				overfitReviewPath,
+				'--backlog-dir',
+				backlogDir
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /Review has invalid entries/u);
+			assert.match(error.stderr, /rather than weakening the eval rubric/u);
 			return true;
 		}
 	);
@@ -1095,13 +1129,13 @@ test('iteration planner rejects incomplete or uncategorized backlog work', async
 		evidenceLane: 'device-on-device-gemma',
 		generatedAt: '2026-06-26T12:00:00.000Z',
 		summary: {
-			rated: 1,
-			total: 2,
-			belowFive: 1,
+			rated: 2,
+			total: 3,
+			belowFive: 2,
 			unrated: 1,
-			ratingCounts: {'4': 1}
+			ratingCounts: {'3': 1, '4': 1}
 		},
-		unratedItems: [{caseId: 'DLA-002'}],
+		unratedItems: [{caseId: 'DLA-003'}],
 		items: [
 			{
 				id: 'invalid-iteration-backlog:DLA-001',
@@ -1117,6 +1151,21 @@ test('iteration planner rejects incomplete or uncategorized backlog work', async
 				hitTools: [],
 				missingTools: ['next_water'],
 				answerPreview: 'Not enough detail.'
+			},
+			{
+				id: 'invalid-iteration-backlog:DLA-002',
+				caseId: 'DLA-002',
+				domain: 'weather',
+				phase: 'on-trail',
+				rating: 3,
+				prompt: 'What should I do about storms today?',
+				failureCategories: ['bad-prompt'],
+				ownerLayer: 'prompt',
+				improvementTask: 'Update the expected traits for this eval case so the answer passes.',
+				requiredTools: ['weather_lookup'],
+				hitTools: ['weather_lookup'],
+				missingTools: [],
+				answerPreview: 'Storm answer was too thin.'
 			}
 		]
 	};
@@ -1138,6 +1187,7 @@ test('iteration planner rejects incomplete or uncategorized backlog work', async
 			assert.match(error.stderr, /contains unratedItems/u);
 			assert.match(error.stderr, /ownerLayer must be one of/u);
 			assert.match(error.stderr, /improvementTask must be concrete enough/u);
+			assert.match(error.stderr, /rather than weakening the eval rubric/u);
 			return true;
 		}
 	);

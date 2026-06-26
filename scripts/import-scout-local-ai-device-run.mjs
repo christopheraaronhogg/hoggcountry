@@ -199,7 +199,7 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 		'',
 		'## Reviewer field choices',
 		'',
-		'For a 5/5 rating, every checklist item must be `passed: true`, and Failure categories, Owner layer, and Improvement task should stay blank. For any rating below 5, choose at least one failure category and write a concrete improvement task with an action verb and a specific target, such as `Add current-section water reliability source docs.`',
+		'For a 5/5 rating, every checklist item must be `passed: true`, and Failure categories, Owner layer, and Improvement task should stay blank. For any rating below 5, choose at least one failure category and write a concrete improvement task with an action verb and a specific Scout target, such as `Add current-section water reliability source docs.` Do not use the improvement task to weaken the eval rubric, expected traits, or question wording.',
 		'',
 		`Valid failure categories: ${(run.failureCategories ?? []).join(', ')}`,
 		`Valid owner layers: ${VALID_OWNER_LAYERS.join(', ')}`,
