@@ -507,6 +507,87 @@ test('review packet ratings can be applied back into review JSON', async () => {
 	assert.equal(backlog.items[0].ownerLayer, 'safety-prompt');
 });
 
+test('review packet apply rejects truncated packets unless partial is explicit', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-packet-truncated-'));
+	const inputPath = join(outputDir, 'device-export.json');
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 2), {
+		runId: 'device-packet-truncated',
+		completeTools: true
+	});
+	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
+
+	await execFileAsync(
+		process.execPath,
+		[
+			'scripts/import-scout-local-ai-device-run.mjs',
+			'--run',
+			inputPath,
+			'--allow-partial',
+			'--device-run-dir',
+			join(outputDir, 'device-runs'),
+			'--review-dir',
+			join(outputDir, 'reviews'),
+			'--packet-dir',
+			join(outputDir, 'review-packets')
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+
+	const packetPath = join(outputDir, 'review-packets', 'device-packet-truncated.review.md');
+	const reviewPath = join(outputDir, 'reviews', 'device-packet-truncated.review.json');
+	let packet = await readFile(packetPath, 'utf8');
+	packet = packet.replaceAll('- passed: null |', '- passed: true |');
+	packet = replaceReviewerFields(packet, run.results[0].caseId, {
+		rating: '4',
+		notes: 'Mostly right, but missing one practical source-backed detail.',
+		failureCategories: 'missing-data',
+		ownerLayer: 'data',
+		improvementTask: 'Add the missing source-backed detail before marking this answer Dad-ready.'
+	});
+	packet = removeReviewCaseBlock(packet, run.results[1].caseId);
+	await writeFile(packetPath, packet);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/apply-scout-local-ai-review-packet.mjs',
+				'--packet',
+				packetPath,
+				'--review',
+				reviewPath
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /packet is missing 1 review case/u);
+			assert.match(error.stderr, new RegExp(run.results[1].caseId, 'u'));
+			assert.match(error.stderr, /--allow-partial/u);
+			return true;
+		}
+	);
+
+	const applyResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/apply-scout-local-ai-review-packet.mjs',
+			'--packet',
+			packetPath,
+			'--review',
+			reviewPath,
+			'--allow-partial'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const review = JSON.parse(await readFile(reviewPath, 'utf8'));
+
+	assert.match(applyResult.stdout, /Updated cases: 1/u);
+	assert.match(applyResult.stdout, /Partial packet apply: 1 review case\(s\) not present in packet/u);
+	assert.equal(review.cases[0].rating, 4);
+	assert.equal(review.cases[1].rating, null);
+});
+
 test('device run intake rejects stale suite fingerprints', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-intake-stale-'));
@@ -1742,4 +1823,16 @@ function replaceReviewerFields(packet, caseId, fields) {
 		.replace(/^- Owner layer:.*$/mu, `- Owner layer: ${fields.ownerLayer}`)
 		.replace(/^- Improvement task:.*$/mu, `- Improvement task: ${fields.improvementTask}`);
 	return `${packet.slice(0, start)}${block}${packet.slice(end)}`;
+}
+
+function removeReviewCaseBlock(packet, caseId) {
+	const headingPattern = new RegExp(`^## ${caseId} - .*$`, 'mu');
+	const match = packet.match(headingPattern);
+	assert.ok(match?.index !== undefined, `packet should contain ${caseId}`);
+	const start = match.index;
+	const nextHeading = packet.slice(start + match[0].length).search(/\n## DLA-\d{3} - /u);
+	const end = nextHeading === -1 ? packet.length : start + match[0].length + nextHeading;
+	const before = packet.slice(0, start).replace(/[ \t]*\n*$/u, '\n\n');
+	const after = packet.slice(end).replace(/^\n+/u, '');
+	return `${before}${after}`;
 }

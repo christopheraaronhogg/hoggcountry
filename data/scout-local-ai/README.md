@@ -99,6 +99,11 @@ machine-readable review JSON:
 npm run apply-review:scout-local-ai -- --packet data/scout-local-ai/review-packets/<run-id>.review.md --review data/scout-local-ai/reviews/<run-id>.review.json
 ```
 
+Packet apply expects every case in the review JSON to be present in the Markdown
+packet by default. If the packet was truncated or a case heading was accidentally
+deleted, apply fails before writing review JSON. Add `--allow-partial` only when
+you are intentionally applying an incremental packet or a smoke-run subset.
+
 For a quick `Run 3` smoke export, add `--allow-partial`. Do not use partial runs
 as final proof. Partial intake can warn about missing final-proof context without
 blocking the smoke packet.

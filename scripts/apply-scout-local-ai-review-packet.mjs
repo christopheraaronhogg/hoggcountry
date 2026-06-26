@@ -19,7 +19,8 @@ async function main() {
 	if (!cli.packet || !cli.review) {
 		throw new Error([
 			'Usage: npm run apply-review:scout-local-ai -- --packet data/scout-local-ai/review-packets/<run>.review.md --review data/scout-local-ai/reviews/<run>.review.json',
-			'Optional: --out data/scout-local-ai/reviews/<run>.review.json'
+			'Optional: --out data/scout-local-ai/reviews/<run>.review.json',
+			'Optional: --allow-partial for intentional smoke or incremental packet updates'
 		].join('\n'));
 	}
 
@@ -29,7 +30,7 @@ async function main() {
 	const packet = await readFile(packetPath, 'utf8');
 	const review = JSON.parse(await readFile(reviewPath, 'utf8'));
 	const parsed = parseReviewPacket(packet);
-	const result = applyPacketToReview(review, parsed);
+	const result = applyPacketToReview(review, parsed, { allowPartial: Boolean(cli.allowPartial) });
 	const summary = summarizeReview(review);
 
 	await writeFile(outPath, `${JSON.stringify(review, null, 2)}\n`);
@@ -38,6 +39,9 @@ async function main() {
 	console.log(`Packet: ${relative(REPO_ROOT, packetPath)}`);
 	console.log(`Review: ${relative(REPO_ROOT, outPath)}`);
 	console.log(`Updated cases: ${result.updatedCases}`);
+	if (result.missingCases?.length) {
+		console.log(`Partial packet apply: ${result.missingCases.length} review case(s) not present in packet.`);
+	}
 	console.log(`Rated: ${summary.rated}/${summary.total}`);
 	console.log(`5/5: ${summary.ratingCounts['5'] ?? 0}`);
 	console.log(`Below 5: ${summary.belowFive}`);
@@ -51,6 +55,10 @@ export function parseReviewPacket(markdown) {
 	const blocks = extractCaseBlocks(markdown);
 	const cases = [];
 	const errors = [];
+
+	if (!blocks.length) {
+		errors.push('packet did not contain any DLA case blocks.');
+	}
 
 	for (const block of blocks) {
 		const traitChecks = parseChecklist({
@@ -89,37 +97,57 @@ export function parseReviewPacket(markdown) {
 	return { cases };
 }
 
-export function applyPacketToReview(review, packetReview) {
+export function applyPacketToReview(review, packetReview, options = {}) {
 	if (!Array.isArray(review.cases)) throw new Error('review.cases must be an array.');
 	const reviewById = new Map(review.cases.map((entry) => [entry.caseId, entry]));
+	const packetCaseIds = new Set();
+	const updates = [];
 	const errors = [];
-	let updatedCases = 0;
 
 	for (const packetCase of packetReview.cases) {
+		if (packetCaseIds.has(packetCase.caseId)) {
+			errors.push(`${packetCase.caseId}: duplicated in packet.`);
+			continue;
+		}
+		packetCaseIds.add(packetCase.caseId);
 		const reviewCase = reviewById.get(packetCase.caseId);
 		if (!reviewCase) {
 			errors.push(`${packetCase.caseId}: found in packet but not in review JSON.`);
 			continue;
 		}
-		reviewCase.rating = packetCase.rating;
-		reviewCase.notes = packetCase.notes;
-		reviewCase.failureCategories = packetCase.failureCategories;
-		reviewCase.ownerLayer = packetCase.ownerLayer;
-		reviewCase.improvementTask = packetCase.improvementTask;
-		applyChecklist(reviewCase.traitChecks, packetCase.traitChecks, `${packetCase.caseId}: traitChecks`, errors);
-		applyChecklist(
+		validateChecklist(reviewCase.traitChecks, packetCase.traitChecks, `${packetCase.caseId}: traitChecks`, errors);
+		validateChecklist(
 			reviewCase.safetyCaveatChecks,
 			packetCase.safetyCaveatChecks,
 			`${packetCase.caseId}: safetyCaveatChecks`,
 			errors
 		);
-		updatedCases += 1;
+		updates.push({ reviewCase, packetCase });
+	}
+
+	const missingCases = review.cases
+		.map((entry) => entry.caseId)
+		.filter((caseId) => !packetCaseIds.has(caseId));
+	if (!options.allowPartial && missingCases.length) {
+		errors.push(
+			`packet is missing ${missingCases.length} review case(s): ${formatCaseList(missingCases)}. Use --allow-partial only for intentional smoke or incremental packet updates.`
+		);
 	}
 
 	if (errors.length) {
 		throw new Error(`Review packet did not match review JSON:\n- ${errors.join('\n- ')}`);
 	}
-	return { updatedCases };
+	for (const { reviewCase, packetCase } of updates) {
+		reviewCase.rating = packetCase.rating;
+		reviewCase.notes = packetCase.notes;
+		reviewCase.failureCategories = packetCase.failureCategories;
+		reviewCase.ownerLayer = packetCase.ownerLayer;
+		reviewCase.improvementTask = packetCase.improvementTask;
+		copyChecklistValues(reviewCase.traitChecks, packetCase.traitChecks);
+		copyChecklistValues(reviewCase.safetyCaveatChecks, packetCase.safetyCaveatChecks);
+	}
+	const updatedCases = updates.length;
+	return { updatedCases, missingCases };
 }
 
 function extractCaseBlocks(markdown) {
@@ -195,7 +223,7 @@ function splitList(value) {
 		.filter(Boolean);
 }
 
-function applyChecklist(reviewChecks, packetChecks, label, errors) {
+function validateChecklist(reviewChecks, packetChecks, label, errors) {
 	if (!packetChecks.length) return;
 	if (!Array.isArray(reviewChecks)) {
 		errors.push(`${label}: review JSON checklist is missing.`);
@@ -209,11 +237,22 @@ function applyChecklist(reviewChecks, packetChecks, label, errors) {
 		const reviewCheck = reviewChecks[index];
 		if (reviewCheck.text !== packetCheck.text) {
 			errors.push(`${label}[${index}]: packet text does not match review JSON.`);
-			continue;
 		}
-		reviewCheck.passed = packetCheck.passed;
-		reviewCheck.notes = packetCheck.notes;
 	}
+}
+
+function copyChecklistValues(reviewChecks, packetChecks) {
+	if (!packetChecks.length) return;
+	for (const [index, packetCheck] of packetChecks.entries()) {
+		reviewChecks[index].passed = packetCheck.passed;
+		reviewChecks[index].notes = packetCheck.notes;
+	}
+}
+
+function formatCaseList(caseIds) {
+	const preview = caseIds.slice(0, 10).join(', ');
+	const suffix = caseIds.length > 10 ? `, and ${caseIds.length - 10} more` : '';
+	return `${preview}${suffix}`;
 }
 
 function resolveInputPath(value) {
