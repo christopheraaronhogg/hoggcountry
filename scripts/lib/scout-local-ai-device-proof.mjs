@@ -127,6 +127,7 @@ export function verifyScoutLocalAiDeviceProof({ suite, run, review }) {
 			errors.push(`${testCase.id}: review answerOrigin must be ${DEVICE_EVIDENCE_LANE}, got ${reviewCase?.answerOrigin ?? '<missing>'}.`);
 		}
 		if (reviewCase?.rating !== 5) errors.push(`${testCase.id}: review rating must be 5, got ${reviewCase?.rating ?? '<missing>'}.`);
+		validatePassedRubricChecks(reviewCase, testCase, errors);
 		if ((reviewCase?.failureCategories ?? []).length) {
 			errors.push(`${testCase.id}: 5/5 final proof must not carry failureCategories.`);
 		}
@@ -219,4 +220,32 @@ function matchesToolExpectation(expectation, record) {
 	if (record?.toolId !== toolId) return false;
 	if (!sourceSkill) return true;
 	return String(record.args?.sourceSkill ?? '').toLowerCase() === sourceSkill.toLowerCase();
+}
+
+function validatePassedRubricChecks(reviewCase, testCase, errors) {
+	for (const problem of rubricProblems(reviewCase?.traitChecks, testCase.expectedTraits, 'traitChecks')) {
+		errors.push(`${testCase.id}: ${problem}`);
+	}
+	for (const problem of rubricProblems(reviewCase?.safetyCaveatChecks, testCase.safetyCaveats, 'safetyCaveatChecks')) {
+		errors.push(`${testCase.id}: ${problem}`);
+	}
+}
+
+function rubricProblems(checks, expected, fieldName) {
+	if (!Array.isArray(expected) || !expected.length) return [];
+	if (!Array.isArray(checks)) return [`${fieldName} must be an array for final proof.`];
+	if (checks.length !== expected.length) {
+		return [`${fieldName} must contain ${expected.length} items, got ${checks.length}.`];
+	}
+	const problems = [];
+	for (const [index, expectedText] of expected.entries()) {
+		const check = checks[index];
+		if (check?.text !== expectedText) {
+			problems.push(`${fieldName}[${index}].text must match the canonical suite.`);
+		}
+		if (check?.passed !== true) {
+			problems.push(`${fieldName}[${index}] must be passed=true for final proof.`);
+		}
+	}
+	return problems;
 }

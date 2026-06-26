@@ -57,7 +57,8 @@ to `data/scout-local-ai/device-runs/`, creates a JSON review file in
 they hold raw model transcripts and human review notes. Use the review packet
 while rating: every case lists the full answer plus confidence, mode/provider,
 required tool hits, actual tool invocations, receipts, required confirmations,
-safety flags, context used, and failure mode.
+safety flags, context used, failure mode, and the expected-trait / safety-caveat
+checklists that must be marked before a 5/5 rating is valid.
 
 For a quick `Run 3` smoke export, add `--allow-partial`. Do not use partial runs
 as final proof.
@@ -84,6 +85,10 @@ is missing failure categories or an improvement task. It also fails while any
 case is unrated so an unfinished review cannot look like a clean 5/5 run. Use
 `--allow-unrated` only when deliberately producing a partial status packet; the
 result will include explicit unrated case entries.
+
+For a `5` rating, every `traitChecks` and `safetyCaveatChecks` item in the
+review JSON must have `passed: true`. Leave failed or uncertain checks unpassed
+and rate below 5 with a concrete improvement task.
 
 Plan the next fix pass from one or more completed backlogs:
 
@@ -126,8 +131,9 @@ the required tools are backed by actual recorded `toolInvocations` rather than
 summary-only flags, every review case is rated `5`, native iOS app metadata is
 present (`com.hoggcountry.trailassistant`, app version/build,
 `native.platform = ios`, runtime configured), and no stale failure categories or
-improvement tasks remain. Passing writes an ignored proof summary under
-`data/scout-local-ai/final-proof/`.
+improvement tasks remain. It also requires every expected-trait and safety-caveat
+rubric item to be explicitly checked as passed. Passing writes an ignored proof
+summary under `data/scout-local-ai/final-proof/`.
 
 For final consistency proof, require at least two separate full TestFlight/iPhone
 runs to pass the same strict gate:

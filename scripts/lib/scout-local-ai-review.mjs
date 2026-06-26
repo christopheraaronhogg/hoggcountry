@@ -44,6 +44,7 @@ export function createReviewTemplate(run, runPath, repoRoot) {
 		reviewInstructions: [
 			'Rate each answer 1-5 using the run ratingScale.',
 			'Only use 5 when the answer is Dad-ready, grounded, safe, and clear.',
+			'For every 5, mark every traitChecks and safetyCaveatChecks item passed=true.',
 			'For every rating below 5, fill failureCategories and improvementTask.',
 			'Do not count scaffold-not-model runs as final local-AI proof.'
 		],
@@ -59,6 +60,10 @@ export function createReviewTemplate(run, runPath, repoRoot) {
 			mode: result.mode,
 			provider: result.provider,
 			contextUsed: result.contextUsed ?? [],
+			expectedTraits: result.case.expectedTraits ?? [],
+			safetyCaveats: result.case.safetyCaveats ?? [],
+			traitChecks: createRubricChecks(result.case.expectedTraits),
+			safetyCaveatChecks: createRubricChecks(result.case.safetyCaveats),
 			receiptCount: result.receipts?.length ?? 0,
 			toolInvocationCount: result.toolInvocations?.length ?? 0,
 			toolExpectations: result.toolExpectations,
@@ -107,6 +112,14 @@ export function summarizeReview(review) {
 			}
 			if (!Array.isArray(entry.failureCategories) || !entry.failureCategories.length) {
 				invalid.push(`${entry.caseId}: ratings below 5 need at least one failure category.`);
+			}
+		}
+		if (rating === 5) {
+			for (const problem of rubricProblems(entry.traitChecks, entry.expectedTraits, 'traitChecks')) {
+				invalid.push(`${entry.caseId}: ${problem}`);
+			}
+			for (const problem of rubricProblems(entry.safetyCaveatChecks, entry.safetyCaveats, 'safetyCaveatChecks')) {
+				invalid.push(`${entry.caseId}: ${problem}`);
 			}
 		}
 		for (const category of entry.failureCategories ?? []) {
@@ -160,6 +173,8 @@ export function createBacklog(run, review, summary) {
 			prompt: entry.prompt,
 			expectedTraits: result?.case?.expectedTraits ?? [],
 			safetyCaveats: result?.case?.safetyCaveats ?? [],
+			failedTraits: failedRubricChecks(entry.traitChecks),
+			failedSafetyCaveats: failedRubricChecks(entry.safetyCaveatChecks),
 			failureCategories: entry.failureCategories ?? [],
 			ownerLayer: entry.ownerLayer || inferOwnerLayer(entry.failureCategories ?? [], result),
 			improvementTask: entry.improvementTask,
@@ -266,8 +281,14 @@ export function createBacklogMarkdown(backlog) {
 			'Expected traits:',
 			...item.expectedTraits.map((trait) => `- ${trait}`),
 			'',
+			'Failed or unchecked traits:',
+			...(item.failedTraits?.length ? item.failedTraits.map((trait) => `- ${trait}`) : ['- none recorded']),
+			'',
 			'Safety caveats:',
 			...item.safetyCaveats.map((caveat) => `- ${caveat}`),
+			'',
+			'Failed or unchecked safety caveats:',
+			...(item.failedSafetyCaveats?.length ? item.failedSafetyCaveats.map((caveat) => `- ${caveat}`) : ['- none recorded']),
 			'',
 			'Answer preview:',
 			'',
@@ -311,6 +332,40 @@ export function inferOwnerLayer(categories, result) {
 	if (categories.includes('poor-ux')) return 'ui';
 	if (categories.includes('local-model-limitation')) return 'local-model';
 	return 'unknown';
+}
+
+function createRubricChecks(values) {
+	return (values ?? []).map((text) => ({
+		text,
+		passed: null,
+		notes: ''
+	}));
+}
+
+function rubricProblems(checks, expected, fieldName) {
+	if (!Array.isArray(expected) || !expected.length) return [];
+	if (!Array.isArray(checks)) return [`${fieldName} must be an array before rating 5.`];
+	if (checks.length !== expected.length) {
+		return [`${fieldName} must contain ${expected.length} items, got ${checks.length}.`];
+	}
+	const problems = [];
+	for (const [index, expectedText] of expected.entries()) {
+		const check = checks[index];
+		if (check?.text !== expectedText) {
+			problems.push(`${fieldName}[${index}].text must match the expected rubric text.`);
+		}
+		if (check?.passed !== true) {
+			problems.push(`${fieldName}[${index}] must be passed=true before rating 5.`);
+		}
+	}
+	return problems;
+}
+
+function failedRubricChecks(checks) {
+	if (!Array.isArray(checks)) return [];
+	return checks
+		.filter((check) => check?.passed !== true)
+		.map((check) => check?.text ?? '<missing rubric text>');
 }
 
 function countBy(items, keyFor) {

@@ -190,10 +190,15 @@ test('device run intake validates exports and creates review packet', async () =
 	assert.equal(review.cases[0].caseId, suite.cases[0].id);
 	assert.equal(review.cases[0].confidence, 'medium');
 	assert.equal(review.cases[0].toolInvocationCount, suite.cases[0].requiredTools.length);
+	assert.equal(review.cases[0].traitChecks.length, suite.cases[0].expectedTraits.length);
+	assert.equal(review.cases[0].traitChecks[0].passed, null);
+	assert.equal(review.cases[0].safetyCaveatChecks.length, suite.cases[0].safetyCaveats.length);
 	assert.match(review.cases[0].answerPreview, /device answer for/);
 	assert.match(packet, /Scout local AI device review/u);
 	assert.match(packet, new RegExp(suite.cases[0].id, 'u'));
 	assert.match(packet, /Confidence: `medium`/u);
+	assert.match(packet, /Trait checklist to fill in review JSON:/u);
+	assert.match(packet, /Safety caveat checklist to fill in review JSON:/u);
 	assert.match(packet, /Tool invocations:/u);
 	assert.match(packet, /Source receipts:/u);
 	assert.match(packet, /Failure mode: `none`/u);
@@ -324,6 +329,44 @@ test('review workflow rejects below-5 ratings without concrete improvement tasks
 			assert.match(error.stderr, /Review has invalid entries/u);
 			assert.match(error.stderr, /ratings below 5 need an improvementTask/u);
 			assert.match(error.stderr, /ratings below 5 need at least one failure category/u);
+			return true;
+		}
+	);
+});
+
+test('review workflow rejects 5-star ratings without passed rubric checks', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-rubric-invalid-'));
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 1), {
+		runId: 'device-review-rubric-invalid',
+		completeTools: true
+	});
+	const review = reviewForRun(run, { rating: 5 });
+	review.cases[0].traitChecks[0].passed = false;
+
+	const runPath = join(outputDir, 'device-review-rubric-invalid.json');
+	const reviewPath = join(outputDir, 'device-review-rubric-invalid.review.json');
+	const backlogDir = join(outputDir, 'backlog');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/review-scout-local-ai-eval.mjs',
+				'--run',
+				runPath,
+				'--review',
+				reviewPath,
+				'--backlog-dir',
+				backlogDir
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /Review has invalid entries/u);
+			assert.match(error.stderr, /traitChecks\[0\] must be passed=true/u);
 			return true;
 		}
 	);
@@ -833,6 +876,40 @@ test('strict device proof rejects summary-only tool hits without invocation evid
 	);
 });
 
+test('strict device proof rejects 5-star reviews with unchecked rubric items', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-proof-rubric-fail-'));
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-final-proof-rubric-fail',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	const review = reviewForRun(run, { rating: 5 });
+	review.cases[0].safetyCaveatChecks[0].passed = null;
+	const runPath = join(outputDir, 'device-final-proof-rubric-fail.json');
+	const reviewPath = join(outputDir, 'device-final-proof-rubric-fail.review.json');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/verify-scout-local-ai-device-proof.mjs',
+				'--run',
+				runPath,
+				'--review',
+				reviewPath
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /safetyCaveatChecks\[0\] must be passed=true/u);
+			return true;
+		}
+	);
+});
+
 test('strict device proof rejects final reviews without native app metadata', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-proof-metadata-fail-'));
@@ -1130,6 +1207,10 @@ function reviewForRun(run, options = {}) {
 			phase: result.case.phase,
 			prompt: result.case.prompt,
 			answerOrigin: result.answerOrigin,
+			expectedTraits: result.case.expectedTraits,
+			safetyCaveats: result.case.safetyCaveats,
+			traitChecks: rubricChecksFor(result.case.expectedTraits),
+			safetyCaveatChecks: rubricChecksFor(result.case.safetyCaveats),
 			toolExpectations: result.toolExpectations,
 			safetyFlags: result.safetyFlags,
 			requiredConfirmations: result.requiredConfirmations,
@@ -1141,4 +1222,12 @@ function reviewForRun(run, options = {}) {
 			ownerLayer: ''
 		}))
 	};
+}
+
+function rubricChecksFor(items) {
+	return items.map((text) => ({
+		text,
+		passed: true,
+		notes: ''
+	}));
 }

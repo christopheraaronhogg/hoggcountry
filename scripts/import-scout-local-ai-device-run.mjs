@@ -190,8 +190,14 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath) {
 			'Expected traits:',
 			...result.case.expectedTraits.map((trait) => `- ${trait}`),
 			'',
+			'Trait checklist to fill in review JSON:',
+			...formatRubricChecklist(result.case.expectedTraits),
+			'',
 			'Safety caveats:',
 			...result.case.safetyCaveats.map((caveat) => `- ${caveat}`),
+			'',
+			'Safety caveat checklist to fill in review JSON:',
+			...formatRubricChecklist(result.case.safetyCaveats),
 			'',
 			'Tool expectations:',
 			`- Required: ${(result.toolExpectations?.required ?? []).join(', ') || 'none'}`,
@@ -244,6 +250,11 @@ function formatToolInvocations(invocations) {
 		if (record.safetyFlags?.length) lines.push(`  - Safety flags: ${record.safetyFlags.map((item) => item.id ?? item.severity ?? 'flag').join(', ')}`);
 		return lines;
 	});
+}
+
+function formatRubricChecklist(items) {
+	if (!Array.isArray(items) || !items.length) return ['- none'];
+	return items.map((item) => `- passed: null | text: ${item} | notes:`);
 }
 
 function formatReceipts(receipts) {
