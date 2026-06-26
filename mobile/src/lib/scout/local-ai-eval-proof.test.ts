@@ -7,7 +7,7 @@ const finalProof = {
 	nativePlatform: 'ios',
 	installSource: 'testflight',
 	minAppVersion: '1.0',
-	minAppBuild: 10
+	minAppBuild: 11
 };
 
 const testflightNative: ScoutLocalAiEvalNativePreflight = {
@@ -17,7 +17,7 @@ const testflightNative: ScoutLocalAiEvalNativePreflight = {
 	installSourceType: 'testflight',
 	installSourceLabel: 'TestFlight',
 	appVersion: '1.0',
-	appBuild: '10'
+	appBuild: '11'
 };
 
 test('Scout Eval Lab proof status unlocks the full run only for the required TestFlight iOS build', () => {
@@ -75,7 +75,7 @@ test('Scout Eval Lab proof status allows smoke but blocks final 100 on stale Tes
 		running: false,
 		native: {
 			...testflightNative,
-			appBuild: '9'
+			appBuild: '10'
 		},
 		finalProof
 	});
@@ -84,7 +84,7 @@ test('Scout Eval Lab proof status allows smoke but blocks final 100 on stale Tes
 	assert.equal(status.canRunFinal, false);
 	assert.equal(status.statusLabel, 'Build too old');
 	assert.equal(status.checks.find((check) => check.id === 'build')?.ok, false);
-	assert.equal(status.checks.find((check) => check.id === 'build')?.value, '1.0 (9)');
+	assert.equal(status.checks.find((check) => check.id === 'build')?.value, '1.0 (10)');
 });
 
 test('Scout Eval Lab proof status blocks web or cloud lanes', () => {

@@ -71,7 +71,7 @@ test('Dad local AI eval suite has 100 complete, reviewable cases', async () => {
 		nativePlatform: 'ios',
 		installSource: 'testflight',
 		minAppVersion: '1.0',
-		minAppBuild: 10
+		minAppBuild: 11
 	});
 	assert.equal(suite.cases.length, 100);
 
@@ -176,11 +176,11 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(gates['device-run'].ok, false);
 	assert.equal(status.runs.currentFullRoutingRuns.length, 1);
 	assert.equal(status.strictDeviceProofs.length, 0);
-	assert.equal(status.testflight.targetBuild, '1.0 (10)');
+	assert.equal(status.testflight.targetBuild, '1.0 (11)');
 	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (10)');
-	assert.equal(status.testflight.targetBuildReadyForDad, true);
-	assert.equal(status.nextAction.kind, 'get-device-run');
-	assert.match(status.nextAction.text, /Run 100/u);
+	assert.equal(status.testflight.targetBuildReadyForDad, false);
+	assert.equal(status.nextAction.kind, 'publish-target-build');
+	assert.match(status.nextAction.text, /Upload and attach target iOS build 1\.0 \(11\)/u);
 });
 
 test('status command surfaces target TestFlight build gaps before phone eval', async () => {
@@ -204,7 +204,7 @@ test('status command surfaces target TestFlight build gaps before phone eval', a
 		items: {
 			'dad-testflight-invite': {
 				status: 'verified',
-				summary: 'Dad Pilot is attached to Hoggcountry iOS build 1.0 (9), and build 10 is not attached yet.',
+				summary: 'Dad Pilot is attached to Hoggcountry iOS build 1.0 (10), and build 11 is not attached yet.',
 				publicLink: 'https://testflight.apple.com/join/BagBCrzf'
 			}
 		}
@@ -228,12 +228,12 @@ test('status command surfaces target TestFlight build gaps before phone eval', a
 	);
 	const status = JSON.parse(result.stdout);
 
-	assert.equal(status.testflight.targetBuild, '1.0 (10)');
-	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (9)');
+	assert.equal(status.testflight.targetBuild, '1.0 (11)');
+	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (10)');
 	assert.equal(status.testflight.targetBuildReadyForDad, false);
 	assert.equal(status.nextAction.kind, 'publish-target-build');
-	assert.match(status.nextAction.text, /Upload and attach target iOS build 1\.0 \(10\)/u);
-	assert.match(status.nextAction.text, /Dad Pilot on 1\.0 \(9\)/u);
+	assert.match(status.nextAction.text, /Upload and attach target iOS build 1\.0 \(11\)/u);
+	assert.match(status.nextAction.text, /Dad Pilot on 1\.0 \(10\)/u);
 });
 
 test('status command recognizes repeated strict TestFlight iPhone proof candidates', async () => {
@@ -317,9 +317,10 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	);
 
 	assert.match(result.stdout, /# Dad Scout local AI Eval Lab handoff/u);
-	assert.match(result.stdout, /Target iOS build for Dad Eval Lab: `1\.0 \(10\)`/u);
+	assert.match(result.stdout, /Target iOS build for Dad Eval Lab: `1\.0 \(11\)`/u);
 	assert.match(result.stdout, /Recorded Dad Pilot build: `1\.0 \(10\)`/u);
 	assert.match(result.stdout, /https:\/\/testflight\.apple\.com\/join\/BagBCrzf/u);
+	assert.match(result.stdout, /recorded Dad Pilot build is not the target build/u);
 	assert.match(result.stdout, /use `Run 100` for real proof/u);
 	assert.match(result.stdout, /npm run intake:scout-local-ai-device-run/u);
 	assert.match(result.stdout, /npm run apply-review:scout-local-ai/u);
@@ -662,7 +663,7 @@ test('device run intake rejects full exports without current TestFlight proof co
 		),
 		(error) => {
 			assert.match(error.stderr, /installSource\.type must be testflight/u);
-			assert.match(error.stderr, /app\.build must be >= 10/u);
+			assert.match(error.stderr, /app\.build must be >= 11/u);
 			assert.match(error.stderr, /got 9/u);
 			return true;
 		}
@@ -1593,8 +1594,8 @@ test('strict device proof accepts a full 5-star device review', async () => {
 	assert.ok(proof.includes(`Suite version: \`${suite.version}\``));
 	assert.match(proof, /Suite hash: `fnv1a32:[0-9a-f]{8}`/u);
 	assert.match(proof, /Required-tool complete: 100\/100/u);
-	assert.match(proof, /App version\/build: `1\.0 \(10\)`/u);
-	assert.match(proof, /Required app version\/build: `1\.0 \(>= 10\)`/u);
+	assert.match(proof, /App version\/build: `1\.0 \(11\)`/u);
+	assert.match(proof, /Required app version\/build: `1\.0 \(>= 11\)`/u);
 	assert.match(proof, /Install source: `testflight`/u);
 });
 
@@ -1857,7 +1858,7 @@ test('strict device proof rejects stale TestFlight app builds', async () => {
 			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
 		),
 		(error) => {
-			assert.match(error.stderr, /app\.build must be >= 10/u);
+			assert.match(error.stderr, /app\.build must be >= 11/u);
 			assert.match(error.stderr, /got 9/u);
 			return true;
 		}
@@ -1944,8 +1945,8 @@ test('stability proof accepts two full 5-star device reviews', async () => {
 	assert.match(proof, /Run 1: device-stability-pass-a/u);
 	assert.match(proof, /Run 2: device-stability-pass-b/u);
 	assert.match(proof, /Install source: `testflight`/u);
-	assert.match(proof, /Required app version\/build: `1\.0 \(>= 10\)`/u);
-	assert.match(proof, /App version\/build: `1\.0 \(10\)`/u);
+	assert.match(proof, /Required app version\/build: `1\.0 \(>= 11\)`/u);
+	assert.match(proof, /App version\/build: `1\.0 \(11\)`/u);
 	assert.match(proof, /Per-case repeated 5\/5: 100\/100/u);
 });
 
@@ -2019,7 +2020,7 @@ function finalDeviceRunContext(patch = {}) {
 			id: 'com.hoggcountry.trailassistant',
 			name: 'Hoggcountry',
 			version: '1.0',
-			build: '10'
+			build: '11'
 		},
 		installSource: {
 			type: 'testflight',

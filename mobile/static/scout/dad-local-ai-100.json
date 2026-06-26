@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "suiteId": "dad-local-ai-100",
   "title": "Dad Local AI 100-question Scout evaluation",
-  "version": "2026-06-26.2",
+  "version": "2026-06-26.3",
   "createdAt": "2026-06-26",
   "successTarget": "All 100 cases rated 5/5 from a real TestFlight iPhone path with Scout using on-device local AI.",
   "ratingScale": {
@@ -25,7 +25,7 @@
     "nativePlatform": "ios",
     "installSource": "testflight",
     "minAppVersion": "1.0",
-    "minAppBuild": 10
+    "minAppBuild": 11
   },
   "cases": [
     {"id":"DLA-001","phase":"pre-trail","domain":"pretrip","prompt":"I have 8 weeks before Springer. What should I focus on first for trail prep?","mile":0,"requiredTools":["source_search:terrain","open_source_doc:terrain"],"expectedTraits":["prioritizes training, shakedown, foot care, and offline app setup","gives Dad a short first-week preparation plan"],"safetyCaveats":["does not invent permits, mileage guarantees, or medical advice"],"improvementTags":["prompt","data"]},

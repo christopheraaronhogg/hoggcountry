@@ -9,10 +9,12 @@ without publishing publicly in the App Store.
   `https://testflight.apple.com/join/BagBCrzf`.
 - App Store Connect app id `6782505691` and bundle id
   `com.hoggcountry.trailassistant` are verified.
-- Build `1.0 (10)` is in Dad Pilot and approved for external testing.
-- Build `10` includes the Scout Eval Lab final-proof gates that require a
-  TestFlight iPhone install on build `10` or newer before a 100-question device
-  run can count as Dad proof.
+- Build `1.0 (10)` is in Dad Pilot and approved for external testing, but it is
+  now the previous Dad Pilot build.
+- The next Scout Eval Lab proof target is build `11`, because the eval handoff
+  now records source-evidence gaps and final proof requires a TestFlight iPhone
+  install on build `11` or newer before a 100-question device run can count as
+  Dad proof.
 - iOS Release signing is configured with team `3CFU9J87A5` and the
   `Hoggcountry App Store Connect` provisioning profile.
 - The repeatable upload command is:
@@ -57,17 +59,17 @@ npm --prefix mobile test
 npm --prefix mobile run cap:sync:ios
 ```
 
-3. Upload the next build with the repeatable TestFlight command above only if
-   mobile source changes again.
+3. Upload build `11` with the repeatable TestFlight command above.
 4. In App Store Connect, wait for the new build to reach `VALID`.
 5. Attach the new build to the existing `Dad Pilot` external group and remove
    the older build only after the new build is approved/available.
 6. If Apple asks for Beta App Review again, submit the build and wait for
    approval. Later TestFlight builds often skip a full review, but do not assume
    that until App Store Connect says the build is available.
-7. For the current build `10`, ask Dad to update/install through the public TestFlight link, open Settings,
-   verify the Eval Lab shows `TestFlight ready`, run `Run 100`, and Share the
-   JSON export back for import/review.
+7. After build `11` is attached to Dad Pilot, ask Dad to update/install through
+   the public TestFlight link, open Settings, verify the Eval Lab shows
+   `TestFlight ready`, run `Run 100`, and Share the JSON export back for
+   import/review.
 
 ## Proof To Capture
 
@@ -75,9 +77,10 @@ npm --prefix mobile run cap:sync:ios
   `DEVELOPMENT_TEAM` build setting.
 - Upload proof: `docs/launch/proof/ios-testflight-attempt-*.md` from the
   successful `--upload` run plus a build-state proof like
-  `docs/launch/proof/ios-testflight-build-10-2026-06-26.md`.
-- App Store Connect proof: build `10` processed, beta review state, Dad Pilot
-  membership, public link enabled, and build `9` removal.
+  `docs/launch/proof/ios-testflight-build-11-2026-06-26.md`.
+- App Store Connect proof: build `11` processed, beta review state, Dad Pilot
+  membership, public link enabled, and build `10` removal after build `11` is
+  available.
 - Release ledger proof: update `docs/launch/release-evidence.json` only after
   upload/processing and Dad Pilot attachment are proven.
 - Dad-ready proof: Dad can install/update from the TestFlight link, the Eval Lab

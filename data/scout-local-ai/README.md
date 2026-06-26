@@ -53,8 +53,8 @@ npm run handoff:scout-local-ai-dad
 ```
 
 It combines the eval status with the recorded Dad Pilot/TestFlight build truth
-so build `9`, build `10`, scaffold routing proof, and final iPhone proof do not
-get blended.
+so old TestFlight builds, the current target build, scaffold routing proof, and
+final iPhone proof do not get blended.
 
 The installed mobile app reads the suite from `mobile/static/scout/dad-local-ai-100.json`. The suite carries a version, a deterministic hash, and the final app build requirement, so stale iPhone exports fail intake/final proof instead of being mixed with the current 100-question set. After editing the canonical suite, bump the top-level `version` and run:
 
