@@ -176,6 +176,58 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(status.runs.currentFullRoutingRuns.length, 1);
 	assert.equal(status.strictDeviceProofs.length, 0);
 	assert.equal(status.testflight.targetBuild, '1.0 (10)');
+	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (10)');
+	assert.equal(status.testflight.targetBuildReadyForDad, true);
+	assert.equal(status.nextAction.kind, 'get-device-run');
+	assert.match(status.nextAction.text, /Run 100/u);
+});
+
+test('status command surfaces target TestFlight build gaps before phone eval', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-build-gap-'));
+	const runsDir = join(outputDir, 'runs');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
+	await mkdir(runsDir, { recursive: true });
+	const routingRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'routing-status-build-gap-proof',
+		completeTools: true
+	});
+	routingRun.evidenceLane = 'scaffold-not-model';
+	routingRun.runContext = null;
+	for (const result of routingRun.results) result.answerOrigin = 'scaffold-not-model';
+	await writeFile(join(runsDir, 'routing-status-build-gap-proof.json'), `${JSON.stringify(routingRun, null, 2)}\n`);
+	await writeFile(releaseEvidencePath, `${JSON.stringify({
+		schemaVersion: 1,
+		items: {
+			'dad-testflight-invite': {
+				status: 'verified',
+				summary: 'Dad Pilot is attached to Hoggcountry iOS build 1.0 (9), and build 10 is not attached yet.',
+				publicLink: 'https://testflight.apple.com/join/BagBCrzf'
+			}
+		}
+	}, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai.mjs',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--release-evidence',
+			releaseEvidencePath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const status = JSON.parse(result.stdout);
+
+	assert.equal(status.testflight.targetBuild, '1.0 (10)');
 	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (9)');
 	assert.equal(status.testflight.targetBuildReadyForDad, false);
 	assert.equal(status.nextAction.kind, 'publish-target-build');
@@ -265,9 +317,8 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 
 	assert.match(result.stdout, /# Dad Scout local AI Eval Lab handoff/u);
 	assert.match(result.stdout, /Target iOS build for Dad Eval Lab: `1\.0 \(10\)`/u);
-	assert.match(result.stdout, /Recorded Dad Pilot build: `1\.0 \(9\)`/u);
+	assert.match(result.stdout, /Recorded Dad Pilot build: `1\.0 \(10\)`/u);
 	assert.match(result.stdout, /https:\/\/testflight\.apple\.com\/join\/BagBCrzf/u);
-	assert.match(result.stdout, /Upload and attach target iOS build 1\.0 \(10\)/u);
 	assert.match(result.stdout, /use `Run 100` for real proof/u);
 	assert.match(result.stdout, /npm run intake:scout-local-ai-device-run/u);
 	assert.match(result.stdout, /npm run apply-review:scout-local-ai/u);
