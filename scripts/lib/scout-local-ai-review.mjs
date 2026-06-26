@@ -126,7 +126,7 @@ export function createReviewTemplate(run, runPath, repoRoot) {
 			answerPreview: String(result.answer ?? '').slice(0, 900),
 			rating: null,
 			notes: '',
-			failureCategories: result.suggestedFailureCategories ?? [],
+			failureCategories: suggestedFailureCategoriesForResult(result),
 			improvementTask: '',
 			ownerLayer: ''
 		}))
@@ -228,6 +228,27 @@ export function reviewRunEvidenceProblems(run, review) {
 	}
 
 	return problems;
+}
+
+export function suggestedFailureCategoriesForResult(result) {
+	const categories = [];
+	const add = (category) => {
+		if (VALID_FAILURES.has(category) && !categories.includes(category)) categories.push(category);
+	};
+	for (const category of result?.suggestedFailureCategories ?? []) add(category);
+	if ((result?.toolExpectations?.missing ?? []).length) {
+		add('bad-routing');
+		add('weak-tool');
+	}
+	const sourceProblems = sourceEvidenceProblems(
+		result?.case?.requiredTools ?? result?.toolExpectations?.required ?? [],
+		result?.toolInvocations ?? []
+	);
+	if (sourceProblems.length) add('weak-tool');
+	if (String(result?.error ?? '').trim() || String(result?.failureMode ?? '').includes('provider')) {
+		add('local-model-limitation');
+	}
+	return categories;
 }
 
 export function reviewRunAlignmentProblems(run, review) {

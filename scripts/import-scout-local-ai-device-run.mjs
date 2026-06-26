@@ -5,6 +5,7 @@ import {
 	createReviewTemplate,
 	inferOwnerLayer,
 	parseCliArgs,
+	suggestedFailureCategoriesForResult,
 	VALID_OWNER_LAYERS
 } from './lib/scout-local-ai-review.mjs';
 import {
@@ -272,7 +273,7 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 	}
 
 	for (const result of run.results) {
-		const suggestedFailureCategories = result.suggestedFailureCategories ?? [];
+		const suggestedFailureCategories = suggestedFailureCategoriesForResult(result);
 		const suggestedOwnerLayer = inferOwnerLayer(suggestedFailureCategories, result);
 		const sourceEvidenceGaps = sourceEvidenceProblems(result.case?.requiredTools ?? [], result.toolInvocations ?? []);
 		lines.push(

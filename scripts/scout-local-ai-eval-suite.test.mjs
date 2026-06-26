@@ -549,6 +549,7 @@ test('device run intake imports truthful missing source receipts for review', as
 		}
 	}
 	result.receipts = result.toolInvocations.flatMap((record) => record.receipts ?? []);
+	result.suggestedFailureCategories = [];
 	run.summary = {
 		...run.summary,
 		...summarizeRunSourceEvidence(run.results)
@@ -578,7 +579,12 @@ test('device run intake imports truthful missing source receipts for review', as
 	assert.match(importResult.stdout, /source-backed required tool/u);
 	assert.match(importResult.stdout, /must record at least one receipt or sourceDocumentId/u);
 	assert.equal(review.cases.length, 100);
+	const reviewCase = review.cases.find((entry) => entry.caseId === sourceCase.id);
+	assert.deepEqual(reviewCase.failureCategories, ['weak-tool']);
 	assert.match(packet, /Import warnings/u);
+	assert.match(packet, new RegExp(`## ${sourceCase.id} - `, 'u'));
+	assert.match(packet, /Suggested failure categories: `weak-tool`/u);
+	assert.match(packet, /Suggested owner layer: `tool-routing`/u);
 	assert.match(packet, /Source evidence gaps:/u);
 	assert.match(packet, /must record at least one receipt or sourceDocumentId/u);
 });
@@ -1308,6 +1314,39 @@ test('review workflow rejects 5-star ratings when run evidence missed required t
 			return true;
 		}
 	);
+});
+
+test('review template suggests local-model owner for provider errors', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-provider-suggest-'));
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 1), {
+		runId: 'device-review-provider-suggest',
+		completeTools: true
+	});
+	run.results[0].answer = '';
+	run.results[0].error = 'Gemma runtime failed to return a response.';
+	run.results[0].failureMode = 'provider-error';
+	run.results[0].suggestedFailureCategories = [];
+	const runPath = join(outputDir, 'device-review-provider-suggest.json');
+	const reviewPath = join(outputDir, 'device-review-provider-suggest.review.json');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+
+	const createResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/review-scout-local-ai-eval.mjs',
+			'--run',
+			runPath,
+			'--review',
+			reviewPath
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const review = JSON.parse(await readFile(reviewPath, 'utf8'));
+
+	assert.match(createResult.stdout, /Review template created/u);
+	assert.deepEqual(review.cases[0].failureCategories, ['local-model-limitation']);
+	assert.equal(review.cases[0].ownerLayer, '');
 });
 
 test('review workflow rejects 5-star ratings when source-backed tools lack evidence', async () => {
