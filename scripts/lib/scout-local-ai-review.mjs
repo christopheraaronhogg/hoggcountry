@@ -186,6 +186,27 @@ export function summarizeReview(review) {
 	};
 }
 
+export function reviewRunEvidenceProblems(run, review) {
+	const problems = [];
+	if (!Array.isArray(run?.results) || !Array.isArray(review?.cases)) return problems;
+	const runById = new Map(run.results.map((result) => [result.caseId, result]));
+
+	for (const entry of review.cases) {
+		if (entry.rating !== 5) continue;
+		const result = runById.get(entry.caseId);
+		if (!result) {
+			problems.push(`${entry.caseId}: 5-star rating has no matching run result.`);
+			continue;
+		}
+		const evidenceProblems = fiveStarRunEvidenceProblems(result);
+		for (const problem of evidenceProblems) {
+			problems.push(`${entry.caseId}: 5-star rating conflicts with run evidence; ${problem}`);
+		}
+	}
+
+	return problems;
+}
+
 export function improvementTaskProblems(task) {
 	const text = String(task ?? '').trim();
 	if (!text) return ['ratings below 5 need an improvementTask.'];
@@ -455,6 +476,62 @@ function failedRubricChecks(checks) {
 	return checks
 		.filter((check) => check?.passed !== true)
 		.map((check) => check?.text ?? '<missing rubric text>');
+}
+
+function fiveStarRunEvidenceProblems(result) {
+	const problems = [];
+	if (!String(result.answer ?? '').trim()) problems.push('answer is empty');
+	if (result.error) problems.push(`run recorded provider error: ${result.error}`);
+	const missingTools = result.toolExpectations?.missing;
+	if (!Array.isArray(missingTools)) {
+		problems.push('toolExpectations.missing is not recorded');
+	} else if (missingTools.length) {
+		problems.push(`missing required tools: ${missingTools.join(', ')}`);
+	}
+	const requiredTools = result.case?.requiredTools ?? result.toolExpectations?.required ?? [];
+	if (requiredTools.length) {
+		if (!Array.isArray(result.toolInvocations)) {
+			problems.push('toolInvocations are not recorded');
+		} else {
+			const actualExpectations = evaluateToolExpectations(requiredTools, result.toolInvocations);
+			if (actualExpectations.missing.length) {
+				problems.push(`actual toolInvocations missed required tools: ${actualExpectations.missing.join(', ')}`);
+			}
+			if (
+				Array.isArray(result.toolExpectations?.hit) &&
+				!sameStringArray(result.toolExpectations.hit, actualExpectations.hit)
+			) {
+				problems.push('toolExpectations.hit does not match actual toolInvocations');
+			}
+		}
+	}
+	return problems;
+}
+
+function evaluateToolExpectations(requiredTools, invocations) {
+	const hit = [];
+	const missing = [];
+	for (const expectation of requiredTools) {
+		if (invocations.some((record) => matchesToolExpectation(expectation, record))) {
+			hit.push(expectation);
+		} else {
+			missing.push(expectation);
+		}
+	}
+	return { hit, missing };
+}
+
+function matchesToolExpectation(expectation, record) {
+	const [toolId, sourceSkill] = expectation.split(':');
+	if (record?.toolId !== toolId) return false;
+	if (!sourceSkill) return true;
+	return String(record.args?.sourceSkill ?? '').toLowerCase() === sourceSkill.toLowerCase();
+}
+
+function sameStringArray(left, right) {
+	if (!Array.isArray(left) || !Array.isArray(right)) return false;
+	if (left.length !== right.length) return false;
+	return left.every((value, index) => value === right[index]);
 }
 
 function countBy(items, keyFor) {

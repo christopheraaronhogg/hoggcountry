@@ -6,6 +6,7 @@ import {
 	createBacklogMarkdown,
 	createReviewTemplate,
 	parseCliArgs,
+	reviewRunEvidenceProblems,
 	summarizeReview
 } from './lib/scout-local-ai-review.mjs';
 
@@ -41,10 +42,14 @@ try {
 }
 
 const summary = summarizeReview(review);
-if (summary.invalid.length) {
+const invalidEntries = [
+	...summary.invalid,
+	...reviewRunEvidenceProblems(run, review)
+];
+if (invalidEntries.length) {
 	console.error('Review has invalid entries. Fix these before creating an iteration backlog:');
-	for (const issue of summary.invalid.slice(0, 20)) console.error(`- ${issue}`);
-	if (summary.invalid.length > 20) console.error(`- ... ${summary.invalid.length - 20} more`);
+	for (const issue of invalidEntries.slice(0, 20)) console.error(`- ${issue}`);
+	if (invalidEntries.length > 20) console.error(`- ... ${invalidEntries.length - 20} more`);
 	process.exit(1);
 }
 if (summary.unrated && !allowUnrated) {

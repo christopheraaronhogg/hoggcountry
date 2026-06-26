@@ -87,7 +87,10 @@ self-contained for scoring: every case keeps the full answer plus confidence,
 mode/provider, required tool hits, actual tool invocations, receipts, required
 confirmations, safety flags, context used, failure mode, bridge diagnostics, and
 the expected-trait / safety-caveat checklists that must be marked before a 5/5
-rating is valid. Use the Markdown review packet as the easier reading surface
+rating is valid. A 5/5 rating must also match the recorded run evidence: no
+empty answer, no provider error, no missing required tools, and actual tool
+invocations must support the required tool hits. Use the Markdown review packet
+as the easier reading surface
 for device exports, but rate from the full evidence rather than the short answer
 preview. The packet includes the rating scale, valid failure categories, valid
 owner layers, and per-case suggested failure categories/owner layer when the run

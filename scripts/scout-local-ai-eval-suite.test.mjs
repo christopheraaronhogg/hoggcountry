@@ -854,6 +854,44 @@ test('review workflow rejects 5-star ratings with stale failure metadata', async
 	);
 });
 
+test('review workflow rejects 5-star ratings when run evidence missed required tools', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-evidence-invalid-'));
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 1), {
+		runId: 'device-review-evidence-invalid'
+	});
+	const review = reviewForRun(run, { rating: 5 });
+
+	const runPath = join(outputDir, 'device-review-evidence-invalid.json');
+	const reviewPath = join(outputDir, 'device-review-evidence-invalid.review.json');
+	const backlogDir = join(outputDir, 'backlog');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/review-scout-local-ai-eval.mjs',
+				'--run',
+				runPath,
+				'--review',
+				reviewPath,
+				'--backlog-dir',
+				backlogDir
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /Review has invalid entries/u);
+			assert.match(error.stderr, /5-star rating conflicts with run evidence/u);
+			assert.match(error.stderr, /missing required tools/u);
+			assert.match(error.stderr, /actual toolInvocations missed required tools/u);
+			return true;
+		}
+	);
+});
+
 test('iteration planner groups completed review backlog by responsible layer', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-iteration-plan-'));
