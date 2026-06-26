@@ -73,9 +73,9 @@
     },
     "apple-archive-upload": {
       "status": "verified",
-      "verifiedAt": "2026-06-21T15:26:03Z",
+      "verifiedAt": "2026-06-26T15:46:38Z",
       "verifiedBy": "Codex on Chris Hogg's local checkout plus App Store Connect API",
-      "summary": "Uploaded Hoggcountry iOS version 1.0 build 5 from repo SHA 9ab36e452bc528af57c8e8307de9c546aa0a62a9 to App Store Connect. Apple processed build id 3e2c90ff-d3dc-4d8f-afa7-8fe292ff8dde to processingState VALID; the build is attached to Dad Pilot and submitted for external Beta App Review.",
+      "summary": "Uploaded Hoggcountry iOS version 1.0 build 6 from repo SHA 07e248df21e2ed4eb4b14705bf3c5d5edf12fe53 to App Store Connect. Xcode direct upload stalled at SPI analysis, then local IPA export plus altool upload succeeded. Apple processed build id 04adec30-b363-4285-9917-67d571b0889a to processingState VALID; the build is attached to Dad Pilot and is IN_BETA_TESTING.",
       "files": [
         "docs/launch/proof/ios-testflight-upload-2026-06-21.md",
         "docs/launch/proof/ios-testflight-attempt-2026-06-21T14-36-45-831Z.md",
@@ -83,25 +83,31 @@
         "docs/launch/proof/ios-testflight-attempt-2026-06-21T15-02-23-312Z.md",
         "docs/launch/proof/ios-testflight-build-4-2026-06-21.md",
         "docs/launch/proof/ios-testflight-attempt-2026-06-21T15-20-34-857Z.md",
-        "docs/launch/proof/ios-testflight-build-5-2026-06-21.md"
+        "docs/launch/proof/ios-testflight-build-5-2026-06-21.md",
+        "docs/launch/proof/ios-testflight-attempt-2026-06-26T15-30-42-068Z.md",
+        "docs/launch/proof/ios-testflight-build-6-2026-06-26.md"
       ],
       "commands": [
         "npm run ios:testflight -- --upload --team-id 3CFU9J87A5 --asc-key-path ~/.appstoreconnect/private_keys/AuthKey_T272T83N98.p8 --asc-key-id T272T83N98 --asc-issuer-id <issuer>",
-        "GET https://api.appstoreconnect.apple.com/v1/builds/3e2c90ff-d3dc-4d8f-afa7-8fe292ff8dde?include=buildBetaDetail,betaGroups"
+        "xcodebuild -exportArchive -archivePath .scout-artifacts/ios-testflight/2026-06-26T15-30-42-068Z/HoggCountry.xcarchive -exportPath .scout-artifacts/ios-testflight/2026-06-26T15-30-42-068Z/export-local -exportOptionsPlist .scout-artifacts/ios-testflight/2026-06-26T15-30-42-068Z/ExportOptions-local.plist",
+        "xcrun altool --upload-app -f .scout-artifacts/ios-testflight/2026-06-26T15-30-42-068Z/export-local/App.ipa --api-key <key> --api-issuer <issuer>",
+        "xcrun altool --build-status --delivery-id 04adec30-b363-4285-9917-67d571b0889a --wait",
+        "GET https://api.appstoreconnect.apple.com/v1/builds/04adec30-b363-4285-9917-67d571b0889a?include=buildBetaDetail,betaGroups"
       ]
     },
     "dad-testflight-invite": {
-      "status": "blocked",
-      "verifiedAt": "2026-06-21T15:26:03Z",
+      "status": "verified",
+      "verifiedAt": "2026-06-26T15:46:38Z",
       "verifiedBy": "Codex via App Store Connect API",
-      "summary": "Dad Pilot is attached to Hoggcountry iOS build 1.0 (5), build 1.0 (4) was removed from Dad Pilot and review, and build 5 was submitted for external Beta App Review. Apple now reports build 5 externalBuildState WAITING_FOR_BETA_REVIEW; Dad's public link remains unavailable until approval.",
+      "summary": "Dad Pilot is attached to Hoggcountry iOS build 1.0 (6), the public TestFlight link is enabled with limit 5, and App Store Connect reports build 6 externalBuildState IN_BETA_TESTING. Build 5 was removed from Dad Pilot so the group now lists only build 6.",
       "files": [
         "docs/launch/proof/ios-testflight-upload-2026-06-21.md",
         "docs/launch/proof/ios-testflight-build-3-2026-06-21.md",
         "docs/launch/proof/ios-testflight-build-4-2026-06-21.md",
-        "docs/launch/proof/ios-testflight-build-5-2026-06-21.md"
+        "docs/launch/proof/ios-testflight-build-5-2026-06-21.md",
+        "docs/launch/proof/ios-testflight-build-6-2026-06-26.md"
       ],
-      "blocker": "Wait for Apple to approve build 5 for external beta testing. After build 5 approval, enable the Dad Pilot public link with limit 5 and send Chris the link."
+      "publicLink": "https://testflight.apple.com/join/BagBCrzf"
     },
     "android-upload-keystore": {
       "status": "verified",
