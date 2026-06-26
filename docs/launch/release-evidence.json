@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-21",
+  "updatedAt": "2026-06-26",
   "items": {
     "privacy-contact-and-deletion": {
       "status": "verified",
@@ -73,9 +73,9 @@
     },
     "apple-archive-upload": {
       "status": "verified",
-      "verifiedAt": "2026-06-26T15:46:38Z",
+      "verifiedAt": "2026-06-26T17:32:50Z",
       "verifiedBy": "Codex on Chris Hogg's local checkout plus App Store Connect API",
-      "summary": "Uploaded Hoggcountry iOS version 1.0 build 6 from repo SHA 07e248df21e2ed4eb4b14705bf3c5d5edf12fe53 to App Store Connect. Xcode direct upload stalled at SPI analysis, then local IPA export plus altool upload succeeded. Apple processed build id 04adec30-b363-4285-9917-67d571b0889a to processingState VALID; the build is attached to Dad Pilot and is IN_BETA_TESTING.",
+      "summary": "Uploaded Hoggcountry iOS version 1.0 build 7 from the mobile source lane captured at repo SHA fc92133201a9a020ea3f119bef62c72e4bedc100 plus CURRENT_PROJECT_VERSION=7. The first Xcode account upload failed with Failed to Use Accounts, then local IPA export plus altool upload succeeded. Apple processed build id 533c8f6c-03d9-4220-b5ef-5b4233d49509 to processingState VALID; the build is attached to Dad Pilot and is IN_BETA_TESTING.",
       "files": [
         "docs/launch/proof/ios-testflight-upload-2026-06-21.md",
         "docs/launch/proof/ios-testflight-attempt-2026-06-21T14-36-45-831Z.md",
@@ -85,27 +85,30 @@
         "docs/launch/proof/ios-testflight-attempt-2026-06-21T15-20-34-857Z.md",
         "docs/launch/proof/ios-testflight-build-5-2026-06-21.md",
         "docs/launch/proof/ios-testflight-attempt-2026-06-26T15-30-42-068Z.md",
-        "docs/launch/proof/ios-testflight-build-6-2026-06-26.md"
+        "docs/launch/proof/ios-testflight-build-6-2026-06-26.md",
+        "docs/launch/proof/ios-testflight-attempt-2026-06-26T17-19-30-564Z.md",
+        "docs/launch/proof/ios-testflight-build-7-2026-06-26.md"
       ],
       "commands": [
         "npm run ios:testflight -- --upload --team-id 3CFU9J87A5 --asc-key-path ~/.appstoreconnect/private_keys/AuthKey_T272T83N98.p8 --asc-key-id T272T83N98 --asc-issuer-id <issuer>",
-        "xcodebuild -exportArchive -archivePath .scout-artifacts/ios-testflight/2026-06-26T15-30-42-068Z/HoggCountry.xcarchive -exportPath .scout-artifacts/ios-testflight/2026-06-26T15-30-42-068Z/export-local -exportOptionsPlist .scout-artifacts/ios-testflight/2026-06-26T15-30-42-068Z/ExportOptions-local.plist",
-        "xcrun altool --upload-app -f .scout-artifacts/ios-testflight/2026-06-26T15-30-42-068Z/export-local/App.ipa --api-key <key> --api-issuer <issuer>",
-        "xcrun altool --build-status --delivery-id 04adec30-b363-4285-9917-67d571b0889a --wait",
-        "GET https://api.appstoreconnect.apple.com/v1/builds/04adec30-b363-4285-9917-67d571b0889a?include=buildBetaDetail,betaGroups"
+        "xcodebuild -exportArchive -archivePath .scout-artifacts/ios-testflight/2026-06-26T17-19-30-564Z/HoggCountry.xcarchive -exportPath .scout-artifacts/ios-testflight/2026-06-26T17-19-30-564Z/export-local -exportOptionsPlist .scout-artifacts/ios-testflight/2026-06-26T17-19-30-564Z/ExportOptions-local.plist",
+        "xcrun altool --upload-app -f .scout-artifacts/ios-testflight/2026-06-26T17-19-30-564Z/export-local/App.ipa --api-key <key> --api-issuer <issuer>",
+        "xcrun altool --build-status --delivery-id 533c8f6c-03d9-4220-b5ef-5b4233d49509 --wait",
+        "GET https://api.appstoreconnect.apple.com/v1/builds/533c8f6c-03d9-4220-b5ef-5b4233d49509?include=buildBetaDetail,betaGroups"
       ]
     },
     "dad-testflight-invite": {
       "status": "verified",
-      "verifiedAt": "2026-06-26T15:46:38Z",
+      "verifiedAt": "2026-06-26T17:32:50Z",
       "verifiedBy": "Codex via App Store Connect API",
-      "summary": "Dad Pilot is attached to Hoggcountry iOS build 1.0 (6), the public TestFlight link is enabled with limit 5, and App Store Connect reports build 6 externalBuildState IN_BETA_TESTING. Build 5 was removed from Dad Pilot so the group now lists only build 6.",
+      "summary": "Dad Pilot is attached to Hoggcountry iOS build 1.0 (7), the public TestFlight link is enabled with limit 5, and App Store Connect reports build 7 externalBuildState IN_BETA_TESTING with beta review APPROVED. Build 6 was removed from Dad Pilot so the group now lists only build 7.",
       "files": [
         "docs/launch/proof/ios-testflight-upload-2026-06-21.md",
         "docs/launch/proof/ios-testflight-build-3-2026-06-21.md",
         "docs/launch/proof/ios-testflight-build-4-2026-06-21.md",
         "docs/launch/proof/ios-testflight-build-5-2026-06-21.md",
-        "docs/launch/proof/ios-testflight-build-6-2026-06-26.md"
+        "docs/launch/proof/ios-testflight-build-6-2026-06-26.md",
+        "docs/launch/proof/ios-testflight-build-7-2026-06-26.md"
       ],
       "publicLink": "https://testflight.apple.com/join/BagBCrzf"
     },
