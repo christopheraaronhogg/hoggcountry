@@ -658,7 +658,9 @@ test('review workflow rejects below-5 ratings without concrete improvement tasks
 	review.cases[0].rating = 4;
 	review.cases[0].failureCategories = [];
 	review.cases[0].improvementTask = '';
-	review.cases[1].rating = 5;
+	review.cases[1].rating = 3;
+	review.cases[1].failureCategories = ['bad-prompt'];
+	review.cases[1].improvementTask = 'needs work';
 
 	const runPath = join(outputDir, 'device-review-invalid.json');
 	const reviewPath = join(outputDir, 'device-review-invalid.review.json');
@@ -684,6 +686,8 @@ test('review workflow rejects below-5 ratings without concrete improvement tasks
 			assert.match(error.stderr, /Review has invalid entries/u);
 			assert.match(error.stderr, /ratings below 5 need an improvementTask/u);
 			assert.match(error.stderr, /ratings below 5 need at least one failure category/u);
+			assert.match(error.stderr, /improvementTask must be concrete enough/u);
+			assert.match(error.stderr, /improvementTask must include an action verb/u);
 			return true;
 		}
 	);
@@ -895,6 +899,7 @@ test('iteration planner rejects incomplete or uncategorized backlog work', async
 			assert.match(error.stderr, /requires a completed review/u);
 			assert.match(error.stderr, /contains unratedItems/u);
 			assert.match(error.stderr, /ownerLayer must be one of/u);
+			assert.match(error.stderr, /improvementTask must be concrete enough/u);
 			return true;
 		}
 	);
@@ -1011,7 +1016,7 @@ test('iteration verifier rejects reruns with unresolved planned cases', async ()
 	const rerunReview = reviewForRun(rerun, { rating: 5 });
 	rerunReview.cases[1].rating = 4;
 	rerunReview.cases[1].failureCategories = ['unsafe-wording'];
-	rerunReview.cases[1].improvementTask = 'Still needs safer wording.';
+	rerunReview.cases[1].improvementTask = 'Tighten safety wording so the answer leads with bailout choices.';
 	const planPath = join(outputDir, 'device-iteration-resolution-fail.iteration.json');
 	const rerunPath = join(outputDir, 'device-iteration-rerun-fail.json');
 	const rerunReviewPath = join(outputDir, 'device-iteration-rerun-fail.review.json');

@@ -20,6 +20,21 @@ export const VALID_OWNER_LAYERS = [
 ];
 
 const VALID_FAILURES = new Set(VALID_FAILURE_CATEGORIES);
+const IMPROVEMENT_ACTION_RE =
+	/\b(add|adjust|build|cache|change|create|expose|fix|generate|improve|investigate|lead|record|refactor|remove|route|surface|teach|test|tighten|update|wire)\b/iu;
+const VAGUE_IMPROVEMENT_TASKS = new Set([
+	'fix',
+	'fix it',
+	'fix answer',
+	'fix the answer',
+	'improve',
+	'improve answer',
+	'improve the answer',
+	'make better',
+	'make it better',
+	'needs work',
+	'bad answer'
+]);
 
 export function parseCliArgs(argv) {
 	const parsed = {};
@@ -127,6 +142,10 @@ export function summarizeReview(review) {
 			belowFive += 1;
 			if (!entry.improvementTask || !entry.improvementTask.trim()) {
 				invalid.push(`${entry.caseId}: ratings below 5 need an improvementTask.`);
+			} else {
+				for (const problem of improvementTaskProblems(entry.improvementTask)) {
+					invalid.push(`${entry.caseId}: ${problem}`);
+				}
 			}
 			if (!Array.isArray(entry.failureCategories) || !entry.failureCategories.length) {
 				invalid.push(`${entry.caseId}: ratings below 5 need at least one failure category.`);
@@ -165,6 +184,21 @@ export function summarizeReview(review) {
 		byDomain,
 		invalid
 	};
+}
+
+export function improvementTaskProblems(task) {
+	const text = String(task ?? '').trim();
+	if (!text) return ['ratings below 5 need an improvementTask.'];
+	const normalized = text.toLowerCase().replace(/\s+/gu, ' ');
+	const wordCount = normalized.split(/\s+/u).filter(Boolean).length;
+	const problems = [];
+	if (VAGUE_IMPROVEMENT_TASKS.has(normalized) || wordCount < 6) {
+		problems.push('improvementTask must be concrete enough for the next iteration.');
+	}
+	if (!IMPROVEMENT_ACTION_RE.test(text)) {
+		problems.push('improvementTask must include an action verb such as add, fix, route, tighten, investigate, or improve.');
+	}
+	return problems;
 }
 
 export function createBacklog(run, review, summary) {

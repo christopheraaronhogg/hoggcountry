@@ -1,28 +1,18 @@
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { basename, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseCliArgs } from './lib/scout-local-ai-review.mjs';
+import {
+	improvementTaskProblems,
+	parseCliArgs,
+	VALID_FAILURE_CATEGORIES,
+	VALID_OWNER_LAYERS as REVIEW_OWNER_LAYERS
+} from './lib/scout-local-ai-review.mjs';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
 const DEFAULT_OUTPUT_DIR = 'data/scout-local-ai/iterations';
-const VALID_FAILURES = new Set([
-	'missing-data',
-	'weak-tool',
-	'bad-routing',
-	'bad-prompt',
-	'unsafe-wording',
-	'poor-ux',
-	'local-model-limitation'
-]);
-const VALID_OWNER_LAYERS = new Set([
-	'data',
-	'tool-routing',
-	'prompt',
-	'safety-prompt',
-	'ui',
-	'local-model'
-]);
+const VALID_FAILURES = new Set(VALID_FAILURE_CATEGORIES);
+const VALID_OWNER_LAYERS = new Set(REVIEW_OWNER_LAYERS);
 const OWNER_GUIDANCE = {
 	data: 'Improve local data tables, generated source docs, or offline field-pack slices; add source retrieval coverage for the affected cases.',
 	'tool-routing': 'Fix Scout tool selection, source-skill routing, or required tool invocation evidence; add routing regression coverage before changing answer wording.',
@@ -128,6 +118,10 @@ function validateBacklog(backlog, path, options) {
 		}
 		if (!String(item.improvementTask ?? '').trim()) {
 			options.errors.push(`${itemLabel}: improvementTask is required.`);
+		} else {
+			for (const problem of improvementTaskProblems(item.improvementTask)) {
+				options.errors.push(`${itemLabel}: ${problem}`);
+			}
 		}
 	}
 }
