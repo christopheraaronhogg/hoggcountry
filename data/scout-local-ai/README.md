@@ -89,8 +89,11 @@ confirmations, safety flags, context used, failure mode, bridge diagnostics, and
 the expected-trait / safety-caveat checklists that must be marked before a 5/5
 rating is valid. Use the Markdown review packet as the easier reading surface
 for device exports, but rate from the full evidence rather than the short answer
-preview. You can fill the checklist `passed:` values and Reviewer fields in the
-Markdown packet, then apply them back to the machine-readable review JSON:
+preview. The packet includes the rating scale, valid failure categories, valid
+owner layers, and per-case suggested failure categories/owner layer when the run
+already shows tool or routing gaps. You can fill the checklist `passed:` values
+and Reviewer fields in the Markdown packet, then apply them back to the
+machine-readable review JSON:
 
 ```sh
 npm run apply-review:scout-local-ai -- --packet data/scout-local-ai/review-packets/<run-id>.review.md --review data/scout-local-ai/reviews/<run-id>.review.json
@@ -130,7 +133,9 @@ result will include explicit unrated case entries.
 
 For a `5` rating, every `traitChecks` and `safetyCaveatChecks` item in the
 review JSON must have `passed: true`. Leave failed or uncertain checks unpassed
-and rate below 5 with a concrete improvement task.
+and rate below 5 with a concrete improvement task. A 5/5 case must not keep
+failure categories, an owner layer, or an improvement task; clear those fields
+when a rerun actually fixes the issue.
 
 Plan the next fix pass from one or more completed backlogs:
 

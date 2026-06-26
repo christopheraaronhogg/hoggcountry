@@ -3,7 +3,9 @@ import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
 	createReviewTemplate,
-	parseCliArgs
+	inferOwnerLayer,
+	parseCliArgs,
+	VALID_OWNER_LAYERS
 } from './lib/scout-local-ai-review.mjs';
 import {
 	validateScoutLocalAiSuiteIdentity
@@ -171,6 +173,17 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 		'',
 		'Use this packet for human reading. Fill the checklist passed values and Reviewer fields here, then apply it back into the review JSON before running the review/backlog command.',
 		'',
+		'## Rating scale',
+		'',
+		...formatRatingScale(run.ratingScale),
+		'',
+		'## Reviewer field choices',
+		'',
+		'For a 5/5 rating, every checklist item must be `passed: true`, and Failure categories, Owner layer, and Improvement task should stay blank. For any rating below 5, choose at least one failure category and write a concrete improvement task.',
+		'',
+		`Valid failure categories: ${(run.failureCategories ?? []).join(', ')}`,
+		`Valid owner layers: ${VALID_OWNER_LAYERS.join(', ')}`,
+		'',
 		'After filling this packet, run:',
 		'',
 		'```sh',
@@ -192,6 +205,8 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 	}
 
 	for (const result of run.results) {
+		const suggestedFailureCategories = result.suggestedFailureCategories ?? [];
+		const suggestedOwnerLayer = inferOwnerLayer(suggestedFailureCategories, result);
 		lines.push(
 			`## ${result.caseId} - ${result.case.domain}`,
 			'',
@@ -202,6 +217,8 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 			`Mode/provider: \`${result.mode ?? '<missing>'} / ${result.provider ?? '<missing>'}\`  `,
 			`Duration: \`${result.durationMs}ms\``,
 			`Failure mode: \`${result.failureMode ?? 'none'}\``,
+			`Suggested failure categories: \`${suggestedFailureCategories.join(', ') || 'none'}\`  `,
+			`Suggested owner layer: \`${suggestedOwnerLayer}\``,
 			'',
 			'Prompt:',
 			'',
@@ -255,6 +272,13 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 	}
 
 	return `${lines.join('\n')}\n`;
+}
+
+function formatRatingScale(ratingScale) {
+	const entries = Object.entries(ratingScale ?? {})
+		.sort(([left], [right]) => Number(left) - Number(right));
+	if (!entries.length) return ['- 1-5; use 5 only for a Dad-ready, grounded, safe answer.'];
+	return entries.map(([rating, label]) => `- ${rating}: ${label}`);
 }
 
 function formatToolInvocations(invocations) {

@@ -405,6 +405,12 @@ test('device run intake validates exports and creates review packet', async () =
 	assert.match(packet, /Tool invocations:/u);
 	assert.match(packet, /Source receipts:/u);
 	assert.match(packet, /Failure mode: `none`/u);
+	assert.match(packet, /## Rating scale/u);
+	assert.match(packet, /## Reviewer field choices/u);
+	assert.match(packet, /Valid failure categories: .*missing-data.*local-model-limitation/u);
+	assert.match(packet, /Valid owner layers: data, tool-routing, prompt, safety-prompt, ui, local-model/u);
+	assert.match(packet, /Suggested failure categories: `bad-routing, weak-tool`/u);
+	assert.match(packet, /Suggested owner layer: `tool-routing`/u);
 	assert.match(packet, /npm run apply-review:scout-local-ai/u);
 	assert.match(packet, /Rating:/u);
 });
@@ -716,6 +722,48 @@ test('review workflow rejects 5-star ratings without passed rubric checks', asyn
 		(error) => {
 			assert.match(error.stderr, /Review has invalid entries/u);
 			assert.match(error.stderr, /traitChecks\[0\] must be passed=true/u);
+			return true;
+		}
+	);
+});
+
+test('review workflow rejects 5-star ratings with stale failure metadata', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-stale-metadata-'));
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 1), {
+		runId: 'device-review-stale-metadata',
+		completeTools: true
+	});
+	const review = reviewForRun(run, { rating: 5 });
+	review.cases[0].failureCategories = ['missing-data'];
+	review.cases[0].ownerLayer = 'data';
+	review.cases[0].improvementTask = 'Add more local water context.';
+
+	const runPath = join(outputDir, 'device-review-stale-metadata.json');
+	const reviewPath = join(outputDir, 'device-review-stale-metadata.review.json');
+	const backlogDir = join(outputDir, 'backlog');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/review-scout-local-ai-eval.mjs',
+				'--run',
+				runPath,
+				'--review',
+				reviewPath,
+				'--backlog-dir',
+				backlogDir
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /Review has invalid entries/u);
+			assert.match(error.stderr, /5-star ratings must not keep failureCategories/u);
+			assert.match(error.stderr, /5-star ratings must not keep ownerLayer/u);
+			assert.match(error.stderr, /5-star ratings must not keep an improvementTask/u);
 			return true;
 		}
 	);

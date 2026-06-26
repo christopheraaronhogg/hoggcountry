@@ -1,6 +1,6 @@
 import { basename, relative } from 'node:path';
 
-const VALID_FAILURES = new Set([
+export const VALID_FAILURE_CATEGORIES = [
 	'missing-data',
 	'weak-tool',
 	'bad-routing',
@@ -8,7 +8,18 @@ const VALID_FAILURES = new Set([
 	'unsafe-wording',
 	'poor-ux',
 	'local-model-limitation'
-]);
+];
+
+export const VALID_OWNER_LAYERS = [
+	'data',
+	'tool-routing',
+	'prompt',
+	'safety-prompt',
+	'ui',
+	'local-model'
+];
+
+const VALID_FAILURES = new Set(VALID_FAILURE_CATEGORIES);
 
 export function parseCliArgs(argv) {
 	const parsed = {};
@@ -122,6 +133,15 @@ export function summarizeReview(review) {
 			}
 		}
 		if (rating === 5) {
+			if ((entry.failureCategories ?? []).length) {
+				invalid.push(`${entry.caseId}: 5-star ratings must not keep failureCategories.`);
+			}
+			if (String(entry.ownerLayer ?? '').trim()) {
+				invalid.push(`${entry.caseId}: 5-star ratings must not keep ownerLayer.`);
+			}
+			if (String(entry.improvementTask ?? '').trim()) {
+				invalid.push(`${entry.caseId}: 5-star ratings must not keep an improvementTask.`);
+			}
 			for (const problem of rubricProblems(entry.traitChecks, entry.expectedTraits, 'traitChecks')) {
 				invalid.push(`${entry.caseId}: ${problem}`);
 			}
