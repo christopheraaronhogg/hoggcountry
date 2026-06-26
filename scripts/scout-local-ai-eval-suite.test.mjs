@@ -466,15 +466,70 @@ test('device run intake rejects full exports with summary-only tool evidence', a
 		),
 		(error) => {
 			assert.match(error.stderr, /Device run import failed validation/u);
-			assert.match(error.stderr, /actual toolInvocations missed required tools/u);
 			assert.match(error.stderr, /toolExpectations\.hit does not match actual toolInvocations/u);
-			assert.match(error.stderr, /toolExpectations\.missing does not match actual toolInvocations/u);
+			assert.match(error.stderr, /toolExpectations\.missing does not match actual toolInvocations; actual missing:/u);
 			return true;
 		}
 	);
 });
 
-test('device run intake rejects full exports with missing source receipts', async () => {
+test('device run intake imports truthful missing-tool runs for review', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-intake-missing-tools-'));
+	const inputPath = join(outputDir, 'missing-tools-device-export.json');
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-intake-missing-tools',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	run.results[0].toolInvocations = [];
+	run.results[0].receipts = [];
+	run.results[0].toolExpectations = {
+		required: run.results[0].case.requiredTools,
+		hit: [],
+		missing: run.results[0].case.requiredTools
+	};
+	run.summary.toolExpectationComplete -= 1;
+	run.summary.missingToolCases += 1;
+	for (const missing of run.results[0].toolExpectations.missing) {
+		run.summary.missingToolCounts[missing] = (run.summary.missingToolCounts[missing] ?? 0) + 1;
+	}
+	run.summary = {
+		...run.summary,
+		...summarizeRunSourceEvidence(run.results)
+	};
+	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/import-scout-local-ai-device-run.mjs',
+			'--run',
+			inputPath,
+			'--device-run-dir',
+			join(outputDir, 'device-runs'),
+			'--review-dir',
+			join(outputDir, 'reviews'),
+			'--packet-dir',
+			join(outputDir, 'review-packets')
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const review = JSON.parse(await readFile(join(outputDir, 'reviews', 'device-intake-missing-tools.review.json'), 'utf8'));
+	const packet = await readFile(join(outputDir, 'review-packets', 'device-intake-missing-tools.review.md'), 'utf8');
+
+	assert.match(result.stdout, /Device run imported/u);
+	assert.match(result.stdout, /Required-tool complete: 99\/100/u);
+	assert.match(result.stdout, /Warnings:/u);
+	assert.match(result.stdout, /actual toolInvocations missed required tools/u);
+	assert.equal(review.cases.length, 100);
+	assert.deepEqual(review.cases[0].toolExpectations.missing, run.results[0].case.requiredTools);
+	assert.match(packet, /Import warnings/u);
+	assert.match(packet, /actual toolInvocations missed required tools/u);
+	assert.match(packet, /Missing: /u);
+});
+
+test('device run intake imports truthful missing source receipts for review', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-intake-source-missing-'));
 	const inputPath = join(outputDir, 'source-missing-device-export.json');
@@ -500,29 +555,32 @@ test('device run intake rejects full exports with missing source receipts', asyn
 	};
 	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
 
-	await assert.rejects(
-		execFileAsync(
-			process.execPath,
-			[
-				'scripts/import-scout-local-ai-device-run.mjs',
-				'--run',
-				inputPath,
-				'--device-run-dir',
-				join(outputDir, 'device-runs'),
-				'--review-dir',
-				join(outputDir, 'reviews'),
-				'--packet-dir',
-				join(outputDir, 'review-packets')
-			],
-			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
-		),
-		(error) => {
-			assert.match(error.stderr, /Device run import failed validation/u);
-			assert.match(error.stderr, /source-backed required tool/u);
-			assert.match(error.stderr, /must record at least one receipt or sourceDocumentId/u);
-			return true;
-		}
+	const importResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/import-scout-local-ai-device-run.mjs',
+			'--run',
+			inputPath,
+			'--device-run-dir',
+			join(outputDir, 'device-runs'),
+			'--review-dir',
+			join(outputDir, 'reviews'),
+			'--packet-dir',
+			join(outputDir, 'review-packets')
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
 	);
+	const review = JSON.parse(await readFile(join(outputDir, 'reviews', 'device-intake-source-missing.review.json'), 'utf8'));
+	const packet = await readFile(join(outputDir, 'review-packets', 'device-intake-source-missing.review.md'), 'utf8');
+
+	assert.match(importResult.stdout, /Device run imported/u);
+	assert.match(importResult.stdout, /Warnings:/u);
+	assert.match(importResult.stdout, /source-backed required tool/u);
+	assert.match(importResult.stdout, /must record at least one receipt or sourceDocumentId/u);
+	assert.equal(review.cases.length, 100);
+	assert.match(packet, /Import warnings/u);
+	assert.match(packet, /Source evidence gaps:/u);
+	assert.match(packet, /must record at least one receipt or sourceDocumentId/u);
 });
 
 test('review packet ratings can be applied back into review JSON', async () => {

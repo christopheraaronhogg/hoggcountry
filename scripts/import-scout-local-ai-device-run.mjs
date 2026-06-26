@@ -129,11 +129,9 @@ function validateDeviceRun(run, suite, options) {
 		if (!result.toolExpectations || !Array.isArray(result.toolExpectations.missing)) {
 			errors.push(`${result.caseId}: toolExpectations.missing must be present`);
 		}
-		const evidenceProblems = resultEvidenceProblems(result, expectedCase);
-		for (const problem of evidenceProblems) {
-			if (options.allowPartial) warnings.push(`partial smoke export is not final Dad proof: ${result.caseId}: ${problem}`);
-			else errors.push(`${result.caseId}: ${problem}`);
-		}
+		const evidence = resultEvidenceValidation(result, expectedCase);
+		for (const problem of evidence.errors) errors.push(`${result.caseId}: ${problem}`);
+		for (const warning of evidence.warnings) warnings.push(`${result.caseId}: ${warning}`);
 	}
 
 	if (run.caseCount !== run.results.length) {
@@ -182,27 +180,28 @@ function validateDeviceRun(run, suite, options) {
 	return { errors, warnings };
 }
 
-function resultEvidenceProblems(result, expectedCase) {
-	const problems = [];
+function resultEvidenceValidation(result, expectedCase) {
+	const errors = [];
+	const warnings = [];
 	const invocations = result.toolInvocations;
 	if (!Array.isArray(invocations)) {
-		problems.push('toolInvocations must be recorded for device proof');
-		return problems;
+		errors.push('toolInvocations must be recorded for device proof');
+		return { errors, warnings };
 	}
 	const actualExpectations = evaluateToolExpectations(expectedCase.requiredTools, invocations);
 	if (actualExpectations.missing.length) {
-		problems.push(`actual toolInvocations missed required tools: ${actualExpectations.missing.join(', ')}`);
+		warnings.push(`actual toolInvocations missed required tools: ${actualExpectations.missing.join(', ')}`);
 	}
 	if (!sameStringArray(result.toolExpectations?.hit, actualExpectations.hit)) {
-		problems.push('toolExpectations.hit does not match actual toolInvocations');
+		errors.push('toolExpectations.hit does not match actual toolInvocations');
 	}
 	if (!sameStringArray(result.toolExpectations?.missing, actualExpectations.missing)) {
-		problems.push('toolExpectations.missing does not match actual toolInvocations');
+		errors.push(`toolExpectations.missing does not match actual toolInvocations; actual missing: ${actualExpectations.missing.join(', ') || 'none'}`);
 	}
 	for (const problem of sourceEvidenceProblems(expectedCase.requiredTools, invocations)) {
-		problems.push(problem.message);
+		warnings.push(problem.message);
 	}
-	return problems;
+	return { errors, warnings };
 }
 
 function evaluateToolExpectations(requiredTools, invocations) {

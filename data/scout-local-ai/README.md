@@ -82,6 +82,10 @@ Settings Eval Lab surface, iOS native shell, `com.hoggcountry.trailassistant`,
 TestFlight install source, suite-required app version/build, configured runtime,
 and model id. If Dad shares an old build, debug install, web/PWA run, or otherwise
 wrong-lane export, intake should fail before anyone rates 100 unusable answers.
+If the run is in the right lane but Scout truthfully missed tools, lacked source
+receipts, returned low-confidence answers, or recorded provider errors, intake
+keeps those failures reviewable and surfaces warnings in the packet so the
+below-5 ratings can become concrete iteration tasks.
 The review JSON is
 self-contained for scoring: every case keeps the full answer plus confidence,
 mode/provider, required tool hits, actual tool invocations, receipts, required
