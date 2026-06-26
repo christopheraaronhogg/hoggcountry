@@ -11,6 +11,20 @@
     TrailMapPoint,
     TrailMapWaypoint
   } from '../map-pack-types';
+  // Relative import (same reason as map-pack-types) so the legacy Astro site
+  // can mount this component cross-tree until the Forge cutover retires it.
+  import {
+    TRAIL_TIME_ZONE,
+    buildDayOptions,
+    dayKeyFor,
+    listTrackedDays,
+    pointsForDay,
+    relativeDayLabel,
+    summarizeDay,
+    type DayElevationSample,
+    type DayOption,
+    type DaySummary
+  } from '../trail/day-replay';
 
   type TerrainMode = 'grade' | 'rockiness' | 'difficulty';
   type PlaceMode = 'core' | 'access' | 'camp' | 'view';
@@ -50,6 +64,11 @@
     }
   }
   let layersOpen = $state(false);
+  // Day replay: an optional "what did Dad do on <day>?" filter layered over the
+  // default live view. `viewMode` stays 'live' unless a day is picked.
+  let daysOpen = $state(false);
+  let viewMode = $state<'live' | 'day'>('live');
+  let selectedDay = $state<string | null>(null);
   // Bottom-sheet snap state: 0 = peek (glanceable summary), 1 = half, 2 = full.
   let sheetSnap = $state<0 | 1 | 2>(0);
   let shellEl = $state<HTMLElement | null>(null);
@@ -399,6 +418,105 @@
     const staleAfterMinutes = pack?.tracker.staleAfterMinutes ?? 360;
     return Date.now() - observed <= staleAfterMinutes * 60000;
   });
+  // --- Freshness / confidence -------------------------------------------
+  // Garmin only shows a dot; the HUD explains how much to trust it.
+  type SignalState = 'live' | 'stale' | 'preview' | 'none';
+  const signalState = $derived.by<SignalState>(() => {
+    if (!currentPoint) return 'none';
+    if (pack?.tracker.source === 'preview') return 'preview';
+    return signalIsLive ? 'live' : 'stale';
+  });
+  const freshnessLabel = $derived.by(() => {
+    if (!currentPoint) return loading ? 'Locating…' : 'Tracker offline';
+    if (signalState === 'preview') return 'Preview · awaiting first fix';
+    if (signalState === 'live') return `Live · ${relativeTime(currentPoint.observedAt)}`;
+    return `Last fix ${relativeTime(currentPoint.observedAt)}`;
+  });
+  const freshChipLabel = $derived.by(() =>
+    signalState === 'live' ? 'Live' : signalState === 'stale' ? 'Stale' : signalState === 'preview' ? 'Preview' : 'Offline'
+  );
+  // Composed in script so the " · state" separator keeps its spaces (Svelte
+  // trims whitespace at the start of an {#if} block in the template).
+  const pillSubtitle = $derived.by(() => (currentState ? `${freshnessLabel} · ${currentState}` : freshnessLabel));
+  // Dad's current position in the measured frame used by the terrain lookups
+  // (matches selectedMileMeasured; collapses to the official mile once the
+  // pack is calibrated, which production always is). Null when the fix has no
+  // calibrated mile — never fall back to 0, which would falsely report the
+  // mile-0 state (Georgia) and a Springer-area "just passed" as if true.
+  const currentMileMeasured = $derived.by(() =>
+    currentPoint && Number.isFinite(currentPoint.mile) ? (currentPoint.mile as number) * measuredFactor : null
+  );
+  const currentState = $derived.by(() =>
+    currentMileMeasured !== null ? nearestElevation(currentMileMeasured)?.state ?? '' : ''
+  );
+  // What Dad most recently passed (nearest shelter / town / summit behind his
+  // current mile) — answers "what did he just pass?".
+  const justPassed = $derived.by<TrailMapWaypoint | null>(() => {
+    if (currentMileMeasured === null) return null;
+    const behind = [
+      prevWaypoint(pack?.waypoints.shelters ?? [], currentMileMeasured),
+      prevWaypoint(pack?.waypoints.towns ?? [], currentMileMeasured),
+      prevWaypoint(pack?.waypoints.summits ?? [], currentMileMeasured)
+    ].filter((point): point is TrailMapWaypoint => point !== null);
+    if (!behind.length) return null;
+    return behind.reduce((best, point) => (point.mile > best.mile ? point : best));
+  });
+
+  // --- Day replay --------------------------------------------------------
+  // Terrain miles arrive on the calibrated official frame in production
+  // (measuredFactor === 1). The fast path avoids re-allocating the big arrays;
+  // the divide keeps the pure day-summary correct if the pack ever ships the
+  // raw measured frame, so its slices line up with the official tracker miles.
+  const officialElevation = $derived.by<DayElevationSample[]>(() => {
+    const list = pack?.terrain.elevation ?? [];
+    const factor = measuredFactor;
+    return factor === 1 ? list : list.map((point) => ({ mile: point.mile / factor, elevationFt: point.elevationFt }));
+  });
+  const officialDifficulty = $derived.by(() => {
+    const list = pack?.terrain.difficulty ?? [];
+    const factor = measuredFactor;
+    return factor === 1
+      ? list
+      : list.map((segment) => ({
+          startMile: segment.startMile / factor,
+          endMile: segment.endMile / factor,
+          score: segment.score,
+          label: segment.label
+        }));
+  });
+  const todayKey = $derived.by(() => dayKeyFor(new Date().toISOString(), TRAIL_TIME_ZONE) ?? '');
+  const trackedDays = $derived.by(() => listTrackedDays(history, TRAIL_TIME_ZONE));
+  const dayOptions = $derived.by<DayOption[]>(() =>
+    history.length ? buildDayOptions(history, todayKey, TRAIL_TIME_ZONE, 10) : []
+  );
+  const dayBounds = $derived.by(() =>
+    trackedDays.length ? { min: trackedDays[trackedDays.length - 1], max: trackedDays[0] } : { min: '', max: '' }
+  );
+  const selectedDayLabel = $derived.by(() => (selectedDay ? relativeDayLabel(selectedDay, todayKey) : ''));
+  const daySubLabel = $derived.by(() => {
+    if (!daySummary) return '';
+    const fixes = `${daySummary.pointCount} fix${daySummary.pointCount === 1 ? '' : 'es'}`;
+    return daySummary.milesCovered !== null ? `${fixes} · ${daySummary.milesCovered} mi covered` : fixes;
+  });
+  const dayPoints = $derived.by(() =>
+    viewMode === 'day' && selectedDay ? pointsForDay(history, selectedDay, TRAIL_TIME_ZONE) : []
+  );
+  const daySummary = $derived.by<DaySummary | null>(() => {
+    if (viewMode !== 'day' || !selectedDay) return null;
+    return summarizeDay(history, selectedDay, TRAIL_TIME_ZONE, {
+      elevation: officialElevation,
+      difficulty: officialDifficulty
+    });
+  });
+  const dayProfileWindow = $derived.by(() => {
+    if (!daySummary || daySummary.startMile === null || daySummary.endMile === null) return [];
+    const lo = Math.min(daySummary.startMile, daySummary.endMile);
+    const hi = Math.max(daySummary.startMile, daySummary.endMile);
+    if (hi <= lo) return [];
+    return officialElevation.filter((point) => point.mile >= lo && point.mile <= hi);
+  });
+  const dayProfileD = $derived(profilePath(dayProfileWindow));
+
   const selectedElevation = $derived.by(() => nearestElevation(selectedMileMeasured));
   const selectedTerrain = $derived.by(() => nearestTerrainSegment(selectedMileMeasured));
   const selectedRockiness = $derived.by(() => nearestRockiness(selectedMileMeasured));
@@ -441,6 +559,59 @@
       hour: 'numeric',
       minute: '2-digit'
     });
+  }
+
+  // "12 min ago" / "3 hr ago" / "2 days ago" — the freshness phrasing the HUD
+  // leads with so a watcher knows how stale the fix is at a glance.
+  function relativeTime(iso?: string | null): string {
+    if (!iso) return 'time unknown';
+    const t = Date.parse(iso);
+    if (!Number.isFinite(t)) return 'time unknown';
+    const diffMin = Math.round((Date.now() - t) / 60000);
+    if (diffMin < 1) return 'just now';
+    if (diffMin < 60) return `${diffMin} min ago`;
+    const diffHr = Math.round(diffMin / 60);
+    if (diffHr < 24) return `${diffHr} hr ago`;
+    const diffDay = Math.round(diffHr / 24);
+    return `${diffDay} day${diffDay === 1 ? '' : 's'} ago`;
+  }
+
+  // Time-of-day in trail time (Eastern) so a day's start/end read consistently
+  // with how the day was bucketed.
+  function clockLabel(iso?: string | null): string {
+    if (!iso) return '--';
+    const t = Date.parse(iso);
+    if (!Number.isFinite(t)) return '--';
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: TRAIL_TIME_ZONE,
+      hour: 'numeric',
+      minute: '2-digit'
+    }).format(new Date(t));
+  }
+
+  function elapsedLabel(minutes: number | null): string {
+    if (minutes === null) return '--';
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return hours ? `${hours}h ${mins}m` : `${mins}m`;
+  }
+
+  function dateHeading(key: string): string {
+    const t = Date.parse(`${key}T12:00:00Z`);
+    if (!Number.isFinite(t)) return key;
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'UTC',
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric'
+    }).format(new Date(t));
+  }
+
+  function confidenceWord(confidence: DaySummary['confidence']): string {
+    if (confidence === 'good') return 'Good data';
+    if (confidence === 'fair') return 'Fair data';
+    if (confidence === 'sparse') return 'Sparse data';
+    return 'No data';
   }
 
   function colorForGrade(grade: number): string {
@@ -527,6 +698,17 @@
     return list.find((point) => point.mile >= mile) ?? null;
   }
 
+  // Nearest waypoint at or behind `mile` (lists are sorted ascending by mile).
+  function prevWaypoint(list: TrailMapWaypoint[], mile: number): TrailMapWaypoint | null {
+    if (!Number.isFinite(mile)) return null;
+    let found: TrailMapWaypoint | null = null;
+    for (const point of list) {
+      if (point.mile <= mile) found = point;
+      else break;
+    }
+    return found;
+  }
+
   function distanceAhead(point: TrailMapWaypoint | null): string {
     if (!point || !Number.isFinite(selectedMileMeasured)) return '--';
     return `${Math.max(0, (point.mile - selectedMileMeasured) / measuredFactor).toFixed(1)} mi`;
@@ -540,7 +722,7 @@
     return list.filter((point) => point.mile >= start && point.mile <= end);
   }
 
-  function profilePath(points: TrailMapElevationPoint[], width = 340, height = 82): string {
+  function profilePath(points: readonly { readonly mile: number; readonly elevationFt: number }[], width = 340, height = 82): string {
     if (points.length < 2) return '';
     const minMile = points[0].mile;
     const maxMile = points[points.length - 1].mile;
@@ -703,10 +885,64 @@
     return points.filter((_, index) => index % step === 0 || index === points.length - 1);
   }
 
+  function dayFlagIcon(kind: 'start' | 'end') {
+    return L.divIcon({
+      className: `day-flag day-flag--${kind}`,
+      html: `<span>${kind === 'start' ? 'S' : 'F'}</span>`,
+      iconSize: [26, 26],
+      iconAnchor: [13, 13]
+    });
+  }
+
+  // Day mode: draw only the selected day's track with explicit start (S) and
+  // finish (F) flags, so a family member sees exactly that day's hike.
+  function renderDayLayer() {
+    const points = dayPoints.filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lon));
+    if (!points.length) return;
+
+    if (points.length >= 2) {
+      L.polyline(points.map((point) => [point.lat, point.lon]), {
+        color: '#f59e0b',
+        weight: 5,
+        opacity: 0.92,
+        lineCap: 'round',
+        lineJoin: 'round'
+      }).addTo(trackerLayer);
+    }
+
+    for (const point of points.slice(1, -1)) {
+      L.circleMarker([point.lat, point.lon], {
+        radius: 3,
+        color: '#7c2d12',
+        fillColor: '#fbbf24',
+        fillOpacity: 0.92,
+        weight: 1
+      }).bindTooltip(timeLabel(point.observedAt)).addTo(trackerLayer);
+    }
+
+    const start = points[0];
+    L.marker([start.lat, start.lon], { icon: dayFlagIcon('start'), zIndexOffset: 820 })
+      .bindPopup(`<b>Day start</b><br/>${timeLabel(start.observedAt)}${Number.isFinite(start.mile) ? `<br/>Mile ${fmt(start.mile, 1)}` : ''}`)
+      .addTo(trackerLayer);
+
+    if (points.length > 1) {
+      const end = points[points.length - 1];
+      L.marker([end.lat, end.lon], { icon: dayFlagIcon('end'), zIndexOffset: 860 })
+        .bindPopup(`<b>Day end</b><br/>${timeLabel(end.observedAt)}${Number.isFinite(end.mile) ? `<br/>Mile ${fmt(end.mile, 1)}` : ''}`)
+        .addTo(trackerLayer);
+    }
+  }
+
   function addTrackerLayer(recenter = false) {
     if (scrubbing) return;
     clearLayer(trackerLayer);
     if (!pack || !L || !trackerLayer) return;
+
+    if (viewMode === 'day') {
+      renderDayLayer();
+      return;
+    }
+
     const path = history.filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lon));
 
     // Sparse history (e.g. just the start fix and today's) must not be
@@ -941,10 +1177,47 @@
     });
   }
 
+  function fitDay() {
+    if (!map || !L) return;
+    const points = dayPoints.filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lon));
+    if (!points.length) return;
+    if (points.length === 1) {
+      map.setView([points[0].lat, points[0].lon], Math.max(map.getZoom(), 12), { animate: true, duration: 0.3 });
+      return;
+    }
+    const bounds = L.latLngBounds(points.map((point) => [point.lat, point.lon]));
+    if (bounds.isValid()) map.fitBounds(bounds, { padding: [60, 60], maxZoom: 14, animate: true });
+  }
+
+  function enterDay(dateKey: string) {
+    selectedDay = dateKey;
+    viewMode = 'day';
+    daysOpen = false;
+    inspectedMile = null;
+    dismissScrubHint();
+    if (sheetSnap === 0) sheetSnap = 1;
+    addTrackerLayer(false);
+    fitDay();
+  }
+
+  function backToLive() {
+    viewMode = 'live';
+    selectedDay = null;
+    addTrackerLayer(false);
+    recenterOnLive();
+  }
+
+  function onDatePick(event: Event) {
+    const value = (event.currentTarget as HTMLInputElement).value;
+    if (value) enterDay(value);
+  }
+
   // Tapping near the trail inspects that mile's terrain, even where Dad
   // hasn't hiked yet. The hit area is a finger-sized 36px regardless of zoom,
   // so taps far from the corridor still behave as plain map panning.
   function inspectFromLatLng(lat: number, lon: number) {
+    // Day mode is a read-only replay; map taps just pan, they don't scout.
+    if (viewMode === 'day') return;
     const points = pack?.milepoints;
     if (!points?.length || !map) return;
 
@@ -1032,6 +1305,8 @@
   $effect(() => {
     if (!map || !pack) return;
     void selectedHistoryIndex;
+    void viewMode;
+    void selectedDay;
     addTrackerLayer(false);
   });
 
@@ -1128,6 +1403,10 @@
       <circle cx="12" cy="12" r="3.4"></circle>
       <path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>
     </symbol>
+    <symbol id="trail-map-icon-calendar" viewBox="0 0 24 24">
+      <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+      <path d="M3 9h18M8 3v4M16 3v4"></path>
+    </symbol>
   </svg>
 
   <!-- Top: slim floating status pill (tap to recenter on the live position) -->
@@ -1136,16 +1415,15 @@
       <svg aria-hidden="true"><use href="#trail-map-icon-arrow-left"></use></svg>
     </a>
     <button class="status-pill" type="button" onclick={recenterOnLive} aria-label="Recenter on current location">
-      <span class="status-dot" class:live={signalIsLive} class:stale={Boolean(currentPoint) && !signalIsLive}></span>
+      <span
+        class="status-dot"
+        class:live={signalState === 'live'}
+        class:stale={signalState === 'stale'}
+        class:preview={signalState === 'preview'}
+      ></span>
       <span class="status-text">
         <strong>{currentPoint ? `Mile ${fmt(currentPoint.mile, 1)}` : loading ? 'Locating…' : 'No signal'}</strong>
-        <small>
-          {#if currentPoint}
-            {signalIsLive ? `Live · ${timeLabel(currentPoint.observedAt)}` : `Seen ${timeLabel(currentPoint.observedAt)}`}{#if totalMiles} · {Math.round(remainingMiles).toLocaleString()} mi to go{/if}
-          {:else}
-            {loading ? 'Loading trail signal' : 'Tracker offline'}
-          {/if}
-        </small>
+        <small>{pillSubtitle}</small>
       </span>
       {#if currentPoint && totalMiles}
         <span class="status-progress" aria-hidden="true"><i style:width={`${progressPct}%`}></i></span>
@@ -1155,7 +1433,10 @@
 
   <!-- Right edge: floating map tools -->
   <div class="edge-tools">
-    <button class="circle-btn" class:on={layersOpen} type="button" aria-expanded={layersOpen} aria-controls="map-layer-sheet" onclick={() => (layersOpen = !layersOpen)} aria-label="Map layers">
+    <button class="circle-btn" class:on={viewMode === 'day' || daysOpen} type="button" aria-expanded={daysOpen} aria-controls="map-days-sheet" onclick={() => { daysOpen = !daysOpen; if (daysOpen) layersOpen = false; }} aria-label="Replay a day" disabled={!history.length}>
+      <svg aria-hidden="true"><use href="#trail-map-icon-calendar"></use></svg>
+    </button>
+    <button class="circle-btn" class:on={layersOpen} type="button" aria-expanded={layersOpen} aria-controls="map-layer-sheet" onclick={() => { layersOpen = !layersOpen; if (layersOpen) daysOpen = false; }} aria-label="Map layers">
       <svg aria-hidden="true"><use href="#trail-map-icon-layers"></use></svg>
     </button>
     <button class="circle-btn" type="button" onclick={recenterOnLive} aria-label="Recenter on current location" disabled={!currentPoint}>
@@ -1169,7 +1450,12 @@
   </div>
 
   <!-- Floating context chip -->
-  {#if inspectedMile !== null}
+  {#if viewMode === 'day'}
+    <button class="floating-chip day" type="button" onclick={backToLive}>
+      <span>Day: {selectedDayLabel}</span>
+      <strong>Back to live</strong>
+    </button>
+  {:else if inspectedMile !== null}
     <button class="floating-chip inspect" type="button" onclick={clearInspect}>
       <span>Scouting mi {fmt(inspectedMile, 1)}</span>
       <strong>Back to live</strong>
@@ -1228,6 +1514,44 @@
     </aside>
   {/if}
 
+  <!-- Day replay sheet -->
+  {#if daysOpen}
+    <button class="sheet-scrim" type="button" aria-label="Close day replay" onclick={() => (daysOpen = false)}></button>
+    <aside id="map-days-sheet" class="layers-sheet days-sheet" aria-label="Replay a day">
+      <div class="layers-head">
+        <h2>Replay a day</h2>
+        <button class="layers-close" type="button" onclick={() => (daysOpen = false)} aria-label="Close day replay">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+        </button>
+      </div>
+
+      {#if dayOptions.length}
+        <p class="days-intro">See what Dad hiked on a given day — start, finish, miles, and climb.</p>
+        <div class="day-chips">
+          {#each dayOptions as opt (opt.key)}
+            <button class:active={viewMode === 'day' && selectedDay === opt.key} type="button" onclick={() => enterDay(opt.key)}>
+              <strong>{opt.label}</strong>
+              <small>{opt.count} fix{opt.count === 1 ? '' : 'es'}</small>
+            </button>
+          {/each}
+        </div>
+        <label class="day-pick">
+          <span>Pick any date</span>
+          <input type="date" min={dayBounds.min} max={dayBounds.max} value={selectedDay ?? ''} onchange={onDatePick} />
+        </label>
+        {#if viewMode === 'day'}
+          <button class="layers-refresh" type="button" onclick={backToLive}>
+            <svg aria-hidden="true"><use href="#trail-map-icon-locate"></use></svg>
+            <span>Back to live</span>
+          </button>
+        {/if}
+      {:else}
+        <p class="day-empty">No Garmin history yet. Day replay lights up once Dad's tracker logs fixes on the trail.</p>
+      {/if}
+      <p class="layers-credit">Days use trail time (Eastern)</p>
+    </aside>
+  {/if}
+
   <!-- Bottom sheet: peek summary always visible, drag/tap to expand -->
   <section
     class="sheet"
@@ -1254,47 +1578,147 @@
       </div>
 
       {#if !errorMessage}
-        <div class="peek">
-          <div class="peek-lead">
-            <span class="peek-eyebrow">{inspectedMile !== null ? 'Scouting' : 'Live position'}</span>
-            <strong class="peek-mile">mi {fmt(selectedMile, 1)}</strong>
-            <small class="peek-sub">{inspectedMile !== null ? 'Tapped on the map' : selectedPoint ? timeLabel(selectedPoint.observedAt) : 'No point selected'}</small>
+        {#if viewMode === 'day' && daySummary}
+          <div class="peek">
+            <div class="peek-lead">
+              <span class="peek-eyebrow">Replaying</span>
+              <strong class="peek-mile">{selectedDayLabel}</strong>
+              <small class="peek-sub">{daySubLabel}</small>
+            </div>
+            <span class={`day-conf day-conf--${daySummary.confidence}`}>{confidenceWord(daySummary.confidence)}</span>
           </div>
-          <span class={`diff-chip ${selectedDifficultyClass}`}>
-            <em>{selectedDifficulty ? fmt(selectedDifficulty.score, 1) : '--'}</em>
-            <span>{selectedDifficulty ? displayLabel(selectedDifficulty.label) : 'difficulty'}</span>
-          </span>
-        </div>
+        {:else}
+          <div class="peek">
+            <div class="peek-lead">
+              <span class="peek-eyebrow">{inspectedMile !== null ? 'Scouting' : 'Live position'}</span>
+              <strong class="peek-mile">mi {fmt(selectedMile, 1)}</strong>
+              <small class="peek-sub">{inspectedMile !== null ? 'Tapped on the map' : selectedPoint ? timeLabel(selectedPoint.observedAt) : 'No point selected'}</small>
+            </div>
+            <span class={`diff-chip ${selectedDifficultyClass}`}>
+              <em>{selectedDifficulty ? fmt(selectedDifficulty.score, 1) : '--'}</em>
+              <span>{selectedDifficulty ? displayLabel(selectedDifficulty.label) : 'difficulty'}</span>
+            </span>
+          </div>
 
-        <div class="ahead-strip" aria-label="What's ahead">
-          <button type="button" onclick={() => nextShelter && map?.setView([nextShelter.lat, nextShelter.lon], 13)}>
-            <svg aria-hidden="true"><use href="#trail-map-icon-shelter"></use></svg>
-            <em>{distanceAhead(nextShelter)}</em>
-            <small>Shelter</small>
-          </button>
-          <button type="button" onclick={() => nextWater && map?.setView([nextWater.lat, nextWater.lon], 13)}>
-            <svg aria-hidden="true"><use href="#trail-map-icon-water"></use></svg>
-            <em>{distanceAhead(nextWater)}</em>
-            <small>Water</small>
-          </button>
-          <button type="button" onclick={() => nextTown && map?.setView([nextTown.lat, nextTown.lon], 12)}>
-            <svg aria-hidden="true"><use href="#trail-map-icon-town"></use></svg>
-            <em>{distanceAhead(nextTown)}</em>
-            <small>Town</small>
-          </button>
-          <button type="button" onclick={() => nextRoad && map?.setView([nextRoad.lat, nextRoad.lon], 13)}>
-            <svg aria-hidden="true"><use href="#trail-map-icon-road"></use></svg>
-            <em>{distanceAhead(nextRoad)}</em>
-            <small>Road</small>
-          </button>
-        </div>
+          <div class="ahead-strip" aria-label="What's ahead">
+            <button type="button" onclick={() => nextShelter && map?.setView([nextShelter.lat, nextShelter.lon], 13)}>
+              <svg aria-hidden="true"><use href="#trail-map-icon-shelter"></use></svg>
+              <em>{distanceAhead(nextShelter)}</em>
+              <small>Shelter</small>
+            </button>
+            <button type="button" onclick={() => nextWater && map?.setView([nextWater.lat, nextWater.lon], 13)}>
+              <svg aria-hidden="true"><use href="#trail-map-icon-water"></use></svg>
+              <em>{distanceAhead(nextWater)}</em>
+              <small>Water</small>
+            </button>
+            <button type="button" onclick={() => nextTown && map?.setView([nextTown.lat, nextTown.lon], 12)}>
+              <svg aria-hidden="true"><use href="#trail-map-icon-town"></use></svg>
+              <em>{distanceAhead(nextTown)}</em>
+              <small>Town</small>
+            </button>
+            <button type="button" onclick={() => nextRoad && map?.setView([nextRoad.lat, nextRoad.lon], 13)}>
+              <svg aria-hidden="true"><use href="#trail-map-icon-road"></use></svg>
+              <em>{distanceAhead(nextRoad)}</em>
+              <small>Road</small>
+            </button>
+          </div>
+        {/if}
       {/if}
     </div>
 
     {#if errorMessage}
       <div class="error">{errorMessage}</div>
+    {:else if viewMode === 'day' && daySummary}
+      <div class="sheet-body">
+        <div class="day-head">
+          <strong>{dateHeading(daySummary.dateKey)}</strong>
+          <span class={`day-conf day-conf--${daySummary.confidence}`}>{confidenceWord(daySummary.confidence)}</span>
+        </div>
+
+        <div class="metric-row">
+          <div class="metric">
+            <span class="metric-label">Tracking window</span>
+            <strong>{elapsedLabel(daySummary.elapsedMinutes)}</strong>
+            <small>{clockLabel(daySummary.startTime)} – {clockLabel(daySummary.endTime)}</small>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Miles covered</span>
+            <strong>{daySummary.milesCovered !== null ? daySummary.milesCovered : '--'}</strong>
+            <small>{daySummary.startMile !== null ? `mi ${fmt(daySummary.startMile, 1)} → ${fmt(daySummary.endMile, 1)}` : 'no mile data'}</small>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Difficulty</span>
+            <strong>{daySummary.difficultyScore !== null ? fmt(daySummary.difficultyScore, 1) : '--'}</strong>
+            <small>{daySummary.difficultyLabel ?? 'unavailable'}</small>
+          </div>
+        </div>
+
+        <div class="metric-row">
+          <div class="metric">
+            <span class="metric-label"><svg aria-hidden="true"><use href="#trail-map-icon-elevation"></use></svg>Elev gain</span>
+            <strong>{daySummary.elevationGainFt !== null ? `${daySummary.elevationGainFt.toLocaleString()} ft` : '--'}</strong>
+            <small>{daySummary.elevationModeled ? `${(daySummary.elevationLossFt ?? 0).toLocaleString()} ft down · modeled` : 'unavailable'}</small>
+          </div>
+          <div class="metric">
+            <span class="metric-label">High / low</span>
+            <strong>{daySummary.highestFt !== null ? `${daySummary.highestFt.toLocaleString()} ft` : '--'}</strong>
+            <small>{daySummary.elevationModeled ? `low ${(daySummary.lowestFt ?? 0).toLocaleString()} ft` : 'unavailable'}</small>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Fixes</span>
+            <strong>{daySummary.pointCount}</strong>
+            <small>Garmin</small>
+          </div>
+        </div>
+
+        {#if dayProfileD}
+          <div class="profile-row">
+            <svg viewBox="0 0 340 92" role="img" aria-label="Modeled elevation across the day">
+              <path class="profile-fill" d={`${dayProfileD} L340 92 L0 92 Z`}></path>
+              <path class="profile-line" d={dayProfileD}></path>
+            </svg>
+            <div class="profile-x-labels">
+              <span>mi {fmt(daySummary.startMile, 1)}</span>
+              <span class="profile-cursor-label">modeled elevation</span>
+              <span>mi {fmt(daySummary.endMile, 1)}</span>
+            </div>
+          </div>
+        {/if}
+
+        {#if daySummary.confidenceNote}
+          <p class="day-note">{daySummary.confidenceNote}</p>
+        {/if}
+
+        <div class="action-row">
+          <button class="back-live-btn" type="button" onclick={backToLive}>Back to live</button>
+          <span>Day uses trail time (Eastern)</span>
+        </div>
+      </div>
     {:else}
       <div class="sheet-body">
+        <div class="today-card">
+          <div class="today-top">
+            <div class="today-lead">
+              <span class="today-eyebrow">Today on trail</span>
+              <strong>Mile {currentPoint ? fmt(currentPoint.mile, 1) : '--'}{#if totalMiles}<small> of {Math.round(totalMiles).toLocaleString()}</small>{/if}</strong>
+            </div>
+            <span class={`fresh-chip fresh-chip--${signalState}`}>{freshChipLabel}</span>
+          </div>
+          {#if currentPoint && totalMiles}
+            <div class="today-rail" aria-hidden="true"><i style:width={`${progressPct}%`}></i></div>
+            <div class="today-foot">
+              <span>{progressPct.toFixed(0)}% done</span>
+              <span>{Math.round(remainingMiles).toLocaleString()} mi to Katahdin</span>
+            </div>
+          {/if}
+          {#if currentState || justPassed}
+            <div class="today-context">
+              {#if currentState}<span class="ctx-here">📍 {currentState}</span>{/if}
+              {#if justPassed}<span class="ctx-passed">Just passed {justPassed.name}</span>{/if}
+            </div>
+          {/if}
+        </div>
+
         <div class="metric-row">
           <div class="metric">
             <span class="metric-label"><svg aria-hidden="true"><use href="#trail-map-icon-elevation"></use></svg>Elevation</span>
@@ -1372,11 +1796,14 @@
         </div>
 
         <div class="action-row">
-          {#if appMode}
-            <a href={`/app/scout?prompt=${encodeURIComponent(scoutPrompt)}`}>Ask Scout about this mile</a>
-          {:else}
-            <a href="/app/map">Open in Scout</a>
-          {/if}
+          <div class="action-links">
+            {#if appMode}
+              <a href={`/app/scout?prompt=${encodeURIComponent(scoutPrompt)}`}>Ask Scout</a>
+            {:else}
+              <a href="/app/map">Open in Scout</a>
+            {/if}
+            <a class="ghost" href="/updates">Latest update</a>
+          </div>
           <span>{pack ? `${pack.terrain.elevation.length.toLocaleString()} elevation pts · ${pack.terrain.rockiness.length.toLocaleString()} rockiness mi` : ''}</span>
         </div>
       </div>
@@ -1464,6 +1891,34 @@
 
   :global(.leaflet-marker-icon.scrub-marker:active) {
     cursor: grabbing;
+  }
+
+  /* Day-replay start (S) / finish (F) flags. */
+  :global(.leaflet-marker-icon.day-flag) {
+    background: transparent;
+    border: 0;
+  }
+
+  :global(.leaflet-marker-icon.day-flag span) {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border: 2px solid #fffdf8;
+    border-radius: 999px;
+    color: #fffdf8;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+
+  :global(.leaflet-marker-icon.day-flag--start span) {
+    background: #16a34a;
+  }
+
+  :global(.leaflet-marker-icon.day-flag--end span) {
+    background: #dc2626;
   }
 
   :global(.trail-map-shell .leaflet-control-attribution) {
@@ -1603,6 +2058,11 @@
   .status-dot.stale {
     background: #f59e0b;
     box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.14);
+  }
+
+  .status-dot.preview {
+    background: #38bdf8;
+    box-shadow: 0 0 0 5px rgba(56, 189, 248, 0.16);
   }
 
   .status-text {
@@ -1755,6 +2215,11 @@
     color: #fdba74;
   }
 
+  .floating-chip.day strong {
+    background: rgba(56, 189, 248, 0.2);
+    color: #bae6fd;
+  }
+
   /* ---- Layers sheet --------------------------------------------------- */
   .sheet-scrim {
     position: absolute;
@@ -1779,6 +2244,11 @@
     bottom: 0;
     display: grid;
     gap: 0.9rem;
+    /* Cap + scroll so a long day list (or a short device) can't push the
+       heading/close button off the top of the viewport. */
+    max-height: calc(100svh - 2rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     border-radius: 22px 22px 0 0;
     padding: 1rem 1.1rem calc(1.1rem + env(safe-area-inset-bottom));
     animation: slide-up 240ms cubic-bezier(0.32, 0.72, 0, 1);
@@ -1797,6 +2267,7 @@
 
   .layers-head h2 {
     margin: 0;
+    color: #fffdf8;
     font-family: Oswald, Impact, sans-serif;
     font-size: 1.1rem;
     font-weight: 700;
@@ -1960,6 +2431,94 @@
     font-size: 0.66rem;
     font-weight: 600;
     text-align: center;
+  }
+
+  /* ---- Day replay sheet ----------------------------------------------- */
+  .days-intro {
+    margin: 0;
+    color: rgba(255, 253, 248, 0.66);
+    font-size: 0.82rem;
+    line-height: 1.4;
+  }
+
+  .day-chips {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+    gap: 0.5rem;
+  }
+
+  .day-chips button {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    align-items: flex-start;
+    border: 1px solid rgba(255, 253, 248, 0.14);
+    border-radius: 12px;
+    background: rgba(255, 253, 248, 0.06);
+    color: #fffdf8;
+    cursor: pointer;
+    padding: 0.55rem 0.7rem;
+    text-align: left;
+  }
+
+  .day-chips button strong {
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.92rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+
+  .day-chips button small {
+    color: rgba(255, 253, 248, 0.56);
+    font-size: 0.68rem;
+    font-weight: 600;
+  }
+
+  .day-chips button.active {
+    border-color: rgba(56, 189, 248, 0.6);
+    background: rgba(56, 189, 248, 0.18);
+    color: #e0f2fe;
+  }
+
+  .day-pick {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border-radius: 12px;
+    background: rgba(255, 253, 248, 0.06);
+    padding: 0.6rem 0.8rem;
+  }
+
+  .day-pick span {
+    color: rgba(255, 253, 248, 0.66);
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .day-pick input {
+    flex: 0 1 auto;
+    min-width: 0;
+    border: 1px solid rgba(255, 253, 248, 0.18);
+    border-radius: 8px;
+    background: rgba(8, 13, 9, 0.5);
+    color: #fffdf8;
+    font: inherit;
+    padding: 0.35rem 0.5rem;
+    color-scheme: dark;
+  }
+
+  .day-empty {
+    margin: 0;
+    border-radius: 12px;
+    background: rgba(255, 253, 248, 0.06);
+    color: rgba(255, 253, 248, 0.74);
+    font-size: 0.84rem;
+    line-height: 1.45;
+    padding: 0.85rem;
   }
 
   /* ---- Bottom sheet --------------------------------------------------- */
@@ -2147,6 +2706,197 @@
     overscroll-behavior: contain;
     touch-action: pan-y;
     padding: 0.2rem 1.05rem calc(1rem + env(safe-area-inset-bottom));
+  }
+
+  /* ---- Today card (live mode) ---------------------------------------- */
+  .today-card {
+    display: grid;
+    gap: 0.5rem;
+    border-radius: 14px;
+    border: 1px solid rgba(217, 249, 157, 0.2);
+    background: rgba(217, 249, 157, 0.07);
+    padding: 0.7rem 0.8rem;
+  }
+
+  .today-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.6rem;
+  }
+
+  .today-lead {
+    display: grid;
+    gap: 0.1rem;
+    min-width: 0;
+  }
+
+  .today-eyebrow {
+    color: #d9f99d;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .today-lead strong {
+    font-size: 1.18rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  .today-lead strong small {
+    margin-left: 0.3rem;
+    color: rgba(255, 253, 248, 0.6);
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+
+  .fresh-chip {
+    flex: 0 0 auto;
+    align-self: center;
+    border-radius: 999px;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 0.24rem 0.6rem;
+    text-transform: uppercase;
+  }
+
+  .fresh-chip--live {
+    background: rgba(34, 197, 94, 0.22);
+    color: #bbf7d0;
+  }
+
+  .fresh-chip--stale {
+    background: rgba(245, 158, 11, 0.22);
+    color: #fde68a;
+  }
+
+  .fresh-chip--preview {
+    background: rgba(56, 189, 248, 0.2);
+    color: #bae6fd;
+  }
+
+  .fresh-chip--none {
+    background: rgba(148, 163, 184, 0.24);
+    color: #e2e8f0;
+  }
+
+  .today-rail {
+    height: 7px;
+    border-radius: 999px;
+    background: rgba(255, 253, 248, 0.12);
+    overflow: hidden;
+  }
+
+  .today-rail i {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #d9f99d, #f97316);
+  }
+
+  .today-foot {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    color: rgba(255, 253, 248, 0.72);
+    font-size: 0.74rem;
+    font-weight: 700;
+  }
+
+  .today-context {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .today-context span {
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 253, 248, 0.08);
+    color: rgba(255, 253, 248, 0.82);
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.22rem 0.55rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .today-context .ctx-here {
+    color: #fdba74;
+  }
+
+  /* ---- Day summary (day mode) ---------------------------------------- */
+  .day-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+  }
+
+  .day-head strong {
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+
+  .day-conf {
+    flex: 0 0 auto;
+    border-radius: 999px;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 0.24rem 0.6rem;
+    text-transform: uppercase;
+  }
+
+  .day-conf--good {
+    background: rgba(34, 197, 94, 0.2);
+    color: #bbf7d0;
+  }
+
+  .day-conf--fair {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fde68a;
+  }
+
+  .day-conf--sparse,
+  .day-conf--none {
+    background: rgba(148, 163, 184, 0.24);
+    color: #e2e8f0;
+  }
+
+  .day-note {
+    margin: 0;
+    border-radius: 12px;
+    border-left: 3px solid rgba(56, 189, 248, 0.6);
+    background: rgba(56, 189, 248, 0.08);
+    color: rgba(255, 253, 248, 0.82);
+    font-size: 0.78rem;
+    line-height: 1.45;
+    padding: 0.6rem 0.7rem;
+  }
+
+  .back-live-btn {
+    flex: 0 0 auto;
+    border: 0;
+    border-radius: 999px;
+    background: #fff7ed;
+    color: #1c1917;
+    cursor: pointer;
+    font-family: Oswald, Impact, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 0.65rem 1rem;
+    text-transform: uppercase;
   }
 
   .metric-row {
@@ -2363,6 +3113,12 @@
     margin-top: 0.1rem;
   }
 
+  .action-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
   .action-row a {
     flex: 0 0 auto;
     border-radius: 999px;
@@ -2375,6 +3131,12 @@
     padding: 0.65rem 1rem;
     text-decoration: none;
     text-transform: uppercase;
+  }
+
+  .action-row a.ghost {
+    background: transparent;
+    border: 1px solid rgba(255, 253, 248, 0.28);
+    color: #fffdf8;
   }
 
   .error {
