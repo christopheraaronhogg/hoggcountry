@@ -99,6 +99,13 @@ npm run refresh:testflight-dad-pilot -- \
 npm run prepare-review:scout-local-ai-device-run -- --run inbox
 ```
 
+While rating the generated Markdown packet, preview progress without writing the
+review JSON:
+
+```bash
+npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json --packet data/scout-local-ai/review-packets/<run-id>.review.md
+```
+
 ## Proof To Capture
 
 - Signing proof: selected team id, `security find-identity` result, and

@@ -1000,7 +1000,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /npm run intake:scout-local-ai-device-run/u);
 	assert.match(result.stdout, /npm run apply-review:scout-local-ai/u);
 	assert.match(result.stdout, /npm run finalize-review:scout-local-ai/u);
-	assert.match(result.stdout, /npm run review-status:scout-local-ai/u);
+	assert.match(result.stdout, /npm run review-status:scout-local-ai.*--packet data\/scout-local-ai\/review-packets\/<run-id>\.review\.md/u);
 	assert.match(result.stdout, /npm run verify:scout-local-ai-stability-proof/u);
 	assert.match(result.stdout, /Final readiness still requires a full current-suite TestFlight\/iPhone/u);
 });
@@ -1160,12 +1160,17 @@ test('device review preparation command inspects, imports, and reports review st
 	assert.equal(report.imported, true);
 	assert.equal(report.partial, false);
 	assert.equal(report.inspection.status, 'ready-for-final-intake');
+	assert.equal(report.reviewStatus.progressSource, 'packet-draft');
+	assert.equal(report.reviewStatus.packetDraft.applied, true);
+	assert.equal(report.reviewStatus.packetDraft.updatedCases, suite.cases.length);
 	assert.equal(report.reviewStatus.summary.total, suite.cases.length);
 	assert.equal(report.reviewStatus.summary.unrated, suite.cases.length);
 	assert.equal(report.reviewStatus.readyForBacklog, false);
 	assert.equal(review.cases.length, suite.cases.length);
 	assert.match(packet, /npm run review-status:scout-local-ai/u);
+	assert.match(packet, /--packet .*device-prepare-final\.review\.md/u);
 	assert.match(report.nextAction, /review-status:scout-local-ai/u);
+	assert.match(report.nextAction, /--packet .*device-prepare-final\.review\.md/u);
 	assert.match(report.nextAction, /finalize-review:scout-local-ai/u);
 	assert.match(report.nextAction, /device-prepare-final\.review\.md/u);
 	assert.match(report.nextAction, /device-prepare-final\.review\.json/u);

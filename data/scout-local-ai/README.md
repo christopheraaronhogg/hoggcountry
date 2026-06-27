@@ -136,7 +136,7 @@ different folder.
 
 That command runs the read-only inspection first, imports only a valid final
 device export, creates the review JSON and Markdown packet, and then prints the
-read-only review-status report. It refuses partial exports unless
+read-only packet-draft review-status report. It refuses partial exports unless
 `--allow-partial` is explicit, so a smoke/interrupted run cannot be mistaken for
 final proof.
 
@@ -196,14 +196,17 @@ proof files.
 During the rating pass, use the read-only progress check as often as needed:
 
 ```sh
-npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json
+npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json --packet data/scout-local-ai/review-packets/<run-id>.review.md
 ```
 
-It reports rated/unrated counts, below-5 debt, invalid checklist/task issues,
-the next highest-priority unrated case, and a strict device-proof preview when a
-full 100-case review is otherwise 5/5. It does not write backlog files, so a
-half-finished human review cannot be promoted into iteration or proof evidence
-by accident.
+With `--packet`, it parses the in-progress Markdown packet into a temporary
+draft review, reports rated/unrated counts, below-5 debt, invalid checklist/task
+issues, the next highest-priority unrated case, and a strict device-proof
+preview when a full 100-case review is otherwise 5/5. It does not write the
+review JSON or backlog files, so a half-finished human review cannot be promoted
+into iteration or proof evidence by accident. If the packet has a malformed
+rating, missing case block, or checklist mismatch, status points at the packet
+issue before anyone applies it.
 
 Packet apply expects every case in the review JSON to be present in the Markdown
 packet by default. If the packet was truncated or a case heading was accidentally

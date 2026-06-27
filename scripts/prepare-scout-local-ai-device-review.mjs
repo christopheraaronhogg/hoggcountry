@@ -109,6 +109,8 @@ const reviewStatus = await runJsonScript('scripts/status-scout-local-ai-review.m
 	importedRunPath,
 	'--review',
 	reviewPath,
+	'--packet',
+	packetPath,
 	'--json'
 ]);
 
@@ -126,7 +128,7 @@ writeOutput({
 	inspection,
 	reviewStatus,
 	importOutput: importOutput.trim().split(/\r?\n/u).filter(Boolean),
-	nextAction: `Fill ${relativePacketPath}, then run npm run finalize-review:scout-local-ai -- --packet ${relativePacketPath} --run ${relativeImportedRunPath} --review ${relativeReviewPath}. Use npm run review-status:scout-local-ai -- --run ${relativeImportedRunPath} --review ${relativeReviewPath} for read-only progress checks while rating.`
+	nextAction: `Fill ${relativePacketPath}, then preview draft progress with npm run review-status:scout-local-ai -- --run ${relativeImportedRunPath} --review ${relativeReviewPath} --packet ${relativePacketPath}. When the packet is fully rated, run npm run finalize-review:scout-local-ai -- --packet ${relativePacketPath} --run ${relativeImportedRunPath} --review ${relativeReviewPath}.`
 });
 
 async function runJsonScript(script, args) {
