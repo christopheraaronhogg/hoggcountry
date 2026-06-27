@@ -73,9 +73,9 @@
     },
     "apple-archive-upload": {
       "status": "verified",
-      "verifiedAt": "2026-06-27T09:04:35.243Z",
+      "verifiedAt": "2026-06-27T11:38:35.752Z",
       "verifiedBy": "Codex via App Store Connect API",
-      "summary": "App Store Connect reports Hoggcountry iOS build 1.0 (15) (729ca381-5b16-40e1-820e-37e14152f933) is VALID, external state IN_BETA_TESTING, and attached to Dad Pilot.",
+      "summary": "App Store Connect reports Hoggcountry iOS build 1.0 (16) (aab0b7f2-769d-43a0-a2b9-216eaf01a9bb) is VALID, external state IN_BETA_TESTING, and attached to Dad Pilot.",
       "files": [
         "docs/launch/proof/ios-testflight-upload-2026-06-21.md",
         "docs/launch/proof/ios-testflight-attempt-2026-06-21T14-36-45-831Z.md",
@@ -99,7 +99,9 @@
         "docs/launch/proof/ios-testflight-attempt-2026-06-27T02-39-27-165Z.md",
         "docs/launch/proof/ios-testflight-build-13-2026-06-27.md",
         "docs/launch/proof/ios-testflight-attempt-2026-06-27T08-59-55-273Z.md",
-        "docs/launch/proof/ios-testflight-build-15-2026-06-27.md"
+        "docs/launch/proof/ios-testflight-build-15-2026-06-27.md",
+        "docs/launch/proof/ios-testflight-attempt-2026-06-27T11-34-05-097Z.md",
+        "docs/launch/proof/ios-testflight-build-16-2026-06-27.md"
       ],
       "commands": [
         "npm run ios:testflight -- --upload --team-id 3CFU9J87A5 --asc-key-path ~/.appstoreconnect/private_keys/AuthKey_T272T83N98.p8 --asc-key-id T272T83N98 --asc-issuer-id <issuer>",
@@ -115,14 +117,16 @@
         "node scripts/refresh-testflight-dad-pilot.mjs --build 13 --app-version 1.0 --attach --submit-review --remove-previous --update-release-evidence",
         "GET https://api.appstoreconnect.apple.com/v1/builds?filter[app]=6782505691&filter[version]=13",
         "node scripts/refresh-testflight-dad-pilot.mjs --build 15 --app-version 1.0 --attach --submit-review --remove-previous --update-release-evidence",
-        "GET https://api.appstoreconnect.apple.com/v1/builds?filter[app]=6782505691&filter[version]=15"
+        "GET https://api.appstoreconnect.apple.com/v1/builds?filter[app]=6782505691&filter[version]=15",
+        "node scripts/refresh-testflight-dad-pilot.mjs --build 16 --app-version 1.0 --attach --submit-review --remove-previous --update-release-evidence",
+        "GET https://api.appstoreconnect.apple.com/v1/builds?filter[app]=6782505691&filter[version]=16"
       ]
     },
     "dad-testflight-invite": {
       "status": "verified",
-      "verifiedAt": "2026-06-27T09:04:35.243Z",
+      "verifiedAt": "2026-06-27T11:38:35.752Z",
       "verifiedBy": "Codex via App Store Connect API",
-      "summary": "Dad Pilot is attached to Hoggcountry iOS build 1.0 (15), the public TestFlight link is enabled with limit 5, and App Store Connect reports external state IN_BETA_TESTING.",
+      "summary": "Dad Pilot is attached to Hoggcountry iOS build 1.0 (16), the public TestFlight link is enabled with limit 5, and App Store Connect reports external state IN_BETA_TESTING.",
       "files": [
         "docs/launch/proof/ios-testflight-upload-2026-06-21.md",
         "docs/launch/proof/ios-testflight-build-3-2026-06-21.md",
@@ -136,7 +140,8 @@
         "docs/launch/proof/ios-testflight-build-11-2026-06-27.md",
         "docs/launch/proof/ios-testflight-build-12-2026-06-27.md",
         "docs/launch/proof/ios-testflight-build-13-2026-06-27.md",
-        "docs/launch/proof/ios-testflight-build-15-2026-06-27.md"
+        "docs/launch/proof/ios-testflight-build-15-2026-06-27.md",
+        "docs/launch/proof/ios-testflight-build-16-2026-06-27.md"
       ],
       "publicLink": "https://testflight.apple.com/join/BagBCrzf"
     },
