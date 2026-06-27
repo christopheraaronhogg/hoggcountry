@@ -19,6 +19,19 @@
 	const SUITE_URL = '/scout/dad-local-ai-100.json';
 	const SAVED_RUN_KEY = 'hoggcountry:scout-local-ai-eval:last-run:v1';
 
+	type EvalRunHealth = {
+		state: 'final' | 'partial' | 'smoke';
+		stateLabel: string;
+		detail: string;
+		savedAt: string;
+		appLabel: string;
+		installLabel: string;
+		completedLabel: string;
+		errorLabel: string;
+		toolsLabel: string;
+		sourceLabel: string;
+	};
+
 	let suite = $state.raw<ScoutLocalAiEvalSuite | null>(null);
 	let run = $state.raw<ScoutLocalAiEvalRun | null>(null);
 	let savedRun = $state.raw<ScoutLocalAiEvalRun | null>(null);
@@ -87,6 +100,7 @@
 	const savedRunLabel = $derived(
 		savedRun ? `${savedRun.caseCount}/${savedRunTarget} saved · ${savedRun.runId}` : 'No saved run'
 	);
+	const runHealth = $derived(activeRun ? summarizeRunHealth(activeRun, suite) : null);
 
 	onMount(() => {
 		loadSavedRun();
@@ -332,6 +346,82 @@
 		if (!Array.isArray(parsed.results)) return null;
 		return parsed as ScoutLocalAiEvalRun;
 	}
+
+	function summarizeRunHealth(
+		currentRun: ScoutLocalAiEvalRun,
+		currentSuite: ScoutLocalAiEvalSuite | null
+	): EvalRunHealth {
+		const target = currentRun.filters?.limit ?? currentRun.totalSuiteCases;
+		const finalTarget = currentSuite?.cases.length ?? currentRun.totalSuiteCases;
+		const isFullRun = currentRun.caseCount >= finalTarget && target >= finalTarget;
+		const state = isFullRun ? 'final' : target < finalTarget ? 'smoke' : 'partial';
+		const errorCount = currentRun.results.filter((result) => Boolean(result.error)).length;
+		const missingTools = currentRun.summary?.missingToolCases ?? 0;
+		const sourceGaps = currentRun.summary?.missingSourceEvidenceCases ?? 0;
+		return {
+			state,
+			stateLabel: state === 'final' ? 'Full export' : state === 'smoke' ? 'Smoke export' : 'Partial export',
+			detail:
+				state === 'final'
+					? 'Ready for import and review'
+					: state === 'smoke'
+						? 'Useful for setup checks'
+						: 'Resume or share for recovery',
+			savedAt: formatEvalTimestamp(lastResultTimestamp(currentRun) ?? currentRun.generatedAt),
+			appLabel: appContextLabel(currentRun),
+			installLabel: installContextLabel(currentRun),
+			completedLabel: `${currentRun.caseCount}/${target}`,
+			errorLabel: String(errorCount),
+			toolsLabel: `${missingTools} missing`,
+			sourceLabel: `${sourceGaps} ${sourceGaps === 1 ? 'gap' : 'gaps'}`
+		};
+	}
+
+	function lastResultTimestamp(currentRun: ScoutLocalAiEvalRun): string | null {
+		const last = currentRun.results.at(-1);
+		return typeof last?.generatedAt === 'string' ? last.generatedAt : null;
+	}
+
+	function formatEvalTimestamp(value: string | null | undefined): string {
+		if (!value) return 'Unknown';
+		const date = new Date(value);
+		if (Number.isNaN(date.getTime())) return 'Unknown';
+		return new Intl.DateTimeFormat(undefined, {
+			month: 'short',
+			day: 'numeric',
+			hour: 'numeric',
+			minute: '2-digit'
+		}).format(date);
+	}
+
+	function appContextLabel(currentRun: ScoutLocalAiEvalRun): string {
+		const app = recordAt(currentRun.runContext, 'app');
+		const version = stringAt(app, 'version') ?? '?';
+		const build = stringAt(app, 'build') ?? '?';
+		return `${version} (${build})`;
+	}
+
+	function installContextLabel(currentRun: ScoutLocalAiEvalRun): string {
+		const installSource = recordAt(currentRun.runContext, 'installSource');
+		const type = stringAt(installSource, 'type');
+		if (type === 'testflight') return 'TestFlight';
+		if (type === 'debug') return 'Debug';
+		if (type === 'app-store') return 'App Store';
+		if (type === 'google-play') return 'Google Play';
+		if (type === 'android-installer') return 'Android installer';
+		return type ? type : 'Unknown';
+	}
+
+	function recordAt(value: unknown, key: string): Record<string, unknown> | null {
+		if (!value || typeof value !== 'object') return null;
+		const child = (value as Record<string, unknown>)[key];
+		return child && typeof child === 'object' ? child as Record<string, unknown> : null;
+	}
+
+	function stringAt(value: Record<string, unknown> | null, key: string): string | null {
+		const child = value?.[key];
+		return typeof child === 'string' && child ? child : null;
+	}
 </script>
 
 <section class="card eval-card">
@@ -405,6 +495,46 @@
 
 	{#if exportMessage}
 		<p class="eval-export-status" data-state={exportStatus} role="status">{exportMessage}</p>
+	{/if}
+
+	{#if runHealth}
+		<div class="eval-rescue" data-state={runHealth.state} aria-label="Saved Scout eval export status">
+			<div class="eval-rescue-heading">
+				<span>Saved export</span>
+				<strong>{runHealth.stateLabel}</strong>
+				<em>{runHealth.detail}</em>
+			</div>
+			<div class="eval-rescue-grid">
+				<div>
+					<span>Last saved</span>
+					<strong>{runHealth.savedAt}</strong>
+				</div>
+				<div>
+					<span>Completed</span>
+					<strong>{runHealth.completedLabel}</strong>
+				</div>
+				<div>
+					<span>Errors</span>
+					<strong>{runHealth.errorLabel}</strong>
+				</div>
+				<div>
+					<span>Required tools</span>
+					<strong>{runHealth.toolsLabel}</strong>
+				</div>
+				<div>
+					<span>Source evidence</span>
+					<strong>{runHealth.sourceLabel}</strong>
+				</div>
+				<div>
+					<span>Install</span>
+					<strong>{runHealth.installLabel}</strong>
+				</div>
+				<div>
+					<span>App build</span>
+					<strong>{runHealth.appLabel}</strong>
+				</div>
+			</div>
+		</div>
 	{/if}
 
 	<p class="eval-save">{savedRunLabel}</p>
@@ -594,6 +724,73 @@
 
 	.eval-actions button:disabled {
 		opacity: 0.5;
+	}
+
+	.eval-rescue {
+		display: grid;
+		gap: 8px;
+		border: 1px solid var(--line);
+		border-radius: 12px;
+		background: var(--surface);
+		padding: 10px;
+	}
+
+	.eval-rescue[data-state='final'] {
+		border-color: color-mix(in srgb, var(--forest) 35%, var(--line));
+		background: var(--forest-soft);
+	}
+
+	.eval-rescue[data-state='partial'] {
+		border-color: color-mix(in srgb, var(--moss) 32%, var(--line));
+	}
+
+	.eval-rescue-heading {
+		min-width: 0;
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: 2px 8px;
+		align-items: baseline;
+	}
+
+	.eval-rescue-heading span,
+	.eval-rescue-grid span {
+		font-size: 0.64rem;
+		font-weight: 900;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--muted);
+	}
+
+	.eval-rescue-heading strong,
+	.eval-rescue-grid strong {
+		min-width: 0;
+		overflow-wrap: anywhere;
+		font-size: 0.78rem;
+		line-height: 1.25;
+	}
+
+	.eval-rescue-heading em {
+		grid-column: 1 / -1;
+		font-size: 0.74rem;
+		font-style: normal;
+		font-weight: 800;
+		color: var(--muted);
+	}
+
+	.eval-rescue-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+		gap: 7px;
+	}
+
+	.eval-rescue-grid div {
+		min-width: 0;
+		display: grid;
+		gap: 2px;
+		border: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
+		border-radius: 9px;
+		padding: 7px;
+		background: color-mix(in srgb, var(--surface) 86%, white);
 	}
 
 	.eval-save {

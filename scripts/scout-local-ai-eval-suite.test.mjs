@@ -170,6 +170,20 @@ test('mobile Eval Lab exposes resilient iPhone export paths', async () => {
 	assert.match(component, />\s*Download\s*</u, 'Download action should remain available');
 });
 
+test('mobile Eval Lab surfaces saved-run rescue and device proof metadata', async () => {
+	const component = await readFile(MOBILE_EVAL_LAB_PATH, 'utf8');
+	assert.match(component, /Saved export/u, 'Eval Lab should label the export saved on device');
+	assert.match(component, /Partial export/u, 'Eval Lab should distinguish interrupted partial exports');
+	assert.match(component, /Resume or share for recovery/u, 'Eval Lab should make partial-run recovery explicit');
+	assert.match(component, /Last saved/u, 'Eval Lab should show when the export last autosaved');
+	assert.match(component, /Errors/u, 'Eval Lab should show errored result count');
+	assert.match(component, /Required tools/u, 'Eval Lab should show required-tool gaps before review');
+	assert.match(component, /Source evidence/u, 'Eval Lab should show source-evidence gaps before review');
+	assert.match(component, /App build/u, 'Eval Lab should show exported app version/build proof metadata');
+	assert.match(component, /Install/u, 'Eval Lab should show exported install-source proof metadata');
+	assert.match(component, /runContext/u, 'Eval Lab should read proof metadata from the exported run context');
+});
+
 test('status command keeps routing proof separate from missing device proof', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-routing-'));
