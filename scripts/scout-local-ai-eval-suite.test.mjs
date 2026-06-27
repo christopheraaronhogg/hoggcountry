@@ -7,6 +7,7 @@ import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
+import { createScoutLocalAiPhoneBuildAction } from './lib/scout-local-ai-phone-build-action.mjs';
 import { summarizeRunSourceEvidence } from './lib/scout-local-ai-source-evidence.mjs';
 import { summarizeScoutLocalAiSuiteCoverage } from './lib/scout-local-ai-suite-coverage.mjs';
 import { scoutLocalAiSuiteHash } from './lib/scout-local-ai-suite.mjs';
@@ -70,6 +71,63 @@ const EXPECTED_DOMAINS = [
 	'town',
 	'spiritual-offline-edge'
 ];
+
+test('phone build action lets Dad run after support-only source changes', () => {
+	const action = createScoutLocalAiPhoneBuildAction({
+		testflight: {
+			targetBuild: '1.0 (19)',
+			recordedDadPilotBuild: '1.0 (19)',
+			suiteRequiredBuild: '1.0 (>= 13)',
+			targetBuildMeetsSuiteRequirement: true,
+			recordedDadPilotMeetsSuiteRequirement: true,
+			targetBuildReadyForDad: true,
+			targetBuildAvailableForDad: true
+		},
+		nativeSource: {
+			latestNativeUploadHasCurrentSource: false,
+			sourceNewerThanLatestNativeUpload: true,
+			nativeAppSourceNewerThanLatestNativeUpload: false,
+			sourceDiffersFromLatestNativeUpload: true,
+			nativeAppChangedFileCount: 0
+		}
+	});
+
+	assert.equal(action.kind, 'run-support-only-source-changes');
+	assert.equal(action.canRunNow, true);
+	assert.equal(action.requiresNewUploadBeforeRun100, false);
+	assert.equal(action.requiresNewUploadForLatestAppSourceProof, false);
+	assert.match(action.text, /Run 100 now on the latest Dad Pilot TestFlight build 1\.0 \(19\)/u);
+	assert.match(action.text, /outside native app source/u);
+	assert.match(action.text, /no fresh TestFlight upload is needed/u);
+});
+
+test('phone build action flags native app changes as latest-source upload work', () => {
+	const action = createScoutLocalAiPhoneBuildAction({
+		testflight: {
+			targetBuild: '1.0 (19)',
+			recordedDadPilotBuild: '1.0 (19)',
+			suiteRequiredBuild: '1.0 (>= 13)',
+			targetBuildMeetsSuiteRequirement: true,
+			recordedDadPilotMeetsSuiteRequirement: true,
+			targetBuildReadyForDad: true,
+			targetBuildAvailableForDad: true
+		},
+		nativeSource: {
+			latestNativeUploadHasCurrentSource: false,
+			sourceNewerThanLatestNativeUpload: true,
+			nativeAppSourceNewerThanLatestNativeUpload: true,
+			sourceDiffersFromLatestNativeUpload: true,
+			nativeAppChangedFileCount: 2
+		}
+	});
+
+	assert.equal(action.kind, 'upload-native-app-source-for-latest-proof');
+	assert.equal(action.canRunNow, true);
+	assert.equal(action.requiresNewUploadBeforeRun100, false);
+	assert.equal(action.requiresNewUploadForLatestAppSourceProof, true);
+	assert.match(action.text, /Dad can still run a suite-compatible build for diagnosis/u);
+	assert.match(action.text, /latest-app-source proof needs a fresh TestFlight upload/u);
+});
 
 test('Dad local AI eval suite has 100 complete, reviewable cases', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
@@ -538,6 +596,10 @@ test('status command suggests the guarded wait command when no device export exi
 	const status = JSON.parse(result.stdout);
 
 	assert.equal(status.nextAction.kind, 'get-device-run');
+	assert.equal(status.phoneBuildAction.canRunNow, true);
+	assert.equal(status.phoneBuildAction.requiresNewUploadBeforeRun100, false);
+	assert.match(status.phoneBuildAction.text, /Run 100 now/u);
+	assert.match(status.nextAction.text, /Run 100 now/u);
 	assert.match(status.nextAction.text, /Run 100/u);
 	assert.match(status.nextAction.text, /Share the JSON/u);
 	assert.match(status.nextAction.text, /wait:scout-local-ai-device-run/u);

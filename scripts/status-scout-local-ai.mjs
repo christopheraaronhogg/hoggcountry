@@ -15,6 +15,9 @@ import {
 	summarizeReview
 } from './lib/scout-local-ai-review.mjs';
 import {
+	createScoutLocalAiPhoneBuildAction
+} from './lib/scout-local-ai-phone-build-action.mjs';
+import {
 	summarizeRunSourceEvidence
 } from './lib/scout-local-ai-source-evidence.mjs';
 import {
@@ -116,6 +119,7 @@ async function buildStatus(paths) {
 		testflight.recordedDadPilotMeetsSuiteRequirement ||
 		testflight.currentTargetDeviceRunCount > 0 ||
 		testflight.currentSuiteCompatibleDeviceRunCount > 0;
+	const phoneBuildAction = createScoutLocalAiPhoneBuildAction({ testflight, nativeSource });
 	const currentFullToolCompleteRuns = currentRuns.filter(
 		(entry) => isFullRun(entry.value, suite) && hasCompleteToolExpectations(entry.value, suite) && hasCompleteSourceEvidence(entry.value)
 	);
@@ -219,6 +223,7 @@ async function buildStatus(paths) {
 			iosProofDir: relative(REPO_ROOT, paths.iosProofDir)
 		},
 		nativeSource,
+		phoneBuildAction,
 		testflight,
 		inbox,
 		downloads,
@@ -273,7 +278,8 @@ async function buildStatus(paths) {
 			testflight,
 			inbox,
 			downloads,
-			finalProof
+			finalProof,
+			phoneBuildAction
 		)
 	};
 }
@@ -399,7 +405,8 @@ function nextActionFor(
 	testflight,
 	inbox,
 	downloads,
-	finalProof
+	finalProof,
+	phoneBuildAction
 ) {
 	const gate = (id) => gates.find((item) => item.id === id);
 	if (!gate('suite')?.ok) {
@@ -506,7 +513,7 @@ function nextActionFor(
 				: `the current Dad Pilot TestFlight build (${testflight.recordedDadPilotBuild}; newer target ${testflight.targetBuild ?? '<unknown>'} is pending upload)`;
 		return {
 			kind: 'get-device-run',
-			text: `Install or update ${phoneBuild} on Dad/Chris iPhone, open Settings > Scout Eval Lab, run Run 100, and Share the JSON. While waiting for the file, leave ${DEVICE_REVIEW_WAIT_COMMAND} running; status also checks ${downloads?.path ?? 'Downloads'} and will use ${DEVICE_REVIEW_PREP_DOWNLOADS_COMMAND} if the export lands there. If Dad sends copied JSON text instead of a file, use ${DEVICE_RECEIVE_CLIPBOARD_COMMAND} or paste into ${DEVICE_RECEIVE_STDIN_COMMAND}; the receiver saves it to the inbox, inspects it, and prepares the same review path as ${DEVICE_REVIEW_PREP_COMMAND} when it is final-ready.`
+			text: `${phoneBuildAction?.text ?? `Install or update ${phoneBuild} on Dad/Chris iPhone.`} Open Settings > Scout Eval Lab, run Run 100, and Share the JSON. While waiting for the file, leave ${DEVICE_REVIEW_WAIT_COMMAND} running; status also checks ${downloads?.path ?? 'Downloads'} and will use ${DEVICE_REVIEW_PREP_DOWNLOADS_COMMAND} if the export lands there. If Dad sends copied JSON text instead of a file, use ${DEVICE_RECEIVE_CLIPBOARD_COMMAND} or paste into ${DEVICE_RECEIVE_STDIN_COMMAND}; the receiver saves it to the inbox, inspects it, and prepares the same review path as ${DEVICE_REVIEW_PREP_COMMAND} when it is final-ready.`
 		};
 	}
 	const latestDeviceRun = currentFullFinalProofDeviceRuns.at(-1)?.value.runId ?? currentFullDeviceRuns.at(-1)?.value.runId ?? '<run-id>';
@@ -1256,6 +1263,13 @@ function createStatusMarkdown(status) {
 		`- Current source newer than latest native upload: ${status.nativeSource?.sourceNewerThanLatestNativeUpload ? 'yes' : 'no'}`,
 		`- Current native app source newer than latest native upload: ${status.nativeSource?.nativeAppSourceNewerThanLatestNativeUpload ? 'yes' : 'no'}`,
 		`- Native app files changed since latest native upload: ${status.nativeSource?.nativeAppChangedFileCount ?? 0}`,
+		'',
+		'## Phone Build Action',
+		'',
+		`- Decision: ${status.phoneBuildAction?.text ?? '<unknown>'}`,
+		`- Can run Run 100 now: ${status.phoneBuildAction?.canRunNow ? 'yes' : 'no'}`,
+		`- Fresh upload required before Run 100: ${status.phoneBuildAction?.requiresNewUploadBeforeRun100 ? 'yes' : 'no'}`,
+		`- Fresh upload required for latest app-source proof: ${status.phoneBuildAction?.requiresNewUploadForLatestAppSourceProof ? 'yes' : 'no'}`,
 		'',
 		'## Gates',
 		''
