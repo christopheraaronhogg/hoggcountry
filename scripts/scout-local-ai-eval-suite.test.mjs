@@ -179,9 +179,15 @@ test('mobile Eval Lab surfaces saved-run rescue and device proof metadata', asyn
 	assert.match(component, /Errors/u, 'Eval Lab should show errored result count');
 	assert.match(component, /Required tools/u, 'Eval Lab should show required-tool gaps before review');
 	assert.match(component, /Source evidence/u, 'Eval Lab should show source-evidence gaps before review');
+	assert.match(component, /Suite/u, 'Eval Lab should show whether the saved export matches the current suite');
 	assert.match(component, /App build/u, 'Eval Lab should show exported app version/build proof metadata');
 	assert.match(component, /Install/u, 'Eval Lab should show exported install-source proof metadata');
 	assert.match(component, /runContext/u, 'Eval Lab should read proof metadata from the exported run context');
+	assert.match(component, /summarizeRunFreshness/u, 'Eval Lab should evaluate saved-run freshness before export');
+	assert.match(component, /Stale export/u, 'Eval Lab should visibly flag stale saved exports');
+	assert.match(component, /Old suite/u, 'Eval Lab should identify saved exports from old suite versions');
+	assert.match(component, /Clear it and run again/u, 'Eval Lab should tell Dad how to recover from stale saved exports');
+	assert.match(component, /activeRunCanExport/u, 'Eval Lab should block stale saved exports from sharing');
 });
 
 test('status command keeps routing proof separate from missing device proof', async () => {

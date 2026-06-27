@@ -20,16 +20,23 @@
 	const SAVED_RUN_KEY = 'hoggcountry:scout-local-ai-eval:last-run:v1';
 
 	type EvalRunHealth = {
-		state: 'final' | 'partial' | 'smoke';
+		state: 'final' | 'partial' | 'smoke' | 'stale' | 'pending';
 		stateLabel: string;
 		detail: string;
 		savedAt: string;
+		suiteLabel: string;
 		appLabel: string;
 		installLabel: string;
 		completedLabel: string;
 		errorLabel: string;
 		toolsLabel: string;
 		sourceLabel: string;
+	};
+	type EvalRunFreshness = {
+		state: 'current' | 'stale' | 'pending';
+		stateLabel: string;
+		detail: string;
+		canExport: boolean;
 	};
 
 	let suite = $state.raw<ScoutLocalAiEvalSuite | null>(null);
@@ -69,6 +76,9 @@
 		})
 	);
 	const savedRunIsFullTarget = $derived(Boolean(suite && savedRunTarget >= suite.cases.length));
+	const activeRunFreshness = $derived(activeRun ? summarizeRunFreshness(activeRun, suite) : null);
+	const savedRunFreshness = $derived(savedRun ? summarizeRunFreshness(savedRun, suite) : null);
+	const activeRunCanExport = $derived(Boolean(activeRun && activeRunFreshness?.canExport));
 	const canResume = $derived(
 		Boolean(
 			proofStatus.canRunSmoke &&
@@ -98,7 +108,9 @@
 			: 'No device run yet'
 	);
 	const savedRunLabel = $derived(
-		savedRun ? `${savedRun.caseCount}/${savedRunTarget} saved · ${savedRun.runId}` : 'No saved run'
+		savedRun
+			? `${savedRun.caseCount}/${savedRunTarget} saved · ${savedRun.runId} · ${savedRunFreshness?.stateLabel ?? 'Checking suite'}`
+			: 'No saved run'
 	);
 	const runHealth = $derived(activeRun ? summarizeRunHealth(activeRun, suite) : null);
 
@@ -226,7 +238,7 @@
 
 	function downloadRun() {
 		const currentRun = activeRun;
-		if (!currentRun) return;
+		if (!currentRun || !canExportCurrentRun()) return;
 		const blob = new Blob([JSON.stringify(currentRun, null, 2)], { type: 'application/json' });
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement('a');
@@ -240,7 +252,7 @@
 	}
 
 	async function copyRun() {
-		if (!activeRun || !exportText) return;
+		if (!activeRun || !exportText || !canExportCurrentRun()) return;
 		try {
 			if (navigator.clipboard) {
 				await navigator.clipboard.writeText(exportText);
@@ -260,7 +272,7 @@
 
 	async function shareRun() {
 		const currentRun = activeRun;
-		if (!currentRun || !exportText) return;
+		if (!currentRun || !exportText || !canExportCurrentRun()) return;
 		if (!navigator.share) {
 			await copyRun();
 			return;
@@ -286,6 +298,13 @@
 			if (err instanceof DOMException && err.name === 'AbortError') return;
 			await copyRun();
 		}
+	}
+
+	function canExportCurrentRun(): boolean {
+		const freshness = activeRunFreshness;
+		if (freshness?.canExport) return true;
+		setExportStatus('failed', freshness?.detail ?? 'Load the current eval suite before sharing.');
+		return false;
 	}
 
 	function setExportStatus(
@@ -351,29 +370,103 @@
 		currentRun: ScoutLocalAiEvalRun,
 		currentSuite: ScoutLocalAiEvalSuite | null
 	): EvalRunHealth {
+		const freshness = summarizeRunFreshness(currentRun, currentSuite);
 		const target = currentRun.filters?.limit ?? currentRun.totalSuiteCases;
 		const finalTarget = currentSuite?.cases.length ?? currentRun.totalSuiteCases;
 		const isFullRun = currentRun.caseCount >= finalTarget && target >= finalTarget;
-		const state = isFullRun ? 'final' : target < finalTarget ? 'smoke' : 'partial';
+		const state =
+			freshness.state === 'stale'
+				? 'stale'
+				: freshness.state === 'pending'
+					? 'pending'
+					: isFullRun
+						? 'final'
+						: target < finalTarget
+							? 'smoke'
+							: 'partial';
 		const errorCount = currentRun.results.filter((result) => Boolean(result.error)).length;
 		const missingTools = currentRun.summary?.missingToolCases ?? 0;
 		const sourceGaps = currentRun.summary?.missingSourceEvidenceCases ?? 0;
 		return {
 			state,
-			stateLabel: state === 'final' ? 'Full export' : state === 'smoke' ? 'Smoke export' : 'Partial export',
-			detail:
+			stateLabel:
 				state === 'final'
+					? 'Full export'
+					: state === 'smoke'
+						? 'Smoke export'
+						: state === 'stale'
+							? 'Stale export'
+							: state === 'pending'
+								? 'Checking export'
+								: 'Partial export',
+			detail:
+				state === 'stale' || state === 'pending'
+					? freshness.detail
+					: state === 'final'
 					? 'Ready for import and review'
 					: state === 'smoke'
 						? 'Useful for setup checks'
 						: 'Resume or share for recovery',
 			savedAt: formatEvalTimestamp(lastResultTimestamp(currentRun) ?? currentRun.generatedAt),
+			suiteLabel: freshness.stateLabel,
 			appLabel: appContextLabel(currentRun),
 			installLabel: installContextLabel(currentRun),
 			completedLabel: `${currentRun.caseCount}/${target}`,
 			errorLabel: String(errorCount),
 			toolsLabel: `${missingTools} missing`,
 			sourceLabel: `${sourceGaps} ${sourceGaps === 1 ? 'gap' : 'gaps'}`
+		};
+	}
+
+	function summarizeRunFreshness(
+		currentRun: ScoutLocalAiEvalRun,
+		currentSuite: ScoutLocalAiEvalSuite | null
+	): EvalRunFreshness {
+		if (!currentSuite) {
+			return {
+				state: 'pending',
+				stateLabel: 'Checking suite',
+				detail: 'Load the current 100-question suite before sharing.',
+				canExport: false
+			};
+		}
+		if (currentRun.suiteId !== currentSuite.suiteId) {
+			return {
+				state: 'stale',
+				stateLabel: 'Different suite',
+				detail: `Saved export is for suite ${currentRun.suiteId ?? 'unknown'}; current suite is ${currentSuite.suiteId}. Clear it and run again before sharing for review.`,
+				canExport: false
+			};
+		}
+		if (currentRun.suiteVersion !== currentSuite.version) {
+			return {
+				state: 'stale',
+				stateLabel: 'Old suite',
+				detail: `Saved export uses suite version ${currentRun.suiteVersion ?? 'unknown'}; current suite is ${currentSuite.version}. Clear it and run again before sharing for review.`,
+				canExport: false
+			};
+		}
+		if (currentRun.suiteHash !== scoutLocalAiSuiteHash(currentSuite)) {
+			return {
+				state: 'stale',
+				stateLabel: 'Changed suite',
+				detail: 'Saved export does not match the current 100-question set. Clear it and run again before sharing for review.',
+				canExport: false
+			};
+		}
+		if (currentRun.evidenceLane !== 'device-on-device-gemma') {
+			return {
+				state: 'stale',
+				stateLabel: 'Wrong lane',
+				detail: 'Saved export is not from the on-device Gemma lane. Clear it and run again before sharing for review.',
+				canExport: false
+			};
+		}
+		return {
+			state: 'current',
+			stateLabel: 'Current suite',
+			detail: 'Matches the current 100-question suite.',
+			canExport: true
 		};
 	}
 
@@ -469,6 +562,12 @@
 		<p class="eval-warning" role="status">{saveWarning}</p>
 	{/if}
 
+	{#if activeRunFreshness?.state === 'stale'}
+		<p class="eval-warning" role="status">Stale export: {activeRunFreshness.detail}</p>
+	{:else if activeRun && activeRunFreshness?.state === 'pending'}
+		<p class="eval-warning" role="status">{activeRunFreshness.detail}</p>
+	{/if}
+
 	<div class="eval-actions">
 		<button class="outline-button compact" type="button" onclick={() => runEval(3)} disabled={!proofStatus.canRunSmoke}>
 			Run 3
@@ -479,13 +578,13 @@
 		<button class="outline-button compact" type="button" onclick={() => runEval(undefined, true)} disabled={!canResume}>
 			Resume
 		</button>
-		<button class="outline-button compact" type="button" onclick={shareRun} disabled={!activeRun}>
+		<button class="outline-button compact" type="button" onclick={shareRun} disabled={!activeRunCanExport}>
 			Share
 		</button>
-		<button class="outline-button compact" type="button" onclick={copyRun} disabled={!activeRun}>
+		<button class="outline-button compact" type="button" onclick={copyRun} disabled={!activeRunCanExport}>
 			Copy
 		</button>
-		<button class="outline-button compact" type="button" onclick={downloadRun} disabled={!activeRun}>
+		<button class="outline-button compact" type="button" onclick={downloadRun} disabled={!activeRunCanExport}>
 			Download
 		</button>
 		<button class="outline-button compact" type="button" onclick={clearSavedRun} disabled={!savedRun || running}>
@@ -508,6 +607,10 @@
 				<div>
 					<span>Last saved</span>
 					<strong>{runHealth.savedAt}</strong>
+				</div>
+				<div>
+					<span>Suite</span>
+					<strong>{runHealth.suiteLabel}</strong>
 				</div>
 				<div>
 					<span>Completed</span>
@@ -742,6 +845,12 @@
 
 	.eval-rescue[data-state='partial'] {
 		border-color: color-mix(in srgb, var(--moss) 32%, var(--line));
+	}
+
+	.eval-rescue[data-state='stale'],
+	.eval-rescue[data-state='pending'] {
+		border-color: color-mix(in srgb, var(--danger) 30%, var(--line));
+		background: color-mix(in srgb, var(--danger) 8%, var(--surface));
 	}
 
 	.eval-rescue-heading {
