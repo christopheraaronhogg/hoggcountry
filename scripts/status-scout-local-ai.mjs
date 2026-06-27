@@ -654,6 +654,10 @@ async function summarizeNativeSource(iosProofDir) {
 	const latestUploadIsAncestor = comparable && !matchesCurrent
 		? await gitCommitIsAncestor(latestNativeUploadSha, currentRepoSha)
 		: false;
+	const changedFiles = comparable && !matchesCurrent
+		? await gitChangedFiles(latestNativeUploadSha, currentRepoSha)
+		: [];
+	const nativeAppChangedFiles = changedFiles.filter(isNativeAppSourcePath);
 	return {
 		currentRepoSha,
 		iosProofDir: relative(REPO_ROOT, iosProofDir),
@@ -661,7 +665,11 @@ async function summarizeNativeSource(iosProofDir) {
 		latestNativeUploadSha,
 		latestNativeUploadHasCurrentSource: matchesCurrent,
 		sourceNewerThanLatestNativeUpload: latestUploadIsAncestor,
-		sourceDiffersFromLatestNativeUpload: comparable && !matchesCurrent
+		nativeAppSourceNewerThanLatestNativeUpload: latestUploadIsAncestor && nativeAppChangedFiles.length > 0,
+		sourceDiffersFromLatestNativeUpload: comparable && !matchesCurrent,
+		changedFileCount: changedFiles.length,
+		nativeAppChangedFileCount: nativeAppChangedFiles.length,
+		nativeAppChangedFiles: nativeAppChangedFiles.slice(0, 12)
 	};
 }
 
@@ -736,6 +744,28 @@ function gitShaMatches(currentSha, candidateSha) {
 	const current = String(currentSha ?? '').toLowerCase();
 	const candidate = String(candidateSha ?? '').toLowerCase();
 	return Boolean(current && candidate && (current === candidate || current.startsWith(candidate)));
+}
+
+async function gitChangedFiles(baseSha, headSha) {
+	try {
+		const result = await execFileAsync('git', ['diff', '--name-only', `${baseSha}..${headSha}`], {
+			cwd: REPO_ROOT,
+			maxBuffer: 1024 * 1024 * 4
+		});
+		return result.stdout
+			.split('\n')
+			.map((line) => line.trim())
+			.filter(Boolean)
+			.sort((left, right) => left.localeCompare(right));
+	} catch {
+		return [];
+	}
+}
+
+function isNativeAppSourcePath(path) {
+	return /^mobile\//u.test(path) ||
+		path === 'package.json' ||
+		path === 'package-lock.json';
 }
 
 async function readOptionalIosBuildSettings(path) {
@@ -1161,6 +1191,8 @@ function createStatusMarkdown(status) {
 		`- Latest native upload SHA: \`${status.nativeSource?.latestNativeUploadSha ?? '<unknown>'}\``,
 		`- Latest native upload has current source: ${status.nativeSource?.latestNativeUploadHasCurrentSource ? 'yes' : 'no'}`,
 		`- Current source newer than latest native upload: ${status.nativeSource?.sourceNewerThanLatestNativeUpload ? 'yes' : 'no'}`,
+		`- Current native app source newer than latest native upload: ${status.nativeSource?.nativeAppSourceNewerThanLatestNativeUpload ? 'yes' : 'no'}`,
+		`- Native app files changed since latest native upload: ${status.nativeSource?.nativeAppChangedFileCount ?? 0}`,
 		'',
 		'## Gates',
 		''
