@@ -104,19 +104,23 @@ async function readOptionalJson(path) {
 
 async function findLatestIosTestFlightProof(path) {
 	try {
+		const proofs = [];
 		const files = (await readdir(path))
 			.filter((file) => /^ios-testflight-attempt-.*\.md$/u.test(file))
 			.sort();
-		const file = files.at(-1);
-		if (!file) return null;
-		const proofPath = resolve(path, file);
-		const text = await readFile(proofPath, 'utf8');
-		return {
-			path: relative(REPO_ROOT, proofPath),
-			checkedAt: firstMarkdownValue(text, 'Checked at') ?? '<unknown>',
-			status: firstMarkdownValue(text, 'Status') ?? '<unknown>',
-			ascApiKeyProvided: firstMarkdownValue(text, 'App Store Connect API key provided') ?? '<unknown>'
-		};
+		for (const file of files) {
+			const proofPath = resolve(path, file);
+			const text = await readFile(proofPath, 'utf8');
+			const proof = {
+				path: relative(REPO_ROOT, proofPath),
+				checkedAt: cleanMarkdownValue(firstMarkdownValue(text, 'Checked at')) ?? '<unknown>',
+				status: normalizeMarkdownValue(firstMarkdownValue(text, 'Status')) ?? '<unknown>',
+				uploadRequested: markdownYes(firstMarkdownValue(text, 'Upload')),
+				ascApiKeyProvided: cleanMarkdownValue(firstMarkdownValue(text, 'App Store Connect API key provided')) ?? '<unknown>'
+			};
+			if (proof.status === 'passed' && proof.uploadRequested) proofs.push(proof);
+		}
+		return proofs.at(-1) ?? null;
 	} catch {
 		return null;
 	}
@@ -219,6 +223,14 @@ function cleanMarkdownValue(value) {
 	return value.trim().replace(/^`|`$/gu, '');
 }
 
+function normalizeMarkdownValue(value) {
+	return cleanMarkdownValue(value)?.toLowerCase() ?? null;
+}
+
+function markdownYes(value) {
+	return normalizeMarkdownValue(value) === 'yes';
+}
+
 function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIosProof, latestDadBuildProof, latestLocalTargetPrepProof, generatedAt }) {
 	const dadTestFlightEvidence = releaseEvidenceItem(releaseEvidence, 'dad-testflight-invite');
 	const publicLink = dadTestFlightEvidence?.publicLink ?? 'https://testflight.apple.com/join/BagBCrzf';
@@ -231,6 +243,7 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 	const dadProofLabel = dadProofMatchesTarget ? 'Dad target-build proof' : 'Latest Dad Pilot proof';
 	const dadGateLabel = dadProofMatchesTarget ? 'Dad target-build gates' : 'Latest Dad Pilot gates';
 	const sourceBoundary = nativeSourceBoundary(status);
+	const latestNativeUploadAttempt = status.nativeSource?.latestNativeUploadAttempt;
 	const phoneBuildDecision = createPhoneBuildDecision({
 		status,
 		recordedDadBuild,
@@ -266,6 +279,9 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		status.nativeSource?.latestNativeUploadProof
 			? `- Latest native upload source: \`${status.nativeSource.latestNativeUploadProof.path}\` (repo SHA \`${status.nativeSource.latestNativeUploadSha ?? '<unknown>'}\`${status.nativeSource.latestNativeUploadProof.repoShaSource ? ` from \`${status.nativeSource.latestNativeUploadProof.repoShaSource}\`` : ''}).`
 			: '- Latest native upload source: none found.',
+		latestNativeUploadAttempt
+			? `- Latest native upload attempt: \`${latestNativeUploadAttempt.path}\` (${latestNativeUploadAttempt.status}, upload requested ${latestNativeUploadAttempt.uploadRequested ? 'yes' : 'no'}, checked ${latestNativeUploadAttempt.checkedAt}).`
+			: '- Latest native upload attempt: none found.',
 		`- Current checkout newer than latest native upload: ${status.nativeSource?.sourceNewerThanLatestNativeUpload ? 'yes' : 'no'}.`,
 		`- Current native app source newer than latest native upload: ${status.nativeSource?.nativeAppSourceNewerThanLatestNativeUpload ? 'yes' : 'no'}.`,
 		`- Imported full device runs: ${status.runs?.currentFullDeviceRuns?.length ?? 0}.`,
@@ -327,11 +343,14 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		`- Xcode Release target: \`${targetBuild}\` from \`${iosBuild.projectPath}\`.`,
 		`- Signing team/profile: \`${iosBuild.teamId}\` / \`${iosBuild.releaseProfile}\`.`,
 		latestIosProof
-			? `- Latest native upload proof: \`${latestIosProof.path}\` (${latestIosProof.status}, checked ${latestIosProof.checkedAt}).`
-			: '- Latest native upload proof: none found.',
+			? `- Latest successful native upload proof: \`${latestIosProof.path}\` (${latestIosProof.status}, checked ${latestIosProof.checkedAt}).`
+			: '- Latest successful native upload proof: none found.',
+		latestNativeUploadAttempt
+			? `- Latest native upload attempt: \`${latestNativeUploadAttempt.path}\` (${latestNativeUploadAttempt.status}, checked ${latestNativeUploadAttempt.checkedAt}).`
+			: '- Latest native upload attempt: none found.',
 		status.nativeSource?.latestNativeUploadSha
-			? `- Latest native upload repo SHA: \`${status.nativeSource.latestNativeUploadSha}\`${status.nativeSource.latestNativeUploadProof?.repoShaSource ? ` from \`${status.nativeSource.latestNativeUploadProof.repoShaSource}\`` : ''}.`
-			: '- Latest native upload repo SHA: unknown.',
+			? `- Latest successful native upload repo SHA: \`${status.nativeSource.latestNativeUploadSha}\`${status.nativeSource.latestNativeUploadProof?.repoShaSource ? ` from \`${status.nativeSource.latestNativeUploadProof.repoShaSource}\`` : ''}.`
+			: '- Latest successful native upload repo SHA: unknown.',
 		`- Current source newer than latest native upload: ${status.nativeSource?.sourceNewerThanLatestNativeUpload ? 'yes' : 'no'}.`,
 		`- Current native app source newer than latest native upload: ${status.nativeSource?.nativeAppSourceNewerThanLatestNativeUpload ? 'yes' : 'no'}.`,
 		...(status.nativeSource?.nativeAppSourceNewerThanLatestNativeUpload
@@ -340,8 +359,11 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 				: `- Latest-source upload note: upload target build \`${iosBuild.marketingVersion} (${iosBuild.buildNumber})\`; bump again only if App Store Connect already has build \`${iosBuild.buildNumber}\`.`]
 			: []),
 		latestIosProof
-			? `- App Store Connect API key in latest proof: ${latestIosProof.ascApiKeyProvided}.`
-			: '- App Store Connect API key in latest proof: unknown.',
+			? `- App Store Connect API key in latest successful upload proof: ${latestIosProof.ascApiKeyProvided}.`
+			: '- App Store Connect API key in latest successful upload proof: unknown.',
+		latestNativeUploadAttempt
+			? `- App Store Connect API key in latest upload attempt: ${latestNativeUploadAttempt.ascApiKeyProvided}.`
+			: '- App Store Connect API key in latest upload attempt: unknown.',
 		'- Future uploads require Chris/account-bound App Store Connect auth: `APP_STORE_CONNECT_API_KEY_PATH`, `APP_STORE_CONNECT_API_KEY_ID`, and `APP_STORE_CONNECT_API_ISSUER_ID`, or matching `--asc-*` flags.',
 		'',
 		'```sh',

@@ -647,7 +647,12 @@ function summarizeIterationPlanList(entries) {
 
 async function summarizeNativeSource(iosProofDir) {
 	const currentRepoSha = await currentGitSha();
-	const latestNativeUploadProof = await findLatestIosUploadProof(iosProofDir);
+	const iosUploadProofs = await findIosUploadProofs(iosProofDir);
+	const uploadAttempts = iosUploadProofs.filter((proof) => proof.uploadRequested);
+	const latestNativeUploadAttempt = uploadAttempts.at(-1) ?? null;
+	const latestNativeUploadProof = uploadAttempts
+		.filter((proof) => proof.status === 'passed')
+		.at(-1) ?? null;
 	const latestNativeUploadSha = latestNativeUploadProof?.repoSha ?? null;
 	const comparable = Boolean(currentRepoSha && latestNativeUploadSha);
 	const matchesCurrent = comparable && gitShaMatches(currentRepoSha, latestNativeUploadSha);
@@ -661,8 +666,11 @@ async function summarizeNativeSource(iosProofDir) {
 	return {
 		currentRepoSha,
 		iosProofDir: relative(REPO_ROOT, iosProofDir),
+		latestNativeUploadAttempt,
 		latestNativeUploadProof,
 		latestNativeUploadSha,
+		latestNativeUploadAttemptStatus: latestNativeUploadAttempt?.status ?? null,
+		latestNativeUploadAttemptWasSuccessful: latestNativeUploadAttempt?.status === 'passed',
 		latestNativeUploadHasCurrentSource: matchesCurrent,
 		sourceNewerThanLatestNativeUpload: latestUploadIsAncestor,
 		nativeAppSourceNewerThanLatestNativeUpload: latestUploadIsAncestor && nativeAppChangedFiles.length > 0,
@@ -685,26 +693,34 @@ async function currentGitSha() {
 	}
 }
 
-async function findLatestIosUploadProof(iosProofDir) {
+async function findIosUploadProofs(iosProofDir) {
 	try {
 		const files = (await readdir(iosProofDir))
 			.filter((file) => /^ios-testflight-attempt-.*\.md$/u.test(file))
 			.sort();
-		const file = files.at(-1);
-		if (!file) return null;
-		const proofPath = resolve(iosProofDir, file);
-		const text = await readFile(proofPath, 'utf8');
-		const repoSha = await repoShaFromIosUploadProof(text, proofPath);
-		return {
-			path: relative(REPO_ROOT, proofPath),
-			checkedAt: firstMarkdownValue(text, 'Checked at') ?? '<unknown>',
-			status: firstMarkdownValue(text, 'Status') ?? '<unknown>',
-			repoSha: repoSha?.sha ?? null,
-			repoShaSource: repoSha?.source ?? null
-		};
+		const proofs = [];
+		for (const file of files) {
+			const proofPath = resolve(iosProofDir, file);
+			proofs.push(await readIosUploadProof(proofPath));
+		}
+		return proofs;
 	} catch {
-		return null;
+		return [];
 	}
+}
+
+async function readIosUploadProof(proofPath) {
+	const text = await readFile(proofPath, 'utf8');
+	const repoSha = await repoShaFromIosUploadProof(text, proofPath);
+	return {
+		path: relative(REPO_ROOT, proofPath),
+		checkedAt: cleanMarkdownValue(firstMarkdownValue(text, 'Checked at')) ?? '<unknown>',
+		status: normalizeMarkdownValue(firstMarkdownValue(text, 'Status')) ?? '<unknown>',
+		uploadRequested: markdownYes(firstMarkdownValue(text, 'Upload')),
+		ascApiKeyProvided: cleanMarkdownValue(firstMarkdownValue(text, 'App Store Connect API key provided')) ?? '<unknown>',
+		repoSha: repoSha?.sha ?? null,
+		repoShaSource: repoSha?.source ?? null
+	};
 }
 
 async function repoShaFromIosUploadProof(text, proofPath) {
@@ -894,6 +910,14 @@ function firstMarkdownValue(text, label) {
 function cleanMarkdownValue(value) {
 	if (!value) return null;
 	return value.trim().replace(/^`|`$/gu, '');
+}
+
+function normalizeMarkdownValue(value) {
+	return cleanMarkdownValue(value)?.toLowerCase() ?? null;
+}
+
+function markdownYes(value) {
+	return normalizeMarkdownValue(value) === 'yes';
 }
 
 function isGitSha(value) {
@@ -1187,8 +1211,10 @@ function createStatusMarkdown(status) {
 		'## Source vs Native Upload',
 		'',
 		`- Current checkout SHA: \`${status.nativeSource?.currentRepoSha ?? '<unknown>'}\``,
-		`- Latest native upload proof: ${status.nativeSource?.latestNativeUploadProof?.path ? `\`${status.nativeSource.latestNativeUploadProof.path}\`` : '<none>'}`,
-		`- Latest native upload SHA: \`${status.nativeSource?.latestNativeUploadSha ?? '<unknown>'}\``,
+		`- Latest native upload attempt: ${status.nativeSource?.latestNativeUploadAttempt?.path ? `\`${status.nativeSource.latestNativeUploadAttempt.path}\` (${status.nativeSource.latestNativeUploadAttempt.status})` : '<none>'}`,
+		`- Latest native upload attempt succeeded: ${status.nativeSource?.latestNativeUploadAttemptWasSuccessful ? 'yes' : 'no'}`,
+		`- Latest successful native upload proof: ${status.nativeSource?.latestNativeUploadProof?.path ? `\`${status.nativeSource.latestNativeUploadProof.path}\`` : '<none>'}`,
+		`- Latest successful native upload SHA: \`${status.nativeSource?.latestNativeUploadSha ?? '<unknown>'}\``,
 		`- Latest native upload has current source: ${status.nativeSource?.latestNativeUploadHasCurrentSource ? 'yes' : 'no'}`,
 		`- Current source newer than latest native upload: ${status.nativeSource?.sourceNewerThanLatestNativeUpload ? 'yes' : 'no'}`,
 		`- Current native app source newer than latest native upload: ${status.nativeSource?.nativeAppSourceNewerThanLatestNativeUpload ? 'yes' : 'no'}`,
