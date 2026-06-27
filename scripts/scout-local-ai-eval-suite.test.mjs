@@ -1352,6 +1352,14 @@ test('device review preparation command inspects, imports, and reports review st
 	assert.equal(report.imported, true);
 	assert.equal(report.partial, false);
 	assert.equal(report.inspection.status, 'ready-for-final-intake');
+	assert.equal(report.acceptance.status, 'final-review-ready');
+	assert.equal(report.acceptance.finalReviewCanStart, true);
+	assert.equal(report.acceptance.diagnosticOnly, false);
+	assert.match(report.acceptance.summary, /Final human review can start/u);
+	assert.match(report.acceptance.proofBoundary, /not final Dad readiness/u);
+	assert.ok(report.acceptance.checklist.some((item) => item === 'inspection=ready-for-final-intake'));
+	assert.ok(report.acceptance.checklist.some((item) => item === 'cases=100/100'));
+	assert.ok(report.acceptance.checklist.some((item) => item === 'lane=device-on-device-gemma'));
 	assert.equal(report.reviewStatus.progressSource, 'packet-draft');
 	assert.equal(report.reviewStatus.packetDraft.applied, true);
 	assert.equal(report.reviewStatus.packetDraft.updatedCases, suite.cases.length);
@@ -1373,6 +1381,30 @@ test('device review preparation command inspects, imports, and reports review st
 	assert.match(report.nextAction, /device-prepare-final\.review\.md/u);
 	assert.match(report.nextAction, /device-prepare-final\.review\.json/u);
 	assert.match(report.nextAction, /device-prepare-final\.json/u);
+
+	const textResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/prepare-scout-local-ai-device-review.mjs',
+			'--run',
+			inputPath,
+			'--device-run-dir',
+			deviceRunsDir,
+			'--review-dir',
+			reviewsDir,
+			'--packet-dir',
+			packetsDir,
+			'--force'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 12 }
+	);
+	assert.match(textResult.stdout, /## Review Acceptance/u);
+	assert.match(textResult.stdout, /Status: final-review-ready/u);
+	assert.match(textResult.stdout, /Final human review can start: yes/u);
+	assert.match(textResult.stdout, /Diagnostic only: no/u);
+	assert.match(textResult.stdout, /inspection=ready-for-final-intake/u);
+	assert.match(textResult.stdout, /cases=100\/100/u);
+	assert.match(textResult.stdout, /This is not final Dad readiness/u);
 });
 
 test('device review preparation command can select the latest Scout export from Downloads', async () => {
@@ -1610,6 +1642,9 @@ test('device review preparation command refuses stale and implicit partial expor
 			const report = JSON.parse(error.stdout);
 			assert.equal(report.status, 'inspection-blocked');
 			assert.equal(report.imported, false);
+			assert.equal(report.acceptance.status, 'blocked-before-review');
+			assert.equal(report.acceptance.finalReviewCanStart, false);
+			assert.equal(report.acceptance.diagnosticOnly, false);
 			assert.match(report.inspection.staleReasons.join('\n'), /run\.suiteVersion/u);
 			return true;
 		}
@@ -1637,6 +1672,8 @@ test('device review preparation command refuses stale and implicit partial expor
 			const report = JSON.parse(error.stdout);
 			assert.equal(report.status, 'partial-needs-explicit-allow-partial');
 			assert.equal(report.imported, false);
+			assert.equal(report.acceptance.status, 'blocked-before-review');
+			assert.equal(report.acceptance.finalReviewCanStart, false);
 			assert.match(report.nextAction, /--allow-partial/u);
 			return true;
 		}
@@ -1664,6 +1701,10 @@ test('device review preparation command refuses stale and implicit partial expor
 	assert.equal(partialReport.status, 'prepared-for-partial-diagnostic-review');
 	assert.equal(partialReport.imported, true);
 	assert.equal(partialReport.partial, true);
+	assert.equal(partialReport.acceptance.status, 'diagnostic-review-only');
+	assert.equal(partialReport.acceptance.finalReviewCanStart, false);
+	assert.equal(partialReport.acceptance.diagnosticOnly, true);
+	assert.match(partialReport.acceptance.proofBoundary, /Finish or rerun Run 100/u);
 	assert.equal(partialReport.reviewStatus.summary.total, 3);
 	assert.equal(partialReport.reviewStatus.readyForStrictDeviceProof, false);
 });

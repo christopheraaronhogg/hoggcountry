@@ -69,6 +69,7 @@ if (!canImportFinal && !canImportPartial) {
 		imported: false,
 		input: selectedInput.report,
 		inspection,
+		acceptance: buildReviewAcceptance({ inspection, canImportFinal: false, canImportPartial: false }),
 		nextAction: inspection.readyForPartialIntake
 			? `Rerun with --allow-partial only if this is a deliberate smoke/interrupted-run diagnostic; otherwise finish Run 100 on the phone first.`
 			: 'Fix the export or rerun Scout Eval Lab before importing review files.'
@@ -126,6 +127,7 @@ writeOutput({
 		packet: relativePacketPath
 	},
 	inspection,
+	acceptance: buildReviewAcceptance({ inspection, canImportFinal, canImportPartial }),
 	reviewStatus,
 	importOutput: importOutput.trim().split(/\r?\n/u).filter(Boolean),
 	nextAction: `Fill ${relativePacketPath}, then preview draft progress with npm run review-status:scout-local-ai -- --run ${relativeImportedRunPath} --review ${relativeReviewPath} --packet ${relativePacketPath}. When the packet is fully rated, run npm run finalize-review:scout-local-ai -- --packet ${relativePacketPath} --run ${relativeImportedRunPath} --review ${relativeReviewPath}.`
@@ -259,6 +261,48 @@ function writeOutput(report) {
 	console.log(formatReport(report));
 }
 
+function buildReviewAcceptance({ inspection, canImportFinal, canImportPartial }) {
+	const run = inspection.run ?? {};
+	const suite = inspection.suite ?? {};
+	const checklist = [
+		`inspection=${inspection.status}`,
+		`cases=${run.caseCount ?? '<missing>'}/${suite.caseCount ?? '<missing>'}`,
+		`suite=${run.suiteId ?? '<missing>'} ${run.suiteVersion ?? '<missing>'} (${run.suiteHash ?? '<missing>'})`,
+		`lane=${run.evidenceLane ?? '<missing>'}`,
+		`app=${run.appVersion ?? '<missing>'} (${run.appBuild ?? '<missing>'}) via ${run.installSource ?? '<missing>'}`,
+		`model=${run.modelId ?? '<missing>'}`,
+		`execution=${run.executionId ?? '<missing>'}`
+	];
+	if (canImportFinal) {
+		return {
+			status: 'final-review-ready',
+			finalReviewCanStart: true,
+			diagnosticOnly: false,
+			summary: 'Final human review can start for this imported TestFlight/iPhone Run 100 export.',
+			checklist,
+			proofBoundary: 'This is not final Dad readiness until all 100 cases are rated 5/5 and strict device plus stability proof pass.'
+		};
+	}
+	if (canImportPartial) {
+		return {
+			status: 'diagnostic-review-only',
+			finalReviewCanStart: false,
+			diagnosticOnly: true,
+			summary: 'Partial diagnostic review can start, but this export is not final Dad proof.',
+			checklist,
+			proofBoundary: 'Finish or rerun Run 100 on the TestFlight iPhone before final human rating.'
+		};
+	}
+	return {
+		status: 'blocked-before-review',
+		finalReviewCanStart: false,
+		diagnosticOnly: false,
+		summary: 'Do not start review from this export until inspection blockers are fixed.',
+		checklist,
+		proofBoundary: 'Fix the export or rerun Scout Eval Lab, then prepare review again.'
+	};
+}
+
 function formatReport(report) {
 	const lines = [
 		`# Scout local AI device review prep: ${report.status}`,
@@ -276,6 +320,20 @@ function formatReport(report) {
 			`- Imported run: \`${report.paths.importedRun}\``,
 			`- Review JSON: \`${report.paths.review}\``,
 			`- Review packet: \`${report.paths.packet}\``,
+			''
+		);
+	}
+	if (report.acceptance) {
+		lines.push(
+			'## Review Acceptance',
+			'',
+			`- Status: ${report.acceptance.status}`,
+			`- Final human review can start: ${report.acceptance.finalReviewCanStart ? 'yes' : 'no'}`,
+			`- Diagnostic only: ${report.acceptance.diagnosticOnly ? 'yes' : 'no'}`,
+			`- Summary: ${report.acceptance.summary}`,
+			`- Boundary: ${report.acceptance.proofBoundary}`,
+			'- Checklist:',
+			...report.acceptance.checklist.map((item) => `  - ${item}`),
 			''
 		);
 	}
