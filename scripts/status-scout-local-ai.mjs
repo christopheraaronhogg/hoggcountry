@@ -88,7 +88,10 @@ async function buildStatus(paths) {
 	const currentPartialDeviceRuns = currentDeviceRuns.filter((entry) => !isFullRun(entry.value, suite));
 	testflight.currentTargetDeviceRunCount = currentFullDeviceRuns.filter((entry) => deviceRunMatchesTargetBuild(entry.value, testflight)).length;
 	testflight.currentTargetPartialDeviceRunCount = currentPartialDeviceRuns.filter((entry) => deviceRunMatchesTargetBuild(entry.value, testflight)).length;
-	testflight.targetBuildAvailableForDad = testflight.targetBuildReadyForDad || testflight.currentTargetDeviceRunCount > 0;
+	testflight.targetBuildAvailableForDad =
+		testflight.targetBuildReadyForDad ||
+		testflight.recordedDadPilotMeetsSuiteRequirement ||
+		testflight.currentTargetDeviceRunCount > 0;
 	const currentFullToolCompleteRuns = currentRuns.filter(
 		(entry) => isFullRun(entry.value, suite) && hasCompleteToolExpectations(entry.value, suite) && hasCompleteSourceEvidence(entry.value)
 	);
@@ -421,9 +424,13 @@ function nextActionFor(
 				text: `Partial TestFlight/iPhone Eval Lab run ${latestPartialRun.runId} is imported at ${completed}/${total}. Reopen the same iPhone build, go to Settings > Scout Eval Lab, tap Resume, finish Run 100, Share the final JSON, then prepare review with ${DEVICE_REVIEW_PREP_COMMAND}. The partial file ${runPath} can be reviewed with --allow-partial for diagnosis, but it is not final Dad proof.`
 			};
 		}
+		const phoneBuild =
+			testflight?.targetBuildReadyForDad || !testflight?.recordedDadPilotMeetsSuiteRequirement
+				? `the latest TestFlight build (${testflight?.targetBuild ?? '<unknown>'})`
+				: `the current Dad Pilot TestFlight build (${testflight.recordedDadPilotBuild}; newer target ${testflight.targetBuild ?? '<unknown>'} is pending upload)`;
 		return {
 			kind: 'get-device-run',
-			text: `Install the latest TestFlight build on Dad/Chris iPhone, open Settings > Scout Eval Lab, run Run 100, Share the JSON, then prepare review with ${DEVICE_REVIEW_PREP_COMMAND}.`
+			text: `Install or update ${phoneBuild} on Dad/Chris iPhone, open Settings > Scout Eval Lab, run Run 100, Share the JSON, then prepare review with ${DEVICE_REVIEW_PREP_COMMAND}.`
 		};
 	}
 	const latestDeviceRun = currentFullDeviceRuns.at(-1)?.value.runId ?? '<run-id>';
@@ -684,6 +691,9 @@ function testflightTargetEvidence(testflight) {
 	}
 	if (!testflight.targetBuildAvailableForDad) {
 		return `Target build is not yet recorded as available for Dad: ${pieces.join('; ')}`;
+	}
+	if (!testflight.targetBuildReadyForDad && testflight.recordedDadPilotMeetsSuiteRequirement) {
+		return `Dad Pilot has a suite-compatible TestFlight build; newer Xcode target is pending App Store Connect: ${pieces.join('; ')}`;
 	}
 	return `Target build is available for Dad: ${pieces.join('; ')}`;
 }

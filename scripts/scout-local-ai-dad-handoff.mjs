@@ -123,10 +123,12 @@ async function findLatestDadBuildProof(path, targetBuild) {
 			const proofPath = resolve(path, file);
 			const text = await readFile(proofPath, 'utf8');
 			const gates = testFlightBuildGates(text);
+			const targetBuildValue = cleanMarkdownValue(firstMarkdownValue(text, 'Target build'));
+			if (!targetBuildValue) continue;
 			proofs.push({
 				path: relative(REPO_ROOT, proofPath),
 				checkedAt: cleanMarkdownValue(firstMarkdownValue(text, 'Checked at')) ?? '<unknown>',
-				targetBuild: cleanMarkdownValue(firstMarkdownValue(text, 'Target build')) ?? '<unknown>',
+				targetBuild: targetBuildValue,
 				processing: cleanMarkdownValue(firstMarkdownValue(text, 'Processing')) ?? '<unknown>',
 				externalState: cleanMarkdownValue(firstMarkdownValue(text, 'External state')) ?? '<unknown>',
 				publicLink: cleanMarkdownValue(firstMarkdownValue(text, 'Public link')) ?? '<unknown>',
@@ -136,10 +138,24 @@ async function findLatestDadBuildProof(path, targetBuild) {
 				targetReadyForDad: gates.some((gate) => gate.id === 'targetReadyForDad' && gate.checked)
 			});
 		}
-		return proofs.filter((proof) => proof.targetBuild === targetBuild).at(-1) ?? proofs.at(-1) ?? null;
+		const sortedProofs = proofs.sort(compareDadBuildProofs);
+		return sortedProofs.filter((proof) => proof.targetBuild === targetBuild).at(-1) ?? sortedProofs.at(-1) ?? null;
 	} catch {
 		return null;
 	}
+}
+
+function compareDadBuildProofs(a, b) {
+	const timeA = Date.parse(a.checkedAt);
+	const timeB = Date.parse(b.checkedAt);
+	if (Number.isFinite(timeA) && Number.isFinite(timeB) && timeA !== timeB) return timeA - timeB;
+	if (Number.isFinite(timeA) !== Number.isFinite(timeB)) return Number.isFinite(timeA) ? 1 : -1;
+	return buildNumberFromLabel(a.targetBuild) - buildNumberFromLabel(b.targetBuild);
+}
+
+function buildNumberFromLabel(label) {
+	const match = String(label ?? '').match(/\((\d+)\)$/u);
+	return match ? Number(match[1]) : 0;
 }
 
 function testFlightBuildGates(text) {
@@ -169,6 +185,9 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 	const completedGates = status.gates.filter((gate) => gate.ok).length;
 	const totalGates = status.gates.length;
 	const suiteRequiredBuild = status.suite?.finalProof?.requiredApp ?? '<unknown>';
+	const dadProofMatchesTarget = latestDadBuildProof?.targetBuild === targetBuild;
+	const dadProofLabel = dadProofMatchesTarget ? 'Dad target-build proof' : 'Latest Dad Pilot proof';
+	const dadGateLabel = dadProofMatchesTarget ? 'Dad target-build gates' : 'Latest Dad Pilot gates';
 	const lines = [
 		'# Dad Scout local AI Eval Lab handoff',
 		'',
@@ -185,11 +204,12 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		`- Recorded Dad Pilot build: \`${recordedDadBuild}\`.`,
 		`- Recorded Dad Pilot build meets suite requirement: ${status.testflight?.recordedDadPilotMeetsSuiteRequirement ? 'yes' : 'no'}.`,
 		latestDadBuildProof
-			? `- Dad target-build proof: \`${latestDadBuildProof.path}\` (${latestDadBuildProof.targetBuild}, ${latestDadBuildProof.externalState}, checked ${latestDadBuildProof.checkedAt}).`
-			: '- Dad target-build proof: none found.',
+			? `- ${dadProofLabel}: \`${latestDadBuildProof.path}\` (${latestDadBuildProof.targetBuild}, ${latestDadBuildProof.externalState}, checked ${latestDadBuildProof.checkedAt}).`
+			: '- Dad Pilot proof: none found.',
 		latestDadBuildProof
-			? `- Dad target-build gates: ${latestDadBuildProof.checkedGateCount}/${latestDadBuildProof.totalGateCount} checked; targetReadyForDad ${latestDadBuildProof.targetReadyForDad ? 'yes' : 'no'}.`
-			: '- Dad target-build gates: unknown.',
+			? `- ${dadGateLabel}: ${latestDadBuildProof.checkedGateCount}/${latestDadBuildProof.totalGateCount} checked; targetReadyForDad ${latestDadBuildProof.targetReadyForDad ? 'yes' : 'no'}.`
+			: '- Dad Pilot gates: unknown.',
+		`- Newer Xcode target pending App Store Connect: ${status.testflight?.targetBuildReadyForDad ? 'no' : 'yes'}.`,
 		`- Imported full device runs: ${status.runs?.currentFullDeviceRuns?.length ?? 0}.`,
 		`- Imported partial device runs: ${status.runs?.currentPartialDeviceRuns?.length ?? 0}.`,
 		`- Inbox candidate exports: ${status.inbox?.candidateCount ?? 0}.`,
@@ -208,6 +228,11 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 	if (!status.testflight?.targetBuildAvailableForDad) {
 		lines.push(
 			'> Important: the recorded Dad Pilot build is not ready for this suite. Do not treat the final Eval Lab run as valid until App Store Connect shows Dad Pilot on the target build, or a current full TestFlight/iPhone export proves the target build was installed.',
+			''
+		);
+	} else if (!status.testflight?.targetBuildReadyForDad && status.testflight?.recordedDadPilotMeetsSuiteRequirement) {
+		lines.push(
+			'> Note: Dad can run the suite-compatible TestFlight build already in Dad Pilot, but the newer Xcode target still needs upload/attachment before it is the latest phone build.',
 			''
 		);
 	}
@@ -243,7 +268,7 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		'',
 		'## Phone run steps',
 		'',
-		'1. Confirm App Store Connect has the target build attached to Dad Pilot and available through the TestFlight link.',
+		'1. Confirm App Store Connect has a suite-compatible build attached to Dad Pilot and available through the TestFlight link. Use the target build when the latest-code candidate is required.',
 		'2. On the iPhone, open TestFlight and update Hoggcountry.',
 		'3. Open Hoggcountry > Settings > Scout Eval Lab.',
 		'4. Confirm the Eval Lab status says `TestFlight ready`.',

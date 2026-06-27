@@ -261,13 +261,14 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(status.runs.currentFullRoutingRuns.length, 1);
 	assert.equal(status.strictDeviceProofs.length, 0);
 	assert.equal(status.suite.finalProof.requiredApp, '1.0 (>= 13)');
-	assert.equal(status.testflight.targetBuild, '1.0 (13)');
+	assert.equal(status.testflight.targetBuild, '1.0 (14)');
 	assert.equal(status.testflight.suiteRequiredBuild, '1.0 (>= 13)');
 	assert.equal(status.testflight.targetBuildMeetsSuiteRequirement, true);
 	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (13)');
 	assert.equal(status.testflight.recordedDadPilotMeetsSuiteRequirement, true);
-	assert.equal(status.testflight.targetBuildReadyForDad, true);
+	assert.equal(status.testflight.targetBuildReadyForDad, false);
 	assert.equal(status.testflight.targetBuildAvailableForDad, true);
+	assert.match(gates['testflight-target'].evidence, /newer Xcode target is pending App Store Connect/u);
 	assert.equal(status.inbox.exists, true);
 	assert.equal(status.inbox.jsonFileCount, 2);
 	assert.equal(status.inbox.candidateCount, 1);
@@ -471,7 +472,7 @@ test('status command surfaces partial TestFlight iPhone runs without counting th
 	assert.equal(status.runs.currentPartialDeviceRuns[0].runId, 'device-status-partial-12');
 	assert.equal(status.runs.currentPartialDeviceRuns[0].caseCount, 12);
 	assert.equal(status.testflight.currentTargetDeviceRunCount, 0);
-	assert.equal(status.testflight.currentTargetPartialDeviceRunCount, 1);
+	assert.equal(status.testflight.currentTargetPartialDeviceRunCount, 0);
 	assert.equal(gates['device-run'].ok, false);
 	assert.match(gates['device-run'].evidence, /partial device run\(s\) imported/u);
 	assert.match(gates['device-run'].evidence, /device-status-partial-12 12\/100/u);
@@ -529,7 +530,7 @@ test('status command surfaces target TestFlight build gaps before phone eval', a
 	);
 	const status = JSON.parse(result.stdout);
 
-	assert.equal(status.testflight.targetBuild, '1.0 (13)');
+	assert.equal(status.testflight.targetBuild, '1.0 (14)');
 	assert.equal(status.testflight.suiteRequiredBuild, '1.0 (>= 13)');
 	assert.equal(status.testflight.targetBuildMeetsSuiteRequirement, true);
 	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (12)');
@@ -537,7 +538,7 @@ test('status command surfaces target TestFlight build gaps before phone eval', a
 	assert.equal(status.testflight.targetBuildReadyForDad, false);
 	assert.equal(status.testflight.targetBuildAvailableForDad, false);
 	assert.equal(status.nextAction.kind, 'publish-target-build');
-	assert.match(status.nextAction.text, /Upload and attach target iOS build 1\.0 \(13\)/u);
+	assert.match(status.nextAction.text, /Upload and attach target iOS build 1\.0 \(14\)/u);
 	assert.match(status.nextAction.text, /Dad Pilot on 1\.0 \(12\)/u);
 	assert.match(status.nextAction.text, /suite requires 1\.0 \(>= 13\)/u);
 	assert.match(status.nextAction.text, /prepare-review:scout-local-ai-device-run/u);
@@ -591,7 +592,7 @@ test('status command recognizes repeated strict TestFlight iPhone proof candidat
 	assert.equal(gates['iteration-loop'].ok, true);
 	assert.equal(gates['strict-device-proof'].ok, true);
 	assert.equal(gates.stability.ok, true);
-	assert.equal(status.testflight.currentTargetDeviceRunCount, 2);
+	assert.equal(status.testflight.currentTargetDeviceRunCount, 0);
 	assert.equal(gates['testflight-target'].ok, true);
 	assert.equal(status.strictDeviceProofs.filter((proof) => proof.ok).length, 2);
 	assert.equal(status.nextAction.kind, 'stability-ready');
@@ -961,6 +962,34 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 		'- [x] targetReadyForDad',
 		''
 	].join('\n'));
+	await writeFile(join(iosProofDir, 'ios-testflight-build-9-2026-06-26.md'), [
+		'# Dad Pilot TestFlight target refresh',
+		'',
+		'Checked at: 2026-06-26T18:19:17Z',
+		'Target build: `1.0 (9)`',
+		'Build id: `build-9-id`',
+		'Processing: `VALID`',
+		'External state: `IN_BETA_TESTING`',
+		'Dad Pilot: `Dad Pilot` (fc963396-a087-44c6-b56b-29847da31cd4)',
+		'Public link: https://testflight.apple.com/join/BagBCrzf',
+		'',
+		'## Gates',
+		'',
+		'- [x] buildFound',
+		'- [x] buildValid',
+		'- [x] attachedToDadPilot',
+		'- [x] externallyAvailable',
+		'- [x] targetReadyForDad',
+		''
+	].join('\n'));
+	await writeFile(join(iosProofDir, 'ios-testflight-build-14-prep-2026-06-27.md'), [
+		'# iOS TestFlight build 14 prep',
+		'',
+		'Checked at: 2026-06-27T05:54:00Z',
+		'',
+		'This is local prep only, not App Store Connect Dad Pilot proof.',
+		''
+	].join('\n'));
 
 	const result = await execFileAsync(
 		process.execPath,
@@ -984,19 +1013,21 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 
 	assert.match(result.stdout, /# Dad Scout local AI Eval Lab handoff/u);
 	assert.match(result.stdout, /Suite final-proof app requirement: `1\.0 \(>= 13\)`/u);
-	assert.match(result.stdout, /Target iOS build for Dad Eval Lab: `1\.0 \(13\)`/u);
+	assert.match(result.stdout, /Target iOS build for Dad Eval Lab: `1\.0 \(14\)`/u);
 	assert.match(result.stdout, /Target build meets suite requirement: yes/u);
 	assert.match(result.stdout, /Recorded Dad Pilot build: `1\.0 \(13\)`/u);
 	assert.match(result.stdout, /Recorded Dad Pilot build meets suite requirement: yes/u);
-	assert.match(result.stdout, /Dad target-build proof: .*ios-testflight-build-13-2026-06-27\.md` \(1\.0 \(13\), IN_BETA_TESTING/u);
-	assert.match(result.stdout, /Dad target-build gates: 5\/5 checked; targetReadyForDad yes/u);
+	assert.match(result.stdout, /Latest Dad Pilot proof: .*ios-testflight-build-13-2026-06-27\.md` \(1\.0 \(13\), IN_BETA_TESTING/u);
+	assert.match(result.stdout, /Latest Dad Pilot gates: 5\/5 checked; targetReadyForDad yes/u);
+	assert.match(result.stdout, /Newer Xcode target pending App Store Connect: yes/u);
+	assert.match(result.stdout, /Dad can run the suite-compatible TestFlight build already in Dad Pilot/u);
 	assert.match(result.stdout, /Imported full device runs: 0/u);
 	assert.match(result.stdout, /Imported partial device runs: 0/u);
 	assert.match(result.stdout, /Inbox candidate exports: 1/u);
 	assert.match(result.stdout, /Latest inbox export: .*device-handoff-inbox-latest, 100 cases/u);
 	assert.match(result.stdout, /https:\/\/testflight\.apple\.com\/join\/BagBCrzf/u);
 	assert.match(result.stdout, /## Upload readiness/u);
-	assert.match(result.stdout, /Xcode Release target: `1\.0 \(13\)`/u);
+	assert.match(result.stdout, /Xcode Release target: `1\.0 \(14\)`/u);
 	assert.match(result.stdout, /Signing team\/profile: `3CFU9J87A5` \/ `Hoggcountry App Store Connect`/u);
 	assert.match(result.stdout, /Latest native upload proof: .*ios-testflight-attempt-2026-06-27T02-39-27-165Z\.md` \(passed/u);
 	assert.match(result.stdout, /App Store Connect API key in latest proof: yes/u);

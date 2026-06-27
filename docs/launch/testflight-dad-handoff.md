@@ -13,6 +13,10 @@ without publishing publicly in the App Store.
   Store Connect reports external state `IN_BETA_TESTING`.
 - Dad Pilot now lists only build `13`; build `12` was removed from the tester
   group after build `13` became available.
+- Next native candidate `1.0 (14)` is prepared locally with the latest Scout
+  Eval Lab export handoff copy and a fresh `cap:sync:ios` pass, but it is **not
+  uploaded, processed, or attached to Dad Pilot yet**. Current prep proof:
+  `docs/launch/proof/ios-testflight-build-14-prep-2026-06-27.md`.
 - The Scout Eval Lab proof target is build `13`, because the eval handoff now
   records source-evidence gaps and final proof requires a TestFlight iPhone
   install on build `13` or newer before a 100-question device run can count as
@@ -51,7 +55,8 @@ call Dad an internal tester in the launch plan.
 ## Account Steps
 
 1. Confirm the current source is clean and the build number is still higher
-   than the latest TestFlight build:
+   than the latest TestFlight build. As of this handoff, local Xcode targets
+   `1.0 (14)` and Dad Pilot is still on `1.0 (13)`:
 
 ```bash
 git status --short
@@ -66,7 +71,7 @@ npm --prefix mobile test
 npm --prefix mobile run cap:sync:ios
 ```
 
-3. Upload the next build with the repeatable TestFlight command above.
+3. Upload build `14` with the repeatable TestFlight command above.
 4. In App Store Connect, wait for the new build to reach `VALID`.
 5. Attach the new build to the existing `Dad Pilot` external group, submit beta
    review when App Store Connect reports `READY_FOR_BETA_SUBMISSION`, and remove
@@ -112,9 +117,12 @@ npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<r
   `DEVELOPMENT_TEAM` build setting.
 - Upload proof: `docs/launch/proof/ios-testflight-attempt-2026-06-27T02-39-27-165Z.md`
   from the successful `--upload` run.
+- Candidate prep proof: build `14` local target bump plus `cap:sync:ios`
+  completion. Current prep proof:
+  `docs/launch/proof/ios-testflight-build-14-prep-2026-06-27.md`.
 - App Store Connect proof: build `13` processed, beta review state, Dad Pilot
   membership, public link enabled, and build `12` removal after build `13` is
-  available. Current proof:
+  available. Current uploaded proof:
   `docs/launch/proof/ios-testflight-build-13-2026-06-27.md`.
 - Release ledger proof: update `docs/launch/release-evidence.json` only after
   upload/processing and Dad Pilot attachment are proven.
