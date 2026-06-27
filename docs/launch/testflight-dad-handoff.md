@@ -104,6 +104,14 @@ npm run refresh:testflight-dad-pilot -- \
 npm run prepare-review:scout-local-ai-device-run -- --run inbox
 ```
 
+   If Chris is waiting while Dad sends the export, the guarded watcher can stay
+   open and prepare the review automatically when a final-ready `Run 100` JSON
+   lands in the repo inbox or Downloads:
+
+```bash
+npm run wait:scout-local-ai-device-run
+```
+
 While rating the generated Markdown packet, preview progress without writing the
 review JSON:
 

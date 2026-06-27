@@ -4,6 +4,7 @@ import { mkdir, mkdtemp, readFile, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { setTimeout as delay } from 'node:timers/promises';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { summarizeRunSourceEvidence } from './lib/scout-local-ai-source-evidence.mjs';
@@ -148,6 +149,7 @@ test('package scripts expose the Scout local AI review handoff commands', async 
 	assert.equal(packageJson.scripts['finalize-review:scout-local-ai'], 'node scripts/finalize-scout-local-ai-review.mjs');
 	assert.equal(packageJson.scripts['prepare-review:scout-local-ai-device-run'], 'node scripts/prepare-scout-local-ai-device-review.mjs');
 	assert.equal(packageJson.scripts['message:scout-local-ai-dad'], 'node scripts/scout-local-ai-dad-handoff.mjs --dad-message');
+	assert.equal(packageJson.scripts['wait:scout-local-ai-device-run'], 'node scripts/wait-scout-local-ai-device-run.mjs');
 });
 
 test('README documents device review acceptance states', async () => {
@@ -346,6 +348,63 @@ test('status command keeps routing proof separate from missing device proof', as
 	);
 	assert.match(textResult.stdout, /Latest inbox handoff: Final Run 100 JSON ready for inbox review \(final-review-ready\)/u);
 	assert.match(textResult.stdout, /Latest inbox boundary: This starts human review only/u);
+});
+
+test('status command suggests the guarded wait command when no device export exists yet', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-wait-'));
+	const runsDir = join(outputDir, 'runs');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const inboxDir = join(outputDir, 'inbox');
+	const reviewsDir = join(outputDir, 'reviews');
+	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
+	await mkdir(runsDir, { recursive: true });
+	await mkdir(inboxDir, { recursive: true });
+	const routingRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'routing-status-wait-proof',
+		completeTools: true
+	});
+	routingRun.evidenceLane = 'scaffold-not-model';
+	routingRun.runContext = null;
+	for (const result of routingRun.results) result.answerOrigin = 'scaffold-not-model';
+	await writeFile(join(runsDir, 'routing-status-wait-proof.json'), `${JSON.stringify(routingRun, null, 2)}\n`);
+	await writeFile(releaseEvidencePath, `${JSON.stringify({
+		schemaVersion: 1,
+		items: {
+			'dad-testflight-invite': {
+				status: 'verified',
+				summary: 'Dad Pilot is attached to Hoggcountry iOS build 1.0 (15), the public TestFlight link is enabled with limit 5, and App Store Connect reports external state IN_BETA_TESTING.',
+				publicLink: 'https://testflight.apple.com/join/BagBCrzf'
+			}
+		}
+	}, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai.mjs',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--inbox-dir',
+			inboxDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--release-evidence',
+			releaseEvidencePath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const status = JSON.parse(result.stdout);
+
+	assert.equal(status.nextAction.kind, 'get-device-run');
+	assert.match(status.nextAction.text, /Run 100/u);
+	assert.match(status.nextAction.text, /Share the JSON/u);
+	assert.match(status.nextAction.text, /wait:scout-local-ai-device-run/u);
+	assert.match(status.nextAction.text, /prepare-review:scout-local-ai-device-run/u);
+	assert.match(status.nextAction.text, /--run inbox/u);
 });
 
 test('status command blocks stale inbox exports before review work starts', async () => {
@@ -1893,6 +1952,70 @@ test('device review preparation command prefers a final-ready inbox export over 
 		'device-prepare-inbox-ready-older'
 	);
 	await assert.rejects(readFile(join(deviceRunsDir, 'device-prepare-inbox-stale-newer.json'), 'utf8'));
+});
+
+test('device run wait command prepares review when a final Run 100 export lands in the inbox', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-device-wait-inbox-'));
+	const inboxDir = join(outputDir, 'inbox');
+	const downloadsDir = join(outputDir, 'Downloads');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	const packetsDir = join(outputDir, 'review-packets');
+	await mkdir(inboxDir, { recursive: true });
+	await mkdir(downloadsDir, { recursive: true });
+	const inboxPath = join(inboxDir, 'Dad shared final Run 100.json');
+	const finalRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-wait-inbox-final',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+
+	const waitResult = execFileAsync(
+		process.execPath,
+		[
+			'scripts/wait-scout-local-ai-device-run.mjs',
+			'--source',
+			'inbox',
+			'--poll-ms',
+			'50',
+			'--timeout-ms',
+			'2500',
+			'--downloads-dir',
+			downloadsDir,
+			'--inbox-dir',
+			inboxDir,
+			'--device-run-dir',
+			deviceRunsDir,
+			'--review-dir',
+			reviewsDir,
+			'--packet-dir',
+			packetsDir,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 12 }
+	);
+
+	await delay(150);
+	await writeFile(inboxPath, `${JSON.stringify(finalRun, null, 2)}\n`);
+	const result = await waitResult;
+	const report = JSON.parse(result.stdout);
+
+	assert.equal(report.status, 'prepared-from-watch');
+	assert.equal(report.source, 'inbox');
+	assert.equal(report.prepare.status, 'prepared-for-final-review');
+	assert.equal(report.prepare.input.mode, 'latest-inbox');
+	assert.equal(report.prepare.input.runId, 'device-wait-inbox-final');
+	assert.equal(report.prepare.acceptance.status, 'final-review-ready');
+	assert.equal(report.prepare.acceptance.finalReviewCanStart, true);
+	assert.match(report.prepare.paths.importedRun, /device-wait-inbox-final\.json/u);
+	assert.match(report.prepare.paths.review, /device-wait-inbox-final\.review\.json/u);
+	assert.match(report.prepare.paths.packet, /device-wait-inbox-final\.review\.md/u);
+	assert.equal(
+		JSON.parse(await readFile(join(deviceRunsDir, 'device-wait-inbox-final.json'), 'utf8')).runId,
+		'device-wait-inbox-final'
+	);
+	assert.match(await readFile(join(packetsDir, 'device-wait-inbox-final.review.md'), 'utf8'), /DLA-001/u);
 });
 
 test('device review preparation command refuses stale and implicit partial exports', async () => {

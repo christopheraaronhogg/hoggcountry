@@ -42,6 +42,7 @@ const DEFAULT_RELEASE_EVIDENCE = 'docs/launch/release-evidence.json';
 const DEVICE_EVIDENCE_LANE = 'device-on-device-gemma';
 const SCAFFOLD_EVIDENCE_LANE = 'scaffold-not-model';
 const DEVICE_REVIEW_PREP_COMMAND = 'npm run prepare-review:scout-local-ai-device-run -- --run inbox';
+const DEVICE_REVIEW_WAIT_COMMAND = 'npm run wait:scout-local-ai-device-run';
 const REVIEW_STATUS_COMMAND = 'npm run review-status:scout-local-ai';
 const FINALIZE_REVIEW_COMMAND = 'npm run finalize-review:scout-local-ai';
 const REVIEW_PACKET_DIR = 'data/scout-local-ai/review-packets';
@@ -466,7 +467,7 @@ function nextActionFor(
 				: `the current Dad Pilot TestFlight build (${testflight.recordedDadPilotBuild}; newer target ${testflight.targetBuild ?? '<unknown>'} is pending upload)`;
 		return {
 			kind: 'get-device-run',
-			text: `Install or update ${phoneBuild} on Dad/Chris iPhone, open Settings > Scout Eval Lab, run Run 100, Share the JSON, then prepare review with ${DEVICE_REVIEW_PREP_COMMAND}.`
+			text: `Install or update ${phoneBuild} on Dad/Chris iPhone, open Settings > Scout Eval Lab, run Run 100, and Share the JSON. While waiting for the file, leave ${DEVICE_REVIEW_WAIT_COMMAND} running; after the JSON lands, it prepares the same review path as ${DEVICE_REVIEW_PREP_COMMAND}.`
 		};
 	}
 	const latestDeviceRun = currentFullFinalProofDeviceRuns.at(-1)?.value.runId ?? currentFullDeviceRuns.at(-1)?.value.runId ?? '<run-id>';

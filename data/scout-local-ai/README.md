@@ -124,6 +124,17 @@ Use `--inbox-dir <folder>` when staging the shared JSON somewhere else. The
 selected file still goes through the same read-only inspection gate before any
 review files are written.
 
+If you are waiting on Dad to send the file, leave the guarded watcher running:
+
+```sh
+npm run wait:scout-local-ai-device-run
+```
+
+It polls the repo inbox and Downloads, then runs the same prepare-review command
+as soon as a final-ready `Run 100` export appears. It keeps polling past stale,
+partial, or blocked candidates unless `--allow-partial` is explicit, so a smoke
+run still cannot become final review evidence by accident.
+
 If the export landed in Downloads instead, pass the explicit file:
 
 ```sh
