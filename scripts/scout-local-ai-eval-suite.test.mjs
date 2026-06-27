@@ -1215,11 +1215,13 @@ test('device run inspector classifies full and partial TestFlight exports before
 		completeTools: true,
 		runContext: finalDeviceRunContext()
 	});
+	fullRun.exportHandoff = exportHandoffForRun(fullRun, suite);
 	const partialRun = deviceRunForCases(suite, suite.cases.slice(0, 12), {
 		runId: 'device-inspect-partial',
 		completeTools: true,
 		runContext: finalDeviceRunContext()
 	});
+	partialRun.exportHandoff = exportHandoffForRun(partialRun, suite);
 	await writeFile(fullPath, `${JSON.stringify(fullRun, null, 2)}\n`);
 	await writeFile(partialPath, `${JSON.stringify(partialRun, null, 2)}\n`);
 
@@ -1242,7 +1244,24 @@ test('device run inspector classifies full and partial TestFlight exports before
 	assert.equal(fullReport.run.appBuild, '13');
 	assert.equal(fullReport.run.installSource, 'testflight');
 	assert.equal(fullReport.run.executionId, 'fixture-scout-eval-device-inspect-full');
+	assert.equal(fullReport.handoff.kind, 'final-run-100');
+	assert.equal(fullReport.handoff.expectedAcceptanceStatus, 'final-review-ready');
+	assert.equal(fullReport.handoff.canStartFinalReview, true);
+	assert.equal(fullReport.handoff.reviewInboxPath, 'data/scout-local-ai/inbox/');
+	assert.match(fullReport.handoff.prepareReviewCommand, /prepare-review:scout-local-ai-device-run/u);
 	assert.equal(fullReport.summary.sourceEvidenceComplete, 100);
+
+	const fullTextResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/inspect-scout-local-ai-device-run.mjs',
+			'--run',
+			fullPath
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	assert.match(fullTextResult.stdout, /Handoff: Final Run 100 JSON ready for inbox review \(final-review-ready\)/u);
+	assert.match(fullTextResult.stdout, /Handoff command: npm run prepare-review:scout-local-ai-device-run -- --run inbox/u);
 
 	const partialResult = await execFileAsync(
 		process.execPath,
@@ -1261,6 +1280,9 @@ test('device run inspector classifies full and partial TestFlight exports before
 	assert.match(partialReport.nextCommand, /--allow-partial/u);
 	assert.equal(partialReport.run.caseCount, 12);
 	assert.equal(partialReport.run.executionId, 'fixture-scout-eval-device-inspect-partial');
+	assert.equal(partialReport.handoff.kind, 'diagnostic');
+	assert.equal(partialReport.handoff.expectedAcceptanceStatus, 'diagnostic-review-only');
+	assert.match(partialReport.handoff.prepareReviewCommand, /--allow-partial/u);
 	assert.match(partialReport.warnings.join('\n'), /missing 88 canonical case/u);
 });
 
@@ -1336,6 +1358,7 @@ test('device review preparation command inspects, imports, and reports review st
 		completeTools: true,
 		runContext: finalDeviceRunContext()
 	});
+	run.exportHandoff = exportHandoffForRun(run, suite);
 	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
 
 	const result = await execFileAsync(
@@ -1370,6 +1393,8 @@ test('device review preparation command inspects, imports, and reports review st
 	assert.ok(report.acceptance.checklist.some((item) => item === 'inspection=ready-for-final-intake'));
 	assert.ok(report.acceptance.checklist.some((item) => item === 'cases=100/100'));
 	assert.ok(report.acceptance.checklist.some((item) => item === 'lane=device-on-device-gemma'));
+	assert.ok(report.acceptance.checklist.some((item) => item === 'handoff=final-run-100/final-review-ready'));
+	assert.ok(report.acceptance.checklist.some((item) => item === 'reviewCommand=npm run prepare-review:scout-local-ai-device-run -- --run inbox'));
 	assert.equal(report.reviewStatus.progressSource, 'packet-draft');
 	assert.equal(report.reviewStatus.packetDraft.applied, true);
 	assert.equal(report.reviewStatus.packetDraft.updatedCases, suite.cases.length);
@@ -1414,6 +1439,8 @@ test('device review preparation command inspects, imports, and reports review st
 	assert.match(textResult.stdout, /Diagnostic only: no/u);
 	assert.match(textResult.stdout, /inspection=ready-for-final-intake/u);
 	assert.match(textResult.stdout, /cases=100\/100/u);
+	assert.match(textResult.stdout, /handoff=final-run-100\/final-review-ready/u);
+	assert.match(textResult.stdout, /reviewCommand=npm run prepare-review:scout-local-ai-device-run -- --run inbox/u);
 	assert.match(textResult.stdout, /This is not final Dad readiness/u);
 });
 
@@ -4997,6 +5024,45 @@ function withFixtureExecutionContext(runContext, runId) {
 			startedAt: '2026-06-26T12:00:00.000Z',
 			evidenceLane: 'device-on-device-gemma',
 			source: 'scout-local-ai-eval'
+		}
+	};
+}
+
+function exportHandoffForRun(run, suite, options = {}) {
+	const fullRun = run.caseCount >= suite.cases.length && (run.filters?.limit ?? run.totalSuiteCases) >= suite.cases.length;
+	const expectedAcceptanceStatus = options.expectedAcceptanceStatus ??
+		(fullRun ? 'final-review-ready' : 'diagnostic-review-only');
+	const kind = expectedAcceptanceStatus === 'final-review-ready' ? 'final-run-100' : 'diagnostic';
+	return {
+		schemaVersion: 1,
+		kind,
+		label: kind === 'final-run-100'
+			? 'Final Run 100 JSON ready for inbox review'
+			: 'Diagnostic export only',
+		expectedAcceptanceStatus,
+		canStartFinalReview: expectedAcceptanceStatus === 'final-review-ready',
+		reviewInboxPath: 'data/scout-local-ai/inbox/',
+		prepareReviewCommand: expectedAcceptanceStatus === 'diagnostic-review-only'
+			? 'npm run prepare-review:scout-local-ai-device-run -- --run inbox --allow-partial'
+			: 'npm run prepare-review:scout-local-ai-device-run -- --run inbox',
+		proofBoundary: expectedAcceptanceStatus === 'final-review-ready'
+			? 'This starts human review only. Final Dad readiness still requires all 100 cases rated 5/5, strict device proof, and second stability proof.'
+			: 'Finish Run 100 on the TestFlight iPhone before final human rating. Smoke and partial exports are diagnostic only.',
+		recommendedAction: expectedAcceptanceStatus === 'final-review-ready'
+			? 'Save this JSON into data/scout-local-ai/inbox/, then run npm run prepare-review:scout-local-ai-device-run -- --run inbox.'
+			: 'Use this for smoke/interrupted-run recovery only, then finish Run 100 on the TestFlight iPhone.',
+		proofContextProblems: [],
+		suite: {
+			suiteId: suite.suiteId,
+			version: suite.version,
+			hash: scoutLocalAiSuiteHash(suite),
+			caseCount: suite.cases.length
+		},
+		run: {
+			runId: run.runId,
+			completedCases: run.caseCount,
+			targetCases: run.filters?.limit ?? run.totalSuiteCases,
+			evidenceLane: run.evidenceLane
 		}
 	};
 }

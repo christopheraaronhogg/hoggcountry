@@ -218,6 +218,7 @@ function buildReport({
 			hash: scoutLocalAiSuiteIdentity(suite).suiteHash,
 			caseCount: totalSuiteCases
 		},
+		handoff: normalizeExportHandoff(run?.exportHandoff),
 		summary: {
 			requiredToolComplete: run?.summary?.toolExpectationComplete ?? 0,
 			missingToolCases: run?.summary?.missingToolCases ?? 0,
@@ -254,6 +255,27 @@ function formatSourceEvidenceCounts(counts) {
 	const entries = Object.entries(counts ?? {}).sort((left, right) => right[1] - left[1]);
 	if (!entries.length) return 'none';
 	return entries.slice(0, 6).map(([key, count]) => `${key}=${count}`).join(', ');
+}
+
+function normalizeExportHandoff(handoff) {
+	if (!handoff || typeof handoff !== 'object' || Array.isArray(handoff)) return null;
+	return {
+		kind: stringOrMissing(handoff.kind),
+		label: stringOrMissing(handoff.label),
+		expectedAcceptanceStatus: stringOrMissing(handoff.expectedAcceptanceStatus),
+		canStartFinalReview: handoff.canStartFinalReview === true,
+		reviewInboxPath: stringOrMissing(handoff.reviewInboxPath),
+		prepareReviewCommand: stringOrMissing(handoff.prepareReviewCommand),
+		proofBoundary: stringOrMissing(handoff.proofBoundary),
+		recommendedAction: stringOrMissing(handoff.recommendedAction),
+		proofContextProblems: Array.isArray(handoff.proofContextProblems)
+			? handoff.proofContextProblems.map((problem) => String(problem)).filter(Boolean)
+			: []
+	};
+}
+
+function stringOrMissing(value) {
+	return typeof value === 'string' && value ? value : '<missing>';
 }
 
 function formatPathForDisplay(path) {

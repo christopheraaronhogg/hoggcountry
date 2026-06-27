@@ -1,4 +1,7 @@
 import { cloneDefaultContextPack } from './default-pack.ts';
+import {
+	scoutLocalAiEvalRunContextProblems
+} from './local-ai-eval-proof.ts';
 import type {
 	CachedWeather,
 	ContextPack,
@@ -16,6 +19,9 @@ export type ScoutLocalAiEvidenceLane =
 	| 'scaffold-not-model'
 	| 'external-local-model-command'
 	| 'device-on-device-gemma';
+
+export const SCOUT_LOCAL_AI_EVAL_REVIEW_INBOX_PATH = 'data/scout-local-ai/inbox/';
+export const SCOUT_LOCAL_AI_EVAL_PREPARE_REVIEW_COMMAND = 'npm run prepare-review:scout-local-ai-device-run -- --run inbox';
 
 export interface ScoutLocalAiEvalCase {
 	id: string;
@@ -81,6 +87,31 @@ export interface ScoutLocalAiEvalResult {
 	improvementTask: string | null;
 }
 
+export interface ScoutLocalAiEvalExportHandoff {
+	schemaVersion: number;
+	kind: 'final-run-100' | 'diagnostic';
+	label: string;
+	expectedAcceptanceStatus: 'final-review-ready' | 'diagnostic-review-only' | 'blocked-before-review';
+	canStartFinalReview: boolean;
+	reviewInboxPath: string;
+	prepareReviewCommand: string;
+	proofBoundary: string;
+	recommendedAction: string;
+	proofContextProblems: string[];
+	suite: {
+		suiteId: string;
+		version: string;
+		hash: string;
+		caseCount: number;
+	};
+	run: {
+		runId: string;
+		completedCases: number;
+		targetCases: number;
+		evidenceLane: ScoutLocalAiEvidenceLane;
+	};
+}
+
 export interface ScoutLocalAiEvalRun {
 	schemaVersion: number;
 	runId: string;
@@ -93,6 +124,7 @@ export interface ScoutLocalAiEvalRun {
 	evidenceLane: ScoutLocalAiEvidenceLane;
 	modelCommand: string | null;
 	runContext?: Record<string, unknown>;
+	exportHandoff?: ScoutLocalAiEvalExportHandoff;
 	caseCount: number;
 	totalSuiteCases: number;
 	filters: {
@@ -242,6 +274,7 @@ function createScoutLocalAiEvalRun(input: {
 		evidenceLane: input.evidenceLane,
 		modelCommand: null,
 		runContext: input.runContext,
+		exportHandoff: createScoutLocalAiEvalExportHandoff(input),
 		caseCount: input.results.length,
 		totalSuiteCases: input.suite.cases.length,
 		filters: {
@@ -254,6 +287,74 @@ function createScoutLocalAiEvalRun(input: {
 		failureCategories: input.suite.failureCategories,
 		summary: summarizeScoutLocalAiEvalResults(input.results),
 		results: [...input.results]
+	};
+}
+
+function createScoutLocalAiEvalExportHandoff(input: {
+	suite: ScoutLocalAiEvalSuite;
+	runId: string;
+	evidenceLane: ScoutLocalAiEvidenceLane;
+	suiteHash: string;
+	runContext?: Record<string, unknown>;
+	limit?: number;
+	results: ScoutLocalAiEvalResult[];
+}): ScoutLocalAiEvalExportHandoff {
+	const completedCases = input.results.length;
+	const suiteCaseCount = input.suite.cases.length;
+	const targetCases = input.limit ?? suiteCaseCount;
+	const fullSuiteTarget = suiteCaseCount > 0 && completedCases >= suiteCaseCount && targetCases >= suiteCaseCount;
+	const deviceLane = input.evidenceLane === 'device-on-device-gemma';
+	const proofContextProblems = fullSuiteTarget && deviceLane
+		? scoutLocalAiEvalRunContextProblems({
+			runContext: input.runContext,
+			finalProof: input.suite.finalProof
+		})
+		: [];
+	const canStartFinalReview = fullSuiteTarget && deviceLane && proofContextProblems.length === 0;
+	const expectedAcceptanceStatus = canStartFinalReview
+		? 'final-review-ready'
+		: fullSuiteTarget && deviceLane
+			? 'blocked-before-review'
+			: 'diagnostic-review-only';
+	const kind = canStartFinalReview ? 'final-run-100' : 'diagnostic';
+	const proofBoundary = canStartFinalReview
+		? 'This starts human review only. Final Dad readiness still requires all 100 cases rated 5/5, strict device proof, and second stability proof.'
+		: fullSuiteTarget && deviceLane
+			? 'Fix the blocked TestFlight/iPhone proof context before review. This export is not final Dad proof.'
+			: 'Finish Run 100 on the TestFlight iPhone before final human rating. Smoke and partial exports are diagnostic only.';
+	return {
+		schemaVersion: 1,
+		kind,
+		label: canStartFinalReview
+			? 'Final Run 100 JSON ready for inbox review'
+			: fullSuiteTarget && deviceLane
+				? 'Full export blocked before review'
+				: 'Diagnostic export only',
+		expectedAcceptanceStatus,
+		canStartFinalReview,
+		reviewInboxPath: SCOUT_LOCAL_AI_EVAL_REVIEW_INBOX_PATH,
+		prepareReviewCommand: expectedAcceptanceStatus === 'diagnostic-review-only'
+			? `${SCOUT_LOCAL_AI_EVAL_PREPARE_REVIEW_COMMAND} --allow-partial`
+			: SCOUT_LOCAL_AI_EVAL_PREPARE_REVIEW_COMMAND,
+		proofBoundary,
+		recommendedAction: canStartFinalReview
+			? `Save this JSON into ${SCOUT_LOCAL_AI_EVAL_REVIEW_INBOX_PATH}, then run ${SCOUT_LOCAL_AI_EVAL_PREPARE_REVIEW_COMMAND}.`
+			: fullSuiteTarget && deviceLane
+				? 'Clear the stale or wrong-context export and rerun Run 100 from the current TestFlight iPhone build.'
+				: 'Use this for smoke/interrupted-run recovery only, then finish Run 100 on the TestFlight iPhone.',
+		proofContextProblems,
+		suite: {
+			suiteId: input.suite.suiteId,
+			version: input.suite.version,
+			hash: input.suiteHash,
+			caseCount: suiteCaseCount
+		},
+		run: {
+			runId: input.runId,
+			completedCases,
+			targetCases,
+			evidenceLane: input.evidenceLane
+		}
 	};
 }
 

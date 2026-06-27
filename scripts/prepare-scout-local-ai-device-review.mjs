@@ -264,6 +264,7 @@ function writeOutput(report) {
 function buildReviewAcceptance({ inspection, canImportFinal, canImportPartial }) {
 	const run = inspection.run ?? {};
 	const suite = inspection.suite ?? {};
+	const handoff = inspection.handoff ?? null;
 	const checklist = [
 		`inspection=${inspection.status}`,
 		`cases=${run.caseCount ?? '<missing>'}/${suite.caseCount ?? '<missing>'}`,
@@ -273,6 +274,12 @@ function buildReviewAcceptance({ inspection, canImportFinal, canImportPartial })
 		`model=${run.modelId ?? '<missing>'}`,
 		`execution=${run.executionId ?? '<missing>'}`
 	];
+	if (handoff) {
+		checklist.push(
+			`handoff=${handoff.kind}/${handoff.expectedAcceptanceStatus}`,
+			`reviewCommand=${handoff.prepareReviewCommand}`
+		);
+	}
 	if (canImportFinal) {
 		return {
 			status: 'final-review-ready',

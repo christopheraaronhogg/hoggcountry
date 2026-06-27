@@ -3,6 +3,8 @@ import { test } from 'node:test';
 
 import {
 	buildScoutLocalAiEvalPack,
+	SCOUT_LOCAL_AI_EVAL_PREPARE_REVIEW_COMMAND,
+	SCOUT_LOCAL_AI_EVAL_REVIEW_INBOX_PATH,
 	runScoutLocalAiEval,
 	scoutLocalAiSuiteHash,
 	type ScoutLocalAiEvalCase,
@@ -80,6 +82,27 @@ function answer(prompt: string, options: { sourceEvidence?: boolean } = {}): Sco
 	};
 }
 
+function finalDeviceRunContext(): Record<string, unknown> {
+	return {
+		surface: 'mobile-settings-scout-eval-lab',
+		native: {
+			isNativePlatform: true,
+			platform: 'ios'
+		},
+		app: {
+			id: 'com.hoggcountry.trailassistant',
+			name: 'Hoggcountry',
+			version: '1.0',
+			build: '13'
+		},
+		installSource: {
+			type: 'testflight'
+		},
+		runtimeConfigured: true,
+		modelId: 'gemma-3n-e2b-it-int4'
+	};
+}
+
 test('runScoutLocalAiEval records on-device answers and tool expectations', async () => {
 	const run = await runScoutLocalAiEval({
 		suite: suite([evalCase()]),
@@ -111,6 +134,35 @@ test('runScoutLocalAiEval records on-device answers and tool expectations', asyn
 	assert.equal(run.results[0].answerOrigin, 'device-on-device-gemma');
 	assert.deepEqual(run.results[0].toolExpectations.missing, []);
 	assert.equal(run.results[0].rating, null);
+});
+
+test('runScoutLocalAiEval embeds final inbox handoff when device proof context matches', async () => {
+	const testSuite = {
+		...suite([evalCase()]),
+		finalProof: {
+			nativePlatform: 'ios',
+			installSource: 'testflight',
+			minAppVersion: '1.0',
+			minAppBuild: 13
+		}
+	};
+	const run = await runScoutLocalAiEval({
+		suite: testSuite,
+		evidenceLane: 'device-on-device-gemma',
+		runContext: finalDeviceRunContext(),
+		now: new Date('2026-06-26T12:00:00.000Z'),
+		ask: ({ testCase }) => Promise.resolve(answer(testCase.prompt))
+	});
+
+	assert.equal(run.exportHandoff?.kind, 'final-run-100');
+	assert.equal(run.exportHandoff?.expectedAcceptanceStatus, 'final-review-ready');
+	assert.equal(run.exportHandoff?.canStartFinalReview, true);
+	assert.equal(run.exportHandoff?.reviewInboxPath, SCOUT_LOCAL_AI_EVAL_REVIEW_INBOX_PATH);
+	assert.equal(run.exportHandoff?.prepareReviewCommand, SCOUT_LOCAL_AI_EVAL_PREPARE_REVIEW_COMMAND);
+	assert.equal(run.exportHandoff?.suite.hash, scoutLocalAiSuiteHash(testSuite));
+	assert.equal(run.exportHandoff?.run.completedCases, 1);
+	assert.deepEqual(run.exportHandoff?.proofContextProblems, []);
+	assert.match(run.exportHandoff?.proofBoundary ?? '', /all 100 cases rated 5\/5/u);
 });
 
 test('runScoutLocalAiEval summarizes source-backed tool hits without evidence', async () => {

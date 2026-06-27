@@ -51,6 +51,17 @@ function formatReport(report) {
 		''
 	];
 
+	if (report.handoff) {
+		lines.push(
+			`- Handoff: ${report.handoff.label} (${report.handoff.expectedAcceptanceStatus})`,
+			`- Handoff command: ${report.handoff.prepareReviewCommand}`,
+			`- Handoff inbox: ${report.handoff.reviewInboxPath}`,
+			`- Handoff boundary: ${report.handoff.proofBoundary}`,
+			''
+		);
+		appendList(lines, 'Handoff proof-context problems', report.handoff.proofContextProblems);
+	}
+
 	if (report.readyForFinalIntake) {
 		lines.push('Result: ready for full TestFlight/iPhone intake and review.', '', 'Next:', report.nextCommand);
 	} else if (report.readyForPartialIntake) {
