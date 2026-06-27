@@ -42,6 +42,7 @@
     "review:scout-model": "node scripts/review-scout-model-responses.mjs",
     "status:scout-local-ai": "node scripts/status-scout-local-ai.mjs",
     "handoff:scout-local-ai-dad": "node scripts/scout-local-ai-dad-handoff.mjs",
+    "message:scout-local-ai-dad": "node scripts/scout-local-ai-dad-handoff.mjs --dad-message",
     "apply-review:scout-local-ai": "node scripts/apply-scout-local-ai-review-packet.mjs",
     "finalize-review:scout-local-ai": "node scripts/finalize-scout-local-ai-review.mjs",
     "review-status:scout-local-ai": "node scripts/status-scout-local-ai-review.mjs",

@@ -29,7 +29,7 @@ const latestLocalTargetPrepProof = await findLatestLocalTargetPrepProof(
 	resolveInputPath(cli.iosProofDir ?? DEFAULT_IOS_PROOF_DIR),
 	targetBuild
 );
-const handoff = createDadHandoffMarkdown({
+const handoffInput = {
 	status,
 	iosBuild,
 	releaseEvidence,
@@ -37,7 +37,10 @@ const handoff = createDadHandoffMarkdown({
 	latestDadBuildProof,
 	latestLocalTargetPrepProof,
 	generatedAt: new Date().toISOString()
-});
+};
+const handoff = cli.dadMessage
+	? createDadMessageText(handoffInput)
+	: createDadHandoffMarkdown(handoffInput);
 
 if (cli.out) {
 	const outPath = resolveInputPath(cli.out);
@@ -405,6 +408,40 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		'This handoff does not prove Dad readiness by itself. Final readiness still requires a full current-suite TestFlight/iPhone `device-on-device-gemma` export, human review with all 100 answers rated 5/5, strict device proof, and repeated stability proof.'
 	);
 
+	return `${lines.join('\n')}\n`;
+}
+
+function createDadMessageText({ status, releaseEvidence }) {
+	const dadTestFlightEvidence = releaseEvidenceItem(releaseEvidence, 'dad-testflight-invite');
+	const publicLink = dadTestFlightEvidence?.publicLink ?? status.testflight?.publicLink ?? 'https://testflight.apple.com/join/BagBCrzf';
+	const recordedDadBuild = extractRecordedDadBuild(releaseEvidence);
+	const suiteRequiredBuild = status.suite?.finalProof?.requiredApp ?? '<unknown>';
+	const buildLabel = status.testflight?.targetBuildReadyForDad
+		? status.testflight.targetBuild
+		: status.testflight?.recordedDadPilotMeetsSuiteRequirement
+			? recordedDadBuild
+			: status.testflight?.targetBuild ?? recordedDadBuild;
+	const readyLine = status.testflight?.targetBuildReadyForDad
+		? `Hoggcountry TestFlight build ${buildLabel} is ready for the local AI test.`
+		: status.testflight?.recordedDadPilotMeetsSuiteRequirement
+			? `Hoggcountry TestFlight build ${buildLabel} can run this suite now; Chris may still refresh you to the latest build later.`
+			: `Hold off on the final Run 100 until Chris says TestFlight has a build matching ${suiteRequiredBuild}.`;
+	const lines = [
+		'Dad, can you help me run the Hoggcountry local AI test?',
+		'',
+		readyLine,
+		`TestFlight link: ${publicLink}`,
+		'',
+		'1. Open TestFlight and update Hoggcountry. If it only says Open, that is fine.',
+		'2. Open Hoggcountry > Settings > Scout Eval Lab.',
+		'3. Make sure the status says TestFlight ready.',
+		'4. Keep the phone plugged in and awake, then tap Run 100.',
+		'5. Run 3 is only a quick smoke check; Run 100 is the real proof.',
+		'6. When it finishes, tap Share and send the JSON to Chris. No need to understand the JSON.',
+		'7. If it gets interrupted, reopen Hoggcountry > Settings > Scout Eval Lab and tap Resume, then Share when it finishes.',
+		'',
+		'Thank you. This is the big local AI test.'
+	];
 	return `${lines.join('\n')}\n`;
 }
 

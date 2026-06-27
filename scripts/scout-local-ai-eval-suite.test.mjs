@@ -147,6 +147,7 @@ test('package scripts expose the Scout local AI review handoff commands', async 
 	assert.equal(packageJson.scripts['status:scout-local-ai-review'], 'node scripts/status-scout-local-ai-review.mjs');
 	assert.equal(packageJson.scripts['finalize-review:scout-local-ai'], 'node scripts/finalize-scout-local-ai-review.mjs');
 	assert.equal(packageJson.scripts['prepare-review:scout-local-ai-device-run'], 'node scripts/prepare-scout-local-ai-device-review.mjs');
+	assert.equal(packageJson.scripts['message:scout-local-ai-dad'], 'node scripts/scout-local-ai-dad-handoff.mjs --dad-message');
 });
 
 test('README documents device review acceptance states', async () => {
@@ -1322,6 +1323,96 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /npm run review-status:scout-local-ai.*--packet data\/scout-local-ai\/review-packets\/<run-id>\.review\.md/u);
 	assert.match(result.stdout, /npm run verify:scout-local-ai-stability-proof/u);
 	assert.match(result.stdout, /Final readiness still requires a full current-suite TestFlight\/iPhone/u);
+});
+
+test('Dad handoff command can print a concise Run 100 message for Dad', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-dad-message-'));
+	const runsDir = join(outputDir, 'runs');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const inboxDir = join(outputDir, 'inbox');
+	const reviewsDir = join(outputDir, 'reviews');
+	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
+	const iosProofDir = join(outputDir, 'proof');
+	await mkdir(runsDir, { recursive: true });
+	await mkdir(deviceRunsDir, { recursive: true });
+	await mkdir(inboxDir, { recursive: true });
+	await mkdir(reviewsDir, { recursive: true });
+	await mkdir(iosProofDir, { recursive: true });
+	const routingRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'routing-dad-message-proof',
+		completeTools: true
+	});
+	routingRun.evidenceLane = 'scaffold-not-model';
+	routingRun.runContext = null;
+	for (const result of routingRun.results) result.answerOrigin = 'scaffold-not-model';
+	await writeFile(join(runsDir, 'routing-dad-message-proof.json'), `${JSON.stringify(routingRun, null, 2)}\n`);
+	await writeFile(releaseEvidencePath, `${JSON.stringify({
+		schemaVersion: 1,
+		items: {
+			'dad-testflight-invite': {
+				status: 'verified',
+				summary: 'Dad Pilot is attached to Hoggcountry iOS build 1.0 (15), the public TestFlight link is enabled with limit 5, and App Store Connect reports external state IN_BETA_TESTING.',
+				publicLink: 'https://testflight.apple.com/join/BagBCrzf'
+			}
+		}
+	}, null, 2)}\n`);
+	await writeFile(join(iosProofDir, 'ios-testflight-build-15-2026-06-27.md'), [
+		'# Dad Pilot TestFlight target refresh',
+		'',
+		'Checked at: 2026-06-27T09:22:00Z',
+		'Target build: `1.0 (15)`',
+		'Build id: `build-15-id`',
+		'Processing: `VALID`',
+		'External state: `IN_BETA_TESTING`',
+		'Dad Pilot: `Dad Pilot` (fc963396-a087-44c6-b56b-29847da31cd4)',
+		'Public link: https://testflight.apple.com/join/BagBCrzf',
+		'',
+		'## Gates',
+		'',
+		'- [x] buildFound',
+		'- [x] buildValid',
+		'- [x] attachedToDadPilot',
+		'- [x] externallyAvailable',
+		'- [x] targetReadyForDad',
+		''
+	].join('\n'));
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/scout-local-ai-dad-handoff.mjs',
+			'--dad-message',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--inbox-dir',
+			inboxDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--release-evidence',
+			releaseEvidencePath,
+			'--ios-proof-dir',
+			iosProofDir
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+
+	assert.match(result.stdout, /Dad, can you help me run the Hoggcountry local AI test/u);
+	assert.match(result.stdout, /Hoggcountry TestFlight build 1\.0 \(15\) is ready/u);
+	assert.match(result.stdout, /https:\/\/testflight\.apple\.com\/join\/BagBCrzf/u);
+	assert.match(result.stdout, /Open TestFlight and update Hoggcountry/u);
+	assert.match(result.stdout, /Settings > Scout Eval Lab/u);
+	assert.match(result.stdout, /TestFlight ready/u);
+	assert.match(result.stdout, /tap Run 100/u);
+	assert.match(result.stdout, /Run 3 is only a quick smoke check; Run 100 is the real proof/u);
+	assert.match(result.stdout, /tap Share and send the JSON to Chris/u);
+	assert.match(result.stdout, /No need to understand the JSON/u);
+	assert.match(result.stdout, /If it gets interrupted.*tap Resume/u);
+	assert.doesNotMatch(result.stdout, /## Upload readiness/u);
+	assert.doesNotMatch(result.stdout, /npm run ios:testflight/u);
+	assert.doesNotMatch(result.stdout, /APP_STORE_CONNECT_API/u);
 });
 
 test('device run inspector classifies full and partial TestFlight exports before intake', async () => {
