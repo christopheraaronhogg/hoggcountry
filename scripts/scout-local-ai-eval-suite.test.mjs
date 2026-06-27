@@ -315,12 +315,11 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(status.testflight.targetBuild, '1.0 (17)');
 	assert.equal(status.testflight.suiteRequiredBuild, '1.0 (>= 13)');
 	assert.equal(status.testflight.targetBuildMeetsSuiteRequirement, true);
-	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (16)');
+	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (17)');
 	assert.equal(status.testflight.recordedDadPilotMeetsSuiteRequirement, true);
-	assert.equal(status.testflight.targetBuildReadyForDad, false);
+	assert.equal(status.testflight.targetBuildReadyForDad, true);
 	assert.equal(status.testflight.targetBuildAvailableForDad, true);
-	assert.match(gates['testflight-target'].evidence, /Dad Pilot has a suite-compatible TestFlight build/u);
-	assert.match(gates['testflight-target'].evidence, /newer Xcode target is pending App Store Connect/u);
+	assert.match(gates['testflight-target'].evidence, /Target build is available for Dad/u);
 	assert.equal(status.inbox.exists, true);
 	assert.equal(status.inbox.jsonFileCount, 2);
 	assert.equal(status.inbox.candidateCount, 1);
@@ -1216,7 +1215,7 @@ test('goal audit maps original success criteria without hiding missing device pr
 	assert.match(requirements['device-proof-lane-separated'].evidence, /Current device proof status: No current full suite-compatible TestFlight\/iPhone run found/u);
 	assert.match(requirements['device-proof-lane-separated'].evidence, /No strict TestFlight\/iPhone proof run passes/u);
 	assert.equal(requirements['target-testflight-build'].ok, true);
-	assert.match(requirements['target-testflight-build'].evidence, /Dad Pilot records 1\.0 \(16\)/u);
+	assert.match(requirements['target-testflight-build'].evidence, /Dad Pilot records 1\.0 \(17\)/u);
 	assert.equal(requirements['final-100-rated-five'].ok, false);
 	assert.match(requirements['final-100-rated-five'].evidence, /No strict TestFlight\/iPhone proof run passes/u);
 	assert.equal(audit.currentStatus.currentFullRoutingRuns, 1);
