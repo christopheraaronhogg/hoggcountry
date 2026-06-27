@@ -15,9 +15,11 @@ use that phone to produce the final Scout local-AI `Run 100` export.
   `docs/launch/proof/ios-testflight-attempt-2026-06-27T12-39-12-099Z.md`.
 - Dad Pilot/App Store Connect proof for build `19`:
   `docs/launch/proof/ios-testflight-build-19-2026-06-27.md`.
-- The Scout Eval Lab final-proof target is build `19` now. The suite allows
-  `1.0 (>= 13)`, but Dad should use the latest Dad Pilot build so the export
-  carries current UI recovery and handoff behavior.
+- The local Xcode target is now build `20` so the latest Scout chat transcript
+  polish can be uploaded next. Build `20` is not Dad Pilot proof until App Store
+  Connect processing and Dad Pilot refresh both pass.
+- Dad can still run `Run 100` on build `19` for diagnosis because the suite
+  allows `1.0 (>= 13)`. Latest-source phone proof should wait for build `20`.
 - The remaining goal is not TestFlight availability. It is a real
   TestFlight/iPhone `Run 100` export, import, human review, and all 100 answers
   rated 5/5 with strict device proof.
@@ -147,6 +149,9 @@ changed after the last successful upload.
   externally available.
 - Native upload proof: build `19` was archived, exported, and uploaded from the
   native app source in commit `2628c58dbefd9fe5f33f0e0ecd39bf259bfe4ad1`.
+- Latest-source candidate: local Xcode target `1.0 (20)` is prepped in
+  `docs/launch/proof/ios-testflight-build-20-prep-2026-06-27.md`, but it still
+  needs upload, App Store Connect processing, and Dad Pilot refresh.
 - Current repo proof: later commits may add docs/tests/proof. Check
   `npm run status:scout-local-ai` for whether native app source changed after
   the latest upload.

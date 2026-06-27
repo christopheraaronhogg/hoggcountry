@@ -36,6 +36,20 @@
 	let initialPlacementDone = $state(false);
 	let activeTurnMessageId = $state<string | null>(null);
 	let turnSpacer = $state(0);
+	let searchQuery = $state('');
+	let activeSearchMessageId = $state<string | null>(null);
+	let firstUnseenMessageId = $state<string | null>(null);
+	const searchResultIds = $derived(matchingMessageIds(searchQuery));
+	const activeSearchIndex = $derived(
+		activeSearchMessageId ? searchResultIds.indexOf(activeSearchMessageId) : -1
+	);
+	const searchResultLabel = $derived.by(() => {
+		const query = searchQuery.trim();
+		if (!query) return 'Search messages';
+		if (searchResultIds.length === 0) return 'No matches';
+		const ordinal = activeSearchIndex >= 0 ? activeSearchIndex + 1 : 1;
+		return `${ordinal} of ${searchResultIds.length}`;
+	});
 	let outOfViewStatus = $derived(
 		!following && (hasUnseen || scoutReplyInProgress)
 			? scoutReplyInProgress
@@ -53,6 +67,7 @@
 	let turnPlacementInProgress = false;
 	let observedSignature = '';
 	let readerAnchor: { messageId: string; offsetFromTop: number } | null = null;
+	const MESSAGE_HASH_PREFIX = '#chat-message-';
 
 	onMount(() => {
 		void restoreInitialReaderPosition();
@@ -172,6 +187,7 @@
 	function scrollToLiveEdge(smooth = false): void {
 		following = true;
 		hasUnseen = false;
+		firstUnseenMessageId = null;
 		scheduleDomTask(() => {
 			if (!logRef) return;
 			updateTurnSpacer();
@@ -198,13 +214,17 @@
 	async function placeTurnAtReadingStart(
 		messageId: string,
 		smooth: boolean,
-		resumeFollowing: boolean
+		resumeFollowing: boolean,
+		clearUnseen = true
 	): Promise<void> {
 		const token = ++placementToken;
 		turnPlacementInProgress = true;
 		activeTurnMessageId = messageId;
 		following = resumeFollowing;
-		hasUnseen = false;
+		if (clearUnseen) {
+			hasUnseen = false;
+			firstUnseenMessageId = null;
+		}
 
 		await tick();
 		if (token !== placementToken) return;
@@ -225,15 +245,22 @@
 	async function restoreInitialReaderPosition(): Promise<void> {
 		await tick();
 		observedSignature = conversationSignature();
-		const lastUserId = latestUserMessageId();
-		if (lastUserId) {
-			await placeTurnAtReadingStart(lastUserId, false, false);
-		} else if (logRef) {
-			turnSpacer = 0;
-			scrollLogTo(0, false);
+		const linkedMessageId = messageIdFromHash();
+		if (linkedMessageId && findMessageElement(linkedMessageId)) {
+			await placeTurnAtReadingStart(linkedMessageId, false, false);
+			activeSearchMessageId = linkedMessageId;
+		} else {
+			const lastUserId = latestUserMessageId();
+			if (lastUserId) {
+				await placeTurnAtReadingStart(lastUserId, false, false);
+			} else if (logRef) {
+				turnSpacer = 0;
+				scrollLogTo(0, false);
+			}
 		}
 		following = false;
 		hasUnseen = false;
+		firstUnseenMessageId = null;
 		initialPlacementDone = true;
 		observedSignature = conversationSignature();
 		rememberReaderAnchor();
@@ -272,8 +299,9 @@
 		programmaticScroll = false;
 		following = false;
 		rememberReaderAnchor();
-		if (scoutReplyInProgress || !liveEdgeIsInFollowRange()) {
+		if (scoutReplyInProgress) {
 			hasUnseen = true;
+			firstUnseenMessageId ??= trailAssistant.coachMessages.at(-1)?.id ?? null;
 		}
 	}
 
@@ -283,6 +311,7 @@
 		following = atLiveEdge;
 		if (atLiveEdge) {
 			hasUnseen = false;
+			firstUnseenMessageId = null;
 		} else {
 			rememberReaderAnchor();
 		}
@@ -298,6 +327,86 @@
 	function usePrompt(prompt: string) {
 		const message = trailAssistant.runQuickPrompt(prompt);
 		if (message) void placeTurnAtReadingStart(message.id, false, true);
+	}
+
+	function normalizeSearch(value: string): string {
+		return value.trim().toLocaleLowerCase();
+	}
+
+	function matchingMessageIds(query: string): string[] {
+		const needle = normalizeSearch(query);
+		if (!needle) return [];
+		return trailAssistant.coachMessages
+			.filter((message) => message.content.toLocaleLowerCase().includes(needle))
+			.map((message) => message.id);
+	}
+
+	function updateSearch(value: string) {
+		searchQuery = value;
+		pauseForReaderIntent();
+		const [first] = matchingMessageIds(value);
+		activeSearchMessageId = first ?? null;
+		if (first) void navigateToMessage(first, false, false);
+	}
+
+	function onSearchInput(event: Event) {
+		const input = event.currentTarget as HTMLInputElement;
+		updateSearch(input.value);
+	}
+
+	function moveSearchResult(delta: -1 | 1) {
+		pauseForReaderIntent();
+		if (!searchResultIds.length) return;
+		const currentIndex = activeSearchIndex >= 0 ? activeSearchIndex : delta > 0 ? -1 : 0;
+		const nextIndex = (currentIndex + delta + searchResultIds.length) % searchResultIds.length;
+		const nextId = searchResultIds[nextIndex];
+		activeSearchMessageId = nextId;
+		void navigateToMessage(nextId, true, false);
+	}
+
+	function onSearchKeydown(event: KeyboardEvent) {
+		if (event.key === 'Enter') {
+			event.preventDefault();
+			moveSearchResult(event.shiftKey ? -1 : 1);
+		}
+	}
+
+	function messageHref(messageId: string): string {
+		return `${MESSAGE_HASH_PREFIX}${encodeURIComponent(messageId)}`;
+	}
+
+	function messageIdFromHash(): string | null {
+		if (typeof window === 'undefined') return null;
+		const hash = window.location.hash;
+		if (!hash.startsWith(MESSAGE_HASH_PREFIX)) return null;
+		try {
+			return decodeURIComponent(hash.slice(MESSAGE_HASH_PREFIX.length));
+		} catch {
+			return null;
+		}
+	}
+
+	function setMessageHash(messageId: string) {
+		if (typeof window === 'undefined') return;
+		const url = new URL(window.location.href);
+		url.hash = messageHref(messageId);
+		history.pushState(history.state, '', url);
+	}
+
+	function navigateToMessage(messageId: string, smooth = true, updateHash = true) {
+		pauseForReaderIntent();
+		activeSearchMessageId = messageId;
+		if (updateHash) setMessageHash(messageId);
+		void placeTurnAtReadingStart(messageId, smooth, false, false);
+	}
+
+	function openMessageLink(messageId: string) {
+		navigateToMessage(messageId, true, true);
+	}
+
+	function onHashChange() {
+		const messageId = messageIdFromHash();
+		if (messageId) navigateToMessage(messageId, true, false);
 	}
 
 	function startScoutSignIn() {
@@ -380,6 +489,8 @@
 			keepLiveEdgeVisible();
 		} else {
 			hasUnseen = true;
+			const newestMessageId = trailAssistant.coachMessages.at(-1)?.id ?? null;
+			firstUnseenMessageId ??= newestMessageId;
 			restoreReaderAnchorSoon();
 		}
 	});
@@ -413,6 +524,7 @@
 	onpointerdown={onWindowReaderIntent}
 	ontouchstart={onWindowReaderIntent}
 	onwheel={onWindowReaderIntent}
+	onhashchange={onHashChange}
 	onresize={onViewportResize}
 />
 <svelte:document onselectionchange={onDocumentSelectionChange} />
@@ -435,7 +547,38 @@
 		</section>
 	{/if}
 
-	<!-- svelte-ignore a11y_no_noninteractive_element_interactions a11y_no_noninteractive_tabindex -->
+	{#if trailAssistant.coachMessages.length > 4 || searchQuery}
+		<div class="transcript-tools" role="search">
+			<label class="search-box">
+				<span aria-hidden="true"><Icon name="search" size={15} stroke={2} /></span>
+				<input
+					type="search"
+					value={searchQuery}
+					placeholder="Search messages"
+					aria-label="Search Scout messages"
+					onfocus={pauseForReaderIntent}
+					oninput={onSearchInput}
+					onkeydown={onSearchKeydown}
+				/>
+			</label>
+			<div class="search-nav" aria-live="polite">
+				<span>{searchResultLabel}</span>
+				<button
+					type="button"
+					aria-label="Previous search result"
+					disabled={!searchResultIds.length}
+					onclick={() => moveSearchResult(-1)}
+				>↑</button>
+				<button
+					type="button"
+					aria-label="Next search result"
+					disabled={!searchResultIds.length}
+					onclick={() => moveSearchResult(1)}
+				>↓</button>
+			</div>
+		</div>
+	{/if}
+
 	<div
 		class="chat-log"
 		bind:this={logRef}
@@ -445,10 +588,14 @@
 	>
 			{#each trailAssistant.coachMessages as message (message.id)}
 				{@const meta = message.role === 'assistant' ? receiptsFor(message.id) : null}
+				{#if hasUnseen && firstUnseenMessageId === message.id}
+					<div class="unread-marker" role="status">New messages</div>
+				{/if}
 				<div
 					id={`chat-message-${message.id}`}
 					class:assistant={message.role === 'assistant'}
 					class:user={message.role === 'user'}
+					class:search-hit={activeSearchMessageId === message.id}
 					class="message"
 					data-message-id={message.id}
 					data-message-role={message.role}
@@ -498,7 +645,15 @@
 						{/if}
 					{/if}
 
-					<span class="timestamp">{new Date(message.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
+					<div class="message-foot">
+						<button
+							type="button"
+							class="message-link"
+							aria-label={`Link to ${message.role === 'assistant' ? 'Scout' : 'your'} message at ${new Date(message.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`}
+							onclick={() => openMessageLink(message.id)}
+						>#</button>
+						<span class="timestamp">{new Date(message.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
+					</div>
 				</div>
 			{/each}
 
@@ -635,6 +790,67 @@
 		opacity: 0.55;
 	}
 
+	.transcript-tools {
+		flex: 0 0 auto;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+		gap: var(--space-2);
+		min-height: 42px;
+	}
+	.search-box {
+		min-width: 0;
+		height: 40px;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 0 11px;
+		border-radius: var(--radius-control);
+		border: 1px solid var(--line);
+		background: var(--surface-strong);
+		color: var(--muted);
+	}
+	.search-box:focus-within {
+		border-color: color-mix(in srgb, var(--forest) 42%, var(--line));
+		box-shadow: 0 0 0 3px var(--forest-soft);
+	}
+	.search-box input {
+		min-width: 0;
+		width: 100%;
+		border: 0;
+		outline: 0;
+		background: transparent;
+		color: var(--ink);
+		font-size: var(--text-sm);
+		line-height: 1.2;
+	}
+	.search-nav {
+		height: 40px;
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 5px;
+		color: var(--muted);
+		font-size: var(--text-xs);
+		font-weight: 800;
+		white-space: nowrap;
+	}
+	.search-nav button {
+		width: 34px;
+		height: 34px;
+		display: grid;
+		place-items: center;
+		border-radius: 50%;
+		border: 1px solid var(--line);
+		background: var(--surface);
+		color: var(--forest);
+		font-size: var(--text-sm);
+		font-weight: 900;
+	}
+	.search-nav button:disabled {
+		opacity: 0.35;
+	}
+
 	/* conversation fills the screen; composer pins to the bottom */
 	.chat-log {
 		flex: 1 1 auto;
@@ -654,6 +870,23 @@
 	.turn-spacer {
 		min-height: 0;
 		pointer-events: none;
+	}
+	.unread-marker {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		color: var(--moss);
+		font-size: var(--text-xs);
+		font-weight: 900;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+	}
+	.unread-marker::before,
+	.unread-marker::after {
+		content: '';
+		height: 1px;
+		flex: 1 1 auto;
+		background: color-mix(in srgb, var(--moss) 45%, transparent);
 	}
 
 	.message {
@@ -685,6 +918,10 @@
 		margin-left: auto;
 		max-width: 80%;
 		border-bottom-right-radius: 7px;
+	}
+	.message.search-hit {
+		outline: 2px solid color-mix(in srgb, var(--sky) 70%, transparent);
+		outline-offset: 2px;
 	}
 	.message p {
 		font-size: var(--text-base);
@@ -790,7 +1027,34 @@
 	.timestamp {
 		font-size: var(--text-2xs);
 		color: var(--muted);
-		justify-self: end;
+	}
+	.message-foot {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 8px;
+	}
+		.message-link {
+			width: 24px;
+			height: 24px;
+			display: grid;
+			place-items: center;
+			padding: 0;
+			border: 0;
+			border-radius: 50%;
+			background: transparent;
+			color: var(--muted);
+			font: inherit;
+			font-size: var(--text-xs);
+			font-weight: 900;
+			text-decoration: none;
+			opacity: 0.72;
+	}
+	.message-link:hover,
+	.message-link:focus-visible {
+		background: var(--forest-soft);
+		color: var(--forest);
+		opacity: 1;
 	}
 
 	/* thinking */
@@ -1005,6 +1269,15 @@
 		.action-confirm,
 		.jump-latest {
 			color: #10160f;
+		}
+	}
+
+	@media (max-width: 380px) {
+		.transcript-tools {
+			grid-template-columns: 1fr;
+		}
+		.search-nav {
+			justify-content: space-between;
 		}
 	}
 </style>
