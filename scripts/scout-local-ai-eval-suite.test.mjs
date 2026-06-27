@@ -171,6 +171,7 @@ test('mobile Eval Lab exposes resilient iPhone export paths', async () => {
 	assert.match(component, /navigator\.share/u, 'Eval Lab needs native Share Sheet export');
 	assert.match(component, /navigator\.clipboard\.writeText/u, 'Eval Lab needs clipboard export');
 	assert.match(component, /document\.execCommand\('copy'\)/u, 'Eval Lab needs a textarea copy fallback');
+	assert.match(component, /textShare: ShareData = \{\s*title: handoff\.shareTitle,\s*text: exportText\s*\}/u, 'Text-only Share fallback should stay parseable JSON');
 	assert.match(component, /proofStatus\.canRunFinal/u, 'Run 100 should be gated by final-proof readiness');
 	assert.match(component, /proofStatus\.canRunSmoke/u, 'Run 3 should remain available for smoke readiness');
 	assert.match(component, /TestFlight/u, 'Eval Lab should surface TestFlight install-source readiness');

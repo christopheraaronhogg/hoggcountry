@@ -319,7 +319,7 @@
 		};
 		const textShare: ShareData = {
 			title: handoff.shareTitle,
-			text: `${handoff.shareText}\n\n${exportText}`
+			text: exportText
 		};
 		try {
 			if (!navigator.canShare || navigator.canShare(fileShare)) {
