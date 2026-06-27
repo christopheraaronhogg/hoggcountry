@@ -235,6 +235,22 @@ test('mobile Eval Lab labels final exports for inbox review', async () => {
 	assert.match(component, /send it only if Chris needs recovery details/u, 'Diagnostic share/copy/download status should preserve proof boundaries');
 });
 
+test('mobile Eval Lab turns proof state into the next Dad checkpoint', async () => {
+	const component = await readFile(MOBILE_EVAL_LAB_PATH, 'utf8');
+	assert.match(component, /summarizeNextCheckpoint/u, 'Eval Lab should derive one immediate phone action from proof state');
+	assert.match(component, /Next checkpoint/u, 'Eval Lab should label the immediate next action for Dad');
+	assert.match(component, /Prepare local model/u, 'Eval Lab should point at local model readiness before running');
+	assert.match(component, /Use local AI lane/u, 'Eval Lab should protect final proof from cloud Scout');
+	assert.match(component, /Open iPhone app/u, 'Eval Lab should keep final proof on the installed iOS path');
+	assert.match(component, /Run smoke check/u, 'Eval Lab should surface Run 3 when final proof is not ready yet');
+	assert.match(component, /Run 100/u, 'Eval Lab should surface the final full-suite action when proof gates pass');
+	assert.match(component, /Resume saved run/u, 'Eval Lab should prefer resuming an interrupted saved run');
+	assert.match(component, /Share final JSON/u, 'Eval Lab should surface final JSON sharing after a completed run');
+	assert.match(component, /Share diagnostic JSON/u, 'Eval Lab should distinguish interrupted diagnostic exports');
+	assert.match(component, /Clear saved export/u, 'Eval Lab should tell Dad when a stale export must be cleared');
+	assert.match(component, /data-state=\{nextCheckpoint\.state\}/u, 'Eval Lab should expose checkpoint state for visual status');
+});
+
 test('status command keeps routing proof separate from missing device proof', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-routing-'));

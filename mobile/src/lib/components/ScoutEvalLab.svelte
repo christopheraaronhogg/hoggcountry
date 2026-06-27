@@ -58,6 +58,21 @@
 		shareText: string;
 		successMessage: string;
 	};
+	type EvalNextCheckpoint = {
+		state:
+			| 'loading'
+			| 'running'
+			| 'blocked'
+			| 'resume'
+			| 'run-smoke'
+			| 'run-final'
+			| 'share-final'
+			| 'share-diagnostic'
+			| 'stale';
+		label: string;
+		detail: string;
+		action: string;
+	};
 
 	let suite = $state.raw<ScoutLocalAiEvalSuite | null>(null);
 	let run = $state.raw<ScoutLocalAiEvalRun | null>(null);
@@ -135,6 +150,7 @@
 			: 'No saved run'
 	);
 	const runHealth = $derived(activeRun ? summarizeRunHealth(activeRun, suite) : null);
+	const nextCheckpoint = $derived(summarizeNextCheckpoint());
 
 	onMount(() => {
 		evalWakeLock = createScoutEvalWakeLock({
@@ -560,6 +576,107 @@
 		};
 	}
 
+	function summarizeNextCheckpoint(): EvalNextCheckpoint {
+		if (loading || !suite) {
+			return {
+				state: 'loading',
+				label: 'Load suite',
+				detail: 'Waiting on the current 100-question set.',
+				action: 'Wait'
+			};
+		}
+		if (running) {
+			return {
+				state: 'running',
+				label: 'Run in progress',
+				detail: progress ? `${progress.completed}/${progress.total} complete; keep this screen open.` : 'Keep this screen open while Scout answers.',
+				action: progress?.caseId ?? 'Running'
+			};
+		}
+		if (activeRunFreshness?.state === 'stale') {
+			return {
+				state: 'stale',
+				label: 'Clear saved export',
+				detail: activeRunFreshness.detail,
+				action: 'Clear'
+			};
+		}
+		if (activeRunCanExport && runHealth?.state === 'final') {
+			return {
+				state: 'share-final',
+				label: 'Share final JSON',
+				detail: 'Send the Run 100 export to Chris for human review.',
+				action: 'Share'
+			};
+		}
+		if (canResume) {
+			return {
+				state: 'resume',
+				label: 'Resume saved run',
+				detail: `${savedRun?.caseCount ?? 0}/${savedRunTarget || suite.cases.length} answers are saved on this phone.`,
+				action: 'Resume'
+			};
+		}
+		if (activeRunCanExport && runHealth?.state === 'partial') {
+			return {
+				state: 'share-diagnostic',
+				label: 'Share diagnostic JSON',
+				detail: 'Send this only if Chris needs to debug an interrupted run.',
+				action: 'Share'
+			};
+		}
+		if (!modelReady) {
+			return {
+				state: 'blocked',
+				label: 'Prepare local model',
+				detail: 'Scout needs the on-device model ready before the eval run.',
+				action: 'Model'
+			};
+		}
+		if (trailAssistant.scoutUsesCloud) {
+			return {
+				state: 'blocked',
+				label: 'Use local AI lane',
+				detail: 'Final proof must come from on-device Scout, not cloud Scout.',
+				action: 'Local AI'
+			};
+		}
+		if (nativePreflight.isNativePlatform !== true || nativePreflight.platform !== 'ios') {
+			return {
+				state: 'blocked',
+				label: 'Open iPhone app',
+				detail: 'Final proof needs the installed iOS app path.',
+				action: 'iOS'
+			};
+		}
+		if (proofStatus.canRunSmoke && !proofStatus.canRunFinal) {
+			const failedFinalCheck = proofStatus.checks.find((check) => !check.ok && (check.id === 'install' || check.id === 'build'));
+			return {
+				state: 'run-smoke',
+				label: 'Run smoke check',
+				detail: failedFinalCheck
+					? `Run 3 is available; Run 100 is waiting on ${failedFinalCheck.label.toLowerCase()} (${failedFinalCheck.value}).`
+					: 'Run 3 is available before final TestFlight proof.',
+				action: 'Run 3'
+			};
+		}
+		if (proofStatus.canRunFinal) {
+			return {
+				state: 'run-final',
+				label: 'Run 100',
+				detail: 'Leave the phone awake, then share the final JSON.',
+				action: 'Run 100'
+			};
+		}
+		const failedCheck = proofStatus.checks.find((check) => !check.ok);
+		return {
+			state: 'blocked',
+			label: failedCheck ? `${failedCheck.label} not ready` : 'Checking readiness',
+			detail: failedCheck ? failedCheck.value : proofStatus.statusLabel,
+			action: 'Fix'
+		};
+	}
+
 	function isFullFinalRun(
 		currentRun: ScoutLocalAiEvalRun,
 		currentSuite: ScoutLocalAiEvalSuite
@@ -649,6 +766,13 @@
 				<em>{check.value}</em>
 			</div>
 		{/each}
+	</div>
+
+	<div class="eval-next-checkpoint" data-state={nextCheckpoint.state} aria-label="Scout Eval Lab next checkpoint">
+		<span>Next checkpoint</span>
+		<strong>{nextCheckpoint.label}</strong>
+		<em>{nextCheckpoint.detail}</em>
+		<b>{nextCheckpoint.action}</b>
 	</div>
 
 	{#if nativePreflight.metadataError}
@@ -1014,6 +1138,76 @@
 		font-style: normal;
 		font-weight: 800;
 		color: var(--muted);
+	}
+
+	.eval-next-checkpoint {
+		min-width: 0;
+		display: grid;
+		grid-template-columns: 1fr auto;
+		gap: 3px 10px;
+		align-items: center;
+		border: 1px solid var(--line);
+		border-radius: 12px;
+		background: var(--surface);
+		padding: 10px;
+	}
+
+	.eval-next-checkpoint[data-state='run-final'],
+	.eval-next-checkpoint[data-state='share-final'] {
+		border-color: color-mix(in srgb, var(--forest) 35%, var(--line));
+		background: var(--forest-soft);
+	}
+
+	.eval-next-checkpoint[data-state='running'],
+	.eval-next-checkpoint[data-state='resume'],
+	.eval-next-checkpoint[data-state='run-smoke'],
+	.eval-next-checkpoint[data-state='share-diagnostic'] {
+		border-color: color-mix(in srgb, var(--moss) 35%, var(--line));
+	}
+
+	.eval-next-checkpoint[data-state='blocked'],
+	.eval-next-checkpoint[data-state='stale'] {
+		border-color: color-mix(in srgb, var(--danger) 30%, var(--line));
+		background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+	}
+
+	.eval-next-checkpoint span {
+		grid-column: 1 / -1;
+		font-size: 0.64rem;
+		font-weight: 900;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--muted);
+	}
+
+	.eval-next-checkpoint strong,
+	.eval-next-checkpoint em {
+		min-width: 0;
+		overflow-wrap: anywhere;
+		font-size: 0.8rem;
+		line-height: 1.25;
+	}
+
+	.eval-next-checkpoint strong {
+		font-weight: 900;
+	}
+
+	.eval-next-checkpoint em {
+		font-style: normal;
+		font-weight: 800;
+		color: var(--muted);
+	}
+
+	.eval-next-checkpoint b {
+		align-self: stretch;
+		display: grid;
+		place-items: center;
+		min-width: 58px;
+		border-radius: 10px;
+		background: var(--ink-soft);
+		color: var(--forest);
+		font-size: 0.72rem;
+		font-weight: 900;
 	}
 
 	.eval-rescue-heading {
