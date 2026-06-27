@@ -1,5 +1,7 @@
+import { execFile } from 'node:child_process';
 import { access, readdir, readFile, stat } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
+import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import {
 	requiredAppLabel,
@@ -27,6 +29,7 @@ import {
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
+const execFileAsync = promisify(execFile);
 
 const DEFAULT_SUITE = 'data/scout-local-ai/dad-local-ai-100.json';
 const DEFAULT_MOBILE_SUITE = 'mobile/static/scout/dad-local-ai-100.json';
@@ -38,6 +41,7 @@ const DEFAULT_BACKLOG_DIR = 'data/scout-local-ai/backlog';
 const DEFAULT_ITERATIONS_DIR = 'data/scout-local-ai/iterations';
 const DEFAULT_XCODE_PROJECT = 'mobile/ios/App/App.xcodeproj/project.pbxproj';
 const DEFAULT_RELEASE_EVIDENCE = 'docs/launch/release-evidence.json';
+const DEFAULT_IOS_PROOF_DIR = 'docs/launch/proof';
 
 const DEVICE_EVIDENCE_LANE = 'device-on-device-gemma';
 const SCAFFOLD_EVIDENCE_LANE = 'scaffold-not-model';
@@ -61,7 +65,8 @@ const status = await buildStatus({
 	backlogDir: resolveInputPath(cli.backlogDir ?? DEFAULT_BACKLOG_DIR),
 	iterationsDir: resolveInputPath(cli.iterationsDir ?? DEFAULT_ITERATIONS_DIR),
 	xcodeProjectPath: resolveInputPath(cli.xcodeProject ?? DEFAULT_XCODE_PROJECT),
-	releaseEvidencePath: resolveInputPath(cli.releaseEvidence ?? DEFAULT_RELEASE_EVIDENCE)
+	releaseEvidencePath: resolveInputPath(cli.releaseEvidence ?? DEFAULT_RELEASE_EVIDENCE),
+	iosProofDir: resolveInputPath(cli.iosProofDir ?? DEFAULT_IOS_PROOF_DIR)
 });
 
 if (cli.json) {
@@ -86,6 +91,7 @@ async function buildStatus(paths) {
 	const inbox = await summarizeInbox(paths.inboxDir, suite);
 	const iosBuild = await readOptionalIosBuildSettings(paths.xcodeProjectPath);
 	const releaseEvidence = await readOptionalJson(paths.releaseEvidencePath);
+	const nativeSource = await summarizeNativeSource(paths.iosProofDir);
 	const testflight = summarizeTestFlightTarget({ iosBuild, releaseEvidence, finalProof, paths });
 	const allRuns = [...runs, ...deviceRuns];
 	const reviewsByRunId = new Map(reviews.map((entry) => [entry.value.runId, entry]));
@@ -204,8 +210,10 @@ async function buildStatus(paths) {
 			backlogDir: relative(REPO_ROOT, paths.backlogDir),
 			iterationsDir: relative(REPO_ROOT, paths.iterationsDir),
 			xcodeProject: relative(REPO_ROOT, paths.xcodeProjectPath),
-			releaseEvidence: relative(REPO_ROOT, paths.releaseEvidencePath)
+			releaseEvidence: relative(REPO_ROOT, paths.releaseEvidencePath),
+			iosProofDir: relative(REPO_ROOT, paths.iosProofDir)
 		},
+		nativeSource,
 		testflight,
 		inbox,
 		runs: {
@@ -637,6 +645,99 @@ function summarizeIterationPlanList(entries) {
 	}));
 }
 
+async function summarizeNativeSource(iosProofDir) {
+	const currentRepoSha = await currentGitSha();
+	const latestNativeUploadProof = await findLatestIosUploadProof(iosProofDir);
+	const latestNativeUploadSha = latestNativeUploadProof?.repoSha ?? null;
+	const comparable = Boolean(currentRepoSha && latestNativeUploadSha);
+	const matchesCurrent = comparable && gitShaMatches(currentRepoSha, latestNativeUploadSha);
+	const latestUploadIsAncestor = comparable && !matchesCurrent
+		? await gitCommitIsAncestor(latestNativeUploadSha, currentRepoSha)
+		: false;
+	return {
+		currentRepoSha,
+		iosProofDir: relative(REPO_ROOT, iosProofDir),
+		latestNativeUploadProof,
+		latestNativeUploadSha,
+		latestNativeUploadHasCurrentSource: matchesCurrent,
+		sourceNewerThanLatestNativeUpload: latestUploadIsAncestor,
+		sourceDiffersFromLatestNativeUpload: comparable && !matchesCurrent
+	};
+}
+
+async function currentGitSha() {
+	try {
+		const result = await execFileAsync('git', ['rev-parse', 'HEAD'], {
+			cwd: REPO_ROOT,
+			maxBuffer: 1024 * 1024
+		});
+		return result.stdout.trim() || null;
+	} catch {
+		return null;
+	}
+}
+
+async function findLatestIosUploadProof(iosProofDir) {
+	try {
+		const files = (await readdir(iosProofDir))
+			.filter((file) => /^ios-testflight-attempt-.*\.md$/u.test(file))
+			.sort();
+		const file = files.at(-1);
+		if (!file) return null;
+		const proofPath = resolve(iosProofDir, file);
+		const text = await readFile(proofPath, 'utf8');
+		const repoSha = await repoShaFromIosUploadProof(text, proofPath);
+		return {
+			path: relative(REPO_ROOT, proofPath),
+			checkedAt: firstMarkdownValue(text, 'Checked at') ?? '<unknown>',
+			status: firstMarkdownValue(text, 'Status') ?? '<unknown>',
+			repoSha: repoSha?.sha ?? null,
+			repoShaSource: repoSha?.source ?? null
+		};
+	} catch {
+		return null;
+	}
+}
+
+async function repoShaFromIosUploadProof(text, proofPath) {
+	const direct = cleanMarkdownValue(firstMarkdownValue(text, 'Repo SHA'));
+	if (isGitSha(direct)) {
+		return { sha: direct, source: 'proof' };
+	}
+	const repoShaLog = [...text.matchAll(/repo-sha[^\n]*:\s*(.+)$/gimu)]
+		.map((match) => cleanMarkdownValue(match[1]))
+		.find(Boolean);
+	if (!repoShaLog) return null;
+	const logPaths = [
+		resolve(dirname(proofPath), repoShaLog),
+		resolve(REPO_ROOT, repoShaLog)
+	];
+	for (const logPath of logPaths) {
+		const logText = await readOptionalText(logPath);
+		const sha = logText?.match(/\b[0-9a-f]{40}\b/iu)?.[0]?.toLowerCase();
+		if (sha) return { sha, source: relative(REPO_ROOT, logPath) };
+	}
+	return null;
+}
+
+async function gitCommitIsAncestor(ancestorSha, descendantSha) {
+	try {
+		await execFileAsync('git', ['merge-base', '--is-ancestor', ancestorSha, descendantSha], {
+			cwd: REPO_ROOT,
+			maxBuffer: 1024 * 1024
+		});
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+function gitShaMatches(currentSha, candidateSha) {
+	const current = String(currentSha ?? '').toLowerCase();
+	const candidate = String(candidateSha ?? '').toLowerCase();
+	return Boolean(current && candidate && (current === candidate || current.startsWith(candidate)));
+}
+
 async function readOptionalIosBuildSettings(path) {
 	const text = await readOptionalText(path);
 	if (!text) return null;
@@ -752,6 +853,21 @@ function parseAppBuildLabel(label) {
 		version: match[1],
 		build: Number(match[2])
 	};
+}
+
+function firstMarkdownValue(text, label) {
+	const escaped = label.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+	const match = text.match(new RegExp(`^(?:-\\s*)?${escaped}:\\s*(.+)$`, 'imu'));
+	return match?.[1]?.trim() ?? null;
+}
+
+function cleanMarkdownValue(value) {
+	if (!value) return null;
+	return value.trim().replace(/^`|`$/gu, '');
+}
+
+function isGitSha(value) {
+	return /^[0-9a-f]{7,40}$/iu.test(String(value ?? ''));
 }
 
 function testflightTargetEvidence(testflight) {
@@ -1037,6 +1153,14 @@ function createStatusMarkdown(status) {
 		`- Imported suite-compatible device runs: ${status.testflight.currentSuiteCompatibleDeviceRunCount}`,
 		`- Imported suite-compatible partial runs: ${status.testflight.currentSuiteCompatiblePartialDeviceRunCount}`,
 		`- Dad TestFlight link: ${status.testflight.publicLink ?? '<unknown>'}`,
+		'',
+		'## Source vs Native Upload',
+		'',
+		`- Current checkout SHA: \`${status.nativeSource?.currentRepoSha ?? '<unknown>'}\``,
+		`- Latest native upload proof: ${status.nativeSource?.latestNativeUploadProof?.path ? `\`${status.nativeSource.latestNativeUploadProof.path}\`` : '<none>'}`,
+		`- Latest native upload SHA: \`${status.nativeSource?.latestNativeUploadSha ?? '<unknown>'}\``,
+		`- Latest native upload has current source: ${status.nativeSource?.latestNativeUploadHasCurrentSource ? 'yes' : 'no'}`,
+		`- Current source newer than latest native upload: ${status.nativeSource?.sourceNewerThanLatestNativeUpload ? 'yes' : 'no'}`,
 		'',
 		'## Gates',
 		''

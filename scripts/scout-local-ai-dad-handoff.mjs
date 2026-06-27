@@ -60,6 +60,7 @@ async function loadStatus(args) {
 	if (args.reviewsDir) statusArgs.push('--reviews-dir', String(args.reviewsDir));
 	if (args.xcodeProject) statusArgs.push('--xcode-project', String(args.xcodeProject));
 	if (args.releaseEvidence) statusArgs.push('--release-evidence', String(args.releaseEvidence));
+	if (args.iosProofDir) statusArgs.push('--ios-proof-dir', String(args.iosProofDir));
 	const result = await execFileAsync(process.execPath, statusArgs, {
 		cwd: REPO_ROOT,
 		maxBuffer: 1024 * 1024 * 4
@@ -229,6 +230,7 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 	const dadProofMatchesTarget = latestDadBuildProof?.targetBuild === targetBuild;
 	const dadProofLabel = dadProofMatchesTarget ? 'Dad target-build proof' : 'Latest Dad Pilot proof';
 	const dadGateLabel = dadProofMatchesTarget ? 'Dad target-build gates' : 'Latest Dad Pilot gates';
+	const sourceBoundary = nativeSourceBoundary(status.nativeSource);
 	const phoneBuildDecision = createPhoneBuildDecision({
 		status,
 		recordedDadBuild,
@@ -260,6 +262,11 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 			? `- Latest local target prep: \`${latestLocalTargetPrepProof.path}\` (${latestLocalTargetPrepProof.localTarget}, checked ${latestLocalTargetPrepProof.checkedAt}; not App Store Connect proof).`
 			: '- Latest local target prep: none found.',
 		`- Newer Xcode target pending App Store Connect: ${status.testflight?.targetBuildReadyForDad ? 'no' : 'yes'}.`,
+		`- Current checkout SHA: \`${status.nativeSource?.currentRepoSha ?? '<unknown>'}\`.`,
+		status.nativeSource?.latestNativeUploadProof
+			? `- Latest native upload source: \`${status.nativeSource.latestNativeUploadProof.path}\` (repo SHA \`${status.nativeSource.latestNativeUploadSha ?? '<unknown>'}\`${status.nativeSource.latestNativeUploadProof.repoShaSource ? ` from \`${status.nativeSource.latestNativeUploadProof.repoShaSource}\`` : ''}).`
+			: '- Latest native upload source: none found.',
+		`- Current checkout newer than latest native upload: ${status.nativeSource?.sourceNewerThanLatestNativeUpload ? 'yes' : 'no'}.`,
 		`- Imported full device runs: ${status.runs?.currentFullDeviceRuns?.length ?? 0}.`,
 		`- Imported partial device runs: ${status.runs?.currentPartialDeviceRuns?.length ?? 0}.`,
 		`- Imported suite-compatible full device runs: ${status.testflight?.currentSuiteCompatibleDeviceRunCount ?? 0}.`,
@@ -282,6 +289,7 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		'',
 		`- Use now: ${phoneBuildDecision.useNow}.`,
 		`- Latest-code target: ${phoneBuildDecision.latestTarget}.`,
+		`- Latest-source proof: ${sourceBoundary}.`,
 		`- Do not count as final proof until: ${phoneBuildDecision.finalProofBoundary}.`,
 		''
 	);
@@ -320,6 +328,13 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		latestIosProof
 			? `- Latest native upload proof: \`${latestIosProof.path}\` (${latestIosProof.status}, checked ${latestIosProof.checkedAt}).`
 			: '- Latest native upload proof: none found.',
+		status.nativeSource?.latestNativeUploadSha
+			? `- Latest native upload repo SHA: \`${status.nativeSource.latestNativeUploadSha}\`${status.nativeSource.latestNativeUploadProof?.repoShaSource ? ` from \`${status.nativeSource.latestNativeUploadProof.repoShaSource}\`` : ''}.`
+			: '- Latest native upload repo SHA: unknown.',
+		`- Current source newer than latest native upload: ${status.nativeSource?.sourceNewerThanLatestNativeUpload ? 'yes' : 'no'}.`,
+		...(status.nativeSource?.sourceNewerThanLatestNativeUpload
+			? [`- Latest-source upload note: bump the iOS build number above \`${iosBuild.buildNumber}\` before uploading this checkout; App Store Connect will not accept reusing build \`${iosBuild.buildNumber}\`.`]
+			: []),
 		latestIosProof
 			? `- App Store Connect API key in latest proof: ${latestIosProof.ascApiKeyProvided}.`
 			: '- App Store Connect API key in latest proof: unknown.',
@@ -416,6 +431,19 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 	);
 
 	return `${lines.join('\n')}\n`;
+}
+
+function nativeSourceBoundary(nativeSource) {
+	if (nativeSource?.latestNativeUploadHasCurrentSource) {
+		return 'latest native upload contains the current checkout';
+	}
+	if (nativeSource?.sourceNewerThanLatestNativeUpload) {
+		return 'current checkout is newer than the latest native upload; Dad can still run a suite-compatible build now, but latest-source phone proof needs a fresh bumped-build upload and Dad Pilot refresh';
+	}
+	if (nativeSource?.sourceDiffersFromLatestNativeUpload) {
+		return 'current checkout differs from the latest native upload; treat latest-source phone proof as unverified until the next upload/refresh';
+	}
+	return 'latest native upload source is unknown';
 }
 
 function createDadMessageText({ status, releaseEvidence }) {
