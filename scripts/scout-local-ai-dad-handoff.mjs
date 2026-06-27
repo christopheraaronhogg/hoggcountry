@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
@@ -13,15 +13,18 @@ const REPO_ROOT = resolve(SCRIPT_DIR, '..');
 
 const DEFAULT_XCODE_PROJECT = 'mobile/ios/App/App.xcodeproj/project.pbxproj';
 const DEFAULT_RELEASE_EVIDENCE = 'docs/launch/release-evidence.json';
+const DEFAULT_IOS_PROOF_DIR = 'docs/launch/proof';
 
 const cli = parseCliArgs(process.argv.slice(2));
 const status = await loadStatus(cli);
 const iosBuild = await readIosBuildSettings(resolveInputPath(cli.xcodeProject ?? DEFAULT_XCODE_PROJECT));
 const releaseEvidence = await readOptionalJson(resolveInputPath(cli.releaseEvidence ?? DEFAULT_RELEASE_EVIDENCE));
+const latestIosProof = await findLatestIosTestFlightProof(resolveInputPath(cli.iosProofDir ?? DEFAULT_IOS_PROOF_DIR));
 const handoff = createDadHandoffMarkdown({
 	status,
 	iosBuild,
 	releaseEvidence,
+	latestIosProof,
 	generatedAt: new Date().toISOString()
 });
 
@@ -53,10 +56,10 @@ async function readIosBuildSettings(path) {
 	const text = await readFile(path, 'utf8');
 	return {
 		projectPath: relative(REPO_ROOT, path),
-		marketingVersion: uniqueBuildSetting(text, 'MARKETING_VERSION') ?? '<missing>',
-		buildNumber: uniqueBuildSetting(text, 'CURRENT_PROJECT_VERSION') ?? '<missing>',
-		teamId: uniqueBuildSetting(text, 'DEVELOPMENT_TEAM') ?? '<missing>',
-		releaseProfile: uniqueBuildSetting(text, 'PROVISIONING_PROFILE_SPECIFIER') ?? '<missing>'
+		marketingVersion: cleanBuildSetting(uniqueBuildSetting(text, 'MARKETING_VERSION')) ?? '<missing>',
+		buildNumber: cleanBuildSetting(uniqueBuildSetting(text, 'CURRENT_PROJECT_VERSION')) ?? '<missing>',
+		teamId: cleanBuildSetting(uniqueBuildSetting(text, 'DEVELOPMENT_TEAM')) ?? '<missing>',
+		releaseProfile: cleanBuildSetting(uniqueBuildSetting(text, 'PROVISIONING_PROFILE_SPECIFIER')) ?? '<missing>'
 	};
 }
 
@@ -70,6 +73,11 @@ function uniqueBuildSetting(text, name) {
 	return null;
 }
 
+function cleanBuildSetting(value) {
+	if (!value) return null;
+	return value.replace(/^"|"$/gu, '');
+}
+
 async function readOptionalJson(path) {
 	try {
 		return JSON.parse(await readFile(path, 'utf8'));
@@ -78,7 +86,33 @@ async function readOptionalJson(path) {
 	}
 }
 
-function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, generatedAt }) {
+async function findLatestIosTestFlightProof(path) {
+	try {
+		const files = (await readdir(path))
+			.filter((file) => /^ios-testflight-attempt-.*\.md$/u.test(file))
+			.sort();
+		const file = files.at(-1);
+		if (!file) return null;
+		const proofPath = resolve(path, file);
+		const text = await readFile(proofPath, 'utf8');
+		return {
+			path: relative(REPO_ROOT, proofPath),
+			checkedAt: firstMarkdownValue(text, 'Checked at') ?? '<unknown>',
+			status: firstMarkdownValue(text, 'Status') ?? '<unknown>',
+			ascApiKeyProvided: firstMarkdownValue(text, 'App Store Connect API key provided') ?? '<unknown>'
+		};
+	} catch {
+		return null;
+	}
+}
+
+function firstMarkdownValue(text, label) {
+	const escaped = label.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+	const match = text.match(new RegExp(`^(?:-\\s*)?${escaped}:\\s*(.+)$`, 'imu'));
+	return match?.[1]?.trim() ?? null;
+}
+
+function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIosProof, generatedAt }) {
 	const dadTestFlightEvidence = releaseEvidenceItem(releaseEvidence, 'dad-testflight-invite');
 	const publicLink = dadTestFlightEvidence?.publicLink ?? 'https://testflight.apple.com/join/BagBCrzf';
 	const recordedDadBuild = extractRecordedDadBuild(releaseEvidence);
@@ -103,6 +137,7 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, generated
 		`- Recorded Dad Pilot build: \`${recordedDadBuild}\`.`,
 		`- Recorded Dad Pilot build meets suite requirement: ${status.testflight?.recordedDadPilotMeetsSuiteRequirement ? 'yes' : 'no'}.`,
 		`- Dad TestFlight link: ${publicLink}`,
+		`- iOS Release signing: team \`${iosBuild.teamId}\`, profile \`${iosBuild.releaseProfile}\`.`,
 		''
 	];
 
@@ -122,6 +157,25 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, generated
 	}
 
 	lines.push(
+		'',
+		'## Upload readiness',
+		'',
+		`- Xcode Release target: \`${targetBuild}\` from \`${iosBuild.projectPath}\`.`,
+		`- Signing team/profile: \`${iosBuild.teamId}\` / \`${iosBuild.releaseProfile}\`.`,
+		latestIosProof
+			? `- Latest native upload proof: \`${latestIosProof.path}\` (${latestIosProof.status}, checked ${latestIosProof.checkedAt}).`
+			: '- Latest native upload proof: none found.',
+		latestIosProof
+			? `- App Store Connect API key in latest proof: ${latestIosProof.ascApiKeyProvided}.`
+			: '- App Store Connect API key in latest proof: unknown.',
+		'- Upload still requires Chris/account-bound App Store Connect auth: `APP_STORE_CONNECT_API_KEY_PATH`, `APP_STORE_CONNECT_API_KEY_ID`, and `APP_STORE_CONNECT_API_ISSUER_ID`, or matching `--asc-*` flags.',
+		'',
+		'```sh',
+		'npm run ios:testflight -- --upload --team-id 3CFU9J87A5 \\',
+		'  --asc-key-path ~/.appstoreconnect/private_keys/AuthKey_T272T83N98.p8 \\',
+		'  --asc-key-id T272T83N98 \\',
+		'  --asc-issuer-id <issuer-id>',
+		'```',
 		'',
 		'## Phone run steps',
 		'',

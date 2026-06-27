@@ -642,7 +642,9 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	const deviceRunsDir = join(outputDir, 'device-runs');
 	const reviewsDir = join(outputDir, 'reviews');
 	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
+	const iosProofDir = join(outputDir, 'proof');
 	await mkdir(runsDir, { recursive: true });
+	await mkdir(iosProofDir, { recursive: true });
 	const routingRun = deviceRunForCases(suite, suite.cases, {
 		runId: 'routing-handoff-proof',
 		completeTools: true
@@ -661,6 +663,17 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 			}
 		}
 	}, null, 2)}\n`);
+	await writeFile(join(iosProofDir, 'ios-testflight-attempt-2026-06-27T01-38-52-730Z.md'), [
+		'# iOS TestFlight lane attempt',
+		'',
+		'Checked at: 2026-06-27T01:38:54.125Z',
+		'Status: passed',
+		'',
+		'## Mode',
+		'',
+		'- App Store Connect API key provided: no',
+		''
+	].join('\n'));
 
 	const result = await execFileAsync(
 		process.execPath,
@@ -673,7 +686,9 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 			'--reviews-dir',
 			reviewsDir,
 			'--release-evidence',
-			releaseEvidencePath
+			releaseEvidencePath,
+			'--ios-proof-dir',
+			iosProofDir
 		],
 		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
 	);
@@ -686,6 +701,12 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Recorded Dad Pilot build meets suite requirement: no/u);
 	assert.match(result.stdout, /https:\/\/testflight\.apple\.com\/join\/BagBCrzf/u);
 	assert.match(result.stdout, /recorded Dad Pilot build is not ready for this suite/u);
+	assert.match(result.stdout, /## Upload readiness/u);
+	assert.match(result.stdout, /Xcode Release target: `1\.0 \(11\)`/u);
+	assert.match(result.stdout, /Signing team\/profile: `3CFU9J87A5` \/ `Hoggcountry App Store Connect`/u);
+	assert.match(result.stdout, /Latest native upload proof: .*ios-testflight-attempt-2026-06-27T01-38-52-730Z\.md` \(passed/u);
+	assert.match(result.stdout, /App Store Connect API key in latest proof: no/u);
+	assert.match(result.stdout, /APP_STORE_CONNECT_API_ISSUER_ID/u);
 	assert.match(result.stdout, /Upload and attach target iOS build 1\.0 \(11\)/u);
 	assert.match(result.stdout, /use `Run 100` for real proof/u);
 	assert.match(result.stdout, /npm run intake:scout-local-ai-device-run/u);
