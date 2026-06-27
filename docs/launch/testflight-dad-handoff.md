@@ -119,6 +119,13 @@ review JSON:
 npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json --packet data/scout-local-ai/review-packets/<run-id>.review.md
 ```
 
+For a case-by-case pass, add `--case DLA-001` to the status command, then update
+only that packet case after the answer has actually earned the rating:
+
+```bash
+npm run rate-case:scout-local-ai -- --packet data/scout-local-ai/review-packets/<run-id>.review.md --review data/scout-local-ai/reviews/<run-id>.review.json --case DLA-001 --rating 5 --mark-all-pass
+```
+
 ## Proof To Capture
 
 - Signing proof: selected team id, `security find-identity` result, and

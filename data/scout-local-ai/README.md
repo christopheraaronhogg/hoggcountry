@@ -237,6 +237,22 @@ and likely owner/category hints:
 npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json --packet data/scout-local-ai/review-packets/<run-id>.review.md --case DLA-001
 ```
 
+After reading the focused card, you can update just that case in the Markdown
+packet without touching review JSON yet. For a 5/5, pass `--mark-all-pass` only
+after you have checked every trait, safety caveat, confirmation, and safety flag
+for that case:
+
+```sh
+npm run rate-case:scout-local-ai -- --packet data/scout-local-ai/review-packets/<run-id>.review.md --review data/scout-local-ai/reviews/<run-id>.review.json --case DLA-001 --rating 5 --notes "Dad-ready answer." --mark-all-pass
+```
+
+For anything below 5, include the concrete owner/fix so the iteration backlog can
+be created later:
+
+```sh
+npm run rate-case:scout-local-ai -- --packet data/scout-local-ai/review-packets/<run-id>.review.md --review data/scout-local-ai/reviews/<run-id>.review.json --case DLA-001 --rating 4 --notes "Needs fresher water evidence." --failure-categories missing-data --owner-layer data --improvement-task "Add current-section water reliability source docs for this trail context."
+```
+
 The same command is also available as `npm run status:scout-local-ai-review`
 when you are thinking "status" first.
 

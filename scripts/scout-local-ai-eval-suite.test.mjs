@@ -147,6 +147,7 @@ test('package scripts expose the Scout local AI review handoff commands', async 
 	assert.equal(packageJson.scripts['review-status:scout-local-ai'], 'node scripts/status-scout-local-ai-review.mjs');
 	assert.equal(packageJson.scripts['status:scout-local-ai-review'], 'node scripts/status-scout-local-ai-review.mjs');
 	assert.equal(packageJson.scripts['finalize-review:scout-local-ai'], 'node scripts/finalize-scout-local-ai-review.mjs');
+	assert.equal(packageJson.scripts['rate-case:scout-local-ai'], 'node scripts/rate-scout-local-ai-review-case.mjs');
 	assert.equal(packageJson.scripts['prepare-review:scout-local-ai-device-run'], 'node scripts/prepare-scout-local-ai-device-review.mjs');
 	assert.equal(packageJson.scripts['message:scout-local-ai-dad'], 'node scripts/scout-local-ai-dad-handoff.mjs --dad-message');
 	assert.equal(packageJson.scripts['wait:scout-local-ai-device-run'], 'node scripts/wait-scout-local-ai-device-run.mjs');
@@ -2639,6 +2640,124 @@ test('review packet ratings can be applied back into review JSON', async () => {
 	assert.equal(backlog.items.length, 1);
 	assert.equal(backlog.items[0].caseId, run.results[1].caseId);
 	assert.equal(backlog.items[0].ownerLayer, 'safety-prompt');
+});
+
+test('single-case rating command updates packet without touching review JSON', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-rate-case-'));
+	const inputPath = join(outputDir, 'device-export.json');
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 2), {
+		runId: 'device-rate-case',
+		completeTools: true
+	});
+	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
+
+	await execFileAsync(
+		process.execPath,
+		[
+			'scripts/import-scout-local-ai-device-run.mjs',
+			'--run',
+			inputPath,
+			'--allow-partial',
+			'--device-run-dir',
+			join(outputDir, 'device-runs'),
+			'--review-dir',
+			join(outputDir, 'reviews'),
+			'--packet-dir',
+			join(outputDir, 'review-packets')
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+
+	const packetPath = join(outputDir, 'review-packets', 'device-rate-case.review.md');
+	const reviewPath = join(outputDir, 'reviews', 'device-rate-case.review.json');
+	const firstCaseId = run.results[0].caseId;
+	const secondCaseId = run.results[1].caseId;
+
+	const updateResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/rate-scout-local-ai-review-case.mjs',
+			'--packet',
+			packetPath,
+			'--review',
+			reviewPath,
+			'--case',
+			firstCaseId,
+			'--rating',
+			'5',
+			'--notes',
+			'Dad-ready answer.',
+			'--mark-all-pass'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const packet = await readFile(packetPath, 'utf8');
+	const review = JSON.parse(await readFile(reviewPath, 'utf8'));
+
+	assert.match(updateResult.stdout, /Scout local AI review packet case updated/u);
+	assert.match(updateResult.stdout, new RegExp(`Case: ${firstCaseId}`, 'u'));
+	assert.match(updateResult.stdout, /Rating: 5/u);
+	assert.match(updateResult.stdout, /Next focused check:/u);
+	assert.match(packet, new RegExp(`## ${firstCaseId} - [\\s\\S]*?- Rating: 5[\\s\\S]*?- Notes: Dad-ready answer\\.`, 'u'));
+	assert.match(packet, new RegExp(`## ${firstCaseId} - [\\s\\S]*?- passed: true \\| text:`, 'u'));
+	assert.match(packet, new RegExp(`## ${secondCaseId} - [\\s\\S]*?- Rating:\\s*(?:\\n|$)`, 'u'));
+	assert.deepEqual(review.cases.map((entry) => entry.rating), [null, null]);
+
+	const statusResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			join(outputDir, 'device-runs', 'device-rate-case.json'),
+			'--review',
+			reviewPath,
+			'--packet',
+			packetPath,
+			'--case',
+			firstCaseId,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const progress = JSON.parse(statusResult.stdout);
+
+	assert.equal(progress.selectedCase.caseId, firstCaseId);
+	assert.equal(progress.selectedCase.rating, 5);
+	assert.equal(progress.selectedCase.notes, 'Dad-ready answer.');
+	assert.equal(progress.selectedCase.traitChecks.every((check) => check.passed === true), true);
+	assert.equal(progress.selectedCase.safetyCaveatChecks.every((check) => check.passed === true), true);
+
+	const packetBeforeInvalidUpdate = await readFile(packetPath, 'utf8');
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/rate-scout-local-ai-review-case.mjs',
+				'--packet',
+				packetPath,
+				'--review',
+				reviewPath,
+				'--case',
+				secondCaseId,
+				'--rating',
+				'4',
+				'--notes',
+				'Needs fresher water evidence.',
+				'--failure-categories',
+				'missing-data',
+				'--owner-layer',
+				'data'
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /was not updated/u);
+			assert.match(error.stderr, /ratings below 5 need an improvementTask/u);
+			return true;
+		}
+	);
+	assert.equal(await readFile(packetPath, 'utf8'), packetBeforeInvalidUpdate);
 });
 
 test('review finalizer applies packet and writes below-5 iteration backlog plus plan', async () => {
