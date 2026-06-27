@@ -535,28 +535,28 @@
 		const executionLabel = executionIdLabel(currentRun);
 		const fullRun = currentSuite ? isFullFinalRun(currentRun, currentSuite) : false;
 		if (fullRun) {
-			const shareText = `Final Scout Run 100 export ${currentRun.runId}. Execution ID ${executionLabel}. Save the shared JSON into ${REVIEW_INBOX_PATH}, then run: ${REVIEW_PREP_COMMAND}`;
+			const shareText = `Final Scout Run 100 export ${currentRun.runId}. Execution ID ${executionLabel}. Send this JSON to Chris for review. Chris: save the shared JSON into ${REVIEW_INBOX_PATH}, then run: ${REVIEW_PREP_COMMAND}`;
 			return {
 				state: 'final',
 				label: 'Final Run 100',
-				detail: `Save the shared JSON into ${REVIEW_INBOX_PATH}`,
-				command: REVIEW_PREP_COMMAND,
+				detail: 'Send this JSON to Chris for review.',
+				command: `Chris imports it from ${REVIEW_INBOX_PATH}: ${REVIEW_PREP_COMMAND}`,
 				fileName,
 				shareTitle: 'Scout final Run 100 export',
 				shareText,
-				successMessage: 'Final Run 100 JSON ready for inbox review.'
+				successMessage: 'Final Run 100 JSON ready. Send it to Chris for review.'
 			};
 		}
-		const shareText = `Scout diagnostic export ${currentRun.runId}. Execution ID ${executionLabel}. This smoke or partial JSON is diagnostic only, not final Dad proof. Use it to rescue an interrupted run.`;
+		const shareText = `Scout diagnostic export ${currentRun.runId}. Execution ID ${executionLabel}. This smoke or partial JSON is diagnostic only, not final Dad proof. Send it to Chris only if the run was interrupted.`;
 		return {
 			state: 'diagnostic',
 			label: 'Diagnostic export',
-			detail: 'Smoke or partial JSON is diagnostic only, not final Dad proof.',
+			detail: 'Send to Chris only if the run was interrupted.',
 			command: 'Finish Run 100 on the TestFlight iPhone for final proof.',
 			fileName,
 			shareTitle: 'Scout diagnostic eval export',
 			shareText,
-			successMessage: 'Diagnostic JSON ready; not final Dad proof.'
+			successMessage: 'Diagnostic JSON ready; send it only if Chris needs recovery details.'
 		};
 	}
 

@@ -221,12 +221,13 @@ test('mobile Eval Lab labels final exports for inbox review', async () => {
 	const component = await readFile(MOBILE_EVAL_LAB_PATH, 'utf8');
 	assert.match(component, /summarizeExportHandoff/u, 'Eval Lab should derive export handoff state');
 	assert.match(component, /REVIEW_INBOX_PATH = 'data\/scout-local-ai\/inbox\/'/u, 'Final Run 100 exports should point at the repo inbox');
-	assert.match(component, /Save the shared JSON into \$\{REVIEW_INBOX_PATH\}/u, 'Final Run 100 exports should describe the inbox handoff');
+	assert.match(component, /Send this JSON to Chris for review/u, 'Final Run 100 exports should give Dad a simple share handoff');
+	assert.match(component, /Chris: save the shared JSON into \$\{REVIEW_INBOX_PATH\}/u, 'Final Run 100 exports should preserve the repo inbox handoff');
 	assert.match(component, /Execution ID \$\{executionLabel\}/u, 'Shared exports should include the durable execution id');
 	assert.match(component, /npm run prepare-review:scout-local-ai-device-run -- --run inbox/u, 'Final Run 100 exports should name the review prep command');
-	assert.match(component, /Final Run 100 JSON ready for inbox review/u, 'Final share/copy/download status should confirm review readiness');
+	assert.match(component, /Final Run 100 JSON ready\. Send it to Chris for review/u, 'Final share/copy/download status should confirm Dad-facing review handoff');
 	assert.match(component, /diagnostic only, not final Dad proof/u, 'Smoke and partial exports should not be confused with final proof');
-	assert.match(component, /Diagnostic JSON ready; not final Dad proof/u, 'Diagnostic share/copy/download status should preserve proof boundaries');
+	assert.match(component, /send it only if Chris needs recovery details/u, 'Diagnostic share/copy/download status should preserve proof boundaries');
 });
 
 test('status command keeps routing proof separate from missing device proof', async () => {
