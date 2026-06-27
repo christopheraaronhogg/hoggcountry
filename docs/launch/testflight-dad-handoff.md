@@ -92,7 +92,12 @@ npm run refresh:testflight-dad-pilot -- \
 6. Ask Dad to update/install through the public TestFlight link, open Settings,
    verify the Eval Lab shows
    `TestFlight ready`, run `Run 100`, and Share the JSON export back for
-   import/review.
+   import/review. Save or drag the shared JSON into
+   `data/scout-local-ai/inbox/`, then prepare the review with:
+
+```bash
+npm run prepare-review:scout-local-ai-device-run -- --run inbox
+```
 
 ## Proof To Capture
 

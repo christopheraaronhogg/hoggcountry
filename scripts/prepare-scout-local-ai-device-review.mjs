@@ -16,23 +16,27 @@ const DEFAULT_DEVICE_RUN_DIR = 'data/scout-local-ai/device-runs';
 const DEFAULT_REVIEW_DIR = 'data/scout-local-ai/reviews';
 const DEFAULT_PACKET_DIR = 'data/scout-local-ai/review-packets';
 const DEFAULT_DOWNLOADS_DIR = '~/Downloads';
+const DEFAULT_INBOX_DIR = 'data/scout-local-ai/inbox';
 const SCOUT_SUITE_ID = 'dad-local-ai-100';
 
 const cli = parseCliArgs(process.argv.slice(2));
-const input = cli.run ?? cli.input ?? (cli.latestDownload ? 'latest' : null);
+const input = cli.run ?? cli.input ?? (cli.latestInbox ? 'inbox' : cli.latestDownload ? 'latest' : null);
 
 if (!input) {
 	throw new Error([
 		'Usage: npm run prepare-review:scout-local-ai-device-run -- --run ~/Downloads/<device-export>.json',
 		'       npm run prepare-review:scout-local-ai-device-run -- --run latest',
+		'       npm run prepare-review:scout-local-ai-device-run -- --run inbox',
 		'This inspects first, imports only valid device exports, then prints review progress.',
 		'Add --downloads-dir <dir> with --run latest when the shared JSON is not in ~/Downloads.',
+		'Drop shared iPhone exports into data/scout-local-ai/inbox/ and use --run inbox for a repo-local handoff.',
 		'Add --allow-partial only for deliberate smoke/interrupted-run diagnostics.'
 	].join('\n'));
 }
 
 const selectedInput = await resolveRunInput(input, {
-	downloadsDir: resolveInputPath(cli.downloadsDir ?? DEFAULT_DOWNLOADS_DIR)
+	downloadsDir: resolveInputPath(cli.downloadsDir ?? DEFAULT_DOWNLOADS_DIR),
+	inboxDir: resolveInputPath(cli.inboxDir ?? DEFAULT_INBOX_DIR)
 });
 const inputPath = selectedInput.path;
 const suitePath = resolveInputPath(cli.suite ?? DEFAULT_SUITE);
@@ -136,7 +140,18 @@ async function runTextScript(script, args) {
 async function resolveRunInput(value, options) {
 	const text = String(value);
 	if (text === 'latest' || text === 'latest-download' || text === 'latest-downloads') {
-		return latestDownloadRun(options.downloadsDir);
+		return latestScoutEvalRun({
+			dir: options.downloadsDir,
+			mode: 'latest-download',
+			dirLabel: 'downloadsDir'
+		});
+	}
+	if (text === 'inbox' || text === 'latest-inbox' || text === 'latest-inbox-export') {
+		return latestScoutEvalRun({
+			dir: options.inboxDir,
+			mode: 'latest-inbox',
+			dirLabel: 'inboxDir'
+		});
 	}
 	const path = resolveInputPath(text);
 	return {
@@ -148,11 +163,11 @@ async function resolveRunInput(value, options) {
 	};
 }
 
-async function latestDownloadRun(downloadsDir) {
+async function latestScoutEvalRun({ dir, mode, dirLabel }) {
 	const candidates = [];
-	for (const entry of await readdir(downloadsDir, { withFileTypes: true })) {
+	for (const entry of await readdir(dir, { withFileTypes: true })) {
 		if (!entry.isFile() || !entry.name.toLowerCase().endsWith('.json')) continue;
-		const path = resolve(downloadsDir, entry.name);
+		const path = resolve(dir, entry.name);
 		const candidate = await readScoutEvalCandidate(path);
 		if (!candidate) continue;
 		const stats = await stat(path);
@@ -165,13 +180,13 @@ async function latestDownloadRun(downloadsDir) {
 	candidates.sort((left, right) => right.mtimeMs - left.mtimeMs || left.path.localeCompare(right.path));
 	const selected = candidates[0];
 	if (!selected) {
-		throw new Error(`No likely Scout Eval Lab JSON exports found in ${downloadsDir}. Pass --run /path/to/<device-export>.json if the file is elsewhere.`);
+		throw new Error(`No likely Scout Eval Lab JSON exports found in ${dir}. Pass --run /path/to/<device-export>.json if the file is elsewhere.`);
 	}
 	return {
 		path: selected.path,
 		report: {
-			mode: 'latest-download',
-			downloadsDir: relative(REPO_ROOT, downloadsDir),
+			mode,
+			[dirLabel]: relative(REPO_ROOT, dir),
 			selected: relative(REPO_ROOT, selected.path),
 			runId: selected.runId,
 			suiteId: selected.suiteId,
@@ -227,11 +242,13 @@ function formatReport(report) {
 			''
 		);
 	}
-	if (report.input?.mode === 'latest-download') {
+	if (report.input?.mode === 'latest-download' || report.input?.mode === 'latest-inbox') {
+		const sourceLabel = report.input.mode === 'latest-inbox' ? 'Inbox dir' : 'Downloads dir';
+		const sourceDir = report.input.inboxDir ?? report.input.downloadsDir;
 		lines.push(
 			'## Selected Export',
 			'',
-			`- Downloads dir: \`${report.input.downloadsDir}\``,
+			`- ${sourceLabel}: \`${sourceDir}\``,
 			`- Selected: \`${report.input.selected}\``,
 			`- Candidate Scout exports: ${report.input.candidateCount}`,
 			''

@@ -112,8 +112,19 @@ npm run prepare-review:scout-local-ai-device-run -- --run latest
 ```
 
 Use `--downloads-dir <folder>` with `--run latest` when the shared JSON is in a
-different folder. The selected file still goes through the same read-only
-inspection gate before any review files are written.
+different folder.
+
+For the simplest repo-local handoff, save or drag the shared iPhone JSON into
+`data/scout-local-ai/inbox/` and let the command select the newest valid Eval
+Lab export:
+
+```sh
+npm run prepare-review:scout-local-ai-device-run -- --run inbox
+```
+
+Use `--inbox-dir <folder>` when staging the shared JSON somewhere else. The
+selected file still goes through the same read-only inspection gate before any
+review files are written.
 
 That command runs the read-only inspection first, imports only a valid final
 device export, creates the review JSON and Markdown packet, and then prints the

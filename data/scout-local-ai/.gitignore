@@ -1,4 +1,6 @@
 runs/
+inbox/*
+!inbox/.gitkeep
 device-runs/
 reviews/
 review-packets/
