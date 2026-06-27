@@ -105,6 +105,9 @@ function buildReviewProgress({ suite, run, review, packetDraft, paths }) {
 		const rating = entry.rating ?? null;
 		const suggestedFailureCategories = suggestedFailureCategoriesForResult(result);
 		const suggestedOwnerLayer = inferOwnerLayer(suggestedFailureCategories, result);
+		const reviewFailureCategories = Array.isArray(entry.failureCategories) ? entry.failureCategories : [];
+		const reviewOwnerLayer = String(entry.ownerLayer ?? '').trim();
+		const belowFive = Number.isInteger(rating) && rating < 5;
 		return {
 			caseId: result.caseId,
 			domain: result.case?.domain ?? entry.domain ?? '<missing>',
@@ -113,12 +116,16 @@ function buildReviewProgress({ suite, run, review, packetDraft, paths }) {
 			signalRank: signalRank(signal),
 			rating,
 			unrated: rating === null || rating === undefined || rating === '',
-			belowFive: Number.isInteger(rating) && rating < 5,
+			belowFive,
 			missingTools: result.toolExpectations?.missing ?? [],
 			sourceEvidenceGaps: sourceGaps.map((problem) => problem.message),
 			sourceEvidenceGapExpectations: sourceGaps.map((problem) => problem.expectation),
 			suggestedFailureCategories,
 			suggestedOwnerLayer,
+			reviewFailureCategories,
+			reviewOwnerLayer,
+			triageFailureCategories: belowFive && reviewFailureCategories.length ? reviewFailureCategories : suggestedFailureCategories,
+			triageOwnerLayer: belowFive && reviewOwnerLayer ? reviewOwnerLayer : suggestedOwnerLayer,
 			evidenceGapSummary: formatQueueEvidenceGaps(result, sourceGaps),
 			promptPreview: truncate(result.case?.prompt ?? entry.prompt ?? '', 120),
 			answerPreview: truncate(entry.answerPreview ?? result.answer ?? result.error ?? '', 220),
@@ -178,6 +185,7 @@ function buildReviewProgress({ suite, run, review, packetDraft, paths }) {
 		strictDeviceProofErrors,
 		invalidEntries,
 		nextUnrated,
+		triageSummary: summarizeReviewTriage(queue),
 		reviewQueue: queue,
 		nextAction: nextAction({
 			invalidEntries,
@@ -211,6 +219,27 @@ function signalRank(signal) {
 	if (signal.includes('safety flag')) return 3;
 	if (signal.includes('required confirmation')) return 4;
 	return 5;
+}
+
+function summarizeReviewTriage(queue) {
+	const focus = queue.filter((item) => item.unrated || item.belowFive);
+	return {
+		focusCount: focus.length,
+		unrated: focus.filter((item) => item.unrated).length,
+		belowFive: focus.filter((item) => item.belowFive).length,
+		signals: countValues(focus.map((item) => item.signal)),
+		ownerLayers: countValues(focus.map((item) => item.triageOwnerLayer || 'unknown')),
+		failureCategories: countValues(focus.flatMap((item) => item.triageFailureCategories.length ? item.triageFailureCategories : ['none'])),
+		missingTools: countValues(focus.flatMap((item) => item.missingTools ?? [])),
+		sourceEvidence: countValues(focus.flatMap((item) => item.sourceEvidenceGapExpectations ?? [])),
+		topFocusCases: focus.slice(0, 5).map((item) => ({
+			caseId: item.caseId,
+			signal: item.signal,
+			ownerLayer: item.triageOwnerLayer || 'unknown',
+			failureCategories: item.triageFailureCategories,
+			evidenceGapSummary: item.evidenceGapSummary
+		}))
+	};
 }
 
 function nextAction(input) {
@@ -300,6 +329,21 @@ function formatReviewProgress(progress) {
 		lines.push('');
 	}
 
+	lines.push('## Triage summary', '');
+	if (progress.triageSummary.focusCount) {
+		lines.push(
+			`- Focus cases: ${progress.triageSummary.focusCount} (${progress.triageSummary.unrated} unrated, ${progress.triageSummary.belowFive} below 5)`,
+			`- Signals: ${formatCountMap(progress.triageSummary.signals)}`,
+			`- Likely owner layers: ${formatCountMap(progress.triageSummary.ownerLayers)}`,
+			`- Failure categories: ${formatCountMap(progress.triageSummary.failureCategories)}`,
+			`- Missing tools: ${formatCountMap(progress.triageSummary.missingTools)}`,
+			`- Source-evidence gaps: ${formatCountMap(progress.triageSummary.sourceEvidence)}`,
+			''
+		);
+	} else {
+		lines.push('No unrated or below-5 cases need triage in this progress view.', '');
+	}
+
 	if (Object.keys(progress.summary.byDomain).length) {
 		lines.push('## By domain', '');
 		for (const [domain, value] of Object.entries(progress.summary.byDomain).sort(([left], [right]) => left.localeCompare(right))) {
@@ -356,6 +400,24 @@ function tableCell(value) {
 function displayRating(value) {
 	if (value === null || value === undefined || value === '') return 'unrated';
 	return value;
+}
+
+function countValues(values) {
+	const counts = {};
+	for (const value of values ?? []) {
+		const key = String(value ?? '').trim();
+		if (!key) continue;
+		counts[key] = (counts[key] ?? 0) + 1;
+	}
+	return Object.fromEntries(
+		Object.entries(counts).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+	);
+}
+
+function formatCountMap(counts) {
+	const entries = Object.entries(counts ?? {});
+	if (!entries.length) return 'none';
+	return entries.map(([key, count]) => `${key}=${count}`).join(', ');
 }
 
 function formatQueueEvidenceGaps(result, sourceGaps) {

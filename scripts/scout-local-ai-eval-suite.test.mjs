@@ -1350,6 +1350,12 @@ test('device review preparation command inspects, imports, and reports review st
 	assert.equal(report.reviewStatus.summary.total, suite.cases.length);
 	assert.equal(report.reviewStatus.summary.unrated, suite.cases.length);
 	assert.equal(report.reviewStatus.readyForBacklog, false);
+	assert.equal(report.reviewStatus.triageSummary.focusCount, suite.cases.length);
+	assert.equal(report.reviewStatus.triageSummary.unrated, suite.cases.length);
+	assert.equal(report.reviewStatus.triageSummary.belowFive, 0);
+	assert.equal(report.reviewStatus.triageSummary.ownerLayers['tool-routing'], suite.cases.length);
+	assert.equal(report.reviewStatus.triageSummary.failureCategories['bad-routing'], suite.cases.length);
+	assert.deepEqual(report.reviewStatus.triageSummary.missingTools, {});
 	assert.equal(review.cases.length, suite.cases.length);
 	assert.match(packet, /npm run review-status:scout-local-ai/u);
 	assert.match(packet, /--packet .*device-prepare-final\.review\.md/u);
@@ -3740,6 +3746,13 @@ test('review status command reports partial human rating progress without writin
 	assert.equal(progress.nextUnrated.caseId, review.cases[2].caseId);
 	assert.match(progress.nextAction, new RegExp(`Review next unrated case ${review.cases[2].caseId}`, 'u'));
 	assert.equal(progress.reviewQueue[0].caseId, review.cases[2].caseId);
+	assert.equal(progress.triageSummary.focusCount, 2);
+	assert.equal(progress.triageSummary.unrated, 1);
+	assert.equal(progress.triageSummary.belowFive, 1);
+	assert.equal(progress.triageSummary.ownerLayers.data, 1);
+	assert.equal(progress.triageSummary.ownerLayers['tool-routing'], 1);
+	assert.equal(progress.triageSummary.failureCategories['missing-data'], 1);
+	assert.equal(progress.triageSummary.topFocusCases[0].caseId, review.cases[2].caseId);
 });
 
 test('review status queue surfaces owner layer and evidence gaps for iteration triage', async () => {
@@ -3776,6 +3789,12 @@ test('review status queue surfaces owner layer and evidence gaps for iteration t
 	assert.deepEqual(firstQueueItem.missingTools, run.results[0].toolExpectations.missing);
 	assert.match(firstQueueItem.evidenceGapSummary, /missing tools:/u);
 	assert.match(firstQueueItem.answerPreview, new RegExp(`device answer for ${run.results[0].caseId}`, 'u'));
+	assert.equal(progress.triageSummary.focusCount, 2);
+	assert.equal(progress.triageSummary.signals['review-first: missing required tools'], 2);
+	assert.equal(progress.triageSummary.ownerLayers['tool-routing'], 2);
+	assert.equal(progress.triageSummary.failureCategories['bad-routing'], 2);
+	assert.equal(progress.triageSummary.failureCategories['weak-tool'], 2);
+	assert.ok(progress.triageSummary.missingTools[run.results[0].toolExpectations.missing[0]] >= 1);
 
 	const textResult = await execFileAsync(
 		process.execPath,
@@ -3789,6 +3808,10 @@ test('review status queue surfaces owner layer and evidence gaps for iteration t
 		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
 	);
 
+	assert.match(textResult.stdout, /## Triage summary/u);
+	assert.match(textResult.stdout, /Focus cases: 2 \(2 unrated, 0 below 5\)/u);
+	assert.match(textResult.stdout, /Signals: review-first: missing required tools=2/u);
+	assert.match(textResult.stdout, /Likely owner layers: tool-routing=2/u);
 	assert.match(textResult.stdout, /Likely owner/u);
 	assert.match(textResult.stdout, /Suggested categories/u);
 	assert.match(textResult.stdout, /Evidence gaps/u);

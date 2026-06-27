@@ -312,6 +312,19 @@ function formatReport(report) {
 			`- Ready for strict device proof: ${report.reviewStatus.readyForStrictDeviceProof ? 'yes' : 'no'}`,
 			''
 		);
+		if (report.reviewStatus.triageSummary) {
+			lines.push(
+				'## Triage Summary',
+				'',
+				`- Focus cases: ${report.reviewStatus.triageSummary.focusCount} (${report.reviewStatus.triageSummary.unrated} unrated, ${report.reviewStatus.triageSummary.belowFive} below 5)`,
+				`- Signals: ${formatCountMap(report.reviewStatus.triageSummary.signals)}`,
+				`- Likely owner layers: ${formatCountMap(report.reviewStatus.triageSummary.ownerLayers)}`,
+				`- Failure categories: ${formatCountMap(report.reviewStatus.triageSummary.failureCategories)}`,
+				`- Missing tools: ${formatCountMap(report.reviewStatus.triageSummary.missingTools)}`,
+				`- Source-evidence gaps: ${formatCountMap(report.reviewStatus.triageSummary.sourceEvidence)}`,
+				''
+			);
+		}
 	}
 	if (report.inspection.structuralErrors?.length || report.inspection.staleReasons?.length || report.inspection.contextProblems?.length) {
 		lines.push('## Blocking Inspection Issues', '');
@@ -330,6 +343,12 @@ function formatReport(report) {
 
 function safeFileName(value) {
 	return String(value).replace(/[^A-Za-z0-9._-]/g, '-');
+}
+
+function formatCountMap(counts) {
+	const entries = Object.entries(counts ?? {});
+	if (!entries.length) return 'none';
+	return entries.map(([key, count]) => `${key}=${count}`).join(', ');
 }
 
 function resolveInputPath(value) {
