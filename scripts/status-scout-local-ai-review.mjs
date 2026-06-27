@@ -31,6 +31,7 @@ if (!cli.run || !cli.review) {
 		'Usage: npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json',
 		'Optional: --packet data/scout-local-ai/review-packets/<run-id>.review.md to preview draft packet progress without writing review JSON.',
 		'Optional: --case DLA-001 to print a focused read-only review card for one case.',
+		'Optional: --next to select the next unrated case, then the next below-5 focus case.',
 		'Add --json for machine-readable progress.'
 	].join('\n'));
 }
@@ -50,6 +51,7 @@ const progress = buildReviewProgress({
 	review: progressReview,
 	packetDraft,
 	selectedCaseId: cli.case ?? cli.caseId,
+	selectNextCase: Boolean(cli.next),
 	paths: { suitePath, runPath, reviewPath, packetPath }
 });
 
@@ -85,7 +87,7 @@ async function buildPacketDraft({ packetPath, review }) {
 	}
 }
 
-function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, paths }) {
+function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, selectNextCase, paths }) {
 	const summary = Array.isArray(review?.cases)
 		? summarizeReview(review)
 		: emptyReviewSummary();
@@ -138,15 +140,18 @@ function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, 
 		if (left.signalRank !== right.signalRank) return left.signalRank - right.signalRank;
 		return left.index - right.index;
 	});
-	const selectedCase = selectedCaseId
+	const nextUnrated = queue.find((entry) => entry.unrated) ?? null;
+	const nextFocusCase = nextUnrated ?? queue.find((entry) => entry.belowFive) ?? null;
+	const selectedCaseRequest = selectedCaseId ?? (selectNextCase ? nextFocusCase?.caseId : null);
+	const selectedCaseSource = selectedCaseId ? 'explicit-case' : selectNextCase ? 'next-focus-case' : null;
+	const selectedCase = selectedCaseRequest
 		? buildSelectedCase({
-			caseId: selectedCaseId,
+			caseId: selectedCaseRequest,
 			run,
 			reviewByCaseId,
 			queue
 		})
 		: null;
-	const nextUnrated = queue.find((entry) => entry.unrated) ?? null;
 	const fiveStar = summary.ratingCounts['5'] ?? 0;
 	const fullDeviceRun = run.evidenceLane === 'device-on-device-gemma' && run.caseCount === run.totalSuiteCases;
 	const readyForBacklog = invalidEntries.length === 0 && summary.unrated === 0;
@@ -195,7 +200,9 @@ function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, 
 		strictDeviceProofErrors,
 		invalidEntries,
 		nextUnrated,
+		nextFocusCase,
 		selectedCase,
+		selectedCaseSource: selectedCase ? selectedCaseSource : null,
 		triageSummary: summarizeReviewTriage(queue),
 		reviewQueue: queue,
 		nextAction: nextAction({

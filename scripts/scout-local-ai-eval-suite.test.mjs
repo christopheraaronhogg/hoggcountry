@@ -4369,6 +4369,24 @@ test('review status command reports partial human rating progress without writin
 	assert.equal(progress.triageSummary.ownerLayers['tool-routing'], 1);
 	assert.equal(progress.triageSummary.failureCategories['missing-data'], 1);
 	assert.equal(progress.triageSummary.topFocusCases[0].caseId, review.cases[2].caseId);
+
+	const nextResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			runPath,
+			'--review',
+			reviewPath,
+			'--next',
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const nextProgress = JSON.parse(nextResult.stdout);
+	assert.equal(nextProgress.nextFocusCase.caseId, review.cases[2].caseId);
+	assert.equal(nextProgress.selectedCase.caseId, review.cases[2].caseId);
+	assert.equal(nextProgress.selectedCaseSource, 'next-focus-case');
 });
 
 test('review status queue surfaces owner layer and evidence gaps for iteration triage', async () => {
@@ -4435,6 +4453,49 @@ test('review status queue surfaces owner layer and evidence gaps for iteration t
 	assert.match(textResult.stdout, /bad-routing, weak-tool/u);
 	assert.match(textResult.stdout, /missing tools:/u);
 	assert.match(textResult.stdout, /device answer for/u);
+});
+
+test('review status --next falls back to below-5 focus cases after all cases are rated', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-status-next-below-five-'));
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 2), {
+		runId: 'device-review-status-next-below-five',
+		completeTools: true
+	});
+	const review = reviewForRun(run, { rating: 5 });
+	review.cases[1].rating = 4;
+	review.cases[1].failureCategories = ['missing-data'];
+	review.cases[1].ownerLayer = 'data';
+	review.cases[1].improvementTask = 'Add current-section water reliability source docs for this trail context.';
+
+	const runPath = join(outputDir, 'device-review-status-next-below-five.json');
+	const reviewPath = join(outputDir, 'device-review-status-next-below-five.review.json');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			runPath,
+			'--review',
+			reviewPath,
+			'--next',
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const progress = JSON.parse(result.stdout);
+
+	assert.equal(progress.summary.unrated, 0);
+	assert.equal(progress.summary.belowFive, 1);
+	assert.equal(progress.nextUnrated, null);
+	assert.equal(progress.nextFocusCase.caseId, review.cases[1].caseId);
+	assert.equal(progress.selectedCase.caseId, review.cases[1].caseId);
+	assert.equal(progress.selectedCase.rating, 4);
+	assert.equal(progress.selectedCaseSource, 'next-focus-case');
+	assert.equal(progress.selectedCase.reviewOwnerLayer, 'data');
 });
 
 test('review status command can print a focused case review card', async () => {

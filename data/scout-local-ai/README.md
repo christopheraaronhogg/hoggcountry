@@ -229,12 +229,14 @@ npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<r
 ```
 
 To review one answer at a time without hunting through the whole packet, add
-`--case DLA-001`. This prints a focused read-only card with the prompt, answer,
-rubric traits, safety caveats, tool/source evidence, current reviewer fields,
-and likely owner/category hints:
+`--next`. This prints a focused read-only card for the next unrated case, then
+falls back to the next below-5 case after every answer is rated. Use
+`--case DLA-001` when you want to jump to a specific answer. The focused card
+includes the prompt, answer, rubric traits, safety caveats, tool/source evidence,
+current reviewer fields, and likely owner/category hints:
 
 ```sh
-npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json --packet data/scout-local-ai/review-packets/<run-id>.review.md --case DLA-001
+npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json --packet data/scout-local-ai/review-packets/<run-id>.review.md --next
 ```
 
 After reading the focused card, you can update just that case in the Markdown
