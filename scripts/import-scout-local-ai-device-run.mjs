@@ -82,6 +82,7 @@ if (validation.warnings.length) {
 	console.log(`Warnings: ${validation.warnings.length}`);
 	for (const warning of validation.warnings.slice(0, 8)) console.log(`- ${warning}`);
 }
+console.log(`Progress check: npm run review-status:scout-local-ai -- --run ${relative(REPO_ROOT, importedRunPath)} --review ${relative(REPO_ROOT, reviewPath)}`);
 console.log(`Next: npm run review:scout-local-ai -- --run ${relative(REPO_ROOT, importedRunPath)} --review ${relative(REPO_ROOT, reviewPath)}`);
 
 function validateDeviceRun(run, suite, options) {
@@ -258,7 +259,13 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 		`npm run apply-review:scout-local-ai -- --packet ${relative(REPO_ROOT, packetPath)} --review ${relative(REPO_ROOT, reviewPath)}`,
 		'```',
 		'',
-		'Then validate ratings and create the iteration backlog:',
+		'Check review progress any time without writing backlog files:',
+		'',
+		'```sh',
+		`npm run review-status:scout-local-ai -- --run ${relative(REPO_ROOT, importedRunPath)} --review ${relative(REPO_ROOT, reviewPath)}`,
+		'```',
+		'',
+		'Then validate complete ratings and create the iteration backlog:',
 		'',
 		'```sh',
 		`npm run review:scout-local-ai -- --run ${relative(REPO_ROOT, importedRunPath)} --review ${relative(REPO_ROOT, reviewPath)}`,

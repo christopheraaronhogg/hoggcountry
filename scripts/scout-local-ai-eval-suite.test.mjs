@@ -2781,6 +2781,150 @@ test('review workflow rejects unrated cases by default', async () => {
 	);
 });
 
+test('review status command reports partial human rating progress without writing backlog', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-status-partial-'));
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 3), {
+		runId: 'device-review-status-partial',
+		completeTools: true
+	});
+	const review = reviewForRun(run);
+	review.cases[0].rating = 5;
+	review.cases[1].rating = 4;
+	review.cases[1].failureCategories = ['missing-data'];
+	review.cases[1].ownerLayer = 'data';
+	review.cases[1].improvementTask = 'Add current-section water reliability source docs for this trail context.';
+
+	const runPath = join(outputDir, 'device-review-status-partial.json');
+	const reviewPath = join(outputDir, 'device-review-status-partial.review.json');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			runPath,
+			'--review',
+			reviewPath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const progress = JSON.parse(result.stdout);
+
+	assert.equal(progress.summary.rated, 2);
+	assert.equal(progress.summary.unrated, 1);
+	assert.equal(progress.summary.belowFive, 1);
+	assert.equal(progress.summary.invalidCount, 0);
+	assert.equal(progress.readyForBacklog, false);
+	assert.equal(progress.readyForStrictDeviceProof, false);
+	assert.equal(progress.nextUnrated.caseId, review.cases[2].caseId);
+	assert.match(progress.nextAction, new RegExp(`Review next unrated case ${review.cases[2].caseId}`, 'u'));
+	assert.equal(progress.reviewQueue[0].caseId, review.cases[2].caseId);
+});
+
+test('review status command surfaces invalid 5-star checklist evidence before backlog', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-status-invalid-'));
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 2), {
+		runId: 'device-review-status-invalid',
+		completeTools: true
+	});
+	const review = reviewForRun(run, { rating: 5 });
+	review.cases[0].traitChecks[0].passed = false;
+
+	const runPath = join(outputDir, 'device-review-status-invalid.json');
+	const reviewPath = join(outputDir, 'device-review-status-invalid.review.json');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			runPath,
+			'--review',
+			reviewPath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const progress = JSON.parse(result.stdout);
+
+	assert.equal(progress.summary.rated, 2);
+	assert.equal(progress.summary.invalidCount, 1);
+	assert.equal(progress.readyForBacklog, false);
+	assert.equal(progress.readyForStrictDeviceProof, false);
+	assert.match(progress.invalidEntries[0], /traitChecks\[0\] must be passed=true before rating 5/u);
+	assert.match(progress.nextAction, /Fix 1 invalid review issue/u);
+});
+
+test('review status command only marks strict proof ready for a full device 5-star review', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-status-proof-'));
+	const partialRun = deviceRunForCases(suite, suite.cases.slice(0, 2), {
+		runId: 'device-review-status-proof-partial',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	const partialReview = reviewForRun(partialRun, { rating: 5 });
+	const fullRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-review-status-proof-full',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	const fullReview = reviewForRun(fullRun, { rating: 5 });
+
+	const partialRunPath = join(outputDir, 'device-review-status-proof-partial.json');
+	const partialReviewPath = join(outputDir, 'device-review-status-proof-partial.review.json');
+	const fullRunPath = join(outputDir, 'device-review-status-proof-full.json');
+	const fullReviewPath = join(outputDir, 'device-review-status-proof-full.review.json');
+	await writeFile(partialRunPath, `${JSON.stringify(partialRun, null, 2)}\n`);
+	await writeFile(partialReviewPath, `${JSON.stringify(partialReview, null, 2)}\n`);
+	await writeFile(fullRunPath, `${JSON.stringify(fullRun, null, 2)}\n`);
+	await writeFile(fullReviewPath, `${JSON.stringify(fullReview, null, 2)}\n`);
+
+	const partialResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			partialRunPath,
+			'--review',
+			partialReviewPath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const partialProgress = JSON.parse(partialResult.stdout);
+	assert.equal(partialProgress.readyForBacklog, true);
+	assert.equal(partialProgress.fullDeviceRun, false);
+	assert.equal(partialProgress.readyForStrictDeviceProof, false);
+	assert.match(partialProgress.nextAction, /not a full TestFlight\/iPhone device proof candidate/u);
+
+	const fullResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			fullRunPath,
+			'--review',
+			fullReviewPath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 6 }
+	);
+	const fullProgress = JSON.parse(fullResult.stdout);
+	assert.equal(fullProgress.readyForBacklog, true);
+	assert.equal(fullProgress.fullDeviceRun, true);
+	assert.equal(fullProgress.readyForStrictDeviceProof, true);
+	assert.equal(fullProgress.summary.fiveStar, suite.cases.length);
+	assert.match(fullProgress.nextAction, /verify:scout-local-ai-device-proof/u);
+});
+
 test('partial review status keeps unrated cases explicit when allowed', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-partial-'));

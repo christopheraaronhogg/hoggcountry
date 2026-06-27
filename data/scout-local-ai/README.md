@@ -138,6 +138,17 @@ machine-readable review JSON:
 npm run apply-review:scout-local-ai -- --packet data/scout-local-ai/review-packets/<run-id>.review.md --review data/scout-local-ai/reviews/<run-id>.review.json
 ```
 
+During the rating pass, use the read-only progress check as often as needed:
+
+```sh
+npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json
+```
+
+It reports rated/unrated counts, below-5 debt, invalid checklist/task issues,
+and the next highest-priority unrated case. It does not write backlog files, so a
+half-finished human review cannot be promoted into iteration or proof evidence
+by accident.
+
 Packet apply expects every case in the review JSON to be present in the Markdown
 packet by default. If the packet was truncated or a case heading was accidentally
 deleted, apply fails before writing review JSON. Add `--allow-partial` only when

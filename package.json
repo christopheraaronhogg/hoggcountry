@@ -43,6 +43,7 @@
     "status:scout-local-ai": "node scripts/status-scout-local-ai.mjs",
     "handoff:scout-local-ai-dad": "node scripts/scout-local-ai-dad-handoff.mjs",
     "apply-review:scout-local-ai": "node scripts/apply-scout-local-ai-review-packet.mjs",
+    "review-status:scout-local-ai": "node scripts/status-scout-local-ai-review.mjs",
     "review:scout-local-ai": "node scripts/review-scout-local-ai-eval.mjs",
     "plan:scout-local-ai-iteration": "node scripts/plan-scout-local-ai-iteration.mjs",
     "verify:scout-local-ai-iteration": "node scripts/verify-scout-local-ai-iteration.mjs",
