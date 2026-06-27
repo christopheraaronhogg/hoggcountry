@@ -3,6 +3,14 @@ import { extname } from 'node:path';
 
 const SUPPORTED_EXPORT_EXTENSIONS = new Set(['.json', '.txt', '.text']);
 
+export class ScoutEvalRunJsonParseError extends Error {
+	constructor(code, message) {
+		super(message);
+		this.name = 'ScoutEvalRunJsonParseError';
+		this.code = code;
+	}
+}
+
 export function isSupportedScoutEvalExportFileName(name) {
 	return SUPPORTED_EXPORT_EXTENSIONS.has(extname(String(name)).toLowerCase());
 }
@@ -13,20 +21,26 @@ export async function readScoutEvalRunJson(path) {
 
 export function parseScoutEvalRunJson(text) {
 	const trimmed = String(text ?? '').trim();
-	const direct = parseJsonObject(trimmed);
-	if (direct) {
-		return { run: direct, extractedJson: false };
+	const direct = parseDirectJsonObject(trimmed);
+	if (direct.ok) {
+		return { run: direct.value, extractedJson: false };
+	}
+	if (direct.invalidJson) {
+		throw new ScoutEvalRunJsonParseError('invalid-json', 'Shared Scout Eval Lab JSON could not be parsed: invalid JSON object.');
 	}
 	const candidates = extractJsonObjectCandidates(trimmed)
-		.map((candidate) => parseJsonObject(candidate))
+		.map((candidate) => parseJsonObjectCandidate(candidate))
 		.filter(isLikelyScoutEvalRunObject);
 	if (candidates.length === 1) {
 		return { run: candidates[0], extractedJson: true };
 	}
 	if (candidates.length > 1) {
-		throw new Error('Shared Scout Eval Lab JSON contains more than one run-like JSON object; paste only the Run 100 export.');
+		throw new ScoutEvalRunJsonParseError(
+			'multiple-run-json',
+			'Shared Scout Eval Lab JSON contains more than one run-like JSON object; paste only the Run 100 export.'
+		);
 	}
-	throw new Error('Shared Scout Eval Lab JSON could not be parsed: no run-like JSON object found.');
+	throw new ScoutEvalRunJsonParseError('no-run-json', 'Shared Scout Eval Lab JSON could not be parsed: no run-like JSON object found.');
 }
 
 export function isLikelyScoutEvalRunObject(value) {
@@ -37,7 +51,19 @@ export function isLikelyScoutEvalRunObject(value) {
 		Array.isArray(value.results);
 }
 
-function parseJsonObject(text) {
+function parseDirectJsonObject(text) {
+	try {
+		const parsed = JSON.parse(text);
+		if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+			return { ok: false, invalidJson: false, value: null };
+		}
+		return { ok: true, invalidJson: false, value: parsed };
+	} catch {
+		return { ok: false, invalidJson: text.startsWith('{'), value: null };
+	}
+}
+
+function parseJsonObjectCandidate(text) {
 	try {
 		const parsed = JSON.parse(text);
 		if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {

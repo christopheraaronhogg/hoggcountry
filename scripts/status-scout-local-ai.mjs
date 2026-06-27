@@ -30,6 +30,7 @@ import {
 	scoutLocalAiSuiteIdentity
 } from './lib/scout-local-ai-suite.mjs';
 import {
+	ScoutEvalRunJsonParseError,
 	isSupportedScoutEvalExportFileName,
 	readScoutEvalRunJson
 } from './lib/scout-local-ai-run-json.mjs';
@@ -1160,7 +1161,10 @@ async function readScoutEvalCandidate(path, suite) {
 				handoff: inspection.handoff
 			}
 		};
-	} catch {
+	} catch (error) {
+		if (error instanceof ScoutEvalRunJsonParseError && error.code === 'no-run-json') {
+			return { readable: true, candidate: null };
+		}
 		return { readable: false, candidate: null };
 	}
 }

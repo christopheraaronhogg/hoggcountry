@@ -579,8 +579,10 @@ test('status command recognizes copied Scout export text in Downloads', async ()
 		'```'
 	].join('\n');
 	await writeFile(join(downloadsDir, 'random-settings.json'), '{"ok":true}\n');
+	await writeFile(join(downloadsDir, 'Dad trip notes.txt'), 'Remember to ask whether the shakedown hike loaded.\n');
 	await writeFile(join(downloadsDir, 'Dad copied Run 100.txt'), copiedMessage);
 	await utimes(join(downloadsDir, 'random-settings.json'), new Date('2026-06-27T01:00:00Z'), new Date('2026-06-27T01:00:00Z'));
+	await utimes(join(downloadsDir, 'Dad trip notes.txt'), new Date('2026-06-27T01:30:00Z'), new Date('2026-06-27T01:30:00Z'));
 	await utimes(join(downloadsDir, 'Dad copied Run 100.txt'), new Date('2026-06-27T02:00:00Z'), new Date('2026-06-27T02:00:00Z'));
 
 	const result = await execFileAsync(
@@ -605,10 +607,11 @@ test('status command recognizes copied Scout export text in Downloads', async ()
 
 	assert.equal(status.downloads.exists, true);
 	assert.equal(status.downloads.jsonFileCount, 1);
-	assert.equal(status.downloads.textFileCount, 1);
-	assert.equal(status.downloads.supportedFileCount, 2);
+	assert.equal(status.downloads.textFileCount, 2);
+	assert.equal(status.downloads.supportedFileCount, 3);
 	assert.equal(status.downloads.candidateCount, 1);
-	assert.equal(status.downloads.ignoredFileCount, 1);
+	assert.equal(status.downloads.ignoredFileCount, 2);
+	assert.equal(status.downloads.unreadableCount, 0);
 	assert.equal(status.downloads.latestCandidate.runId, 'device-status-downloads-text');
 	assert.equal(status.downloads.latestCandidate.extractedJson, true);
 	assert.match(status.downloads.latestCandidate.path, /Dad copied Run 100\.txt$/u);
