@@ -23,6 +23,90 @@ const OWNER_GUIDANCE = {
 	ui: 'Improve the Eval Lab, recovery state, export/review UX, or visible receipts so Dad can complete and understand the flow.',
 	'local-model': 'Investigate local model runtime, context budget, bridge behavior, latency, or truncation before treating wording tweaks as a fix.'
 };
+const OWNER_FIX_TARGETS = {
+	data: [
+		target('Local reference data', ['data/at-open-reference/', 'apps/openclaw-web/src/lib/server/public-mobile-field-pack.ts'], 'Update generated reference packs, field-pack slices, or local data tables before prompt wording.')
+	],
+	'tool-routing': [
+		target('Scout tool registry and runtime routing', ['mobile/src/lib/scout/built-in-tools.ts', 'mobile/src/lib/scout/tool-registry.ts', 'mobile/src/lib/scout/scout-runtime.ts'], 'Fix required tool selection, source-skill args, invocation records, and receipt/source evidence.')
+	],
+	prompt: [
+		target('Scout synthesis contract', ['mobile/src/lib/scout/scout-runtime.ts', 'mobile/src/lib/scout/model-policy.ts'], 'Tighten answer instructions while preserving grounded receipts and safety caveats.')
+	],
+	'safety-prompt': [
+		target('Safety response contract', ['mobile/src/lib/scout/scout-runtime.ts', 'packages/scout-skills/src/index.ts'], 'Push lower-risk choices, escalation language, and required confirmations into the safety lane.')
+	],
+	ui: [
+		target('Eval Lab and recovery UI', ['mobile/src/lib/components/ScoutEvalLab.svelte', 'mobile/src/lib/scout/local-ai-eval.ts', 'mobile/src/lib/scout/local-ai-eval-proof.ts'], 'Improve visible preflight, resume/export recovery, and receipt clarity for Dad.')
+	],
+	'local-model': [
+		target('On-device model bridge', ['mobile/src/lib/scout/providers/on-device-gemma.ts', 'mobile/src/lib/scout/capacitor-gemma-bridge.ts', 'mobile/src/lib/scout/model-router.ts'], 'Investigate bridge availability, context limits, provider errors, and truncation before changing answer text.')
+	]
+};
+const TOOL_FIX_TARGETS = {
+	bible_search: [
+		target('KJV Bible search', ['mobile/src/lib/bible/', 'packages/corpus/src/kjv-pce.ts', 'scripts/kjv-pce.test.mjs'], 'Fix scripture lookup, exact KJV PCE wording, or citation behavior.')
+	],
+	current_mile: [
+		target('Current mile context', ['mobile/src/lib/scout/hike-profile.ts', 'mobile/src/lib/scout/built-in-tools.ts', 'mobile/src/lib/trailState.svelte.ts'], 'Verify Dad profile/current-mile inputs reach Scout before synthesis.')
+	],
+	loadout_check: [
+		target('Loadout tool', ['mobile/src/lib/scout/built-in-tools.ts', 'apps/openclaw-web/src/lib/loadout.ts', 'mobile/src/lib/scout/default-pack.ts'], 'Repair current pack/body notes retrieval and loadout caveats.')
+	],
+	next_shelter: [
+		target('Shelter/camping tool data', ['mobile/src/lib/scout/built-in-tools.ts', 'data/at-open-reference/*/processed/waypoints/shelters.json', 'packages/scout-skills/src/index.ts'], 'Fix next shelter/camping candidate lookup and legal/current-status caveats.')
+	],
+	next_town: [
+		target('Town/resupply tool data', ['mobile/src/lib/scout/built-in-tools.ts', 'data/at-open-reference/processed/towns_resupply/', 'packages/scout-skills/src/index.ts'], 'Fix town candidates, service uncertainty, and resupply source routing.')
+	],
+	next_water: [
+		target('Water tool data', ['mobile/src/lib/scout/built-in-tools.ts', 'apps/openclaw-web/src/lib/server/generated/awol-water-reference.ts', 'data/at-open-reference/*/processed/water/'], 'Fix next-water lookup, current-flow caveats, and water source receipts.')
+	],
+	open_source_doc: [
+		target('Source document open tool', ['mobile/src/lib/scout/offline-source-docs.ts', 'packages/scout-sources/src/index.ts', 'packages/scout-skills/src/index.ts'], 'Make source_search results open the right local document and preserve sourceDocumentIds.')
+	],
+	park_services: [
+		target('Park services data', ['apps/openclaw-web/src/lib/server/scout-park-facilities.ts', 'scripts/scout-park-facilities.test.mjs'], 'Fix visitor center, campground, and developed-park service retrieval.')
+	],
+	source_search: [
+		target('Source search tool', ['mobile/src/lib/scout/offline-source-docs.ts', 'packages/scout-sources/src/index.ts', 'packages/scout-skills/src/index.ts'], 'Repair source-skill search selection, query terms, citations, and receipt coverage.')
+	],
+	trail_conditions: [
+		target('Trail conditions tool', ['apps/openclaw-web/src/lib/server/scout-trail-conditions.ts', 'data/at-open-reference/processed/live_alerts/', 'scripts/scout-trail-conditions.test.mjs'], 'Fix official/current trail condition retrieval and stale-data caveats.')
+	],
+	upcoming_terrain: [
+		target('Terrain tool data', ['mobile/src/lib/scout/built-in-tools.ts', 'packages/trail-data/src/index.ts', 'data/at-open-reference/rag_docs/segment_guides/'], 'Fix elevation, exposure, segment guide, and difficulty context.')
+	],
+	weather_lookup: [
+		target('Weather tool', ['apps/openclaw-web/src/lib/server/scout-official-sources.ts', 'scripts/weather-assessor.test.mjs', 'mobile/src/lib/scout/built-in-tools.ts'], 'Fix NWS/current weather lookup, stale forecast language, and weather receipts.')
+	]
+};
+const SOURCE_SKILL_FIX_TARGETS = {
+	loadout: [
+		target('Loadout source skill', ['packages/scout-skills/src/index.ts', 'mobile/src/lib/scout/offline-source-docs.ts', 'apps/openclaw-web/src/lib/loadout.ts'], 'Improve pack/loadout docs, gear/body notes retrieval, and stale-loadout caveats.')
+	],
+	safety: [
+		target('Safety source skill', ['packages/scout-skills/src/index.ts', 'mobile/src/lib/scout/offline-source-docs.ts', 'data/at-open-reference/rag_docs/state_guides/'], 'Improve safety docs, escalation rules, and conservative response constraints.')
+	],
+	shelter: [
+		target('Shelter source skill', ['packages/scout-skills/src/index.ts', 'data/at-open-reference/*/processed/waypoints/shelters.json', 'data/at-open-reference/rag_docs/state_guides/'], 'Improve shelter/camping docs, legality caveats, and candidate-source receipts.')
+	],
+	terrain: [
+		target('Terrain source skill', ['packages/scout-skills/src/index.ts', 'data/at-open-reference/rag_docs/segment_guides/', 'data/at-open-reference/rag_docs/segment_guides/elevation_5mi/'], 'Improve terrain segment docs, elevation guidance, and route-context retrieval.')
+	],
+	town: [
+		target('Town source skill', ['packages/scout-skills/src/index.ts', 'data/at-open-reference/processed/towns_resupply/', 'data/at-open-reference/rag_docs/state_guides/'], 'Improve town/resupply docs, service uncertainty, and private-business review boundaries.')
+	],
+	'trail conditions': [
+		target('Trail conditions source skill', ['packages/scout-skills/src/index.ts', 'data/at-open-reference/processed/live_alerts/', 'apps/openclaw-web/src/lib/server/scout-trail-conditions.ts'], 'Improve closure/alert/current-condition docs and official-source routing.')
+	],
+	water: [
+		target('Water source skill', ['packages/scout-skills/src/index.ts', 'data/at-open-reference/rag_docs/source_notes/water_language.md', 'data/at-open-reference/*/rag_docs/policies/water.md'], 'Improve water discipline docs, reliability language, and source-backed water receipts.')
+	],
+	weather: [
+		target('Weather source skill', ['packages/scout-skills/src/index.ts', 'data/at-open-reference/*/rag_docs/policies/weather_live_conditions.md', 'apps/openclaw-web/src/lib/server/scout-official-sources.ts'], 'Improve weather-risk docs, NWS/current-source routing, and stale forecast caveats.')
+	]
+};
 
 const cli = parseCliArgs(process.argv.slice(2));
 const backlogPaths = await resolveBacklogPaths(cli);
@@ -198,6 +282,7 @@ function createWorkstream(ownerLayer, items) {
 		ownerLayer,
 		itemCount: sorted.length,
 		recommendedFixScope: OWNER_GUIDANCE[ownerLayer],
+		fixTargets: createFixTargets(ownerLayer, sorted),
 		regressionCaseIds: [...new Set(sorted.map((item) => item.caseId))],
 		failureCategories: [...new Set(sorted.flatMap((item) => item.failureCategories))].sort(),
 		missingTools: [...new Set(sorted.flatMap((item) => item.missingTools ?? []))].sort(),
@@ -286,6 +371,9 @@ function createIterationPlanMarkdown(plan) {
 			`- Missing tools: ${workstream.missingTools.join(', ') || 'none'}`,
 			`- Source evidence gaps: ${workstream.sourceEvidenceGaps.join(', ') || 'none'}`,
 			'',
+			'Likely fix targets:',
+			...formatFixTargets(workstream.fixTargets),
+			'',
 			'Items:',
 			''
 		);
@@ -319,6 +407,54 @@ function createRerunCommand(caseIds) {
 	return `npm run eval:scout-local-ai -- --id ${caseIds.join(',')}`;
 }
 
+function createFixTargets(ownerLayer, items) {
+	const candidates = [];
+	for (const item of OWNER_FIX_TARGETS[ownerLayer] ?? []) candidates.push(item);
+	for (const expectation of uniqueExpectations(items)) {
+		const parsed = parseToolExpectation(expectation);
+		for (const item of TOOL_FIX_TARGETS[parsed.toolId] ?? []) candidates.push(item);
+		if (parsed.sourceSkill) {
+			for (const item of SOURCE_SKILL_FIX_TARGETS[parsed.sourceSkill] ?? []) candidates.push(item);
+		}
+	}
+	return uniqueTargets(candidates);
+}
+
+function uniqueExpectations(items) {
+	const values = [];
+	for (const item of items) {
+		values.push(...(item.requiredTools ?? []));
+		values.push(...(item.missingTools ?? []));
+		values.push(...sourceEvidenceGapExpectations(item));
+	}
+	return [...new Set(values.map((value) => String(value ?? '').trim()).filter(Boolean))].sort();
+}
+
+function parseToolExpectation(expectation) {
+	const [toolId, ...rest] = String(expectation).split(':');
+	return {
+		toolId,
+		sourceSkill: rest.join(':').trim().toLowerCase()
+	};
+}
+
+function uniqueTargets(targets) {
+	const seen = new Set();
+	const unique = [];
+	for (const item of targets) {
+		const key = `${item.label}\n${item.paths.join('\n')}`;
+		if (seen.has(key)) continue;
+		seen.add(key);
+		unique.push(item);
+	}
+	return unique.sort((left, right) => left.label.localeCompare(right.label));
+}
+
+function formatFixTargets(targets) {
+	if (!targets?.length) return ['- none inferred; inspect the prompt, answer, and recorded tool evidence manually.'];
+	return targets.map((item) => `- ${item.label}: ${item.paths.map((path) => `\`${path}\``).join(', ')} - ${item.notes}`);
+}
+
 function compareItems(left, right) {
 	const ratingDelta = left.rating - right.rating;
 	if (ratingDelta) return ratingDelta;
@@ -342,6 +478,10 @@ function sourceEvidenceGapExpectations(item) {
 	return (item.sourceEvidenceGaps ?? [])
 		.map((gap) => String(gap?.expectation ?? '').trim())
 		.filter(Boolean);
+}
+
+function target(label, paths, notes) {
+	return { label, paths, notes };
 }
 
 function groupBy(items, keyFor) {

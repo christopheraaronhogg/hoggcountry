@@ -1606,7 +1606,12 @@ test('review workflow carries source evidence gaps into backlog and iteration pl
 	assert.equal(plan.summary.bySourceEvidenceGap[sourceExpectation], 1);
 	assert.ok(plan.workstreams[0].sourceEvidenceGaps.includes(sourceExpectation));
 	assert.ok(plan.workstreams[0].items[0].sourceEvidenceGaps.some((gap) => gap.expectation === sourceExpectation));
+	assert.ok(plan.workstreams[0].fixTargets.some((target) => target.label === 'Source search tool'));
+	assert.ok(plan.workstreams[0].fixTargets.some((target) => target.label === 'Terrain source skill'));
 	assert.match(planMarkdown, /Source evidence gaps:/u);
+	assert.match(planMarkdown, /Likely fix targets:/u);
+	assert.match(planMarkdown, /mobile\/src\/lib\/scout\/offline-source-docs\.ts/u);
+	assert.match(planMarkdown, /data\/at-open-reference\/rag_docs\/segment_guides\//u);
 	assert.match(planMarkdown, new RegExp(sourceExpectation.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
 });
 
@@ -1672,6 +1677,10 @@ test('iteration planner groups completed review backlog by responsible layer', a
 	assert.equal(plan.summary.byOwnerLayer.data, 1);
 	assert.equal(plan.summary.byOwnerLayer['tool-routing'], 1);
 	assert.equal(plan.summary.byOwnerLayer['safety-prompt'], 1);
+	const dataWorkstream = plan.workstreams.find((workstream) => workstream.ownerLayer === 'data');
+	const routingWorkstream = plan.workstreams.find((workstream) => workstream.ownerLayer === 'tool-routing');
+	assert.ok(dataWorkstream.fixTargets.some((target) => target.label === 'Local reference data'));
+	assert.ok(routingWorkstream.fixTargets.some((target) => target.label === 'Scout tool registry and runtime routing'));
 	assert.deepEqual(plan.regressionCaseIds, [
 		review.cases[2].caseId,
 		review.cases[3].caseId,
@@ -1679,6 +1688,8 @@ test('iteration planner groups completed review backlog by responsible layer', a
 	]);
 	assert.match(plan.rerunCommand, new RegExp(`--id ${review.cases[2].caseId},${review.cases[3].caseId},${review.cases[0].caseId}`, 'u'));
 	assert.match(markdown, /Do not close this iteration by changing expected wording only/u);
+	assert.match(markdown, /Likely fix targets:/u);
+	assert.match(markdown, /Scout tool registry and runtime routing/u);
 	assert.match(markdown, /### tool-routing/u);
 	assert.match(markdown, /### safety-prompt/u);
 	assert.match(markdown, /Fix source skill routing/u);

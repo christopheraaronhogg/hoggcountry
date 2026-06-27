@@ -176,9 +176,12 @@ gaps, and fails if a below-5 item is uncategorized or lacks a concrete improveme
 task. It also requires `device-on-device-gemma` backlogs by default so scaffold
 routing smoke data cannot masquerade as Dad local-AI iteration proof. Add
 `--allow-non-device` only for deliberate routing/local-lab experiments outside
-final Dad proof. Use the plan to fix the data, tool routing, prompt, safety
-wording, UI recovery state, or local-model lane named by the backlog; do not
-close an iteration by changing expected answer wording only.
+final Dad proof. Each workstream includes likely fix targets for the affected
+tools/source skills, such as local source docs, the Scout tool registry, water
+or town data, safety prompts, Eval Lab recovery, or the on-device bridge. Use
+the plan to fix the data, tool routing, prompt, safety wording, UI recovery
+state, or local-model lane named by the backlog; do not close an iteration by
+changing expected answer wording only.
 
 After applying a fix and rerunning the plan's regression cases, verify that the
 iteration really closed:
