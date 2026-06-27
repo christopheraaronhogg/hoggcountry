@@ -36,6 +36,7 @@ const DEFAULT_MOBILE_SUITE = 'mobile/static/scout/dad-local-ai-100.json';
 const DEFAULT_RUNS_DIR = 'data/scout-local-ai/runs';
 const DEFAULT_DEVICE_RUNS_DIR = 'data/scout-local-ai/device-runs';
 const DEFAULT_INBOX_DIR = 'data/scout-local-ai/inbox';
+const DEFAULT_DOWNLOADS_DIR = process.env.SCOUT_LOCAL_AI_DOWNLOADS_DIR ?? '~/Downloads';
 const DEFAULT_REVIEWS_DIR = 'data/scout-local-ai/reviews';
 const DEFAULT_BACKLOG_DIR = 'data/scout-local-ai/backlog';
 const DEFAULT_ITERATIONS_DIR = 'data/scout-local-ai/iterations';
@@ -46,6 +47,7 @@ const DEFAULT_IOS_PROOF_DIR = 'docs/launch/proof';
 const DEVICE_EVIDENCE_LANE = 'device-on-device-gemma';
 const SCAFFOLD_EVIDENCE_LANE = 'scaffold-not-model';
 const DEVICE_REVIEW_PREP_COMMAND = 'npm run prepare-review:scout-local-ai-device-run -- --run inbox';
+const DEVICE_REVIEW_PREP_DOWNLOADS_COMMAND = 'npm run prepare-review:scout-local-ai-device-run -- --run latest';
 const DEVICE_REVIEW_WAIT_COMMAND = 'npm run wait:scout-local-ai-device-run';
 const DEVICE_RECEIVE_CLIPBOARD_COMMAND = 'npm run receive:scout-local-ai-device-run -- --clipboard';
 const DEVICE_RECEIVE_STDIN_COMMAND = 'npm run receive:scout-local-ai-device-run -- --stdin';
@@ -61,6 +63,7 @@ const status = await buildStatus({
 	runsDir: resolveInputPath(cli.runsDir ?? DEFAULT_RUNS_DIR),
 	deviceRunsDir: resolveInputPath(cli.deviceRunsDir ?? DEFAULT_DEVICE_RUNS_DIR),
 	inboxDir: resolveInputPath(cli.inboxDir ?? DEFAULT_INBOX_DIR),
+	downloadsDir: resolveInputPath(cli.downloadsDir ?? DEFAULT_DOWNLOADS_DIR),
 	reviewsDir: resolveInputPath(cli.reviewsDir ?? DEFAULT_REVIEWS_DIR),
 	backlogDir: resolveInputPath(cli.backlogDir ?? DEFAULT_BACKLOG_DIR),
 	iterationsDir: resolveInputPath(cli.iterationsDir ?? DEFAULT_ITERATIONS_DIR),
@@ -89,6 +92,7 @@ async function buildStatus(paths) {
 	const backlogs = await loadJsonFiles(paths.backlogDir);
 	const iterationFiles = await loadJsonFiles(paths.iterationsDir);
 	const inbox = await summarizeInbox(paths.inboxDir, suite);
+	const downloads = await summarizeDownloads(paths.downloadsDir, suite);
 	const iosBuild = await readOptionalIosBuildSettings(paths.xcodeProjectPath);
 	const releaseEvidence = await readOptionalJson(paths.releaseEvidencePath);
 	const nativeSource = await summarizeNativeSource(paths.iosProofDir);
@@ -206,6 +210,7 @@ async function buildStatus(paths) {
 			runsDir: relative(REPO_ROOT, paths.runsDir),
 			deviceRunsDir: relative(REPO_ROOT, paths.deviceRunsDir),
 			inboxDir: relative(REPO_ROOT, paths.inboxDir),
+			downloadsDir: displayPath(paths.downloadsDir),
 			reviewsDir: relative(REPO_ROOT, paths.reviewsDir),
 			backlogDir: relative(REPO_ROOT, paths.backlogDir),
 			iterationsDir: relative(REPO_ROOT, paths.iterationsDir),
@@ -216,6 +221,7 @@ async function buildStatus(paths) {
 		nativeSource,
 		testflight,
 		inbox,
+		downloads,
 		runs: {
 			totalLoaded: allRuns.length,
 			currentSuiteRuns: currentRuns.length,
@@ -266,6 +272,7 @@ async function buildStatus(paths) {
 			strictDeviceProofs,
 			testflight,
 			inbox,
+			downloads,
 			finalProof
 		)
 	};
@@ -391,6 +398,7 @@ function nextActionFor(
 	strictDeviceProofs,
 	testflight,
 	inbox,
+	downloads,
 	finalProof
 ) {
 	const gate = (id) => gates.find((item) => item.id === id);
@@ -425,33 +433,54 @@ function nextActionFor(
 		};
 	}
 	if (!gate('device-run')?.ok) {
-		if (inbox?.latestCandidate) {
-			const candidate = inbox.latestCandidate;
-			const readyCandidate = inbox.latestReadyCandidate;
+		const handoffSources = [
+			{
+				name: 'inbox',
+				label: 'inbox',
+				path: inbox?.path,
+				prepareCommand: DEVICE_REVIEW_PREP_COMMAND,
+				latestCandidate: inbox?.latestCandidate ?? null,
+				latestReadyCandidate: inbox?.latestReadyCandidate ?? null
+			},
+			{
+				name: 'downloads',
+				label: 'Downloads',
+				path: downloads?.path,
+				prepareCommand: DEVICE_REVIEW_PREP_DOWNLOADS_COMMAND,
+				latestCandidate: downloads?.latestCandidate ?? null,
+				latestReadyCandidate: downloads?.latestReadyCandidate ?? null
+			}
+		];
+		const readySource = handoffSources.find((source) => source.latestReadyCandidate);
+		if (readySource) {
+			const candidate = readySource.latestCandidate ?? readySource.latestReadyCandidate;
+			const readyCandidate = readySource.latestReadyCandidate;
 			if (readyCandidate && readyCandidate.path !== candidate.path) {
 				return {
-					kind: 'prepare-inbox-ready-export',
-					text: `A final-ready Scout Eval Lab export is already in ${inbox.path}: ${readyCandidate.path} (${readyCandidate.runId}, ${readyCandidate.caseCount} cases, ${readyCandidate.inspectionStatus}). The newest inbox file is ${candidate.inspectionStatus}: ${candidate.path} (${candidate.runId}). ${DEVICE_REVIEW_PREP_COMMAND} will select the final-ready export before blocked or partial files.`
+					kind: `prepare-${readySource.name}-ready-export`,
+					text: `A final-ready Scout Eval Lab export is already in ${readySource.path}: ${readyCandidate.path} (${readyCandidate.runId}, ${readyCandidate.caseCount} cases, ${readyCandidate.inspectionStatus}). The newest ${readySource.label} file is ${candidate.inspectionStatus}: ${candidate.path} (${candidate.runId}). ${readySource.prepareCommand} will select the final-ready export before blocked or partial files.`
 				};
 			}
-			if (candidate.readyForFinalIntake) {
-				return {
-					kind: 'prepare-inbox-export',
-					text: `A likely Scout Eval Lab export is already in ${inbox.path}: ${candidate.path} (${candidate.runId}, ${candidate.caseCount} cases, ${candidate.inspectionStatus}). Inspect and import it with ${DEVICE_REVIEW_PREP_COMMAND}, and do not count it as final Dad proof until intake creates a current full device-on-device-gemma run.`
-				};
-			}
+			return {
+				kind: `prepare-${readySource.name}-export`,
+				text: `A likely Scout Eval Lab export is already in ${readySource.path}: ${readyCandidate.path} (${readyCandidate.runId}, ${readyCandidate.caseCount} cases, ${readyCandidate.inspectionStatus}). Inspect and import it with ${readySource.prepareCommand}, and do not count it as final Dad proof until intake creates a current full device-on-device-gemma run.`
+			};
+		}
+		const latestSource = handoffSources.find((source) => source.latestCandidate);
+		if (latestSource) {
+			const candidate = latestSource.latestCandidate;
 			if (candidate.readyForPartialIntake) {
 				return {
-					kind: 'finish-inbox-export',
-					text: `The latest inbox export is only a partial diagnostic: ${candidate.path} (${candidate.runId}, ${candidate.caseCount} cases, ${candidate.inspectionStatus}). Finish Run 100 on the phone, Share the final JSON, then prepare review with ${DEVICE_REVIEW_PREP_COMMAND}. Import this partial only with --allow-partial if you are debugging an interrupted run.`
+					kind: `finish-${latestSource.name}-export`,
+					text: `The latest ${latestSource.label} export is only a partial diagnostic: ${candidate.path} (${candidate.runId}, ${candidate.caseCount} cases, ${candidate.inspectionStatus}). Finish Run 100 on the phone, Share the final JSON, then prepare review with ${latestSource.prepareCommand}. Import this partial only with --allow-partial if you are debugging an interrupted run.`
 				};
 			}
 			const reasons = candidate.blockingReasons?.length
 				? ` Blocking reason(s): ${candidate.blockingReasons.join('; ')}.`
 				: '';
 			return {
-				kind: 'fix-inbox-export',
-				text: `The latest inbox export is blocked before review: ${candidate.path} (${candidate.runId}, ${candidate.caseCount} cases, ${candidate.inspectionStatus}).${reasons} Fix that export or rerun Run 100 on the phone, then prepare review with ${DEVICE_REVIEW_PREP_COMMAND}. Do not rate it until inspection says ready-for-final-intake.`
+				kind: `fix-${latestSource.name}-export`,
+				text: `The latest ${latestSource.label} export is blocked before review: ${candidate.path} (${candidate.runId}, ${candidate.caseCount} cases, ${candidate.inspectionStatus}).${reasons} Fix that export or rerun Run 100 on the phone, then prepare review with ${latestSource.prepareCommand}. Do not rate it until inspection says ready-for-final-intake.`
 			};
 		}
 		if (currentFullNonFinalProofDeviceRuns.length) {
@@ -477,7 +506,7 @@ function nextActionFor(
 				: `the current Dad Pilot TestFlight build (${testflight.recordedDadPilotBuild}; newer target ${testflight.targetBuild ?? '<unknown>'} is pending upload)`;
 		return {
 			kind: 'get-device-run',
-			text: `Install or update ${phoneBuild} on Dad/Chris iPhone, open Settings > Scout Eval Lab, run Run 100, and Share the JSON. While waiting for the file, leave ${DEVICE_REVIEW_WAIT_COMMAND} running. If Dad sends copied JSON text instead of a file, use ${DEVICE_RECEIVE_CLIPBOARD_COMMAND} or paste into ${DEVICE_RECEIVE_STDIN_COMMAND}; the receiver saves it to the inbox, inspects it, and prepares the same review path as ${DEVICE_REVIEW_PREP_COMMAND} when it is final-ready.`
+			text: `Install or update ${phoneBuild} on Dad/Chris iPhone, open Settings > Scout Eval Lab, run Run 100, and Share the JSON. While waiting for the file, leave ${DEVICE_REVIEW_WAIT_COMMAND} running; status also checks ${downloads?.path ?? 'Downloads'} and will use ${DEVICE_REVIEW_PREP_DOWNLOADS_COMMAND} if the export lands there. If Dad sends copied JSON text instead of a file, use ${DEVICE_RECEIVE_CLIPBOARD_COMMAND} or paste into ${DEVICE_RECEIVE_STDIN_COMMAND}; the receiver saves it to the inbox, inspects it, and prepares the same review path as ${DEVICE_REVIEW_PREP_COMMAND} when it is final-ready.`
 		};
 	}
 	const latestDeviceRun = currentFullFinalProofDeviceRuns.at(-1)?.value.runId ?? currentFullDeviceRuns.at(-1)?.value.runId ?? '<run-id>';
@@ -1001,9 +1030,17 @@ function hasCompleteSourceEvidence(run) {
 }
 
 async function summarizeInbox(dir, suite) {
+	return summarizeHandoffDirectory(dir, suite);
+}
+
+async function summarizeDownloads(dir, suite) {
+	return summarizeHandoffDirectory(dir, suite);
+}
+
+async function summarizeHandoffDirectory(dir, suite) {
 	if (!(await exists(dir))) {
 		return {
-			path: relative(REPO_ROOT, dir),
+			path: displayPath(dir),
 			exists: false,
 			jsonFileCount: 0,
 			candidateCount: 0,
@@ -1048,7 +1085,7 @@ async function summarizeInbox(dir, suite) {
 	const latest = candidates[0] ?? null;
 	const latestReady = candidates.find((candidate) => candidate.readyForFinalIntake) ?? null;
 	return {
-		path: relative(REPO_ROOT, dir),
+		path: displayPath(dir),
 		exists: true,
 		jsonFileCount,
 		candidateCount: candidates.length,
@@ -1080,7 +1117,7 @@ async function readScoutEvalCandidate(path, suite) {
 		return {
 			readable: true,
 			candidate: {
-				path: relative(REPO_ROOT, path),
+				path: displayPath(path),
 				runId: parsed.runId,
 				suiteId: parsed.suiteId,
 				suiteVersion: parsed.suiteVersion ?? '<missing>',
@@ -1234,7 +1271,16 @@ function createStatusMarkdown(status) {
 		`- Full routing/tool-complete runs: ${status.runs.currentFullToolCompleteRuns.length}`,
 		`- Full device runs: ${status.runs.currentFullDeviceRuns.length}`,
 		`- Partial device runs: ${status.runs.currentPartialDeviceRuns.length}`,
-		...inboxEvidenceLines(status.inbox),
+		...handoffEvidenceLines(status.inbox, {
+			label: 'Inbox',
+			emptyAction: `drop Dad's shared JSON into \`${status.inbox?.path ?? DEFAULT_INBOX_DIR}\``,
+			prepareCommand: null
+		}),
+		...handoffEvidenceLines(status.downloads, {
+			label: 'Downloads',
+			emptyAction: `save Dad's shared JSON there or keep ${DEVICE_REVIEW_WAIT_COMMAND} running`,
+			prepareCommand: DEVICE_REVIEW_PREP_DOWNLOADS_COMMAND
+		}),
 		`- Device reviews: ${status.reviews.currentDeviceReviews.length}`,
 		`- Below-5 review debt: ${status.iterations.reviewDebt.totalReviews} review(s) / ${status.iterations.reviewDebt.totalBelowFive} answer(s)`,
 		`- Below-5 debt missing backlog: ${status.iterations.reviewDebt.needsBacklog.length}`,
@@ -1255,37 +1301,40 @@ function createStatusMarkdown(status) {
 	return `${lines.join('\n')}\n`;
 }
 
-function inboxEvidenceLines(inbox) {
-	const path = inbox?.path ?? DEFAULT_INBOX_DIR;
+function handoffEvidenceLines(summary, options) {
+	const label = options.label;
+	const lowerLabel = label.toLowerCase();
+	const path = summary?.path ?? (label === 'Inbox' ? DEFAULT_INBOX_DIR : DEFAULT_DOWNLOADS_DIR);
 	const lines = [
-		`- Inbox candidate exports: ${inbox?.candidateCount ?? 0}`
+		`- ${label} candidate exports: ${summary?.candidateCount ?? 0}`
 	];
-	if (!inbox?.exists) {
-		lines.push(`- Inbox folder: \`${path}\` is missing`);
+	if (!summary?.exists) {
+		lines.push(`- ${label} folder: \`${path}\` is missing`);
 		return lines;
 	}
-	if (inbox.latestCandidate) {
-		const candidate = inbox.latestCandidate;
+	if (summary.latestCandidate) {
+		const candidate = summary.latestCandidate;
 		const app = candidate.appVersion && candidate.appBuild
 			? `, app ${candidate.appVersion} (${candidate.appBuild})`
 			: '';
 		const install = candidate.installSource ? `, ${candidate.installSource}` : '';
-		lines.push(`- Inbox final-ready exports: ${inbox.readyForFinalIntakeCount ?? 0}; partial diagnostics: ${inbox.partialDiagnosticCount ?? 0}; blocked: ${inbox.blockedCandidateCount ?? 0}`);
-		lines.push(`- Latest inbox export: \`${candidate.path}\` (${candidate.runId}, ${candidate.caseCount} cases${app}${install}, ${candidate.inspectionStatus ?? 'not inspected'})`);
+		lines.push(`- ${label} final-ready exports: ${summary.readyForFinalIntakeCount ?? 0}; partial diagnostics: ${summary.partialDiagnosticCount ?? 0}; blocked: ${summary.blockedCandidateCount ?? 0}`);
+		lines.push(`- Latest ${lowerLabel} export: \`${candidate.path}\` (${candidate.runId}, ${candidate.caseCount} cases${app}${install}, ${candidate.inspectionStatus ?? 'not inspected'})`);
 		if (candidate.handoff) {
-			lines.push(`- Latest inbox handoff: ${candidate.handoff.label} (${candidate.handoff.expectedAcceptanceStatus}); command: \`${candidate.handoff.prepareReviewCommand}\``);
-			lines.push(`- Latest inbox boundary: ${candidate.handoff.proofBoundary}`);
+			const command = options.prepareCommand ?? candidate.handoff.prepareReviewCommand;
+			lines.push(`- Latest ${lowerLabel} handoff: ${candidate.handoff.label} (${candidate.handoff.expectedAcceptanceStatus}); command: \`${command}\``);
+			lines.push(`- Latest ${lowerLabel} boundary: ${candidate.handoff.proofBoundary}`);
 		}
-		if (inbox.latestReadyCandidate && inbox.latestReadyCandidate.path !== candidate.path) {
-			const ready = inbox.latestReadyCandidate;
-			lines.push(`- Latest final-ready inbox export: \`${ready.path}\` (${ready.runId}, ${ready.caseCount} cases, ${ready.inspectionStatus})`);
+		if (summary.latestReadyCandidate && summary.latestReadyCandidate.path !== candidate.path) {
+			const ready = summary.latestReadyCandidate;
+			lines.push(`- Latest final-ready ${lowerLabel} export: \`${ready.path}\` (${ready.runId}, ${ready.caseCount} cases, ${ready.inspectionStatus})`);
 		}
 		if (candidate.blockingReasons?.length) {
-			lines.push(`- Latest inbox block: ${candidate.blockingReasons.join('; ')}`);
+			lines.push(`- Latest ${lowerLabel} block: ${candidate.blockingReasons.join('; ')}`);
 		}
 		return lines;
 	}
-	lines.push(`- Latest inbox export: none; drop Dad's shared JSON into \`${path}\``);
+	lines.push(`- Latest ${lowerLabel} export: none; ${options.emptyAction}`);
 	return lines;
 }
 
@@ -1294,6 +1343,14 @@ function resolveInputPath(value) {
 	if (text === '~') return process.env.HOME ?? text;
 	if (text.startsWith('~/')) return resolve(process.env.HOME ?? REPO_ROOT, text.slice(2));
 	return resolve(REPO_ROOT, text);
+}
+
+function displayPath(path) {
+	const repoRelativePath = relative(REPO_ROOT, path);
+	if (repoRelativePath && !repoRelativePath.startsWith('..') && repoRelativePath !== path) {
+		return repoRelativePath;
+	}
+	return path;
 }
 
 function stableJson(value) {

@@ -20,6 +20,9 @@ const MOBILE_EVAL_LAB_PATH = new URL('../mobile/src/lib/components/ScoutEvalLab.
 const PACKAGE_PATH = new URL('../package.json', import.meta.url);
 const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
 const execFileAsync = promisify(execFile);
+
+process.env.SCOUT_LOCAL_AI_DOWNLOADS_DIR ??= join(tmpdir(), 'scout-local-ai-default-downloads-empty');
+
 const VALID_PHASES = new Set(['pre-trail', 'on-trail']);
 const VALID_TOOL_IDS = new Set([
 	'current_mile',
@@ -394,6 +397,95 @@ test('status command keeps routing proof separate from missing device proof', as
 	);
 	assert.match(textResult.stdout, /Latest inbox handoff: Final Run 100 JSON ready for inbox review \(final-review-ready\)/u);
 	assert.match(textResult.stdout, /Latest inbox boundary: This starts human review only/u);
+});
+
+test('status command can prepare a final Run 100 export from Downloads', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-downloads-'));
+	const runsDir = join(outputDir, 'runs');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const inboxDir = join(outputDir, 'inbox');
+	const downloadsDir = join(outputDir, 'Downloads');
+	const reviewsDir = join(outputDir, 'reviews');
+	await mkdir(runsDir, { recursive: true });
+	await mkdir(inboxDir, { recursive: true });
+	await mkdir(downloadsDir, { recursive: true });
+	const routingRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'routing-status-downloads',
+		completeTools: true
+	});
+	routingRun.evidenceLane = 'scaffold-not-model';
+	routingRun.runContext = null;
+	for (const result of routingRun.results) result.answerOrigin = 'scaffold-not-model';
+	await writeFile(join(runsDir, 'routing-status-downloads.json'), `${JSON.stringify(routingRun, null, 2)}\n`);
+	const downloadsRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-status-downloads-latest',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	downloadsRun.exportHandoff = exportHandoffForRun(downloadsRun, suite);
+	await writeFile(join(downloadsDir, 'random-settings.json'), '{"ok":true}\n');
+	await writeFile(join(downloadsDir, 'Hoggcountry Scout Eval Run 100.json'), `${JSON.stringify(downloadsRun, null, 2)}\n`);
+	await utimes(join(downloadsDir, 'random-settings.json'), new Date('2026-06-27T01:00:00Z'), new Date('2026-06-27T01:00:00Z'));
+	await utimes(join(downloadsDir, 'Hoggcountry Scout Eval Run 100.json'), new Date('2026-06-27T02:00:00Z'), new Date('2026-06-27T02:00:00Z'));
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai.mjs',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--inbox-dir',
+			inboxDir,
+			'--downloads-dir',
+			downloadsDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const status = JSON.parse(result.stdout);
+
+	assert.equal(status.inbox.candidateCount, 0);
+	assert.equal(status.downloads.exists, true);
+	assert.equal(status.downloads.jsonFileCount, 2);
+	assert.equal(status.downloads.candidateCount, 1);
+	assert.equal(status.downloads.readyForFinalIntakeCount, 1);
+	assert.equal(status.downloads.partialDiagnosticCount, 0);
+	assert.equal(status.downloads.blockedCandidateCount, 0);
+	assert.equal(status.downloads.ignoredFileCount, 1);
+	assert.equal(status.downloads.latestCandidate.runId, 'device-status-downloads-latest');
+	assert.equal(status.downloads.latestCandidate.caseCount, 100);
+	assert.equal(status.downloads.latestCandidate.evidenceLane, 'device-on-device-gemma');
+	assert.equal(status.downloads.latestCandidate.readyForFinalIntake, true);
+	assert.equal(status.downloads.latestReadyCandidate.runId, 'device-status-downloads-latest');
+	assert.equal(status.nextAction.kind, 'prepare-downloads-export');
+	assert.match(status.nextAction.text, /likely Scout Eval Lab export is already/u);
+	assert.match(status.nextAction.text, /device-status-downloads-latest/u);
+	assert.match(status.nextAction.text, /--run latest/u);
+	assert.match(status.nextAction.text, /do not count it as final Dad proof/u);
+
+	const textResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai.mjs',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--inbox-dir',
+			inboxDir,
+			'--downloads-dir',
+			downloadsDir,
+			'--reviews-dir',
+			reviewsDir
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	assert.match(textResult.stdout, /Latest downloads handoff: Final Run 100 JSON ready for inbox review \(final-review-ready\); command: `npm run prepare-review:scout-local-ai-device-run -- --run latest`/u);
 });
 
 test('status command suggests the guarded wait command when no device export exists yet', async () => {

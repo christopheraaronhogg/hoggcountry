@@ -50,6 +50,13 @@ the review with:
 npm run prepare-review:scout-local-ai-device-run -- --run inbox
 ```
 
+If the shared file lands in macOS Downloads, let the prep command select the
+newest likely Scout export:
+
+```bash
+npm run prepare-review:scout-local-ai-device-run -- --run latest
+```
+
 If Dad sends copied JSON text or it lands on the macOS clipboard:
 
 ```bash
