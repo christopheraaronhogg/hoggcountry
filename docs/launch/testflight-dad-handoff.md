@@ -9,20 +9,18 @@ use that phone to produce the final Scout local-AI `Run 100` export.
   `https://testflight.apple.com/join/BagBCrzf`.
 - App Store Connect app id `6782505691` and bundle id
   `com.hoggcountry.trailassistant` are verified.
-- Build `1.0 (19)` is live in Dad Pilot, Apple beta review is approved, and App
+- Build `1.0 (21)` is live in Dad Pilot, Apple beta review is approved, and App
   Store Connect reports external state `IN_BETA_TESTING`.
-- Latest native upload proof for build `19`:
-  `docs/launch/proof/ios-testflight-attempt-2026-06-27T12-39-12-099Z.md`.
-- Dad Pilot/App Store Connect proof for build `19`:
-  `docs/launch/proof/ios-testflight-build-19-2026-06-27.md`.
+- Latest native upload proof for build `21`:
+  `docs/launch/proof/ios-testflight-attempt-2026-06-27T14-21-18-095Z.md`.
+- Dad Pilot/App Store Connect proof for build `21`:
+  `docs/launch/proof/ios-testflight-build-21-2026-06-27.md`.
 - Build `20` was uploaded from commit `54fe3f9431d5973a2de6e0773604ad846be2dea3`
   as an intermediate, but later Scout chat scroll geometry changed before Dad
   Pilot refresh.
-- The local Xcode target is now build `21` so the latest Scout chat transcript
-  polish can be uploaded next. Build `21` is not Dad Pilot proof until App Store
-  Connect processing and Dad Pilot refresh both pass.
-- Dad can still run `Run 100` on build `19` for diagnosis because the suite
-  allows `1.0 (>= 13)`. Latest-source phone proof should wait for build `21`.
+- The local Xcode target is build `21`, matching the current Dad Pilot build.
+- Dad should now run `Run 100` on build `21`; the suite allows `1.0 (>= 13)`,
+  but build `21` is the latest-source TestFlight proof.
 - The remaining goal is not TestFlight availability. It is a real
   TestFlight/iPhone `Run 100` export, import, human review, and all 100 answers
   rated 5/5 with strict device proof.
@@ -148,16 +146,15 @@ changed after the last successful upload.
 
 ## Proof Boundaries
 
-- Account/TestFlight proof: build `1.0 (19)` is attached to Dad Pilot and
+- Account/TestFlight proof: build `1.0 (21)` is attached to Dad Pilot and
   externally available.
-- Native upload proof: build `19` was archived, exported, and uploaded from the
-  native app source in commit `2628c58dbefd9fe5f33f0e0ecd39bf259bfe4ad1`.
+- Native upload proof: build `21` was archived, exported, and uploaded from the
+  native app source in commit `f541be4501a6d42ea9a3e4146e5279cf60c0ae59`.
 - Intermediate upload: build `20` was archived and uploaded from commit
   `54fe3f9431d5973a2de6e0773604ad846be2dea3`, but it is not the latest-source
   Dad Pilot target after the subsequent Scout chat scroll geometry change.
-- Latest-source candidate: local Xcode target `1.0 (21)` is the next candidate,
-  but it still
-  needs upload, App Store Connect processing, and Dad Pilot refresh.
+- Latest-source TestFlight proof: local Xcode target `1.0 (21)` matches Dad
+  Pilot build `1.0 (21)`.
 - Current repo proof: later commits may add docs/tests/proof. Check
   `npm run status:scout-local-ai` for whether native app source changed after
   the latest upload.
