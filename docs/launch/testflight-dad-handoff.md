@@ -15,6 +15,10 @@ without publishing publicly in the App Store.
   now records source-evidence gaps and final proof requires a TestFlight iPhone
   install on build `11` or newer before a 100-question device run can count as
   Dad proof.
+- Read-only App Store Connect API proof captured on 2026-06-27 shows build
+  `1.0 (11)` is not found in App Store Connect yet, and Dad Pilot still lists
+  build `10`. Proof:
+  `docs/launch/proof/ios-testflight-build-11-not-found-2026-06-27.md`.
 - iOS Release signing is configured with team `3CFU9J87A5` and the
   `Hoggcountry App Store Connect` provisioning profile.
 - The repeatable upload command is:
@@ -59,7 +63,9 @@ npm --prefix mobile test
 npm --prefix mobile run cap:sync:ios
 ```
 
-3. Upload build `11` with the repeatable TestFlight command above.
+3. Upload build `11` with the repeatable TestFlight command above. The
+   2026-06-27 API refresh could not find build `11`, so this upload/processing
+   step must happen before any Dad Pilot attachment can succeed.
 4. In App Store Connect, wait for the new build to reach `VALID`.
 5. Attach the new build to the existing `Dad Pilot` external group and remove
    the older build only after the new build is approved/available.
