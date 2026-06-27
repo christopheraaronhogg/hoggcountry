@@ -120,6 +120,8 @@ function createRequirementAudit(input) {
 	const transcriptEvidence = summarizeTranscriptEvidence(input.transcriptRuns);
 	const caseRubricProblems = caseRubricAudit(input.suite);
 	const scripts = input.scriptMap;
+	const reviewWorkflowEvidence = summarizeReviewWorkflowEvidence({ scripts, reviewSource: input.reviewSource, iterationLoopGate });
+	const deviceProofBoundaryEvidence = summarizeDeviceProofBoundaryEvidence({ scripts, deviceRunGate, strictProofGate, stabilityGate });
 
 	return [
 		requirement({
@@ -158,11 +160,8 @@ function createRequirementAudit(input) {
 		requirement({
 			id: 'below-five-creates-task',
 			label: 'Any answer below 5 creates a concrete improvement task',
-			ok: Boolean(scripts['apply-review:scout-local-ai']) &&
-				iterationLoopGate?.ok === true &&
-				input.reviewSource.includes('ratings below 5 need an improvementTask') &&
-				input.reviewSource.includes('improvementTask must be concrete enough'),
-			evidence: iterationLoopGate?.evidence ?? 'iteration-loop status gate is missing'
+			ok: reviewWorkflowEvidence.ok,
+			evidence: reviewWorkflowEvidence.evidence
 		}),
 		requirement({
 			id: 'iterations-target-responsible-layer',
@@ -178,16 +177,8 @@ function createRequirementAudit(input) {
 		requirement({
 			id: 'device-proof-lane-separated',
 			label: 'Final proof keeps local AI/device proof separate from browser/cloud/scaffold proof',
-			ok: Boolean(scripts['intake:scout-local-ai-device-run']) &&
-				Boolean(scripts['prepare-review:scout-local-ai-device-run']) &&
-				Boolean(scripts['verify:scout-local-ai-device-proof']) &&
-				Boolean(scripts['verify:scout-local-ai-stability-proof']) &&
-				[deviceRunGate, strictProofGate, stabilityGate].every(Boolean),
-			evidence: [
-				deviceRunGate?.evidence ?? '<missing device-run gate>',
-				strictProofGate?.evidence ?? '<missing strict proof gate>',
-				stabilityGate?.evidence ?? '<missing stability gate>'
-			].join('; ')
+			ok: deviceProofBoundaryEvidence.ok,
+			evidence: deviceProofBoundaryEvidence.evidence
 		}),
 		requirement({
 			id: 'target-testflight-build',
@@ -206,6 +197,49 @@ function createRequirementAudit(input) {
 			].join('; ')
 		})
 	];
+}
+
+function summarizeReviewWorkflowEvidence({ scripts, reviewSource, iterationLoopGate }) {
+	const problems = [];
+	if (!scripts['apply-review:scout-local-ai']) problems.push('package.json is missing apply-review:scout-local-ai.');
+	if (!scripts['review:scout-local-ai']) problems.push('package.json is missing review:scout-local-ai.');
+	if (!reviewSource.includes('ratings below 5 need an improvementTask')) {
+		problems.push('review validation does not require improvementTask for below-5 ratings.');
+	}
+	if (!reviewSource.includes('ratings below 5 need an ownerLayer')) {
+		problems.push('review validation does not require ownerLayer for below-5 ratings.');
+	}
+	if (!reviewSource.includes('improvementTask must be concrete enough')) {
+		problems.push('review validation does not reject vague improvementTask entries.');
+	}
+	if (!iterationLoopGate) problems.push('iteration-loop status gate is missing.');
+	return {
+		ok: problems.length === 0,
+		evidence: problems.length
+			? problems.join('; ')
+			: `Workflow guardrail present: below-5 ratings require failure categories, ownerLayer, and concrete improvementTask before backlog/iteration planning. Current device-review debt: ${iterationLoopGate.evidence}`
+	};
+}
+
+function summarizeDeviceProofBoundaryEvidence({ scripts, deviceRunGate, strictProofGate, stabilityGate }) {
+	const problems = [];
+	for (const scriptName of [
+		'intake:scout-local-ai-device-run',
+		'prepare-review:scout-local-ai-device-run',
+		'verify:scout-local-ai-device-proof',
+		'verify:scout-local-ai-stability-proof'
+	]) {
+		if (!scripts[scriptName]) problems.push(`package.json is missing ${scriptName}.`);
+	}
+	if (!deviceRunGate) problems.push('device-run status gate is missing.');
+	if (!strictProofGate) problems.push('strict-device-proof status gate is missing.');
+	if (!stabilityGate) problems.push('stability status gate is missing.');
+	return {
+		ok: problems.length === 0,
+		evidence: problems.length
+			? problems.join('; ')
+			: `Boundary guardrail present: intake and proof commands keep TestFlight/iPhone device proof separate from scaffold/browser/cloud evidence. Current device proof status: ${deviceRunGate.evidence}; ${strictProofGate.evidence}; ${stabilityGate.evidence}`
+	};
 }
 
 function requirement(input) {

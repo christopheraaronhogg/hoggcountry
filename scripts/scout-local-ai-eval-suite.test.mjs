@@ -951,8 +951,14 @@ test('goal audit maps original success criteria without hiding missing device pr
 	assert.match(requirements['runner-saves-transcripts'].evidence, /100 result transcript/u);
 	assert.equal(requirements['review-ratings-and-notes'].ok, true);
 	assert.equal(requirements['below-five-creates-task'].ok, true);
+	assert.match(requirements['below-five-creates-task'].evidence, /Workflow guardrail present/u);
+	assert.match(requirements['below-five-creates-task'].evidence, /failure categories, ownerLayer, and concrete improvementTask/u);
+	assert.match(requirements['below-five-creates-task'].evidence, /Current device-review debt:/u);
 	assert.equal(requirements['iterations-target-responsible-layer'].ok, true);
 	assert.equal(requirements['device-proof-lane-separated'].ok, true);
+	assert.match(requirements['device-proof-lane-separated'].evidence, /Boundary guardrail present/u);
+	assert.match(requirements['device-proof-lane-separated'].evidence, /Current device proof status: No current full device-on-device-gemma run found/u);
+	assert.match(requirements['device-proof-lane-separated'].evidence, /No strict TestFlight\/iPhone proof run passes/u);
 	assert.equal(requirements['target-testflight-build'].ok, true);
 	assert.match(requirements['target-testflight-build'].evidence, /Dad Pilot records 1\.0 \(13\)/u);
 	assert.equal(requirements['final-100-rated-five'].ok, false);
