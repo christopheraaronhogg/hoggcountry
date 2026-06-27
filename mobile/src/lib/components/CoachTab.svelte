@@ -1,6 +1,14 @@
 <script lang="ts">
+	import { onMount, tick } from 'svelte';
 	import { quickPrompts } from '$lib/scout/quick-prompts';
 	import { trailAssistant } from '$lib/trailState.svelte';
+	import {
+		CHAT_FOLLOW_THRESHOLD,
+		isAtLiveEdge,
+		liveEdgeScrollTop,
+		turnSpacerHeight,
+		turnStartScrollTop
+	} from '$lib/chat-scroll';
 	import type {
 		RequiredConfirmation,
 		SafetyFlag,
@@ -16,78 +24,363 @@
 
 	let draft = $state('');
 	let logRef = $state<HTMLDivElement | null>(null);
+	let liveEdgeRef = $state<HTMLDivElement | null>(null);
 	let modelPhase = $derived(trailAssistant.modelPhase);
+	let scoutReplyInProgress = $derived(trailAssistant.scoutReplyInProgress);
 
-	// Auto-scroll only when the hiker is following the bottom. If they've scrolled
-	// up to read, we must NOT yank them back down on every streamed token (the
-	// "it fights me" complaint). Intent is inferred purely from scroll geometry:
-	// near the bottom = pinned (auto-stick); scrolled up = unpinned (leave them be).
-	let pinned = $state(true);
-	let hasUnseen = $state(false); // new content arrived while unpinned
-	const STICK_THRESHOLD = 56; // px of slack that still counts as "at bottom"
+	// "Following" is an explicit reader mode, not just a geometry accident. It is
+	// turned on by Send/quick prompt/Jump to latest, and turned off by reader
+	// interactions such as scrolling, selection, keyboard use, or opening details.
+	let following = $state(false);
+	let hasUnseen = $state(false);
+	let initialPlacementDone = $state(false);
+	let activeTurnMessageId = $state<string | null>(null);
+	let turnSpacer = $state(0);
+	let outOfViewStatus = $derived(
+		!following && (hasUnseen || scoutReplyInProgress)
+			? scoutReplyInProgress
+				? 'Scout is replying below.'
+				: 'New Scout messages below.'
+			: ''
+	);
 
 	const prefersReduced =
 		typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+	let programmaticScroll = false;
+	let programmaticTimer: ReturnType<typeof setTimeout> | null = null;
+	let scrollFrame: number | null = null;
+	let placementToken = 0;
+	let turnPlacementInProgress = false;
+	let observedSignature = '';
+	let readerAnchor: { messageId: string; offsetFromTop: number } | null = null;
+
+	onMount(() => {
+		void restoreInitialReaderPosition();
+		return () => {
+			placementToken += 1;
+			if (programmaticTimer) clearTimeout(programmaticTimer);
+			if (scrollFrame !== null && typeof cancelAnimationFrame !== 'undefined') {
+				cancelAnimationFrame(scrollFrame);
+			}
+		};
+	});
 
 	function distanceFromBottom(): number {
 		if (!logRef) return 0;
 		return logRef.scrollHeight - logRef.scrollTop - logRef.clientHeight;
 	}
 
-	function scrollToBottom(smooth = false) {
-		queueMicrotask(() => {
-			if (!logRef) return;
-			logRef.scrollTo({
-				top: logRef.scrollHeight,
-				behavior: smooth && !prefersReduced ? 'smooth' : 'auto'
-			});
-			pinned = true;
-			hasUnseen = false;
+	function modelPhaseSignature(): string {
+		if (modelPhase.kind === 'downloading') {
+			return `${modelPhase.kind}:${modelPhase.percent}:${modelPhase.bytesLabel}`;
+		}
+		return modelPhase.kind;
+	}
+
+	function conversationSignature(): string {
+		const messages = trailAssistant.coachMessages;
+		const last = messages.at(-1);
+		return [
+			messages.length,
+			last?.id ?? 'none',
+			last?.content.length ?? 0,
+			trailAssistant.scoutThinking ? 'thinking' : 'idle',
+			scoutReplyInProgress ? 'replying' : 'done',
+			trailAssistant.pendingAction?.id ?? 'no-action',
+			modelPhaseSignature()
+		].join('|');
+	}
+
+	function latestUserMessageId(): string | null {
+		for (let index = trailAssistant.coachMessages.length - 1; index >= 0; index -= 1) {
+			const message = trailAssistant.coachMessages[index];
+			if (message?.role === 'user') return message.id;
+		}
+		return null;
+	}
+
+	function findMessageElement(messageId: string): HTMLElement | null {
+		if (!logRef) return null;
+		const messages = logRef.querySelectorAll<HTMLElement>('[data-message-id]');
+		for (const message of messages) {
+			if (message.dataset.messageId === messageId) return message;
+		}
+		return null;
+	}
+
+	function scheduleDomTask(task: () => void): void {
+		void tick().then(() => {
+			if (scrollFrame !== null && typeof cancelAnimationFrame !== 'undefined') {
+				cancelAnimationFrame(scrollFrame);
+			}
+			const run = () => {
+				scrollFrame = null;
+				task();
+			};
+			if (typeof requestAnimationFrame === 'undefined') {
+				run();
+			} else {
+				scrollFrame = requestAnimationFrame(run);
+			}
 		});
 	}
 
-	// Geometry-only intent detection. A programmatic scroll-to-bottom lands within
-	// the threshold (stays pinned); a user dragging up measures far-from-bottom and
-	// unpins — no programmatic-scroll flag needed.
+	function markProgrammaticScroll(smooth: boolean): void {
+		programmaticScroll = true;
+		if (programmaticTimer) clearTimeout(programmaticTimer);
+		programmaticTimer = setTimeout(
+			() => {
+				programmaticScroll = false;
+			},
+			smooth && !prefersReduced ? 520 : 90
+		);
+	}
+
+	function scrollLogTo(top: number, smooth = false): void {
+		if (!logRef) return;
+		markProgrammaticScroll(smooth);
+		logRef.scrollTo({
+			top,
+			behavior: smooth && !prefersReduced ? 'smooth' : 'auto'
+		});
+	}
+
+	function updateTurnSpacer(messageId = activeTurnMessageId): void {
+		if (!logRef || !messageId) {
+			turnSpacer = 0;
+			return;
+		}
+		const message = findMessageElement(messageId);
+		turnSpacer = message ? turnSpacerHeight(logRef.clientHeight, message.offsetHeight) : 0;
+	}
+
+	function liveEdgeIsInFollowRange(): boolean {
+		if (!logRef) return true;
+		if (!liveEdgeRef) {
+			return isAtLiveEdge(
+				{
+					scrollTop: logRef.scrollTop,
+					scrollHeight: logRef.scrollHeight,
+					clientHeight: logRef.clientHeight
+				},
+				CHAT_FOLLOW_THRESHOLD
+			);
+		}
+		return liveEdgeRef.offsetTop - (logRef.scrollTop + logRef.clientHeight) <= CHAT_FOLLOW_THRESHOLD;
+	}
+
+	function scrollToLiveEdge(smooth = false): void {
+		following = true;
+		hasUnseen = false;
+		scheduleDomTask(() => {
+			if (!logRef) return;
+			updateTurnSpacer();
+			const target = liveEdgeRef
+				? liveEdgeScrollTop(liveEdgeRef.offsetTop, logRef.clientHeight)
+				: Math.max(0, logRef.scrollHeight - turnSpacer - logRef.clientHeight);
+			scrollLogTo(target, smooth);
+			rememberReaderAnchor();
+		});
+	}
+
+	function keepLiveEdgeVisible(): void {
+		scheduleDomTask(() => {
+			if (!logRef || !liveEdgeRef) return;
+			updateTurnSpacer();
+			const visibleBottom = logRef.scrollTop + logRef.clientHeight - 18;
+			if (liveEdgeRef.offsetTop > visibleBottom) {
+				scrollLogTo(liveEdgeScrollTop(liveEdgeRef.offsetTop, logRef.clientHeight), false);
+			}
+			rememberReaderAnchor();
+		});
+	}
+
+	async function placeTurnAtReadingStart(
+		messageId: string,
+		smooth: boolean,
+		resumeFollowing: boolean
+	): Promise<void> {
+		const token = ++placementToken;
+		turnPlacementInProgress = true;
+		activeTurnMessageId = messageId;
+		following = resumeFollowing;
+		hasUnseen = false;
+
+		await tick();
+		if (token !== placementToken) return;
+		updateTurnSpacer(messageId);
+		await tick();
+		if (token !== placementToken || !logRef) return;
+
+		const message = findMessageElement(messageId);
+		if (message) {
+			scrollLogTo(turnStartScrollTop(message.offsetTop, logRef.clientHeight), smooth);
+			rememberReaderAnchor();
+		}
+
+		turnPlacementInProgress = false;
+		if (resumeFollowing) keepLiveEdgeVisible();
+	}
+
+	async function restoreInitialReaderPosition(): Promise<void> {
+		await tick();
+		observedSignature = conversationSignature();
+		const lastUserId = latestUserMessageId();
+		if (lastUserId) {
+			await placeTurnAtReadingStart(lastUserId, false, false);
+		} else if (logRef) {
+			turnSpacer = 0;
+			scrollLogTo(0, false);
+		}
+		following = false;
+		hasUnseen = false;
+		initialPlacementDone = true;
+		observedSignature = conversationSignature();
+		rememberReaderAnchor();
+	}
+
+	function rememberReaderAnchor(): void {
+		if (!logRef) return;
+		const messages = logRef.querySelectorAll<HTMLElement>('[data-message-id]');
+		for (const message of messages) {
+			if (message.offsetTop + message.offsetHeight >= logRef.scrollTop + 1) {
+				readerAnchor = {
+					messageId: message.dataset.messageId ?? '',
+					offsetFromTop: message.offsetTop - logRef.scrollTop
+				};
+				return;
+			}
+		}
+		readerAnchor = null;
+	}
+
+	function restoreReaderAnchorSoon(): void {
+		const anchor = readerAnchor;
+		if (!anchor) return;
+		scheduleDomTask(() => {
+			if (!logRef || following) return;
+			const message = findMessageElement(anchor.messageId);
+			if (!message) return;
+			scrollLogTo(Math.max(0, message.offsetTop - anchor.offsetFromTop), false);
+		});
+	}
+
+	function pauseForReaderIntent(): void {
+		if (!initialPlacementDone) return;
+		placementToken += 1;
+		turnPlacementInProgress = false;
+		programmaticScroll = false;
+		following = false;
+		rememberReaderAnchor();
+		if (scoutReplyInProgress || !liveEdgeIsInFollowRange()) {
+			hasUnseen = true;
+		}
+	}
+
 	function onLogScroll() {
-		const atBottom = distanceFromBottom() <= STICK_THRESHOLD;
-		pinned = atBottom;
-		if (atBottom) hasUnseen = false;
+		if (programmaticScroll) return;
+		const atLiveEdge = liveEdgeIsInFollowRange() || distanceFromBottom() <= CHAT_FOLLOW_THRESHOLD;
+		following = atLiveEdge;
+		if (atLiveEdge) {
+			hasUnseen = false;
+		} else {
+			rememberReaderAnchor();
+		}
 	}
 
 	function submit() {
 		if (!draft.trim()) return;
-		trailAssistant.sendCoachMessage(draft);
+		const message = trailAssistant.sendCoachMessage(draft);
 		draft = '';
-		scrollToBottom(true); // deliberate send → follow, smoothly
+		if (message) void placeTurnAtReadingStart(message.id, true, true);
 	}
 
 	function usePrompt(prompt: string) {
-		trailAssistant.runQuickPrompt(prompt);
-		scrollToBottom(true);
+		const message = trailAssistant.runQuickPrompt(prompt);
+		if (message) void placeTurnAtReadingStart(message.id, true, true);
 	}
 
 	function startScoutSignIn() {
 		trailAssistant.openScoutSignIn();
 	}
 
-	// Re-runs on every message/token/state change. Only auto-sticks when pinned;
-	// otherwise just flags that there's new content below the fold (for the pill).
-	// Instant ('auto') while streaming so the view tracks growing text without a
-	// perpetual smooth-scroll animation.
-	$effect(() => {
-		trailAssistant.coachMessages.length;
-		trailAssistant.scoutThinking;
-		trailAssistant.pendingAction;
-		modelPhase.kind;
-		if (modelPhase.kind === 'downloading') {
-			modelPhase.percent;
-			modelPhase.bytesLabel;
+	function onComposerKeydown(event: KeyboardEvent) {
+		if (event.key === 'Enter' && !event.shiftKey) {
+			event.preventDefault();
+			submit();
+			return;
 		}
-		if (pinned) {
-			scrollToBottom(false);
+		pauseForReaderIntent();
+	}
+
+	function onWindowKeydown(event: KeyboardEvent) {
+		if (event.target instanceof HTMLTextAreaElement) return;
+		if (eventTargetInsideLog(event)) {
+			pauseForReaderIntent();
+			return;
+		}
+		const key = event.key.toLowerCase();
+		if (
+			key === 'tab' ||
+			key.startsWith('arrow') ||
+			key === 'pageup' ||
+			key === 'pagedown' ||
+			key === 'home' ||
+			key === 'end' ||
+			((event.metaKey || event.ctrlKey) && (key === 'f' || key === 'g'))
+		) {
+			pauseForReaderIntent();
+		}
+	}
+
+	function onWindowReaderIntent(event: Event) {
+		if (eventTargetInsideLog(event)) pauseForReaderIntent();
+	}
+
+	function onDocumentSelectionChange() {
+		if (!logRef) return;
+		const selection = document.getSelection();
+		if (!selection || selection.isCollapsed) return;
+		if (nodeInsideLog(selection.anchorNode) || nodeInsideLog(selection.focusNode)) {
+			pauseForReaderIntent();
+		}
+	}
+
+	function eventTargetInsideLog(event: Event): boolean {
+		if (!logRef || !(event.target instanceof Node)) return false;
+		return logRef.contains(event.target);
+	}
+
+	function nodeInsideLog(node: Node | null): boolean {
+		if (!node || !logRef) return false;
+		const element = node instanceof Element ? node : node.parentElement;
+		return element ? logRef.contains(element) : false;
+	}
+
+	function onViewportResize() {
+		if (!initialPlacementDone) return;
+		updateTurnSpacer();
+		if (following) {
+			keepLiveEdgeVisible();
+		} else {
+			restoreReaderAnchorSoon();
+		}
+	}
+
+	$effect(() => {
+		const signature = conversationSignature();
+		if (!initialPlacementDone) {
+			observedSignature = signature;
+			return;
+		}
+		if (signature === observedSignature) return;
+		observedSignature = signature;
+		if (turnPlacementInProgress) return;
+		if (following) {
+			keepLiveEdgeVisible();
 		} else {
 			hasUnseen = true;
+			restoreReaderAnchorSoon();
 		}
 	});
 
@@ -115,6 +408,15 @@
 	}
 </script>
 
+<svelte:window
+	onkeydown={onWindowKeydown}
+	onpointerdown={onWindowReaderIntent}
+	ontouchstart={onWindowReaderIntent}
+	onwheel={onWindowReaderIntent}
+	onresize={onViewportResize}
+/>
+<svelte:document onselectionchange={onDocumentSelectionChange} />
+
 <div class="coach-shell" class:empty={trailAssistant.coachMessages.length <= 1}>
 	<!-- Chat stays pure: status (Day/Mile/online) lives in the app header, not
 	     repeated here. Only the starter prompts sit above the conversation, and
@@ -133,10 +435,24 @@
 		</section>
 	{/if}
 
-	<div class="chat-log" bind:this={logRef} onscroll={onLogScroll}>
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions a11y_no_noninteractive_tabindex -->
+	<div
+		class="chat-log"
+		bind:this={logRef}
+		role="region"
+		aria-label="Scout conversation"
+		onscroll={onLogScroll}
+	>
 			{#each trailAssistant.coachMessages as message (message.id)}
 				{@const meta = message.role === 'assistant' ? receiptsFor(message.id) : null}
-				<div class:assistant={message.role === 'assistant'} class:user={message.role === 'user'} class="message">
+				<div
+					id={`chat-message-${message.id}`}
+					class:assistant={message.role === 'assistant'}
+					class:user={message.role === 'user'}
+					class="message"
+					data-message-id={message.id}
+					data-message-role={message.role}
+				>
 					{#if message.role === 'assistant' && meta}
 						<div class="message-head">
 							<span class="bot-mark" aria-hidden="true"><Icon name="scout" size={14} stroke={2} /></span>
@@ -206,15 +522,20 @@
 					</p>
 				</div>
 			{/if}
+
+			<div class="live-edge" bind:this={liveEdgeRef} aria-hidden="true"></div>
+			<div class="turn-spacer" aria-hidden="true" style:height={`${turnSpacer}px`}></div>
 		</div>
 
-		{#if !pinned && (hasUnseen || trailAssistant.scoutThinking)}
+		<p class="sr-status" aria-live="polite">{outOfViewStatus}</p>
+
+		{#if !following && (hasUnseen || scoutReplyInProgress)}
 			<button
 				class="jump-latest"
-				aria-label="Jump to latest messages"
-				onclick={() => scrollToBottom(true)}
+				aria-label={scoutReplyInProgress ? 'Jump to latest. Scout is replying below.' : 'Jump to latest messages'}
+				onclick={() => scrollToLiveEdge(true)}
 			>
-				↓ {trailAssistant.scoutThinking ? 'Scout is replying' : 'New messages'}
+				↓ {scoutReplyInProgress ? 'Scout is replying' : 'New messages'}
 			</button>
 		{/if}
 
@@ -240,12 +561,8 @@
 					bind:value={draft}
 					rows="1"
 					placeholder="Ask about water, town, or safety…"
-					onkeydown={(event) => {
-						if (event.key === 'Enter' && !event.shiftKey) {
-							event.preventDefault();
-							submit();
-						}
-					}}
+					onfocus={pauseForReaderIntent}
+					onkeydown={onComposerKeydown}
 				></textarea>
 				<button class="send" onclick={submit} disabled={!draft.trim()} aria-label="Send message">
 					<span aria-hidden="true">↑</span>
@@ -328,6 +645,15 @@
 		overflow: auto;
 		overflow-anchor: none;
 		padding: var(--space-1) 2px var(--space-2);
+	}
+	.live-edge {
+		width: 1px;
+		height: 1px;
+		pointer-events: none;
+	}
+	.turn-spacer {
+		min-height: 0;
+		pointer-events: none;
 	}
 
 	.message {
@@ -525,6 +851,17 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 4px;
+	}
+	.sr-status {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
 	}
 
 	/* pending action */

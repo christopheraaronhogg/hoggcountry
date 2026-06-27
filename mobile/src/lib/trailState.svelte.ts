@@ -175,6 +175,7 @@ class TrailAssistantStore {
 	// many seconds), so the chat can show a "thinking" indicator instead of
 	// looking frozen.
 	#scoutThinking = $state(false);
+	#activeScoutReplies = $state(0);
 	// A write-action Scout proposed from chat, awaiting explicit user confirm.
 	// Scout NEVER mutates trail state without the user confirming this card —
 	// the confirm-before-apply gate for "Do" tools.
@@ -566,6 +567,11 @@ class TrailAssistantStore {
 		return this.#scoutThinking;
 	}
 
+	/** True from send through final token/error, including after the first token lands. */
+	get scoutReplyInProgress() {
+		return this.#activeScoutReplies > 0;
+	}
+
 	/** A write-action Scout proposed, awaiting the user's Confirm/Cancel (or null). */
 	get pendingAction() {
 		return this.#pendingAction;
@@ -805,9 +811,9 @@ class TrailAssistantStore {
 		return { streamingMessageId: stream.streamingMessageId, started: stream.started };
 	}
 
-	sendCoachMessage(content: string) {
+	sendCoachMessage(content: string): ChatMessage | null {
 		const trimmed = content.trim();
-		if (!trimmed) return;
+		if (!trimmed) return null;
 
 		const userMessage = this.#addCoachMessage('user', trimmed);
 
@@ -819,10 +825,11 @@ class TrailAssistantStore {
 			this.#pendingAction = proposal.display;
 			this.#pendingApply = proposal.apply;
 			this.#addCoachMessage('assistant', proposal.prompt);
-			return;
+			return userMessage;
 		}
 
 		void this.#dispatchScoutReply(trimmed, userMessage.id);
+		return userMessage;
 	}
 
 	/**
@@ -908,6 +915,7 @@ class TrailAssistantStore {
 		// Self-heal the native wiring in case Capacitor wasn't ready at construction.
 		this.#nativeScout.ensureNativeWiring();
 		if (REQUIRE_GEMMA) await this.refreshModelStatus();
+		this.#activeScoutReplies += 1;
 		this.#scoutThinking = true;
 
 		// Stream tokens into a live-updating assistant bubble. The bubble is only
@@ -1028,6 +1036,7 @@ class TrailAssistantStore {
 			}
 		} finally {
 			this.#scoutThinking = false;
+			this.#activeScoutReplies = Math.max(0, this.#activeScoutReplies - 1);
 		}
 	}
 
@@ -1339,8 +1348,8 @@ class TrailAssistantStore {
 		return this.#scoutAnswersByMessage.get(messageId) ?? null;
 	}
 
-	runQuickPrompt(prompt: string) {
-		this.sendCoachMessage(prompt);
+	runQuickPrompt(prompt: string): ChatMessage | null {
+		return this.sendCoachMessage(prompt);
 	}
 
 	/** True once at least one real check-in has been logged on this device. */
