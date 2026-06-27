@@ -20,11 +20,17 @@ const status = await loadStatus(cli);
 const iosBuild = await readIosBuildSettings(resolveInputPath(cli.xcodeProject ?? DEFAULT_XCODE_PROJECT));
 const releaseEvidence = await readOptionalJson(resolveInputPath(cli.releaseEvidence ?? DEFAULT_RELEASE_EVIDENCE));
 const latestIosProof = await findLatestIosTestFlightProof(resolveInputPath(cli.iosProofDir ?? DEFAULT_IOS_PROOF_DIR));
+const targetBuild = `${iosBuild.marketingVersion} (${iosBuild.buildNumber})`;
+const latestDadBuildProof = await findLatestDadBuildProof(
+	resolveInputPath(cli.iosProofDir ?? DEFAULT_IOS_PROOF_DIR),
+	targetBuild
+);
 const handoff = createDadHandoffMarkdown({
 	status,
 	iosBuild,
 	releaseEvidence,
 	latestIosProof,
+	latestDadBuildProof,
 	generatedAt: new Date().toISOString()
 });
 
@@ -107,20 +113,61 @@ async function findLatestIosTestFlightProof(path) {
 	}
 }
 
+async function findLatestDadBuildProof(path, targetBuild) {
+	try {
+		const proofs = [];
+		const files = (await readdir(path))
+			.filter((file) => /^ios-testflight-build-.*\.md$/u.test(file))
+			.sort();
+		for (const file of files) {
+			const proofPath = resolve(path, file);
+			const text = await readFile(proofPath, 'utf8');
+			const gates = testFlightBuildGates(text);
+			proofs.push({
+				path: relative(REPO_ROOT, proofPath),
+				checkedAt: cleanMarkdownValue(firstMarkdownValue(text, 'Checked at')) ?? '<unknown>',
+				targetBuild: cleanMarkdownValue(firstMarkdownValue(text, 'Target build')) ?? '<unknown>',
+				processing: cleanMarkdownValue(firstMarkdownValue(text, 'Processing')) ?? '<unknown>',
+				externalState: cleanMarkdownValue(firstMarkdownValue(text, 'External state')) ?? '<unknown>',
+				publicLink: cleanMarkdownValue(firstMarkdownValue(text, 'Public link')) ?? '<unknown>',
+				gates,
+				checkedGateCount: gates.filter((gate) => gate.checked).length,
+				totalGateCount: gates.length,
+				targetReadyForDad: gates.some((gate) => gate.id === 'targetReadyForDad' && gate.checked)
+			});
+		}
+		return proofs.filter((proof) => proof.targetBuild === targetBuild).at(-1) ?? proofs.at(-1) ?? null;
+	} catch {
+		return null;
+	}
+}
+
+function testFlightBuildGates(text) {
+	return [...text.matchAll(/^- \[(x| )\]\s+([A-Za-z0-9_-]+)\s*$/gmu)]
+		.map((match) => ({
+			id: match[2],
+			checked: match[1] === 'x'
+		}));
+}
+
 function firstMarkdownValue(text, label) {
 	const escaped = label.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
 	const match = text.match(new RegExp(`^(?:-\\s*)?${escaped}:\\s*(.+)$`, 'imu'));
 	return match?.[1]?.trim() ?? null;
 }
 
-function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIosProof, generatedAt }) {
+function cleanMarkdownValue(value) {
+	if (!value) return null;
+	return value.trim().replace(/^`|`$/gu, '');
+}
+
+function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIosProof, latestDadBuildProof, generatedAt }) {
 	const dadTestFlightEvidence = releaseEvidenceItem(releaseEvidence, 'dad-testflight-invite');
 	const publicLink = dadTestFlightEvidence?.publicLink ?? 'https://testflight.apple.com/join/BagBCrzf';
 	const recordedDadBuild = extractRecordedDadBuild(releaseEvidence);
 	const nextAction = status.nextAction?.text ?? 'Run npm run status:scout-local-ai and follow the next action.';
 	const completedGates = status.gates.filter((gate) => gate.ok).length;
 	const totalGates = status.gates.length;
-	const targetBuild = `${iosBuild.marketingVersion} (${iosBuild.buildNumber})`;
 	const suiteRequiredBuild = status.suite?.finalProof?.requiredApp ?? '<unknown>';
 	const lines = [
 		'# Dad Scout local AI Eval Lab handoff',
@@ -137,6 +184,12 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		`- Target build meets suite requirement: ${status.testflight?.targetBuildMeetsSuiteRequirement ? 'yes' : 'no'}.`,
 		`- Recorded Dad Pilot build: \`${recordedDadBuild}\`.`,
 		`- Recorded Dad Pilot build meets suite requirement: ${status.testflight?.recordedDadPilotMeetsSuiteRequirement ? 'yes' : 'no'}.`,
+		latestDadBuildProof
+			? `- Dad target-build proof: \`${latestDadBuildProof.path}\` (${latestDadBuildProof.targetBuild}, ${latestDadBuildProof.externalState}, checked ${latestDadBuildProof.checkedAt}).`
+			: '- Dad target-build proof: none found.',
+		latestDadBuildProof
+			? `- Dad target-build gates: ${latestDadBuildProof.checkedGateCount}/${latestDadBuildProof.totalGateCount} checked; targetReadyForDad ${latestDadBuildProof.targetReadyForDad ? 'yes' : 'no'}.`
+			: '- Dad target-build gates: unknown.',
 		`- Imported full device runs: ${status.runs?.currentFullDeviceRuns?.length ?? 0}.`,
 		`- Imported partial device runs: ${status.runs?.currentPartialDeviceRuns?.length ?? 0}.`,
 		`- Inbox candidate exports: ${status.inbox?.candidateCount ?? 0}.`,

@@ -790,6 +790,26 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 		'- App Store Connect API key provided: yes',
 		''
 	].join('\n'));
+	await writeFile(join(iosProofDir, 'ios-testflight-build-13-2026-06-27.md'), [
+		'# Dad Pilot TestFlight target refresh',
+		'',
+		'Checked at: 2026-06-27T02:44:54.431Z',
+		'Target build: `1.0 (13)`',
+		'Build id: `build-13-id`',
+		'Processing: `VALID`',
+		'External state: `IN_BETA_TESTING`',
+		'Dad Pilot: `Dad Pilot` (fc963396-a087-44c6-b56b-29847da31cd4)',
+		'Public link: https://testflight.apple.com/join/BagBCrzf',
+		'',
+		'## Gates',
+		'',
+		'- [x] buildFound',
+		'- [x] buildValid',
+		'- [x] attachedToDadPilot',
+		'- [x] externallyAvailable',
+		'- [x] targetReadyForDad',
+		''
+	].join('\n'));
 
 	const result = await execFileAsync(
 		process.execPath,
@@ -817,6 +837,8 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Target build meets suite requirement: yes/u);
 	assert.match(result.stdout, /Recorded Dad Pilot build: `1\.0 \(13\)`/u);
 	assert.match(result.stdout, /Recorded Dad Pilot build meets suite requirement: yes/u);
+	assert.match(result.stdout, /Dad target-build proof: .*ios-testflight-build-13-2026-06-27\.md` \(1\.0 \(13\), IN_BETA_TESTING/u);
+	assert.match(result.stdout, /Dad target-build gates: 5\/5 checked; targetReadyForDad yes/u);
 	assert.match(result.stdout, /Imported full device runs: 0/u);
 	assert.match(result.stdout, /Imported partial device runs: 0/u);
 	assert.match(result.stdout, /Inbox candidate exports: 1/u);
