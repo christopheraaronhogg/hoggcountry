@@ -473,6 +473,8 @@ test('status command surfaces partial TestFlight iPhone runs without counting th
 	assert.equal(status.runs.currentPartialDeviceRuns[0].caseCount, 12);
 	assert.equal(status.testflight.currentTargetDeviceRunCount, 0);
 	assert.equal(status.testflight.currentTargetPartialDeviceRunCount, 0);
+	assert.equal(status.testflight.currentSuiteCompatibleDeviceRunCount, 0);
+	assert.equal(status.testflight.currentSuiteCompatiblePartialDeviceRunCount, 1);
 	assert.equal(gates['device-run'].ok, false);
 	assert.match(gates['device-run'].evidence, /partial device run\(s\) imported/u);
 	assert.match(gates['device-run'].evidence, /device-status-partial-12 12\/100/u);
@@ -537,12 +539,73 @@ test('status command surfaces target TestFlight build gaps before phone eval', a
 	assert.equal(status.testflight.recordedDadPilotMeetsSuiteRequirement, false);
 	assert.equal(status.testflight.targetBuildReadyForDad, false);
 	assert.equal(status.testflight.targetBuildAvailableForDad, false);
+	assert.equal(status.testflight.currentSuiteCompatibleDeviceRunCount, 0);
 	assert.equal(status.nextAction.kind, 'publish-target-build');
 	assert.match(status.nextAction.text, /Upload and attach target iOS build 1\.0 \(14\)/u);
 	assert.match(status.nextAction.text, /Dad Pilot on 1\.0 \(12\)/u);
 	assert.match(status.nextAction.text, /suite requires 1\.0 \(>= 13\)/u);
 	assert.match(status.nextAction.text, /prepare-review:scout-local-ai-device-run/u);
 	assert.match(status.nextAction.text, /--run inbox/u);
+});
+
+test('status command lets suite-compatible TestFlight device proof override stale Dad Pilot release evidence', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-device-proves-build-'));
+	const runsDir = join(outputDir, 'runs');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
+	await mkdir(deviceRunsDir, { recursive: true });
+	await mkdir(reviewsDir, { recursive: true });
+	await writeFile(releaseEvidencePath, `${JSON.stringify({
+		schemaVersion: 1,
+		items: {
+			'dad-testflight-invite': {
+				status: 'verified',
+				summary: 'Dad Pilot is attached to Hoggcountry iOS build 1.0 (12), and release evidence was not refreshed yet.',
+				publicLink: 'https://testflight.apple.com/join/BagBCrzf'
+			}
+		}
+	}, null, 2)}\n`);
+	const deviceRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-status-suite-compatible-build13',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	await writeFile(join(deviceRunsDir, 'device-status-suite-compatible-build13.json'), `${JSON.stringify(deviceRun, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai.mjs',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--release-evidence',
+			releaseEvidencePath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const status = JSON.parse(result.stdout);
+	const gates = Object.fromEntries(status.gates.map((gate) => [gate.id, gate]));
+
+	assert.equal(status.testflight.targetBuild, '1.0 (14)');
+	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (12)');
+	assert.equal(status.testflight.recordedDadPilotMeetsSuiteRequirement, false);
+	assert.equal(status.testflight.targetBuildReadyForDad, false);
+	assert.equal(status.testflight.targetBuildAvailableForDad, true);
+	assert.equal(status.testflight.currentTargetDeviceRunCount, 0);
+	assert.equal(status.testflight.currentSuiteCompatibleDeviceRunCount, 1);
+	assert.equal(status.runs.currentFullDeviceRuns.length, 1);
+	assert.equal(gates['testflight-target'].ok, true);
+	assert.match(gates['testflight-target'].evidence, /Imported TestFlight\/iPhone proof shows a suite-compatible build is installed/u);
+	assert.match(gates['testflight-target'].evidence, /1 imported full device run\(s\) satisfy the suite-required TestFlight build/u);
+	assert.equal(status.nextAction.kind, 'finish-review');
+	assert.match(status.nextAction.text, /device-status-suite-compatible-build13\.review\.json/u);
 });
 
 test('status command recognizes repeated strict TestFlight iPhone proof candidates', async () => {
@@ -593,6 +656,7 @@ test('status command recognizes repeated strict TestFlight iPhone proof candidat
 	assert.equal(gates['strict-device-proof'].ok, true);
 	assert.equal(gates.stability.ok, true);
 	assert.equal(status.testflight.currentTargetDeviceRunCount, 0);
+	assert.equal(status.testflight.currentSuiteCompatibleDeviceRunCount, 2);
 	assert.equal(gates['testflight-target'].ok, true);
 	assert.equal(status.strictDeviceProofs.filter((proof) => proof.ok).length, 2);
 	assert.equal(status.nextAction.kind, 'stability-ready');

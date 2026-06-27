@@ -88,10 +88,13 @@ async function buildStatus(paths) {
 	const currentPartialDeviceRuns = currentDeviceRuns.filter((entry) => !isFullRun(entry.value, suite));
 	testflight.currentTargetDeviceRunCount = currentFullDeviceRuns.filter((entry) => deviceRunMatchesTargetBuild(entry.value, testflight)).length;
 	testflight.currentTargetPartialDeviceRunCount = currentPartialDeviceRuns.filter((entry) => deviceRunMatchesTargetBuild(entry.value, testflight)).length;
+	testflight.currentSuiteCompatibleDeviceRunCount = currentFullDeviceRuns.filter((entry) => deviceRunSatisfiesFinalProof(entry.value, finalProof)).length;
+	testflight.currentSuiteCompatiblePartialDeviceRunCount = currentPartialDeviceRuns.filter((entry) => deviceRunSatisfiesFinalProof(entry.value, finalProof)).length;
 	testflight.targetBuildAvailableForDad =
 		testflight.targetBuildReadyForDad ||
 		testflight.recordedDadPilotMeetsSuiteRequirement ||
-		testflight.currentTargetDeviceRunCount > 0;
+		testflight.currentTargetDeviceRunCount > 0 ||
+		testflight.currentSuiteCompatibleDeviceRunCount > 0;
 	const currentFullToolCompleteRuns = currentRuns.filter(
 		(entry) => isFullRun(entry.value, suite) && hasCompleteToolExpectations(entry.value, suite) && hasCompleteSourceEvidence(entry.value)
 	);
@@ -632,6 +635,9 @@ function summarizeTestFlightTarget({ iosBuild, releaseEvidence, finalProof, path
 		targetBuildReadyForDad: Boolean(targetBuild && recordedDadPilotBuild && targetBuild === recordedDadPilotBuild && recordedDadPilotMeetsSuiteRequirement),
 		targetBuildAvailableForDad: false,
 		currentTargetDeviceRunCount: 0,
+		currentTargetPartialDeviceRunCount: 0,
+		currentSuiteCompatibleDeviceRunCount: 0,
+		currentSuiteCompatiblePartialDeviceRunCount: 0,
 		publicLink: dadTestFlightEvidence?.publicLink ?? null,
 		xcodeProject: relative(REPO_ROOT, paths.xcodeProjectPath),
 		releaseEvidence: relative(REPO_ROOT, paths.releaseEvidencePath)
@@ -668,6 +674,16 @@ function deviceRunMatchesTargetBuild(run, testflight) {
 	return runBuild === testflight.targetBuild && installSource?.type === 'testflight';
 }
 
+function deviceRunSatisfiesFinalProof(run, finalProof) {
+	const app = run?.runContext?.app;
+	const installSource = run?.runContext?.installSource;
+	const native = run?.runContext?.native;
+	const runBuild = app?.version && app?.build ? `${app.version} (${app.build})` : null;
+	return installSource?.type === finalProof.installSource &&
+		native?.platform === finalProof.nativePlatform &&
+		appBuildSatisfiesFinalProof(runBuild, finalProof);
+}
+
 function parseAppBuildLabel(label) {
 	const match = String(label ?? '').match(/^(\d+(?:\.\d+)*)\s+\((\d+)\)$/u);
 	if (!match) return null;
@@ -686,6 +702,9 @@ function testflightTargetEvidence(testflight) {
 	if (testflight.currentTargetDeviceRunCount > 0) {
 		pieces.push(`${testflight.currentTargetDeviceRunCount} imported full device run(s) already used the target TestFlight build`);
 	}
+	if (testflight.currentSuiteCompatibleDeviceRunCount > 0) {
+		pieces.push(`${testflight.currentSuiteCompatibleDeviceRunCount} imported full device run(s) satisfy the suite-required TestFlight build`);
+	}
 	if (!testflight.targetBuildMeetsSuiteRequirement) {
 		return `Current Xcode target does not meet the suite final-proof requirement: ${pieces.join('; ')}`;
 	}
@@ -694,6 +713,9 @@ function testflightTargetEvidence(testflight) {
 	}
 	if (!testflight.targetBuildReadyForDad && testflight.recordedDadPilotMeetsSuiteRequirement) {
 		return `Dad Pilot has a suite-compatible TestFlight build; newer Xcode target is pending App Store Connect: ${pieces.join('; ')}`;
+	}
+	if (!testflight.targetBuildReadyForDad && testflight.currentSuiteCompatibleDeviceRunCount > 0) {
+		return `Imported TestFlight/iPhone proof shows a suite-compatible build is installed; newer Xcode target may still be pending App Store Connect: ${pieces.join('; ')}`;
 	}
 	return `Target build is available for Dad: ${pieces.join('; ')}`;
 }
@@ -950,6 +972,8 @@ function createStatusMarkdown(status) {
 		`- Recorded Dad Pilot build meets suite requirement: ${status.testflight.recordedDadPilotMeetsSuiteRequirement ? 'yes' : 'no'}`,
 		`- Target build ready for Dad: ${status.testflight.targetBuildReadyForDad ? 'yes' : 'no'}`,
 		`- Imported target-build device runs: ${status.testflight.currentTargetDeviceRunCount}`,
+		`- Imported suite-compatible device runs: ${status.testflight.currentSuiteCompatibleDeviceRunCount}`,
+		`- Imported suite-compatible partial runs: ${status.testflight.currentSuiteCompatiblePartialDeviceRunCount}`,
 		`- Dad TestFlight link: ${status.testflight.publicLink ?? '<unknown>'}`,
 		'',
 		'## Gates',

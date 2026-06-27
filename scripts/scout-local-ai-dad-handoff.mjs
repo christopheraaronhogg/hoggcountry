@@ -212,6 +212,8 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		`- Newer Xcode target pending App Store Connect: ${status.testflight?.targetBuildReadyForDad ? 'no' : 'yes'}.`,
 		`- Imported full device runs: ${status.runs?.currentFullDeviceRuns?.length ?? 0}.`,
 		`- Imported partial device runs: ${status.runs?.currentPartialDeviceRuns?.length ?? 0}.`,
+		`- Imported suite-compatible full device runs: ${status.testflight?.currentSuiteCompatibleDeviceRunCount ?? 0}.`,
+		`- Imported suite-compatible partial device runs: ${status.testflight?.currentSuiteCompatiblePartialDeviceRunCount ?? 0}.`,
 		`- Inbox candidate exports: ${status.inbox?.candidateCount ?? 0}.`,
 		`- Inbox final-ready/partial/blocked: ${status.inbox?.readyForFinalIntakeCount ?? 0}/${status.inbox?.partialDiagnosticCount ?? 0}/${status.inbox?.blockedCandidateCount ?? 0}.`,
 		status.inbox?.latestCandidate
@@ -233,6 +235,11 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 	} else if (!status.testflight?.targetBuildReadyForDad && status.testflight?.recordedDadPilotMeetsSuiteRequirement) {
 		lines.push(
 			'> Note: Dad can run the suite-compatible TestFlight build already in Dad Pilot, but the newer Xcode target still needs upload/attachment before it is the latest phone build.',
+			''
+		);
+	} else if (!status.testflight?.targetBuildReadyForDad && (status.testflight?.currentSuiteCompatibleDeviceRunCount ?? 0) > 0) {
+		lines.push(
+			'> Note: an imported TestFlight/iPhone run proves a suite-compatible build was installed, but the newer Xcode target still needs App Store Connect upload/attachment before it is the latest Dad Pilot build.',
 			''
 		);
 	}
