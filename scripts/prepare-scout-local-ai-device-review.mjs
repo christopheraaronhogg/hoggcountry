@@ -114,6 +114,8 @@ const reviewStatus = await runJsonScript('scripts/status-scout-local-ai-review.m
 	packetPath,
 	'--json'
 ]);
+const reviewStatusCommand = `npm run review-status:scout-local-ai -- --run ${relativeImportedRunPath} --review ${relativeReviewPath} --packet ${relativePacketPath}`;
+const finalizeCommand = `npm run finalize-review:scout-local-ai -- --packet ${relativePacketPath} --run ${relativeImportedRunPath} --review ${relativeReviewPath}`;
 
 writeOutput({
 	schemaVersion: 1,
@@ -130,7 +132,13 @@ writeOutput({
 	acceptance: buildReviewAcceptance({ inspection, canImportFinal, canImportPartial }),
 	reviewStatus,
 	importOutput: importOutput.trim().split(/\r?\n/u).filter(Boolean),
-	nextAction: `Open the next focused review card with npm run review-status:scout-local-ai -- --run ${relativeImportedRunPath} --review ${relativeReviewPath} --packet ${relativePacketPath} --next, fill ${relativePacketPath}, then rerun that --next command until every case is rated. When the packet is fully rated, run npm run finalize-review:scout-local-ai -- --packet ${relativePacketPath} --run ${relativeImportedRunPath} --review ${relativeReviewPath}.`
+	nextAction: [
+		`Open the next focused review card with ${reviewStatusCommand} --next, fill ${relativePacketPath}, then rerun that --next command until every case is rated.`,
+		reviewStatus.reviewBatches?.length
+			? 'This progress report also includes Human-reviewed batch helpers for standard unrated cases; use them only after reading every listed focused card.'
+			: 'If Human-reviewed batch helpers appear later, use them only after reading every listed focused card.',
+		`When the packet is fully rated, run ${finalizeCommand}.`
+	].join(' ')
 });
 
 async function runJsonScript(script, args) {

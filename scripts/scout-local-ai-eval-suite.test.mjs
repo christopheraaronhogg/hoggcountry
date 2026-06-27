@@ -1724,6 +1724,7 @@ test('device review preparation command inspects, imports, and reports review st
 	assert.equal(report.reviewStatus.summary.total, suite.cases.length);
 	assert.equal(report.reviewStatus.summary.unrated, suite.cases.length);
 	assert.equal(report.reviewStatus.readyForBacklog, false);
+	assert.ok(report.reviewStatus.reviewBatches.length >= 1);
 	assert.equal(report.reviewStatus.triageSummary.focusCount, suite.cases.length);
 	assert.equal(report.reviewStatus.triageSummary.unrated, suite.cases.length);
 	assert.equal(report.reviewStatus.triageSummary.belowFive, 0);
@@ -1733,9 +1734,15 @@ test('device review preparation command inspects, imports, and reports review st
 	assert.equal(review.cases.length, suite.cases.length);
 	assert.match(packet, /npm run review-status:scout-local-ai/u);
 	assert.match(packet, /--packet .*device-prepare-final\.review\.md/u);
+	assert.match(packet, /Human-reviewed batch helpers/u);
+	assert.match(packet, /read every listed focused card first/u);
+	assert.match(packet, /rate-case --cases/u);
+	assert.ok(report.importOutput.some((line) => /Batch helpers:/u.test(line)));
 	assert.match(report.nextAction, /review-status:scout-local-ai/u);
 	assert.match(report.nextAction, /--packet .*device-prepare-final\.review\.md/u);
 	assert.match(report.nextAction, /--next/u);
+	assert.match(report.nextAction, /Human-reviewed batch helpers/u);
+	assert.match(report.nextAction, /reading every listed focused card/u);
 	assert.match(report.nextAction, /finalize-review:scout-local-ai/u);
 	assert.match(report.nextAction, /device-prepare-final\.review\.md/u);
 	assert.match(report.nextAction, /device-prepare-final\.review\.json/u);
@@ -1766,6 +1773,7 @@ test('device review preparation command inspects, imports, and reports review st
 	assert.match(textResult.stdout, /handoff=final-run-100\/final-review-ready/u);
 	assert.match(textResult.stdout, /reviewCommand=npm run prepare-review:scout-local-ai-device-run -- --run inbox/u);
 	assert.match(textResult.stdout, /This is not final Dad readiness/u);
+	assert.match(textResult.stdout, /Human-reviewed batch helpers/u);
 });
 
 test('device run receive command saves pasted JSON and prepares final review', async () => {
@@ -1813,6 +1821,7 @@ test('device run receive command saves pasted JSON and prepares final review', a
 	assert.equal(report.prepare.status, 'prepared-for-final-review');
 	assert.match(report.nextAction, /review-status:scout-local-ai/u);
 	assert.match(report.nextAction, /--next/u);
+	assert.match(report.nextAction, /Human-reviewed batch helpers/u);
 	assert.equal(inboxRun.runId, run.runId);
 	assert.equal(review.cases.length, suite.cases.length);
 	assert.match(packet, /Scout local AI device review: device-receive-final/u);

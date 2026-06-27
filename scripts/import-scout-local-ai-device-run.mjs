@@ -84,6 +84,7 @@ if (validation.warnings.length) {
 }
 console.log(`Progress check: npm run review-status:scout-local-ai -- --run ${relative(REPO_ROOT, importedRunPath)} --review ${relative(REPO_ROOT, reviewPath)} --packet ${relative(REPO_ROOT, packetPath)}`);
 console.log(`Next focused card: npm run review-status:scout-local-ai -- --run ${relative(REPO_ROOT, importedRunPath)} --review ${relative(REPO_ROOT, reviewPath)} --packet ${relative(REPO_ROOT, packetPath)} --next`);
+console.log('Batch helpers: the progress check prints Human-reviewed batch helpers when standard unrated cases can be grouped; use them only after reading every listed focused card.');
 console.log(`Next: npm run review:scout-local-ai -- --run ${relative(REPO_ROOT, importedRunPath)} --review ${relative(REPO_ROOT, reviewPath)}`);
 
 function validateDeviceRun(run, suite, options) {
@@ -283,6 +284,8 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 		'```sh',
 		`npm run review-status:scout-local-ai -- --run ${relative(REPO_ROOT, importedRunPath)} --review ${relative(REPO_ROOT, reviewPath)} --packet ${relative(REPO_ROOT, packetPath)} --next`,
 		'```',
+		'',
+		'The progress check may also print Human-reviewed batch helpers for standard unrated cases. Treat those as reading groups only: read every listed focused card first, then use the printed `rate-case --cases ...` command only when each answer honestly earned 5/5.',
 		'',
 		'Then validate complete ratings and run the safe next step. A below-5 review writes both an iteration backlog and an iteration plan; a full 100/100 5-star TestFlight/iPhone review runs strict device proof:',
 		'',
