@@ -2521,11 +2521,13 @@ test('review workflow writes actionable JSON and Markdown iteration backlog', as
 	const review = reviewForRun(run);
 	review.cases[0].rating = 4;
 	review.cases[0].failureCategories = ['missing-data'];
+	review.cases[0].ownerLayer = 'data';
 	review.cases[0].notes = 'Needs more local water context.';
 	review.cases[0].improvementTask = 'Add current-section water reliability source docs.';
 	review.cases[1].rating = 5;
 	review.cases[2].rating = 2;
 	review.cases[2].failureCategories = ['weak-tool', 'bad-routing'];
+	review.cases[2].ownerLayer = 'tool-routing';
 	review.cases[2].notes = 'Used the wrong source lane.';
 	review.cases[2].improvementTask = 'Route onboarding/offline setup prompts through the safety source docs.';
 
@@ -2681,16 +2683,17 @@ test('review workflow rejects below-5 ratings without concrete improvement tasks
 				backlogDir
 			],
 			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
-		),
-		(error) => {
-			assert.match(error.stderr, /Review has invalid entries/u);
-			assert.match(error.stderr, /ratings below 5 need an improvementTask/u);
-			assert.match(error.stderr, /ratings below 5 need at least one failure category/u);
-			assert.match(error.stderr, /improvementTask must be concrete enough/u);
-			assert.match(error.stderr, /improvementTask must include an action verb/u);
-			return true;
-		}
-	);
+			),
+			(error) => {
+				assert.match(error.stderr, /Review has invalid entries/u);
+				assert.match(error.stderr, /ratings below 5 need an improvementTask/u);
+				assert.match(error.stderr, /ratings below 5 need at least one failure category/u);
+				assert.match(error.stderr, /ratings below 5 need an ownerLayer/u);
+				assert.match(error.stderr, /improvementTask must be concrete enough/u);
+				assert.match(error.stderr, /improvementTask must include an action verb/u);
+				return true;
+			}
+		);
 
 	await assert.rejects(
 		execFileAsync(
@@ -2963,6 +2966,7 @@ test('review workflow carries source evidence gaps into backlog and iteration pl
 	const review = reviewForRun(run);
 	review.cases[0].rating = 4;
 	review.cases[0].failureCategories = ['weak-tool'];
+	review.cases[0].ownerLayer = 'tool-routing';
 	review.cases[0].improvementTask = 'Fix source evidence receipts so required source-backed tools record proof.';
 
 	const runPath = join(outputDir, 'device-source-gap-plan.json');
@@ -3033,13 +3037,16 @@ test('iteration planner groups completed review backlog by responsible layer', a
 	const review = reviewForRun(run);
 	review.cases[0].rating = 4;
 	review.cases[0].failureCategories = ['missing-data'];
+	review.cases[0].ownerLayer = 'data';
 	review.cases[0].improvementTask = 'Add a current-section water reliability source document.';
 	review.cases[1].rating = 5;
 	review.cases[2].rating = 2;
 	review.cases[2].failureCategories = ['weak-tool', 'bad-routing'];
+	review.cases[2].ownerLayer = 'tool-routing';
 	review.cases[2].improvementTask = 'Fix source skill routing so this prompt opens the right local document.';
 	review.cases[3].rating = 3;
 	review.cases[3].failureCategories = ['unsafe-wording'];
+	review.cases[3].ownerLayer = 'safety-prompt';
 	review.cases[3].improvementTask = 'Tighten the safety response so it pushes lower-risk choices first.';
 
 	const runPath = join(outputDir, 'device-iteration-plan.json');
@@ -3285,10 +3292,12 @@ test('iteration verifier passes when rerun resolves planned regression cases', a
 	const sourceReview = reviewForRun(sourceRun);
 	sourceReview.cases[0].rating = 4;
 	sourceReview.cases[0].failureCategories = ['missing-data'];
+	sourceReview.cases[0].ownerLayer = 'data';
 	sourceReview.cases[0].improvementTask = 'Add a current-section water reliability source document.';
 	sourceReview.cases[1].rating = 5;
 	sourceReview.cases[2].rating = 2;
 	sourceReview.cases[2].failureCategories = ['weak-tool', 'bad-routing'];
+	sourceReview.cases[2].ownerLayer = 'tool-routing';
 	sourceReview.cases[2].improvementTask = 'Fix source routing for the local safety document.';
 	const sourceRunPath = join(outputDir, 'device-iteration-source.json');
 	const sourceReviewPath = join(outputDir, 'device-iteration-source.review.json');
@@ -3529,6 +3538,7 @@ test('iteration verifier rejects reruns with unresolved planned cases', async ()
 	const rerunReview = reviewForRun(rerun, { rating: 5 });
 	rerunReview.cases[1].rating = 4;
 	rerunReview.cases[1].failureCategories = ['unsafe-wording'];
+	rerunReview.cases[1].ownerLayer = 'safety-prompt';
 	rerunReview.cases[1].improvementTask = 'Tighten safety wording so the answer leads with bailout choices.';
 	const planPath = join(outputDir, 'device-iteration-resolution-fail.iteration.json');
 	const rerunPath = join(outputDir, 'device-iteration-rerun-fail.json');

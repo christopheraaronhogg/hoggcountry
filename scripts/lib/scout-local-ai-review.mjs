@@ -91,7 +91,7 @@ export function createReviewTemplate(run, runPath, repoRoot) {
 			'Only use 5 when the answer is Dad-ready, grounded, safe, and clear.',
 			'For every 5, mark every traitChecks and safetyCaveatChecks item passed=true.',
 			'For every 5, mark every requiredConfirmationChecks and safetyFlagChecks item acknowledged=true.',
-			'For every rating below 5, fill failureCategories and improvementTask.',
+			'For every rating below 5, fill failureCategories, ownerLayer, and improvementTask.',
 			'Do not count scaffold-not-model runs as final local-AI proof.'
 		],
 		ratingScale: run.ratingScale,
@@ -337,7 +337,10 @@ export function improvementTaskProblems(task) {
 
 export function ownerLayerProblems(failureCategories, ownerLayer) {
 	const normalizedOwner = String(ownerLayer ?? '').trim();
-	if (!normalizedOwner) return [];
+	if (!normalizedOwner) return ['ratings below 5 need an ownerLayer.'];
+	if (!VALID_OWNER_LAYERS.includes(normalizedOwner)) {
+		return [`ownerLayer must be one of ${VALID_OWNER_LAYERS.join(', ')}.`];
+	}
 	const categories = Array.isArray(failureCategories)
 		? failureCategories.filter((category) => VALID_FAILURES.has(category))
 		: [];

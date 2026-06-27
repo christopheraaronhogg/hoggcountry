@@ -251,10 +251,10 @@ tool was called without a receipt or source document id, so the next iteration c
 fix the retrieval/evidence layer instead of rediscovering the gap from raw
 transcripts.
 The review command fails instead of writing backlog files if any below-5 rating
-is missing failure categories or a concrete improvement task. A concrete task
-needs enough detail for the next iteration and an action verb such as add, fix,
-route, tighten, investigate, or improve. It also fails while any case is unrated
-so an unfinished review cannot look like a clean 5/5 run. Use
+is missing failure categories, an owner layer, or a concrete improvement task. A
+concrete task needs enough detail for the next iteration and an action verb such
+as add, fix, route, tighten, investigate, or improve. It also fails while any
+case is unrated so an unfinished review cannot look like a clean 5/5 run. Use
 `--allow-unrated` only when deliberately producing a partial status packet; the
 result will include explicit unrated case entries.
 
