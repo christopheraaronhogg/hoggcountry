@@ -197,8 +197,10 @@ test('status command keeps routing proof separate from missing device proof', as
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-routing-'));
 	const runsDir = join(outputDir, 'runs');
 	const deviceRunsDir = join(outputDir, 'device-runs');
+	const inboxDir = join(outputDir, 'inbox');
 	const reviewsDir = join(outputDir, 'reviews');
 	await mkdir(runsDir, { recursive: true });
+	await mkdir(inboxDir, { recursive: true });
 	const routingRun = deviceRunForCases(suite, suite.cases, {
 		runId: 'routing-status-proof',
 		completeTools: true
@@ -207,6 +209,15 @@ test('status command keeps routing proof separate from missing device proof', as
 	routingRun.runContext = null;
 	for (const result of routingRun.results) result.answerOrigin = 'scaffold-not-model';
 	await writeFile(join(runsDir, 'routing-status-proof.json'), `${JSON.stringify(routingRun, null, 2)}\n`);
+	const inboxRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-status-inbox-latest',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	await writeFile(join(inboxDir, 'Dad notes.json'), '{"suiteId":"dad-local-ai-100","runId":"missing-results"}\n');
+	await writeFile(join(inboxDir, 'AirDrop Hoggcountry latest.json'), `${JSON.stringify(inboxRun, null, 2)}\n`);
+	await utimes(join(inboxDir, 'Dad notes.json'), new Date('2026-06-27T01:00:00Z'), new Date('2026-06-27T01:00:00Z'));
+	await utimes(join(inboxDir, 'AirDrop Hoggcountry latest.json'), new Date('2026-06-27T02:00:00Z'), new Date('2026-06-27T02:00:00Z'));
 
 	const result = await execFileAsync(
 		process.execPath,
@@ -216,6 +227,8 @@ test('status command keeps routing proof separate from missing device proof', as
 			runsDir,
 			'--device-runs-dir',
 			deviceRunsDir,
+			'--inbox-dir',
+			inboxDir,
 			'--reviews-dir',
 			reviewsDir,
 			'--json'
@@ -244,6 +257,16 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(status.testflight.recordedDadPilotMeetsSuiteRequirement, true);
 	assert.equal(status.testflight.targetBuildReadyForDad, true);
 	assert.equal(status.testflight.targetBuildAvailableForDad, true);
+	assert.equal(status.inbox.exists, true);
+	assert.equal(status.inbox.jsonFileCount, 2);
+	assert.equal(status.inbox.candidateCount, 1);
+	assert.equal(status.inbox.ignoredFileCount, 1);
+	assert.equal(status.inbox.latestCandidate.runId, 'device-status-inbox-latest');
+	assert.equal(status.inbox.latestCandidate.caseCount, 100);
+	assert.equal(status.inbox.latestCandidate.evidenceLane, 'device-on-device-gemma');
+	assert.equal(status.inbox.latestCandidate.appVersion, '1.0');
+	assert.equal(status.inbox.latestCandidate.appBuild, '13');
+	assert.equal(status.inbox.latestCandidate.installSource, 'testflight');
 	assert.equal(status.nextAction.kind, 'get-device-run');
 	assert.match(status.nextAction.text, /Install the latest TestFlight build/u);
 	assert.match(status.nextAction.text, /Run 100/u);
@@ -706,10 +729,12 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-dad-handoff-'));
 	const runsDir = join(outputDir, 'runs');
 	const deviceRunsDir = join(outputDir, 'device-runs');
+	const inboxDir = join(outputDir, 'inbox');
 	const reviewsDir = join(outputDir, 'reviews');
 	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
 	const iosProofDir = join(outputDir, 'proof');
 	await mkdir(runsDir, { recursive: true });
+	await mkdir(inboxDir, { recursive: true });
 	await mkdir(iosProofDir, { recursive: true });
 	const routingRun = deviceRunForCases(suite, suite.cases, {
 		runId: 'routing-handoff-proof',
@@ -719,6 +744,12 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	routingRun.runContext = null;
 	for (const result of routingRun.results) result.answerOrigin = 'scaffold-not-model';
 	await writeFile(join(runsDir, 'routing-handoff-proof.json'), `${JSON.stringify(routingRun, null, 2)}\n`);
+	const inboxRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-handoff-inbox-latest',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	await writeFile(join(inboxDir, 'AirDrop Hoggcountry latest.json'), `${JSON.stringify(inboxRun, null, 2)}\n`);
 	await writeFile(releaseEvidencePath, `${JSON.stringify({
 		schemaVersion: 1,
 		items: {
@@ -749,6 +780,8 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 			runsDir,
 			'--device-runs-dir',
 			deviceRunsDir,
+			'--inbox-dir',
+			inboxDir,
 			'--reviews-dir',
 			reviewsDir,
 			'--release-evidence',
@@ -767,6 +800,8 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Recorded Dad Pilot build meets suite requirement: yes/u);
 	assert.match(result.stdout, /Imported full device runs: 0/u);
 	assert.match(result.stdout, /Imported partial device runs: 0/u);
+	assert.match(result.stdout, /Inbox candidate exports: 1/u);
+	assert.match(result.stdout, /Latest inbox export: .*device-handoff-inbox-latest, 100 cases/u);
 	assert.match(result.stdout, /https:\/\/testflight\.apple\.com\/join\/BagBCrzf/u);
 	assert.match(result.stdout, /## Upload readiness/u);
 	assert.match(result.stdout, /Xcode Release target: `1\.0 \(13\)`/u);

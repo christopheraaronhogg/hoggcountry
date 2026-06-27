@@ -48,6 +48,9 @@ missing TestFlight/iPhone proof stay visually separate. The coverage gate fails
 if the suite stops covering trail prep, daily hiking decisions, water, shelters,
 weather, resupply, safety, gear, Bible/spiritual support, offline/local-model
 use, or confusing edge cases at the expected minimum depth.
+It also checks `data/scout-local-ai/inbox/` and reports whether Dad's shared
+iPhone JSON handoff folder is empty, has ignored/unreadable files, or has a
+newest likely Scout Eval Lab export ready for `--run inbox` inspection.
 The status output also tracks below-5 review debt explicitly: a completed
 below-5 review is marked as needing backlog generation, needing an iteration
 plan, or already planned, so improvement work cannot hide behind the broader

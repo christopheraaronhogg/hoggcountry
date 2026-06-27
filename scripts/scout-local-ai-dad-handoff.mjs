@@ -42,6 +42,7 @@ async function loadStatus(args) {
 	if (args.mobileSuite) statusArgs.push('--mobile-suite', String(args.mobileSuite));
 	if (args.runsDir) statusArgs.push('--runs-dir', String(args.runsDir));
 	if (args.deviceRunsDir) statusArgs.push('--device-runs-dir', String(args.deviceRunsDir));
+	if (args.inboxDir) statusArgs.push('--inbox-dir', String(args.inboxDir));
 	if (args.reviewsDir) statusArgs.push('--reviews-dir', String(args.reviewsDir));
 	if (args.xcodeProject) statusArgs.push('--xcode-project', String(args.xcodeProject));
 	if (args.releaseEvidence) statusArgs.push('--release-evidence', String(args.releaseEvidence));
@@ -138,6 +139,10 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		`- Recorded Dad Pilot build meets suite requirement: ${status.testflight?.recordedDadPilotMeetsSuiteRequirement ? 'yes' : 'no'}.`,
 		`- Imported full device runs: ${status.runs?.currentFullDeviceRuns?.length ?? 0}.`,
 		`- Imported partial device runs: ${status.runs?.currentPartialDeviceRuns?.length ?? 0}.`,
+		`- Inbox candidate exports: ${status.inbox?.candidateCount ?? 0}.`,
+		status.inbox?.latestCandidate
+			? `- Latest inbox export: \`${status.inbox.latestCandidate.path}\` (${status.inbox.latestCandidate.runId}, ${status.inbox.latestCandidate.caseCount} cases).`
+			: `- Latest inbox export: none in \`${status.inbox?.path ?? 'data/scout-local-ai/inbox'}\`.`,
 		`- Dad TestFlight link: ${publicLink}`,
 		`- iOS Release signing: team \`${iosBuild.teamId}\`, profile \`${iosBuild.releaseProfile}\`.`,
 		''

@@ -1,4 +1,4 @@
-import { access, readdir, readFile } from 'node:fs/promises';
+import { access, readdir, readFile, stat } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -26,6 +26,7 @@ const DEFAULT_SUITE = 'data/scout-local-ai/dad-local-ai-100.json';
 const DEFAULT_MOBILE_SUITE = 'mobile/static/scout/dad-local-ai-100.json';
 const DEFAULT_RUNS_DIR = 'data/scout-local-ai/runs';
 const DEFAULT_DEVICE_RUNS_DIR = 'data/scout-local-ai/device-runs';
+const DEFAULT_INBOX_DIR = 'data/scout-local-ai/inbox';
 const DEFAULT_REVIEWS_DIR = 'data/scout-local-ai/reviews';
 const DEFAULT_BACKLOG_DIR = 'data/scout-local-ai/backlog';
 const DEFAULT_ITERATIONS_DIR = 'data/scout-local-ai/iterations';
@@ -43,6 +44,7 @@ const status = await buildStatus({
 	mobileSuitePath: resolveInputPath(cli.mobileSuite ?? DEFAULT_MOBILE_SUITE),
 	runsDir: resolveInputPath(cli.runsDir ?? DEFAULT_RUNS_DIR),
 	deviceRunsDir: resolveInputPath(cli.deviceRunsDir ?? DEFAULT_DEVICE_RUNS_DIR),
+	inboxDir: resolveInputPath(cli.inboxDir ?? DEFAULT_INBOX_DIR),
 	reviewsDir: resolveInputPath(cli.reviewsDir ?? DEFAULT_REVIEWS_DIR),
 	backlogDir: resolveInputPath(cli.backlogDir ?? DEFAULT_BACKLOG_DIR),
 	iterationsDir: resolveInputPath(cli.iterationsDir ?? DEFAULT_ITERATIONS_DIR),
@@ -69,6 +71,7 @@ async function buildStatus(paths) {
 	const reviews = await loadJsonFiles(paths.reviewsDir);
 	const backlogs = await loadJsonFiles(paths.backlogDir);
 	const iterationFiles = await loadJsonFiles(paths.iterationsDir);
+	const inbox = await summarizeInbox(paths.inboxDir);
 	const iosBuild = await readOptionalIosBuildSettings(paths.xcodeProjectPath);
 	const releaseEvidence = await readOptionalJson(paths.releaseEvidencePath);
 	const testflight = summarizeTestFlightTarget({ iosBuild, releaseEvidence, finalProof, paths });
@@ -172,6 +175,7 @@ async function buildStatus(paths) {
 		paths: {
 			runsDir: relative(REPO_ROOT, paths.runsDir),
 			deviceRunsDir: relative(REPO_ROOT, paths.deviceRunsDir),
+			inboxDir: relative(REPO_ROOT, paths.inboxDir),
 			reviewsDir: relative(REPO_ROOT, paths.reviewsDir),
 			backlogDir: relative(REPO_ROOT, paths.backlogDir),
 			iterationsDir: relative(REPO_ROOT, paths.iterationsDir),
@@ -179,6 +183,7 @@ async function buildStatus(paths) {
 			releaseEvidence: relative(REPO_ROOT, paths.releaseEvidencePath)
 		},
 		testflight,
+		inbox,
 		runs: {
 			totalLoaded: allRuns.length,
 			currentSuiteRuns: currentRuns.length,
@@ -698,6 +703,102 @@ function hasCompleteSourceEvidence(run) {
 	return sourceEvidence.missingSourceEvidenceCases === 0;
 }
 
+async function summarizeInbox(dir) {
+	if (!(await exists(dir))) {
+		return {
+			path: relative(REPO_ROOT, dir),
+			exists: false,
+			jsonFileCount: 0,
+			candidateCount: 0,
+			ignoredFileCount: 0,
+			unreadableCount: 0,
+			latestCandidate: null
+		};
+	}
+	const candidates = [];
+	let jsonFileCount = 0;
+	let ignoredFileCount = 0;
+	let unreadableCount = 0;
+	for (const entry of await readdir(dir, { withFileTypes: true })) {
+		if (!entry.isFile() || entry.name === '.gitkeep') continue;
+		const path = resolve(dir, entry.name);
+		if (!entry.name.toLowerCase().endsWith('.json')) {
+			ignoredFileCount += 1;
+			continue;
+		}
+		jsonFileCount += 1;
+		const stats = await stat(path);
+		const parsed = await readScoutEvalCandidate(path);
+		if (!parsed.readable) {
+			unreadableCount += 1;
+			continue;
+		}
+		if (!parsed.candidate) {
+			ignoredFileCount += 1;
+			continue;
+		}
+		candidates.push({
+			...parsed.candidate,
+			mtimeMs: stats.mtimeMs,
+			modifiedAt: new Date(stats.mtimeMs).toISOString()
+		});
+	}
+	candidates.sort((left, right) => right.mtimeMs - left.mtimeMs || left.path.localeCompare(right.path));
+	const latest = candidates[0] ?? null;
+	return {
+		path: relative(REPO_ROOT, dir),
+		exists: true,
+		jsonFileCount,
+		candidateCount: candidates.length,
+		ignoredFileCount,
+		unreadableCount,
+		latestCandidate: latest ? withoutMtime(latest) : null
+	};
+}
+
+async function readScoutEvalCandidate(path) {
+	try {
+		const parsed = await readJson(path);
+		if (!parsed || typeof parsed !== 'object') return { readable: true, candidate: null };
+		if (parsed.schemaVersion !== 1) return { readable: true, candidate: null };
+		if (parsed.suiteId !== 'dad-local-ai-100') return { readable: true, candidate: null };
+		if (typeof parsed.runId !== 'string' || !parsed.runId) return { readable: true, candidate: null };
+		if (!Array.isArray(parsed.results)) return { readable: true, candidate: null };
+		const app = parsed.runContext?.app ?? {};
+		return {
+			readable: true,
+			candidate: {
+				path: relative(REPO_ROOT, path),
+				runId: parsed.runId,
+				suiteId: parsed.suiteId,
+				suiteVersion: parsed.suiteVersion ?? '<missing>',
+				suiteHash: parsed.suiteHash ?? '<missing>',
+				caseCount: typeof parsed.caseCount === 'number' ? parsed.caseCount : parsed.results.length,
+				evidenceLane: parsed.evidenceLane ?? '<missing>',
+				appVersion: app.version ?? null,
+				appBuild: app.build ?? null,
+				installSource: installSourceLabel(parsed.runContext?.installSource),
+				generatedAt: parsed.generatedAt ?? '<missing>'
+			}
+		};
+	} catch {
+		return { readable: false, candidate: null };
+	}
+}
+
+function installSourceLabel(value) {
+	if (!value) return null;
+	if (typeof value === 'string') return value;
+	if (typeof value === 'object' && typeof value.type === 'string') return value.type;
+	return null;
+}
+
+function withoutMtime(candidate) {
+	const copy = { ...candidate };
+	delete copy.mtimeMs;
+	return copy;
+}
+
 async function loadJsonFiles(dir) {
 	if (!(await exists(dir))) return [];
 	const names = await readdir(dir);
@@ -798,6 +899,7 @@ function createStatusMarkdown(status) {
 		`- Full routing/tool-complete runs: ${status.runs.currentFullToolCompleteRuns.length}`,
 		`- Full device runs: ${status.runs.currentFullDeviceRuns.length}`,
 		`- Partial device runs: ${status.runs.currentPartialDeviceRuns.length}`,
+		...inboxEvidenceLines(status.inbox),
 		`- Device reviews: ${status.reviews.currentDeviceReviews.length}`,
 		`- Below-5 review debt: ${status.iterations.reviewDebt.totalReviews} review(s) / ${status.iterations.reviewDebt.totalBelowFive} answer(s)`,
 		`- Below-5 debt missing backlog: ${status.iterations.reviewDebt.needsBacklog.length}`,
@@ -816,6 +918,28 @@ function createStatusMarkdown(status) {
 		for (const error of status.nextAction.errors) lines.push(`- ${error}`);
 	}
 	return `${lines.join('\n')}\n`;
+}
+
+function inboxEvidenceLines(inbox) {
+	const path = inbox?.path ?? DEFAULT_INBOX_DIR;
+	const lines = [
+		`- Inbox candidate exports: ${inbox?.candidateCount ?? 0}`
+	];
+	if (!inbox?.exists) {
+		lines.push(`- Inbox folder: \`${path}\` is missing`);
+		return lines;
+	}
+	if (inbox.latestCandidate) {
+		const candidate = inbox.latestCandidate;
+		const app = candidate.appVersion && candidate.appBuild
+			? `, app ${candidate.appVersion} (${candidate.appBuild})`
+			: '';
+		const install = candidate.installSource ? `, ${candidate.installSource}` : '';
+		lines.push(`- Latest inbox export: \`${candidate.path}\` (${candidate.runId}, ${candidate.caseCount} cases${app}${install})`);
+		return lines;
+	}
+	lines.push(`- Latest inbox export: none; drop Dad's shared JSON into \`${path}\``);
+	return lines;
 }
 
 function resolveInputPath(value) {
