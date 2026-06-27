@@ -139,6 +139,18 @@ device export, creates the review JSON and Markdown packet, and then prints the
 read-only packet-draft review-status report. It refuses partial exports unless
 `--allow-partial` is explicit, so a smoke/interrupted run cannot be mistaken for
 final proof.
+Its report also includes a `Review Acceptance` section:
+
+- `final-review-ready` means the export imported cleanly and final human rating
+  can start.
+- `diagnostic-review-only` means the export can help debug an interrupted/smoke
+  run, but it is not Dad proof and should not be used for final ratings.
+- `blocked-before-review` means the export failed inspection; rerun or fix the
+  handoff before anyone rates answers.
+
+Even `final-review-ready` is only permission to begin review. Final Dad
+readiness still requires all 100 cases rated 5/5, strict device proof, and a
+second distinct stability run.
 
 When the inspector says the export is ready, import it before rating:
 

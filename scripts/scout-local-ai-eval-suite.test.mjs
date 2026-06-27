@@ -11,6 +11,7 @@ import { summarizeScoutLocalAiSuiteCoverage } from './lib/scout-local-ai-suite-c
 import { scoutLocalAiSuiteHash } from './lib/scout-local-ai-suite.mjs';
 
 const SUITE_PATH = new URL('../data/scout-local-ai/dad-local-ai-100.json', import.meta.url);
+const README_PATH = new URL('../data/scout-local-ai/README.md', import.meta.url);
 const MOBILE_SUITE_PATH = new URL('../mobile/static/scout/dad-local-ai-100.json', import.meta.url);
 const MOBILE_EVAL_LAB_PATH = new URL('../mobile/src/lib/components/ScoutEvalLab.svelte', import.meta.url);
 const PACKAGE_PATH = new URL('../package.json', import.meta.url);
@@ -146,6 +147,15 @@ test('package scripts expose the Scout local AI review handoff commands', async 
 	assert.equal(packageJson.scripts['status:scout-local-ai-review'], 'node scripts/status-scout-local-ai-review.mjs');
 	assert.equal(packageJson.scripts['finalize-review:scout-local-ai'], 'node scripts/finalize-scout-local-ai-review.mjs');
 	assert.equal(packageJson.scripts['prepare-review:scout-local-ai-device-run'], 'node scripts/prepare-scout-local-ai-device-review.mjs');
+});
+
+test('README documents device review acceptance states', async () => {
+	const readme = await readFile(README_PATH, 'utf8');
+	assert.match(readme, /Review Acceptance/u);
+	assert.match(readme, /final-review-ready/u);
+	assert.match(readme, /diagnostic-review-only/u);
+	assert.match(readme, /blocked-before-review/u);
+	assert.match(readme, /Final Dad\s+readiness still requires all 100 cases rated 5\/5/u);
 });
 
 test('objective coverage summary fails when a requested objective area disappears', async () => {
