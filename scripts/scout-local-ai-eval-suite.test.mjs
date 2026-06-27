@@ -769,10 +769,128 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /APP_STORE_CONNECT_API_ISSUER_ID/u);
 	assert.match(result.stdout, /Install the latest TestFlight build/u);
 	assert.match(result.stdout, /use `Run 100` for real proof/u);
+	assert.match(result.stdout, /npm run inspect:scout-local-ai-device-run/u);
 	assert.match(result.stdout, /npm run intake:scout-local-ai-device-run/u);
 	assert.match(result.stdout, /npm run apply-review:scout-local-ai/u);
 	assert.match(result.stdout, /npm run verify:scout-local-ai-stability-proof/u);
 	assert.match(result.stdout, /Final readiness still requires a full current-suite TestFlight\/iPhone/u);
+});
+
+test('device run inspector classifies full and partial TestFlight exports before intake', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-device-inspect-'));
+	const fullPath = join(outputDir, 'device-full-export.json');
+	const partialPath = join(outputDir, 'device-partial-export.json');
+	const fullRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-inspect-full',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	const partialRun = deviceRunForCases(suite, suite.cases.slice(0, 12), {
+		runId: 'device-inspect-partial',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	await writeFile(fullPath, `${JSON.stringify(fullRun, null, 2)}\n`);
+	await writeFile(partialPath, `${JSON.stringify(partialRun, null, 2)}\n`);
+
+	const fullResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/inspect-scout-local-ai-device-run.mjs',
+			'--run',
+			fullPath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const fullReport = JSON.parse(fullResult.stdout);
+	assert.equal(fullReport.status, 'ready-for-final-intake');
+	assert.equal(fullReport.readyForFinalIntake, true);
+	assert.equal(fullReport.readyForPartialIntake, false);
+	assert.match(fullReport.nextCommand, /npm run intake:scout-local-ai-device-run/u);
+	assert.doesNotMatch(fullReport.nextCommand, /--allow-partial/u);
+	assert.equal(fullReport.run.appBuild, '13');
+	assert.equal(fullReport.run.installSource, 'testflight');
+	assert.equal(fullReport.summary.sourceEvidenceComplete, 100);
+
+	const partialResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/inspect-scout-local-ai-device-run.mjs',
+			'--run',
+			partialPath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const partialReport = JSON.parse(partialResult.stdout);
+	assert.equal(partialReport.status, 'partial-diagnostic');
+	assert.equal(partialReport.readyForFinalIntake, false);
+	assert.equal(partialReport.readyForPartialIntake, true);
+	assert.match(partialReport.nextCommand, /--allow-partial/u);
+	assert.equal(partialReport.run.caseCount, 12);
+	assert.match(partialReport.warnings.join('\n'), /missing 88 canonical case/u);
+});
+
+test('device run inspector rejects stale or wrong-context exports before review work', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-device-inspect-block-'));
+	const stalePath = join(outputDir, 'device-stale-export.json');
+	const wrongBuildPath = join(outputDir, 'device-wrong-build-export.json');
+	const staleRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-inspect-stale',
+		completeTools: true,
+		runContext: finalDeviceRunContext(),
+		suiteVersion: '2026-01-01.1',
+		suiteHash: 'fnv1a32:oldhash'
+	});
+	const wrongBuildRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-inspect-wrong-build',
+		completeTools: true,
+		runContext: finalDeviceRunContext({
+			app: {
+				id: 'com.hoggcountry.trailassistant',
+				name: 'Hoggcountry',
+				version: '1.0',
+				build: '12'
+			}
+		})
+	});
+	await writeFile(stalePath, `${JSON.stringify(staleRun, null, 2)}\n`);
+	await writeFile(wrongBuildPath, `${JSON.stringify(wrongBuildRun, null, 2)}\n`);
+
+	const staleResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/inspect-scout-local-ai-device-run.mjs',
+			'--run',
+			stalePath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const staleReport = JSON.parse(staleResult.stdout);
+	assert.equal(staleReport.status, 'stale-suite');
+	assert.equal(staleReport.nextCommand, null);
+	assert.match(staleReport.staleReasons.join('\n'), /run\.suiteVersion/u);
+	assert.match(staleReport.staleReasons.join('\n'), /run\.suiteHash/u);
+
+	const wrongBuildResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/inspect-scout-local-ai-device-run.mjs',
+			'--run',
+			wrongBuildPath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const wrongBuildReport = JSON.parse(wrongBuildResult.stdout);
+	assert.equal(wrongBuildReport.status, 'wrong-proof-context');
+	assert.equal(wrongBuildReport.readyForFinalIntake, false);
+	assert.equal(wrongBuildReport.nextCommand, null);
+	assert.match(wrongBuildReport.contextProblems.join('\n'), /app\.build must be >= 13/u);
 });
 
 test('Dad Pilot refresh command can attach the target build and update release evidence from verified App Store Connect state', async () => {

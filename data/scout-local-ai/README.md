@@ -85,7 +85,20 @@ The suite test fails if the embedded mobile copy drifts.
 
 ## Dad TestFlight / iPhone intake
 
-When Dad exports a real device run from the in-app Eval Lab, import it before rating:
+When Dad exports a real device run from the in-app Eval Lab, inspect it before
+importing or rating:
+
+```sh
+npm run inspect:scout-local-ai-device-run -- --run ~/Downloads/<device-run>.json
+```
+
+The inspector is read-only. It classifies the export as final-intake ready,
+partial/smoke diagnostic, stale-suite, wrong proof context, or invalid, then
+prints the exact next command. Use it first when a shared JSON arrives so a
+debug build, stale suite, interrupted `Run 100`, or wrong-lane export does not
+turn into wasted review work.
+
+When the inspector says the export is ready, import it before rating:
 
 ```sh
 npm run intake:scout-local-ai-device-run -- --run ~/Downloads/<device-run>.json

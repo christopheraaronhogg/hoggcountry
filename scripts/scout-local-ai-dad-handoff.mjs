@@ -192,6 +192,7 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		'## Import and review',
 		'',
 		'```sh',
+		'npm run inspect:scout-local-ai-device-run -- --run ~/Downloads/<device-run>.json',
 		'npm run intake:scout-local-ai-device-run -- --run ~/Downloads/<device-run>.json',
 		'npm run apply-review:scout-local-ai -- --packet data/scout-local-ai/review-packets/<run-id>.review.md --review data/scout-local-ai/reviews/<run-id>.review.json',
 		'npm run review:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json',
