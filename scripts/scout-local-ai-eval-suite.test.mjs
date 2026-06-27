@@ -1687,7 +1687,8 @@ test('Dad handoff command can print a concise Run 100 message for Dad', async ()
 	assert.match(result.stdout, /TestFlight ready/u);
 	assert.match(result.stdout, /tap Run 100/u);
 	assert.match(result.stdout, /Run 3 is only a quick smoke check; Run 100 is the real proof/u);
-	assert.match(result.stdout, /tap Share and send the JSON to Chris/u);
+	assert.match(result.stdout, /tap Share and send the JSON file to Chris by Messages or AirDrop/u);
+	assert.match(result.stdout, /If Share does not send a file, tap Copy and send the copied text/u);
 	assert.match(result.stdout, /No need to understand the JSON/u);
 	assert.match(result.stdout, /If it gets interrupted.*tap Resume/u);
 	assert.doesNotMatch(result.stdout, /## Upload readiness/u);

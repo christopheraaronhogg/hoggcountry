@@ -37,8 +37,10 @@ Current message summary:
 3. Make sure the status says `TestFlight ready`.
 4. Keep the phone plugged in and awake, then tap `Run 100`.
 5. `Run 3` is only a quick smoke check; `Run 100` is the real proof.
-6. When it finishes, tap Share and send the JSON to Chris.
-7. If it gets interrupted, reopen Hoggcountry > Settings > Scout Eval Lab and
+6. When it finishes, tap Share and send the JSON file to Chris by Messages or
+   AirDrop.
+7. If Share does not send a file, tap Copy and send the copied text to Chris.
+8. If it gets interrupted, reopen Hoggcountry > Settings > Scout Eval Lab and
    tap Resume, then Share when it finishes.
 
 ## Chris Intake
