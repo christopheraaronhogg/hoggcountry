@@ -16,6 +16,9 @@ import {
 	summarizeRunSourceEvidence
 } from './lib/scout-local-ai-source-evidence.mjs';
 import {
+	scoutLocalAiStabilityRunFingerprint
+} from './lib/scout-local-ai-stability.mjs';
+import {
 	summarizeScoutLocalAiSuiteCoverage
 } from './lib/scout-local-ai-suite-coverage.mjs';
 import {
@@ -149,6 +152,7 @@ async function buildStatus(paths) {
 			runId: runEntry.value.runId,
 			runPath: relative(REPO_ROOT, runEntry.path),
 			reviewPath: relative(REPO_ROOT, reviewEntry.path),
+			executionFingerprint: scoutLocalAiStabilityRunFingerprint(runEntry.value),
 			ok: result.errors.length === 0,
 			errorCount: result.errors.length,
 			errors: result.errors.slice(0, 12)
@@ -272,7 +276,9 @@ function createGates(input) {
 	const reviewOk = input.completeFiveStarDeviceReviews.length > 0;
 	const iterationDebtOk = input.iterationDebt.ok;
 	const strictOk = input.strictDeviceProofPasses.length > 0;
-	const stabilityOk = new Set(input.strictDeviceProofPasses.map((proof) => proof.runId)).size >= 2;
+	const stabilityRunIds = new Set(input.strictDeviceProofPasses.map((proof) => proof.runId));
+	const stabilityFingerprints = new Set(input.strictDeviceProofPasses.map((proof) => proof.executionFingerprint));
+	const stabilityOk = stabilityRunIds.size >= 2 && stabilityFingerprints.size >= 2;
 	return [
 		{
 			id: 'suite',
@@ -341,8 +347,10 @@ function createGates(input) {
 			label: 'Repeated stability proof ready',
 			ok: stabilityOk,
 			evidence: stabilityOk
-				? 'At least two distinct strict TestFlight/iPhone proof runs pass'
-				: 'Need two distinct strict full TestFlight/iPhone runs before stability proof'
+				? `At least two distinct strict TestFlight/iPhone proof executions pass (${stabilityRunIds.size} run ids, ${stabilityFingerprints.size} execution fingerprints)`
+				: stabilityRunIds.size >= 2
+					? `Need two separate Eval Lab executions before stability proof; ${input.strictDeviceProofPasses.length} strict proof run(s) pass but only ${stabilityFingerprints.size} distinct execution fingerprint(s)`
+					: 'Need two distinct strict full TestFlight/iPhone runs before stability proof'
 		}
 	];
 }

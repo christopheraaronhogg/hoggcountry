@@ -639,6 +639,7 @@ test('status command recognizes repeated strict TestFlight iPhone proof candidat
 		completeTools: true,
 		runContext: finalDeviceRunContext()
 	});
+	runB.generatedAt = '2026-06-26T12:10:00.000Z';
 	const reviewA = reviewForRun(runA, { rating: 5 });
 	const reviewB = reviewForRun(runB, { rating: 5 });
 	await writeFile(join(deviceRunsDir, 'device-status-pass-a.json'), `${JSON.stringify(runA, null, 2)}\n`);
@@ -668,11 +669,62 @@ test('status command recognizes repeated strict TestFlight iPhone proof candidat
 	assert.equal(gates['iteration-loop'].ok, true);
 	assert.equal(gates['strict-device-proof'].ok, true);
 	assert.equal(gates.stability.ok, true);
+	assert.match(gates.stability.evidence, /2 run ids, 2 execution fingerprints/u);
 	assert.equal(status.testflight.currentTargetDeviceRunCount, 0);
 	assert.equal(status.testflight.currentSuiteCompatibleDeviceRunCount, 2);
 	assert.equal(gates['testflight-target'].ok, true);
 	assert.equal(status.strictDeviceProofs.filter((proof) => proof.ok).length, 2);
 	assert.equal(status.nextAction.kind, 'stability-ready');
+});
+
+test('status command rejects copied strict proof exports as stability-ready', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-stability-copy-'));
+	const runsDir = join(outputDir, 'runs');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	await mkdir(deviceRunsDir, { recursive: true });
+	await mkdir(reviewsDir, { recursive: true });
+	const runA = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-status-copy-a',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	const runB = JSON.parse(JSON.stringify(runA));
+	runB.runId = 'device-status-copy-b';
+	const reviewA = reviewForRun(runA, { rating: 5 });
+	const reviewB = reviewForRun(runB, { rating: 5 });
+	await writeFile(join(deviceRunsDir, 'device-status-copy-a.json'), `${JSON.stringify(runA, null, 2)}\n`);
+	await writeFile(join(deviceRunsDir, 'device-status-copy-b.json'), `${JSON.stringify(runB, null, 2)}\n`);
+	await writeFile(join(reviewsDir, 'device-status-copy-a.review.json'), `${JSON.stringify(reviewA, null, 2)}\n`);
+	await writeFile(join(reviewsDir, 'device-status-copy-b.review.json'), `${JSON.stringify(reviewB, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai.mjs',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const status = JSON.parse(result.stdout);
+	const gates = Object.fromEntries(status.gates.map((gate) => [gate.id, gate]));
+
+	assert.equal(gates['device-run'].ok, true);
+	assert.equal(gates.review.ok, true);
+	assert.equal(gates['strict-device-proof'].ok, true);
+	assert.equal(status.strictDeviceProofs.filter((proof) => proof.ok).length, 2);
+	assert.equal(new Set(status.strictDeviceProofs.filter((proof) => proof.ok).map((proof) => proof.executionFingerprint)).size, 1);
+	assert.equal(gates.stability.ok, false);
+	assert.match(gates.stability.evidence, /Need two separate Eval Lab executions/u);
+	assert.match(gates.stability.evidence, /only 1 distinct execution fingerprint/u);
+	assert.equal(status.nextAction.kind, 'get-second-device-run');
 });
 
 test('status command sends completed below-5 device reviews into iteration planning', async () => {

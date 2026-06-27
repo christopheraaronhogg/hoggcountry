@@ -337,3 +337,6 @@ That fails unless every case is 5/5 in each run, every run is from the installed
 iOS Eval Lab device lane, every run hit all required tool expectations, and the
 runs have distinct execution fingerprints. A copied JSON export with a new
 `runId` is not enough for stability proof.
+`npm run status:scout-local-ai` uses the same execution-fingerprint rule before
+showing the stability gate as ready, so the dashboard and final verifier should
+not disagree about copied exports.

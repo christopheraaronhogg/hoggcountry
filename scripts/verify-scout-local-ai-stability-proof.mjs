@@ -11,6 +11,9 @@ import {
 import {
 	summarizeRunSourceEvidence
 } from './lib/scout-local-ai-source-evidence.mjs';
+import {
+	scoutLocalAiStabilityRunFingerprint
+} from './lib/scout-local-ai-stability.mjs';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
@@ -57,7 +60,7 @@ for (const [index, pair] of pairs.entries()) {
 	} else {
 		seenRunIds.set(run.runId, `pair ${index + 1}`);
 	}
-	const fingerprint = stabilityRunFingerprint(run);
+	const fingerprint = scoutLocalAiStabilityRunFingerprint(run);
 	if (seenRunFingerprints.has(fingerprint)) {
 		errors.push(`${label}: duplicate run execution fingerprint; previous pair was ${seenRunFingerprints.get(fingerprint)}. Stability proof needs separate Eval Lab executions, not a copied export with a new runId.`);
 	} else {
@@ -197,40 +200,6 @@ function createStabilityProofMarkdown({ suite, suitePath, records, minRuns, perC
 	return `${lines.join('\n')}\n`;
 }
 
-function stabilityRunFingerprint(run) {
-	return stableJson({
-		generatedAt: run.generatedAt ?? null,
-		evidenceLane: run.evidenceLane ?? null,
-		suiteId: run.suiteId ?? null,
-		suiteVersion: run.suiteVersion ?? null,
-		suiteHash: run.suiteHash ?? null,
-		runContext: {
-			surface: run.runContext?.surface ?? null,
-			scoutLane: run.runContext?.scoutLane ?? null,
-			modelId: run.runContext?.modelId ?? null,
-			runtimeConfigured: run.runContext?.runtimeConfigured ?? null,
-			native: {
-				platform: run.runContext?.native?.platform ?? null,
-				isNativePlatform: run.runContext?.native?.isNativePlatform ?? null
-			},
-			app: {
-				id: run.runContext?.app?.id ?? null,
-				version: run.runContext?.app?.version ?? null,
-				build: run.runContext?.app?.build ?? null
-			},
-			installSource: {
-				type: run.runContext?.installSource?.type ?? null,
-				debugBuild: run.runContext?.installSource?.debugBuild ?? null,
-				buildConfiguration: run.runContext?.installSource?.buildConfiguration ?? null
-			}
-		},
-		caseCount: run.caseCount ?? null,
-		totalSuiteCases: run.totalSuiteCases ?? null,
-		firstResultGeneratedAt: run.results?.[0]?.generatedAt ?? null,
-		lastResultGeneratedAt: run.results?.at?.(-1)?.generatedAt ?? run.results?.[run.results.length - 1]?.generatedAt ?? null
-	});
-}
-
 function resolveInputPath(value) {
 	const text = String(value);
 	if (text === '~') return process.env.HOME ?? text;
@@ -244,12 +213,4 @@ function compactTimestamp(date) {
 
 function safeFileName(value) {
 	return String(value).replace(/[^A-Za-z0-9._-]/g, '-');
-}
-
-function stableJson(value) {
-	if (Array.isArray(value)) return `[${value.map((item) => stableJson(item)).join(',')}]`;
-	if (value && typeof value === 'object') {
-		return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableJson(value[key])}`).join(',')}}`;
-	}
-	return JSON.stringify(value) ?? 'null';
 }
