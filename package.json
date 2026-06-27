@@ -45,6 +45,7 @@
     "apply-review:scout-local-ai": "node scripts/apply-scout-local-ai-review-packet.mjs",
     "finalize-review:scout-local-ai": "node scripts/finalize-scout-local-ai-review.mjs",
     "review-status:scout-local-ai": "node scripts/status-scout-local-ai-review.mjs",
+    "status:scout-local-ai-review": "node scripts/status-scout-local-ai-review.mjs",
     "review:scout-local-ai": "node scripts/review-scout-local-ai-eval.mjs",
     "plan:scout-local-ai-iteration": "node scripts/plan-scout-local-ai-iteration.mjs",
     "verify:scout-local-ai-iteration": "node scripts/verify-scout-local-ai-iteration.mjs",

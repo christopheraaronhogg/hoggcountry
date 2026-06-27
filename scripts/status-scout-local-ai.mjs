@@ -39,6 +39,9 @@ const DEFAULT_RELEASE_EVIDENCE = 'docs/launch/release-evidence.json';
 const DEVICE_EVIDENCE_LANE = 'device-on-device-gemma';
 const SCAFFOLD_EVIDENCE_LANE = 'scaffold-not-model';
 const DEVICE_REVIEW_PREP_COMMAND = 'npm run prepare-review:scout-local-ai-device-run -- --run inbox';
+const REVIEW_STATUS_COMMAND = 'npm run review-status:scout-local-ai';
+const FINALIZE_REVIEW_COMMAND = 'npm run finalize-review:scout-local-ai';
+const REVIEW_PACKET_DIR = 'data/scout-local-ai/review-packets';
 
 const cli = parseCliArgs(process.argv.slice(2));
 
@@ -469,9 +472,12 @@ function nextActionFor(
 				text: `Review ${completeBelowFiveReview.runId} is complete but has ${completeBelowFiveReview.summary.belowFive} below-5 answer(s). Run npm run review:scout-local-ai -- --run ${relativeRunPath} --review ${relativeReviewPath} to write ${relativeBacklogPath}, then run npm run plan:scout-local-ai-iteration -- --backlog ${relativeBacklogPath}. Fix the named owner layers and rerun the regression cases; do not close the iteration by changing expected wording only.`
 			};
 		}
+		const reviewPath = `data/scout-local-ai/reviews/${latestDeviceRun}.review.json`;
+		const runPath = `data/scout-local-ai/device-runs/${latestDeviceRun}.json`;
+		const packetPath = `${REVIEW_PACKET_DIR}/${latestDeviceRun}.review.md`;
 		return {
 			kind: 'finish-review',
-			text: `Fill ratings/checklists in data/scout-local-ai/reviews/${latestDeviceRun}.review.json, then run npm run review:scout-local-ai -- --run data/scout-local-ai/device-runs/${latestDeviceRun}.json --review data/scout-local-ai/reviews/${latestDeviceRun}.review.json.`
+			text: `Fill ratings/checklists in ${packetPath}, preview progress with ${REVIEW_STATUS_COMMAND} -- --run ${runPath} --review ${reviewPath} --packet ${packetPath}, then run ${FINALIZE_REVIEW_COMMAND} -- --packet ${packetPath} --review ${reviewPath}. If the packet is missing, recreate it with ${DEVICE_REVIEW_PREP_COMMAND} before rating raw JSON.`
 		};
 	}
 	const latestFiveStarReview = completeFiveStarDeviceReviews.at(-1)?.runId ?? latestDeviceRun;

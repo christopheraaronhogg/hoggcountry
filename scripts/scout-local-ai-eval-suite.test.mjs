@@ -13,6 +13,7 @@ import { scoutLocalAiSuiteHash } from './lib/scout-local-ai-suite.mjs';
 const SUITE_PATH = new URL('../data/scout-local-ai/dad-local-ai-100.json', import.meta.url);
 const MOBILE_SUITE_PATH = new URL('../mobile/static/scout/dad-local-ai-100.json', import.meta.url);
 const MOBILE_EVAL_LAB_PATH = new URL('../mobile/src/lib/components/ScoutEvalLab.svelte', import.meta.url);
+const PACKAGE_PATH = new URL('../package.json', import.meta.url);
 const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
 const execFileAsync = promisify(execFile);
 const VALID_PHASES = new Set(['pre-trail', 'on-trail']);
@@ -137,6 +138,14 @@ test('Dad local AI eval suite covers requested hiker objective areas', async () 
 	assert.ok(byId['bible-spiritual-support'].count >= 5);
 	assert.ok(byId['offline-local-ai-use'].count >= 10);
 	assert.ok(byId['confusing-edge-cases'].count >= 10);
+});
+
+test('package scripts expose the Scout local AI review handoff commands', async () => {
+	const packageJson = JSON.parse(await readFile(PACKAGE_PATH, 'utf8'));
+	assert.equal(packageJson.scripts['review-status:scout-local-ai'], 'node scripts/status-scout-local-ai-review.mjs');
+	assert.equal(packageJson.scripts['status:scout-local-ai-review'], 'node scripts/status-scout-local-ai-review.mjs');
+	assert.equal(packageJson.scripts['finalize-review:scout-local-ai'], 'node scripts/finalize-scout-local-ai-review.mjs');
+	assert.equal(packageJson.scripts['prepare-review:scout-local-ai-device-run'], 'node scripts/prepare-scout-local-ai-device-review.mjs');
 });
 
 test('objective coverage summary fails when a requested objective area disappears', async () => {
@@ -605,7 +614,11 @@ test('status command lets suite-compatible TestFlight device proof override stal
 	assert.match(gates['testflight-target'].evidence, /Imported TestFlight\/iPhone proof shows a suite-compatible build is installed/u);
 	assert.match(gates['testflight-target'].evidence, /1 imported full device run\(s\) satisfy the suite-required TestFlight build/u);
 	assert.equal(status.nextAction.kind, 'finish-review');
+	assert.match(status.nextAction.text, /review-packets\/device-status-suite-compatible-build13\.review\.md/u);
+	assert.match(status.nextAction.text, /npm run review-status:scout-local-ai/u);
+	assert.match(status.nextAction.text, /npm run finalize-review:scout-local-ai/u);
 	assert.match(status.nextAction.text, /device-status-suite-compatible-build13\.review\.json/u);
+	assert.match(status.nextAction.text, /If the packet is missing, recreate it/u);
 });
 
 test('status command recognizes repeated strict TestFlight iPhone proof candidates', async () => {

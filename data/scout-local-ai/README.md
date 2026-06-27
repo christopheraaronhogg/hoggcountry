@@ -199,6 +199,9 @@ During the rating pass, use the read-only progress check as often as needed:
 npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json --packet data/scout-local-ai/review-packets/<run-id>.review.md
 ```
 
+The same command is also available as `npm run status:scout-local-ai-review`
+when you are thinking "status" first.
+
 With `--packet`, it parses the in-progress Markdown packet into a temporary
 draft review, reports rated/unrated counts, below-5 debt, invalid checklist/task
 issues, the next highest-priority unrated case, and a strict device-proof
