@@ -174,6 +174,7 @@ function createRequirementAudit(input) {
 			id: 'device-proof-lane-separated',
 			label: 'Final proof keeps local AI/device proof separate from browser/cloud/scaffold proof',
 			ok: Boolean(scripts['intake:scout-local-ai-device-run']) &&
+				Boolean(scripts['prepare-review:scout-local-ai-device-run']) &&
 				Boolean(scripts['verify:scout-local-ai-device-proof']) &&
 				Boolean(scripts['verify:scout-local-ai-stability-proof']) &&
 				[deviceRunGate, strictProofGate, stabilityGate].every(Boolean),
