@@ -21,6 +21,10 @@ without publishing publicly in the App Store.
   `docs/launch/proof/ios-testflight-build-11-not-found-2026-06-27.md`.
 - iOS Release signing is configured with team `3CFU9J87A5` and the
   `Hoggcountry App Store Connect` provisioning profile.
+- Native pre-upload readiness was refreshed on 2026-06-27: `check`, unit tests,
+  `cap:sync:ios`, and the diagnose-only signing lane passed with no tracked
+  native diffs. Proof:
+  `docs/launch/proof/ios-testflight-attempt-2026-06-27T01-06-47-776Z.md`.
 - The repeatable upload command is:
 
 ```bash
@@ -98,6 +102,9 @@ npm run refresh:testflight-dad-pilot -- \
 
 - Signing proof: selected team id, `security find-identity` result, and
   `DEVELOPMENT_TEAM` build setting.
+- Pre-upload proof: `docs/launch/proof/ios-testflight-attempt-2026-06-27T01-06-47-776Z.md`
+  shows build `11` signing/readiness diagnostics passed before the manual
+  upload step.
 - Upload proof: `docs/launch/proof/ios-testflight-attempt-*.md` from the
   successful `--upload` run plus a build-state proof like
   `docs/launch/proof/ios-testflight-build-11-2026-06-26.md`.
