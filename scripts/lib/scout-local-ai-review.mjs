@@ -90,6 +90,7 @@ export function createReviewTemplate(run, runPath, repoRoot) {
 			'Rate each answer 1-5 using the run ratingScale.',
 			'Only use 5 when the answer is Dad-ready, grounded, safe, and clear.',
 			'For every 5, mark every traitChecks and safetyCaveatChecks item passed=true.',
+			'For every 5, mark every requiredConfirmationChecks and safetyFlagChecks item acknowledged=true.',
 			'For every rating below 5, fill failureCategories and improvementTask.',
 			'Do not count scaffold-not-model runs as final local-AI proof.'
 		],
@@ -111,6 +112,8 @@ export function createReviewTemplate(run, runPath, repoRoot) {
 			safetyCaveats: result.case.safetyCaveats ?? [],
 			traitChecks: createRubricChecks(result.case.expectedTraits),
 			safetyCaveatChecks: createRubricChecks(result.case.safetyCaveats),
+			requiredConfirmationChecks: createSignalChecks(result.requiredConfirmations, requiredConfirmationText),
+			safetyFlagChecks: createSignalChecks(result.safetyFlags, safetyFlagText),
 			receipts: result.receipts ?? [],
 			receiptCount: result.receipts?.length ?? 0,
 			toolInvocations: result.toolInvocations ?? [],
@@ -188,6 +191,12 @@ export function summarizeReview(review) {
 				invalid.push(`${entry.caseId}: ${problem}`);
 			}
 			for (const problem of rubricProblems(entry.safetyCaveatChecks, entry.safetyCaveats, 'safetyCaveatChecks')) {
+				invalid.push(`${entry.caseId}: ${problem}`);
+			}
+			for (const problem of signalCheckProblems(entry.requiredConfirmationChecks, entry.requiredConfirmations, 'requiredConfirmationChecks', requiredConfirmationText)) {
+				invalid.push(`${entry.caseId}: ${problem}`);
+			}
+			for (const problem of signalCheckProblems(entry.safetyFlagChecks, entry.safetyFlags, 'safetyFlagChecks', safetyFlagText)) {
 				invalid.push(`${entry.caseId}: ${problem}`);
 			}
 		}
@@ -588,6 +597,14 @@ function createRubricChecks(values) {
 	}));
 }
 
+function createSignalChecks(values, textFor) {
+	return (values ?? []).map((value) => ({
+		text: textFor(value),
+		acknowledged: null,
+		notes: ''
+	}));
+}
+
 function rubricProblems(checks, expected, fieldName) {
 	if (!Array.isArray(expected) || !expected.length) return [];
 	if (!Array.isArray(checks)) return [`${fieldName} must be an array before rating 5.`];
@@ -607,11 +624,45 @@ function rubricProblems(checks, expected, fieldName) {
 	return problems;
 }
 
+function signalCheckProblems(checks, expected, fieldName, textFor) {
+	if (!Array.isArray(expected) || !expected.length) return [];
+	if (!Array.isArray(checks)) return [`${fieldName} must be an array before rating 5.`];
+	if (checks.length !== expected.length) {
+		return [`${fieldName} must contain ${expected.length} items, got ${checks.length}.`];
+	}
+	const problems = [];
+	for (const [index, expectedSignal] of expected.entries()) {
+		const expectedText = textFor(expectedSignal);
+		const check = checks[index];
+		if (check?.text !== expectedText) {
+			problems.push(`${fieldName}[${index}].text must match the recorded signal text.`);
+		}
+		if (check?.acknowledged !== true) {
+			problems.push(`${fieldName}[${index}] must be acknowledged=true before rating 5.`);
+		}
+	}
+	return problems;
+}
+
 function failedRubricChecks(checks) {
 	if (!Array.isArray(checks)) return [];
 	return checks
 		.filter((check) => check?.passed !== true)
 		.map((check) => check?.text ?? '<missing rubric text>');
+}
+
+function requiredConfirmationText(confirmation) {
+	const id = confirmation?.id ?? '<missing-id>';
+	const reason = confirmation?.reason ?? 'reason unknown';
+	const prompt = confirmation?.prompt ?? '(no prompt)';
+	return `${id}: ${prompt} (${reason})`;
+}
+
+function safetyFlagText(flag) {
+	const severity = flag?.severity ?? 'unknown';
+	const id = flag?.id ?? '<missing-id>';
+	const message = flag?.message ?? '(no message)';
+	return `${severity}: ${message} (${id})`;
 }
 
 function fiveStarRunEvidenceProblems(result) {

@@ -176,7 +176,9 @@ so an unfinished review cannot look like a clean 5/5 run. Use
 result will include explicit unrated case entries.
 
 For a `5` rating, every `traitChecks` and `safetyCaveatChecks` item in the
-review JSON must have `passed: true`. Leave failed or uncertain checks unpassed
+review JSON must have `passed: true`, and every recorded
+`requiredConfirmationChecks` and `safetyFlagChecks` item must have
+`acknowledged: true`. Leave failed or uncertain checks unpassed/unacknowledged
 and rate below 5 with a concrete improvement task. A 5/5 case must not keep
 failure categories, an owner layer, or an improvement task; clear those fields
 when a rerun actually fixes the issue.

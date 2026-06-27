@@ -918,6 +918,20 @@ test('device run intake validates exports and creates review packet', async () =
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-intake-'));
 	const inputPath = join(outputDir, 'device-export.json');
 	const run = deviceRunForCases(suite, suite.cases.slice(0, 2), { completeTools: true });
+	run.results[0].requiredConfirmations = [
+		{
+			id: 'confirm-live-weather',
+			prompt: 'Confirm the current forecast before committing to exposed terrain.',
+			reason: 'safety-critical'
+		}
+	];
+	run.results[0].safetyFlags = [
+		{
+			id: 'lightning-risk',
+			severity: 'critical',
+			message: 'Lightning risk needs an exit or wait plan.'
+		}
+	];
 	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
 
 	await execFileAsync(
@@ -957,12 +971,21 @@ test('device run intake validates exports and creates review packet', async () =
 	assert.equal(review.cases[0].traitChecks.length, suite.cases[0].expectedTraits.length);
 	assert.equal(review.cases[0].traitChecks[0].passed, null);
 	assert.equal(review.cases[0].safetyCaveatChecks.length, suite.cases[0].safetyCaveats.length);
+	assert.equal(review.cases[0].requiredConfirmationChecks.length, 1);
+	assert.equal(review.cases[0].requiredConfirmationChecks[0].acknowledged, null);
+	assert.equal(review.cases[0].safetyFlagChecks.length, 1);
+	assert.equal(review.cases[0].safetyFlagChecks[0].acknowledged, null);
 	assert.match(review.cases[0].answerPreview, /device answer for/);
 	assert.match(packet, /Scout local AI device review/u);
 	assert.match(packet, new RegExp(suite.cases[0].id, 'u'));
 	assert.match(packet, /Confidence: `medium`/u);
 	assert.match(packet, /Trait checklist to fill in review JSON:/u);
 	assert.match(packet, /Safety caveat checklist to fill in review JSON:/u);
+	assert.match(packet, /Required confirmation acknowledgement checklist to fill in review JSON:/u);
+	assert.match(packet, /Safety flag acknowledgement checklist to fill in review JSON:/u);
+	assert.match(packet, /acknowledged: null/u);
+	assert.match(packet, /confirm-live-weather/u);
+	assert.match(packet, /lightning-risk/u);
 	assert.match(packet, /Tool invocations:/u);
 	assert.match(packet, /Source evidence gaps:/u);
 	assert.match(packet, /Source receipts:/u);
@@ -1145,6 +1168,20 @@ test('review packet ratings can be applied back into review JSON', async () => {
 		runId: 'device-packet-apply',
 		completeTools: true
 	});
+	run.results[0].requiredConfirmations = [
+		{
+			id: 'confirm-seasonal-water',
+			prompt: 'Confirm current flow before counting on the seasonal water source.',
+			reason: 'volatile'
+		}
+	];
+	run.results[0].safetyFlags = [
+		{
+			id: 'water-seasonal-confirm-flow',
+			severity: 'warn',
+			message: 'Seasonal water should not be treated as guaranteed.'
+		}
+	];
 	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
 
 	await execFileAsync(
@@ -1169,6 +1206,7 @@ test('review packet ratings can be applied back into review JSON', async () => {
 	const backlogDir = join(outputDir, 'backlog');
 	let packet = await readFile(packetPath, 'utf8');
 	packet = packet.replaceAll('- passed: null |', '- passed: true |');
+	packet = packet.replaceAll('- acknowledged: null |', '- acknowledged: true |');
 	packet = replaceReviewerFields(packet, run.results[0].caseId, {
 		rating: '5',
 		notes: 'Dad-ready answer.',
@@ -1203,6 +1241,8 @@ test('review packet ratings can be applied back into review JSON', async () => {
 	assert.equal(review.cases[0].rating, 5);
 	assert.equal(review.cases[0].traitChecks.every((check) => check.passed === true), true);
 	assert.equal(review.cases[0].safetyCaveatChecks.every((check) => check.passed === true), true);
+	assert.equal(review.cases[0].requiredConfirmationChecks.every((check) => check.acknowledged === true), true);
+	assert.equal(review.cases[0].safetyFlagChecks.every((check) => check.acknowledged === true), true);
 	assert.equal(review.cases[1].rating, 3);
 	assert.deepEqual(review.cases[1].failureCategories, ['unsafe-wording', 'poor-ux']);
 	assert.equal(review.cases[1].ownerLayer, 'safety-prompt');
@@ -2882,6 +2922,56 @@ test('strict device proof rejects 5-star reviews with unchecked rubric items', a
 	);
 });
 
+test('strict device proof rejects 5-star reviews with unacknowledged safety signals', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-proof-safety-signal-fail-'));
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-final-proof-safety-signal-fail',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	run.results[0].requiredConfirmations = [
+		{
+			id: 'confirm-live-conditions',
+			prompt: 'Confirm the current official conditions before following this plan.',
+			reason: 'safety-critical'
+		}
+	];
+	run.results[0].safetyFlags = [
+		{
+			id: 'official-closure-risk',
+			severity: 'critical',
+			message: 'Official closure risk must change the hiking plan.'
+		}
+	];
+	const review = reviewForRun(run, { rating: 5 });
+	review.cases[0].requiredConfirmationChecks[0].acknowledged = false;
+	review.cases[0].safetyFlagChecks[0].acknowledged = null;
+	const runPath = join(outputDir, 'device-final-proof-safety-signal-fail.json');
+	const reviewPath = join(outputDir, 'device-final-proof-safety-signal-fail.review.json');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/verify-scout-local-ai-device-proof.mjs',
+				'--run',
+				runPath,
+				'--review',
+				reviewPath
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /requiredConfirmationChecks\[0\] must be acknowledged=true/u);
+			assert.match(error.stderr, /safetyFlagChecks\[0\] must be acknowledged=true/u);
+			return true;
+		}
+	);
+});
+
 test('strict device proof rejects final reviews without native app metadata', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-proof-metadata-fail-'));
@@ -3416,6 +3506,8 @@ function reviewForRun(run, options = {}) {
 			safetyCaveats: result.case.safetyCaveats,
 			traitChecks: rubricChecksFor(result.case.expectedTraits),
 			safetyCaveatChecks: rubricChecksFor(result.case.safetyCaveats),
+			requiredConfirmationChecks: signalChecksFor(result.requiredConfirmations, requiredConfirmationText),
+			safetyFlagChecks: signalChecksFor(result.safetyFlags, safetyFlagText),
 			toolExpectations: result.toolExpectations,
 			safetyFlags: result.safetyFlags,
 			requiredConfirmations: result.requiredConfirmations,
@@ -3435,6 +3527,28 @@ function rubricChecksFor(items) {
 		passed: true,
 		notes: ''
 	}));
+}
+
+function signalChecksFor(items, textFor) {
+	return (items ?? []).map((item) => ({
+		text: textFor(item),
+		acknowledged: true,
+		notes: ''
+	}));
+}
+
+function requiredConfirmationText(confirmation) {
+	const id = confirmation?.id ?? '<missing-id>';
+	const prompt = confirmation?.prompt ?? '(no prompt)';
+	const reason = confirmation?.reason ?? 'reason unknown';
+	return `${id}: ${prompt} (${reason})`;
+}
+
+function safetyFlagText(flag) {
+	const severity = flag?.severity ?? 'unknown';
+	const message = flag?.message ?? '(no message)';
+	const id = flag?.id ?? '<missing-id>';
+	return `${severity}: ${message} (${id})`;
 }
 
 function replaceReviewerFields(packet, caseId, fields) {

@@ -98,6 +98,22 @@ export function parseReviewPacket(markdown) {
 			fieldName: 'safetyCaveatChecks',
 			errors
 		});
+		const requiredConfirmationChecks = parseSignalChecklist({
+			block: block.body,
+			startLabel: 'Required confirmation acknowledgement checklist to fill in review JSON:',
+			endLabel: 'Safety flags:',
+			caseId: block.caseId,
+			fieldName: 'requiredConfirmationChecks',
+			errors
+		});
+		const safetyFlagChecks = parseSignalChecklist({
+			block: block.body,
+			startLabel: 'Safety flag acknowledgement checklist to fill in review JSON:',
+			endLabel: 'Context used:',
+			caseId: block.caseId,
+			fieldName: 'safetyFlagChecks',
+			errors
+		});
 		cases.push({
 			caseId: block.caseId,
 			rating: parseRating(parseField(block.body, 'Rating'), block.caseId, errors),
@@ -106,7 +122,9 @@ export function parseReviewPacket(markdown) {
 			ownerLayer: parseField(block.body, 'Owner layer') ?? '',
 			improvementTask: parseField(block.body, 'Improvement task') ?? '',
 			traitChecks,
-			safetyCaveatChecks
+			safetyCaveatChecks,
+			requiredConfirmationChecks,
+			safetyFlagChecks
 		});
 	}
 
@@ -143,6 +161,18 @@ export function applyPacketToReview(review, packetReview, options = {}) {
 			`${packetCase.caseId}: safetyCaveatChecks`,
 			errors
 		);
+		validateSignalChecklist(
+			reviewCase.requiredConfirmationChecks,
+			packetCase.requiredConfirmationChecks,
+			`${packetCase.caseId}: requiredConfirmationChecks`,
+			errors
+		);
+		validateSignalChecklist(
+			reviewCase.safetyFlagChecks,
+			packetCase.safetyFlagChecks,
+			`${packetCase.caseId}: safetyFlagChecks`,
+			errors
+		);
 		updates.push({ reviewCase, packetCase });
 	}
 
@@ -166,6 +196,8 @@ export function applyPacketToReview(review, packetReview, options = {}) {
 		reviewCase.improvementTask = packetCase.improvementTask;
 		copyChecklistValues(reviewCase.traitChecks, packetCase.traitChecks);
 		copyChecklistValues(reviewCase.safetyCaveatChecks, packetCase.safetyCaveatChecks);
+		copySignalChecklistValues(reviewCase.requiredConfirmationChecks, packetCase.requiredConfirmationChecks);
+		copySignalChecklistValues(reviewCase.safetyFlagChecks, packetCase.safetyFlagChecks);
 	}
 	const updatedCases = updates.length;
 	return { updatedCases, missingCases };
@@ -205,18 +237,44 @@ function parseChecklistLine(line, label, errors) {
 		return { text: '', passed: null, notes: '' };
 	}
 	return {
-		passed: parsePassed(match[1], label, errors),
+		passed: parseBooleanChoice(match[1], label, 'passed', errors),
 		text: match[2].trim(),
 		notes: match[3].trim()
 	};
 }
 
-function parsePassed(value, label, errors) {
+function parseSignalChecklist({ block, startLabel, endLabel, caseId, fieldName, errors }) {
+	const start = block.indexOf(startLabel);
+	if (start === -1) return [];
+	const afterStart = block.slice(start + startLabel.length);
+	const end = afterStart.indexOf(endLabel);
+	const section = end === -1 ? afterStart : afterStart.slice(0, end);
+	return section
+		.split(/\r?\n/u)
+		.map((line) => line.trim())
+		.filter((line) => line.startsWith('- acknowledged:'))
+		.map((line, index) => parseSignalChecklistLine(line, `${caseId}: ${fieldName}[${index}]`, errors));
+}
+
+function parseSignalChecklistLine(line, label, errors) {
+	const match = line.match(/^- acknowledged:\s*([^|]*?)\s*\|\s*text:\s*(.*?)\s*\|\s*notes:\s*(.*)$/u);
+	if (!match) {
+		errors.push(`${label}: expected "- acknowledged: true|false|null | text: ... | notes: ..."`);
+		return { text: '', acknowledged: null, notes: '' };
+	}
+	return {
+		acknowledged: parseBooleanChoice(match[1], label, 'acknowledged', errors),
+		text: match[2].trim(),
+		notes: match[3].trim()
+	};
+}
+
+function parseBooleanChoice(value, label, fieldName, errors) {
 	const normalized = String(value ?? '').trim().toLowerCase();
 	if (!normalized || normalized === 'null' || normalized === 'n/a' || normalized === 'na') return null;
 	if (['true', 'yes', 'y', 'pass', 'passed'].includes(normalized)) return true;
 	if (['false', 'no', 'n', 'fail', 'failed'].includes(normalized)) return false;
-	errors.push(`${label}: passed must be true, false, or null; got "${value}".`);
+	errors.push(`${label}: ${fieldName} must be true, false, or null; got "${value}".`);
 	return null;
 }
 
@@ -262,10 +320,36 @@ function validateChecklist(reviewChecks, packetChecks, label, errors) {
 	}
 }
 
+function validateSignalChecklist(reviewChecks, packetChecks, label, errors) {
+	if (!packetChecks.length) return;
+	if (!Array.isArray(reviewChecks)) {
+		errors.push(`${label}: review JSON checklist is missing.`);
+		return;
+	}
+	if (reviewChecks.length !== packetChecks.length) {
+		errors.push(`${label}: packet has ${packetChecks.length} checks but review JSON has ${reviewChecks.length}.`);
+		return;
+	}
+	for (const [index, packetCheck] of packetChecks.entries()) {
+		const reviewCheck = reviewChecks[index];
+		if (reviewCheck.text !== packetCheck.text) {
+			errors.push(`${label}[${index}]: packet text does not match review JSON.`);
+		}
+	}
+}
+
 function copyChecklistValues(reviewChecks, packetChecks) {
 	if (!packetChecks.length) return;
 	for (const [index, packetCheck] of packetChecks.entries()) {
 		reviewChecks[index].passed = packetCheck.passed;
+		reviewChecks[index].notes = packetCheck.notes;
+	}
+}
+
+function copySignalChecklistValues(reviewChecks, packetChecks) {
+	if (!packetChecks.length) return;
+	for (const [index, packetCheck] of packetChecks.entries()) {
+		reviewChecks[index].acknowledged = packetCheck.acknowledged;
 		reviewChecks[index].notes = packetCheck.notes;
 	}
 }

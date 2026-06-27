@@ -247,7 +247,7 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 		'',
 		'## Reviewer field choices',
 		'',
-		'For a 5/5 rating, every checklist item must be `passed: true`, and Failure categories, Owner layer, and Improvement task should stay blank. For any rating below 5, choose at least one failure category and write a concrete improvement task with an action verb and a specific Scout target, such as `Add current-section water reliability source docs.` Do not use the improvement task to weaken the eval rubric, expected traits, or question wording.',
+		'For a 5/5 rating, every trait/safety-caveat checklist item must be `passed: true`, every required-confirmation/safety-flag checklist item must be `acknowledged: true`, and Failure categories, Owner layer, and Improvement task should stay blank. For any rating below 5, choose at least one failure category and write a concrete improvement task with an action verb and a specific Scout target, such as `Add current-section water reliability source docs.` Do not use the improvement task to weaken the eval rubric, expected traits, or question wording.',
 		'',
 		`Valid failure categories: ${(run.failureCategories ?? []).join(', ')}`,
 		`Valid owner layers: ${VALID_OWNER_LAYERS.join(', ')}`,
@@ -331,8 +331,14 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 			'Required confirmations:',
 			...formatConfirmations(result.requiredConfirmations),
 			'',
+			'Required confirmation acknowledgement checklist to fill in review JSON:',
+			...formatSignalChecklist(result.requiredConfirmations, confirmationReviewText),
+			'',
 			'Safety flags:',
 			...formatSafetyFlags(result.safetyFlags),
+			'',
+			'Safety flag acknowledgement checklist to fill in review JSON:',
+			...formatSignalChecklist(result.safetyFlags, safetyFlagReviewText),
 			'',
 			'Context used:',
 			...formatStringList(result.contextUsed),
@@ -431,6 +437,11 @@ function formatRubricChecklist(items) {
 	return items.map((item) => `- passed: null | text: ${item} | notes:`);
 }
 
+function formatSignalChecklist(items, textFor) {
+	if (!Array.isArray(items) || !items.length) return ['- none'];
+	return items.map((item) => `- acknowledged: null | text: ${textFor(item)} | notes:`);
+}
+
 function formatReceipts(receipts) {
 	if (!Array.isArray(receipts) || !receipts.length) return ['- none recorded'];
 	return receipts.map((receipt) => `- ${formatReceiptInline(receipt)}`);
@@ -449,12 +460,26 @@ function formatReceiptInline(receipt) {
 
 function formatConfirmations(confirmations) {
 	if (!Array.isArray(confirmations) || !confirmations.length) return ['- none'];
-	return confirmations.map((confirmation) => `- ${confirmation.id ?? '<missing>'}: ${confirmation.prompt ?? '(no prompt)'} (${confirmation.reason ?? 'reason unknown'})`);
+	return confirmations.map((confirmation) => `- ${confirmationReviewText(confirmation)}`);
 }
 
 function formatSafetyFlags(flags) {
 	if (!Array.isArray(flags) || !flags.length) return ['- none'];
-	return flags.map((flag) => `- ${flag.severity ?? 'unknown'}: ${flag.message ?? flag.id ?? '(no message)'}`);
+	return flags.map((flag) => `- ${safetyFlagReviewText(flag)}`);
+}
+
+function confirmationReviewText(confirmation) {
+	const id = confirmation?.id ?? '<missing>';
+	const prompt = confirmation?.prompt ?? '(no prompt)';
+	const reason = confirmation?.reason ?? 'reason unknown';
+	return `${id}: ${prompt} (${reason})`;
+}
+
+function safetyFlagReviewText(flag) {
+	const severity = flag?.severity ?? 'unknown';
+	const message = flag?.message ?? '(no message)';
+	const id = flag?.id ?? '<missing>';
+	return `${severity}: ${message} (${id})`;
 }
 
 function formatStringList(items) {
