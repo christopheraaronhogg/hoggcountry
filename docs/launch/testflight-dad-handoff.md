@@ -82,6 +82,13 @@ lands in the repo inbox or Downloads:
 npm run wait:scout-local-ai-device-run
 ```
 
+For a bounded check that reports inbox/Downloads status and exits if Dad has
+not sent the file yet:
+
+```bash
+npm run wait:scout-local-ai-device-run -- --timeout-ms 300000 --poll-ms 10000
+```
+
 ## Review Loop
 
 Preview review progress without writing the review JSON:

@@ -154,6 +154,14 @@ If you are waiting on Dad to send the file, leave the guarded watcher running:
 npm run wait:scout-local-ai-device-run
 ```
 
+For a bounded check that is easier to run from Codex or a temporary terminal,
+add a timeout. It exits with a source-by-source status report if no final-ready
+export appears:
+
+```sh
+npm run wait:scout-local-ai-device-run -- --timeout-ms 300000 --poll-ms 10000
+```
+
 It polls the repo inbox and Downloads, then runs the same prepare-review command
 as soon as a final-ready `Run 100` export appears. It keeps polling past stale,
 partial, or blocked candidates unless `--allow-partial` is explicit, so a smoke

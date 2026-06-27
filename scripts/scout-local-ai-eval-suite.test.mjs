@@ -223,6 +223,7 @@ test('README documents device review acceptance states', async () => {
 	assert.match(readme, /final-review-ready/u);
 	assert.match(readme, /diagnostic-review-only/u);
 	assert.match(readme, /blocked-before-review/u);
+	assert.match(readme, /wait:scout-local-ai-device-run -- --timeout-ms 300000 --poll-ms 10000/u);
 	assert.match(readme, /Final Dad\s+readiness still requires all 100 cases rated 5\/5/u);
 });
 
@@ -240,6 +241,7 @@ test('Dad TestFlight handoff documents the current Dad Pilot Run 100 path', asyn
 	assert.match(handoff, /tap `Run 100`/u);
 	assert.match(handoff, /npm run receive:scout-local-ai-device-run -- --clipboard/u);
 	assert.match(handoff, /npm run wait:scout-local-ai-device-run/u);
+	assert.match(handoff, /wait:scout-local-ai-device-run -- --timeout-ms 300000 --poll-ms 10000/u);
 	assert.match(handoff, /Device\/local-AI proof: still pending/u);
 	assert.doesNotMatch(handoff, /Next native candidate `1\.0 \(14\)`/u);
 	assert.doesNotMatch(handoff, /Dad Pilot is still on `1\.0 \(13\)`/u);
@@ -2693,6 +2695,10 @@ test('device run wait timeout reports every watched handoff source', async () =>
 			assert.deepEqual(report.sources, ['inbox', 'downloads']);
 			assert.ok(report.sourceReports.inbox);
 			assert.ok(report.sourceReports.downloads);
+			assert.match(report.sourceReports.inbox.error, /No likely Scout Eval Lab JSON\/text exports found/u);
+			assert.doesNotMatch(report.sourceReports.inbox.error, /Node\.js|at async|file:\/\//u);
+			assert.match(report.sourceReports.downloads.error, /No likely Scout Eval Lab JSON\/text exports found/u);
+			assert.doesNotMatch(report.sourceReports.downloads.error, /Node\.js|at async|file:\/\//u);
 			assert.match(report.nextAction, /--run inbox/u);
 			assert.match(report.nextAction, /--run latest/u);
 			return true;

@@ -123,9 +123,22 @@ async function tryPrepare(source) {
 		return {
 			ok: false,
 			report: parseJson(stdout),
-			error: stderr || err?.message || 'prepare command failed'
+			error: summarizeCommandError(stderr, err)
 		};
 	}
+}
+
+function summarizeCommandError(stderr, err) {
+	const text = String(stderr || err?.message || '').trim();
+	if (!text) return 'prepare command failed';
+	const errorLines = text
+		.split(/\r?\n/u)
+		.map((line) => line.trim())
+		.filter((line) => /^Error:/u.test(line));
+	const [lastErrorLine] = errorLines.slice(-1);
+	if (lastErrorLine) return lastErrorLine.replace(/^Error:\s*/u, '');
+	const firstMeaningfulLine = text.split(/\r?\n/u).map((line) => line.trim()).find(Boolean);
+	return firstMeaningfulLine ?? 'prepare command failed';
 }
 
 function sourceOrderFor(value) {
