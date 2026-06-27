@@ -86,6 +86,9 @@
 	let exportMessage = $state<string | null>(null);
 	let exportTextarea = $state<HTMLTextAreaElement | null>(null);
 	let exportStatusTimer: ReturnType<typeof setTimeout> | null = null;
+	let runStartedAt = $state<number | null>(null);
+	let runClockNow = $state(Date.now());
+	let runClockTimer: ReturnType<typeof setInterval> | null = null;
 	let nativePreflight = $state.raw<ScoutLocalAiEvalNativePreflight>({
 		metadataLoaded: false,
 		isNativePlatform: null,
@@ -129,10 +132,13 @@
 				(!savedRunIsFullTarget || proofStatus.canRunFinal)
 		)
 	);
+	const runElapsedLabel = $derived(
+		running && runStartedAt ? formatElapsedDuration(runClockNow - runStartedAt) : null
+	);
 	const exportText = $derived(activeRun ? JSON.stringify(activeRun, null, 2) : '');
 	const progressLabel = $derived(
 		progress
-				? `${progress.completed}/${progress.total} · ${progress.caseId}`
+				? `${progress.completed}/${progress.total} · ${progress.caseId}${runElapsedLabel ? ` · ${runElapsedLabel}` : ''}`
 			: activeRun
 				? `${activeRun.caseCount}/${activeRun.filters?.limit ?? activeRun.totalSuiteCases} done`
 				: suite
@@ -166,6 +172,7 @@
 		void loadSuite();
 		void loadNativePreflight();
 		return () => {
+			stopRunClock();
 			evalWakeLock?.dispose();
 			evalWakeLock = null;
 		};
@@ -204,6 +211,7 @@
 		progress = null;
 		if (!resume) run = null;
 		try {
+			startRunClock();
 			await evalWakeLock?.request();
 			run = await trailAssistant.runLocalAiEvalSuite({
 				suite,
@@ -222,6 +230,7 @@
 			void loadNativePreflight();
 		} finally {
 			running = false;
+			stopRunClock();
 			await evalWakeLock?.release();
 		}
 	}
@@ -377,6 +386,23 @@
 			exportMessage = null;
 			exportStatusTimer = null;
 		}, 2400);
+	}
+
+	function startRunClock() {
+		runStartedAt = Date.now();
+		runClockNow = runStartedAt;
+		if (runClockTimer) clearInterval(runClockTimer);
+		runClockTimer = setInterval(() => {
+			runClockNow = Date.now();
+		}, 1000);
+	}
+
+	function stopRunClock() {
+		if (runClockTimer) {
+			clearInterval(runClockTimer);
+			runClockTimer = null;
+		}
+		runStartedAt = null;
 	}
 
 	function loadSavedRun() {
@@ -597,7 +623,9 @@
 			return {
 				state: 'running',
 				label: 'Run in progress',
-				detail: progress ? `${progress.completed}/${progress.total} complete; keep this screen open.` : 'Keep this screen open while Scout answers.',
+				detail: progress
+					? `${progress.completed}/${progress.total} complete${runElapsedLabel ? ` in ${runElapsedLabel}` : ''}; keep this screen open.`
+					: `Keep this screen open while Scout answers${runElapsedLabel ? ` (${runElapsedLabel})` : ''}.`,
 				action: progress?.caseId ?? 'Running'
 			};
 		}
@@ -708,6 +736,15 @@
 			hour: 'numeric',
 			minute: '2-digit'
 		}).format(date);
+	}
+
+	function formatElapsedDuration(ms: number): string {
+		if (!Number.isFinite(ms) || ms < 0) return '0s';
+		const seconds = Math.floor(ms / 1000);
+		if (seconds < 60) return `${seconds}s elapsed`;
+		const minutes = Math.floor(seconds / 60);
+		const remainder = seconds % 60;
+		return `${minutes}m ${remainder.toString().padStart(2, '0')}s elapsed`;
 	}
 
 	function appContextLabel(currentRun: ScoutLocalAiEvalRun): string {

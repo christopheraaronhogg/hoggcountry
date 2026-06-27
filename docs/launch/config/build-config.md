@@ -13,7 +13,7 @@ Branch: `main`.
 | Setting | Value | Status |
 |---|---|---|
 | MARKETING_VERSION | `1.0` | ✓ ready |
-| CURRENT_PROJECT_VERSION (local build target) | `17` | ✓ live in Dad Pilot through TestFlight |
+| CURRENT_PROJECT_VERSION (local build target) | `18` | ⏳ latest-source candidate; Dad Pilot currently live on `17` |
 | Deployment target | iOS 15.0 | ✓ required by LiteRT-LM Swift |
 | TARGETED_DEVICE_FAMILY | `1` (iPhone-only) | ✓ set tonight (was `1,2`; reversible decision) |
 | NSLocationWhenInUseUsageDescription | present | ✓ |
@@ -43,5 +43,5 @@ Branch: `main`.
 | Location permission | `ACCESS_COARSE_LOCATION` + `ACCESS_FINE_LOCATION`, no background location | ✓ foreground, user-initiated GPS-to-mile snapping; raw GPS stays on-device |
 
 ## What this means
-- **iOS** project-file blockers are cleared for the privacy manifest, shared scheme, LiteRT-LM package wiring, Release signing, and TestFlight archive/upload lane. Build `17` is live in Dad Pilot through the public TestFlight link and matches the current native app source. Scout AI still needs model-download/runtime smoke proof and the full 100-question Eval Lab export on a real TestFlight iPhone before Dad-ready claims.
+- **iOS** project-file blockers are cleared for the privacy manifest, shared scheme, LiteRT-LM package wiring, Release signing, and TestFlight archive/upload lane. Build `17` is live in Dad Pilot through the public TestFlight link; local build target `18` is the latest-source candidate and needs native upload plus Dad Pilot refresh proof before Dad can install that exact source from TestFlight. Scout AI still needs model-download/runtime smoke proof and the full 100-question Eval Lab export on a real TestFlight iPhone before Dad-ready claims.
 - **Android** can build a signed release AAB with the local upload keystore proof already recorded. Gemma and foreground GPS are wired in the native Android lane, but still need physical-device smoke proof before submission.
