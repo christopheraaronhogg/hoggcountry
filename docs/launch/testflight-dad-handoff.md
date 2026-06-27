@@ -15,11 +15,14 @@ use that phone to produce the final Scout local-AI `Run 100` export.
   `docs/launch/proof/ios-testflight-attempt-2026-06-27T12-39-12-099Z.md`.
 - Dad Pilot/App Store Connect proof for build `19`:
   `docs/launch/proof/ios-testflight-build-19-2026-06-27.md`.
-- The local Xcode target is now build `20` so the latest Scout chat transcript
-  polish can be uploaded next. Build `20` is not Dad Pilot proof until App Store
+- Build `20` was uploaded from commit `54fe3f9431d5973a2de6e0773604ad846be2dea3`
+  as an intermediate, but later Scout chat scroll geometry changed before Dad
+  Pilot refresh.
+- The local Xcode target is now build `21` so the latest Scout chat transcript
+  polish can be uploaded next. Build `21` is not Dad Pilot proof until App Store
   Connect processing and Dad Pilot refresh both pass.
 - Dad can still run `Run 100` on build `19` for diagnosis because the suite
-  allows `1.0 (>= 13)`. Latest-source phone proof should wait for build `20`.
+  allows `1.0 (>= 13)`. Latest-source phone proof should wait for build `21`.
 - The remaining goal is not TestFlight availability. It is a real
   TestFlight/iPhone `Run 100` export, import, human review, and all 100 answers
   rated 5/5 with strict device proof.
@@ -149,8 +152,11 @@ changed after the last successful upload.
   externally available.
 - Native upload proof: build `19` was archived, exported, and uploaded from the
   native app source in commit `2628c58dbefd9fe5f33f0e0ecd39bf259bfe4ad1`.
-- Latest-source candidate: local Xcode target `1.0 (20)` is prepped in
-  `docs/launch/proof/ios-testflight-build-20-prep-2026-06-27.md`, but it still
+- Intermediate upload: build `20` was archived and uploaded from commit
+  `54fe3f9431d5973a2de6e0773604ad846be2dea3`, but it is not the latest-source
+  Dad Pilot target after the subsequent Scout chat scroll geometry change.
+- Latest-source candidate: local Xcode target `1.0 (21)` is the next candidate,
+  but it still
   needs upload, App Store Connect processing, and Dad Pilot refresh.
 - Current repo proof: later commits may add docs/tests/proof. Check
   `npm run status:scout-local-ai` for whether native app source changed after

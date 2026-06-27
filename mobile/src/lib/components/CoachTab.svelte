@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
+	import { resolve } from '$app/paths';
 	import { quickPrompts } from '$lib/scout/quick-prompts';
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import {
@@ -123,6 +124,13 @@
 		return null;
 	}
 
+	function elementTopInLog(element: HTMLElement): number {
+		if (!logRef) return element.offsetTop;
+		const logRect = logRef.getBoundingClientRect();
+		const elementRect = element.getBoundingClientRect();
+		return elementRect.top - logRect.top + logRef.scrollTop;
+	}
+
 	function scheduleDomTask(task: () => void): void {
 		void tick().then(() => {
 			if (scrollFrame !== null && typeof cancelAnimationFrame !== 'undefined') {
@@ -181,7 +189,7 @@
 				CHAT_FOLLOW_THRESHOLD
 			);
 		}
-		return liveEdgeRef.offsetTop - (logRef.scrollTop + logRef.clientHeight) <= CHAT_FOLLOW_THRESHOLD;
+		return elementTopInLog(liveEdgeRef) - (logRef.scrollTop + logRef.clientHeight) <= CHAT_FOLLOW_THRESHOLD;
 	}
 
 	function scrollToLiveEdge(smooth = false): void {
@@ -192,7 +200,7 @@
 			if (!logRef) return;
 			updateTurnSpacer();
 			const target = liveEdgeRef
-				? liveEdgeScrollTop(liveEdgeRef.offsetTop, logRef.clientHeight)
+				? liveEdgeScrollTop(elementTopInLog(liveEdgeRef), logRef.clientHeight)
 				: Math.max(0, logRef.scrollHeight - turnSpacer - logRef.clientHeight);
 			scrollLogTo(target, smooth);
 			rememberReaderAnchor();
@@ -203,9 +211,10 @@
 		scheduleDomTask(() => {
 			if (!logRef || !liveEdgeRef) return;
 			updateTurnSpacer();
+			const liveEdgeTop = elementTopInLog(liveEdgeRef);
 			const visibleBottom = logRef.scrollTop + logRef.clientHeight - 18;
-			if (liveEdgeRef.offsetTop > visibleBottom) {
-				scrollLogTo(liveEdgeScrollTop(liveEdgeRef.offsetTop, logRef.clientHeight), false);
+			if (liveEdgeTop > visibleBottom) {
+				scrollLogTo(liveEdgeScrollTop(liveEdgeTop, logRef.clientHeight), false);
 			}
 			rememberReaderAnchor();
 		});
@@ -234,12 +243,11 @@
 
 		const message = findMessageElement(messageId);
 		if (message) {
-			scrollLogTo(turnStartScrollTop(message.offsetTop, logRef.clientHeight), smooth);
+			scrollLogTo(turnStartScrollTop(elementTopInLog(message), logRef.clientHeight), smooth);
 			rememberReaderAnchor();
 		}
 
 		turnPlacementInProgress = false;
-		if (resumeFollowing) keepLiveEdgeVisible();
 	}
 
 	async function restoreInitialReaderPosition(): Promise<void> {
@@ -270,10 +278,11 @@
 		if (!logRef) return;
 		const messages = logRef.querySelectorAll<HTMLElement>('[data-message-id]');
 		for (const message of messages) {
-			if (message.offsetTop + message.offsetHeight >= logRef.scrollTop + 1) {
+			const messageTop = elementTopInLog(message);
+			if (messageTop + message.offsetHeight >= logRef.scrollTop + 1) {
 				readerAnchor = {
 					messageId: message.dataset.messageId ?? '',
-					offsetFromTop: message.offsetTop - logRef.scrollTop
+					offsetFromTop: messageTop - logRef.scrollTop
 				};
 				return;
 			}
@@ -288,7 +297,7 @@
 			if (!logRef || following) return;
 			const message = findMessageElement(anchor.messageId);
 			if (!message) return;
-			scrollLogTo(Math.max(0, message.offsetTop - anchor.offsetFromTop), false);
+			scrollLogTo(Math.max(0, elementTopInLog(message) - anchor.offsetFromTop), false);
 		});
 	}
 
@@ -371,7 +380,7 @@
 		}
 	}
 
-	function messageHref(messageId: string): string {
+	function messageHash(messageId: string): string {
 		return `${MESSAGE_HASH_PREFIX}${encodeURIComponent(messageId)}`;
 	}
 
@@ -389,7 +398,7 @@
 	function setMessageHash(messageId: string) {
 		if (typeof window === 'undefined') return;
 		const url = new URL(window.location.href);
-		url.hash = messageHref(messageId);
+		url.hash = messageHash(messageId);
 		history.pushState(history.state, '', url);
 	}
 
@@ -400,7 +409,8 @@
 		void placeTurnAtReadingStart(messageId, smooth, false, false);
 	}
 
-	function openMessageLink(messageId: string) {
+	function openMessageLink(event: MouseEvent, messageId: string) {
+		event.preventDefault();
 		navigateToMessage(messageId, true, true);
 	}
 
@@ -646,12 +656,12 @@
 					{/if}
 
 					<div class="message-foot">
-						<button
-							type="button"
+						<a
+							href={resolve(`/${messageHash(message.id)}` as `/#${string}`)}
 							class="message-link"
 							aria-label={`Link to ${message.role === 'assistant' ? 'Scout' : 'your'} message at ${new Date(message.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`}
-							onclick={() => openMessageLink(message.id)}
-						>#</button>
+							onclick={(event) => openMessageLink(event, message.id)}
+						>#</a>
 						<span class="timestamp">{new Date(message.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
 					</div>
 				</div>
@@ -1034,21 +1044,21 @@
 		justify-content: flex-end;
 		gap: 8px;
 	}
-		.message-link {
-			width: 24px;
-			height: 24px;
-			display: grid;
-			place-items: center;
-			padding: 0;
-			border: 0;
-			border-radius: 50%;
-			background: transparent;
-			color: var(--muted);
-			font: inherit;
-			font-size: var(--text-xs);
-			font-weight: 900;
-			text-decoration: none;
-			opacity: 0.72;
+	.message-link {
+		width: 24px;
+		height: 24px;
+		display: grid;
+		place-items: center;
+		padding: 0;
+		border: 0;
+		border-radius: 50%;
+		background: transparent;
+		color: var(--muted);
+		font: inherit;
+		font-size: var(--text-xs);
+		font-weight: 900;
+		text-decoration: none;
+		opacity: 0.72;
 	}
 	.message-link:hover,
 	.message-link:focus-visible {
