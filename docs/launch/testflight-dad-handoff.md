@@ -9,21 +9,21 @@ without publishing publicly in the App Store.
   `https://testflight.apple.com/join/BagBCrzf`.
 - App Store Connect app id `6782505691` and bundle id
   `com.hoggcountry.trailassistant` are verified.
-- Build `1.0 (11)` is in Dad Pilot, Apple beta review is approved, and App
+- Build `1.0 (12)` is in Dad Pilot, Apple beta review is approved, and App
   Store Connect reports external state `IN_BETA_TESTING`.
-- Dad Pilot now lists only build `11`; build `10` was removed from the tester
-  group after build `11` became available.
-- The Scout Eval Lab proof target is build `11`, because the eval handoff now
+- Dad Pilot now lists only build `12`; build `11` was removed from the tester
+  group after build `12` became available.
+- The Scout Eval Lab proof target is build `12`, because the eval handoff now
   records source-evidence gaps and final proof requires a TestFlight iPhone
-  install on build `11` or newer before a 100-question device run can count as
+  install on build `12` or newer before a 100-question device run can count as
   Dad proof.
 - iOS Release signing is configured with team `3CFU9J87A5` and the
   `Hoggcountry App Store Connect` provisioning profile.
-- Native upload proof for build `11`: `check`, unit tests, `cap:sync:ios`,
+- Native upload proof for build `12`: `check`, unit tests, `cap:sync:ios`,
   archive, export, and App Store Connect upload passed on 2026-06-27:
-  `docs/launch/proof/ios-testflight-attempt-2026-06-27T01-47-15-162Z.md`.
-- Dad Pilot/App Store Connect proof for build `11`:
-  `docs/launch/proof/ios-testflight-build-11-2026-06-27.md`.
+  `docs/launch/proof/ios-testflight-attempt-2026-06-27T02-18-34-941Z.md`.
+- Dad Pilot/App Store Connect proof for build `12`:
+  `docs/launch/proof/ios-testflight-build-12-2026-06-27.md`.
 - The repeatable upload command for the next build is:
 
 ```bash
@@ -86,7 +86,7 @@ npm run refresh:testflight-dad-pilot -- \
   --submit-review \
   --remove-previous \
   --update-release-evidence \
-  --proof-out docs/launch/proof/ios-testflight-build-11-$(date +%F).md
+  --proof-out docs/launch/proof/ios-testflight-build-<next-build>-$(date +%F).md
 ```
 
 6. Ask Dad to update/install through the public TestFlight link, open Settings,
@@ -98,12 +98,12 @@ npm run refresh:testflight-dad-pilot -- \
 
 - Signing proof: selected team id, `security find-identity` result, and
   `DEVELOPMENT_TEAM` build setting.
-- Upload proof: `docs/launch/proof/ios-testflight-attempt-2026-06-27T01-47-15-162Z.md`
+- Upload proof: `docs/launch/proof/ios-testflight-attempt-2026-06-27T02-18-34-941Z.md`
   from the successful `--upload` run.
-- App Store Connect proof: build `11` processed, beta review state, Dad Pilot
-  membership, public link enabled, and build `10` removal after build `11` is
+- App Store Connect proof: build `12` processed, beta review state, Dad Pilot
+  membership, public link enabled, and build `11` removal after build `12` is
   available. Current proof:
-  `docs/launch/proof/ios-testflight-build-11-2026-06-27.md`.
+  `docs/launch/proof/ios-testflight-build-12-2026-06-27.md`.
 - Release ledger proof: update `docs/launch/release-evidence.json` only after
   upload/processing and Dad Pilot attachment are proven.
 - Dad-ready proof: Dad can install/update from the TestFlight link, the Eval Lab
