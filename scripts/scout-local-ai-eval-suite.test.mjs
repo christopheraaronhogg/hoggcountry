@@ -267,11 +267,12 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(status.inbox.latestCandidate.appVersion, '1.0');
 	assert.equal(status.inbox.latestCandidate.appBuild, '13');
 	assert.equal(status.inbox.latestCandidate.installSource, 'testflight');
-	assert.equal(status.nextAction.kind, 'get-device-run');
-	assert.match(status.nextAction.text, /Install the latest TestFlight build/u);
-	assert.match(status.nextAction.text, /Run 100/u);
+	assert.equal(status.nextAction.kind, 'prepare-inbox-export');
+	assert.match(status.nextAction.text, /likely Scout Eval Lab export is already/u);
+	assert.match(status.nextAction.text, /device-status-inbox-latest/u);
 	assert.match(status.nextAction.text, /prepare-review:scout-local-ai-device-run/u);
 	assert.match(status.nextAction.text, /--run inbox/u);
+	assert.match(status.nextAction.text, /do not count it as final Dad proof/u);
 });
 
 test('status command surfaces partial TestFlight iPhone runs without counting them as final proof', async () => {
@@ -809,7 +810,8 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Latest native upload proof: .*ios-testflight-attempt-2026-06-27T02-39-27-165Z\.md` \(passed/u);
 	assert.match(result.stdout, /App Store Connect API key in latest proof: yes/u);
 	assert.match(result.stdout, /APP_STORE_CONNECT_API_ISSUER_ID/u);
-	assert.match(result.stdout, /Install the latest TestFlight build/u);
+	assert.match(result.stdout, /A likely Scout Eval Lab export is already/u);
+	assert.match(result.stdout, /device-handoff-inbox-latest/u);
 	assert.match(result.stdout, /use `Run 100` for real proof/u);
 	assert.match(result.stdout, /npm run prepare-review:scout-local-ai-device-run/u);
 	assert.match(result.stdout, /--run latest/u);

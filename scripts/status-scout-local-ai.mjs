@@ -228,7 +228,8 @@ async function buildStatus(paths) {
 			currentBacklogs,
 			currentIterationPlans,
 			strictDeviceProofs,
-			testflight
+			testflight,
+			inbox
 		)
 	};
 }
@@ -343,7 +344,8 @@ function nextActionFor(
 	currentBacklogs,
 	currentIterationPlans,
 	strictDeviceProofs,
-	testflight
+	testflight,
+	inbox
 ) {
 	const gate = (id) => gates.find((item) => item.id === id);
 	if (!gate('suite')?.ok) {
@@ -377,6 +379,13 @@ function nextActionFor(
 		};
 	}
 	if (!gate('device-run')?.ok) {
+		if (inbox?.latestCandidate) {
+			const candidate = inbox.latestCandidate;
+			return {
+				kind: 'prepare-inbox-export',
+				text: `A likely Scout Eval Lab export is already in ${inbox.path}: ${candidate.path} (${candidate.runId}, ${candidate.caseCount} cases). Inspect and import it with ${DEVICE_REVIEW_PREP_COMMAND}. If inspection blocks it, fix that export or rerun Run 100 on the phone; do not count it as final Dad proof until intake creates a current full device-on-device-gemma run.`
+			};
+		}
 		const latestPartialRun = currentPartialDeviceRuns.at(-1)?.value;
 		if (latestPartialRun) {
 			const completed = latestPartialRun.caseCount ?? latestPartialRun.results?.length ?? 0;
