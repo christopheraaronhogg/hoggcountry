@@ -775,6 +775,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /npm run inspect:scout-local-ai-device-run/u);
 	assert.match(result.stdout, /npm run intake:scout-local-ai-device-run/u);
 	assert.match(result.stdout, /npm run apply-review:scout-local-ai/u);
+	assert.match(result.stdout, /npm run review-status:scout-local-ai/u);
 	assert.match(result.stdout, /npm run verify:scout-local-ai-stability-proof/u);
 	assert.match(result.stdout, /Final readiness still requires a full current-suite TestFlight\/iPhone/u);
 });
