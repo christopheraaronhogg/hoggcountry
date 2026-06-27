@@ -23,6 +23,8 @@
 
 	const SUITE_URL = '/scout/dad-local-ai-100.json';
 	const SAVED_RUN_KEY = 'hoggcountry:scout-local-ai-eval:last-run:v1';
+	const REVIEW_INBOX_PATH = 'data/scout-local-ai/inbox/';
+	const REVIEW_PREP_COMMAND = 'npm run prepare-review:scout-local-ai-device-run -- --run inbox';
 
 	type EvalRunHealth = {
 		state: 'final' | 'partial' | 'smoke' | 'stale' | 'pending';
@@ -42,6 +44,16 @@
 		stateLabel: string;
 		detail: string;
 		canExport: boolean;
+	};
+	type EvalExportHandoff = {
+		state: 'final' | 'diagnostic';
+		label: string;
+		detail: string;
+		command: string;
+		fileName: string;
+		shareTitle: string;
+		shareText: string;
+		successMessage: string;
 	};
 
 	let suite = $state.raw<ScoutLocalAiEvalSuite | null>(null);
@@ -85,6 +97,7 @@
 	const activeRunFreshness = $derived(activeRun ? summarizeRunFreshness(activeRun, suite) : null);
 	const savedRunFreshness = $derived(savedRun ? summarizeRunFreshness(savedRun, suite) : null);
 	const activeRunCanExport = $derived(Boolean(activeRun && activeRunFreshness?.canExport));
+	const exportHandoff = $derived(activeRun ? summarizeExportHandoff(activeRun, suite) : null);
 	const canResume = $derived(
 		Boolean(
 			proofStatus.canRunSmoke &&
@@ -255,19 +268,22 @@
 		const currentRun = activeRun;
 		if (!currentRun || !canExportCurrentRun()) return;
 		const blob = new Blob([JSON.stringify(currentRun, null, 2)], { type: 'application/json' });
+		const handoff = summarizeExportHandoff(currentRun, suite);
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement('a');
 		link.href = url;
-		link.download = `${currentRun.runId}.json`;
+		link.download = handoff.fileName;
 		document.body.append(link);
 		link.click();
 		link.remove();
 		setTimeout(() => URL.revokeObjectURL(url), 1000);
-		setExportStatus('downloaded', 'Download started.');
+		setExportStatus('downloaded', handoff.successMessage);
 	}
 
 	async function copyRun() {
-		if (!activeRun || !exportText || !canExportCurrentRun()) return;
+		const currentRun = activeRun;
+		if (!currentRun || !exportText || !canExportCurrentRun()) return;
+		const handoff = summarizeExportHandoff(currentRun, suite);
 		try {
 			if (navigator.clipboard) {
 				await navigator.clipboard.writeText(exportText);
@@ -279,7 +295,7 @@
 			} else {
 				throw new Error('Copy is not available.');
 			}
-			setExportStatus('copied', 'Run copied.');
+			setExportStatus('copied', handoff.successMessage);
 		} catch {
 			setExportStatus('failed', 'Copy failed. Select the JSON below.');
 		}
@@ -292,15 +308,16 @@
 			await copyRun();
 			return;
 		}
-		const file = new File([exportText], `${currentRun.runId}.json`, { type: 'application/json' });
+		const handoff = summarizeExportHandoff(currentRun, suite);
+		const file = new File([exportText], handoff.fileName, { type: 'application/json' });
 		const fileShare: ShareData = {
-			title: 'Scout local AI eval run',
-			text: currentRun.runId,
+			title: handoff.shareTitle,
+			text: handoff.shareText,
 			files: [file]
 		};
 		const textShare: ShareData = {
-			title: 'Scout local AI eval run',
-			text: exportText
+			title: handoff.shareTitle,
+			text: `${handoff.shareText}\n\n${exportText}`
 		};
 		try {
 			if (!navigator.canShare || navigator.canShare(fileShare)) {
@@ -308,7 +325,7 @@
 			} else {
 				await navigator.share(textShare);
 			}
-			setExportStatus('shared', 'Share sheet opened.');
+			setExportStatus('shared', handoff.successMessage);
 		} catch (err) {
 			if (err instanceof DOMException && err.name === 'AbortError') return;
 			await copyRun();
@@ -499,6 +516,38 @@
 		};
 	}
 
+	function summarizeExportHandoff(
+		currentRun: ScoutLocalAiEvalRun,
+		currentSuite: ScoutLocalAiEvalSuite | null
+	): EvalExportHandoff {
+		const fileName = `${currentRun.runId}.json`;
+		const fullRun = currentSuite ? isFullFinalRun(currentRun, currentSuite) : false;
+		if (fullRun) {
+			const shareText = `Final Scout Run 100 export ${currentRun.runId}. Save the shared JSON into ${REVIEW_INBOX_PATH}, then run: ${REVIEW_PREP_COMMAND}`;
+			return {
+				state: 'final',
+				label: 'Final Run 100',
+				detail: `Save the shared JSON into ${REVIEW_INBOX_PATH}`,
+				command: REVIEW_PREP_COMMAND,
+				fileName,
+				shareTitle: 'Scout final Run 100 export',
+				shareText,
+				successMessage: 'Final Run 100 JSON ready for inbox review.'
+			};
+		}
+		const shareText = `Scout diagnostic export ${currentRun.runId}. This smoke or partial JSON is diagnostic only, not final Dad proof. Use it to rescue an interrupted run.`;
+		return {
+			state: 'diagnostic',
+			label: 'Diagnostic export',
+			detail: 'Smoke or partial JSON is diagnostic only, not final Dad proof.',
+			command: 'Finish Run 100 on the TestFlight iPhone for final proof.',
+			fileName,
+			shareTitle: 'Scout diagnostic eval export',
+			shareText,
+			successMessage: 'Diagnostic JSON ready; not final Dad proof.'
+		};
+	}
+
 	function isFullFinalRun(
 		currentRun: ScoutLocalAiEvalRun,
 		currentSuite: ScoutLocalAiEvalSuite
@@ -674,6 +723,14 @@
 					<strong>{runHealth.appLabel}</strong>
 				</div>
 			</div>
+		</div>
+	{/if}
+
+	{#if exportHandoff && activeRunCanExport}
+		<div class="eval-handoff" data-state={exportHandoff.state} aria-label="Scout eval export handoff">
+			<span>{exportHandoff.label}</span>
+			<strong>{exportHandoff.detail}</strong>
+			<em>{exportHandoff.command}</em>
 		</div>
 	{/if}
 
@@ -888,6 +945,50 @@
 	.eval-rescue[data-state='pending'] {
 		border-color: color-mix(in srgb, var(--danger) 30%, var(--line));
 		background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+	}
+
+	.eval-handoff {
+		display: grid;
+		gap: 3px;
+		border: 1px solid var(--line);
+		border-radius: 12px;
+		padding: 10px;
+		background: var(--surface);
+	}
+
+	.eval-handoff[data-state='final'] {
+		border-color: color-mix(in srgb, var(--forest) 35%, var(--line));
+		background: var(--forest-soft);
+	}
+
+	.eval-handoff[data-state='diagnostic'] {
+		border-color: color-mix(in srgb, var(--moss) 32%, var(--line));
+	}
+
+	.eval-handoff span {
+		font-size: 0.64rem;
+		font-weight: 900;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--muted);
+	}
+
+	.eval-handoff strong,
+	.eval-handoff em {
+		min-width: 0;
+		overflow-wrap: anywhere;
+		font-size: 0.78rem;
+		line-height: 1.25;
+	}
+
+	.eval-handoff strong {
+		font-weight: 900;
+	}
+
+	.eval-handoff em {
+		font-style: normal;
+		font-weight: 800;
+		color: var(--muted);
 	}
 
 	.eval-rescue-heading {
