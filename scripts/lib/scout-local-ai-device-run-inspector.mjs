@@ -83,7 +83,7 @@ export function inspectDeviceRun({ run, suite, inputPath }) {
 			}
 			if (typeof result.answer !== 'string') structuralErrors.push(`${result.caseId}: answer must be a string`);
 			if (result.answerOrigin !== run.evidenceLane) {
-				warnings.push(`${result.caseId}: answerOrigin ${result.answerOrigin ?? '<missing>'} differs from run.evidenceLane ${run.evidenceLane ?? '<missing>'}`);
+				contextProblems.push(`${result.caseId}: answerOrigin must match run.evidenceLane ${run.evidenceLane ?? '<missing>'}, got ${result.answerOrigin ?? '<missing>'}`);
 			}
 			if (result.error) warnings.push(`${result.caseId}: provider error recorded: ${result.error}`);
 			if (!String(result.answer ?? '').trim() && !result.error) {

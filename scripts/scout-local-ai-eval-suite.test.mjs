@@ -1313,6 +1313,7 @@ test('device run inspector rejects stale or wrong-context exports before review 
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-device-inspect-block-'));
 	const stalePath = join(outputDir, 'device-stale-export.json');
 	const wrongBuildPath = join(outputDir, 'device-wrong-build-export.json');
+	const mixedOriginPath = join(outputDir, 'device-mixed-origin-export.json');
 	const staleRun = deviceRunForCases(suite, suite.cases, {
 		runId: 'device-inspect-stale',
 		completeTools: true,
@@ -1332,8 +1333,15 @@ test('device run inspector rejects stale or wrong-context exports before review 
 			}
 		})
 	});
+	const mixedOriginRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-inspect-mixed-origin',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	mixedOriginRun.results[0].answerOrigin = 'scaffold-not-model';
 	await writeFile(stalePath, `${JSON.stringify(staleRun, null, 2)}\n`);
 	await writeFile(wrongBuildPath, `${JSON.stringify(wrongBuildRun, null, 2)}\n`);
+	await writeFile(mixedOriginPath, `${JSON.stringify(mixedOriginRun, null, 2)}\n`);
 
 	const staleResult = await execFileAsync(
 		process.execPath,
@@ -1366,6 +1374,22 @@ test('device run inspector rejects stale or wrong-context exports before review 
 	assert.equal(wrongBuildReport.readyForFinalIntake, false);
 	assert.equal(wrongBuildReport.nextCommand, null);
 	assert.match(wrongBuildReport.contextProblems.join('\n'), /app\.build must be >= 13/u);
+
+	const mixedOriginResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/inspect-scout-local-ai-device-run.mjs',
+			'--run',
+			mixedOriginPath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const mixedOriginReport = JSON.parse(mixedOriginResult.stdout);
+	assert.equal(mixedOriginReport.status, 'wrong-proof-context');
+	assert.equal(mixedOriginReport.readyForFinalIntake, false);
+	assert.equal(mixedOriginReport.nextCommand, null);
+	assert.match(mixedOriginReport.contextProblems.join('\n'), /answerOrigin must match run\.evidenceLane device-on-device-gemma/u);
 });
 
 test('device review preparation command inspects, imports, and reports review status', async () => {
@@ -4294,6 +4318,44 @@ test('device run intake rejects scaffold runs by default', async () => {
 		),
 		/evidenceLane must be device-on-device-gemma/u
 	);
+});
+
+test('device run intake rejects mixed answer origins before review files are created', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-intake-origin-reject-'));
+	const inputPath = join(outputDir, 'mixed-origin-export.json');
+	const deviceRunDir = join(outputDir, 'device-runs');
+	const reviewDir = join(outputDir, 'reviews');
+	const packetDir = join(outputDir, 'review-packets');
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 3), {
+		runId: 'device-mixed-answer-origin',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	run.results[0].answerOrigin = 'scaffold-not-model';
+	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/import-scout-local-ai-device-run.mjs',
+				'--run',
+				inputPath,
+				'--allow-partial',
+				'--device-run-dir',
+				deviceRunDir,
+				'--review-dir',
+				reviewDir,
+				'--packet-dir',
+				packetDir
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 }
+		),
+		/answerOrigin must match run\.evidenceLane device-on-device-gemma/u
+	);
+	await assert.rejects(readFile(join(deviceRunDir, 'device-mixed-answer-origin.json'), 'utf8'));
+	await assert.rejects(readFile(join(reviewDir, 'device-mixed-answer-origin.review.json'), 'utf8'));
 });
 
 test('strict device proof accepts a full 5-star device review', async () => {

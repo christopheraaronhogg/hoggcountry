@@ -124,7 +124,9 @@ function validateDeviceRun(run, suite, options) {
 			errors.push(`${result.caseId}: requiredTools do not match canonical suite`);
 		}
 		if (result.answerOrigin !== run.evidenceLane) {
-			warnings.push(`${result.caseId}: answerOrigin ${result.answerOrigin ?? '<missing>'} differs from run.evidenceLane ${run.evidenceLane}`);
+			const message = `${result.caseId}: answerOrigin must match run.evidenceLane ${run.evidenceLane}, got ${result.answerOrigin ?? '<missing>'}`;
+			if (options.allowNonDevice) warnings.push(message);
+			else errors.push(message);
 		}
 		if (typeof result.answer !== 'string') errors.push(`${result.caseId}: answer must be a string`);
 		if (!result.answer && !result.error) warnings.push(`${result.caseId}: answer is empty and no error was recorded`);
