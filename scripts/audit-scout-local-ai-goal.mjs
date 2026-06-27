@@ -15,6 +15,7 @@ const DEFAULT_SUITE = 'data/scout-local-ai/dad-local-ai-100.json';
 const DEFAULT_MOBILE_SUITE = 'mobile/static/scout/dad-local-ai-100.json';
 const DEFAULT_RUNS_DIR = 'data/scout-local-ai/runs';
 const DEFAULT_DEVICE_RUNS_DIR = 'data/scout-local-ai/device-runs';
+const DEFAULT_INBOX_DIR = 'data/scout-local-ai/inbox';
 const DEFAULT_REVIEWS_DIR = 'data/scout-local-ai/reviews';
 const DEFAULT_BACKLOG_DIR = 'data/scout-local-ai/backlog';
 const DEFAULT_ITERATIONS_DIR = 'data/scout-local-ai/iterations';
@@ -27,6 +28,7 @@ const paths = {
 	mobileSuite: resolveInputPath(cli.mobileSuite ?? DEFAULT_MOBILE_SUITE),
 	runsDir: resolveInputPath(cli.runsDir ?? DEFAULT_RUNS_DIR),
 	deviceRunsDir: resolveInputPath(cli.deviceRunsDir ?? DEFAULT_DEVICE_RUNS_DIR),
+	inboxDir: resolveInputPath(cli.inboxDir ?? DEFAULT_INBOX_DIR),
 	reviewsDir: resolveInputPath(cli.reviewsDir ?? DEFAULT_REVIEWS_DIR),
 	backlogDir: resolveInputPath(cli.backlogDir ?? DEFAULT_BACKLOG_DIR),
 	iterationsDir: resolveInputPath(cli.iterationsDir ?? DEFAULT_ITERATIONS_DIR),
@@ -90,6 +92,9 @@ const audit = {
 		currentFullRoutingRuns: status.runs.currentFullRoutingRuns.length,
 		currentFullDeviceRuns: status.runs.currentFullDeviceRuns.length,
 		currentPartialDeviceRuns: status.runs.currentPartialDeviceRuns.length,
+		inboxCandidateExports: status.inbox?.candidateCount ?? 0,
+		inboxJsonFiles: status.inbox?.jsonFileCount ?? 0,
+		latestInboxExport: summarizeLatestInboxExport(status.inbox?.latestCandidate),
 		currentDeviceReviews: status.reviews.currentDeviceReviews.length,
 		strictDeviceProofPasses: status.strictDeviceProofs.filter((proof) => proof.ok).length,
 		nextAction: status.nextAction
@@ -285,6 +290,8 @@ async function loadStatus(paths) {
 		relative(REPO_ROOT, paths.runsDir),
 		'--device-runs-dir',
 		relative(REPO_ROOT, paths.deviceRunsDir),
+		'--inbox-dir',
+		relative(REPO_ROOT, paths.inboxDir),
 		'--reviews-dir',
 		relative(REPO_ROOT, paths.reviewsDir),
 		'--backlog-dir',
@@ -329,6 +336,10 @@ function createAuditMarkdown(audit) {
 		`- Recorded Dad Pilot build: \`${audit.currentStatus.recordedDadPilotBuild ?? '<unknown>'}\``,
 		`- Full routing runs: ${audit.currentStatus.currentFullRoutingRuns}`,
 		`- Full device runs: ${audit.currentStatus.currentFullDeviceRuns}`,
+		`- Inbox candidate exports: ${audit.currentStatus.inboxCandidateExports}`,
+		audit.currentStatus.latestInboxExport
+			? `- Latest inbox export: \`${audit.currentStatus.latestInboxExport.path}\` (${audit.currentStatus.latestInboxExport.runId}, ${audit.currentStatus.latestInboxExport.caseCount} cases)`
+			: '- Latest inbox export: none',
 		`- Device reviews: ${audit.currentStatus.currentDeviceReviews}`,
 		`- Strict proof passes: ${audit.currentStatus.strictDeviceProofPasses}`,
 		'',
@@ -337,6 +348,19 @@ function createAuditMarkdown(audit) {
 		audit.currentStatus.nextAction.text
 	);
 	return `${lines.join('\n')}\n`;
+}
+
+function summarizeLatestInboxExport(candidate) {
+	if (!candidate) return null;
+	return {
+		path: candidate.path,
+		runId: candidate.runId,
+		caseCount: candidate.caseCount,
+		evidenceLane: candidate.evidenceLane,
+		appVersion: candidate.appVersion,
+		appBuild: candidate.appBuild,
+		installSource: candidate.installSource
+	};
 }
 
 async function readJson(path) {

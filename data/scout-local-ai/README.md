@@ -69,6 +69,9 @@ That report maps the requested success criteria to the current suite, runner,
 review, iteration, TestFlight, and strict device-proof evidence. It should stay
 `Goal complete: no` until the current TestFlight build is available for Dad and
 at least two full iPhone Eval Lab runs pass strict 100/100 5-star proof.
+Its current-state summary also includes inbox candidate counts, so a shared
+iPhone export waiting for inspection is visible without treating it as imported
+device proof.
 
 Before handing the phone to Dad or sending Chris the next TestFlight steps,
 generate the current one-page phone/run/review checklist:

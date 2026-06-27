@@ -671,10 +671,12 @@ test('goal audit maps original success criteria without hiding missing device pr
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-goal-audit-'));
 	const runsDir = join(outputDir, 'runs');
 	const deviceRunsDir = join(outputDir, 'device-runs');
+	const inboxDir = join(outputDir, 'inbox');
 	const reviewsDir = join(outputDir, 'reviews');
 	const backlogDir = join(outputDir, 'backlog');
 	const iterationsDir = join(outputDir, 'iterations');
 	await mkdir(runsDir, { recursive: true });
+	await mkdir(inboxDir, { recursive: true });
 	const routingRun = deviceRunForCases(suite, suite.cases, {
 		runId: 'routing-goal-audit-proof',
 		completeTools: true
@@ -683,6 +685,12 @@ test('goal audit maps original success criteria without hiding missing device pr
 	routingRun.runContext = null;
 	for (const result of routingRun.results) result.answerOrigin = 'scaffold-not-model';
 	await writeFile(join(runsDir, 'routing-goal-audit-proof.json'), `${JSON.stringify(routingRun, null, 2)}\n`);
+	const inboxRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-goal-audit-inbox',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	await writeFile(join(inboxDir, 'AirDrop Hoggcountry latest.json'), `${JSON.stringify(inboxRun, null, 2)}\n`);
 
 	const result = await execFileAsync(
 		process.execPath,
@@ -692,6 +700,8 @@ test('goal audit maps original success criteria without hiding missing device pr
 			runsDir,
 			'--device-runs-dir',
 			deviceRunsDir,
+			'--inbox-dir',
+			inboxDir,
 			'--reviews-dir',
 			reviewsDir,
 			'--backlog-dir',
@@ -721,7 +731,15 @@ test('goal audit maps original success criteria without hiding missing device pr
 	assert.equal(audit.currentStatus.currentFullRoutingRuns, 1);
 	assert.equal(audit.currentStatus.currentFullDeviceRuns, 0);
 	assert.equal(audit.currentStatus.currentPartialDeviceRuns, 0);
-	assert.equal(audit.currentStatus.nextAction.kind, 'get-device-run');
+	assert.equal(audit.currentStatus.inboxCandidateExports, 1);
+	assert.equal(audit.currentStatus.inboxJsonFiles, 1);
+	assert.equal(audit.currentStatus.latestInboxExport.runId, 'device-goal-audit-inbox');
+	assert.equal(audit.currentStatus.latestInboxExport.caseCount, 100);
+	assert.equal(audit.currentStatus.latestInboxExport.evidenceLane, 'device-on-device-gemma');
+	assert.equal(audit.currentStatus.latestInboxExport.appBuild, '13');
+	assert.equal(audit.currentStatus.latestInboxExport.installSource, 'testflight');
+	assert.equal(audit.currentStatus.nextAction.kind, 'prepare-inbox-export');
+	assert.match(audit.currentStatus.nextAction.text, /device-goal-audit-inbox/u);
 	assert.match(audit.currentStatus.nextAction.text, /--run inbox/u);
 });
 
