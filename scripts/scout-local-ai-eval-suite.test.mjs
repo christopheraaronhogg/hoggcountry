@@ -1314,6 +1314,7 @@ test('device run inspector rejects stale or wrong-context exports before review 
 	const stalePath = join(outputDir, 'device-stale-export.json');
 	const wrongBuildPath = join(outputDir, 'device-wrong-build-export.json');
 	const mixedOriginPath = join(outputDir, 'device-mixed-origin-export.json');
+	const cloudModePath = join(outputDir, 'device-cloud-mode-export.json');
 	const staleRun = deviceRunForCases(suite, suite.cases, {
 		runId: 'device-inspect-stale',
 		completeTools: true,
@@ -1339,9 +1340,17 @@ test('device run inspector rejects stale or wrong-context exports before review 
 		runContext: finalDeviceRunContext()
 	});
 	mixedOriginRun.results[0].answerOrigin = 'scaffold-not-model';
+	const cloudModeRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-inspect-cloud-mode',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	cloudModeRun.results[0].mode = 'online';
+	cloudModeRun.results[0].provider = 'openai-api';
 	await writeFile(stalePath, `${JSON.stringify(staleRun, null, 2)}\n`);
 	await writeFile(wrongBuildPath, `${JSON.stringify(wrongBuildRun, null, 2)}\n`);
 	await writeFile(mixedOriginPath, `${JSON.stringify(mixedOriginRun, null, 2)}\n`);
+	await writeFile(cloudModePath, `${JSON.stringify(cloudModeRun, null, 2)}\n`);
 
 	const staleResult = await execFileAsync(
 		process.execPath,
@@ -1390,6 +1399,23 @@ test('device run inspector rejects stale or wrong-context exports before review 
 	assert.equal(mixedOriginReport.readyForFinalIntake, false);
 	assert.equal(mixedOriginReport.nextCommand, null);
 	assert.match(mixedOriginReport.contextProblems.join('\n'), /answerOrigin must match run\.evidenceLane device-on-device-gemma/u);
+
+	const cloudModeResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/inspect-scout-local-ai-device-run.mjs',
+			'--run',
+			cloudModePath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const cloudModeReport = JSON.parse(cloudModeResult.stdout);
+	assert.equal(cloudModeReport.status, 'wrong-proof-context');
+	assert.equal(cloudModeReport.readyForFinalIntake, false);
+	assert.equal(cloudModeReport.nextCommand, null);
+	assert.match(cloudModeReport.contextProblems.join('\n'), /mode must be on-device for device-on-device-gemma/u);
+	assert.match(cloudModeReport.contextProblems.join('\n'), /provider must be on-device-gemma for device-on-device-gemma/u);
 });
 
 test('device review preparation command inspects, imports, and reports review status', async () => {
@@ -4356,6 +4382,49 @@ test('device run intake rejects mixed answer origins before review files are cre
 	);
 	await assert.rejects(readFile(join(deviceRunDir, 'device-mixed-answer-origin.json'), 'utf8'));
 	await assert.rejects(readFile(join(reviewDir, 'device-mixed-answer-origin.review.json'), 'utf8'));
+});
+
+test('device run intake rejects cloud-mode answers before review files are created', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-intake-cloud-reject-'));
+	const inputPath = join(outputDir, 'cloud-mode-export.json');
+	const deviceRunDir = join(outputDir, 'device-runs');
+	const reviewDir = join(outputDir, 'reviews');
+	const packetDir = join(outputDir, 'review-packets');
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 3), {
+		runId: 'device-cloud-answer-mode',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	run.results[0].mode = 'online';
+	run.results[0].provider = 'openai-api';
+	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/import-scout-local-ai-device-run.mjs',
+				'--run',
+				inputPath,
+				'--allow-partial',
+				'--device-run-dir',
+				deviceRunDir,
+				'--review-dir',
+				reviewDir,
+				'--packet-dir',
+				packetDir
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 }
+		),
+		(error) => {
+			assert.match(error.stderr, /mode must be on-device for device-on-device-gemma/u);
+			assert.match(error.stderr, /provider must be on-device-gemma for device-on-device-gemma/u);
+			return true;
+		}
+	);
+	await assert.rejects(readFile(join(deviceRunDir, 'device-cloud-answer-mode.json'), 'utf8'));
+	await assert.rejects(readFile(join(reviewDir, 'device-cloud-answer-mode.review.json'), 'utf8'));
 });
 
 test('strict device proof accepts a full 5-star device review', async () => {

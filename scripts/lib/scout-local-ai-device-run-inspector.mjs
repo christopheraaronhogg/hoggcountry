@@ -85,6 +85,12 @@ export function inspectDeviceRun({ run, suite, inputPath }) {
 			if (result.answerOrigin !== run.evidenceLane) {
 				contextProblems.push(`${result.caseId}: answerOrigin must match run.evidenceLane ${run.evidenceLane ?? '<missing>'}, got ${result.answerOrigin ?? '<missing>'}`);
 			}
+			if (run.evidenceLane === DEVICE_EVIDENCE_LANE && result.mode !== 'on-device') {
+				contextProblems.push(`${result.caseId}: mode must be on-device for ${DEVICE_EVIDENCE_LANE}, got ${result.mode ?? '<missing>'}`);
+			}
+			if (run.evidenceLane === DEVICE_EVIDENCE_LANE && result.provider !== 'on-device-gemma') {
+				contextProblems.push(`${result.caseId}: provider must be on-device-gemma for ${DEVICE_EVIDENCE_LANE}, got ${result.provider ?? '<missing>'}`);
+			}
 			if (result.error) warnings.push(`${result.caseId}: provider error recorded: ${result.error}`);
 			if (!String(result.answer ?? '').trim() && !result.error) {
 				warnings.push(`${result.caseId}: answer is empty and no provider error was recorded`);

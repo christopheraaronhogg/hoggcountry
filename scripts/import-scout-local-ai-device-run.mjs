@@ -128,6 +128,16 @@ function validateDeviceRun(run, suite, options) {
 			if (options.allowNonDevice) warnings.push(message);
 			else errors.push(message);
 		}
+		if (run.evidenceLane === DEVICE_EVIDENCE_LANE && result.mode !== 'on-device') {
+			const message = `${result.caseId}: mode must be on-device for ${DEVICE_EVIDENCE_LANE}, got ${result.mode ?? '<missing>'}`;
+			if (options.allowNonDevice) warnings.push(message);
+			else errors.push(message);
+		}
+		if (run.evidenceLane === DEVICE_EVIDENCE_LANE && result.provider !== 'on-device-gemma') {
+			const message = `${result.caseId}: provider must be on-device-gemma for ${DEVICE_EVIDENCE_LANE}, got ${result.provider ?? '<missing>'}`;
+			if (options.allowNonDevice) warnings.push(message);
+			else errors.push(message);
+		}
 		if (typeof result.answer !== 'string') errors.push(`${result.caseId}: answer must be a string`);
 		if (!result.answer && !result.error) warnings.push(`${result.caseId}: answer is empty and no error was recorded`);
 		if (!result.toolExpectations || !Array.isArray(result.toolExpectations.missing)) {
