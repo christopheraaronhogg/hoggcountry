@@ -38,7 +38,8 @@ const suitePath = resolveInputPath(cli.suite ?? DEFAULT_SUITE);
 const suite = JSON.parse(await readFile(suitePath, 'utf8'));
 const inboxDir = resolveInputPath(cli.inboxDir ?? DEFAULT_INBOX_DIR);
 const input = await readSharedInput(inputMode);
-const run = parseRunJson(input.text);
+const parsedInput = parseRunJson(input.text);
+const run = parsedInput.run;
 const saved = await saveInboxRun(run, inboxDir);
 const inspection = inspectDeviceRun({ run, suite, inputPath: saved.path });
 const allowPartial = Boolean(cli.allowPartial);
@@ -61,7 +62,8 @@ const report = {
 	status: receiveStatus({ inspection, prepare, shouldPrepare, allowPartial }),
 	input: {
 		mode: input.mode,
-		path: input.path ? relative(REPO_ROOT, input.path) : null
+		path: input.path ? relative(REPO_ROOT, input.path) : null,
+		extractedJson: parsedInput.extractedJson
 	},
 	inbox: {
 		path: relative(REPO_ROOT, saved.path),
@@ -104,15 +106,78 @@ async function readSharedInput(mode) {
 }
 
 function parseRunJson(text) {
+	const trimmed = String(text ?? '').trim();
+	const direct = parseJsonObject(trimmed);
+	if (direct) {
+		return { run: direct, extractedJson: false };
+	}
+	const candidates = extractJsonObjectCandidates(trimmed)
+		.map((candidate) => parseJsonObject(candidate))
+		.filter(isLikelyRunObject);
+	if (candidates.length === 1) {
+		return { run: candidates[0], extractedJson: true };
+	}
+	if (candidates.length > 1) {
+		throw new Error('Shared Scout Eval Lab JSON contains more than one run-like JSON object; paste only the Run 100 export.');
+	}
+	throw new Error('Shared Scout Eval Lab JSON could not be parsed: no run-like JSON object found.');
+}
+
+function parseJsonObject(text) {
 	try {
 		const parsed = JSON.parse(text);
 		if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
 			throw new Error('shared export must be a JSON object');
 		}
 		return parsed;
-	} catch (err) {
-		throw new Error(`Shared Scout Eval Lab JSON could not be parsed: ${err.message}`);
+	} catch {
+		return null;
 	}
+}
+
+function extractJsonObjectCandidates(text) {
+	const candidates = [];
+	let depth = 0;
+	let start = -1;
+	let inString = false;
+	let escaped = false;
+	for (let index = 0; index < text.length; index += 1) {
+		const char = text[index];
+		if (inString) {
+			if (escaped) {
+				escaped = false;
+			} else if (char === '\\') {
+				escaped = true;
+			} else if (char === '"') {
+				inString = false;
+			}
+			continue;
+		}
+		if (char === '"') {
+			inString = true;
+			continue;
+		}
+		if (char === '{') {
+			if (depth === 0) start = index;
+			depth += 1;
+			continue;
+		}
+		if (char !== '}' || depth === 0) continue;
+		depth -= 1;
+		if (depth === 0 && start >= 0) {
+			candidates.push(text.slice(start, index + 1));
+			start = -1;
+		}
+	}
+	return candidates;
+}
+
+function isLikelyRunObject(value) {
+	return Boolean(value) &&
+		typeof value === 'object' &&
+		!Array.isArray(value) &&
+		typeof value.runId === 'string' &&
+		Array.isArray(value.results);
 }
 
 async function saveInboxRun(run, inboxDir) {
@@ -194,6 +259,7 @@ function formatReport(report) {
 		`# Scout local AI device run receive: ${report.status}`,
 		'',
 		`- Source: ${report.input.mode}${report.input.path ? ` (${report.input.path})` : ''}`,
+		`- Extracted JSON from surrounding text: ${report.input.extractedJson ? 'yes' : 'no'}`,
 		`- Inbox file: \`${report.inbox.path}\`${report.inbox.alreadyExisted ? ' (already existed)' : ''}`,
 		`- Inspection: ${report.inspection.status}`,
 		`- Run: ${report.inspection.run.runId}`,

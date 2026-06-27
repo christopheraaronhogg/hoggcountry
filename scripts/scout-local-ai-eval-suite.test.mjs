@@ -2095,6 +2095,7 @@ test('device run receive command saves pasted JSON and prepares final review', a
 
 	assert.equal(report.status, 'prepared-for-final-review');
 	assert.equal(report.input.mode, 'stdin');
+	assert.equal(report.input.extractedJson, false);
 	assert.match(report.inbox.path, /inbox\/device-receive-final\.json$/u);
 	assert.equal(report.inbox.alreadyExisted, false);
 	assert.equal(report.inspection.status, 'ready-for-final-intake');
@@ -2105,6 +2106,58 @@ test('device run receive command saves pasted JSON and prepares final review', a
 	assert.equal(inboxRun.runId, run.runId);
 	assert.equal(review.cases.length, suite.cases.length);
 	assert.match(packet, /Scout local AI device review: device-receive-final/u);
+});
+
+test('device run receive command extracts JSON from copied message text', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-device-receive-wrapped-'));
+	const inboxDir = join(outputDir, 'inbox');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	const packetsDir = join(outputDir, 'review-packets');
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-receive-wrapped',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	run.exportHandoff = exportHandoffForRun(run, suite);
+	const copiedMessage = [
+		'Dad sent the Hoggcountry export:',
+		'',
+		'```json',
+		JSON.stringify(run, null, 2),
+		'```',
+		'',
+		'Sent from Messages.'
+	].join('\n');
+
+	const result = await execFileWithInput(
+		process.execPath,
+		[
+			'scripts/receive-scout-local-ai-device-run.mjs',
+			'--stdin',
+			'--inbox-dir',
+			inboxDir,
+			'--device-run-dir',
+			deviceRunsDir,
+			'--review-dir',
+			reviewsDir,
+			'--packet-dir',
+			packetsDir,
+			'--json'
+		],
+		copiedMessage,
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 12 }
+	);
+	const report = JSON.parse(result.stdout);
+	const inboxRun = JSON.parse(await readFile(join(inboxDir, 'device-receive-wrapped.json'), 'utf8'));
+
+	assert.equal(report.status, 'prepared-for-final-review');
+	assert.equal(report.input.extractedJson, true);
+	assert.equal(report.inspection.status, 'ready-for-final-intake');
+	assert.equal(report.prepare.status, 'prepared-for-final-review');
+	assert.equal(inboxRun.runId, run.runId);
+	assert.match(report.nextAction, /review-status:scout-local-ai/u);
 });
 
 test('device run receive command saves blocked exports without preparing review files', async () => {
