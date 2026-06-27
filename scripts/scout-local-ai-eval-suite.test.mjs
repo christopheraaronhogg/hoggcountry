@@ -349,6 +349,63 @@ test('status command recognizes repeated strict TestFlight iPhone proof candidat
 	assert.equal(status.nextAction.kind, 'stability-ready');
 });
 
+test('status command sends completed below-5 device reviews into iteration planning', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-below-five-'));
+	const runsDir = join(outputDir, 'runs');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	await mkdir(deviceRunsDir, { recursive: true });
+	await mkdir(reviewsDir, { recursive: true });
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-status-below-five',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	const review = reviewForRun(run, { rating: 5 });
+	review.cases[0].rating = 4;
+	review.cases[0].failureCategories = ['missing-data'];
+	review.cases[0].ownerLayer = 'data';
+	review.cases[0].improvementTask = 'Add current-section water reliability source docs for this trail context.';
+	review.cases[1].rating = 3;
+	review.cases[1].failureCategories = ['bad-routing', 'weak-tool'];
+	review.cases[1].ownerLayer = 'tool-routing';
+	review.cases[1].improvementTask = 'Fix source skill routing so Scout opens the relevant shelter source document.';
+	await writeFile(join(deviceRunsDir, 'device-status-below-five.json'), `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(join(reviewsDir, 'device-status-below-five.review.json'), `${JSON.stringify(review, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai.mjs',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const status = JSON.parse(result.stdout);
+	const gates = Object.fromEntries(status.gates.map((gate) => [gate.id, gate]));
+
+	assert.equal(gates['device-run'].ok, true);
+	assert.equal(gates.review.ok, false);
+	assert.equal(status.reviews.currentDeviceReviews.length, 1);
+	assert.equal(status.reviews.currentDeviceReviews[0].rated, 100);
+	assert.equal(status.reviews.currentDeviceReviews[0].belowFive, 2);
+	assert.equal(status.reviews.currentDeviceReviews[0].invalidCount, 0);
+	assert.equal(status.nextAction.kind, 'plan-iteration');
+	assert.match(status.nextAction.text, /complete but has 2 below-5 answer\(s\)/u);
+	assert.match(status.nextAction.text, /npm run review:scout-local-ai/u);
+	assert.match(status.nextAction.text, /npm run plan:scout-local-ai-iteration/u);
+	assert.match(status.nextAction.text, /data\/scout-local-ai\/backlog\/device-status-below-five\.backlog\.json/u);
+	assert.match(status.nextAction.text, /Fix the named owner layers/u);
+	assert.match(status.nextAction.text, /do not close the iteration by changing expected wording only/u);
+});
+
 test('Dad handoff command summarizes current TestFlight/iPhone eval next steps', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-dad-handoff-'));

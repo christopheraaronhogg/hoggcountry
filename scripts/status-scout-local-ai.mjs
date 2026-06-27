@@ -186,7 +186,14 @@ async function buildStatus(paths) {
 		},
 		strictDeviceProofs,
 		gates,
-		nextAction: nextActionFor(gates, currentFullDeviceRuns, completeFiveStarDeviceReviews, strictDeviceProofs, testflight)
+		nextAction: nextActionFor(
+			gates,
+			currentFullDeviceRuns,
+			currentDeviceReviewSummaries,
+			completeFiveStarDeviceReviews,
+			strictDeviceProofs,
+			testflight
+		)
 	};
 }
 
@@ -282,7 +289,7 @@ function createGates(input) {
 	];
 }
 
-function nextActionFor(gates, currentFullDeviceRuns, completeFiveStarDeviceReviews, strictDeviceProofs, testflight) {
+function nextActionFor(gates, currentFullDeviceRuns, currentDeviceReviewSummaries, completeFiveStarDeviceReviews, strictDeviceProofs, testflight) {
 	const gate = (id) => gates.find((item) => item.id === id);
 	if (!gate('suite')?.ok) {
 		return {
@@ -322,6 +329,19 @@ function nextActionFor(gates, currentFullDeviceRuns, completeFiveStarDeviceRevie
 	}
 	const latestDeviceRun = currentFullDeviceRuns.at(-1)?.value.runId ?? '<run-id>';
 	if (!gate('review')?.ok) {
+		const completeBelowFiveReview = currentDeviceReviewSummaries
+			.filter((entry) => isCompleteBelowFiveReview(entry.summary))
+			.at(-1);
+		if (completeBelowFiveReview) {
+			const runPath = currentFullDeviceRuns.find((entry) => entry.value.runId === completeBelowFiveReview.runId)?.path;
+			const relativeRunPath = runPath ? relative(REPO_ROOT, runPath) : `data/scout-local-ai/device-runs/${completeBelowFiveReview.runId}.json`;
+			const relativeReviewPath = relative(REPO_ROOT, completeBelowFiveReview.path);
+			const backlogPath = `data/scout-local-ai/backlog/${completeBelowFiveReview.runId}.backlog.json`;
+			return {
+				kind: 'plan-iteration',
+				text: `Review ${completeBelowFiveReview.runId} is complete but has ${completeBelowFiveReview.summary.belowFive} below-5 answer(s). Run npm run review:scout-local-ai -- --run ${relativeRunPath} --review ${relativeReviewPath} to write the backlog, then run npm run plan:scout-local-ai-iteration -- --backlog ${backlogPath}. Fix the named owner layers and rerun the regression cases; do not close the iteration by changing expected wording only.`
+			};
+		}
 		return {
 			kind: 'finish-review',
 			text: `Fill ratings/checklists in data/scout-local-ai/reviews/${latestDeviceRun}.review.json, then run npm run review:scout-local-ai -- --run data/scout-local-ai/device-runs/${latestDeviceRun}.json --review data/scout-local-ai/reviews/${latestDeviceRun}.review.json.`
@@ -346,6 +366,14 @@ function nextActionFor(gates, currentFullDeviceRuns, completeFiveStarDeviceRevie
 		kind: 'stability-ready',
 		text: 'Run or archive npm run verify:scout-local-ai-stability-proof with the two passing run/review pairs as the final repeated device proof.'
 	};
+}
+
+function isCompleteBelowFiveReview(summary) {
+	return summary.total > 0 &&
+		summary.rated === summary.total &&
+		summary.unrated === 0 &&
+		summary.belowFive > 0 &&
+		summary.invalid.length === 0;
 }
 
 function summarizeRunList(entries) {
