@@ -248,6 +248,7 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.match(status.nextAction.text, /Install the latest TestFlight build/u);
 	assert.match(status.nextAction.text, /Run 100/u);
 	assert.match(status.nextAction.text, /prepare-review:scout-local-ai-device-run/u);
+	assert.match(status.nextAction.text, /--run inbox/u);
 });
 
 test('status command surfaces partial TestFlight iPhone runs without counting them as final proof', async () => {
@@ -303,6 +304,7 @@ test('status command surfaces partial TestFlight iPhone runs without counting th
 	assert.match(status.nextAction.text, /Partial TestFlight\/iPhone Eval Lab run device-status-partial-12 is imported at 12\/100/u);
 	assert.match(status.nextAction.text, /tap Resume/u);
 	assert.match(status.nextAction.text, /prepare-review:scout-local-ai-device-run/u);
+	assert.match(status.nextAction.text, /--run inbox/u);
 	assert.match(status.nextAction.text, /--allow-partial for diagnosis/u);
 	assert.match(status.nextAction.text, /not final Dad proof/u);
 });
@@ -364,6 +366,7 @@ test('status command surfaces target TestFlight build gaps before phone eval', a
 	assert.match(status.nextAction.text, /Dad Pilot on 1\.0 \(12\)/u);
 	assert.match(status.nextAction.text, /suite requires 1\.0 \(>= 13\)/u);
 	assert.match(status.nextAction.text, /prepare-review:scout-local-ai-device-run/u);
+	assert.match(status.nextAction.text, /--run inbox/u);
 });
 
 test('status command recognizes repeated strict TestFlight iPhone proof candidates', async () => {
@@ -695,6 +698,7 @@ test('goal audit maps original success criteria without hiding missing device pr
 	assert.equal(audit.currentStatus.currentFullDeviceRuns, 0);
 	assert.equal(audit.currentStatus.currentPartialDeviceRuns, 0);
 	assert.equal(audit.currentStatus.nextAction.kind, 'get-device-run');
+	assert.match(audit.currentStatus.nextAction.text, /--run inbox/u);
 });
 
 test('Dad handoff command summarizes current TestFlight/iPhone eval next steps', async () => {
@@ -945,6 +949,10 @@ test('device review preparation command inspects, imports, and reports review st
 	assert.equal(review.cases.length, suite.cases.length);
 	assert.match(packet, /npm run review-status:scout-local-ai/u);
 	assert.match(report.nextAction, /review-status:scout-local-ai/u);
+	assert.match(report.nextAction, /finalize-review:scout-local-ai/u);
+	assert.match(report.nextAction, /device-prepare-final\.review\.md/u);
+	assert.match(report.nextAction, /device-prepare-final\.review\.json/u);
+	assert.match(report.nextAction, /device-prepare-final\.json/u);
 });
 
 test('device review preparation command can select the latest Scout export from Downloads', async () => {

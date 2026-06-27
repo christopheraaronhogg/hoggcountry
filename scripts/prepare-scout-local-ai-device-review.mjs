@@ -93,6 +93,9 @@ const safeRunId = safeFileName(run.runId);
 const importedRunPath = resolve(deviceRunDir, `${safeRunId}.json`);
 const reviewPath = resolve(reviewDir, `${safeRunId}.review.json`);
 const packetPath = resolve(packetDir, `${safeRunId}.review.md`);
+const relativeImportedRunPath = relative(REPO_ROOT, importedRunPath);
+const relativeReviewPath = relative(REPO_ROOT, reviewPath);
+const relativePacketPath = relative(REPO_ROOT, packetPath);
 
 const reviewStatus = await runJsonScript('scripts/status-scout-local-ai-review.mjs', [
 	'--suite',
@@ -111,14 +114,14 @@ writeOutput({
 	partial: canImportPartial,
 	input: selectedInput.report,
 	paths: {
-		importedRun: relative(REPO_ROOT, importedRunPath),
-		review: relative(REPO_ROOT, reviewPath),
-		packet: relative(REPO_ROOT, packetPath)
+		importedRun: relativeImportedRunPath,
+		review: relativeReviewPath,
+		packet: relativePacketPath
 	},
 	inspection,
 	reviewStatus,
 	importOutput: importOutput.trim().split(/\r?\n/u).filter(Boolean),
-	nextAction: `Fill/apply the review packet, rerun npm run review-status:scout-local-ai -- --run ${relative(REPO_ROOT, importedRunPath)} --review ${relative(REPO_ROOT, reviewPath)}, then run npm run review:scout-local-ai when the review is complete.`
+	nextAction: `Fill ${relativePacketPath}, then run npm run finalize-review:scout-local-ai -- --packet ${relativePacketPath} --run ${relativeImportedRunPath} --review ${relativeReviewPath}. Use npm run review-status:scout-local-ai -- --run ${relativeImportedRunPath} --review ${relativeReviewPath} for read-only progress checks while rating.`
 });
 
 async function runJsonScript(script, args) {

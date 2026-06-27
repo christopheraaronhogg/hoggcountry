@@ -34,7 +34,7 @@ const DEFAULT_RELEASE_EVIDENCE = 'docs/launch/release-evidence.json';
 
 const DEVICE_EVIDENCE_LANE = 'device-on-device-gemma';
 const SCAFFOLD_EVIDENCE_LANE = 'scaffold-not-model';
-const DEVICE_REVIEW_PREP_COMMAND = 'npm run prepare-review:scout-local-ai-device-run -- --run ~/Downloads/<device-run>.json';
+const DEVICE_REVIEW_PREP_COMMAND = 'npm run prepare-review:scout-local-ai-device-run -- --run inbox';
 
 const cli = parseCliArgs(process.argv.slice(2));
 

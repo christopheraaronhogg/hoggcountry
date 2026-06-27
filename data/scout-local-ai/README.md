@@ -98,25 +98,8 @@ prints the exact next command. Use it first when a shared JSON arrives so a
 debug build, stale suite, interrupted `Run 100`, or wrong-lane export does not
 turn into wasted review work.
 
-For the normal Dad JSON handoff, the safest single command is:
-
-```sh
-npm run prepare-review:scout-local-ai-device-run -- --run ~/Downloads/<device-run>.json
-```
-
-If the export landed in Downloads but the filename is awkward, let the command
-select the newest likely Scout Eval Lab JSON first:
-
-```sh
-npm run prepare-review:scout-local-ai-device-run -- --run latest
-```
-
-Use `--downloads-dir <folder>` with `--run latest` when the shared JSON is in a
-different folder.
-
-For the simplest repo-local handoff, save or drag the shared iPhone JSON into
-`data/scout-local-ai/inbox/` and let the command select the newest valid Eval
-Lab export:
+For the normal Dad JSON handoff, save or drag the shared iPhone JSON into
+`data/scout-local-ai/inbox/` and run:
 
 ```sh
 npm run prepare-review:scout-local-ai-device-run -- --run inbox
@@ -125,6 +108,22 @@ npm run prepare-review:scout-local-ai-device-run -- --run inbox
 Use `--inbox-dir <folder>` when staging the shared JSON somewhere else. The
 selected file still goes through the same read-only inspection gate before any
 review files are written.
+
+If the export landed in Downloads instead, pass the explicit file:
+
+```sh
+npm run prepare-review:scout-local-ai-device-run -- --run ~/Downloads/<device-run>.json
+```
+
+If the Downloads filename is awkward, let the command select the newest likely
+Scout Eval Lab JSON first:
+
+```sh
+npm run prepare-review:scout-local-ai-device-run -- --run latest
+```
+
+Use `--downloads-dir <folder>` with `--run latest` when the shared JSON is in a
+different folder.
 
 That command runs the read-only inspection first, imports only a valid final
 device export, creates the review JSON and Markdown packet, and then prints the
