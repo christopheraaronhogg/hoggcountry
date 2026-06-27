@@ -394,6 +394,65 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Final readiness still requires a full current-suite TestFlight\/iPhone/u);
 });
 
+test('Dad Pilot refresh command can attach the target build and update release evidence from verified App Store Connect state', async () => {
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-dad-pilot-refresh-'));
+	const fixturePath = join(outputDir, 'app-store-connect-fixture.json');
+	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
+	const proofPath = join(outputDir, 'ios-testflight-build-11.proof.md');
+	await writeFile(fixturePath, `${JSON.stringify(dadPilotFixture(), null, 2)}\n`);
+	await writeFile(releaseEvidencePath, `${JSON.stringify({
+		schemaVersion: 1,
+		items: {
+			'dad-testflight-invite': {
+				status: 'verified',
+				summary: 'Dad Pilot is attached to Hoggcountry iOS build 1.0 (10).',
+				publicLink: 'https://testflight.apple.com/join/BagBCrzf'
+			}
+		}
+	}, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/refresh-testflight-dad-pilot.mjs',
+			'--fixture',
+			fixturePath,
+			'--release-evidence',
+			releaseEvidencePath,
+			'--proof-out',
+			proofPath,
+			'--build',
+			'11',
+			'--app-version',
+			'1.0',
+			'--attach',
+			'--remove-previous',
+			'--update-release-evidence',
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const summary = JSON.parse(result.stdout);
+	const releaseEvidence = JSON.parse(await readFile(releaseEvidencePath, 'utf8'));
+	const proof = await readFile(proofPath, 'utf8');
+
+	assert.equal(summary.targetBuild, '1.0 (11)');
+	assert.equal(summary.target.id, 'build-11-id');
+	assert.equal(summary.gates.buildValid, true);
+	assert.equal(summary.gates.attachedToDadPilot, true);
+	assert.equal(summary.gates.externallyAvailable, true);
+	assert.equal(summary.gates.targetReadyForDad, true);
+	assert.equal(summary.actions.attached, true);
+	assert.deepEqual(summary.actions.removedBuildIds, ['build-10-id']);
+	assert.equal(summary.dadPilot.attachedBuilds.length, 1);
+	assert.equal(summary.dadPilot.attachedBuilds[0].id, 'build-11-id');
+	assert.match(proof, /Target build: `1\.0 \(11\)`/u);
+	assert.match(proof, /This refresh only covers App Store Connect \/ Dad Pilot build availability/u);
+	assert.match(releaseEvidence.items['dad-testflight-invite'].summary, /build 1\.0 \(11\)/u);
+	assert.equal(releaseEvidence.items['dad-testflight-invite'].publicLink, 'https://testflight.apple.com/join/BagBCrzf');
+	assert.match(releaseEvidence.items['apple-archive-upload'].summary, /external state IN_BETA_TESTING/u);
+});
+
 test('Dad local AI eval suite routes every case through expected Scout tools', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-routing-'));
@@ -2647,6 +2706,98 @@ test('stability proof rejects copied exports with new run ids', async () => {
 		}
 	);
 });
+
+function dadPilotFixture() {
+	const dadGroupId = 'fc963396-a087-44c6-b56b-29847da31cd4';
+	const targetBuild = {
+		type: 'builds',
+		id: 'build-11-id',
+		attributes: {
+			version: '11',
+			uploadedDate: '2026-06-26T18:30:00-07:00',
+			processingState: 'VALID'
+		},
+		relationships: {
+			preReleaseVersion: {
+				data: { type: 'preReleaseVersions', id: 'pre-1-0' }
+			},
+			buildBetaDetail: {
+				data: { type: 'buildBetaDetails', id: 'build-11-id' }
+			},
+			betaGroups: {
+				data: []
+			}
+		}
+	};
+	return {
+		buildQuery: {
+			data: [targetBuild],
+			included: [
+				{
+					type: 'preReleaseVersions',
+					id: 'pre-1-0',
+					attributes: {
+						version: '1.0',
+						platform: 'IOS'
+					}
+				},
+				{
+					type: 'buildBetaDetails',
+					id: 'build-11-id',
+					attributes: {
+						internalBuildState: 'READY_FOR_BETA_TESTING',
+						externalBuildState: 'IN_BETA_TESTING'
+					}
+				},
+				{
+					type: 'betaAppReviewSubmissions',
+					id: 'review-build-11',
+					attributes: {
+						betaReviewState: 'APPROVED'
+					}
+				}
+			]
+		},
+		group: {
+			data: {
+				type: 'betaGroups',
+				id: dadGroupId,
+				attributes: {
+					name: 'Dad Pilot',
+					publicLinkEnabled: true,
+					publicLinkLimit: 5,
+					publicLink: 'https://testflight.apple.com/join/BagBCrzf'
+				},
+				relationships: {
+					betaTesters: {
+						data: [{ type: 'betaTesters', id: 'dad-tester' }]
+					},
+					builds: {
+						data: [{ type: 'builds', id: 'build-10-id' }]
+					}
+				}
+			},
+			included: [
+				{
+					type: 'builds',
+					id: 'build-10-id',
+					attributes: {
+						version: '10',
+						uploadedDate: '2026-06-26T14:15:00-07:00',
+						processingState: 'VALID'
+					}
+				},
+				{
+					type: 'betaTesters',
+					id: 'dad-tester',
+					attributes: {
+						firstName: 'Dad'
+					}
+				}
+			]
+		}
+	};
+}
 
 function assertNonEmptyStringArray(value, label) {
 	assert.ok(Array.isArray(value), `${label} must be an array`);

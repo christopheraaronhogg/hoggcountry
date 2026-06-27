@@ -63,6 +63,23 @@ npm --prefix mobile run cap:sync:ios
 4. In App Store Connect, wait for the new build to reach `VALID`.
 5. Attach the new build to the existing `Dad Pilot` external group and remove
    the older build only after the new build is approved/available.
+   The repeatable API helper for this step is read-only by default:
+
+```bash
+npm run refresh:testflight-dad-pilot
+```
+
+   After App Store Connect shows build `11` as available for external testing,
+   attach it and refresh the local release ledger with:
+
+```bash
+npm run refresh:testflight-dad-pilot -- \
+  --attach \
+  --remove-previous \
+  --update-release-evidence \
+  --proof-out docs/launch/proof/ios-testflight-build-11-$(date +%F).md
+```
+
 6. If Apple asks for Beta App Review again, submit the build and wait for
    approval. Later TestFlight builds often skip a full review, but do not assume
    that until App Store Connect says the build is available.
