@@ -777,6 +777,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /npm run inspect:scout-local-ai-device-run/u);
 	assert.match(result.stdout, /npm run intake:scout-local-ai-device-run/u);
 	assert.match(result.stdout, /npm run apply-review:scout-local-ai/u);
+	assert.match(result.stdout, /npm run finalize-review:scout-local-ai/u);
 	assert.match(result.stdout, /npm run review-status:scout-local-ai/u);
 	assert.match(result.stdout, /npm run verify:scout-local-ai-stability-proof/u);
 	assert.match(result.stdout, /Final readiness still requires a full current-suite TestFlight\/iPhone/u);
@@ -1601,6 +1602,155 @@ test('review packet ratings can be applied back into review JSON', async () => {
 	assert.equal(backlog.items.length, 1);
 	assert.equal(backlog.items[0].caseId, run.results[1].caseId);
 	assert.equal(backlog.items[0].ownerLayer, 'safety-prompt');
+});
+
+test('review finalizer applies packet and writes below-5 iteration backlog', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-finalize-backlog-'));
+	const inputPath = join(outputDir, 'device-export.json');
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 2), {
+		runId: 'device-finalize-backlog',
+		completeTools: true
+	});
+	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
+	await execFileAsync(
+		process.execPath,
+		[
+			'scripts/import-scout-local-ai-device-run.mjs',
+			'--run',
+			inputPath,
+			'--allow-partial',
+			'--device-run-dir',
+			join(outputDir, 'device-runs'),
+			'--review-dir',
+			join(outputDir, 'reviews'),
+			'--packet-dir',
+			join(outputDir, 'review-packets')
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+
+	const runPath = join(outputDir, 'device-runs', 'device-finalize-backlog.json');
+	const reviewPath = join(outputDir, 'reviews', 'device-finalize-backlog.review.json');
+	const packetPath = join(outputDir, 'review-packets', 'device-finalize-backlog.review.md');
+	const backlogDir = join(outputDir, 'backlog');
+	let packet = await readFile(packetPath, 'utf8');
+	packet = packet.replaceAll('- passed: null |', '- passed: true |');
+	packet = replaceReviewerFields(packet, run.results[0].caseId, {
+		rating: '5',
+		notes: 'Dad-ready answer.',
+		failureCategories: '',
+		ownerLayer: '',
+		improvementTask: ''
+	});
+	packet = replaceReviewerFields(packet, run.results[1].caseId, {
+		rating: '3',
+		notes: 'Needs a more concrete water source caveat.',
+		failureCategories: 'weak-tool',
+		ownerLayer: 'tool-routing',
+		improvementTask: 'Improve source_search water receipts for the current section.'
+	});
+	await writeFile(packetPath, packet);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/finalize-scout-local-ai-review.mjs',
+			'--packet',
+			packetPath,
+			'--run',
+			runPath,
+			'--review',
+			reviewPath,
+			'--backlog-dir',
+			backlogDir,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 12 }
+	);
+	const report = JSON.parse(result.stdout);
+	const backlog = JSON.parse(await readFile(join(backlogDir, 'device-finalize-backlog.backlog.json'), 'utf8'));
+
+	assert.equal(report.status, 'iteration-backlog-written');
+	assert.equal(report.reviewStatus.summary.belowFive, 1);
+	assert.match(report.commands.review.join('\n'), /Iteration backlog written/u);
+	assert.equal(backlog.items.length, 1);
+	assert.equal(backlog.items[0].caseId, run.results[1].caseId);
+	assert.equal(backlog.items[0].ownerLayer, 'tool-routing');
+});
+
+test('review finalizer applies a 100-case packet and writes strict device proof', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-finalize-proof-'));
+	const inputPath = join(outputDir, 'device-export.json');
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-finalize-proof',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
+	await execFileAsync(
+		process.execPath,
+		[
+			'scripts/import-scout-local-ai-device-run.mjs',
+			'--run',
+			inputPath,
+			'--device-run-dir',
+			join(outputDir, 'device-runs'),
+			'--review-dir',
+			join(outputDir, 'reviews'),
+			'--packet-dir',
+			join(outputDir, 'review-packets')
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 12 }
+	);
+
+	const runPath = join(outputDir, 'device-runs', 'device-finalize-proof.json');
+	const reviewPath = join(outputDir, 'reviews', 'device-finalize-proof.review.json');
+	const packetPath = join(outputDir, 'review-packets', 'device-finalize-proof.review.md');
+	const backlogDir = join(outputDir, 'backlog');
+	const proofPath = join(outputDir, 'final-proof', 'device-finalize-proof.proof.md');
+	let packet = await readFile(packetPath, 'utf8');
+	packet = packet.replaceAll('- passed: null |', '- passed: true |');
+	packet = packet.replaceAll('- acknowledged: null |', '- acknowledged: true |');
+	for (const result of run.results) {
+		packet = replaceReviewerFields(packet, result.caseId, {
+			rating: '5',
+			notes: 'Dad-ready answer.',
+			failureCategories: '',
+			ownerLayer: '',
+			improvementTask: ''
+		});
+	}
+	await writeFile(packetPath, packet);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/finalize-scout-local-ai-review.mjs',
+			'--packet',
+			packetPath,
+			'--run',
+			runPath,
+			'--review',
+			reviewPath,
+			'--backlog-dir',
+			backlogDir,
+			'--proof-out',
+			proofPath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 12 }
+	);
+	const report = JSON.parse(result.stdout);
+	const proof = await readFile(proofPath, 'utf8');
+
+	assert.equal(report.status, 'strict-device-proof-passed');
+	assert.equal(report.reviewStatus.readyForStrictDeviceProof, true);
+	assert.equal(report.reviewStatus.summary.fiveStar, suite.cases.length);
+	assert.match(report.commands.proof.join('\n'), /Scout local AI device proof passed/u);
+	assert.match(proof, /# Scout local AI final device proof/u);
+	assert.match(report.nextAction, /second distinct full TestFlight\/iPhone/u);
 });
 
 test('review packet apply rejects invalid reviewer fields before writing JSON', async () => {

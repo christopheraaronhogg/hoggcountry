@@ -161,6 +161,19 @@ machine-readable review JSON:
 npm run apply-review:scout-local-ai -- --packet data/scout-local-ai/review-packets/<run-id>.review.md --review data/scout-local-ai/reviews/<run-id>.review.json
 ```
 
+For the normal finished-packet handoff, use the one-command finalizer instead:
+
+```sh
+npm run finalize-review:scout-local-ai -- --packet data/scout-local-ai/review-packets/<run-id>.review.md --review data/scout-local-ai/reviews/<run-id>.review.json
+```
+
+The finalizer applies the packet, runs the read-only review status check, and
+only then runs the safe next step: write an iteration backlog for below-5
+answers, record a non-final review for smoke/partial runs, or run strict device
+proof when the full TestFlight/iPhone review is 100/100 at 5/5. If the packet is
+incomplete or invalid, it stops at review status instead of writing backlog or
+proof files.
+
 During the rating pass, use the read-only progress check as often as needed:
 
 ```sh
