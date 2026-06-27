@@ -168,7 +168,7 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		latestIosProof
 			? `- App Store Connect API key in latest proof: ${latestIosProof.ascApiKeyProvided}.`
 			: '- App Store Connect API key in latest proof: unknown.',
-		'- Upload still requires Chris/account-bound App Store Connect auth: `APP_STORE_CONNECT_API_KEY_PATH`, `APP_STORE_CONNECT_API_KEY_ID`, and `APP_STORE_CONNECT_API_ISSUER_ID`, or matching `--asc-*` flags.',
+		'- Future uploads require Chris/account-bound App Store Connect auth: `APP_STORE_CONNECT_API_KEY_PATH`, `APP_STORE_CONNECT_API_KEY_ID`, and `APP_STORE_CONNECT_API_ISSUER_ID`, or matching `--asc-*` flags.',
 		'',
 		'```sh',
 		'npm run ios:testflight -- --upload --team-id 3CFU9J87A5 \\',

@@ -14,6 +14,10 @@ const DEFAULT_DAD_GROUP_ID = 'fc963396-a087-44c6-b56b-29847da31cd4';
 const DEFAULT_XCODE_PROJECT = 'mobile/ios/App/App.xcodeproj/project.pbxproj';
 const DEFAULT_RELEASE_EVIDENCE = 'docs/launch/release-evidence.json';
 const AVAILABLE_EXTERNAL_STATES = new Set(['IN_BETA_TESTING', 'BETA_APPROVED']);
+const SUBMITTABLE_EXTERNAL_STATES = new Set(['READY_FOR_BETA_SUBMISSION']);
+const REVIEW_PENDING_EXTERNAL_STATES = new Set(['READY_FOR_BETA_SUBMISSION', 'WAITING_FOR_BETA_REVIEW']);
+const DEFAULT_REVIEW_POLL_ATTEMPTS = 12;
+const DEFAULT_REVIEW_POLL_INTERVAL_MS = 15000;
 
 const cli = parseCliArgs(process.argv.slice(2));
 if (cli.help || cli.h) {
@@ -25,6 +29,7 @@ Usage:
   npm run refresh:testflight-dad-pilot
   npm run refresh:testflight-dad-pilot -- --build 11 --app-version 1.0
   npm run refresh:testflight-dad-pilot -- --attach --build 11 --app-version 1.0
+  npm run refresh:testflight-dad-pilot -- --attach --submit-review --build 11 --app-version 1.0
   npm run refresh:testflight-dad-pilot -- --attach --remove-previous --update-release-evidence
 
 Auth:
@@ -48,6 +53,10 @@ const options = {
 	buildNumber: cli.build ? String(cli.build) : null,
 	appVersion: cli.appVersion ? String(cli.appVersion) : null,
 	attach: Boolean(cli.attach),
+	submitReview: Boolean(cli.submitReview),
+	waitReview: Boolean(cli.waitReview),
+	reviewPollAttempts: parseInteger(cli.reviewPollAttempts ?? DEFAULT_REVIEW_POLL_ATTEMPTS, 'review-poll-attempts'),
+	reviewPollIntervalMs: parseInteger(cli.reviewPollIntervalMs ?? DEFAULT_REVIEW_POLL_INTERVAL_MS, 'review-poll-interval-ms'),
 	removePrevious: Boolean(cli.removePrevious),
 	updateReleaseEvidence: Boolean(cli.updateReleaseEvidence),
 	proofOut: cli.proofOut ? resolveInputPath(cli.proofOut) : null,
@@ -97,19 +106,34 @@ async function refreshDadPilot(input, client) {
 	let dadPilot = summarizeDadPilot(groupResponse, input.groupId);
 	const actions = {
 		attached: false,
+		submittedBetaReview: false,
+		reviewPolls: 0,
 		removedBuildIds: []
 	};
-
-	if (input.attach && target?.id && !isAttachedToGroup(target, input.groupId)) {
-		if (!targetBuildCanBeAttached(target)) {
-			throw new Error(`Refusing to attach build ${input.appVersion} (${input.buildNumber}): processing=${target.processingState ?? '<missing>'}, external=${target.externalState ?? '<missing>'}.`);
-		}
-		await client.attachBuild(input.groupId, target.id);
-		actions.attached = true;
+	const refresh = async () => {
 		buildResponse = await client.getBuild(input.appId, input.buildNumber);
 		groupResponse = await client.getGroup(input.groupId);
 		target = selectTargetBuild(buildResponse, input);
 		dadPilot = summarizeDadPilot(groupResponse, input.groupId);
+		return { buildResponse, groupResponse, target, dadPilot };
+	};
+
+	if (input.attach && target?.id && !isAttachedToGroup(target, input.groupId)) {
+		if (targetBuildCanBeAttached(target) || (input.submitReview && targetBuildCanBeSubmittedForReview(target))) {
+			await client.attachBuild(input.groupId, target.id);
+			actions.attached = true;
+			await refresh();
+		} else {
+			throw new Error(`Refusing to attach build ${input.appVersion} (${input.buildNumber}): processing=${target.processingState ?? '<missing>'}, external=${target.externalState ?? '<missing>'}.`);
+		}
+	}
+
+	if (input.submitReview && target?.id && targetBuildCanBeSubmittedForReview(target)) {
+		await client.submitBetaReview(target.id);
+		actions.submittedBetaReview = true;
+		await pollReviewState(input, refresh, actions);
+	} else if ((input.submitReview || input.waitReview) && target?.id && targetReviewMayStillSettle(target)) {
+		await pollReviewState(input, refresh, actions);
 	}
 
 	if (input.removePrevious && target?.id && targetReadyForDad(target, input.groupId)) {
@@ -214,11 +238,34 @@ function targetBuildCanBeAttached(target) {
 	return target.processingState === 'VALID' && AVAILABLE_EXTERNAL_STATES.has(String(target.externalState ?? ''));
 }
 
+function targetBuildCanBeSubmittedForReview(target) {
+	return target.processingState === 'VALID' && SUBMITTABLE_EXTERNAL_STATES.has(String(target.externalState ?? ''));
+}
+
+function targetReviewMayStillSettle(target) {
+	return target.processingState === 'VALID' && REVIEW_PENDING_EXTERNAL_STATES.has(String(target.externalState ?? ''));
+}
+
 function targetReadyForDad(target, groupId, dadPilot = null) {
 	const attached = isAttachedToGroup(target, groupId) || Boolean(dadPilot?.attachedBuilds?.some((build) => build.id === target.id));
 	return target.processingState === 'VALID' &&
 		attached &&
 		AVAILABLE_EXTERNAL_STATES.has(String(target.externalState ?? ''));
+}
+
+async function pollReviewState(input, refresh, actions) {
+	const attempts = Math.max(1, input.reviewPollAttempts);
+	for (let attempt = 0; attempt < attempts; attempt += 1) {
+		if (attempt > 0 && input.reviewPollIntervalMs > 0) {
+			await sleep(input.reviewPollIntervalMs);
+		}
+		const state = await refresh();
+		actions.reviewPolls += 1;
+		if (!state.target) return state;
+		if (targetReadyForDad(state.target, input.groupId, state.dadPilot)) return state;
+		if (!targetReviewMayStillSettle(state.target)) return state;
+	}
+	return { target: null, dadPilot: null };
 }
 
 function isAttachedToGroup(target, groupId) {
@@ -232,7 +279,7 @@ function updateReleaseEvidence(evidence, summary) {
 	const date = summary.checkedAt.slice(0, 10);
 	const proofFile = summary.proofPath ? [summary.proofPath] : [];
 	const commands = [
-		`node scripts/refresh-testflight-dad-pilot.mjs --build ${summary.target?.buildNumber ?? '<build>'} --app-version ${summary.target?.appVersion ?? '<version>'} --attach --remove-previous --update-release-evidence`,
+		`node scripts/refresh-testflight-dad-pilot.mjs --build ${summary.target?.buildNumber ?? '<build>'} --app-version ${summary.target?.appVersion ?? '<version>'} --attach --submit-review --remove-previous --update-release-evidence`,
 		`GET https://api.appstoreconnect.apple.com/v1/builds?filter[app]=${summary.appId}&filter[version]=${summary.target?.buildNumber ?? '<build>'}`,
 		`GET https://api.appstoreconnect.apple.com/v1/betaGroups/${summary.dadGroupId}?include=builds,betaTesters`
 	];
@@ -277,6 +324,8 @@ function createSummaryMarkdown(summary) {
 		'## Actions',
 		'',
 		`- Attached target build this run: ${summary.actions.attached ? 'yes' : 'no'}`,
+		`- Submitted target build for beta review this run: ${summary.actions.submittedBetaReview ? 'yes' : 'no'}`,
+		`- Review refresh polls this run: ${summary.actions.reviewPolls}`,
 		`- Removed previous build ids: ${summary.actions.removedBuildIds.join(', ') || 'none'}`,
 		'',
 		'## Boundary',
@@ -298,6 +347,17 @@ function appStoreConnectClient(auth) {
 		attachBuild: (groupId, buildId) => ascRequest(token, `/v1/betaGroups/${encodeURIComponent(groupId)}/relationships/builds`, {
 			method: 'POST',
 			body: { data: [{ type: 'builds', id: buildId }] }
+		}),
+		submitBetaReview: (buildId) => ascRequest(token, '/v1/betaAppReviewSubmissions', {
+			method: 'POST',
+			body: {
+				data: {
+					type: 'betaAppReviewSubmissions',
+					relationships: {
+						build: { data: { type: 'builds', id: buildId } }
+					}
+				}
+			}
 		}),
 		removeBuild: (groupId, buildId) => ascRequest(token, `/v1/betaGroups/${encodeURIComponent(groupId)}/relationships/builds`, {
 			method: 'DELETE',
@@ -335,6 +395,21 @@ function fixtureClient(fixture) {
 				fixture.group.included.push(fixture.buildQuery.data[0]);
 			}
 			return { data: null };
+		},
+		submitBetaReview: async (buildId) => {
+			const betaDetail = fixture.buildQuery.included.find((entry) => entry.type === 'buildBetaDetails' && entry.id === buildId);
+			if (betaDetail) {
+				betaDetail.attributes.internalBuildState = 'READY_FOR_BETA_TESTING';
+				betaDetail.attributes.externalBuildState = 'IN_BETA_TESTING';
+			}
+			if (!fixture.buildQuery.included.some((entry) => entry.type === 'betaAppReviewSubmissions')) {
+				fixture.buildQuery.included.push({
+					type: 'betaAppReviewSubmissions',
+					id: `review-${buildId}`,
+					attributes: { betaReviewState: 'APPROVED' }
+				});
+			}
+			return { data: { type: 'betaAppReviewSubmissions', id: `review-${buildId}` } };
 		},
 		removeBuild: async (_groupId, buildId) => {
 			fixture.group.included = (fixture.group.included ?? []).filter((entry) => !(entry.type === 'builds' && entry.id === buildId));
@@ -443,6 +518,14 @@ function parseCliArgs(argv) {
 	return parsed;
 }
 
+function parseInteger(value, label) {
+	const parsed = Number.parseInt(String(value), 10);
+	if (!Number.isInteger(parsed) || parsed < 0) {
+		throw new Error(`--${label} must be a non-negative integer.`);
+	}
+	return parsed;
+}
+
 function camelCase(value) {
 	return value.replace(/-([a-z])/gu, (_match, char) => char.toUpperCase());
 }
@@ -456,4 +539,8 @@ function resolveInputPath(value) {
 
 function base64url(value) {
 	return Buffer.from(value).toString('base64url');
+}
+
+function sleep(ms) {
+	return new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
 }

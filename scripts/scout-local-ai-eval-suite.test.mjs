@@ -228,7 +228,7 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(gates.suite.ok, true);
 	assert.equal(gates.coverage.ok, true);
 	assert.equal(gates.routing.ok, true);
-	assert.equal(gates['testflight-target'].ok, false);
+	assert.equal(gates['testflight-target'].ok, true);
 	assert.equal(gates['device-run'].ok, false);
 	assert.equal(gates['iteration-loop'].ok, true);
 	assert.match(gates['iteration-loop'].evidence, /No completed below-5 device reviews yet/u);
@@ -238,13 +238,13 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(status.testflight.targetBuild, '1.0 (11)');
 	assert.equal(status.testflight.suiteRequiredBuild, '1.0 (>= 11)');
 	assert.equal(status.testflight.targetBuildMeetsSuiteRequirement, true);
-	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (10)');
-	assert.equal(status.testflight.recordedDadPilotMeetsSuiteRequirement, false);
-	assert.equal(status.testflight.targetBuildReadyForDad, false);
-	assert.equal(status.testflight.targetBuildAvailableForDad, false);
-	assert.equal(status.nextAction.kind, 'publish-target-build');
-	assert.match(status.nextAction.text, /Upload and attach target iOS build 1\.0 \(11\)/u);
-	assert.match(status.nextAction.text, /suite requires 1\.0 \(>= 11\)/u);
+	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (11)');
+	assert.equal(status.testflight.recordedDadPilotMeetsSuiteRequirement, true);
+	assert.equal(status.testflight.targetBuildReadyForDad, true);
+	assert.equal(status.testflight.targetBuildAvailableForDad, true);
+	assert.equal(status.nextAction.kind, 'get-device-run');
+	assert.match(status.nextAction.text, /Install the latest TestFlight build/u);
+	assert.match(status.nextAction.text, /Run 100/u);
 });
 
 test('status command surfaces target TestFlight build gaps before phone eval', async () => {
@@ -626,13 +626,13 @@ test('goal audit maps original success criteria without hiding missing device pr
 	assert.equal(requirements['below-five-creates-task'].ok, true);
 	assert.equal(requirements['iterations-target-responsible-layer'].ok, true);
 	assert.equal(requirements['device-proof-lane-separated'].ok, true);
-	assert.equal(requirements['target-testflight-build'].ok, false);
-	assert.match(requirements['target-testflight-build'].evidence, /Dad Pilot records 1\.0 \(10\)/u);
+	assert.equal(requirements['target-testflight-build'].ok, true);
+	assert.match(requirements['target-testflight-build'].evidence, /Dad Pilot records 1\.0 \(11\)/u);
 	assert.equal(requirements['final-100-rated-five'].ok, false);
 	assert.match(requirements['final-100-rated-five'].evidence, /No strict TestFlight\/iPhone proof run passes/u);
 	assert.equal(audit.currentStatus.currentFullRoutingRuns, 1);
 	assert.equal(audit.currentStatus.currentFullDeviceRuns, 0);
-	assert.equal(audit.currentStatus.nextAction.kind, 'publish-target-build');
+	assert.equal(audit.currentStatus.nextAction.kind, 'get-device-run');
 });
 
 test('Dad handoff command summarizes current TestFlight/iPhone eval next steps', async () => {
@@ -772,6 +772,57 @@ test('Dad Pilot refresh command can attach the target build and update release e
 	assert.match(releaseEvidence.items['dad-testflight-invite'].summary, /build 1\.0 \(11\)/u);
 	assert.equal(releaseEvidence.items['dad-testflight-invite'].publicLink, 'https://testflight.apple.com/join/BagBCrzf');
 	assert.match(releaseEvidence.items['apple-archive-upload'].summary, /external state IN_BETA_TESTING/u);
+});
+
+test('Dad Pilot refresh command can submit a valid target build for beta review before updating release evidence', async () => {
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-dad-pilot-submit-'));
+	const fixturePath = join(outputDir, 'app-store-connect-fixture.json');
+	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
+	const proofPath = join(outputDir, 'ios-testflight-build-11-submit.proof.md');
+	await writeFile(fixturePath, `${JSON.stringify(dadPilotReadyForBetaSubmissionFixture(), null, 2)}\n`);
+	await writeFile(releaseEvidencePath, `${JSON.stringify({ schemaVersion: 1, items: {} }, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/refresh-testflight-dad-pilot.mjs',
+			'--fixture',
+			fixturePath,
+			'--release-evidence',
+			releaseEvidencePath,
+			'--proof-out',
+			proofPath,
+			'--build',
+			'11',
+			'--app-version',
+			'1.0',
+			'--attach',
+			'--submit-review',
+			'--review-poll-attempts',
+			'1',
+			'--review-poll-interval-ms',
+			'0',
+			'--remove-previous',
+			'--update-release-evidence',
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const summary = JSON.parse(result.stdout);
+	const releaseEvidence = JSON.parse(await readFile(releaseEvidencePath, 'utf8'));
+	const proof = await readFile(proofPath, 'utf8');
+
+	assert.equal(summary.targetBuild, '1.0 (11)');
+	assert.equal(summary.target.externalState, 'IN_BETA_TESTING');
+	assert.equal(summary.target.betaReviewState, 'APPROVED');
+	assert.equal(summary.gates.targetReadyForDad, true);
+	assert.equal(summary.actions.attached, true);
+	assert.equal(summary.actions.submittedBetaReview, true);
+	assert.equal(summary.actions.reviewPolls, 1);
+	assert.deepEqual(summary.actions.removedBuildIds, ['build-10-id']);
+	assert.match(proof, /Submitted target build for beta review this run: yes/u);
+	assert.match(releaseEvidence.items['apple-archive-upload'].commands.join('\n'), /--submit-review/u);
+	assert.match(releaseEvidence.items['dad-testflight-invite'].summary, /build 1\.0 \(11\)/u);
 });
 
 test('Dad local AI eval suite routes every case through expected Scout tools', async () => {
@@ -3134,6 +3185,14 @@ function dadPilotFixture() {
 			]
 		}
 	};
+}
+
+function dadPilotReadyForBetaSubmissionFixture() {
+	const fixture = dadPilotFixture();
+	const betaDetail = fixture.buildQuery.included.find((entry) => entry.type === 'buildBetaDetails' && entry.id === 'build-11-id');
+	betaDetail.attributes.externalBuildState = 'READY_FOR_BETA_SUBMISSION';
+	fixture.buildQuery.included = fixture.buildQuery.included.filter((entry) => entry.type !== 'betaAppReviewSubmissions');
+	return fixture;
 }
 
 function assertNonEmptyStringArray(value, label) {
