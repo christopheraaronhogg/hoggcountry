@@ -82,6 +82,13 @@ npm run handoff:scout-local-ai-dad
 It combines the eval status with the recorded Dad Pilot/TestFlight build truth
 so old TestFlight builds, the current target build, scaffold routing proof, and
 final iPhone proof do not get blended.
+The handoff has a `Phone build path` section that says which TestFlight build Dad
+can use now, which Xcode build is only a latest-code candidate, and what proof is
+still needed before a target build counts as Dad-ready. If the local target is
+newer than the recorded Dad Pilot build, first run the read-only refresh command
+shown in the handoff; after upload/processing, rerun it with
+`--attach --submit-review --remove-previous --update-release-evidence` to update
+the release ledger from App Store Connect truth.
 
 The installed mobile app reads the suite from `mobile/static/scout/dad-local-ai-100.json`. The suite carries a version, a deterministic hash, and the final app build requirement, so stale iPhone exports fail intake/final proof instead of being mixed with the current 100-question set. After editing the canonical suite, bump the top-level `version` and run:
 

@@ -25,12 +25,17 @@ const latestDadBuildProof = await findLatestDadBuildProof(
 	resolveInputPath(cli.iosProofDir ?? DEFAULT_IOS_PROOF_DIR),
 	targetBuild
 );
+const latestLocalTargetPrepProof = await findLatestLocalTargetPrepProof(
+	resolveInputPath(cli.iosProofDir ?? DEFAULT_IOS_PROOF_DIR),
+	targetBuild
+);
 const handoff = createDadHandoffMarkdown({
 	status,
 	iosBuild,
 	releaseEvidence,
 	latestIosProof,
 	latestDadBuildProof,
+	latestLocalTargetPrepProof,
 	generatedAt: new Date().toISOString()
 });
 
@@ -145,12 +150,45 @@ async function findLatestDadBuildProof(path, targetBuild) {
 	}
 }
 
+async function findLatestLocalTargetPrepProof(path, targetBuild) {
+	try {
+		const proofs = [];
+		const files = (await readdir(path))
+			.filter((file) => /^ios-testflight-build-.*-prep-.*\.md$/u.test(file))
+			.sort();
+		for (const file of files) {
+			const proofPath = resolve(path, file);
+			const text = await readFile(proofPath, 'utf8');
+			const localTarget = cleanMarkdownValue(firstMarkdownValue(text, 'Local iOS target'));
+			if (!localTarget) continue;
+			proofs.push({
+				path: relative(REPO_ROOT, proofPath),
+				checkedAt: cleanMarkdownValue(firstMarkdownValue(text, 'Checked at')) ?? '<unknown>',
+				localTarget,
+				isTargetBuild: localTarget === targetBuild
+			});
+		}
+		const sortedProofs = proofs.sort(compareLocalTargetPrepProofs);
+		return sortedProofs.filter((proof) => proof.localTarget === targetBuild).at(-1) ?? sortedProofs.at(-1) ?? null;
+	} catch {
+		return null;
+	}
+}
+
 function compareDadBuildProofs(a, b) {
 	const timeA = Date.parse(a.checkedAt);
 	const timeB = Date.parse(b.checkedAt);
 	if (Number.isFinite(timeA) && Number.isFinite(timeB) && timeA !== timeB) return timeA - timeB;
 	if (Number.isFinite(timeA) !== Number.isFinite(timeB)) return Number.isFinite(timeA) ? 1 : -1;
 	return buildNumberFromLabel(a.targetBuild) - buildNumberFromLabel(b.targetBuild);
+}
+
+function compareLocalTargetPrepProofs(a, b) {
+	const timeA = Date.parse(a.checkedAt);
+	const timeB = Date.parse(b.checkedAt);
+	if (Number.isFinite(timeA) && Number.isFinite(timeB) && timeA !== timeB) return timeA - timeB;
+	if (Number.isFinite(timeA) !== Number.isFinite(timeB)) return Number.isFinite(timeA) ? 1 : -1;
+	return buildNumberFromLabel(a.localTarget) - buildNumberFromLabel(b.localTarget);
 }
 
 function buildNumberFromLabel(label) {
@@ -177,7 +215,7 @@ function cleanMarkdownValue(value) {
 	return value.trim().replace(/^`|`$/gu, '');
 }
 
-function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIosProof, latestDadBuildProof, generatedAt }) {
+function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIosProof, latestDadBuildProof, latestLocalTargetPrepProof, generatedAt }) {
 	const dadTestFlightEvidence = releaseEvidenceItem(releaseEvidence, 'dad-testflight-invite');
 	const publicLink = dadTestFlightEvidence?.publicLink ?? 'https://testflight.apple.com/join/BagBCrzf';
 	const recordedDadBuild = extractRecordedDadBuild(releaseEvidence);
@@ -188,6 +226,12 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 	const dadProofMatchesTarget = latestDadBuildProof?.targetBuild === targetBuild;
 	const dadProofLabel = dadProofMatchesTarget ? 'Dad target-build proof' : 'Latest Dad Pilot proof';
 	const dadGateLabel = dadProofMatchesTarget ? 'Dad target-build gates' : 'Latest Dad Pilot gates';
+	const phoneBuildDecision = createPhoneBuildDecision({
+		status,
+		recordedDadBuild,
+		targetBuild,
+		suiteRequiredBuild
+	});
 	const lines = [
 		'# Dad Scout local AI Eval Lab handoff',
 		'',
@@ -209,6 +253,9 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		latestDadBuildProof
 			? `- ${dadGateLabel}: ${latestDadBuildProof.checkedGateCount}/${latestDadBuildProof.totalGateCount} checked; targetReadyForDad ${latestDadBuildProof.targetReadyForDad ? 'yes' : 'no'}.`
 			: '- Dad Pilot gates: unknown.',
+		latestLocalTargetPrepProof
+			? `- Latest local target prep: \`${latestLocalTargetPrepProof.path}\` (${latestLocalTargetPrepProof.localTarget}, checked ${latestLocalTargetPrepProof.checkedAt}; not App Store Connect proof).`
+			: '- Latest local target prep: none found.',
 		`- Newer Xcode target pending App Store Connect: ${status.testflight?.targetBuildReadyForDad ? 'no' : 'yes'}.`,
 		`- Imported full device runs: ${status.runs?.currentFullDeviceRuns?.length ?? 0}.`,
 		`- Imported partial device runs: ${status.runs?.currentPartialDeviceRuns?.length ?? 0}.`,
@@ -226,6 +273,15 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		`- iOS Release signing: team \`${iosBuild.teamId}\`, profile \`${iosBuild.releaseProfile}\`.`,
 		''
 	];
+
+	lines.push(
+		'## Phone build path',
+		'',
+		`- Use now: ${phoneBuildDecision.useNow}.`,
+		`- Latest-code target: ${phoneBuildDecision.latestTarget}.`,
+		`- Do not count as final proof until: ${phoneBuildDecision.finalProofBoundary}.`,
+		''
+	);
 
 	if (!status.testflight?.targetBuildAvailableForDad) {
 		lines.push(
@@ -273,9 +329,16 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		'  --asc-issuer-id <issuer-id>',
 		'```',
 		'',
+		'After upload/processing, refresh Dad Pilot proof from App Store Connect:',
+		'',
+		'```sh',
+		`npm run refresh:testflight-dad-pilot -- --build ${iosBuild.buildNumber} --app-version ${iosBuild.marketingVersion}`,
+		`npm run refresh:testflight-dad-pilot -- --build ${iosBuild.buildNumber} --app-version ${iosBuild.marketingVersion} --attach --submit-review --remove-previous --update-release-evidence`,
+		'```',
+		'',
 		'## Phone run steps',
 		'',
-		'1. Confirm App Store Connect has a suite-compatible build attached to Dad Pilot and available through the TestFlight link. Use the target build when the latest-code candidate is required.',
+		`1. Confirm the phone build path above. For the next suite run, ${phoneBuildDecision.useNow}.`,
 		'2. On the iPhone, open TestFlight and update Hoggcountry.',
 		'3. Open Hoggcountry > Settings > Scout Eval Lab.',
 		'4. Confirm the Eval Lab status says `TestFlight ready`.',
@@ -343,6 +406,28 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 	);
 
 	return `${lines.join('\n')}\n`;
+}
+
+function createPhoneBuildDecision({ status, recordedDadBuild, targetBuild, suiteRequiredBuild }) {
+	if (status.testflight?.targetBuildReadyForDad) {
+		return {
+			useNow: `install/update the latest Dad Pilot TestFlight target \`${targetBuild}\``,
+			latestTarget: `\`${targetBuild}\` is recorded in Dad Pilot and meets \`${suiteRequiredBuild}\``,
+			finalProofBoundary: 'Run 100 is imported from a TestFlight/iPhone export, reviewed 100/100 at 5/5, and strict/stability proof passes'
+		};
+	}
+	if (status.testflight?.recordedDadPilotMeetsSuiteRequirement) {
+		return {
+			useNow: `Dad can run the suite on the currently approved Dad Pilot build \`${recordedDadBuild}\`; do not wait for target \`${targetBuild}\` unless latest-code proof is required`,
+			latestTarget: `\`${targetBuild}\` is the Xcode target/local candidate, but it still needs App Store Connect upload/refresh proof before it is the latest Dad Pilot build`,
+			finalProofBoundary: `the exported run shows TestFlight/iPhone context and app build satisfying \`${suiteRequiredBuild}\`; build \`${targetBuild}\` only counts as latest-code proof after Dad Pilot refresh shows targetReadyForDad`
+		};
+	}
+	return {
+		useNow: `wait for App Store Connect to show a Dad Pilot build satisfying \`${suiteRequiredBuild}\` before asking Dad for Run 100`,
+		latestTarget: `\`${targetBuild}\` is the Xcode target/local candidate, but Dad Pilot evidence currently records \`${recordedDadBuild}\``,
+		finalProofBoundary: `Dad Pilot/TestFlight proof and the exported run both show app build satisfying \`${suiteRequiredBuild}\``
+	};
 }
 
 function extractRecordedDadBuild(releaseEvidence) {

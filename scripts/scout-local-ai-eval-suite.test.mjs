@@ -1242,6 +1242,10 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 		'',
 		'Checked at: 2026-06-27T05:54:00Z',
 		'',
+		'## Local candidate',
+		'',
+		'- Local iOS target: `1.0 (14)`',
+		'',
 		'This is local prep only, not App Store Connect Dad Pilot proof.',
 		''
 	].join('\n'));
@@ -1274,7 +1278,12 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Recorded Dad Pilot build meets suite requirement: yes/u);
 	assert.match(result.stdout, /Latest Dad Pilot proof: .*ios-testflight-build-13-2026-06-27\.md` \(1\.0 \(13\), IN_BETA_TESTING/u);
 	assert.match(result.stdout, /Latest Dad Pilot gates: 5\/5 checked; targetReadyForDad yes/u);
+	assert.match(result.stdout, /Latest local target prep: .*ios-testflight-build-14-prep-2026-06-27\.md` \(1\.0 \(14\), checked 2026-06-27T05:54:00Z; not App Store Connect proof\)/u);
 	assert.match(result.stdout, /Newer Xcode target pending App Store Connect: yes/u);
+	assert.match(result.stdout, /## Phone build path/u);
+	assert.match(result.stdout, /Use now: Dad can run the suite on the currently approved Dad Pilot build `1\.0 \(13\)`/u);
+	assert.match(result.stdout, /Latest-code target: `1\.0 \(14\)` is the Xcode target\/local candidate/u);
+	assert.match(result.stdout, /targetReadyForDad/u);
 	assert.match(result.stdout, /Dad can run the suite-compatible TestFlight build already in Dad Pilot/u);
 	assert.match(result.stdout, /Imported full device runs: 0/u);
 	assert.match(result.stdout, /Imported partial device runs: 0/u);
@@ -1287,6 +1296,8 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Latest native upload proof: .*ios-testflight-attempt-2026-06-27T02-39-27-165Z\.md` \(passed/u);
 	assert.match(result.stdout, /App Store Connect API key in latest proof: yes/u);
 	assert.match(result.stdout, /APP_STORE_CONNECT_API_ISSUER_ID/u);
+	assert.match(result.stdout, /npm run refresh:testflight-dad-pilot -- --build 14 --app-version 1\.0/u);
+	assert.match(result.stdout, /--attach --submit-review --remove-previous --update-release-evidence/u);
 	assert.match(result.stdout, /A likely Scout Eval Lab export is already/u);
 	assert.match(result.stdout, /device-handoff-inbox-latest/u);
 	assert.match(result.stdout, /use `Run 100` for real proof/u);
