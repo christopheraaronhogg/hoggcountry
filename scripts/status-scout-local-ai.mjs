@@ -2,6 +2,7 @@ import { access, readdir, readFile } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+	requiredAppLabel,
 	verifyScoutLocalAiDeviceProof
 } from './lib/scout-local-ai-device-proof.mjs';
 import {
@@ -55,6 +56,7 @@ async function buildStatus(paths) {
 	const suite = await readJson(paths.suitePath);
 	const mobileSuite = await readOptionalJson(paths.mobileSuitePath);
 	const suiteIdentity = scoutLocalAiSuiteIdentity(suite);
+	const finalProof = summarizeFinalProofRequirement(suite);
 	const suiteErrors = validateSuite(suite, mobileSuite, suiteIdentity);
 	const suiteCoverage = summarizeScoutLocalAiSuiteCoverage(suite);
 	const runs = await loadJsonFiles(paths.runsDir);
@@ -62,12 +64,14 @@ async function buildStatus(paths) {
 	const reviews = await loadJsonFiles(paths.reviewsDir);
 	const iosBuild = await readOptionalIosBuildSettings(paths.xcodeProjectPath);
 	const releaseEvidence = await readOptionalJson(paths.releaseEvidencePath);
-	const testflight = summarizeTestFlightTarget({ iosBuild, releaseEvidence, paths });
+	const testflight = summarizeTestFlightTarget({ iosBuild, releaseEvidence, finalProof, paths });
 	const allRuns = [...runs, ...deviceRuns];
 	const reviewsByRunId = new Map(reviews.map((entry) => [entry.value.runId, entry]));
 	const currentRuns = allRuns.filter((entry) => isCurrentRun(entry.value, suite, suiteIdentity));
 	const currentDeviceRuns = currentRuns.filter((entry) => entry.value.evidenceLane === DEVICE_EVIDENCE_LANE);
 	const currentFullDeviceRuns = currentDeviceRuns.filter((entry) => isFullRun(entry.value, suite));
+	testflight.currentTargetDeviceRunCount = currentFullDeviceRuns.filter((entry) => deviceRunMatchesTargetBuild(entry.value, testflight)).length;
+	testflight.targetBuildAvailableForDad = testflight.targetBuildReadyForDad || testflight.currentTargetDeviceRunCount > 0;
 	const currentFullToolCompleteRuns = currentRuns.filter(
 		(entry) => isFullRun(entry.value, suite) && hasCompleteToolExpectations(entry.value, suite) && hasCompleteSourceEvidence(entry.value)
 	);
@@ -125,6 +129,7 @@ async function buildStatus(paths) {
 		suiteCoverage,
 		suite,
 		suiteIdentity,
+		testflight,
 		currentFullRoutingRuns,
 		currentFullToolCompleteRuns,
 		currentFullDeviceRuns,
@@ -141,6 +146,7 @@ async function buildStatus(paths) {
 			version: suite.version ?? '<missing>',
 			hash: suiteIdentity.suiteHash,
 			caseCount: Array.isArray(suite.cases) ? suite.cases.length : 0,
+			finalProof,
 			mobileCopyMatches: mobileSuite ? stableJson(mobileSuite) === stableJson(suite) : false,
 			coverage: suiteCoverage,
 			errors: suiteErrors
@@ -205,6 +211,7 @@ function createGates(input) {
 	const suiteOk = input.suiteErrors.length === 0;
 	const coverageOk = input.suiteCoverage.ok;
 	const routingOk = input.currentFullRoutingRuns.length > 0 || input.currentFullToolCompleteRuns.length > 0;
+	const testflightOk = input.testflight.targetBuildAvailableForDad && input.testflight.targetBuildMeetsSuiteRequirement;
 	const deviceOk = input.currentFullDeviceRuns.length > 0;
 	const reviewOk = input.completeFiveStarDeviceReviews.length > 0;
 	const strictOk = input.strictDeviceProofPasses.length > 0;
@@ -233,6 +240,12 @@ function createGates(input) {
 			evidence: routingOk
 				? `${input.currentFullToolCompleteRuns.length} current full run(s) with all required tools hit and source evidence recorded`
 				: 'No current full 100-case run has complete required-tool hits and source evidence'
+		},
+		{
+			id: 'testflight-target',
+			label: 'Dad Pilot has current suite-required TestFlight build',
+			ok: testflightOk,
+			evidence: testflightTargetEvidence(input.testflight)
 		},
 		{
 			id: 'device-run',
@@ -289,13 +302,19 @@ function nextActionFor(gates, currentFullDeviceRuns, completeFiveStarDeviceRevie
 			text: 'Run npm run eval:scout-local-ai and fix any missing required-tool hits before Dad spends time on phone review.'
 		};
 	}
-	if (!gate('device-run')?.ok) {
-		if (testflight?.targetBuild && testflight.recordedDadPilotBuild && !testflight.targetBuildReadyForDad) {
+	if (!gate('testflight-target')?.ok) {
+		if (!testflight?.targetBuildMeetsSuiteRequirement) {
 			return {
-				kind: 'publish-target-build',
-				text: `Upload and attach target iOS build ${testflight.targetBuild} to Dad Pilot first; release evidence currently records Dad Pilot on ${testflight.recordedDadPilotBuild}. After App Store Connect shows the target build through the TestFlight link, update the iPhone, open Settings > Scout Eval Lab, run Run 100, Share the JSON, then import it with npm run intake:scout-local-ai-device-run.`
+				kind: 'align-suite-build',
+				text: `Align the Xcode target build with the suite final-proof requirement ${testflight?.suiteRequiredBuild ?? '<unknown>'}; current target is ${testflight?.targetBuild ?? '<unknown>'}.`
 			};
 		}
+		return {
+			kind: 'publish-target-build',
+			text: `Upload and attach target iOS build ${testflight.targetBuild ?? '<unknown>'} to Dad Pilot first; release evidence currently records Dad Pilot on ${testflight.recordedDadPilotBuild ?? '<unknown>'}, while the suite requires ${testflight.suiteRequiredBuild ?? '<unknown>'}. After App Store Connect shows the target build through the TestFlight link, update the iPhone, open Settings > Scout Eval Lab, run Run 100, Share the JSON, then import it with npm run intake:scout-local-ai-device-run.`
+		};
+	}
+	if (!gate('device-run')?.ok) {
 		return {
 			kind: 'get-device-run',
 			text: 'Install the latest TestFlight build on Dad/Chris iPhone, open Settings > Scout Eval Lab, run Run 100, Share the JSON, then import it with npm run intake:scout-local-ai-device-run.'
@@ -369,18 +388,82 @@ function uniqueBuildSetting(text, name) {
 	return null;
 }
 
-function summarizeTestFlightTarget({ iosBuild, releaseEvidence, paths }) {
+function summarizeTestFlightTarget({ iosBuild, releaseEvidence, finalProof, paths }) {
 	const dadTestFlightEvidence = releaseEvidenceItem(releaseEvidence, 'dad-testflight-invite');
 	const targetBuild = iosBuild ? `${iosBuild.marketingVersion} (${iosBuild.buildNumber})` : null;
 	const recordedDadPilotBuild = extractRecordedDadBuild(releaseEvidence);
+	const targetBuildMeetsSuiteRequirement = appBuildSatisfiesFinalProof(targetBuild, finalProof);
+	const recordedDadPilotMeetsSuiteRequirement = appBuildSatisfiesFinalProof(recordedDadPilotBuild, finalProof);
 	return {
 		targetBuild,
 		recordedDadPilotBuild,
-		targetBuildReadyForDad: Boolean(targetBuild && recordedDadPilotBuild && targetBuild === recordedDadPilotBuild),
+		suiteRequiredBuild: finalProof.requiredApp,
+		targetBuildMeetsSuiteRequirement,
+		recordedDadPilotMeetsSuiteRequirement,
+		targetBuildReadyForDad: Boolean(targetBuild && recordedDadPilotBuild && targetBuild === recordedDadPilotBuild && recordedDadPilotMeetsSuiteRequirement),
+		targetBuildAvailableForDad: false,
+		currentTargetDeviceRunCount: 0,
 		publicLink: dadTestFlightEvidence?.publicLink ?? null,
 		xcodeProject: relative(REPO_ROOT, paths.xcodeProjectPath),
 		releaseEvidence: relative(REPO_ROOT, paths.releaseEvidencePath)
 	};
+}
+
+function summarizeFinalProofRequirement(suite) {
+	const raw = suite?.finalProof ?? {};
+	const minAppBuild = raw?.minAppBuild === undefined || raw?.minAppBuild === null
+		? null
+		: Number(raw.minAppBuild);
+	return {
+		nativePlatform: String(raw?.nativePlatform ?? 'ios').trim() || 'ios',
+		installSource: String(raw?.installSource ?? 'testflight').trim() || 'testflight',
+		minAppVersion: String(raw?.minAppVersion ?? '').trim() || null,
+		minAppBuild: Number.isInteger(minAppBuild) && minAppBuild > 0 ? minAppBuild : null,
+		requiredApp: requiredAppLabel(suite)
+	};
+}
+
+function appBuildSatisfiesFinalProof(label, finalProof) {
+	const parsed = parseAppBuildLabel(label);
+	if (!parsed) return false;
+	if (finalProof.minAppVersion && parsed.version !== finalProof.minAppVersion) return false;
+	if (finalProof.minAppBuild !== null && parsed.build < finalProof.minAppBuild) return false;
+	return true;
+}
+
+function deviceRunMatchesTargetBuild(run, testflight) {
+	if (!testflight.targetBuild) return false;
+	const app = run?.runContext?.app;
+	const installSource = run?.runContext?.installSource;
+	const runBuild = app?.version && app?.build ? `${app.version} (${app.build})` : null;
+	return runBuild === testflight.targetBuild && installSource?.type === 'testflight';
+}
+
+function parseAppBuildLabel(label) {
+	const match = String(label ?? '').match(/^(\d+(?:\.\d+)*)\s+\((\d+)\)$/u);
+	if (!match) return null;
+	return {
+		version: match[1],
+		build: Number(match[2])
+	};
+}
+
+function testflightTargetEvidence(testflight) {
+	const pieces = [
+		`target ${testflight.targetBuild ?? '<unknown>'}`,
+		`suite requires ${testflight.suiteRequiredBuild ?? '<unknown>'}`,
+		`Dad Pilot records ${testflight.recordedDadPilotBuild ?? '<unknown>'}`
+	];
+	if (testflight.currentTargetDeviceRunCount > 0) {
+		pieces.push(`${testflight.currentTargetDeviceRunCount} imported full device run(s) already used the target TestFlight build`);
+	}
+	if (!testflight.targetBuildMeetsSuiteRequirement) {
+		return `Current Xcode target does not meet the suite final-proof requirement: ${pieces.join('; ')}`;
+	}
+	if (!testflight.targetBuildAvailableForDad) {
+		return `Target build is not yet recorded as available for Dad: ${pieces.join('; ')}`;
+	}
+	return `Target build is available for Dad: ${pieces.join('; ')}`;
 }
 
 function extractRecordedDadBuild(releaseEvidence) {
@@ -485,6 +568,7 @@ function createStatusMarkdown(status) {
 		`- Mobile copy: \`${status.suite.mobilePath}\``,
 		`- Version/hash: \`${status.suite.version}\` / \`${status.suite.hash}\``,
 		`- Cases: ${status.suite.caseCount}`,
+		`- Final proof app requirement: \`${status.suite.finalProof.requiredApp}\``,
 		`- Mobile copy matches: ${status.suite.mobileCopyMatches ? 'yes' : 'no'}`,
 		`- Objective coverage: ${status.suite.coverage.ok ? 'yes' : 'no'}`,
 		'',
@@ -495,8 +579,12 @@ function createStatusMarkdown(status) {
 		'## TestFlight Target',
 		'',
 		`- Target iOS build: \`${status.testflight.targetBuild ?? '<unknown>'}\``,
+		`- Suite-required app build: \`${status.testflight.suiteRequiredBuild ?? '<unknown>'}\``,
+		`- Target build meets suite requirement: ${status.testflight.targetBuildMeetsSuiteRequirement ? 'yes' : 'no'}`,
 		`- Recorded Dad Pilot build: \`${status.testflight.recordedDadPilotBuild ?? '<unknown>'}\``,
+		`- Recorded Dad Pilot build meets suite requirement: ${status.testflight.recordedDadPilotMeetsSuiteRequirement ? 'yes' : 'no'}`,
 		`- Target build ready for Dad: ${status.testflight.targetBuildReadyForDad ? 'yes' : 'no'}`,
+		`- Imported target-build device runs: ${status.testflight.currentTargetDeviceRunCount}`,
 		`- Dad TestFlight link: ${status.testflight.publicLink ?? '<unknown>'}`,
 		'',
 		'## Gates',

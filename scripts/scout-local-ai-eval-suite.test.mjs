@@ -208,14 +208,21 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(gates.suite.ok, true);
 	assert.equal(gates.coverage.ok, true);
 	assert.equal(gates.routing.ok, true);
+	assert.equal(gates['testflight-target'].ok, false);
 	assert.equal(gates['device-run'].ok, false);
 	assert.equal(status.runs.currentFullRoutingRuns.length, 1);
 	assert.equal(status.strictDeviceProofs.length, 0);
+	assert.equal(status.suite.finalProof.requiredApp, '1.0 (>= 11)');
 	assert.equal(status.testflight.targetBuild, '1.0 (11)');
+	assert.equal(status.testflight.suiteRequiredBuild, '1.0 (>= 11)');
+	assert.equal(status.testflight.targetBuildMeetsSuiteRequirement, true);
 	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (10)');
+	assert.equal(status.testflight.recordedDadPilotMeetsSuiteRequirement, false);
 	assert.equal(status.testflight.targetBuildReadyForDad, false);
+	assert.equal(status.testflight.targetBuildAvailableForDad, false);
 	assert.equal(status.nextAction.kind, 'publish-target-build');
 	assert.match(status.nextAction.text, /Upload and attach target iOS build 1\.0 \(11\)/u);
+	assert.match(status.nextAction.text, /suite requires 1\.0 \(>= 11\)/u);
 });
 
 test('status command surfaces target TestFlight build gaps before phone eval', async () => {
@@ -264,11 +271,16 @@ test('status command surfaces target TestFlight build gaps before phone eval', a
 	const status = JSON.parse(result.stdout);
 
 	assert.equal(status.testflight.targetBuild, '1.0 (11)');
+	assert.equal(status.testflight.suiteRequiredBuild, '1.0 (>= 11)');
+	assert.equal(status.testflight.targetBuildMeetsSuiteRequirement, true);
 	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (10)');
+	assert.equal(status.testflight.recordedDadPilotMeetsSuiteRequirement, false);
 	assert.equal(status.testflight.targetBuildReadyForDad, false);
+	assert.equal(status.testflight.targetBuildAvailableForDad, false);
 	assert.equal(status.nextAction.kind, 'publish-target-build');
 	assert.match(status.nextAction.text, /Upload and attach target iOS build 1\.0 \(11\)/u);
 	assert.match(status.nextAction.text, /Dad Pilot on 1\.0 \(10\)/u);
+	assert.match(status.nextAction.text, /suite requires 1\.0 \(>= 11\)/u);
 });
 
 test('status command recognizes repeated strict TestFlight iPhone proof candidates', async () => {
@@ -317,6 +329,8 @@ test('status command recognizes repeated strict TestFlight iPhone proof candidat
 	assert.equal(gates.review.ok, true);
 	assert.equal(gates['strict-device-proof'].ok, true);
 	assert.equal(gates.stability.ok, true);
+	assert.equal(status.testflight.currentTargetDeviceRunCount, 2);
+	assert.equal(gates['testflight-target'].ok, true);
 	assert.equal(status.strictDeviceProofs.filter((proof) => proof.ok).length, 2);
 	assert.equal(status.nextAction.kind, 'stability-ready');
 });
@@ -365,10 +379,13 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	);
 
 	assert.match(result.stdout, /# Dad Scout local AI Eval Lab handoff/u);
+	assert.match(result.stdout, /Suite final-proof app requirement: `1\.0 \(>= 11\)`/u);
 	assert.match(result.stdout, /Target iOS build for Dad Eval Lab: `1\.0 \(11\)`/u);
+	assert.match(result.stdout, /Target build meets suite requirement: yes/u);
 	assert.match(result.stdout, /Recorded Dad Pilot build: `1\.0 \(10\)`/u);
+	assert.match(result.stdout, /Recorded Dad Pilot build meets suite requirement: no/u);
 	assert.match(result.stdout, /https:\/\/testflight\.apple\.com\/join\/BagBCrzf/u);
-	assert.match(result.stdout, /recorded Dad Pilot build is not the target build/u);
+	assert.match(result.stdout, /recorded Dad Pilot build is not ready for this suite/u);
 	assert.match(result.stdout, /Upload and attach target iOS build 1\.0 \(11\)/u);
 	assert.match(result.stdout, /use `Run 100` for real proof/u);
 	assert.match(result.stdout, /npm run intake:scout-local-ai-device-run/u);

@@ -86,6 +86,7 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, generated
 	const completedGates = status.gates.filter((gate) => gate.ok).length;
 	const totalGates = status.gates.length;
 	const targetBuild = `${iosBuild.marketingVersion} (${iosBuild.buildNumber})`;
+	const suiteRequiredBuild = status.suite?.finalProof?.requiredApp ?? '<unknown>';
 	const lines = [
 		'# Dad Scout local AI Eval Lab handoff',
 		'',
@@ -96,15 +97,18 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, generated
 		`- Eval suite: \`${status.suite.suiteId}\` version \`${status.suite.version}\`, ${status.suite.caseCount} cases, hash \`${status.suite.hash}\`.`,
 		`- Mobile suite copy matches canonical: ${status.suite.mobileCopyMatches ? 'yes' : 'no'}.`,
 		`- Eval gates complete: ${completedGates}/${totalGates}.`,
+		`- Suite final-proof app requirement: \`${suiteRequiredBuild}\`.`,
 		`- Target iOS build for Dad Eval Lab: \`${targetBuild}\`.`,
+		`- Target build meets suite requirement: ${status.testflight?.targetBuildMeetsSuiteRequirement ? 'yes' : 'no'}.`,
 		`- Recorded Dad Pilot build: \`${recordedDadBuild}\`.`,
+		`- Recorded Dad Pilot build meets suite requirement: ${status.testflight?.recordedDadPilotMeetsSuiteRequirement ? 'yes' : 'no'}.`,
 		`- Dad TestFlight link: ${publicLink}`,
 		''
 	];
 
-	if (recordedDadBuild !== targetBuild) {
+	if (!status.testflight?.targetBuildAvailableForDad) {
 		lines.push(
-			'> Important: the recorded Dad Pilot build is not the target build. Do not treat the final Eval Lab run as valid until App Store Connect shows Dad Pilot on the target build.',
+			'> Important: the recorded Dad Pilot build is not ready for this suite. Do not treat the final Eval Lab run as valid until App Store Connect shows Dad Pilot on the target build, or a current full TestFlight/iPhone export proves the target build was installed.',
 			''
 		);
 	}
