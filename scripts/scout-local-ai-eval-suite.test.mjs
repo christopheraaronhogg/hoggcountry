@@ -185,6 +185,9 @@ test('mobile Eval Lab surfaces saved-run rescue and device proof metadata', asyn
 	assert.match(component, /Partial export/u, 'Eval Lab should distinguish interrupted partial exports');
 	assert.match(component, /Resume or share for recovery/u, 'Eval Lab should make partial-run recovery explicit');
 	assert.match(component, /Last saved/u, 'Eval Lab should show when the export last autosaved');
+	assert.match(component, /Run ID/u, 'Eval Lab should show the saved export run id');
+	assert.match(component, /Execution ID/u, 'Eval Lab should show the saved export execution id');
+	assert.match(component, /executionIdLabel/u, 'Eval Lab should read the durable execution id from run context');
 	assert.match(component, /Errors/u, 'Eval Lab should show errored result count');
 	assert.match(component, /Required tools/u, 'Eval Lab should show required-tool gaps before review');
 	assert.match(component, /Source evidence/u, 'Eval Lab should show source-evidence gaps before review');
@@ -206,6 +209,7 @@ test('mobile Eval Lab labels final exports for inbox review', async () => {
 	assert.match(component, /summarizeExportHandoff/u, 'Eval Lab should derive export handoff state');
 	assert.match(component, /REVIEW_INBOX_PATH = 'data\/scout-local-ai\/inbox\/'/u, 'Final Run 100 exports should point at the repo inbox');
 	assert.match(component, /Save the shared JSON into \$\{REVIEW_INBOX_PATH\}/u, 'Final Run 100 exports should describe the inbox handoff');
+	assert.match(component, /Execution ID \$\{executionLabel\}/u, 'Shared exports should include the durable execution id');
 	assert.match(component, /npm run prepare-review:scout-local-ai-device-run -- --run inbox/u, 'Final Run 100 exports should name the review prep command');
 	assert.match(component, /Final Run 100 JSON ready for inbox review/u, 'Final share/copy/download status should confirm review readiness');
 	assert.match(component, /diagnostic only, not final Dad proof/u, 'Smoke and partial exports should not be confused with final proof');

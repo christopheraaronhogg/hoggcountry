@@ -38,6 +38,8 @@
 		errorLabel: string;
 		toolsLabel: string;
 		sourceLabel: string;
+		runIdLabel: string;
+		executionIdLabel: string;
 	};
 	type EvalRunFreshness = {
 		state: 'current' | 'stale' | 'pending';
@@ -446,7 +448,9 @@
 			completedLabel: `${currentRun.caseCount}/${target}`,
 			errorLabel: String(errorCount),
 			toolsLabel: `${missingTools} missing`,
-			sourceLabel: `${sourceGaps} ${sourceGaps === 1 ? 'gap' : 'gaps'}`
+			sourceLabel: `${sourceGaps} ${sourceGaps === 1 ? 'gap' : 'gaps'}`,
+			runIdLabel: currentRun.runId,
+			executionIdLabel: executionIdLabel(currentRun)
 		};
 	}
 
@@ -521,9 +525,10 @@
 		currentSuite: ScoutLocalAiEvalSuite | null
 	): EvalExportHandoff {
 		const fileName = `${currentRun.runId}.json`;
+		const executionLabel = executionIdLabel(currentRun);
 		const fullRun = currentSuite ? isFullFinalRun(currentRun, currentSuite) : false;
 		if (fullRun) {
-			const shareText = `Final Scout Run 100 export ${currentRun.runId}. Save the shared JSON into ${REVIEW_INBOX_PATH}, then run: ${REVIEW_PREP_COMMAND}`;
+			const shareText = `Final Scout Run 100 export ${currentRun.runId}. Execution ID ${executionLabel}. Save the shared JSON into ${REVIEW_INBOX_PATH}, then run: ${REVIEW_PREP_COMMAND}`;
 			return {
 				state: 'final',
 				label: 'Final Run 100',
@@ -535,7 +540,7 @@
 				successMessage: 'Final Run 100 JSON ready for inbox review.'
 			};
 		}
-		const shareText = `Scout diagnostic export ${currentRun.runId}. This smoke or partial JSON is diagnostic only, not final Dad proof. Use it to rescue an interrupted run.`;
+		const shareText = `Scout diagnostic export ${currentRun.runId}. Execution ID ${executionLabel}. This smoke or partial JSON is diagnostic only, not final Dad proof. Use it to rescue an interrupted run.`;
 		return {
 			state: 'diagnostic',
 			label: 'Diagnostic export',
@@ -591,10 +596,15 @@
 		return type ? type : 'Unknown';
 	}
 
+	function executionIdLabel(currentRun: ScoutLocalAiEvalRun): string {
+		const execution = recordAt(currentRun.runContext, 'execution');
+		return stringAt(execution, 'id') ?? 'Missing';
+	}
+
 	function recordAt(value: unknown, key: string): Record<string, unknown> | null {
-		if (!value || typeof value !== 'object') return null;
+		if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
 		const child = (value as Record<string, unknown>)[key];
-		return child && typeof child === 'object' ? child as Record<string, unknown> : null;
+		return child && typeof child === 'object' && !Array.isArray(child) ? child as Record<string, unknown> : null;
 	}
 
 	function stringAt(value: Record<string, unknown> | null, key: string): string | null {
@@ -690,6 +700,14 @@
 				<em>{runHealth.detail}</em>
 			</div>
 			<div class="eval-rescue-grid">
+				<div>
+					<span>Run ID</span>
+					<strong>{runHealth.runIdLabel}</strong>
+				</div>
+				<div>
+					<span>Execution ID</span>
+					<strong>{runHealth.executionIdLabel}</strong>
+				</div>
 				<div>
 					<span>Last saved</span>
 					<strong>{runHealth.savedAt}</strong>
