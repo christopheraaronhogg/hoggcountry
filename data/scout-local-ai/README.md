@@ -48,6 +48,10 @@ missing TestFlight/iPhone proof stay visually separate. The coverage gate fails
 if the suite stops covering trail prep, daily hiking decisions, water, shelters,
 weather, resupply, safety, gear, Bible/spiritual support, offline/local-model
 use, or confusing edge cases at the expected minimum depth.
+The status output also tracks below-5 review debt explicitly: a completed
+below-5 review is marked as needing backlog generation, needing an iteration
+plan, or already planned, so improvement work cannot hide behind the broader
+"review is not 100/100" gate.
 
 Before handing the phone to Dad or sending Chris the next TestFlight steps,
 generate the current one-page phone/run/review checklist:

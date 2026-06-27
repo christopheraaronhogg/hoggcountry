@@ -105,6 +105,11 @@ async function buildStatus(paths) {
 			(entry.summary.ratingCounts['5'] ?? 0) === suite.cases.length &&
 			entry.summary.invalid.length === 0
 	);
+	const iterationDebt = summarizeIterationDebt(
+		currentDeviceReviewSummaries,
+		currentBacklogs,
+		currentIterationPlans
+	);
 	const strictDeviceProofs = currentFullDeviceRuns.map((runEntry) => {
 		const reviewEntry = reviewsByRunId.get(runEntry.value.runId);
 		if (!reviewEntry) {
@@ -138,6 +143,7 @@ async function buildStatus(paths) {
 		suite,
 		suiteIdentity,
 		testflight,
+		iterationDebt,
 		currentFullRoutingRuns,
 		currentFullToolCompleteRuns,
 		currentFullDeviceRuns,
@@ -198,7 +204,8 @@ async function buildStatus(paths) {
 			totalBacklogsLoaded: backlogs.length,
 			currentBacklogs: summarizeBacklogList(currentBacklogs),
 			totalIterationFilesLoaded: iterationFiles.length,
-			currentIterationPlans: summarizeIterationPlanList(currentIterationPlans)
+			currentIterationPlans: summarizeIterationPlanList(currentIterationPlans),
+			reviewDebt: iterationDebt
 		},
 		strictDeviceProofs,
 		gates,
@@ -239,6 +246,7 @@ function createGates(input) {
 	const testflightOk = input.testflight.targetBuildAvailableForDad && input.testflight.targetBuildMeetsSuiteRequirement;
 	const deviceOk = input.currentFullDeviceRuns.length > 0;
 	const reviewOk = input.completeFiveStarDeviceReviews.length > 0;
+	const iterationDebtOk = input.iterationDebt.ok;
 	const strictOk = input.strictDeviceProofPasses.length > 0;
 	const stabilityOk = new Set(input.strictDeviceProofPasses.map((proof) => proof.runId)).size >= 2;
 	return [
@@ -287,6 +295,12 @@ function createGates(input) {
 			evidence: reviewOk
 				? `${input.completeFiveStarDeviceReviews.length} current full device review(s) rated all 5/5`
 				: 'No current full device review is rated 100/100 at 5/5'
+		},
+		{
+			id: 'iteration-loop',
+			label: 'Below-5 answers create iteration work',
+			ok: iterationDebtOk,
+			evidence: iterationDebtEvidence(input.iterationDebt)
 		},
 		{
 			id: 'strict-device-proof',
@@ -423,6 +437,53 @@ function isCompleteBelowFiveReview(summary) {
 
 function iterationPlanIncludesRun(plan, runId) {
 	return (plan?.sourceBacklogs ?? []).some((backlog) => backlog.runId === runId);
+}
+
+function summarizeIterationDebt(currentDeviceReviewSummaries, currentBacklogs, currentIterationPlans) {
+	const items = currentDeviceReviewSummaries
+		.filter((entry) => isCompleteBelowFiveReview(entry.summary))
+		.map((entry) => {
+			const backlogEntry = currentBacklogs.find((candidate) => candidate.value.runId === entry.runId);
+			const planEntry = currentIterationPlans.find((candidate) => iterationPlanIncludesRun(candidate.value, entry.runId));
+			const status = planEntry ? 'planned' : backlogEntry ? 'backlog-only' : 'needs-backlog';
+			return {
+				runId: entry.runId,
+				belowFive: entry.summary.belowFive,
+				reviewPath: relative(REPO_ROOT, entry.path),
+				backlogPath: backlogEntry ? relative(REPO_ROOT, backlogEntry.path) : null,
+				iterationPlanPath: planEntry ? relative(REPO_ROOT, planEntry.path) : null,
+				status
+			};
+		});
+	const needsBacklog = items.filter((item) => item.status === 'needs-backlog');
+	const backlogOnly = items.filter((item) => item.status === 'backlog-only');
+	const planned = items.filter((item) => item.status === 'planned');
+	return {
+		ok: needsBacklog.length === 0 && backlogOnly.length === 0,
+		totalReviews: items.length,
+		totalBelowFive: items.reduce((sum, item) => sum + item.belowFive, 0),
+		needsBacklog,
+		backlogOnly,
+		planned,
+		items
+	};
+}
+
+function iterationDebtEvidence(debt) {
+	if (!debt.totalReviews) {
+		return 'No completed below-5 device reviews yet';
+	}
+	if (debt.ok) {
+		return `${debt.totalBelowFive} below-5 answer(s) from ${debt.totalReviews} completed review(s) are represented by iteration plan(s): ${debt.planned.map((item) => item.runId).join(', ')}`;
+	}
+	const pieces = [];
+	if (debt.needsBacklog.length) {
+		pieces.push(`missing backlog for ${debt.needsBacklog.map((item) => item.runId).join(', ')}`);
+	}
+	if (debt.backlogOnly.length) {
+		pieces.push(`missing iteration plan for ${debt.backlogOnly.map((item) => item.runId).join(', ')}`);
+	}
+	return `Below-5 review debt needs artifacts: ${pieces.join('; ')}`;
 }
 
 function summarizeRunList(entries) {
@@ -718,6 +779,10 @@ function createStatusMarkdown(status) {
 		`- Full routing/tool-complete runs: ${status.runs.currentFullToolCompleteRuns.length}`,
 		`- Full device runs: ${status.runs.currentFullDeviceRuns.length}`,
 		`- Device reviews: ${status.reviews.currentDeviceReviews.length}`,
+		`- Below-5 review debt: ${status.iterations.reviewDebt.totalReviews} review(s) / ${status.iterations.reviewDebt.totalBelowFive} answer(s)`,
+		`- Below-5 debt missing backlog: ${status.iterations.reviewDebt.needsBacklog.length}`,
+		`- Below-5 debt missing iteration plan: ${status.iterations.reviewDebt.backlogOnly.length}`,
+		`- Below-5 debt with iteration plan: ${status.iterations.reviewDebt.planned.length}`,
 		`- Current below-5 backlogs: ${status.iterations.currentBacklogs.length}`,
 		`- Current iteration plans: ${status.iterations.currentIterationPlans.length}`,
 		`- Strict device proof passes: ${status.strictDeviceProofs.filter((proof) => proof.ok).length}`,

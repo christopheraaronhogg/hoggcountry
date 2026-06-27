@@ -224,6 +224,8 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(gates.routing.ok, true);
 	assert.equal(gates['testflight-target'].ok, false);
 	assert.equal(gates['device-run'].ok, false);
+	assert.equal(gates['iteration-loop'].ok, true);
+	assert.match(gates['iteration-loop'].evidence, /No completed below-5 device reviews yet/u);
 	assert.equal(status.runs.currentFullRoutingRuns.length, 1);
 	assert.equal(status.strictDeviceProofs.length, 0);
 	assert.equal(status.suite.finalProof.requiredApp, '1.0 (>= 11)');
@@ -341,6 +343,7 @@ test('status command recognizes repeated strict TestFlight iPhone proof candidat
 
 	assert.equal(gates['device-run'].ok, true);
 	assert.equal(gates.review.ok, true);
+	assert.equal(gates['iteration-loop'].ok, true);
 	assert.equal(gates['strict-device-proof'].ok, true);
 	assert.equal(gates.stability.ok, true);
 	assert.equal(status.testflight.currentTargetDeviceRunCount, 2);
@@ -401,12 +404,17 @@ test('status command sends completed below-5 device reviews into iteration plann
 
 	assert.equal(gates['device-run'].ok, true);
 	assert.equal(gates.review.ok, false);
+	assert.equal(gates['iteration-loop'].ok, false);
+	assert.match(gates['iteration-loop'].evidence, /missing backlog for device-status-below-five/u);
 	assert.equal(status.reviews.currentDeviceReviews.length, 1);
 	assert.equal(status.reviews.currentDeviceReviews[0].rated, 100);
 	assert.equal(status.reviews.currentDeviceReviews[0].belowFive, 2);
 	assert.equal(status.reviews.currentDeviceReviews[0].invalidCount, 0);
 	assert.equal(status.iterations.currentBacklogs.length, 0);
 	assert.equal(status.iterations.currentIterationPlans.length, 0);
+	assert.equal(status.iterations.reviewDebt.totalReviews, 1);
+	assert.equal(status.iterations.reviewDebt.totalBelowFive, 2);
+	assert.equal(status.iterations.reviewDebt.needsBacklog[0].runId, 'device-status-below-five');
 	assert.equal(status.nextAction.kind, 'write-backlog');
 	assert.match(status.nextAction.text, /complete but has 2 below-5 answer\(s\)/u);
 	assert.match(status.nextAction.text, /npm run review:scout-local-ai/u);
@@ -498,8 +506,12 @@ test('status command follows existing below-5 backlog and iteration plan', async
 		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
 	);
 	const backlogOnlyStatus = JSON.parse(backlogOnlyResult.stdout);
+	const backlogOnlyGates = Object.fromEntries(backlogOnlyStatus.gates.map((gate) => [gate.id, gate]));
 	assert.equal(backlogOnlyStatus.iterations.currentBacklogs.length, 1);
 	assert.equal(backlogOnlyStatus.iterations.currentIterationPlans.length, 0);
+	assert.equal(backlogOnlyGates['iteration-loop'].ok, false);
+	assert.match(backlogOnlyGates['iteration-loop'].evidence, /missing iteration plan for device-status-artifacts/u);
+	assert.equal(backlogOnlyStatus.iterations.reviewDebt.backlogOnly[0].runId, 'device-status-artifacts');
 	assert.equal(backlogOnlyStatus.nextAction.kind, 'plan-iteration');
 	assert.match(backlogOnlyStatus.nextAction.text, /backlog .*device-status-artifacts\.backlog\.json already exists/u);
 	assert.doesNotMatch(backlogOnlyStatus.nextAction.text, /npm run review:scout-local-ai/u);
@@ -547,9 +559,13 @@ test('status command follows existing below-5 backlog and iteration plan', async
 		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
 	);
 	const plannedStatus = JSON.parse(plannedResult.stdout);
+	const plannedGates = Object.fromEntries(plannedStatus.gates.map((gate) => [gate.id, gate]));
 	assert.equal(plannedStatus.iterations.currentBacklogs.length, 1);
 	assert.equal(plannedStatus.iterations.currentIterationPlans.length, 1);
 	assert.equal(plannedStatus.iterations.currentIterationPlans[0].planId, 'device-status-artifacts-plan');
+	assert.equal(plannedGates['iteration-loop'].ok, true);
+	assert.match(plannedGates['iteration-loop'].evidence, /2 below-5 answer\(s\).*iteration plan\(s\): device-status-artifacts/u);
+	assert.match(plannedStatus.iterations.reviewDebt.planned[0].iterationPlanPath, /iterations\/device-status-artifacts-plan\.iteration\.json$/u);
 	assert.equal(plannedStatus.nextAction.kind, 'execute-iteration');
 	assert.match(plannedStatus.nextAction.text, /iteration plan .*device-status-artifacts-plan\.iteration\.json is ready/u);
 	assert.match(plannedStatus.nextAction.text, /npm run eval:scout-local-ai -- --id/u);
