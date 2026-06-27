@@ -2,6 +2,10 @@ import { readFile } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+	applyPacketToReview,
+	parseReviewPacket
+} from './apply-scout-local-ai-review-packet.mjs';
+import {
 	verifyScoutLocalAiDeviceProof
 } from './lib/scout-local-ai-device-proof.mjs';
 import {
@@ -23,6 +27,7 @@ const cli = parseCliArgs(process.argv.slice(2));
 if (!cli.run || !cli.review) {
 	throw new Error([
 		'Usage: npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json',
+		'Optional: --packet data/scout-local-ai/review-packets/<run-id>.review.md to preview draft packet progress without writing review JSON.',
 		'Add --json for machine-readable progress.'
 	].join('\n'));
 }
@@ -30,10 +35,19 @@ if (!cli.run || !cli.review) {
 const runPath = resolveInputPath(cli.run);
 const reviewPath = resolveInputPath(cli.review);
 const suitePath = resolveInputPath(cli.suite ?? DEFAULT_SUITE);
+const packetPath = cli.packet ? resolveInputPath(cli.packet) : null;
 const suite = JSON.parse(await readFile(suitePath, 'utf8'));
 const run = JSON.parse(await readFile(runPath, 'utf8'));
 const review = JSON.parse(await readFile(reviewPath, 'utf8'));
-const progress = buildReviewProgress({ suite, run, review, paths: { suitePath, runPath, reviewPath } });
+const packetDraft = packetPath ? await buildPacketDraft({ packetPath, review }) : null;
+const progressReview = packetDraft?.applied ? packetDraft.review : review;
+const progress = buildReviewProgress({
+	suite,
+	run,
+	review: progressReview,
+	packetDraft,
+	paths: { suitePath, runPath, reviewPath, packetPath }
+});
 
 if (cli.json) {
 	console.log(JSON.stringify(progress, null, 2));
@@ -41,7 +55,33 @@ if (cli.json) {
 	console.log(formatReviewProgress(progress));
 }
 
-function buildReviewProgress({ suite, run, review, paths }) {
+async function buildPacketDraft({ packetPath, review }) {
+	try {
+		const packet = await readFile(packetPath, 'utf8');
+		const draftReview = JSON.parse(JSON.stringify(review));
+		const parsed = parseReviewPacket(packet);
+		const result = applyPacketToReview(draftReview, parsed, { allowPartial: true });
+		return {
+			applied: true,
+			path: relative(REPO_ROOT, packetPath),
+			updatedCases: result.updatedCases,
+			missingCases: result.missingCases ?? [],
+			review: draftReview,
+			errors: []
+		};
+	} catch (error) {
+		return {
+			applied: false,
+			path: relative(REPO_ROOT, packetPath),
+			updatedCases: 0,
+			missingCases: [],
+			review: null,
+			errors: packetErrorLines(error)
+		};
+	}
+}
+
+function buildReviewProgress({ suite, run, review, packetDraft, paths }) {
 	const summary = Array.isArray(review?.cases)
 		? summarizeReview(review)
 		: emptyReviewSummary();
@@ -101,8 +141,19 @@ function buildReviewProgress({ suite, run, review, paths }) {
 		paths: {
 			suite: relative(REPO_ROOT, paths.suitePath),
 			run: relative(REPO_ROOT, paths.runPath),
-			review: relative(REPO_ROOT, paths.reviewPath)
+			review: relative(REPO_ROOT, paths.reviewPath),
+			packet: paths.packetPath ? relative(REPO_ROOT, paths.packetPath) : null
 		},
+		progressSource: packetDraft ? 'packet-draft' : 'review-json',
+		packetDraft: packetDraft
+			? {
+				applied: packetDraft.applied,
+				path: packetDraft.path,
+				updatedCases: packetDraft.updatedCases,
+				missingCaseCount: packetDraft.missingCases.length,
+				errors: packetDraft.errors
+			}
+			: null,
 		summary: {
 			total: summary.total,
 			rated: summary.rated,
@@ -129,7 +180,9 @@ function buildReviewProgress({ suite, run, review, paths }) {
 			strictDeviceProofErrors,
 			summary,
 			runPath: relative(REPO_ROOT, paths.runPath),
-			reviewPath: relative(REPO_ROOT, paths.reviewPath)
+			reviewPath: relative(REPO_ROOT, paths.reviewPath),
+			packetPath: paths.packetPath ? relative(REPO_ROOT, paths.packetPath) : null,
+			packetDraft
 		})
 	};
 }
@@ -153,11 +206,22 @@ function signalRank(signal) {
 }
 
 function nextAction(input) {
+	if (input.packetDraft && !input.packetDraft.applied) {
+		return `Fix draft packet parse/apply issue before checking rating progress: ${input.packetDraft.errors[0] ?? 'unknown packet error'}`;
+	}
 	if (input.invalidEntries.length) {
-		return `Fix ${input.invalidEntries.length} invalid review issue(s), starting with: ${input.invalidEntries[0]}`;
+		const target = input.packetDraft ? ' in the packet draft' : '';
+		return `Fix ${input.invalidEntries.length} invalid review issue(s)${target}, starting with: ${input.invalidEntries[0]}`;
 	}
 	if (input.nextUnrated) {
-		return `Review next unrated case ${input.nextUnrated.caseId} (${input.nextUnrated.domain}) and rerun review-status:scout-local-ai.`;
+		const target = input.packetDraft ? ' in the packet' : '';
+		return `Review next unrated case ${input.nextUnrated.caseId} (${input.nextUnrated.domain})${target} and rerun review-status:scout-local-ai.`;
+	}
+	if (input.packetDraft) {
+		return [
+			'Packet draft is fully rated and valid.',
+			`Apply it with npm run apply-review:scout-local-ai -- --packet ${input.packetPath} --review ${input.reviewPath} --run ${input.runPath}, then run npm run finalize-review:scout-local-ai -- --packet ${input.packetPath} --run ${input.runPath} --review ${input.reviewPath}.`
+		].join(' ');
 	}
 	if (input.readyForStrictDeviceProof) {
 		return [
@@ -193,7 +257,9 @@ function formatReviewProgress(progress) {
 		`Suite: \`${progress.paths.suite}\``,
 		`Run: \`${progress.paths.run}\``,
 		`Review: \`${progress.paths.review}\``,
+		progress.paths.packet ? `Packet draft: \`${progress.paths.packet}\`` : null,
 		`Evidence lane: \`${progress.evidenceLane}\``,
+		`Progress source: \`${progress.progressSource}\``,
 		'',
 		'## Progress',
 		'',
@@ -211,7 +277,20 @@ function formatReviewProgress(progress) {
 		'',
 		progress.nextAction,
 		''
-	];
+	].filter((line) => line !== null);
+
+	if (progress.packetDraft) {
+		lines.push('## Packet Draft', '');
+		lines.push(`- Parsed/applied: ${progress.packetDraft.applied ? 'yes' : 'no'}`);
+		lines.push(`- Cases applied: ${progress.packetDraft.updatedCases}`);
+		lines.push(`- Missing case count: ${progress.packetDraft.missingCaseCount}`);
+		if (progress.packetDraft.errors.length) {
+			lines.push('- Errors:');
+			for (const issue of progress.packetDraft.errors.slice(0, 10)) lines.push(`  - ${issue}`);
+			if (progress.packetDraft.errors.length > 10) lines.push(`  - ... ${progress.packetDraft.errors.length - 10} more`);
+		}
+		lines.push('');
+	}
 
 	if (Object.keys(progress.summary.byDomain).length) {
 		lines.push('## By domain', '');
@@ -283,6 +362,14 @@ function emptyReviewSummary() {
 		byDomain: {},
 		invalid: []
 	};
+}
+
+function packetErrorLines(error) {
+	if (Array.isArray(error?.errors)) return error.errors.map((line) => String(line));
+	return String(error?.message ?? error ?? 'unknown packet error')
+		.split(/\r?\n/u)
+		.map((line) => line.replace(/^- /u, '').trim())
+		.filter(Boolean);
 }
 
 function resolveInputPath(value) {

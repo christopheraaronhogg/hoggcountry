@@ -3543,6 +3543,147 @@ test('review status command reports partial human rating progress without writin
 	assert.equal(progress.reviewQueue[0].caseId, review.cases[2].caseId);
 });
 
+test('review status command can preview draft packet progress without writing review JSON', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-status-packet-'));
+	const inputPath = join(outputDir, 'device-export.json');
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 3), {
+		runId: 'device-review-status-packet',
+		completeTools: true
+	});
+	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
+	await execFileAsync(
+		process.execPath,
+		[
+			'scripts/import-scout-local-ai-device-run.mjs',
+			'--run',
+			inputPath,
+			'--allow-partial',
+			'--device-run-dir',
+			join(outputDir, 'device-runs'),
+			'--review-dir',
+			join(outputDir, 'reviews'),
+			'--packet-dir',
+			join(outputDir, 'review-packets')
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+
+	const runPath = join(outputDir, 'device-runs', 'device-review-status-packet.json');
+	const reviewPath = join(outputDir, 'reviews', 'device-review-status-packet.review.json');
+	const packetPath = join(outputDir, 'review-packets', 'device-review-status-packet.review.md');
+	let packet = await readFile(packetPath, 'utf8');
+	packet = replaceReviewerFields(packet, run.results[0].caseId, {
+		rating: '4',
+		notes: 'Needs stronger local water source receipts.',
+		failureCategories: 'missing-data',
+		ownerLayer: 'data',
+		improvementTask: 'Add current-section water reliability source docs for this trail context.'
+	});
+	packet = replaceReviewerFields(packet, run.results[1].caseId, {
+		rating: '4',
+		notes: 'Needs better tool routing evidence.',
+		failureCategories: 'weak-tool',
+		ownerLayer: 'tool-routing',
+		improvementTask: 'Improve source_search receipts for the current section Scout answer.'
+	});
+	await writeFile(packetPath, packet);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			runPath,
+			'--review',
+			reviewPath,
+			'--packet',
+			packetPath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const progress = JSON.parse(result.stdout);
+	const persistedReview = JSON.parse(await readFile(reviewPath, 'utf8'));
+
+	assert.equal(progress.progressSource, 'packet-draft');
+	assert.equal(progress.packetDraft.applied, true);
+	assert.equal(progress.packetDraft.updatedCases, 3);
+	assert.equal(progress.packetDraft.missingCaseCount, 0);
+	assert.equal(progress.summary.rated, 2);
+	assert.equal(progress.summary.unrated, 1);
+	assert.equal(progress.summary.belowFive, 2);
+	assert.equal(progress.summary.invalidCount, 0);
+	assert.equal(progress.nextUnrated.caseId, run.results[2].caseId);
+	assert.match(progress.nextAction, new RegExp(`Review next unrated case ${run.results[2].caseId} .* in the packet`, 'u'));
+	assert.deepEqual(persistedReview.cases.map((entry) => entry.rating), [null, null, null]);
+});
+
+test('review status command reports packet parse errors without touching review JSON', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-status-packet-invalid-'));
+	const inputPath = join(outputDir, 'device-export.json');
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 2), {
+		runId: 'device-review-status-packet-invalid',
+		completeTools: true
+	});
+	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
+	await execFileAsync(
+		process.execPath,
+		[
+			'scripts/import-scout-local-ai-device-run.mjs',
+			'--run',
+			inputPath,
+			'--allow-partial',
+			'--device-run-dir',
+			join(outputDir, 'device-runs'),
+			'--review-dir',
+			join(outputDir, 'reviews'),
+			'--packet-dir',
+			join(outputDir, 'review-packets')
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+
+	const runPath = join(outputDir, 'device-runs', 'device-review-status-packet-invalid.json');
+	const reviewPath = join(outputDir, 'reviews', 'device-review-status-packet-invalid.review.json');
+	const packetPath = join(outputDir, 'review-packets', 'device-review-status-packet-invalid.review.md');
+	let packet = await readFile(packetPath, 'utf8');
+	packet = replaceReviewerFields(packet, run.results[0].caseId, {
+		rating: 'six',
+		notes: 'Invalid draft packet entry.',
+		failureCategories: 'missing-data',
+		ownerLayer: 'data',
+		improvementTask: 'Add current-section water reliability source docs for this trail context.'
+	});
+	await writeFile(packetPath, packet);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			runPath,
+			'--review',
+			reviewPath,
+			'--packet',
+			packetPath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const progress = JSON.parse(result.stdout);
+	const persistedReview = JSON.parse(await readFile(reviewPath, 'utf8'));
+
+	assert.equal(progress.progressSource, 'packet-draft');
+	assert.equal(progress.packetDraft.applied, false);
+	assert.equal(progress.packetDraft.updatedCases, 0);
+	assert.match(progress.packetDraft.errors.join('\n'), /rating must be an integer 1-5 or blank/u);
+	assert.match(progress.nextAction, /Fix draft packet parse\/apply issue/u);
+	assert.equal(progress.summary.rated, 0);
+	assert.deepEqual(persistedReview.cases.map((entry) => entry.rating), [null, null]);
+});
+
 test('review status command surfaces invalid 5-star checklist evidence before backlog', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-status-invalid-'));
