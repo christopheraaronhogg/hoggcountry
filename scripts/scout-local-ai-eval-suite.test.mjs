@@ -247,6 +247,7 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(status.nextAction.kind, 'get-device-run');
 	assert.match(status.nextAction.text, /Install the latest TestFlight build/u);
 	assert.match(status.nextAction.text, /Run 100/u);
+	assert.match(status.nextAction.text, /inspect:scout-local-ai-device-run/u);
 });
 
 test('status command surfaces partial TestFlight iPhone runs without counting them as final proof', async () => {
@@ -301,6 +302,7 @@ test('status command surfaces partial TestFlight iPhone runs without counting th
 	assert.equal(status.nextAction.kind, 'resume-device-run');
 	assert.match(status.nextAction.text, /Partial TestFlight\/iPhone Eval Lab run device-status-partial-12 is imported at 12\/100/u);
 	assert.match(status.nextAction.text, /tap Resume/u);
+	assert.match(status.nextAction.text, /inspect:scout-local-ai-device-run/u);
 	assert.match(status.nextAction.text, /--allow-partial for diagnosis/u);
 	assert.match(status.nextAction.text, /not final Dad proof/u);
 });
@@ -361,6 +363,7 @@ test('status command surfaces target TestFlight build gaps before phone eval', a
 	assert.match(status.nextAction.text, /Upload and attach target iOS build 1\.0 \(13\)/u);
 	assert.match(status.nextAction.text, /Dad Pilot on 1\.0 \(12\)/u);
 	assert.match(status.nextAction.text, /suite requires 1\.0 \(>= 13\)/u);
+	assert.match(status.nextAction.text, /inspect:scout-local-ai-device-run/u);
 });
 
 test('status command recognizes repeated strict TestFlight iPhone proof candidates', async () => {

@@ -367,7 +367,7 @@ function nextActionFor(
 		}
 		return {
 			kind: 'publish-target-build',
-			text: `Upload and attach target iOS build ${testflight.targetBuild ?? '<unknown>'} to Dad Pilot first; release evidence currently records Dad Pilot on ${testflight.recordedDadPilotBuild ?? '<unknown>'}, while the suite requires ${testflight.suiteRequiredBuild ?? '<unknown>'}. After App Store Connect shows the target build through the TestFlight link, update the iPhone, open Settings > Scout Eval Lab, run Run 100, Share the JSON, then import it with npm run intake:scout-local-ai-device-run.`
+			text: `Upload and attach target iOS build ${testflight.targetBuild ?? '<unknown>'} to Dad Pilot first; release evidence currently records Dad Pilot on ${testflight.recordedDadPilotBuild ?? '<unknown>'}, while the suite requires ${testflight.suiteRequiredBuild ?? '<unknown>'}. After App Store Connect shows the target build through the TestFlight link, update the iPhone, open Settings > Scout Eval Lab, run Run 100, Share the JSON, inspect it with npm run inspect:scout-local-ai-device-run, then import it with npm run intake:scout-local-ai-device-run.`
 		};
 	}
 	if (!gate('device-run')?.ok) {
@@ -378,12 +378,12 @@ function nextActionFor(
 			const runPath = `data/scout-local-ai/device-runs/${latestPartialRun.runId}.json`;
 			return {
 				kind: 'resume-device-run',
-				text: `Partial TestFlight/iPhone Eval Lab run ${latestPartialRun.runId} is imported at ${completed}/${total}. Reopen the same iPhone build, go to Settings > Scout Eval Lab, tap Resume, finish Run 100, Share the final JSON, then import it with npm run intake:scout-local-ai-device-run. The partial file ${runPath} can be reviewed with --allow-partial for diagnosis, but it is not final Dad proof.`
+				text: `Partial TestFlight/iPhone Eval Lab run ${latestPartialRun.runId} is imported at ${completed}/${total}. Reopen the same iPhone build, go to Settings > Scout Eval Lab, tap Resume, finish Run 100, Share the final JSON, inspect it with npm run inspect:scout-local-ai-device-run, then import it with npm run intake:scout-local-ai-device-run. The partial file ${runPath} can be reviewed with --allow-partial for diagnosis, but it is not final Dad proof.`
 			};
 		}
 		return {
 			kind: 'get-device-run',
-			text: 'Install the latest TestFlight build on Dad/Chris iPhone, open Settings > Scout Eval Lab, run Run 100, Share the JSON, then import it with npm run intake:scout-local-ai-device-run.'
+			text: 'Install the latest TestFlight build on Dad/Chris iPhone, open Settings > Scout Eval Lab, run Run 100, Share the JSON, inspect it with npm run inspect:scout-local-ai-device-run, then import it with npm run intake:scout-local-ai-device-run.'
 		};
 	}
 	const latestDeviceRun = currentFullDeviceRuns.at(-1)?.value.runId ?? '<run-id>';
