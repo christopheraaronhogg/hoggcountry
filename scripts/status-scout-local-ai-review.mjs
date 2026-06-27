@@ -30,6 +30,7 @@ if (!cli.run || !cli.review) {
 	throw new Error([
 		'Usage: npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json',
 		'Optional: --packet data/scout-local-ai/review-packets/<run-id>.review.md to preview draft packet progress without writing review JSON.',
+		'Optional: --case DLA-001 to print a focused read-only review card for one case.',
 		'Add --json for machine-readable progress.'
 	].join('\n'));
 }
@@ -48,6 +49,7 @@ const progress = buildReviewProgress({
 	run,
 	review: progressReview,
 	packetDraft,
+	selectedCaseId: cli.case ?? cli.caseId,
 	paths: { suitePath, runPath, reviewPath, packetPath }
 });
 
@@ -83,7 +85,7 @@ async function buildPacketDraft({ packetPath, review }) {
 	}
 }
 
-function buildReviewProgress({ suite, run, review, packetDraft, paths }) {
+function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, paths }) {
 	const summary = Array.isArray(review?.cases)
 		? summarizeReview(review)
 		: emptyReviewSummary();
@@ -136,6 +138,14 @@ function buildReviewProgress({ suite, run, review, packetDraft, paths }) {
 		if (left.signalRank !== right.signalRank) return left.signalRank - right.signalRank;
 		return left.index - right.index;
 	});
+	const selectedCase = selectedCaseId
+		? buildSelectedCase({
+			caseId: selectedCaseId,
+			run,
+			reviewByCaseId,
+			queue
+		})
+		: null;
 	const nextUnrated = queue.find((entry) => entry.unrated) ?? null;
 	const fiveStar = summary.ratingCounts['5'] ?? 0;
 	const fullDeviceRun = run.evidenceLane === 'device-on-device-gemma' && run.caseCount === run.totalSuiteCases;
@@ -185,6 +195,7 @@ function buildReviewProgress({ suite, run, review, packetDraft, paths }) {
 		strictDeviceProofErrors,
 		invalidEntries,
 		nextUnrated,
+		selectedCase,
 		triageSummary: summarizeReviewTriage(queue),
 		reviewQueue: queue,
 		nextAction: nextAction({
@@ -200,6 +211,85 @@ function buildReviewProgress({ suite, run, review, packetDraft, paths }) {
 			packetPath: paths.packetPath ? relative(REPO_ROOT, paths.packetPath) : null,
 			packetDraft
 		})
+	};
+}
+
+function buildSelectedCase({ caseId, run, reviewByCaseId, queue }) {
+	const requested = String(caseId ?? '').trim();
+	if (!requested) return null;
+	const result = (run.results ?? []).find((entry) => sameCaseId(entry.caseId, requested));
+	if (!result) {
+		throw new Error(`Case ${requested} was not found in run ${run.runId ?? '<missing>'}.`);
+	}
+	const reviewEntry = reviewByCaseId.get(result.caseId) ?? {};
+	const queueEntry = queue.find((entry) => sameCaseId(entry.caseId, result.caseId)) ?? {};
+	const sourceGaps = sourceEvidenceProblems(
+		result.case?.requiredTools ?? result.toolExpectations?.required ?? [],
+		result.toolInvocations ?? []
+	);
+	return {
+		caseId: result.caseId,
+		index: result.index ?? queueEntry.index ?? null,
+		domain: result.case?.domain ?? reviewEntry.domain ?? '<missing>',
+		phase: result.case?.phase ?? reviewEntry.phase ?? '<missing>',
+		prompt: result.case?.prompt ?? reviewEntry.prompt ?? '',
+		answer: result.answer ?? result.error ?? '',
+		answerOrigin: result.answerOrigin ?? reviewEntry.answerOrigin ?? '',
+		confidence: result.confidence ?? '',
+		mode: result.mode ?? '',
+		provider: result.provider ?? '',
+		contextUsed: result.contextUsed ?? [],
+		generatedAt: result.generatedAt ?? '',
+		durationMs: result.durationMs ?? null,
+		rating: reviewEntry.rating ?? null,
+		notes: reviewEntry.notes ?? '',
+		improvementTask: reviewEntry.improvementTask ?? '',
+		signal: queueEntry.signal ?? reviewSignal(result, sourceGaps),
+		suggestedOwnerLayer: queueEntry.suggestedOwnerLayer ?? inferOwnerLayer(suggestedFailureCategoriesForResult(result), result),
+		suggestedFailureCategories: queueEntry.suggestedFailureCategories ?? suggestedFailureCategoriesForResult(result),
+		reviewOwnerLayer: reviewEntry.ownerLayer ?? '',
+		reviewFailureCategories: Array.isArray(reviewEntry.failureCategories) ? reviewEntry.failureCategories : [],
+		triageOwnerLayer: queueEntry.triageOwnerLayer ?? '',
+		triageFailureCategories: queueEntry.triageFailureCategories ?? [],
+		expectedTraits: result.case?.expectedTraits ?? reviewEntry.expectedTraits ?? [],
+		safetyCaveats: result.case?.safetyCaveats ?? reviewEntry.safetyCaveats ?? [],
+		traitChecks: summarizeChecks(reviewEntry.traitChecks, 'passed'),
+		safetyCaveatChecks: summarizeChecks(reviewEntry.safetyCaveatChecks, 'passed'),
+		requiredConfirmationChecks: summarizeChecks(reviewEntry.requiredConfirmationChecks, 'acknowledged'),
+		safetyFlagChecks: summarizeChecks(reviewEntry.safetyFlagChecks, 'acknowledged'),
+		toolExpectations: result.toolExpectations ?? reviewEntry.toolExpectations ?? {},
+		missingTools: result.toolExpectations?.missing ?? [],
+		toolInvocations: (result.toolInvocations ?? []).map(formatToolInvocation),
+		receipts: result.receipts ?? [],
+		sourceEvidenceGaps: sourceGaps.map((problem) => problem.message),
+		sourceEvidenceGapExpectations: sourceGaps.map((problem) => problem.expectation),
+		requiredConfirmations: result.requiredConfirmations ?? [],
+		safetyFlags: result.safetyFlags ?? [],
+		error: result.error ?? ''
+	};
+}
+
+function sameCaseId(left, right) {
+	return String(left ?? '').toLowerCase() === String(right ?? '').toLowerCase();
+}
+
+function summarizeChecks(checks, stateKey) {
+	return (checks ?? []).map((check) => ({
+		text: check.text ?? '',
+		[stateKey]: check[stateKey] === true ? true : check[stateKey] === false ? false : null,
+		notes: check.notes ?? ''
+	}));
+}
+
+function formatToolInvocation(record) {
+	return {
+		toolId: record.toolId ?? '',
+		args: record.args ?? {},
+		summary: record.summary ?? '',
+		confidence: record.confidence ?? '',
+		receiptCount: record.receipts?.length ?? 0,
+		sourceDocumentIds: record.sourceDocumentIds ?? [],
+		receipts: record.receipts ?? []
 	};
 }
 
@@ -329,6 +419,10 @@ function formatReviewProgress(progress) {
 		lines.push('');
 	}
 
+	if (progress.selectedCase) {
+		lines.push(...formatSelectedCase(progress.selectedCase));
+	}
+
 	lines.push('## Triage summary', '');
 	if (progress.triageSummary.focusCount) {
 		lines.push(
@@ -388,6 +482,106 @@ function formatReviewProgress(progress) {
 	lines.push('');
 
 	return `${lines.join('\n')}\n`;
+}
+
+function formatSelectedCase(selected) {
+	const lines = [
+		`## Selected case: ${selected.caseId}`,
+		'',
+		`- Domain: ${selected.domain}`,
+		`- Phase: ${selected.phase}`,
+		`- Rating: ${displayRating(selected.rating)}`,
+		`- Signal: ${selected.signal}`,
+		`- Suggested owner: ${selected.suggestedOwnerLayer || 'unknown'}`,
+		`- Suggested categories: ${selected.suggestedFailureCategories.join(', ') || 'none'}`,
+		`- Review owner: ${selected.reviewOwnerLayer || 'blank'}`,
+		`- Review categories: ${selected.reviewFailureCategories.join(', ') || 'blank'}`,
+		`- Missing tools: ${(selected.missingTools ?? []).join(', ') || 'none'}`,
+		`- Source-evidence gaps: ${(selected.sourceEvidenceGapExpectations ?? []).join(', ') || 'none'}`,
+		`- Tool invocations: ${(selected.toolInvocations ?? []).map((record) => record.toolId).join(', ') || 'none'}`,
+		`- Receipts: ${selected.receipts?.length ?? 0}`,
+		'',
+		'### Prompt',
+		'',
+		indentBlock(selected.prompt),
+		'',
+		'### Answer',
+		'',
+		indentBlock(selected.answer || selected.error || '<blank>'),
+		''
+	];
+
+	if ((selected.expectedTraits ?? []).length) {
+		lines.push('### Expected traits', '');
+		for (const [index, trait] of selected.expectedTraits.entries()) {
+			const check = selected.traitChecks?.[index];
+			lines.push(`- ${formatCheckState(check?.passed)} ${trait}${check?.notes ? ` (${check.notes})` : ''}`);
+		}
+		lines.push('');
+	}
+
+	if ((selected.safetyCaveats ?? []).length) {
+		lines.push('### Safety caveats', '');
+		for (const [index, caveat] of selected.safetyCaveats.entries()) {
+			const check = selected.safetyCaveatChecks?.[index];
+			lines.push(`- ${formatCheckState(check?.passed)} ${caveat}${check?.notes ? ` (${check.notes})` : ''}`);
+		}
+		lines.push('');
+	}
+
+	if ((selected.requiredConfirmations ?? []).length) {
+		lines.push('### Required confirmations', '');
+		for (const [index, confirmation] of selected.requiredConfirmations.entries()) {
+			const check = selected.requiredConfirmationChecks?.[index];
+			lines.push(`- ${formatCheckState(check?.acknowledged)} ${confirmation}${check?.notes ? ` (${check.notes})` : ''}`);
+		}
+		lines.push('');
+	}
+
+	if ((selected.safetyFlags ?? []).length) {
+		lines.push('### Safety flags', '');
+		for (const [index, flag] of selected.safetyFlags.entries()) {
+			const check = selected.safetyFlagChecks?.[index];
+			lines.push(`- ${formatCheckState(check?.acknowledged)} ${flag}${check?.notes ? ` (${check.notes})` : ''}`);
+		}
+		lines.push('');
+	}
+
+	if ((selected.toolExpectations?.required ?? []).length) {
+		lines.push('### Tool expectations', '');
+		lines.push(`- Required: ${selected.toolExpectations.required.join(', ')}`);
+		lines.push(`- Hit: ${(selected.toolExpectations.hit ?? []).join(', ') || 'none'}`);
+		lines.push(`- Missing: ${(selected.toolExpectations.missing ?? []).join(', ') || 'none'}`);
+		lines.push('');
+	}
+
+	if ((selected.toolInvocations ?? []).length) {
+		lines.push('### Tool evidence', '');
+		for (const record of selected.toolInvocations) {
+			const sourceDocs = (record.sourceDocumentIds ?? []).join(', ') || 'none';
+			lines.push(`- ${record.toolId}: ${record.summary || 'no summary'}; receipts=${record.receiptCount}; source docs=${sourceDocs}`);
+		}
+		lines.push('');
+	}
+
+	lines.push('### Reviewer fields', '');
+	lines.push(`- Notes: ${selected.notes || 'blank'}`);
+	lines.push(`- Improvement task: ${selected.improvementTask || 'blank'}`);
+	lines.push('');
+
+	return lines;
+}
+
+function formatCheckState(value) {
+	if (value === true) return 'pass';
+	if (value === false) return 'fail';
+	return 'blank';
+}
+
+function indentBlock(value) {
+	const text = String(value ?? '').trim();
+	if (!text) return '    <blank>';
+	return text.split(/\r?\n/u).map((line) => `    ${line}`).join('\n');
 }
 
 function tableCell(value) {

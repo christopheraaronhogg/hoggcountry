@@ -228,6 +228,15 @@ During the rating pass, use the read-only progress check as often as needed:
 npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json --packet data/scout-local-ai/review-packets/<run-id>.review.md
 ```
 
+To review one answer at a time without hunting through the whole packet, add
+`--case DLA-001`. This prints a focused read-only card with the prompt, answer,
+rubric traits, safety caveats, tool/source evidence, current reviewer fields,
+and likely owner/category hints:
+
+```sh
+npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json --packet data/scout-local-ai/review-packets/<run-id>.review.md --case DLA-001
+```
+
 The same command is also available as `npm run status:scout-local-ai-review`
 when you are thinking "status" first.
 

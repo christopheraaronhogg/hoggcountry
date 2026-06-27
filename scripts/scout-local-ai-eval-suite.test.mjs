@@ -4318,6 +4318,84 @@ test('review status queue surfaces owner layer and evidence gaps for iteration t
 	assert.match(textResult.stdout, /device answer for/u);
 });
 
+test('review status command can print a focused case review card', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-status-case-'));
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 2), {
+		runId: 'device-review-status-case',
+		completeTools: true
+	});
+	const review = reviewForRun(run);
+	review.cases[1].rating = 4;
+	review.cases[1].notes = 'Needs a clearer source-backed bailout recommendation.';
+	review.cases[1].failureCategories = ['bad-routing'];
+	review.cases[1].ownerLayer = 'tool-routing';
+	review.cases[1].improvementTask = 'Improve route-source selection for this hiking scenario.';
+	review.cases[1].traitChecks[0].passed = false;
+	review.cases[1].traitChecks[0].notes = 'Too vague on the first required trait.';
+
+	const runPath = join(outputDir, 'device-review-status-case.json');
+	const reviewPath = join(outputDir, 'device-review-status-case.review.json');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	const selectedCaseId = run.results[1].caseId;
+	const jsonResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			runPath,
+			'--review',
+			reviewPath,
+			'--case',
+			selectedCaseId,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const progress = JSON.parse(jsonResult.stdout);
+
+	assert.equal(progress.selectedCase.caseId, selectedCaseId);
+	assert.equal(progress.selectedCase.prompt, run.results[1].case.prompt);
+	assert.equal(progress.selectedCase.answer, run.results[1].answer);
+	assert.equal(progress.selectedCase.rating, 4);
+	assert.equal(progress.selectedCase.reviewOwnerLayer, 'tool-routing');
+	assert.deepEqual(progress.selectedCase.reviewFailureCategories, ['bad-routing']);
+	assert.equal(progress.selectedCase.notes, 'Needs a clearer source-backed bailout recommendation.');
+	assert.equal(progress.selectedCase.improvementTask, 'Improve route-source selection for this hiking scenario.');
+	assert.equal(progress.selectedCase.traitChecks[0].passed, false);
+	assert.equal(progress.selectedCase.traitChecks[0].notes, 'Too vague on the first required trait.');
+	assert.equal(progress.selectedCase.toolInvocations.length, run.results[1].toolInvocations.length);
+	assert.equal(progress.selectedCase.receipts.length, run.results[1].receipts.length);
+	assert.deepEqual(progress.selectedCase.sourceEvidenceGaps, []);
+
+	const textResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			runPath,
+			'--review',
+			reviewPath,
+			'--case',
+			selectedCaseId
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+
+	assert.match(textResult.stdout, new RegExp(`## Selected case: ${selectedCaseId}`, 'u'));
+	assert.match(textResult.stdout, /### Prompt/u);
+	assert.match(textResult.stdout, new RegExp(run.results[1].case.prompt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'u'));
+	assert.match(textResult.stdout, /### Answer/u);
+	assert.match(textResult.stdout, new RegExp(`device answer for ${selectedCaseId}`, 'u'));
+	assert.match(textResult.stdout, /Review owner: tool-routing/u);
+	assert.match(textResult.stdout, /Review categories: bad-routing/u);
+	assert.match(textResult.stdout, /fail .*Too vague on the first required trait/u);
+	assert.match(textResult.stdout, /Tool evidence/u);
+	assert.match(textResult.stdout, /Reviewer fields/u);
+});
+
 test('review status command can preview draft packet progress without writing review JSON', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-status-packet-'));
@@ -4392,6 +4470,25 @@ test('review status command can preview draft packet progress without writing re
 	assert.equal(progress.nextUnrated.caseId, run.results[2].caseId);
 	assert.match(progress.nextAction, new RegExp(`Review next unrated case ${run.results[2].caseId} .* in the packet`, 'u'));
 	assert.deepEqual(persistedReview.cases.map((entry) => entry.rating), [null, null, null]);
+
+	const selectedResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			runPath,
+			'--review',
+			reviewPath,
+			'--packet',
+			packetPath,
+			'--case',
+			run.results[2].caseId,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const selectedProgress = JSON.parse(selectedResult.stdout);
+	assert.equal(selectedProgress.selectedCase.traitChecks[0].passed, null);
 });
 
 test('review status command reports packet parse errors without touching review JSON', async () => {
