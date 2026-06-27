@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { scoutLocalAiEvalProofStatus, type ScoutLocalAiEvalNativePreflight } from './local-ai-eval-proof.ts';
+import {
+	scoutLocalAiEvalProofStatus,
+	scoutLocalAiEvalRunContextProblems,
+	type ScoutLocalAiEvalNativePreflight
+} from './local-ai-eval-proof.ts';
 
 const finalProof = {
 	nativePlatform: 'ios',
@@ -133,4 +137,60 @@ test('Scout Eval Lab proof status blocks while running or while the model is mis
 	assert.equal(running.statusLabel, 'Running');
 	assert.equal(missingModel.canRunSmoke, false);
 	assert.equal(missingModel.statusLabel, 'Needs model');
+});
+
+test('Scout Eval Lab run context proves a full export came from the required TestFlight iPhone build', () => {
+	const problems = scoutLocalAiEvalRunContextProblems({
+		finalProof,
+		runContext: {
+			surface: 'mobile-settings-scout-eval-lab',
+			scoutLane: 'ios-on-device-gemma',
+			modelState: 'ready',
+			modelId: 'gemma-3n-E4B-it-int4',
+			runtimeConfigured: true,
+			native: {
+				isNativePlatform: true,
+				platform: 'ios'
+			},
+			app: {
+				id: 'com.hoggcountry.trailassistant',
+				version: '1.0',
+				build: '11'
+			},
+			installSource: {
+				type: 'testflight',
+				detectedBy: 'ios-app-store-receipt'
+			}
+		}
+	});
+
+	assert.deepEqual(problems, []);
+});
+
+test('Scout Eval Lab run context catches stale or non-TestFlight full exports before sharing', () => {
+	const problems = scoutLocalAiEvalRunContextProblems({
+		finalProof,
+		runContext: {
+			surface: 'mobile-settings-scout-eval-lab',
+			modelId: '',
+			runtimeConfigured: false,
+			native: {
+				isNativePlatform: true,
+				platform: 'ios'
+			},
+			app: {
+				id: 'com.hoggcountry.trailassistant',
+				version: '1.0',
+				build: '10'
+			},
+			installSource: {
+				type: 'debug'
+			}
+		}
+	});
+
+	assert.ok(problems.includes('not a testflight install'));
+	assert.ok(problems.includes('app build is not 1.0 (>= 11)'));
+	assert.ok(problems.includes('local runtime was not configured'));
+	assert.ok(problems.includes('model id is missing'));
 });

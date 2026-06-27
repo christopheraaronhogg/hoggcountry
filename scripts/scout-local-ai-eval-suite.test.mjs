@@ -186,6 +186,8 @@ test('mobile Eval Lab surfaces saved-run rescue and device proof metadata', asyn
 	assert.match(component, /summarizeRunFreshness/u, 'Eval Lab should evaluate saved-run freshness before export');
 	assert.match(component, /Stale export/u, 'Eval Lab should visibly flag stale saved exports');
 	assert.match(component, /Old suite/u, 'Eval Lab should identify saved exports from old suite versions');
+	assert.match(component, /scoutLocalAiEvalRunContextProblems/u, 'Eval Lab should block stale full exports from old app/install proof');
+	assert.match(component, /Proof mismatch/u, 'Eval Lab should explain when a full export is not valid final Dad proof');
 	assert.match(component, /Clear it and run again/u, 'Eval Lab should tell Dad how to recover from stale saved exports');
 	assert.match(component, /activeRunCanExport/u, 'Eval Lab should block stale saved exports from sharing');
 });

@@ -9,6 +9,7 @@
 	} from '$lib/scout/local-ai-eval';
 	import {
 		scoutLocalAiEvalProofStatus,
+		scoutLocalAiEvalRunContextProblems,
 		type ScoutLocalAiEvalNativePreflight
 	} from '$lib/scout/local-ai-eval-proof';
 	import {
@@ -462,12 +463,34 @@
 				canExport: false
 			};
 		}
+		if (isFullFinalRun(currentRun, currentSuite)) {
+			const contextProblems = scoutLocalAiEvalRunContextProblems({
+				runContext: currentRun.runContext,
+				finalProof: currentSuite.finalProof
+			});
+			if (contextProblems.length) {
+				return {
+					state: 'stale',
+					stateLabel: 'Proof mismatch',
+					detail: `Saved full export is not valid final Dad proof: ${contextProblems.slice(0, 3).join(', ')}. Clear it and run again from the current TestFlight iPhone build.`,
+					canExport: false
+				};
+			}
+		}
 		return {
 			state: 'current',
 			stateLabel: 'Current suite',
 			detail: 'Matches the current 100-question suite.',
 			canExport: true
 		};
+	}
+
+	function isFullFinalRun(
+		currentRun: ScoutLocalAiEvalRun,
+		currentSuite: ScoutLocalAiEvalSuite
+	): boolean {
+		const target = currentRun.filters?.limit ?? currentRun.totalSuiteCases;
+		return currentRun.caseCount >= currentSuite.cases.length && target >= currentSuite.cases.length;
 	}
 
 	function lastResultTimestamp(currentRun: ScoutLocalAiEvalRun): string | null {
