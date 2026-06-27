@@ -9,10 +9,12 @@ import {
 	verifyScoutLocalAiDeviceProof
 } from './lib/scout-local-ai-device-proof.mjs';
 import {
+	inferOwnerLayer,
 	parseCliArgs,
 	reviewRunAlignmentProblems,
 	reviewRunEvidenceProblems,
-	summarizeReview
+	summarizeReview,
+	suggestedFailureCategoriesForResult
 } from './lib/scout-local-ai-review.mjs';
 import {
 	sourceEvidenceProblems
@@ -101,6 +103,8 @@ function buildReviewProgress({ suite, run, review, packetDraft, paths }) {
 		);
 		const signal = reviewSignal(result, sourceGaps);
 		const rating = entry.rating ?? null;
+		const suggestedFailureCategories = suggestedFailureCategoriesForResult(result);
+		const suggestedOwnerLayer = inferOwnerLayer(suggestedFailureCategories, result);
 		return {
 			caseId: result.caseId,
 			domain: result.case?.domain ?? entry.domain ?? '<missing>',
@@ -112,6 +116,10 @@ function buildReviewProgress({ suite, run, review, packetDraft, paths }) {
 			belowFive: Number.isInteger(rating) && rating < 5,
 			missingTools: result.toolExpectations?.missing ?? [],
 			sourceEvidenceGaps: sourceGaps.map((problem) => problem.message),
+			sourceEvidenceGapExpectations: sourceGaps.map((problem) => problem.expectation),
+			suggestedFailureCategories,
+			suggestedOwnerLayer,
+			evidenceGapSummary: formatQueueEvidenceGaps(result, sourceGaps),
 			promptPreview: truncate(result.case?.prompt ?? entry.prompt ?? '', 120),
 			answerPreview: truncate(entry.answerPreview ?? result.answer ?? result.error ?? '', 220),
 			index
@@ -315,19 +323,23 @@ function formatReviewProgress(progress) {
 	}
 
 	lines.push('## Review queue', '');
-	lines.push('| Case | Rating | Signal | Domain | Prompt preview |');
-	lines.push('| --- | --- | --- | --- | --- |');
+	lines.push('| Case | Rating | Signal | Likely owner | Suggested categories | Evidence gaps | Domain | Prompt preview | Answer preview |');
+	lines.push('| --- | --- | --- | --- | --- | --- | --- | --- | --- |');
 	for (const item of progress.reviewQueue.slice(0, 25)) {
 		lines.push([
 			item.caseId,
 			displayRating(item.rating),
 			item.signal,
+			item.suggestedOwnerLayer,
+			item.suggestedFailureCategories.join(', ') || 'none',
+			item.evidenceGapSummary,
 			item.domain,
-			item.promptPreview
+			item.promptPreview,
+			item.answerPreview
 		].map(tableCell).join(' | ').replace(/^/u, '| ').replace(/$/u, ' |'));
 	}
 	if (progress.reviewQueue.length > 25) {
-		lines.push(`| ... | ... | ... | ... | ${progress.reviewQueue.length - 25} more cases |`);
+		lines.push(`| ... | ... | ... | ... | ... | ... | ... | ... | ${progress.reviewQueue.length - 25} more cases |`);
 	}
 	lines.push('');
 
@@ -344,6 +356,18 @@ function tableCell(value) {
 function displayRating(value) {
 	if (value === null || value === undefined || value === '') return 'unrated';
 	return value;
+}
+
+function formatQueueEvidenceGaps(result, sourceGaps) {
+	const gaps = [];
+	if ((result?.toolExpectations?.missing ?? []).length) {
+		gaps.push(`missing tools: ${result.toolExpectations.missing.join(', ')}`);
+	}
+	if (sourceGaps.length) {
+		gaps.push(`source evidence: ${sourceGaps.map((problem) => problem.expectation ?? problem.message).join(', ')}`);
+	}
+	if (String(result?.error ?? '').trim()) gaps.push(`error: ${truncate(result.error, 80)}`);
+	return gaps.join('; ') || 'none';
 }
 
 function truncate(value, maxLength) {

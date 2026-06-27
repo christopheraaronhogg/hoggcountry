@@ -3742,6 +3742,62 @@ test('review status command reports partial human rating progress without writin
 	assert.equal(progress.reviewQueue[0].caseId, review.cases[2].caseId);
 });
 
+test('review status queue surfaces owner layer and evidence gaps for iteration triage', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-status-triage-'));
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 2), {
+		runId: 'device-review-status-triage'
+	});
+	const review = reviewForRun(run);
+	const runPath = join(outputDir, 'device-review-status-triage.json');
+	const reviewPath = join(outputDir, 'device-review-status-triage.review.json');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	const jsonResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			runPath,
+			'--review',
+			reviewPath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const progress = JSON.parse(jsonResult.stdout);
+	const firstQueueItem = progress.reviewQueue[0];
+
+	assert.equal(firstQueueItem.caseId, run.results[0].caseId);
+	assert.equal(firstQueueItem.signal, 'review-first: missing required tools');
+	assert.equal(firstQueueItem.suggestedOwnerLayer, 'tool-routing');
+	assert.deepEqual(firstQueueItem.suggestedFailureCategories, ['bad-routing', 'weak-tool']);
+	assert.deepEqual(firstQueueItem.missingTools, run.results[0].toolExpectations.missing);
+	assert.match(firstQueueItem.evidenceGapSummary, /missing tools:/u);
+	assert.match(firstQueueItem.answerPreview, new RegExp(`device answer for ${run.results[0].caseId}`, 'u'));
+
+	const textResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			runPath,
+			'--review',
+			reviewPath
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+
+	assert.match(textResult.stdout, /Likely owner/u);
+	assert.match(textResult.stdout, /Suggested categories/u);
+	assert.match(textResult.stdout, /Evidence gaps/u);
+	assert.match(textResult.stdout, /tool-routing/u);
+	assert.match(textResult.stdout, /bad-routing, weak-tool/u);
+	assert.match(textResult.stdout, /missing tools:/u);
+	assert.match(textResult.stdout, /device answer for/u);
+});
+
 test('review status command can preview draft packet progress without writing review JSON', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-status-packet-'));
