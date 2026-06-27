@@ -249,6 +249,7 @@ test('status command keeps routing proof separate from missing device proof', as
 		completeTools: true,
 		runContext: finalDeviceRunContext()
 	});
+	inboxRun.exportHandoff = exportHandoffForRun(inboxRun, suite);
 	await writeFile(join(inboxDir, 'Dad notes.json'), '{"suiteId":"dad-local-ai-100","runId":"missing-results"}\n');
 	await writeFile(join(inboxDir, 'AirDrop Hoggcountry latest.json'), `${JSON.stringify(inboxRun, null, 2)}\n`);
 	await utimes(join(inboxDir, 'Dad notes.json'), new Date('2026-06-27T01:00:00Z'), new Date('2026-06-27T01:00:00Z'));
@@ -312,6 +313,9 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(status.inbox.latestCandidate.blockingReasonCount, 0);
 	assert.equal(status.inbox.latestCandidate.missingSourceEvidenceCases, 0);
 	assert.equal(status.inbox.latestCandidate.errorCases, 0);
+	assert.equal(status.inbox.latestCandidate.handoff.kind, 'final-run-100');
+	assert.equal(status.inbox.latestCandidate.handoff.expectedAcceptanceStatus, 'final-review-ready');
+	assert.match(status.inbox.latestCandidate.handoff.prepareReviewCommand, /prepare-review:scout-local-ai-device-run/u);
 	assert.equal(status.inbox.latestReadyCandidate.runId, 'device-status-inbox-latest');
 	assert.equal(status.nextAction.kind, 'prepare-inbox-export');
 	assert.match(status.nextAction.text, /likely Scout Eval Lab export is already/u);
@@ -320,6 +324,24 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.match(status.nextAction.text, /prepare-review:scout-local-ai-device-run/u);
 	assert.match(status.nextAction.text, /--run inbox/u);
 	assert.match(status.nextAction.text, /do not count it as final Dad proof/u);
+
+	const textResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai.mjs',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--inbox-dir',
+			inboxDir,
+			'--reviews-dir',
+			reviewsDir
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	assert.match(textResult.stdout, /Latest inbox handoff: Final Run 100 JSON ready for inbox review \(final-review-ready\)/u);
+	assert.match(textResult.stdout, /Latest inbox boundary: This starts human review only/u);
 });
 
 test('status command blocks stale inbox exports before review work starts', async () => {

@@ -881,7 +881,8 @@ async function readScoutEvalCandidate(path, suite) {
 				blockingReasons: blockingReasons.slice(0, 6),
 				warningCount: inspection.warningCount,
 				missingSourceEvidenceCases: inspection.summary.missingSourceEvidenceCases,
-				errorCases: inspection.summary.errorCases
+				errorCases: inspection.summary.errorCases,
+				handoff: inspection.handoff
 			}
 		};
 	} catch {
@@ -1042,6 +1043,10 @@ function inboxEvidenceLines(inbox) {
 		const install = candidate.installSource ? `, ${candidate.installSource}` : '';
 		lines.push(`- Inbox final-ready exports: ${inbox.readyForFinalIntakeCount ?? 0}; partial diagnostics: ${inbox.partialDiagnosticCount ?? 0}; blocked: ${inbox.blockedCandidateCount ?? 0}`);
 		lines.push(`- Latest inbox export: \`${candidate.path}\` (${candidate.runId}, ${candidate.caseCount} cases${app}${install}, ${candidate.inspectionStatus ?? 'not inspected'})`);
+		if (candidate.handoff) {
+			lines.push(`- Latest inbox handoff: ${candidate.handoff.label} (${candidate.handoff.expectedAcceptanceStatus}); command: \`${candidate.handoff.prepareReviewCommand}\``);
+			lines.push(`- Latest inbox boundary: ${candidate.handoff.proofBoundary}`);
+		}
 		if (inbox.latestReadyCandidate && inbox.latestReadyCandidate.path !== candidate.path) {
 			const ready = inbox.latestReadyCandidate;
 			lines.push(`- Latest final-ready inbox export: \`${ready.path}\` (${ready.runId}, ${ready.caseCount} cases, ${ready.inspectionStatus})`);
