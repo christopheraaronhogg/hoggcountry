@@ -13,6 +13,8 @@ import { scoutLocalAiSuiteHash } from './lib/scout-local-ai-suite.mjs';
 
 const SUITE_PATH = new URL('../data/scout-local-ai/dad-local-ai-100.json', import.meta.url);
 const README_PATH = new URL('../data/scout-local-ai/README.md', import.meta.url);
+const TESTFLIGHT_HANDOFF_PATH = new URL('../docs/launch/testflight-dad-handoff.md', import.meta.url);
+const RELEASE_EVIDENCE_PATH = new URL('../docs/launch/release-evidence.json', import.meta.url);
 const MOBILE_SUITE_PATH = new URL('../mobile/static/scout/dad-local-ai-100.json', import.meta.url);
 const MOBILE_EVAL_LAB_PATH = new URL('../mobile/src/lib/components/ScoutEvalLab.svelte', import.meta.url);
 const PACKAGE_PATH = new URL('../package.json', import.meta.url);
@@ -161,6 +163,25 @@ test('README documents device review acceptance states', async () => {
 	assert.match(readme, /diagnostic-review-only/u);
 	assert.match(readme, /blocked-before-review/u);
 	assert.match(readme, /Final Dad\s+readiness still requires all 100 cases rated 5\/5/u);
+});
+
+test('Dad TestFlight handoff documents the current Dad Pilot Run 100 path', async () => {
+	const handoff = await readFile(TESTFLIGHT_HANDOFF_PATH, 'utf8');
+	const releaseEvidence = JSON.parse(await readFile(RELEASE_EVIDENCE_PATH, 'utf8'));
+	const summary = releaseEvidence.items?.['dad-testflight-invite']?.summary ?? '';
+	const buildMatch = summary.match(/iOS build (\d+\.\d+) \((\d+)\)/u);
+	assert.ok(buildMatch, 'release evidence should identify the current Dad Pilot build');
+	const currentBuild = `${buildMatch[1]} (${buildMatch[2]})`;
+
+	assert.ok(handoff.includes(`Build \`${currentBuild}\` is live in Dad Pilot`));
+	assert.match(handoff, /https:\/\/testflight\.apple\.com\/join\/BagBCrzf/u);
+	assert.match(handoff, /Settings > Scout Eval Lab/u);
+	assert.match(handoff, /tap `Run 100`/u);
+	assert.match(handoff, /npm run receive:scout-local-ai-device-run -- --clipboard/u);
+	assert.match(handoff, /npm run wait:scout-local-ai-device-run/u);
+	assert.match(handoff, /Device\/local-AI proof: still pending/u);
+	assert.doesNotMatch(handoff, /Next native candidate `1\.0 \(14\)`/u);
+	assert.doesNotMatch(handoff, /Dad Pilot is still on `1\.0 \(13\)`/u);
 });
 
 test('objective coverage summary fails when a requested objective area disappears', async () => {
