@@ -104,6 +104,19 @@ npm run refresh:testflight-dad-pilot -- \
 npm run prepare-review:scout-local-ai-device-run -- --run inbox
 ```
 
+   If the JSON lands as copied text or in the macOS clipboard, receive it
+   directly instead of hand-making the inbox file:
+
+```bash
+npm run receive:scout-local-ai-device-run -- --clipboard
+```
+
+   For pasted/stdin JSON:
+
+```bash
+pbpaste | npm run receive:scout-local-ai-device-run -- --stdin
+```
+
    If Chris is waiting while Dad sends the export, the guarded watcher can stay
    open and prepare the review automatically when a final-ready `Run 100` JSON
    lands in the repo inbox or Downloads:

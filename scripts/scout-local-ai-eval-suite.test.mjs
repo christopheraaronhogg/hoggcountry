@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -150,6 +150,7 @@ test('package scripts expose the Scout local AI review handoff commands', async 
 	assert.equal(packageJson.scripts['rate-case:scout-local-ai'], 'node scripts/rate-scout-local-ai-review-case.mjs');
 	assert.equal(packageJson.scripts['prepare-review:scout-local-ai-device-run'], 'node scripts/prepare-scout-local-ai-device-review.mjs');
 	assert.equal(packageJson.scripts['message:scout-local-ai-dad'], 'node scripts/scout-local-ai-dad-handoff.mjs --dad-message');
+	assert.equal(packageJson.scripts['receive:scout-local-ai-device-run'], 'node scripts/receive-scout-local-ai-device-run.mjs');
 	assert.equal(packageJson.scripts['wait:scout-local-ai-device-run'], 'node scripts/wait-scout-local-ai-device-run.mjs');
 });
 
@@ -1374,6 +1375,8 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Review triage: any provider error, missing required tool, or missing source evidence starts in the review-first queue/u);
 	assert.match(result.stdout, /If any checklist item fails, do not rate it as final Dad proof/u);
 	assert.match(result.stdout, /npm run prepare-review:scout-local-ai-device-run/u);
+	assert.match(result.stdout, /npm run receive:scout-local-ai-device-run -- --clipboard/u);
+	assert.match(result.stdout, /npm run receive:scout-local-ai-device-run -- --stdin/u);
 	assert.match(result.stdout, /--run latest/u);
 	assert.match(result.stdout, /--run inbox/u);
 	assert.match(result.stdout, /npm run inspect:scout-local-ai-device-run/u);
@@ -1763,6 +1766,102 @@ test('device review preparation command inspects, imports, and reports review st
 	assert.match(textResult.stdout, /handoff=final-run-100\/final-review-ready/u);
 	assert.match(textResult.stdout, /reviewCommand=npm run prepare-review:scout-local-ai-device-run -- --run inbox/u);
 	assert.match(textResult.stdout, /This is not final Dad readiness/u);
+});
+
+test('device run receive command saves pasted JSON and prepares final review', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-device-receive-final-'));
+	const inboxDir = join(outputDir, 'inbox');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	const packetsDir = join(outputDir, 'review-packets');
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-receive-final',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	run.exportHandoff = exportHandoffForRun(run, suite);
+
+	const result = await execFileWithInput(
+		process.execPath,
+		[
+			'scripts/receive-scout-local-ai-device-run.mjs',
+			'--stdin',
+			'--inbox-dir',
+			inboxDir,
+			'--device-run-dir',
+			deviceRunsDir,
+			'--review-dir',
+			reviewsDir,
+			'--packet-dir',
+			packetsDir,
+			'--json'
+		],
+		`${JSON.stringify(run)}\n`,
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 12 }
+	);
+	const report = JSON.parse(result.stdout);
+	const inboxRun = JSON.parse(await readFile(join(inboxDir, 'device-receive-final.json'), 'utf8'));
+	const review = JSON.parse(await readFile(join(reviewsDir, 'device-receive-final.review.json'), 'utf8'));
+	const packet = await readFile(join(packetsDir, 'device-receive-final.review.md'), 'utf8');
+
+	assert.equal(report.status, 'prepared-for-final-review');
+	assert.equal(report.input.mode, 'stdin');
+	assert.match(report.inbox.path, /inbox\/device-receive-final\.json$/u);
+	assert.equal(report.inbox.alreadyExisted, false);
+	assert.equal(report.inspection.status, 'ready-for-final-intake');
+	assert.equal(report.prepare.status, 'prepared-for-final-review');
+	assert.match(report.nextAction, /review-status:scout-local-ai/u);
+	assert.match(report.nextAction, /--next/u);
+	assert.equal(inboxRun.runId, run.runId);
+	assert.equal(review.cases.length, suite.cases.length);
+	assert.match(packet, /Scout local AI device review: device-receive-final/u);
+});
+
+test('device run receive command saves blocked exports without preparing review files', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-device-receive-blocked-'));
+	const inboxDir = join(outputDir, 'inbox');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	const packetsDir = join(outputDir, 'review-packets');
+	const inputPath = join(outputDir, 'blocked-export.json');
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-receive-blocked',
+		completeTools: true
+	});
+	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/receive-scout-local-ai-device-run.mjs',
+			'--input',
+			inputPath,
+			'--inbox-dir',
+			inboxDir,
+			'--device-run-dir',
+			deviceRunsDir,
+			'--review-dir',
+			reviewsDir,
+			'--packet-dir',
+			packetsDir,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 4 }
+	);
+	const report = JSON.parse(result.stdout);
+	const inboxRun = JSON.parse(await readFile(join(inboxDir, 'device-receive-blocked.json'), 'utf8'));
+
+	assert.equal(report.status, 'saved-blocked-before-review');
+	assert.equal(report.input.mode, 'file');
+	assert.equal(report.inspection.status, 'wrong-proof-context');
+	assert.equal(report.prepare, null);
+	assert.match(report.nextAction, /blocked export/u);
+	assert.equal(inboxRun.runId, run.runId);
+	await assert.rejects(readFile(join(reviewsDir, 'device-receive-blocked.review.json'), 'utf8'));
+	await assert.rejects(readFile(join(packetsDir, 'device-receive-blocked.review.md'), 'utf8'));
+	await assert.rejects(readFile(join(deviceRunsDir, 'device-receive-blocked.json'), 'utf8'));
 });
 
 test('device review preparation command can select the latest Scout export from Downloads', async () => {
@@ -5956,4 +6055,41 @@ function removeReviewCaseBlock(packet, caseId) {
 	const before = packet.slice(0, start).replace(/[ \t]*\n*$/u, '\n\n');
 	const after = packet.slice(end).replace(/^\n+/u, '');
 	return `${before}${after}`;
+}
+
+function execFileWithInput(file, args, input, options = {}) {
+	return new Promise((resolvePromise, rejectPromise) => {
+		const child = spawn(file, args, {
+			cwd: options.cwd,
+			env: options.env,
+			stdio: ['pipe', 'pipe', 'pipe']
+		});
+		let stdout = '';
+		let stderr = '';
+		const maxBuffer = options.maxBuffer ?? 1024 * 1024;
+		child.stdout.setEncoding('utf8');
+		child.stderr.setEncoding('utf8');
+		child.stdout.on('data', (chunk) => {
+			stdout += chunk;
+			if (stdout.length > maxBuffer) child.kill();
+		});
+		child.stderr.on('data', (chunk) => {
+			stderr += chunk;
+			if (stderr.length > maxBuffer) child.kill();
+		});
+		child.on('error', rejectPromise);
+		child.on('close', (code, signal) => {
+			if (code === 0) {
+				resolvePromise({ stdout, stderr });
+				return;
+			}
+			const error = new Error(`Command failed: ${file} ${args.join(' ')}`);
+			error.code = code;
+			error.signal = signal;
+			error.stdout = stdout;
+			error.stderr = stderr;
+			rejectPromise(error);
+		});
+		child.stdin.end(input);
+	});
 }

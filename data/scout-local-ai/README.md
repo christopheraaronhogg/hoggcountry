@@ -124,6 +124,30 @@ Use `--inbox-dir <folder>` when staging the shared JSON somewhere else. The
 selected file still goes through the same read-only inspection gate before any
 review files are written.
 
+If Dad sends copied JSON text, or the share lands in the macOS clipboard, use
+the receiver instead of hand-making a file. It saves a normalized inbox JSON,
+inspects it, and prepares review automatically when the export is final-ready:
+
+```sh
+npm run receive:scout-local-ai-device-run -- --clipboard
+```
+
+For pasted/stdin JSON:
+
+```sh
+pbpaste | npm run receive:scout-local-ai-device-run -- --stdin
+```
+
+For a file outside the inbox:
+
+```sh
+npm run receive:scout-local-ai-device-run -- --input ~/Downloads/<device-run>.json
+```
+
+Use `--no-prepare` when you only want to save and inspect the export. Partial or
+wrong-context exports are saved for diagnosis, but they do not create review
+files unless `--allow-partial` is explicit.
+
 If you are waiting on Dad to send the file, leave the guarded watcher running:
 
 ```sh

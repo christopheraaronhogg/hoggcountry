@@ -43,6 +43,7 @@
     "status:scout-local-ai": "node scripts/status-scout-local-ai.mjs",
     "handoff:scout-local-ai-dad": "node scripts/scout-local-ai-dad-handoff.mjs",
     "message:scout-local-ai-dad": "node scripts/scout-local-ai-dad-handoff.mjs --dad-message",
+    "receive:scout-local-ai-device-run": "node scripts/receive-scout-local-ai-device-run.mjs",
     "wait:scout-local-ai-device-run": "node scripts/wait-scout-local-ai-device-run.mjs",
     "apply-review:scout-local-ai": "node scripts/apply-scout-local-ai-review-packet.mjs",
     "finalize-review:scout-local-ai": "node scripts/finalize-scout-local-ai-review.mjs",
