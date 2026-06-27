@@ -2408,6 +2408,100 @@ test('device run wait command prepares review when a final Run 100 export lands 
 	assert.match(await readFile(join(packetsDir, 'device-wait-inbox-final.review.md'), 'utf8'), /DLA-001/u);
 });
 
+test('device run wait command prepares review from Downloads by default', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-device-wait-downloads-'));
+	const inboxDir = join(outputDir, 'inbox');
+	const downloadsDir = join(outputDir, 'Downloads');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	const packetsDir = join(outputDir, 'review-packets');
+	await mkdir(inboxDir, { recursive: true });
+	await mkdir(downloadsDir, { recursive: true });
+	const downloadsPath = join(downloadsDir, 'Dad shared final Run 100.json');
+	const finalRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-wait-downloads-final',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+
+	const waitResult = execFileAsync(
+		process.execPath,
+		[
+			'scripts/wait-scout-local-ai-device-run.mjs',
+			'--poll-ms',
+			'50',
+			'--timeout-ms',
+			'2500',
+			'--downloads-dir',
+			downloadsDir,
+			'--inbox-dir',
+			inboxDir,
+			'--device-run-dir',
+			deviceRunsDir,
+			'--review-dir',
+			reviewsDir,
+			'--packet-dir',
+			packetsDir,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 12 }
+	);
+
+	await delay(150);
+	await writeFile(downloadsPath, `${JSON.stringify(finalRun, null, 2)}\n`);
+	const result = await waitResult;
+	const report = JSON.parse(result.stdout);
+
+	assert.equal(report.status, 'prepared-from-watch');
+	assert.equal(report.source, 'downloads');
+	assert.equal(report.prepare.status, 'prepared-for-final-review');
+	assert.equal(report.prepare.input.mode, 'latest-download');
+	assert.equal(report.prepare.input.runId, 'device-wait-downloads-final');
+	assert.equal(report.prepare.acceptance.status, 'final-review-ready');
+	assert.match(report.prepare.paths.importedRun, /device-wait-downloads-final\.json/u);
+	assert.match(await readFile(join(packetsDir, 'device-wait-downloads-final.review.md'), 'utf8'), /DLA-001/u);
+});
+
+test('device run wait timeout reports every watched handoff source', async () => {
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-device-wait-timeout-'));
+	const inboxDir = join(outputDir, 'inbox');
+	const downloadsDir = join(outputDir, 'Downloads');
+	await mkdir(inboxDir, { recursive: true });
+	await mkdir(downloadsDir, { recursive: true });
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/wait-scout-local-ai-device-run.mjs',
+				'--source',
+				'both',
+				'--poll-ms',
+				'25',
+				'--timeout-ms',
+				'100',
+				'--downloads-dir',
+				downloadsDir,
+				'--inbox-dir',
+				inboxDir,
+				'--json'
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 12 }
+		),
+		(err) => {
+			const report = JSON.parse(err.stdout);
+			assert.equal(report.status, 'timed-out');
+			assert.deepEqual(report.sources, ['inbox', 'downloads']);
+			assert.ok(report.sourceReports.inbox);
+			assert.ok(report.sourceReports.downloads);
+			assert.match(report.nextAction, /--run inbox/u);
+			assert.match(report.nextAction, /--run latest/u);
+			return true;
+		}
+	);
+});
+
 test('device review preparation command refuses stale and implicit partial exports', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-device-prepare-block-'));

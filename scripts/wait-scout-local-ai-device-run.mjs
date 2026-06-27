@@ -27,6 +27,7 @@ const sourceOrder = sourceOrderFor(cli.source ?? cli.sources ?? 'both');
 const startedAt = Date.now();
 let attempts = 0;
 let lastReport = null;
+const sourceReports = {};
 
 if (!sourceOrder.length) {
 	throw new Error('Use --source inbox, --source downloads, or --source both.');
@@ -54,6 +55,13 @@ while (true) {
 			source,
 			error: result.error
 		};
+		sourceReports[source] = {
+			status: lastReport?.status ?? 'prepare-command-failed',
+			error: result.error ?? null,
+			inspectionStatus: lastReport?.inspection?.status ?? lastReport?.acceptance?.status ?? null,
+			inputMode: lastReport?.input?.mode ?? null,
+			runId: lastReport?.input?.runId ?? lastReport?.run?.runId ?? null
+		};
 	}
 
 	const waitedMs = Date.now() - startedAt;
@@ -66,7 +74,8 @@ while (true) {
 			waitedMs,
 			pollMs,
 			lastReport,
-			nextAction: 'Keep waiting, or save the shared Scout Eval Lab JSON into data/scout-local-ai/inbox/ and run npm run prepare-review:scout-local-ai-device-run -- --run inbox.'
+			sourceReports,
+			nextAction: 'Keep waiting, or save the shared Scout Eval Lab JSON into data/scout-local-ai/inbox/ or Downloads. Then run npm run prepare-review:scout-local-ai-device-run -- --run inbox for the repo inbox, or npm run prepare-review:scout-local-ai-device-run -- --run latest for Downloads.'
 		};
 		await writeOutput(report);
 		process.exit(1);
@@ -193,11 +202,31 @@ function formatReport(report) {
 		`- Waited: ${formatDuration(report.waitedMs)}`,
 		`- Last status: ${report.lastReport?.status ?? '<none>'}`,
 		'',
+		'## Source status',
+		'',
+		...sourceStatusLines(report.sourceReports),
+		'',
 		'## Next action',
 		'',
 		report.nextAction,
 		''
 	].join('\n');
+}
+
+function sourceStatusLines(sourceReports) {
+	if (!sourceReports || !Object.keys(sourceReports).length) {
+		return ['- <none>'];
+	}
+	return Object.entries(sourceReports)
+		.sort(([left], [right]) => left.localeCompare(right))
+		.map(([source, report]) => {
+			const pieces = [`status=${report.status ?? '<unknown>'}`];
+			if (report.inspectionStatus) pieces.push(`inspection=${report.inspectionStatus}`);
+			if (report.inputMode) pieces.push(`input=${report.inputMode}`);
+			if (report.runId) pieces.push(`run=${report.runId}`);
+			if (report.error) pieces.push(`error=${report.error}`);
+			return `- ${source}: ${pieces.join('; ')}`;
+		});
 }
 
 function formatDuration(ms) {
