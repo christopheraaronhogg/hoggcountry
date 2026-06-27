@@ -157,6 +157,8 @@
 	);
 	const runHealth = $derived(activeRun ? summarizeRunHealth(activeRun, suite) : null);
 	const nextCheckpoint = $derived(summarizeNextCheckpoint());
+	const finalExportReady = $derived(Boolean(activeRunCanExport && runHealth?.state === 'final'));
+	const shareButtonClass = $derived(finalExportReady ? 'cta-button compact' : 'outline-button compact');
 
 	onMount(() => {
 		evalWakeLock = createScoutEvalWakeLock({
@@ -850,7 +852,7 @@
 		<button class="outline-button compact" type="button" onclick={() => runEval(undefined, true)} disabled={!canResume}>
 			Resume
 		</button>
-		<button class="outline-button compact" type="button" onclick={shareRun} disabled={!activeRunCanExport}>
+		<button class={shareButtonClass} type="button" onclick={shareRun} disabled={!activeRunCanExport}>
 			Share
 		</button>
 		<button class="outline-button compact" type="button" onclick={copyRun} disabled={!activeRunCanExport}>
@@ -866,6 +868,10 @@
 
 	{#if exportMessage}
 		<p class="eval-export-status" data-state={exportStatus} role="status">{exportMessage}</p>
+	{/if}
+
+	{#if finalExportReady}
+		<p class="eval-final-reminder" role="status">Final Run 100 saved. Tap Share and keep this export until Chris confirms it imported.</p>
 	{/if}
 
 	{#if runHealth}
@@ -1077,7 +1083,8 @@
 
 	.eval-error,
 	.eval-warning,
-	.eval-export-status {
+	.eval-export-status,
+	.eval-final-reminder {
 		border-radius: 12px;
 		padding: 10px 12px;
 		background: color-mix(in srgb, var(--danger) 10%, var(--surface));
@@ -1100,6 +1107,12 @@
 	.eval-export-status[data-state='failed'] {
 		background: var(--warn-soft);
 		color: var(--ink);
+	}
+
+	.eval-final-reminder {
+		background: color-mix(in srgb, var(--forest) 14%, var(--surface));
+		border: 1px solid color-mix(in srgb, var(--forest) 35%, var(--line));
+		color: var(--forest);
 	}
 
 	.eval-actions {
