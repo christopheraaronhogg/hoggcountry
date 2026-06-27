@@ -292,12 +292,12 @@
 		if (!draft.trim()) return;
 		const message = trailAssistant.sendCoachMessage(draft);
 		draft = '';
-		if (message) void placeTurnAtReadingStart(message.id, true, true);
+		if (message) void placeTurnAtReadingStart(message.id, false, true);
 	}
 
 	function usePrompt(prompt: string) {
 		const message = trailAssistant.runQuickPrompt(prompt);
-		if (message) void placeTurnAtReadingStart(message.id, true, true);
+		if (message) void placeTurnAtReadingStart(message.id, false, true);
 	}
 
 	function startScoutSignIn() {
