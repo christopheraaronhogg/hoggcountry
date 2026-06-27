@@ -128,6 +128,25 @@ test('shipped KJV "testing" question lands on temptation/trial verses, not "say"
 	);
 });
 
+test('shipped KJV fear search prefers comfort verses for a scared hiker', async () => {
+	const data = JSON.parse(await readFile(new URL('../../../static/bible/kjv.json', import.meta.url), 'utf8')) as KjvData;
+	const index = buildBibleIndex(data);
+	const hits = index.search('I am scared and alone tonight. Give me scripture and practical next steps.', 5);
+	const references = hits.map((hit) => hit.reference);
+
+	assert.deepEqual(references.slice(0, 4), ['Psalms 56:3', 'Isaiah 41:10', '2 Timothy 1:7', 'Psalms 23:4']);
+	assert.ok(!references.includes('2 Kings 6:29'), 'does not surface disturbing lexical matches for comfort queries');
+	assert.match(hits[0]?.text ?? '', /afraid.*trust/i);
+});
+
+test('shipped KJV fear question returns direct fear comfort references', async () => {
+	const data = JSON.parse(await readFile(new URL('../../../static/bible/kjv.json', import.meta.url), 'utf8')) as KjvData;
+	const index = buildBibleIndex(data);
+	const hits = index.search('What does the Bible say about fear while I am out here?', 4);
+
+	assert.deepEqual(hits.map((hit) => hit.reference), ['Psalms 56:3', 'Isaiah 41:10', '2 Timothy 1:7', 'Psalms 23:4']);
+});
+
 test('shipped KJV search treats exact references as exact references', async () => {
 	const data = JSON.parse(await readFile(new URL('../../../static/bible/kjv.json', import.meta.url), 'utf8')) as KjvData;
 	const index = buildBibleIndex(data);

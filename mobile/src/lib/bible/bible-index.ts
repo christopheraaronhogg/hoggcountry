@@ -223,6 +223,22 @@ const COMMON_BOOK_ALIASES: Record<string, string[]> = {
 	Revelation: ['rev', 'apocalypse']
 };
 
+interface TopicalReferenceHint {
+	pattern: RegExp;
+	references: string[];
+}
+
+// Pure lexical matching can surface verses that technically contain "fear" or
+// "alone" while being a bad answer to a scared hiker. These small topical rails
+// keep common comfort queries anchored to clear KJV passages, then normal search
+// fills any remaining slots.
+const TOPICAL_REFERENCE_HINTS: TopicalReferenceHint[] = [
+	{
+		pattern: /\b(?:scared|afraid|fear|fearful|terrified|anxious|anxiety|alone|lonely|tonight)\b/iu,
+		references: ['Psalms 56:3', 'Isaiah 41:10', '2 Timothy 1:7', 'Psalms 23:4', 'Psalms 4:8', 'John 14:27']
+	}
+];
+
 export function tokenize(text: string): string[] {
 	return text
 		.toLowerCase()
@@ -308,8 +324,9 @@ export function buildBibleIndex(data: KjvData): BibleIndex {
 		const referenceHits = resolveReference(query, limit);
 		if (referenceHits.length) return referenceHits;
 
+		const topicalHits = resolveTopicalReferenceHits(query);
 		const groups = expandQueryToConceptGroups(query);
-		if (!groups.length) return [];
+		if (!groups.length) return topicalHits.slice(0, limit);
 
 		// coverage   = distinct CONCEPT groups a verse satisfies (matching two
 		//              synonyms of one concept still counts once);
@@ -340,7 +357,7 @@ export function buildBibleIndex(data: KjvData): BibleIndex {
 				literalCov.set(index, (literalCov.get(index) ?? 0) + 1);
 			}
 		}
-		if (!coverage.size) return [];
+		if (!coverage.size) return topicalHits.slice(0, limit);
 
 		const ranked = [...coverage.keys()].sort((a, b) => {
 			const cov = (coverage.get(b) ?? 0) - (coverage.get(a) ?? 0);
@@ -353,13 +370,40 @@ export function buildBibleIndex(data: KjvData): BibleIndex {
 			return (hits.get(b) ?? 0) - (hits.get(a) ?? 0);
 		});
 
-		const expanded = expandQuestionAnswerVerses(ranked).slice(0, limit);
-		return expanded.map((index) => ({
+		const expanded = expandQuestionAnswerVerses(ranked);
+		const lexicalHits = expanded.map((index) => ({
 			reference: verses[index].reference,
 			text: verses[index].text,
 			bookName: verseBook[index],
 			score: coverage.get(index) ?? 1
 		}));
+		return mergeUniqueHits([...topicalHits, ...lexicalHits]).slice(0, limit);
+	}
+
+	function resolveTopicalReferenceHits(query: string): BibleSearchHit[] {
+		const hits: BibleSearchHit[] = [];
+		const seen = new Set<string>();
+		for (const hint of TOPICAL_REFERENCE_HINTS) {
+			if (!hint.pattern.test(query)) continue;
+			for (const reference of hint.references) {
+				const [hit] = resolveReference(reference, 1);
+				if (!hit || seen.has(hit.reference)) continue;
+				hits.push(hit);
+				seen.add(hit.reference);
+			}
+		}
+		return hits;
+	}
+
+	function mergeUniqueHits(hits: BibleSearchHit[]): BibleSearchHit[] {
+		const merged: BibleSearchHit[] = [];
+		const seen = new Set<string>();
+		for (const hit of hits) {
+			if (seen.has(hit.reference)) continue;
+			merged.push(hit);
+			seen.add(hit.reference);
+		}
+		return merged;
 	}
 
 	function expandQuestionAnswerVerses(indices: number[]): number[] {

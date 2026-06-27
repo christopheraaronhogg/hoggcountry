@@ -44,6 +44,8 @@ const TIER_TO_CHARS: Record<GemmaTier, number> = {
 	small: 8_000
 };
 const ON_DEVICE_MAX_TOKENS = 640;
+const SYSTEM_CONTEXT_TRIM_MARKER =
+	'\n\n[Middle context trimmed to fit the on-device model window. Use only retained tool findings and cite only supplied sources.]\n\n';
 
 export class OnDeviceGemmaProvider implements ScoutProvider {
 	private bridge?: OnDeviceGemmaBridge;
@@ -131,11 +133,22 @@ export class OnDeviceGemmaProvider implements ScoutProvider {
 			);
 		}
 
-		const systemContext = renderSystemContext(request);
-		const result = await this.bridge.generate(
-			{ prompt: request.prompt, systemContext, maxTokens: ON_DEVICE_MAX_TOKENS },
-			onToken
-		);
+		const systemContext = fitSystemContext(renderSystemContext(request), this.capabilities.maxContextChars);
+		const nativeInput = { prompt: request.prompt, systemContext, maxTokens: ON_DEVICE_MAX_TOKENS };
+		let result: { text: string; truncated: boolean };
+		try {
+			result = await this.bridge.generate(nativeInput, onToken);
+		} catch (error) {
+			// The iOS LiteRT bridge can very occasionally return a null native
+			// response during long non-streaming eval runs. Retry once only when no
+			// token stream has been emitted to avoid duplicating user-visible text.
+			if (!onToken && isTransientNativeGenerationError(error)) {
+				await this.warmUp();
+				result = await this.bridge.generate(nativeInput);
+			} else {
+				throw error;
+			}
+		}
 		const answer = polishOnDeviceAnswer(result.text, request.prompt);
 
 		// A blank/whitespace generation is a failure, not an answer. Treat it as
@@ -174,7 +187,10 @@ export function polishOnDeviceAnswer(text: string, prompt: string): string {
 		/\bshould escalate beyond what you can handle\b/giu,
 		'should trigger the escalation plan'
 	);
+	answer = stripInternalToolReferences(answer);
+	answer = normalizeSpelledDecimalDistances(answer);
 	answer = removeTrailingProvenanceParagraphs(answer);
+	answer = removeRepeatedSentences(answer);
 
 	const lowerPrompt = prompt.toLowerCase();
 	if (isInjuryPrompt(lowerPrompt)) {
@@ -199,6 +215,14 @@ export function polishOnDeviceAnswer(text: string, prompt: string): string {
 	return trimToCompleteSentence(answer);
 }
 
+function fitSystemContext(systemContext: string, maxChars: number): string {
+	if (systemContext.length <= maxChars) return systemContext;
+	const available = Math.max(0, maxChars - SYSTEM_CONTEXT_TRIM_MARKER.length);
+	const headChars = Math.floor(available * 0.6);
+	const tailChars = available - headChars;
+	return `${systemContext.slice(0, headChars).trimEnd()}${SYSTEM_CONTEXT_TRIM_MARKER}${systemContext.slice(-tailChars).trimStart()}`;
+}
+
 function removeTrailingProvenanceParagraphs(answer: string): string {
 	const paragraphs = answer.split(/\n{2,}/u);
 	while (
@@ -217,6 +241,88 @@ function removeInjuryPrepDrift(answer: string): string {
 		.split(/\n{2,}/u)
 		.filter((paragraph) => !/^A shakedown hike should prove\b/iu.test(paragraph.trim()))
 		.join('\n\n')
+		.trim();
+}
+
+function stripInternalToolReferences(answer: string): string {
+	return answer.replace(
+		/\s*\[(?:source_search|open_source_doc|next_water|next_shelter|next_town|current_mile|weather_lookup|upcoming_terrain|loadout_check|trail_conditions|park_services|bible_search)\]/giu,
+		''
+	);
+}
+
+function normalizeSpelledDecimalDistances(answer: string): string {
+	const tenths: Record<string, string> = {
+		one: '1',
+		two: '2',
+		three: '3',
+		four: '4',
+		five: '5',
+		six: '6',
+		seven: '7',
+		eight: '8',
+		nine: '9'
+	};
+	return answer.replace(/\b(?:about\s+)?a mile and (one|two|three|four|five|six|seven|eight|nine)\b/giu, (match, word: string) => {
+		const prefix = match.toLowerCase().startsWith('about ') ? 'about ' : '';
+		return `${prefix}1.${tenths[word.toLowerCase()] ?? word} miles`;
+	});
+}
+
+function removeRepeatedSentences(answer: string): string {
+	const seen = new Set<string>();
+	return answer
+		.split(/\n{2,}/u)
+		.map((paragraph) => {
+			const sentences = splitSentences(paragraph);
+			return sentences
+				.map((sentence) => sentence.trim())
+				.filter((sentence) => {
+					const key = canonicalSentenceForDedupe(sentence);
+					if (!key) return true;
+					if (seen.has(key)) return false;
+					seen.add(key);
+					return true;
+				})
+				.join(' ');
+		})
+		.map((paragraph) => paragraph.trim())
+		.filter(Boolean)
+		.join('\n\n')
+		.trim();
+}
+
+function splitSentences(paragraph: string): string[] {
+	const sentences: string[] = [];
+	let start = 0;
+	for (let index = 0; index < paragraph.length; index += 1) {
+		const char = paragraph[index];
+		if (char !== '.' && char !== '!' && char !== '?') continue;
+		if (isDigit(paragraph[index - 1]) && isDigit(paragraph[index + 1])) continue;
+		let end = index + 1;
+		while (end < paragraph.length && /["')\]]/u.test(paragraph[end])) end += 1;
+		if (end < paragraph.length && !/\s/u.test(paragraph[end])) continue;
+		const sentence = paragraph.slice(start, end).trim();
+		if (sentence) sentences.push(sentence);
+		start = end;
+	}
+	const tail = paragraph.slice(start).trim();
+	if (tail) sentences.push(tail);
+	return sentences.length ? sentences : [paragraph];
+}
+
+function isDigit(char: string | undefined): boolean {
+	return typeof char === 'string' && /[0-9]/u.test(char);
+}
+
+function canonicalSentenceForDedupe(sentence: string): string {
+	return sentence
+		.toLowerCase()
+		.replace(/^for practical next steps,\s*/u, '')
+		.replace(/^first,\s*/u, '')
+		.replace(/^you need to\s*/u, '')
+		.replace(/[^a-z0-9\s]/gu, ' ')
+		.replace(/\s+/gu, ' ')
 		.trim();
 }
 
@@ -266,9 +372,14 @@ export class OnDeviceModelUnavailableError extends Error {
 	}
 }
 
+function isTransientNativeGenerationError(error: unknown): boolean {
+	const message = error instanceof Error ? error.message : String(error);
+	return /(?:native sendmessage returned null|invalid response from native layer)/iu.test(message);
+}
+
 export function renderSystemContext(request: ProviderRequest): string {
 	const { pack, toolInvocations } = request;
-	const toolLines = toolInvocations.map((tool) => `- [${tool.toolId}] ${tool.summary}`);
+	const toolLines = toolInvocations.map((tool) => `- [${tool.toolId}] ${compactToolSummaryForContext(tool.toolId, tool.summary)}`);
 	const conversationLines = (request.conversationHistory ?? []).map((message) => {
 		const speaker = message.role === 'user' ? 'Hiker' : 'Scout';
 		const timestamp = message.timestamp ? ` (${message.timestamp})` : '';
@@ -288,12 +399,14 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`When tool findings are labeled as guidance, treat them as topic-specific documents Scout intentionally read for this answer. Use them to shape caveats and next-step advice.`,
 		`When preparation or training questions have pretrip, terrain, loadout, safety, or offline setup findings, give a concrete short plan. For "what should I focus on first" prompts, include an immediate first-week checklist, not only general training advice. Include shakedown hikes, foot care/blister practice, conservative early mileage, gear/loadout checks, water treatment habits, and an offline app/model rehearsal when those appear in the findings.`,
 		`For offline setup, offline downloads, phone settings, or day-one readiness questions, distinguish phone/app readiness from personal safety readiness. Always include the exact check "verify Bible text is available offline." Also mention field-pack refresh, current mile, local AI model, offline maps/docs, battery, airplane-mode rehearsal, and that Scout does not replace inReach, PLB, 911, or the family emergency plan. For personal documents, include this safety boundary in plain words: do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat.`,
+		`For Bible or scripture questions, quote only verses returned by bible_search and keep the reference with each quote. For fear, scared, alone, or nighttime comfort prompts, use direct comfort verses when present, such as Psalms 56:3, Isaiah 41:10, 2 Timothy 1:7, Psalms 23:4, Psalms 4:8, or John 14:27. Do not use disturbing, violent, judgment, or famine passages as comfort unless the hiker explicitly asked about that passage. If the hiker sounds scared or alone, pair scripture with immediate safety steps: check weather and hazards, get warm and dry, eat or drink if needed, make a one-hour plan, and escalate through the emergency plan if there is real danger, injury, exposure, or repeated panic.`,
 		`For shakedown questions, name what the shakedown must prove: sleep system, rain system, cooking/food rhythm, water filtering, battery drain, pack fit, foot care, and offline app/model flow. Turn failures into specific gear or app fixes. Always say that one shakedown does not prove every condition is covered.`,
 		`For first-week mileage questions, use body condition, daylight, elevation, weather, pack weight, water spacing, foot/knee condition, and legal shelter/campsite/town spacing. Start low, protect feet and knees, and avoid fixed mileage promises.`,
 		`For heavy-rain start questions, include conservative mileage, dry sleep layers, footing caution on slick roots/rocks/descents, current forecast verification, and a bailout or stop plan for lightning, hypothermia risk, flooding, or worsening conditions.`,
 		`For family check-in questions, set cadence, content, normal gap expectations, escalation window, emergency contacts, itinerary sharing, and the live-location caveat. Use phrasing like "if they do not hear from you" or "if you miss a check-in"; never write "if you don't hear from you." Repeated missed check-ins, bad weather, health concerns, or itinerary mismatch should escalate beyond Scout.`,
 		`For trail budget questions, separate daily burn from town spikes, hostels/shuttles/laundry/meals, gear replacement, and emergency cushion. Keep advice flexible around actual pace and services, and do not provide financial guarantees.`,
 		`For resupply or mail-drop questions, avoid firm mail-ahead advice until the missing inputs are named: diet restrictions, expected pace, next town timing, store/post-office hours, hostel or shuttle access, and whether the item is hard to find locally. Give the default rule after that: buy common food in town; mail only constrained, medical, diet-specific, or hard-to-find items to verified stops. Never say hard-to-find items are better bought in town unless a current town source proves availability.`,
+		`For first-aid kit or blister questions, keep the kit compact and personal. Include prevention tape, blister treatment, wound basics, normal personal meds, and a warning to stop or get medical help for spreading redness, drainage, fever, worsening pain, swelling, or changed gait. Do not diagnose.`,
 		`For injury or pain questions, do not tell the hiker to train through pain. Keep the answer focused on the injury decision, not a general prep checklist. Lead with pain-free load reduction, low-impact conditioning, strength/mobility work, and clinician/physical-therapist guidance when pain persists, worsens, swells, or changes gait. Recommend low first-week mileage and stopping while normal recovery is still possible. Do not offer terrain lookups or custom workouts at the end.`,
 		`Use the strongest 2-4 tool findings visibly in the answer. Convert source-skill discipline into specific actions; do not answer with generic outdoor advice when Scout supplied concrete findings.`,
 		conversationLines.length
@@ -306,4 +419,11 @@ export function renderSystemContext(request: ProviderRequest): string {
 	]
 		.filter(Boolean)
 		.join('\n\n');
+}
+
+function compactToolSummaryForContext(toolId: string, summary: string): string {
+	const normalized = summary.replace(/\s+/gu, ' ').trim();
+	const maxChars = toolId === 'source_search' ? 850 : toolId === 'open_source_doc' ? 700 : 650;
+	if (normalized.length <= maxChars) return normalized;
+	return `${normalized.slice(0, maxChars - 1).trimEnd()}...`;
 }

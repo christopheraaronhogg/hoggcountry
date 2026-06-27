@@ -41,7 +41,7 @@ const TOOL_TRIGGERS: ToolTrigger[] = [
 	{ keywords: ['water', 'spring', 'creek', 'source', 'seasonal', 'dry stretch', 'camel up', 'hydrate', 'filter', 'questionable', 'hot', 'heat', 'dizzy', 'big climb', 'too tired', 'keep going'], toolId: 'next_water' },
 	{ keywords: ['shelter', 'camp', 'camping', 'campsite', 'tent site', 'lean-to', 'where sleep', 'sleep', 'overnight', 'tonight', 'after dark', 'dark', 'full when i arrive', 'bear activity', 'big climb', 'stop before', 'too tired', 'keep going', 'safe plan'], toolId: 'next_shelter' },
 	{ keywords: ['town', 'resupply', 'hostel', 'shuttle', 'outfitter', 'laundry', 'groceries', 'mail drop', 'road crossing', 'bailout', 'exit', 'nero', 'zero', 'food', 'lodging', 'unsafe', 'overdue', 'ankle', 'budget'], toolId: 'next_town' },
-	{ keywords: ['weather', 'wind', 'cold', 'rain', 'storm', 'forecast', 'heat', 'hot', 'thunder', 'lightning', 'hypothermia', 'freez', 'dizzy', 'ridge', 'push past', 'stop there', 'dry gear', 'bad weather', 'tomorrow', 'dry stretch', 'smoke', 'fire', 'zero', 'nero', 'stop hiking'], toolId: 'weather_lookup' },
+	{ keywords: ['weather', 'wind', 'cold', 'rain', 'storm', 'thunderstorm', 'thunderstorms', 'forecast', 'heat', 'hot', 'thunder', 'lightning', 'hypothermia', 'freez', 'dizzy', 'ridge', 'push past', 'stop there', 'dry gear', 'bad weather', 'tomorrow', 'dry stretch', 'smoke', 'fire', 'zero', 'nero', 'stop hiking'], toolId: 'weather_lookup' },
 	{
 		keywords: ['closure', 'closed', 'detour', 'reroute', 'fire', 'smoke', 'burn ban', 'washout', 'bridge out', 'blowdown', 'high water', 'alert', 'bear activity', 'bear reports'],
 		toolId: 'trail_conditions'
@@ -112,8 +112,8 @@ const SOURCE_SKILL_TRIGGERS: SourceSkillTrigger[] = [
 	},
 	{
 		id: 'weather',
-		keywords: ['weather', 'wind', 'cold', 'rain', 'storm', 'forecast', 'heat', 'hot', 'thunder', 'lightning', 'hypothermia', 'freez', 'dizzy', 'ridge', 'dry gear', 'bad weather', 'tomorrow', 'zero', 'nero', 'stop hiking'],
-		queryHints: ['weather discipline', 'exposure', 'wind', 'cold', 'rain', 'storm', 'verify forecast']
+		keywords: ['weather', 'wind', 'cold', 'rain', 'storm', 'thunderstorm', 'thunderstorms', 'forecast', 'heat', 'hot', 'thunder', 'lightning', 'hypothermia', 'freez', 'dizzy', 'ridge', 'dry gear', 'bad weather', 'tomorrow', 'zero', 'nero', 'stop hiking'],
+		queryHints: ['weather discipline', 'exposure', 'wind', 'cold', 'rain', 'storm', 'thunderstorm', 'lightning', 'verify forecast']
 	},
 	{
 		id: 'trail conditions',
@@ -122,7 +122,7 @@ const SOURCE_SKILL_TRIGGERS: SourceSkillTrigger[] = [
 	},
 	{
 		id: 'safety',
-		keywords: ['safety', 'safe', 'unsafe', 'injury', 'hurt', 'pain', 'knee', 'ankle', 'rolled', 'dizzy', 'symptoms', 'blister', 'medical', 'sick', 'bear', 'bailout', 'emergency', 'sos', 'support circle', 'signal', 'cell service', 'airplane mode', 'offline', 'stale', 'trust', 'wrong trail mile', 'wrong mile', 'documents', 'personal documents', 'offline documents', 'photo id', 'driver license', 'insurance', 'emergency contacts', 'itinerary', 'permits', 'reservations', 'screenshot', 'check-ins', 'check ins', 'check-in', 'family', 'miss one', 'missed check-in', 'miss a check-in', 'stealth', 'exhausted', 'after dark', 'dark', 'lost', 'off trail', 'gps', 'junction', 'overdue', 'smoke', 'fire', 'scared', 'alone', 'tired', 'hypothermia', 'lightning', 'charge', 'refresh', 'download', 'update in scout', 'stop hiking', 'make miles', 'download failed', 'model download failed', 'ford', 'flood'],
+		keywords: ['safety', 'safe', 'unsafe', 'injury', 'hurt', 'pain', 'knee', 'ankle', 'rolled', 'dizzy', 'symptoms', 'blister', 'blisters', 'first aid', 'first-aid', 'wound', 'wounds', 'infection', 'medical', 'sick', 'bear', 'bailout', 'emergency', 'sos', 'support circle', 'signal', 'cell service', 'airplane mode', 'offline', 'stale', 'trust', 'wrong trail mile', 'wrong mile', 'documents', 'personal documents', 'offline documents', 'photo id', 'driver license', 'insurance', 'emergency contacts', 'itinerary', 'permits', 'reservations', 'screenshot', 'check-ins', 'check ins', 'check-in', 'family', 'miss one', 'missed check-in', 'miss a check-in', 'stealth', 'exhausted', 'after dark', 'dark', 'lost', 'off trail', 'gps', 'junction', 'overdue', 'smoke', 'fire', 'scared', 'alone', 'tired', 'hypothermia', 'lightning', 'charge', 'refresh', 'download', 'update in scout', 'stop hiking', 'make miles', 'download failed', 'model download failed', 'ford', 'flood'],
 		queryHints: ['safety discipline', 'body risk', 'bailout', 'emergency boundaries', 'official source', 'choose safer stop']
 	},
 	{
@@ -194,8 +194,8 @@ function sourceSkillQueryHints(skill: SourceSkillTrigger, prompt: string): strin
 	if (/check-ins|check ins|check-in|family|miss one|missed check-in|miss a check-in/u.test(lower)) {
 		return ['family check-ins', 'missed contact', 'escalation window', 'emergency contacts', 'itinerary', 'live location'];
 	}
-	if (/injury|hurt|pain|knee|ankle|rolled|symptoms|blister|medical|sick/u.test(lower)) {
-		return ['injury', 'knee pain', 'joint pain', 'do not train through pain', 'clinician', 'physical therapist', 'stop if pain worsens', 'bailout'];
+	if (/first aid|first-aid|blister|blisters|wound|wounds|infection|injury|hurt|pain|knee|ankle|rolled|symptoms|medical|sick/u.test(lower)) {
+		return ['first aid', 'blisters', 'wound basics', 'infection warning', 'injury', 'knee pain', 'joint pain', 'do not train through pain', 'clinician', 'physical therapist', 'stop if pain worsens', 'bailout'];
 	}
 	return skill.queryHints;
 }

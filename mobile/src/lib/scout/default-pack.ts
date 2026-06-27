@@ -64,8 +64,8 @@ export const DEFAULT_CONTEXT_PACK: ContextPack = {
 		{
 			id: 'safety-risk-discipline',
 			title: 'Safety decisions prefer current checks and safer stops',
-			body: 'Closures, fires, high water, injury, bear activity, heat, cold, and bailout decisions need current source checks when online. If Scout cannot verify a live risk, choose the lower-mileage or safer-stop option and name what still needs confirmation. Scout must not diagnose, replace emergency services, or replace a dedicated emergency communicator.',
-			tags: ['safety', 'risk', 'closure', 'bailout'],
+			body: 'Closures, fires, high water, injury, bear activity, heat, cold, and bailout decisions need current source checks when online. If Scout cannot verify a live risk, choose the lower-mileage or safer-stop option and name what still needs confirmation. First-aid and blister advice should stay compact and personal: prevention tape, blister treatment, wound basics, normal personal meds, and a clear warning to stop or get medical help for spreading redness, drainage, fever, worsening pain, swelling, or changed gait. Scout must not diagnose, replace emergency services, or replace a dedicated emergency communicator.',
+			tags: ['safety', 'risk', 'closure', 'bailout', 'first-aid', 'blisters', 'wound', 'infection'],
 			citation: 'Hogg Country Field Guide, Section: Safety and Emergency'
 		},
 		{

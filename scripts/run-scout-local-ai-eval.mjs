@@ -22,6 +22,8 @@ const bridgeMode = String(cli.mode ?? (process.env.SCOUT_LOCAL_AI_COMMAND ? 'com
 const command = String(cli.command ?? process.env.SCOUT_LOCAL_AI_COMMAND ?? '');
 const timeoutMs = Number(cli.timeoutMs ?? process.env.SCOUT_LOCAL_AI_TIMEOUT_MS ?? 120_000);
 
+installLocalBibleAssetFetch();
+
 const suite = JSON.parse(await readFile(suitePath, 'utf8'));
 const suiteIdentity = scoutLocalAiSuiteIdentity(suite);
 const selectedCases = filterCases(suite.cases, cli);
@@ -136,6 +138,30 @@ console.log(`Missing required tool hits: ${summary.missingToolCases}`);
 console.log(`Source-evidence complete: ${summary.sourceEvidenceComplete}/${run.caseCount}`);
 if (run.evidenceLane === 'scaffold-not-model') {
 	console.log('Note: scaffold answers are not local-model proof. Re-run with SCOUT_LOCAL_AI_COMMAND or a device bridge before scoring release readiness.');
+}
+
+function installLocalBibleAssetFetch() {
+	const nativeFetch = globalThis.fetch?.bind(globalThis);
+	if (!nativeFetch || globalThis.__scoutLocalBibleAssetFetchInstalled) return;
+	globalThis.__scoutLocalBibleAssetFetchInstalled = true;
+	globalThis.fetch = async (input, init) => {
+		const url = fetchInputUrl(input);
+		if (url === '/bible/kjv.json' || url.endsWith('/bible/kjv.json')) {
+			const body = await readFile(resolve(REPO_ROOT, 'mobile/static/bible/kjv.json'), 'utf8');
+			return new Response(body, {
+				status: 200,
+				headers: { 'content-type': 'application/json' }
+			});
+		}
+		return nativeFetch(input, init);
+	};
+}
+
+function fetchInputUrl(input) {
+	if (typeof input === 'string') return input;
+	if (input instanceof URL) return input.pathname;
+	if (input && typeof input.url === 'string') return input.url;
+	return '';
 }
 
 function parseArgs(argv) {
@@ -413,7 +439,7 @@ function townsFor(mile) {
 function weatherFor(mile, prompt, now) {
 	const lower = prompt.toLowerCase();
 	const stale = lower.includes('stale');
-	const storm = /\b(?:storm|thunder|lightning|heavy rain|rain)\b/.test(lower);
+	const storm = /\b(?:storm|storms|thunder|thunderstorm|thunderstorms|lightning|heavy rain|rain)\b/.test(lower);
 	const cold = /\b(?:cold|35 degrees|wind|hypothermia|freez[a-z]*)\b/.test(lower);
 	const hot = /hot|heat|dizzy/.test(lower);
 	return {
@@ -515,7 +541,7 @@ function evalGuideExcerpts() {
 		{id: 'eval-weather-discipline', title: 'Weather discipline', body: 'Weather is volatile. Stale cached weather can guide caution but must not be treated as live proof. Thunderstorms, heat, cold rain, wind, flooding, and exposed ridges require current checks when possible. For a heavy-rain start, recommend conservative mileage, keeping sleep layers dry, footing caution on slick roots/rocks/descents, and a bailout or stop plan if lightning, hypothermia risk, flooding, or worsening conditions appear.', tags: ['weather', 'wind', 'cold', 'rain', 'heat', 'storm', 'footing', 'bailout'], citation: 'Dad Local AI eval source skill: weather'},
 		{id: 'eval-town-discipline', title: 'Town discipline', body: 'Town stops are recovery first: eat, shower, laundry, foot care, sleep, charge, download, then logistics. Services, hostels, shuttles, mail, and store hours need same-day confirmation. For mail-drop versus buy-in-town questions, ask for or name the missing decision inputs before firm advice: diet restrictions, daily pace, next town timing, store hours, post-office hours, hostel/shuttle access, and whether the item is hard to find locally. Default resupply rule: buy common food in town; mail only constrained, medical, diet-specific, or hard-to-find items to verified stops. Never say hard-to-find items are better bought in town unless a current town source proves availability. Budget advice should separate daily burn, town spikes, hostel/shuttle/laundry/meals, gear replacement, and an emergency cushion; it should stay flexible around actual pace and town services and never sound like a financial guarantee.', tags: ['town', 'resupply', 'recovery', 'hostel', 'laundry', 'budget', 'mail-drop'], citation: 'Dad Local AI eval source skill: town'},
 		{id: 'eval-loadout-discipline', title: 'Loadout discipline', body: 'Gear advice starts from actual carried items. Cut duplicate comfort weight before rain protection, insulation, water treatment, first aid, battery, navigation, or sleep safety. A shakedown hike should prove the sleep system, rain system, cooking/food rhythm, water filtering, battery drain, pack fit, foot care, and offline app/model flow. Turn every failure into a specific gear or app fix before Springer, and do not treat one shakedown as proof every condition is solved.', tags: ['loadout', 'gear', 'pack', 'weight', 'shakedown', 'battery'], citation: 'Dad Local AI eval source skill: loadout'},
-		{id: 'eval-safety-discipline', title: 'Safety discipline', body: 'For injury, heat illness, hypothermia, lightning, unsafe people, lost/off-trail, fire, or severe fatigue, Scout should choose lower-risk stops, exits, or help. For knee or joint pain, do not tell the hiker to train through pain; recommend pain-free load reduction, low-impact conditioning, strength/mobility work, and a clinician or physical therapist when pain persists, worsens, swells, or changes gait. Scout must not diagnose, replace emergency services, or replace a dedicated emergency communicator.', tags: ['safety', 'risk', 'injury', 'bailout', 'emergency'], citation: 'Dad Local AI eval source skill: safety'},
+		{id: 'eval-safety-discipline', title: 'Safety discipline', body: 'For injury, heat illness, hypothermia, lightning, unsafe people, lost/off-trail, fire, or severe fatigue, Scout should choose lower-risk stops, exits, or help. For knee or joint pain, do not tell the hiker to train through pain; recommend pain-free load reduction, low-impact conditioning, strength/mobility work, and a clinician or physical therapist when pain persists, worsens, swells, or changes gait. For first-aid and blister kit questions, keep the kit compact and personal: prevention tape, blister treatment, wound basics, normal personal meds, and a warning to stop or get medical help for spreading redness, drainage, fever, worsening pain, swelling, or changed gait. Scout must not diagnose, replace emergency services, or replace a dedicated emergency communicator.', tags: ['safety', 'risk', 'injury', 'bailout', 'emergency', 'first-aid', 'blisters', 'wound', 'infection'], citation: 'Dad Local AI eval source skill: safety'},
 		{id: 'eval-offline-documents-discipline', title: 'Offline documents and sensitive information discipline', body: 'Before day one, save personal documents outside Scout where you can reach them offline: photo ID, insurance card, emergency contacts, medication/allergy notes, itinerary/check-in plan, permits or reservations if needed, shuttle/lodging confirmations, and the Scout field pack/offline map status. Distinguish personal documents from Scout trail data: Scout can ground on cached field pack, saved docs, Bible text, and map data, but it should explicitly tell you not to paste private ID, insurance, medical, payment, or reservation numbers into Scout chat.', tags: ['safety', 'documents', 'offline', 'pretrip', 'itinerary', 'insurance', 'permits', 'sensitive'], citation: 'Dad Local AI eval source skill: safety documents'},
 		{id: 'eval-family-checkin-discipline', title: 'Family check-in and missed-contact discipline', body: 'Family check-ins should set expectations before the trail: usual cadence, current mile or location, how you feel, planned stop, and next expected contact. Normal gaps can happen from dead zones, battery conservation, rain, or town chaos. Give family an escalation window and the emergency contact/itinerary sheet ahead of time. Tell family: if they do not hear from you after that window, use direct calls/texts, emergency contacts, hostels/shuttles/rangers when appropriate, and then emergency services. Repeated missed check-ins, bad weather, health concerns, or itinerary mismatch should escalate. Do not promise live location is always available.', tags: ['safety', 'check-ins', 'family', 'offline', 'emergency', 'itinerary'], citation: 'Dad Local AI eval source skill: safety check-ins'},
 		{id: 'eval-trail-conditions-discipline', title: 'Trail conditions discipline', body: 'Closures, detours, fires, burn bans, bridge outs, washouts, and bear activity require current official verification. Scout can summarize loaded alerts but must not invent alternate routes.', tags: ['closure', 'detour', 'hazard', 'condition', 'fire'], citation: 'Dad Local AI eval source skill: trail conditions'},

@@ -71,6 +71,109 @@ test('a throwing bridge does not cache and does not crash', async () => {
 	assert.equal(await provider.available(), true, 're-probes after a transient failure');
 });
 
+test('generate retries a transient non-streaming native null response once', async () => {
+	let attempts = 0;
+	let warmed = 0;
+	const provider = new OnDeviceGemmaProvider({
+		bridge: {
+			isAvailable: async () => true,
+			describeModel: async () => null,
+			warmUp: async () => {
+				warmed += 1;
+			},
+			generate: async () => {
+				attempts += 1;
+				if (attempts === 1) {
+					throw new Error('On-device Gemma generation failed: Invalid response from native layer: Native sendMessage returned null.');
+				}
+				return { text: 'Use the cached trail pack and answer plainly.', truncated: false };
+			}
+		}
+	});
+
+	const response = await provider.generate({
+		prompt: 'What water is ahead?',
+		pack: cloneDefaultContextPack(),
+		toolInvocations: [],
+		now: new Date('2026-06-20T12:00:00Z')
+	});
+
+	assert.equal(attempts, 2);
+	assert.equal(warmed, 1);
+	assert.equal(response.answer, 'Use the cached trail pack and answer plainly.');
+});
+
+test('generate does not retry a transient native null after streaming begins', async () => {
+	let attempts = 0;
+	const provider = new OnDeviceGemmaProvider({
+		bridge: {
+			isAvailable: async () => true,
+			describeModel: async () => null,
+			generate: async (_input, onToken) => {
+				attempts += 1;
+				onToken?.('partial');
+				throw new Error('Invalid response from native layer: Native sendMessage returned null.');
+			}
+		}
+	});
+
+	await assert.rejects(
+		() =>
+			provider.generate(
+				{
+					prompt: 'What water is ahead?',
+					pack: cloneDefaultContextPack(),
+					toolInvocations: [],
+					now: new Date('2026-06-20T12:00:00Z')
+				},
+				() => {}
+			),
+		/Native sendMessage returned null/
+	);
+	assert.equal(attempts, 1);
+});
+
+test('generate compacts oversized tool context before calling native Gemma', async () => {
+	let seenContext = '';
+	const provider = new OnDeviceGemmaProvider({
+		bridge: {
+			isAvailable: async () => true,
+			describeModel: async () => null,
+			generate: async (input) => {
+				seenContext = input.systemContext;
+				return { text: 'Carry extra water over the ridge.', truncated: false };
+			}
+		},
+		tier: 'balanced'
+	});
+
+	await provider.generate({
+		prompt: 'Should I camel up here or carry extra water over the ridge?',
+		pack: cloneDefaultContextPack(),
+		toolInvocations: [
+			{
+				toolId: 'source_search',
+				args: {},
+				summary: `Water guidance: ${'confirm current flow before committing '.repeat(900)}`,
+				confidence: 'medium',
+				receipts: []
+			},
+			{
+				toolId: 'open_source_doc',
+				args: {},
+				summary: `Opened water document: ${'top off before dry ridge '.repeat(900)}`,
+				confidence: 'medium',
+				receipts: []
+			}
+		],
+		now: new Date('2026-06-20T12:00:00Z')
+	});
+
+	assert.ok(seenContext.length <= 16_000);
+	assert.match(seenContext, /Water guidance:/);
+	assert.match(seenContext, /Opened water document:/);
+});
+
 test('system context keeps Scout plain-spoken and avoids markdown/corny voice', () => {
 	const pack = cloneDefaultContextPack();
 	pack.hiker.currentMile = 0;
@@ -103,8 +206,14 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /include an immediate first-week checklist/);
 	assert.match(systemContext, /End every answer with a complete sentence/);
 	assert.match(systemContext, /verify Bible text is available offline/);
+	assert.match(systemContext, /For Bible or scripture questions/);
+	assert.match(systemContext, /Psalms 56:3, Isaiah 41:10, 2 Timothy 1:7/);
+	assert.match(systemContext, /Do not use disturbing, violent, judgment, or famine passages as comfort/);
+	assert.match(systemContext, /make a one-hour plan/);
 	assert.match(systemContext, /never write "if you don't hear from you\."/);
 	assert.match(systemContext, /For resupply or mail-drop questions/);
+	assert.match(systemContext, /For first-aid kit or blister questions/);
+	assert.match(systemContext, /spreading redness, drainage, fever, worsening pain/);
 	assert.match(systemContext, /do not tell the hiker to train through pain/);
 	assert.match(systemContext, /Do not offer terrain lookups or custom workouts at the end/);
 	assert.match(systemContext, /Use the strongest 2-4 tool findings visibly/);
@@ -140,5 +249,34 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			'How should I train with a bad knee before the first week of the AT?'
 		),
 		'Protect your knee.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'For practical next steps, first, check the weather and any immediate hazards around you. If you are cold or wet, get warm and dry immediately. Eat or drink if you have food or water available. Make a one-hour plan for what you need to do next, focusing on immediate safety. If you feel you are in immediate danger, use your emergency plan.\n\nYou need to check the weather and any immediate hazards around you. If you are cold or wet, get warm and dry immediately. Eat or drink if you have food or water available. Make a one-hour plan for what you need to do next, focusing on immediate safety. If you feel you are in immediate danger, use your emergency plan.',
+			'I am scared and alone tonight. Give me scripture and practical next steps.'
+		),
+		'For practical next steps, first, check the weather and any immediate hazards around you. If you are cold or wet, get warm and dry immediately. Eat or drink if you have food or water available. Make a one-hour plan for what you need to do next, focusing on immediate safety. If you feel you are in immediate danger, use your emergency plan.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer('The next water is at mile 138.3. The reliable creek is at mile 142.7.', 'Should I camel up?'),
+		'The next water is at mile 138.3. The reliable creek is at mile 142.7.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Stop at Ridge Shelter [source_search]. Verify water and crowding [next_shelter].',
+			'Where should I sleep tonight?'
+		),
+		'Stop at Ridge Shelter. Verify water and crowding.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'The nearest loaded water is about a mile and eight ahead of you.',
+			'What water is ahead from my current mile?'
+		),
+		'The nearest loaded water is about 1.8 miles ahead of you.'
 	);
 });

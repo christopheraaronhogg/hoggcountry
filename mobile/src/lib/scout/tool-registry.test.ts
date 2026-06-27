@@ -281,6 +281,30 @@ test('runToolsFor reads safety source skill for bailout and injury prompts', asy
 	);
 });
 
+test('runToolsFor reads safety source skill for first-aid blister prompts', async () => {
+	const records = await runToolsFor(
+		'What should be in my first-aid kit for blisters and normal trail problems?',
+		packWithTrailPlanningContext(),
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	assert.ok(records.some((record) => record.toolId === 'loadout_check'));
+	const sourceSkill = records.find(
+		(record) => record.toolId === 'source_search' && record.args.sourceSkill === 'safety'
+	);
+	assert.ok(sourceSkill);
+	assert.match(sourceSkill.summary, /^Safety guidance:/);
+	assert.ok(
+		records.some(
+			(record) =>
+				record.toolId === 'open_source_doc' &&
+				record.args.sourceSkill === 'safety' &&
+				record.toolId === 'open_source_doc'
+		)
+	);
+});
+
 test('runToolsFor does not route training prompts to rain/weather', async () => {
 	const records = await runToolsFor(
 		'How should I train with a bad knee before the first week of the AT?',
@@ -292,6 +316,31 @@ test('runToolsFor does not route training prompts to rain/weather', async () => 
 	assert.ok(records.some((record) => record.toolId === 'source_search' && record.args.sourceSkill === 'safety'));
 	assert.ok(!records.some((record) => record.toolId === 'weather_lookup'));
 	assert.ok(!records.some((record) => record.toolId === 'source_search' && record.args.sourceSkill === 'weather'));
+});
+
+test('runToolsFor routes thunderstorm prompts to weather lookup and weather source skill', async () => {
+	const records = await runToolsFor(
+		"Thunderstorms are possible this afternoon. What should I do with today's hike?",
+		packWithTrailPlanningContext(),
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	assert.ok(records.some((record) => record.toolId === 'weather_lookup'));
+	assert.ok(records.some((record) => record.toolId === 'upcoming_terrain'));
+	const sourceSkill = records.find(
+		(record) => record.toolId === 'source_search' && record.args.sourceSkill === 'weather'
+	);
+	assert.ok(sourceSkill);
+	assert.match(sourceSkill.summary, /^Weather guidance:/);
+	assert.ok(
+		records.some(
+			(record) =>
+				record.toolId === 'open_source_doc' &&
+				record.args.sourceSkill === 'weather' &&
+				record.toolId === 'open_source_doc'
+		)
+	);
 });
 
 test('runToolsFor opens offline document safety discipline for day-one document prompts', async () => {
