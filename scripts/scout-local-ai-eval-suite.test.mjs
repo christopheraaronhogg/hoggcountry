@@ -1875,6 +1875,10 @@ test('device run intake validates exports and creates review packet', async () =
 	assert.match(packet, /Source evidence gaps:/u);
 	assert.match(packet, /Source receipts:/u);
 	assert.match(packet, /Failure mode: `none`/u);
+	assert.match(packet, /## Review-first triage/u);
+	assert.match(packet, /Review-first cases: 0\/2/u);
+	assert.match(packet, /Signals: none/u);
+	assert.match(packet, /No hard evidence issues were recorded before human rating/u);
 	assert.match(packet, /## Review queue summary/u);
 	assert.match(packet, /Likely owner/u);
 	assert.match(packet, /\| DLA-\d{3} \| [^|]+ \| [^|]+ \| standard \| tool-routing \| bad-routing, weak-tool \| none \|/u);
@@ -1980,6 +1984,13 @@ test('device run intake imports truthful missing-tool runs for review', async ()
 	assert.deepEqual(review.cases[0].toolExpectations.missing, run.results[0].case.requiredTools);
 	assert.match(packet, /Import warnings/u);
 	assert.match(packet, /actual toolInvocations missed required tools/u);
+	assert.match(packet, /## Review-first triage/u);
+	assert.match(packet, /Review-first cases: 1\/100/u);
+	assert.match(packet, /Signals: review-first: missing required tools=1/u);
+	assert.match(packet, /Likely owner layers: tool-routing=1/u);
+	assert.match(packet, /Suggested failure categories: bad-routing=1, weak-tool=1/u);
+	assert.match(packet, /Missing tools: [^\n]+/u);
+	assert.match(packet, /Top review-first cases:/u);
 	assert.match(packet, /Missing: /u);
 });
 
@@ -2039,6 +2050,13 @@ test('device run intake imports truthful missing source receipts for review', as
 	assert.match(packet, new RegExp(`## ${sourceCase.id} - `, 'u'));
 	assert.match(packet, /Suggested failure categories: `weak-tool`/u);
 	assert.match(packet, /Suggested owner layer: `tool-routing`/u);
+	assert.match(packet, /## Review-first triage/u);
+	assert.match(packet, /Review-first cases: 1\/100/u);
+	assert.match(packet, /Signals: review-first: source evidence gap=1/u);
+	assert.match(packet, /Likely owner layers: tool-routing=1/u);
+	assert.match(packet, /Suggested failure categories: weak-tool=1/u);
+	assert.match(packet, /Source-evidence gaps: [^\n]+:/u);
+	assert.match(packet, /Top review-first cases:/u);
 	assert.match(packet, /review-first: source evidence gap/u);
 	assert.match(packet, /source evidence: .*:/u);
 	assert.match(packet, /Source evidence gaps:/u);

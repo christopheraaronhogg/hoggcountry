@@ -280,6 +280,12 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 	}
 
 	lines.push(
+		'## Review-first triage',
+		'',
+		'Use this as the first pass before reading all 100 answers. It only counts rows with hard evidence issues: provider errors, missing required tools, or missing source evidence.',
+		'',
+		...formatReviewFirstTriage(run.results),
+		'',
 		'## Review queue summary',
 		'',
 		'Start with `review-first` rows. Those rows have provider errors, missing required tools, or missing source evidence. The full case blocks below remain the source of truth for ratings.',
@@ -368,6 +374,53 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 	return `${lines.join('\n')}\n`;
 }
 
+function formatReviewFirstTriage(results) {
+	if (!Array.isArray(results) || !results.length) return ['No results were imported.'];
+	const reviewFirst = [];
+	for (const result of results) {
+		const sourceEvidenceGaps = sourceEvidenceProblems(result.case?.requiredTools ?? [], result.toolInvocations ?? []);
+		const signal = reviewQueueSignal(result, sourceEvidenceGaps);
+		if (!signal.startsWith('review-first')) continue;
+		const suggestedFailureCategories = suggestedFailureCategoriesForResult(result);
+		const suggestedOwnerLayer = inferOwnerLayer(suggestedFailureCategories, result);
+		reviewFirst.push({
+			result,
+			sourceEvidenceGaps,
+			signal,
+			suggestedFailureCategories,
+			suggestedOwnerLayer
+		});
+	}
+
+	if (!reviewFirst.length) {
+		return [
+			`- Review-first cases: 0/${results.length}`,
+			'- Signals: none',
+			'- Likely owner layers: none',
+			'- Suggested failure categories: none',
+			'- Missing tools: none',
+			'- Source-evidence gaps: none',
+			'',
+			'No hard evidence issues were recorded before human rating. Continue through the full review queue for answer quality, clarity, safety, and prompt fit.'
+		];
+	}
+
+	return [
+		`- Review-first cases: ${reviewFirst.length}/${results.length}`,
+		`- Signals: ${formatCountMap(countBy(reviewFirst, (item) => item.signal))}`,
+		`- Likely owner layers: ${formatCountMap(countBy(reviewFirst, (item) => item.suggestedOwnerLayer || 'unknown'))}`,
+		`- Suggested failure categories: ${formatCountMap(countBy(reviewFirst.flatMap((item) => item.suggestedFailureCategories.length ? item.suggestedFailureCategories : ['none']), (item) => item))}`,
+		`- Missing tools: ${formatCountMap(countBy(reviewFirst.flatMap((item) => item.result.toolExpectations?.missing ?? []), (item) => item))}`,
+		`- Source-evidence gaps: ${formatCountMap(countBy(reviewFirst.flatMap((item) => item.sourceEvidenceGaps.map((problem) => problem.expectation ?? problem.message)), (item) => item))}`,
+		'',
+		'Top review-first cases:',
+		...reviewFirst.slice(0, 8).map((item) => {
+			const result = item.result;
+			return `- ${result.caseId ?? '<missing>'}: ${item.signal}; likely owner ${item.suggestedOwnerLayer}; gaps ${formatReviewQueueEvidenceGaps(result, item.sourceEvidenceGaps)}`;
+		})
+	];
+}
+
 function formatReviewQueueSummary(results) {
 	if (!Array.isArray(results) || !results.length) return ['No results were imported.'];
 	const rows = [
@@ -415,6 +468,24 @@ function formatSourceEvidenceCounts(counts) {
 	const entries = Object.entries(counts ?? {}).sort(([left], [right]) => left.localeCompare(right));
 	if (!entries.length) return 'none';
 	return entries.map(([expectation, count]) => `${expectation}=${count}`).join(', ');
+}
+
+function countBy(items, keyFor) {
+	const counts = {};
+	for (const item of items ?? []) {
+		const key = String(keyFor(item) ?? '').trim();
+		if (!key) continue;
+		counts[key] = (counts[key] ?? 0) + 1;
+	}
+	return Object.fromEntries(
+		Object.entries(counts).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+	);
+}
+
+function formatCountMap(counts) {
+	const entries = Object.entries(counts ?? {});
+	if (!entries.length) return 'none';
+	return entries.map(([key, count]) => `${key}=${count}`).join(', ');
 }
 
 function formatRatingScale(ratingScale) {
