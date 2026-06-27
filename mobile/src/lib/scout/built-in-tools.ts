@@ -22,6 +22,7 @@ const SOURCE_OPEN_MAX_CHARS = 1600;
 const SOURCE_SKILL_TAG_HINTS: Record<string, string[]> = {
 	loadout: ['loadout', 'gear', 'pack'],
 	'park services': ['park', 'ranger', 'visitor', 'campground', 'permit'],
+	pretrip: ['pretrip', 'prep', 'shakedown', 'foot-care', 'offline'],
 	safety: ['safety', 'risk', 'bailout', 'injury'],
 	shelter: ['shelter', 'camping', 'campsite', 'tent'],
 	'trail conditions': ['closure', 'detour', 'hazard', 'condition'],

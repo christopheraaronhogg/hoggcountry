@@ -67,6 +67,11 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
     /// thread-safe) so `_engine` is set before any plugin method can be called.
     public override func load() {
         _engine = ScoutGemmaEngineFactory.create(store: store)
+        #if DEBUG && targetEnvironment(simulator)
+        if shouldRunSimulatorGemmaProbe() {
+            runSimulatorGemmaProbe()
+        }
+        #endif
     }
 
     // MARK: - Plugin methods
@@ -260,6 +265,52 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
         return false
         #endif
     }
+
+    #if DEBUG && targetEnvironment(simulator)
+    private func shouldRunSimulatorGemmaProbe() -> Bool {
+        let process = ProcessInfo.processInfo
+        return process.environment["SCOUT_GEMMA_SIM_PROBE"] == "1"
+            || process.arguments.contains("--scout-gemma-sim-probe")
+    }
+
+    private func runSimulatorGemmaProbe() {
+        let status = store.status()
+        NSLog(
+            "SCOUT_GEMMA_SIM_PROBE status state=%@ runtimeConfigured=%@ bytes=%lld expected=%lld file=%@",
+            status.state,
+            runtimeConfigured() ? "true" : "false",
+            status.bytesOnDevice,
+            status.expectedBytes,
+            status.filePath)
+
+        let capturedEngine = engine
+        NSLog("SCOUT_GEMMA_SIM_PROBE engine available=%@", capturedEngine.isAvailable ? "true" : "false")
+        if let info = capturedEngine.describeModel() {
+            NSLog(
+                "SCOUT_GEMMA_SIM_PROBE model tier=%@ id=%@ maxContextTokens=%d",
+                info.tier,
+                info.modelId,
+                info.maxContextTokens)
+        }
+
+        Task {
+            do {
+                let result = try await capturedEngine.generate(
+                    prompt: "Say READY in one word.",
+                    systemContext: "You are Scout. This is an iOS Simulator Gemma smoke test.",
+                    maxTokens: 16)
+                let preview = String(result.text.prefix(160))
+                NSLog(
+                    "SCOUT_GEMMA_SIM_PROBE generate ok truncated=%@ chars=%d preview=%@",
+                    result.truncated ? "true" : "false",
+                    result.text.count,
+                    preview)
+            } catch {
+                NSLog("SCOUT_GEMMA_SIM_PROBE generate failed error=%@", error.localizedDescription)
+            }
+        }
+    }
+    #endif
 
     private func modelStatusPayload(_ status: ScoutModelStatus) -> [String: Any] {
         var payload = status.toDict()

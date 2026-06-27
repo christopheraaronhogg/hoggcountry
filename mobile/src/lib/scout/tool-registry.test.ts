@@ -255,6 +255,43 @@ test('runToolsFor reads safety source skill for bailout and injury prompts', asy
 	);
 });
 
+test('runToolsFor reads pretrip source skill for Springer preparation prompts', async () => {
+	const records = await runToolsFor(
+		'I have 8 weeks before Springer. What should I focus on first for trail prep?',
+		{
+			...DEFAULT_CONTEXT_PACK,
+			guideExcerpts: [
+				...DEFAULT_CONTEXT_PACK.guideExcerpts,
+				{
+					id: 'eval-pretrip-discipline',
+					title: 'Pretrip and first-week discipline',
+					body: 'Pretrail answers should include shakedown hikes, foot care, conservative early mileage, loadout checks, water treatment habits, and an offline app rehearsal.',
+					tags: ['pretrip', 'prep', 'shakedown', 'foot-care', 'offline'],
+					citation: 'Dad Local AI eval source skill: pretrip'
+				}
+			]
+		},
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	const sourceSkill = records.find(
+		(record) => record.toolId === 'source_search' && record.args.sourceSkill === 'pretrip'
+	);
+	assert.ok(sourceSkill);
+	assert.match(sourceSkill.summary, /^Pretrip source skill:/);
+	assert.match(sourceSkill.summary, /shakedown hikes/);
+	assert.ok(sourceSkill.sourceDocumentIds?.includes('field-guide:eval-pretrip-discipline'));
+	assert.ok(
+		records.some(
+			(record) =>
+				record.toolId === 'open_source_doc' &&
+				record.args.documentId === 'field-guide:eval-pretrip-discipline' &&
+				/Pretrip source skill opened Pretrip and first-week discipline/.test(record.summary)
+		)
+	);
+});
+
 test('next_water answers plain water prompts with nearest water plus better-known follow-up', async () => {
 	const records = await runToolsFor(
 		'where is the next water?',

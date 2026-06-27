@@ -98,4 +98,9 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /Never turn candidate water, shelters, towns, or weather into guarantees/);
 	assert.match(systemContext, /For water questions, use the next_water tool finding as the answer's spine/);
 	assert.match(systemContext, /When source_search or open_source_doc findings are labeled as source skills/);
+	assert.match(systemContext, /When preparation or training questions have pretrip/);
+	assert.match(systemContext, /include an immediate first-week checklist/);
+	assert.match(systemContext, /For resupply or mail-drop questions/);
+	assert.match(systemContext, /do not tell the hiker to train through pain/);
+	assert.match(systemContext, /Use the strongest 2-4 tool findings visibly/);
 });

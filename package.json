@@ -38,6 +38,7 @@
     "eval:scout-sources": "node --experimental-strip-types --experimental-transform-types scripts/eval-scout-sources.mjs",
     "eval:scout-reliability": "node --experimental-strip-types --experimental-transform-types scripts/eval-scout-reliability.mjs",
     "eval:scout-local-ai": "node --experimental-strip-types --experimental-transform-types scripts/run-scout-local-ai-eval.mjs",
+    "eval:scout-local-ai:openclaw-local": "SCOUT_LOCAL_AI_COMMAND=\"node scripts/scout-openclaw-local-command.mjs\" npm run eval:scout-local-ai --",
     "eval:scout-holdout": "node --experimental-strip-types --experimental-transform-types scripts/eval-scout-reliability.mjs --scenario-file data/scout-reliability/holdout-scenarios.json --suite-name holdout-generalization-2026-05-07",
     "review:scout-model": "node scripts/review-scout-model-responses.mjs",
     "status:scout-local-ai": "node scripts/status-scout-local-ai.mjs",

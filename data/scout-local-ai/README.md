@@ -18,6 +18,14 @@ The loop:
    SCOUT_LOCAL_AI_COMMAND="node path/to/local-model-bridge.mjs" npm run eval:scout-local-ai
    ```
 
+   On Chris's Mac mini, use the OpenClaw local command bridge:
+
+   ```sh
+   npm run eval:scout-local-ai:openclaw-local -- --run-id mac-openclaw-gpt55-$(date -u +%Y%m%dT%H%MZ)
+   ```
+
+   The default model is `gpt-5.5`; override it with `SCOUT_OPENCLAW_LOCAL_MODEL=<model>`. This is useful Mac-side model evidence, but it does not replace the final TestFlight/iPhone Gemma proof.
+
 5. Create or update the review file:
 
    ```sh

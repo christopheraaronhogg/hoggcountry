@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import AppHeader from '$lib/components/AppHeader.svelte';
 	import CoachTab from '$lib/components/CoachTab.svelte';
 	import TodayTab from '$lib/components/TodayTab.svelte';
@@ -8,10 +9,74 @@
 	import TabNavigation from '$lib/components/TabNavigation.svelte';
 	import HikeSetupSheet from '$lib/components/HikeSetupSheet.svelte';
 	import { trailAssistant } from '$lib/trailState.svelte';
+	import type { ScoutLocalAiEvalSuite } from '$lib/scout/local-ai-eval';
 
 	// Scout chat stays pure: no shared header chrome, no surrounding cards — just
 	// the conversation. Every other pillar scrolls inside the standard shell.
 	const tab = $derived(trailAssistant.activeTab);
+	const SIM_EVAL_PROBE_KEY = 'hoggcountry:scout-gemma-sim-eval-probe:v1';
+	const SIM_EVAL_RESULT_KEY = 'hoggcountry:scout-gemma-sim-eval-result:v1';
+
+	onMount(() => {
+		void maybeRunSimulatorGemmaEvalProbe();
+	});
+
+	async function maybeRunSimulatorGemmaEvalProbe() {
+		try {
+			const [{ Capacitor }, { Preferences }] = await Promise.all([
+				import('@capacitor/core'),
+				import('@capacitor/preferences')
+			]);
+			if (!Capacitor.isNativePlatform()) return;
+
+			const trigger = await Preferences.get({ key: SIM_EVAL_PROBE_KEY });
+			if (trigger.value !== 'run3' && trigger.value !== '1') return;
+			await Preferences.remove({ key: SIM_EVAL_PROBE_KEY });
+			console.info('SCOUT_GEMMA_SIM_EVAL_PROBE requested', trigger.value);
+
+			const response = await fetch('/scout/dad-local-ai-100.json', { cache: 'no-store' });
+			if (!response.ok) {
+				throw new Error(`Eval suite fetch failed with HTTP ${response.status}.`);
+			}
+
+			const suite = (await response.json()) as ScoutLocalAiEvalSuite;
+			const run = await trailAssistant.runLocalAiEvalSuite({
+				suite,
+				limit: 3,
+				onProgress: (progress) => {
+					console.info(
+						`SCOUT_GEMMA_SIM_EVAL_PROBE progress ${progress.completed}/${progress.total} case=${progress.caseId}`
+					);
+				}
+			});
+			await Preferences.set({ key: SIM_EVAL_RESULT_KEY, value: JSON.stringify(run) });
+			console.info(
+				'SCOUT_GEMMA_SIM_EVAL_PROBE complete',
+				JSON.stringify({
+					runId: run.runId,
+					evidenceLane: run.evidenceLane,
+					caseCount: run.caseCount,
+					toolExpectationComplete: run.summary.toolExpectationComplete,
+					missingToolCases: run.summary.missingToolCases,
+					sourceEvidenceComplete: run.summary.sourceEvidenceComplete,
+					firstCase: run.results[0]?.caseId,
+					firstAnswerChars: run.results[0]?.answer.length ?? 0
+				})
+			);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			try {
+				const { Preferences } = await import('@capacitor/preferences');
+				await Preferences.set({
+					key: SIM_EVAL_RESULT_KEY,
+					value: JSON.stringify({ ok: false, generatedAt: new Date().toISOString(), error: message })
+				});
+			} catch {
+				// Keep the original probe error visible even if persistence fails.
+			}
+			console.error('SCOUT_GEMMA_SIM_EVAL_PROBE failed', message, error);
+		}
+	}
 </script>
 
 <div class="phone-frame">

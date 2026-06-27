@@ -126,6 +126,11 @@ const SOURCE_SKILL_TRIGGERS: SourceSkillTrigger[] = [
 		queryHints: ['safety discipline', 'body risk', 'bailout', 'emergency boundaries', 'official source', 'choose safer stop']
 	},
 	{
+		id: 'pretrip',
+		keywords: ['8 weeks', 'springer', 'trail prep', 'pre-trail', 'before trail', 'first week', 'train', 'training', 'shakedown', 'foot care', 'local ai', 'model download', 'offline setup'],
+		queryHints: ['pretrip discipline', 'shakedown', 'foot care', 'offline setup', 'local AI model', 'first week']
+	},
+	{
 		id: 'park services',
 		keywords: ['visitor center', 'ranger', 'ranger station', 'campground', 'national park', 'park office', 'wayside', 'permit office'],
 		queryHints: ['park services', 'visitor center', 'ranger station', 'campground', 'permits', 'hours']
