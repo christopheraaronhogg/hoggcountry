@@ -1,0 +1,192 @@
+import { execFile } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
+import { dirname, relative, resolve } from 'node:path';
+import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
+import {
+	parseCliArgs
+} from './lib/scout-local-ai-review.mjs';
+
+const execFileAsync = promisify(execFile);
+const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = resolve(SCRIPT_DIR, '..');
+
+const DEFAULT_SUITE = 'data/scout-local-ai/dad-local-ai-100.json';
+const DEFAULT_DEVICE_RUN_DIR = 'data/scout-local-ai/device-runs';
+const DEFAULT_REVIEW_DIR = 'data/scout-local-ai/reviews';
+const DEFAULT_PACKET_DIR = 'data/scout-local-ai/review-packets';
+
+const cli = parseCliArgs(process.argv.slice(2));
+const input = cli.run ?? cli.input;
+
+if (!input) {
+	throw new Error([
+		'Usage: npm run prepare-review:scout-local-ai-device-run -- --run ~/Downloads/<device-export>.json',
+		'This inspects first, imports only valid device exports, then prints review progress.',
+		'Add --allow-partial only for deliberate smoke/interrupted-run diagnostics.'
+	].join('\n'));
+}
+
+const inputPath = resolveInputPath(input);
+const suitePath = resolveInputPath(cli.suite ?? DEFAULT_SUITE);
+const deviceRunDir = resolveInputPath(cli.deviceRunDir ?? DEFAULT_DEVICE_RUN_DIR);
+const reviewDir = resolveInputPath(cli.reviewDir ?? DEFAULT_REVIEW_DIR);
+const packetDir = resolveInputPath(cli.packetDir ?? DEFAULT_PACKET_DIR);
+const allowPartial = Boolean(cli.allowPartial);
+const force = Boolean(cli.force);
+
+const inspection = await runJsonScript('scripts/inspect-scout-local-ai-device-run.mjs', [
+	'--run',
+	inputPath,
+	'--suite',
+	suitePath,
+	'--json'
+]);
+
+const canImportFinal = inspection.readyForFinalIntake === true;
+const canImportPartial = allowPartial && inspection.readyForPartialIntake === true;
+
+if (!canImportFinal && !canImportPartial) {
+	const blocked = {
+		schemaVersion: 1,
+		status: inspection.readyForPartialIntake ? 'partial-needs-explicit-allow-partial' : 'inspection-blocked',
+		imported: false,
+		inspection,
+		nextAction: inspection.readyForPartialIntake
+			? `Rerun with --allow-partial only if this is a deliberate smoke/interrupted-run diagnostic; otherwise finish Run 100 on the phone first.`
+			: 'Fix the export or rerun Scout Eval Lab before importing review files.'
+	};
+	writeOutput(blocked);
+	process.exit(1);
+}
+
+const importArgs = [
+	'--run',
+	inputPath,
+	'--suite',
+	suitePath,
+	'--device-run-dir',
+	deviceRunDir,
+	'--review-dir',
+	reviewDir,
+	'--packet-dir',
+	packetDir
+];
+if (canImportPartial) importArgs.push('--allow-partial');
+if (force) importArgs.push('--force');
+
+const importOutput = await runTextScript('scripts/import-scout-local-ai-device-run.mjs', importArgs);
+const run = JSON.parse(await readFile(inputPath, 'utf8'));
+const safeRunId = safeFileName(run.runId);
+const importedRunPath = resolve(deviceRunDir, `${safeRunId}.json`);
+const reviewPath = resolve(reviewDir, `${safeRunId}.review.json`);
+const packetPath = resolve(packetDir, `${safeRunId}.review.md`);
+
+const reviewStatus = await runJsonScript('scripts/status-scout-local-ai-review.mjs', [
+	'--suite',
+	suitePath,
+	'--run',
+	importedRunPath,
+	'--review',
+	reviewPath,
+	'--json'
+]);
+
+writeOutput({
+	schemaVersion: 1,
+	status: canImportFinal ? 'prepared-for-final-review' : 'prepared-for-partial-diagnostic-review',
+	imported: true,
+	partial: canImportPartial,
+	paths: {
+		importedRun: relative(REPO_ROOT, importedRunPath),
+		review: relative(REPO_ROOT, reviewPath),
+		packet: relative(REPO_ROOT, packetPath)
+	},
+	inspection,
+	reviewStatus,
+	importOutput: importOutput.trim().split(/\r?\n/u).filter(Boolean),
+	nextAction: `Fill/apply the review packet, rerun npm run review-status:scout-local-ai -- --run ${relative(REPO_ROOT, importedRunPath)} --review ${relative(REPO_ROOT, reviewPath)}, then run npm run review:scout-local-ai when the review is complete.`
+});
+
+async function runJsonScript(script, args) {
+	const result = await execFileAsync(process.execPath, [script, ...args], {
+		cwd: REPO_ROOT,
+		maxBuffer: 1024 * 1024 * 12
+	});
+	return JSON.parse(result.stdout);
+}
+
+async function runTextScript(script, args) {
+	const result = await execFileAsync(process.execPath, [script, ...args], {
+		cwd: REPO_ROOT,
+		maxBuffer: 1024 * 1024 * 12
+	});
+	return result.stdout;
+}
+
+function writeOutput(report) {
+	if (cli.json) {
+		console.log(JSON.stringify(report, null, 2));
+		return;
+	}
+	console.log(formatReport(report));
+}
+
+function formatReport(report) {
+	const lines = [
+		`# Scout local AI device review prep: ${report.status}`,
+		'',
+		`Imported: ${report.imported ? 'yes' : 'no'}`,
+		`Inspection status: ${report.inspection.status}`,
+		`Ready for final intake: ${report.inspection.readyForFinalIntake ? 'yes' : 'no'}`,
+		`Ready for partial intake: ${report.inspection.readyForPartialIntake ? 'yes' : 'no'}`,
+		''
+	];
+	if (report.paths) {
+		lines.push(
+			'## Files',
+			'',
+			`- Imported run: \`${report.paths.importedRun}\``,
+			`- Review JSON: \`${report.paths.review}\``,
+			`- Review packet: \`${report.paths.packet}\``,
+			''
+		);
+	}
+	if (report.reviewStatus) {
+		lines.push(
+			'## Review Status',
+			'',
+			`- Rated: ${report.reviewStatus.summary.rated}/${report.reviewStatus.summary.total}`,
+			`- Unrated: ${report.reviewStatus.summary.unrated}`,
+			`- Below 5: ${report.reviewStatus.summary.belowFive}`,
+			`- Invalid review issues: ${report.reviewStatus.summary.invalidCount}`,
+			`- Ready for backlog: ${report.reviewStatus.readyForBacklog ? 'yes' : 'no'}`,
+			`- Ready for strict device proof: ${report.reviewStatus.readyForStrictDeviceProof ? 'yes' : 'no'}`,
+			''
+		);
+	}
+	if (report.inspection.structuralErrors?.length || report.inspection.staleReasons?.length || report.inspection.contextProblems?.length) {
+		lines.push('## Blocking Inspection Issues', '');
+		for (const issue of [
+			...(report.inspection.structuralErrors ?? []),
+			...(report.inspection.staleReasons ?? []),
+			...(report.inspection.contextProblems ?? [])
+		].slice(0, 25)) {
+			lines.push(`- ${issue}`);
+		}
+		lines.push('');
+	}
+	lines.push('## Next action', '', report.nextAction, '');
+	return `${lines.join('\n')}\n`;
+}
+
+function safeFileName(value) {
+	return String(value).replace(/[^A-Za-z0-9._-]/g, '-');
+}
+
+function resolveInputPath(value) {
+	const text = String(value);
+	if (text === '~') return process.env.HOME ?? text;
+	if (text.startsWith('~/')) return resolve(process.env.HOME ?? REPO_ROOT, text.slice(2));
+	return resolve(REPO_ROOT, text);
+}

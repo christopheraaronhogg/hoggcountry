@@ -98,6 +98,18 @@ prints the exact next command. Use it first when a shared JSON arrives so a
 debug build, stale suite, interrupted `Run 100`, or wrong-lane export does not
 turn into wasted review work.
 
+For the normal Dad JSON handoff, the safest single command is:
+
+```sh
+npm run prepare-review:scout-local-ai-device-run -- --run ~/Downloads/<device-run>.json
+```
+
+That command runs the read-only inspection first, imports only a valid final
+device export, creates the review JSON and Markdown packet, and then prints the
+read-only review-status report. It refuses partial exports unless
+`--allow-partial` is explicit, so a smoke/interrupted run cannot be mistaken for
+final proof.
+
 When the inspector says the export is ready, import it before rating:
 
 ```sh

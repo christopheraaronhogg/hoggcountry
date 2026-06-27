@@ -50,6 +50,7 @@
     "audit:scout-local-ai-goal": "node scripts/audit-scout-local-ai-goal.mjs",
     "inspect:scout-local-ai-device-run": "node scripts/inspect-scout-local-ai-device-run.mjs",
     "intake:scout-local-ai-device-run": "node scripts/import-scout-local-ai-device-run.mjs",
+    "prepare-review:scout-local-ai-device-run": "node scripts/prepare-scout-local-ai-device-review.mjs",
     "verify:scout-local-ai-device-proof": "node scripts/verify-scout-local-ai-device-proof.mjs",
     "verify:scout-local-ai-stability-proof": "node scripts/verify-scout-local-ai-stability-proof.mjs",
     "refresh:testflight-dad-pilot": "node scripts/refresh-testflight-dad-pilot.mjs",

@@ -772,6 +772,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /APP_STORE_CONNECT_API_ISSUER_ID/u);
 	assert.match(result.stdout, /Install the latest TestFlight build/u);
 	assert.match(result.stdout, /use `Run 100` for real proof/u);
+	assert.match(result.stdout, /npm run prepare-review:scout-local-ai-device-run/u);
 	assert.match(result.stdout, /npm run inspect:scout-local-ai-device-run/u);
 	assert.match(result.stdout, /npm run intake:scout-local-ai-device-run/u);
 	assert.match(result.stdout, /npm run apply-review:scout-local-ai/u);
@@ -895,6 +896,154 @@ test('device run inspector rejects stale or wrong-context exports before review 
 	assert.equal(wrongBuildReport.readyForFinalIntake, false);
 	assert.equal(wrongBuildReport.nextCommand, null);
 	assert.match(wrongBuildReport.contextProblems.join('\n'), /app\.build must be >= 13/u);
+});
+
+test('device review preparation command inspects, imports, and reports review status', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-device-prepare-'));
+	const inputPath = join(outputDir, 'device-prepare-final-export.json');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	const packetsDir = join(outputDir, 'review-packets');
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-prepare-final',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/prepare-scout-local-ai-device-review.mjs',
+			'--run',
+			inputPath,
+			'--device-run-dir',
+			deviceRunsDir,
+			'--review-dir',
+			reviewsDir,
+			'--packet-dir',
+			packetsDir,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 12 }
+	);
+	const report = JSON.parse(result.stdout);
+	const review = JSON.parse(await readFile(join(reviewsDir, 'device-prepare-final.review.json'), 'utf8'));
+	const packet = await readFile(join(packetsDir, 'device-prepare-final.review.md'), 'utf8');
+
+	assert.equal(report.status, 'prepared-for-final-review');
+	assert.equal(report.imported, true);
+	assert.equal(report.partial, false);
+	assert.equal(report.inspection.status, 'ready-for-final-intake');
+	assert.equal(report.reviewStatus.summary.total, suite.cases.length);
+	assert.equal(report.reviewStatus.summary.unrated, suite.cases.length);
+	assert.equal(report.reviewStatus.readyForBacklog, false);
+	assert.equal(review.cases.length, suite.cases.length);
+	assert.match(packet, /npm run review-status:scout-local-ai/u);
+	assert.match(report.nextAction, /review-status:scout-local-ai/u);
+});
+
+test('device review preparation command refuses stale and implicit partial exports', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-device-prepare-block-'));
+	const stalePath = join(outputDir, 'device-prepare-stale-export.json');
+	const partialPath = join(outputDir, 'device-prepare-partial-export.json');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	const packetsDir = join(outputDir, 'review-packets');
+	const staleRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-prepare-stale',
+		completeTools: true,
+		runContext: finalDeviceRunContext(),
+		suiteVersion: '2026-01-01.1',
+		suiteHash: 'fnv1a32:oldhash'
+	});
+	const partialRun = deviceRunForCases(suite, suite.cases.slice(0, 3), {
+		runId: 'device-prepare-partial',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	await writeFile(stalePath, `${JSON.stringify(staleRun, null, 2)}\n`);
+	await writeFile(partialPath, `${JSON.stringify(partialRun, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/prepare-scout-local-ai-device-review.mjs',
+				'--run',
+				stalePath,
+				'--device-run-dir',
+				deviceRunsDir,
+				'--review-dir',
+				reviewsDir,
+				'--packet-dir',
+				packetsDir,
+				'--json'
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 12 }
+		),
+		(error) => {
+			const report = JSON.parse(error.stdout);
+			assert.equal(report.status, 'inspection-blocked');
+			assert.equal(report.imported, false);
+			assert.match(report.inspection.staleReasons.join('\n'), /run\.suiteVersion/u);
+			return true;
+		}
+	);
+	await assert.rejects(readFile(join(deviceRunsDir, 'device-prepare-stale.json'), 'utf8'));
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/prepare-scout-local-ai-device-review.mjs',
+				'--run',
+				partialPath,
+				'--device-run-dir',
+				deviceRunsDir,
+				'--review-dir',
+				reviewsDir,
+				'--packet-dir',
+				packetsDir,
+				'--json'
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 12 }
+		),
+		(error) => {
+			const report = JSON.parse(error.stdout);
+			assert.equal(report.status, 'partial-needs-explicit-allow-partial');
+			assert.equal(report.imported, false);
+			assert.match(report.nextAction, /--allow-partial/u);
+			return true;
+		}
+	);
+	await assert.rejects(readFile(join(deviceRunsDir, 'device-prepare-partial.json'), 'utf8'));
+
+	const partialResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/prepare-scout-local-ai-device-review.mjs',
+			'--run',
+			partialPath,
+			'--device-run-dir',
+			deviceRunsDir,
+			'--review-dir',
+			reviewsDir,
+			'--packet-dir',
+			packetsDir,
+			'--allow-partial',
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 12 }
+	);
+	const partialReport = JSON.parse(partialResult.stdout);
+	assert.equal(partialReport.status, 'prepared-for-partial-diagnostic-review');
+	assert.equal(partialReport.imported, true);
+	assert.equal(partialReport.partial, true);
+	assert.equal(partialReport.reviewStatus.summary.total, 3);
+	assert.equal(partialReport.reviewStatus.readyForStrictDeviceProof, false);
 });
 
 test('Dad Pilot refresh command can attach the target build and update release evidence from verified App Store Connect state', async () => {
