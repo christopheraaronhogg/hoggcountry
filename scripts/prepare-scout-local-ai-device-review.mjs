@@ -4,6 +4,9 @@ import { dirname, relative, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import {
+	inspectDeviceRun
+} from './lib/scout-local-ai-device-run-inspector.mjs';
+import {
 	parseCliArgs
 } from './lib/scout-local-ai-review.mjs';
 
@@ -17,7 +20,6 @@ const DEFAULT_REVIEW_DIR = 'data/scout-local-ai/reviews';
 const DEFAULT_PACKET_DIR = 'data/scout-local-ai/review-packets';
 const DEFAULT_DOWNLOADS_DIR = '~/Downloads';
 const DEFAULT_INBOX_DIR = 'data/scout-local-ai/inbox';
-const SCOUT_SUITE_ID = 'dad-local-ai-100';
 
 const cli = parseCliArgs(process.argv.slice(2));
 const input = cli.run ?? cli.input ?? (cli.latestInbox ? 'inbox' : cli.latestDownload ? 'latest' : null);
@@ -34,16 +36,19 @@ if (!input) {
 	].join('\n'));
 }
 
+const suitePath = resolveInputPath(cli.suite ?? DEFAULT_SUITE);
+const suite = JSON.parse(await readFile(suitePath, 'utf8'));
+const allowPartial = Boolean(cli.allowPartial);
 const selectedInput = await resolveRunInput(input, {
 	downloadsDir: resolveInputPath(cli.downloadsDir ?? DEFAULT_DOWNLOADS_DIR),
-	inboxDir: resolveInputPath(cli.inboxDir ?? DEFAULT_INBOX_DIR)
+	inboxDir: resolveInputPath(cli.inboxDir ?? DEFAULT_INBOX_DIR),
+	suite,
+	allowPartial
 });
 const inputPath = selectedInput.path;
-const suitePath = resolveInputPath(cli.suite ?? DEFAULT_SUITE);
 const deviceRunDir = resolveInputPath(cli.deviceRunDir ?? DEFAULT_DEVICE_RUN_DIR);
 const reviewDir = resolveInputPath(cli.reviewDir ?? DEFAULT_REVIEW_DIR);
 const packetDir = resolveInputPath(cli.packetDir ?? DEFAULT_PACKET_DIR);
-const allowPartial = Boolean(cli.allowPartial);
 const force = Boolean(cli.force);
 
 const inspection = await runJsonScript('scripts/inspect-scout-local-ai-device-run.mjs', [
@@ -146,14 +151,18 @@ async function resolveRunInput(value, options) {
 		return latestScoutEvalRun({
 			dir: options.downloadsDir,
 			mode: 'latest-download',
-			dirLabel: 'downloadsDir'
+			dirLabel: 'downloadsDir',
+			suite: options.suite,
+			allowPartial: options.allowPartial
 		});
 	}
 	if (text === 'inbox' || text === 'latest-inbox' || text === 'latest-inbox-export') {
 		return latestScoutEvalRun({
 			dir: options.inboxDir,
 			mode: 'latest-inbox',
-			dirLabel: 'inboxDir'
+			dirLabel: 'inboxDir',
+			suite: options.suite,
+			allowPartial: options.allowPartial
 		});
 	}
 	const path = resolveInputPath(text);
@@ -166,12 +175,12 @@ async function resolveRunInput(value, options) {
 	};
 }
 
-async function latestScoutEvalRun({ dir, mode, dirLabel }) {
+async function latestScoutEvalRun({ dir, mode, dirLabel, suite, allowPartial }) {
 	const candidates = [];
 	for (const entry of await readdir(dir, { withFileTypes: true })) {
 		if (!entry.isFile() || !entry.name.toLowerCase().endsWith('.json')) continue;
 		const path = resolve(dir, entry.name);
-		const candidate = await readScoutEvalCandidate(path);
+		const candidate = await readScoutEvalCandidate(path, suite);
 		if (!candidate) continue;
 		const stats = await stat(path);
 		candidates.push({
@@ -181,36 +190,59 @@ async function latestScoutEvalRun({ dir, mode, dirLabel }) {
 		});
 	}
 	candidates.sort((left, right) => right.mtimeMs - left.mtimeMs || left.path.localeCompare(right.path));
-	const selected = candidates[0];
+	const latest = candidates[0] ?? null;
+	const selected = candidates.find((candidate) => candidate.readyForFinalIntake) ??
+		(allowPartial ? candidates.find((candidate) => candidate.readyForPartialIntake) : null) ??
+		latest;
 	if (!selected) {
 		throw new Error(`No likely Scout Eval Lab JSON exports found in ${dir}. Pass --run /path/to/<device-export>.json if the file is elsewhere.`);
 	}
+	const finalReadyCount = candidates.filter((candidate) => candidate.readyForFinalIntake).length;
+	const partialDiagnosticCount = candidates.filter((candidate) => candidate.readyForPartialIntake).length;
+	const blockedCandidateCount = candidates.filter((candidate) => !candidate.readyForFinalIntake && !candidate.readyForPartialIntake).length;
 	return {
 		path: selected.path,
 		report: {
 			mode,
 			[dirLabel]: relative(REPO_ROOT, dir),
 			selected: relative(REPO_ROOT, selected.path),
+			selectedIsLatest: latest?.path === selected.path,
+			selectedInspectionStatus: selected.inspectionStatus,
+			selectedReadyForFinalIntake: selected.readyForFinalIntake,
+			selectedReadyForPartialIntake: selected.readyForPartialIntake,
+			latest: latest ? {
+				path: relative(REPO_ROOT, latest.path),
+				runId: latest.runId,
+				caseCount: latest.caseCount,
+				inspectionStatus: latest.inspectionStatus
+			} : null,
 			runId: selected.runId,
 			suiteId: selected.suiteId,
 			caseCount: selected.caseCount,
-			candidateCount: candidates.length
+			candidateCount: candidates.length,
+			finalReadyCount,
+			partialDiagnosticCount,
+			blockedCandidateCount
 		}
 	};
 }
 
-async function readScoutEvalCandidate(path) {
+async function readScoutEvalCandidate(path, suite) {
 	try {
 		const parsed = JSON.parse(await readFile(path, 'utf8'));
 		if (!parsed || typeof parsed !== 'object') return null;
 		if (parsed.schemaVersion !== 1) return null;
-		if (parsed.suiteId !== SCOUT_SUITE_ID) return null;
+		if (parsed.suiteId !== suite.suiteId) return null;
 		if (typeof parsed.runId !== 'string' || !parsed.runId) return null;
 		if (!Array.isArray(parsed.results)) return null;
+		const inspection = inspectDeviceRun({ run: parsed, suite, inputPath: path });
 		return {
 			runId: parsed.runId,
 			suiteId: parsed.suiteId,
-			caseCount: typeof parsed.caseCount === 'number' ? parsed.caseCount : parsed.results.length
+			caseCount: typeof parsed.caseCount === 'number' ? parsed.caseCount : parsed.results.length,
+			inspectionStatus: inspection.status,
+			readyForFinalIntake: inspection.readyForFinalIntake,
+			readyForPartialIntake: inspection.readyForPartialIntake
 		};
 	} catch {
 		return null;
@@ -253,9 +285,18 @@ function formatReport(report) {
 			'',
 			`- ${sourceLabel}: \`${sourceDir}\``,
 			`- Selected: \`${report.input.selected}\``,
+			`- Selected status: ${report.input.selectedInspectionStatus ?? 'not inspected'}`,
+			`- Selected is newest candidate: ${report.input.selectedIsLatest ? 'yes' : 'no'}`,
 			`- Candidate Scout exports: ${report.input.candidateCount}`,
+			`- Final-ready / partial / blocked: ${report.input.finalReadyCount ?? 0}/${report.input.partialDiagnosticCount ?? 0}/${report.input.blockedCandidateCount ?? 0}`,
 			''
 		);
+		if (report.input.latest && !report.input.selectedIsLatest) {
+			lines.push(
+				`- Newest candidate: \`${report.input.latest.path}\` (${report.input.latest.runId}, ${report.input.latest.caseCount} cases, ${report.input.latest.inspectionStatus})`,
+				''
+			);
+		}
 	}
 	if (report.reviewStatus) {
 		lines.push(

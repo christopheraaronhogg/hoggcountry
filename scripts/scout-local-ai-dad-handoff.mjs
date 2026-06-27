@@ -197,6 +197,9 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		status.inbox?.latestCandidate
 			? `- Latest inbox export: \`${status.inbox.latestCandidate.path}\` (${status.inbox.latestCandidate.runId}, ${status.inbox.latestCandidate.caseCount} cases, ${status.inbox.latestCandidate.inspectionStatus ?? 'not inspected'}).`
 			: `- Latest inbox export: none in \`${status.inbox?.path ?? 'data/scout-local-ai/inbox'}\`.`,
+		...(status.inbox?.latestReadyCandidate && status.inbox.latestReadyCandidate.path !== status.inbox.latestCandidate?.path
+			? [`- Latest final-ready inbox export: \`${status.inbox.latestReadyCandidate.path}\` (${status.inbox.latestReadyCandidate.runId}, ${status.inbox.latestReadyCandidate.caseCount} cases, ${status.inbox.latestReadyCandidate.inspectionStatus}).`]
+			: []),
 		`- Dad TestFlight link: ${publicLink}`,
 		`- iOS Release signing: team \`${iosBuild.teamId}\`, profile \`${iosBuild.releaseProfile}\`.`,
 		''

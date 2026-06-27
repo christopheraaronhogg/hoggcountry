@@ -384,6 +384,13 @@ function nextActionFor(
 	if (!gate('device-run')?.ok) {
 		if (inbox?.latestCandidate) {
 			const candidate = inbox.latestCandidate;
+			const readyCandidate = inbox.latestReadyCandidate;
+			if (readyCandidate && readyCandidate.path !== candidate.path) {
+				return {
+					kind: 'prepare-inbox-ready-export',
+					text: `A final-ready Scout Eval Lab export is already in ${inbox.path}: ${readyCandidate.path} (${readyCandidate.runId}, ${readyCandidate.caseCount} cases, ${readyCandidate.inspectionStatus}). The newest inbox file is ${candidate.inspectionStatus}: ${candidate.path} (${candidate.runId}). ${DEVICE_REVIEW_PREP_COMMAND} will select the final-ready export before blocked or partial files.`
+				};
+			}
 			if (candidate.readyForFinalIntake) {
 				return {
 					kind: 'prepare-inbox-export',
@@ -987,6 +994,10 @@ function inboxEvidenceLines(inbox) {
 		const install = candidate.installSource ? `, ${candidate.installSource}` : '';
 		lines.push(`- Inbox final-ready exports: ${inbox.readyForFinalIntakeCount ?? 0}; partial diagnostics: ${inbox.partialDiagnosticCount ?? 0}; blocked: ${inbox.blockedCandidateCount ?? 0}`);
 		lines.push(`- Latest inbox export: \`${candidate.path}\` (${candidate.runId}, ${candidate.caseCount} cases${app}${install}, ${candidate.inspectionStatus ?? 'not inspected'})`);
+		if (inbox.latestReadyCandidate && inbox.latestReadyCandidate.path !== candidate.path) {
+			const ready = inbox.latestReadyCandidate;
+			lines.push(`- Latest final-ready inbox export: \`${ready.path}\` (${ready.runId}, ${ready.caseCount} cases, ${ready.inspectionStatus})`);
+		}
 		if (candidate.blockingReasons?.length) {
 			lines.push(`- Latest inbox block: ${candidate.blockingReasons.join('; ')}`);
 		}

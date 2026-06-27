@@ -348,6 +348,73 @@ test('status command blocks stale inbox exports before review work starts', asyn
 	assert.match(status.nextAction.text, /Do not rate it/u);
 });
 
+test('status command prefers an older final-ready inbox export over a newer blocked export', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-mixed-inbox-'));
+	const runsDir = join(outputDir, 'runs');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const inboxDir = join(outputDir, 'inbox');
+	const reviewsDir = join(outputDir, 'reviews');
+	await mkdir(runsDir, { recursive: true });
+	await mkdir(inboxDir, { recursive: true });
+	const routingRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'routing-status-mixed-inbox',
+		completeTools: true
+	});
+	routingRun.evidenceLane = 'scaffold-not-model';
+	routingRun.runContext = null;
+	for (const result of routingRun.results) result.answerOrigin = 'scaffold-not-model';
+	await writeFile(join(runsDir, 'routing-status-mixed-inbox.json'), `${JSON.stringify(routingRun, null, 2)}\n`);
+	const readyRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-status-inbox-ready-older',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	const staleRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-status-inbox-stale-newer',
+		completeTools: true,
+		runContext: finalDeviceRunContext(),
+		suiteVersion: '2026-01-01.1',
+		suiteHash: 'fnv1a32:oldhash'
+	});
+	const readyPath = join(inboxDir, 'AirDrop Hoggcountry ready older.json');
+	const stalePath = join(inboxDir, 'AirDrop Hoggcountry stale newer.json');
+	await writeFile(readyPath, `${JSON.stringify(readyRun, null, 2)}\n`);
+	await writeFile(stalePath, `${JSON.stringify(staleRun, null, 2)}\n`);
+	await utimes(readyPath, new Date('2026-06-27T02:00:00Z'), new Date('2026-06-27T02:00:00Z'));
+	await utimes(stalePath, new Date('2026-06-27T03:00:00Z'), new Date('2026-06-27T03:00:00Z'));
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai.mjs',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--inbox-dir',
+			inboxDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const status = JSON.parse(result.stdout);
+
+	assert.equal(status.inbox.candidateCount, 2);
+	assert.equal(status.inbox.readyForFinalIntakeCount, 1);
+	assert.equal(status.inbox.blockedCandidateCount, 1);
+	assert.equal(status.inbox.latestCandidate.runId, 'device-status-inbox-stale-newer');
+	assert.equal(status.inbox.latestCandidate.inspectionStatus, 'stale-suite');
+	assert.equal(status.inbox.latestReadyCandidate.runId, 'device-status-inbox-ready-older');
+	assert.equal(status.nextAction.kind, 'prepare-inbox-ready-export');
+	assert.match(status.nextAction.text, /final-ready Scout Eval Lab export is already/u);
+	assert.match(status.nextAction.text, /device-status-inbox-ready-older/u);
+	assert.match(status.nextAction.text, /newest inbox file is stale-suite/u);
+	assert.match(status.nextAction.text, /will select the final-ready export/u);
+});
+
 test('status command surfaces partial TestFlight iPhone runs without counting them as final proof', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-partial-device-'));
@@ -1227,6 +1294,73 @@ test('device review preparation command can select the latest Scout export from 
 		'device-prepare-inbox-latest'
 	);
 	await assert.rejects(readFile(join(deviceRunsDir, 'device-prepare-inbox-older.json'), 'utf8'));
+});
+
+test('device review preparation command prefers a final-ready inbox export over a newer blocked export', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-device-prepare-mixed-inbox-'));
+	const inboxDir = join(outputDir, 'inbox');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	const packetsDir = join(outputDir, 'review-packets');
+	await mkdir(inboxDir, { recursive: true });
+
+	const readyPath = join(inboxDir, 'AirDrop Hoggcountry ready older.json');
+	const stalePath = join(inboxDir, 'AirDrop Hoggcountry stale newer.json');
+	const readyRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-prepare-inbox-ready-older',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	const staleRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-prepare-inbox-stale-newer',
+		completeTools: true,
+		runContext: finalDeviceRunContext(),
+		suiteVersion: '2026-01-01.1',
+		suiteHash: 'fnv1a32:oldhash'
+	});
+	await writeFile(readyPath, `${JSON.stringify(readyRun, null, 2)}\n`);
+	await writeFile(stalePath, `${JSON.stringify(staleRun, null, 2)}\n`);
+	await utimes(readyPath, new Date('2026-06-27T02:00:00Z'), new Date('2026-06-27T02:00:00Z'));
+	await utimes(stalePath, new Date('2026-06-27T03:00:00Z'), new Date('2026-06-27T03:00:00Z'));
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/prepare-scout-local-ai-device-review.mjs',
+			'--run',
+			'inbox',
+			'--inbox-dir',
+			inboxDir,
+			'--device-run-dir',
+			deviceRunsDir,
+			'--review-dir',
+			reviewsDir,
+			'--packet-dir',
+			packetsDir,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 12 }
+	);
+	const report = JSON.parse(result.stdout);
+
+	assert.equal(report.status, 'prepared-for-final-review');
+	assert.equal(report.input.mode, 'latest-inbox');
+	assert.equal(report.input.runId, 'device-prepare-inbox-ready-older');
+	assert.equal(report.input.candidateCount, 2);
+	assert.equal(report.input.finalReadyCount, 1);
+	assert.equal(report.input.blockedCandidateCount, 1);
+	assert.equal(report.input.selectedInspectionStatus, 'ready-for-final-intake');
+	assert.equal(report.input.selectedIsLatest, false);
+	assert.match(report.input.selected, /AirDrop Hoggcountry ready older\.json/u);
+	assert.match(report.input.latest.path, /AirDrop Hoggcountry stale newer\.json/u);
+	assert.equal(report.input.latest.runId, 'device-prepare-inbox-stale-newer');
+	assert.equal(report.input.latest.inspectionStatus, 'stale-suite');
+	assert.equal(
+		JSON.parse(await readFile(join(deviceRunsDir, 'device-prepare-inbox-ready-older.json'), 'utf8')).runId,
+		'device-prepare-inbox-ready-older'
+	);
+	await assert.rejects(readFile(join(deviceRunsDir, 'device-prepare-inbox-stale-newer.json'), 'utf8'));
 });
 
 test('device review preparation command refuses stale and implicit partial exports', async () => {
