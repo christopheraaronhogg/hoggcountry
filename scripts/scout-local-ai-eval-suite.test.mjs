@@ -573,10 +573,37 @@ test('status command follows existing below-5 backlog and iteration plan', async
 });
 
 test('goal audit maps original success criteria without hiding missing device proof', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-goal-audit-'));
+	const runsDir = join(outputDir, 'runs');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	const backlogDir = join(outputDir, 'backlog');
+	const iterationsDir = join(outputDir, 'iterations');
+	await mkdir(runsDir, { recursive: true });
+	const routingRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'routing-goal-audit-proof',
+		completeTools: true
+	});
+	routingRun.evidenceLane = 'scaffold-not-model';
+	routingRun.runContext = null;
+	for (const result of routingRun.results) result.answerOrigin = 'scaffold-not-model';
+	await writeFile(join(runsDir, 'routing-goal-audit-proof.json'), `${JSON.stringify(routingRun, null, 2)}\n`);
+
 	const result = await execFileAsync(
 		process.execPath,
 		[
 			'scripts/audit-scout-local-ai-goal.mjs',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--backlog-dir',
+			backlogDir,
+			'--iterations-dir',
+			iterationsDir,
 			'--json'
 		],
 		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 4 }
