@@ -1732,6 +1732,7 @@ test('device review preparation command inspects, imports, and reports review st
 	assert.match(packet, /--packet .*device-prepare-final\.review\.md/u);
 	assert.match(report.nextAction, /review-status:scout-local-ai/u);
 	assert.match(report.nextAction, /--packet .*device-prepare-final\.review\.md/u);
+	assert.match(report.nextAction, /--next/u);
 	assert.match(report.nextAction, /finalize-review:scout-local-ai/u);
 	assert.match(report.nextAction, /device-prepare-final\.review\.md/u);
 	assert.match(report.nextAction, /device-prepare-final\.review\.json/u);
@@ -2698,7 +2699,10 @@ test('single-case rating command updates packet without touching review JSON', a
 	assert.match(updateResult.stdout, /Scout local AI review packet case updated/u);
 	assert.match(updateResult.stdout, new RegExp(`Case: ${firstCaseId}`, 'u'));
 	assert.match(updateResult.stdout, /Rating: 5/u);
+	assert.match(updateResult.stdout, /Selected focused check:/u);
+	assert.match(updateResult.stdout, new RegExp(`--case ${firstCaseId}`, 'u'));
 	assert.match(updateResult.stdout, /Next focused check:/u);
+	assert.match(updateResult.stdout, /--next/u);
 	assert.match(packet, new RegExp(`## ${firstCaseId} - [\\s\\S]*?- Rating: 5[\\s\\S]*?- Notes: Dad-ready answer\\.`, 'u'));
 	assert.match(packet, new RegExp(`## ${firstCaseId} - [\\s\\S]*?- passed: true \\| text:`, 'u'));
 	assert.match(packet, new RegExp(`## ${secondCaseId} - [\\s\\S]*?- Rating:\\s*(?:\\n|$)`, 'u'));
@@ -2727,6 +2731,27 @@ test('single-case rating command updates packet without touching review JSON', a
 	assert.equal(progress.selectedCase.notes, 'Dad-ready answer.');
 	assert.equal(progress.selectedCase.traitChecks.every((check) => check.passed === true), true);
 	assert.equal(progress.selectedCase.safetyCaveatChecks.every((check) => check.passed === true), true);
+
+	const nextStatusResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			join(outputDir, 'device-runs', 'device-rate-case.json'),
+			'--review',
+			reviewPath,
+			'--packet',
+			packetPath,
+			'--next',
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const nextProgress = JSON.parse(nextStatusResult.stdout);
+
+	assert.equal(nextProgress.nextFocusCase.caseId, secondCaseId);
+	assert.equal(nextProgress.selectedCase.caseId, secondCaseId);
+	assert.equal(nextProgress.selectedCaseSource, 'next-focus-case');
 
 	const packetBeforeInvalidUpdate = await readFile(packetPath, 'utf8');
 	await assert.rejects(

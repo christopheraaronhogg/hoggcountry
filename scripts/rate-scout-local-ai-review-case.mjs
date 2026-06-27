@@ -54,7 +54,11 @@ console.log(`Packet: ${relative(REPO_ROOT, packetPath)}`);
 console.log(`Case: ${validation.caseId}`);
 console.log(`Rating: ${validation.rating ?? 'unrated'}`);
 console.log(`Notes: ${validation.notes || 'blank'}`);
-console.log(`Next focused check: npm run review-status:scout-local-ai -- --run ${relative(REPO_ROOT, resolveInputPath(cli.run ?? review.runPath))} --review ${relative(REPO_ROOT, reviewPath)} --packet ${relative(REPO_ROOT, packetPath)} --case ${validation.caseId}`);
+const reviewStatusCommand = `npm run review-status:scout-local-ai -- --run ${relative(REPO_ROOT, resolveInputPath(cli.run ?? review.runPath))} --review ${relative(REPO_ROOT, reviewPath)} --packet ${relative(REPO_ROOT, packetPath)}`;
+console.log(`Selected focused check: ${reviewStatusCommand} --case ${validation.caseId}`);
+if (!cli.dryRun) {
+	console.log(`Next focused check: ${reviewStatusCommand} --next`);
+}
 
 function updatePacketCase(markdown, input) {
 	const caseId = String(input.case).trim();

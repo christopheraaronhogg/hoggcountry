@@ -130,7 +130,7 @@ writeOutput({
 	acceptance: buildReviewAcceptance({ inspection, canImportFinal, canImportPartial }),
 	reviewStatus,
 	importOutput: importOutput.trim().split(/\r?\n/u).filter(Boolean),
-	nextAction: `Fill ${relativePacketPath}, then preview draft progress with npm run review-status:scout-local-ai -- --run ${relativeImportedRunPath} --review ${relativeReviewPath} --packet ${relativePacketPath}. When the packet is fully rated, run npm run finalize-review:scout-local-ai -- --packet ${relativePacketPath} --run ${relativeImportedRunPath} --review ${relativeReviewPath}.`
+	nextAction: `Open the next focused review card with npm run review-status:scout-local-ai -- --run ${relativeImportedRunPath} --review ${relativeReviewPath} --packet ${relativePacketPath} --next, fill ${relativePacketPath}, then rerun that --next command until every case is rated. When the packet is fully rated, run npm run finalize-review:scout-local-ai -- --packet ${relativePacketPath} --run ${relativeImportedRunPath} --review ${relativeReviewPath}.`
 });
 
 async function runJsonScript(script, args) {

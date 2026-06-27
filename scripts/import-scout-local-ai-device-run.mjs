@@ -83,6 +83,7 @@ if (validation.warnings.length) {
 	for (const warning of validation.warnings.slice(0, 8)) console.log(`- ${warning}`);
 }
 console.log(`Progress check: npm run review-status:scout-local-ai -- --run ${relative(REPO_ROOT, importedRunPath)} --review ${relative(REPO_ROOT, reviewPath)} --packet ${relative(REPO_ROOT, packetPath)}`);
+console.log(`Next focused card: npm run review-status:scout-local-ai -- --run ${relative(REPO_ROOT, importedRunPath)} --review ${relative(REPO_ROOT, reviewPath)} --packet ${relative(REPO_ROOT, packetPath)} --next`);
 console.log(`Next: npm run review:scout-local-ai -- --run ${relative(REPO_ROOT, importedRunPath)} --review ${relative(REPO_ROOT, reviewPath)}`);
 
 function validateDeviceRun(run, suite, options) {

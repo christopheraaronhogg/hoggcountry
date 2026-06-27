@@ -242,7 +242,9 @@ npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<r
 After reading the focused card, you can update just that case in the Markdown
 packet without touching review JSON yet. For a 5/5, pass `--mark-all-pass` only
 after you have checked every trait, safety caveat, confirmation, and safety flag
-for that case:
+for that case. After a successful update, the command prints both a focused
+check for the selected case and a `--next` command that advances to the next
+unrated or below-5 answer:
 
 ```sh
 npm run rate-case:scout-local-ai -- --packet data/scout-local-ai/review-packets/<run-id>.review.md --review data/scout-local-ai/reviews/<run-id>.review.json --case DLA-001 --rating 5 --notes "Dad-ready answer." --mark-all-pass

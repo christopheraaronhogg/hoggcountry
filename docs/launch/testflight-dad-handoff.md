@@ -127,6 +127,10 @@ earned the rating:
 npm run rate-case:scout-local-ai -- --packet data/scout-local-ai/review-packets/<run-id>.review.md --review data/scout-local-ai/reviews/<run-id>.review.json --case DLA-001 --rating 5 --mark-all-pass
 ```
 
+After each successful `rate-case` update, use the printed `Next focused check`
+command. It reruns `review-status` with `--next`, so the review naturally moves
+to the next unrated case and then loops back through any below-5 fixes.
+
 ## Proof To Capture
 
 - Signing proof: selected team id, `security find-identity` result, and
