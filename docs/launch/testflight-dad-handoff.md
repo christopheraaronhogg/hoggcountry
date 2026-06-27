@@ -144,6 +144,9 @@ npm run rate-case:scout-local-ai -- --packet data/scout-local-ai/review-packets/
 After each successful `rate-case` update, use the printed `Next focused check`
 command. It reruns `review-status` with `--next`, so the review naturally moves
 to the next unrated case and then loops back through any below-5 fixes.
+When `review-status` prints `Human-reviewed batch helpers`, treat those as
+reading groups only: read every listed focused card first, then use the printed
+batch command if each answer has honestly earned 5/5.
 
 When several answers have already been read and are clearly Dad-ready, update an
 explicit human-reviewed batch with the same command:

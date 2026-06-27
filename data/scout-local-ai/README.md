@@ -264,6 +264,11 @@ command templates when a packet path is available:
 npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json --packet data/scout-local-ai/review-packets/<run-id>.review.md --next
 ```
 
+When a packet has multiple standard unrated cases, `review-status` also prints
+small human-reviewed batch helpers. They group explicit case ids and produce a
+ready `--cases` command, but they are only for answers you have already read.
+Use `--batch-size <n>` when you want shorter or longer suggested reading groups.
+
 After reading the focused card, you can update just that case in the Markdown
 packet without touching review JSON yet. For a 5/5, pass `--mark-all-pass` only
 after you have checked every trait, safety caveat, confirmation, and safety flag

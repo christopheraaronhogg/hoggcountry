@@ -4856,6 +4856,84 @@ test('review status command can preview draft packet progress without writing re
 	assert.match(selectedTextResult.stdout, /npm run review-status:scout-local-ai.*--next/u);
 });
 
+test('review status command suggests explicit human-reviewed packet batches', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-status-batches-'));
+	const inputPath = join(outputDir, 'device-export.json');
+	const run = deviceRunForCases(suite, suite.cases.slice(0, 4), {
+		runId: 'device-review-status-batches',
+		completeTools: true
+	});
+	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
+	await execFileAsync(
+		process.execPath,
+		[
+			'scripts/import-scout-local-ai-device-run.mjs',
+			'--run',
+			inputPath,
+			'--allow-partial',
+			'--device-run-dir',
+			join(outputDir, 'device-runs'),
+			'--review-dir',
+			join(outputDir, 'reviews'),
+			'--packet-dir',
+			join(outputDir, 'review-packets')
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+
+	const runPath = join(outputDir, 'device-runs', 'device-review-status-batches.json');
+	const reviewPath = join(outputDir, 'reviews', 'device-review-status-batches.review.json');
+	const packetPath = join(outputDir, 'review-packets', 'device-review-status-batches.review.md');
+	const expectedCases = run.results.slice(0, 3).map((entry) => entry.caseId);
+	const jsonResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			runPath,
+			'--review',
+			reviewPath,
+			'--packet',
+			packetPath,
+			'--batch-size',
+			'3',
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const progress = JSON.parse(jsonResult.stdout);
+
+	assert.ok(progress.reviewBatches.length >= 1);
+	assert.deepEqual(progress.reviewBatches[0].caseIds, expectedCases);
+	assert.match(progress.reviewBatches[0].readFirstFocusedCheck, new RegExp(`--case ${expectedCases[0]}`, 'u'));
+	assert.match(progress.reviewBatches[0].rateFiveAfterReading, /rate-case:scout-local-ai/u);
+	assert.match(progress.reviewBatches[0].rateFiveAfterReading, new RegExp(`--cases ${expectedCases.join(',')}`, 'u'));
+	assert.match(progress.reviewBatches[0].rateFiveAfterReading, /--mark-all-pass/u);
+
+	const textResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			runPath,
+			'--review',
+			reviewPath,
+			'--packet',
+			packetPath,
+			'--batch-size',
+			'3'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+
+	assert.match(textResult.stdout, /## Human-reviewed batch helpers/u);
+	assert.match(textResult.stdout, /Use these only after reading every listed focused card/u);
+	assert.match(textResult.stdout, new RegExp(`--cases ${expectedCases.join(',')}`, 'u'));
+	assert.match(textResult.stdout, /--rating 5/u);
+	assert.match(textResult.stdout, /--mark-all-pass/u);
+});
+
 test('review status command reports packet parse errors without touching review JSON', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-status-packet-invalid-'));

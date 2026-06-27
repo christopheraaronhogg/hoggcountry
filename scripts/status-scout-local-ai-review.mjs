@@ -32,6 +32,7 @@ if (!cli.run || !cli.review) {
 		'Optional: --packet data/scout-local-ai/review-packets/<run-id>.review.md to preview draft packet progress without writing review JSON.',
 		'Optional: --case DLA-001 to print a focused read-only review card for one case.',
 		'Optional: --next to select the next unrated case, then the next below-5 focus case.',
+		'Optional: --batch-size 5 to control human-reviewed batch helper size.',
 		'Add --json for machine-readable progress.'
 	].join('\n'));
 }
@@ -52,6 +53,7 @@ const progress = buildReviewProgress({
 	packetDraft,
 	selectedCaseId: cli.case ?? cli.caseId,
 	selectNextCase: Boolean(cli.next),
+	reviewBatchSize: parseReviewBatchSize(cli.batchSize),
 	paths: { suitePath, runPath, reviewPath, packetPath }
 });
 
@@ -87,7 +89,7 @@ async function buildPacketDraft({ packetPath, review }) {
 	}
 }
 
-function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, selectNextCase, paths }) {
+function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, selectNextCase, reviewBatchSize, paths }) {
 	const summary = Array.isArray(review?.cases)
 		? summarizeReview(review)
 		: emptyReviewSummary();
@@ -159,6 +161,11 @@ function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, 
 			paths: relativePaths
 		})
 		: null;
+	const reviewBatches = buildHumanReviewBatchSuggestions({
+		queue,
+		paths: relativePaths,
+		batchSize: reviewBatchSize
+	});
 	const fiveStar = summary.ratingCounts['5'] ?? 0;
 	const fullDeviceRun = run.evidenceLane === 'device-on-device-gemma' && run.caseCount === run.totalSuiteCases;
 	const readyForBacklog = invalidEntries.length === 0 && summary.unrated === 0;
@@ -205,6 +212,7 @@ function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, 
 		nextFocusCase,
 		selectedCase,
 		selectedCaseSource: selectedCase ? selectedCaseSource : null,
+		reviewBatches,
 		triageSummary: summarizeReviewTriage(queue),
 		reviewQueue: queue,
 		nextAction: nextAction({
@@ -221,6 +229,15 @@ function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, 
 			packetDraft
 		})
 	};
+}
+
+function parseReviewBatchSize(value) {
+	if (value === undefined) return 5;
+	const parsed = Number.parseInt(String(value), 10);
+	if (!Number.isInteger(parsed) || parsed < 0) {
+		throw new Error('--batch-size must be a non-negative integer.');
+	}
+	return parsed;
 }
 
 function buildSelectedCase({ caseId, run, reviewByCaseId, queue, paths }) {
@@ -317,6 +334,85 @@ function buildSelectedCaseRatingCommands({ caseId, paths, suggestedFailureCatego
 		nextFocusedCheck: `${reviewStatusBase} --next`,
 		rateFive: `${base} --rating 5 --notes ${shellArg('Dad-ready answer.')} --mark-all-pass`,
 		rateBelowFive: `${base} --rating 4 --notes ${shellArg('Describe what is missing.')} --failure-categories ${shellArg(failureCategories)} --owner-layer ${shellArg(ownerLayer)} --improvement-task ${shellArg('Add or fix the responsible data/tool/prompt/UI layer.')}`
+	};
+}
+
+function buildHumanReviewBatchSuggestions({ queue, paths, batchSize }) {
+	if (!paths?.packet || batchSize < 2) return [];
+	const candidates = queue.filter((item) =>
+		item.unrated &&
+		item.signal === 'standard' &&
+		!(item.missingTools ?? []).length &&
+		!(item.sourceEvidenceGapExpectations ?? []).length
+	);
+	if (candidates.length < 2) return [];
+
+	const reviewStatusBase = [
+		'npm run review-status:scout-local-ai --',
+		'--run',
+		shellArg(paths.run),
+		'--review',
+		shellArg(paths.review),
+		'--packet',
+		shellArg(paths.packet)
+	].join(' ');
+	const batchBase = [
+		'npm run rate-case:scout-local-ai --',
+		'--packet',
+		shellArg(paths.packet),
+		'--review',
+		shellArg(paths.review),
+		'--run',
+		shellArg(paths.run)
+	].join(' ');
+
+	const byDomain = new Map();
+	for (const candidate of candidates) {
+		const key = candidate.domain || 'mixed';
+		byDomain.set(key, [...(byDomain.get(key) ?? []), candidate]);
+	}
+
+	const suggestions = [];
+	for (const [domain, items] of [...byDomain.entries()].sort((left, right) => {
+		if (right[1].length !== left[1].length) return right[1].length - left[1].length;
+		return left[0].localeCompare(right[0]);
+	})) {
+		if (items.length < 2) continue;
+		const selected = items.slice(0, batchSize);
+		suggestions.push(reviewBatchSuggestion({
+			label: `${domain} standard unrated cases`,
+			items: selected,
+			reviewStatusBase,
+			batchBase
+		}));
+		if (suggestions.length >= 3) break;
+	}
+
+	if (!suggestions.length && candidates.length >= 2) {
+		suggestions.push(reviewBatchSuggestion({
+			label: 'standard unrated cases',
+			items: candidates.slice(0, batchSize),
+			reviewStatusBase,
+			batchBase
+		}));
+	}
+
+	return suggestions;
+}
+
+function reviewBatchSuggestion({ label, items, reviewStatusBase, batchBase }) {
+	const caseIds = items.map((item) => item.caseId);
+	return {
+		label,
+		caseIds,
+		count: caseIds.length,
+		readFirstFocusedCheck: `${reviewStatusBase} --case ${shellArg(caseIds[0])}`,
+		nextFocusedCheck: `${reviewStatusBase} --next`,
+		rateFiveAfterReading: `${batchBase} --cases ${shellArg(caseIds.join(','))} --rating 5 --notes ${shellArg('Dad-ready answer.')} --mark-all-pass`,
+		promptPreviews: items.map((item) => ({
+			caseId: item.caseId,
+			promptPreview: item.promptPreview
+		}))
 	};
 }
 
@@ -472,6 +568,28 @@ function formatReviewProgress(progress) {
 
 	if (progress.selectedCase) {
 		lines.push(...formatSelectedCase(progress.selectedCase));
+	}
+
+	if (progress.reviewBatches?.length) {
+		lines.push('## Human-reviewed batch helpers', '');
+		lines.push('Use these only after reading every listed focused card. They update the Markdown packet, not final review JSON.', '');
+		for (const [index, batch] of progress.reviewBatches.entries()) {
+			lines.push(`### Batch ${index + 1}: ${batch.label}`, '');
+			lines.push(`- Cases: ${batch.caseIds.join(', ')}`);
+			lines.push('- Prompt previews:');
+			for (const preview of batch.promptPreviews) {
+				lines.push(`  - ${preview.caseId}: ${preview.promptPreview}`);
+			}
+			lines.push('- Read first focused card:');
+			lines.push('```sh');
+			lines.push(batch.readFirstFocusedCheck);
+			lines.push('```');
+			lines.push('- Rate 5/5 after reading every listed case:');
+			lines.push('```sh');
+			lines.push(batch.rateFiveAfterReading);
+			lines.push('```');
+			lines.push('');
+		}
 	}
 
 	lines.push('## Triage summary', '');
