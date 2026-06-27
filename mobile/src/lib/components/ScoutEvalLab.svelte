@@ -402,6 +402,7 @@
 	}
 
 	function clearSavedRun() {
+		if (savedRun && !confirmClearSavedRun(savedRun)) return;
 		try {
 			localStorage.removeItem(SAVED_RUN_KEY);
 		} catch {
@@ -412,6 +413,13 @@
 			run = null;
 			progress = null;
 		}
+	}
+
+	function confirmClearSavedRun(currentRun: ScoutLocalAiEvalRun): boolean {
+		if (typeof window === 'undefined' || typeof window.confirm !== 'function') return true;
+		const target = currentRun.filters?.limit ?? currentRun.totalSuiteCases;
+		const kind = suite && isFullFinalRun(currentRun, suite) ? 'final Run 100 export' : 'saved eval run';
+		return window.confirm(`Clear this ${kind}? ${currentRun.caseCount}/${target} answers are saved on this phone. Share or download it first if Chris may need it.`);
 	}
 
 	function parseSavedRun(text: string): ScoutLocalAiEvalRun | null {
