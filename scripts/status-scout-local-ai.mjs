@@ -6,6 +6,9 @@ import {
 	verifyScoutLocalAiDeviceProof
 } from './lib/scout-local-ai-device-proof.mjs';
 import {
+	inspectDeviceRun
+} from './lib/scout-local-ai-device-run-inspector.mjs';
+import {
 	parseCliArgs,
 	summarizeReview
 } from './lib/scout-local-ai-review.mjs';
@@ -71,7 +74,7 @@ async function buildStatus(paths) {
 	const reviews = await loadJsonFiles(paths.reviewsDir);
 	const backlogs = await loadJsonFiles(paths.backlogDir);
 	const iterationFiles = await loadJsonFiles(paths.iterationsDir);
-	const inbox = await summarizeInbox(paths.inboxDir);
+	const inbox = await summarizeInbox(paths.inboxDir, suite);
 	const iosBuild = await readOptionalIosBuildSettings(paths.xcodeProjectPath);
 	const releaseEvidence = await readOptionalJson(paths.releaseEvidencePath);
 	const testflight = summarizeTestFlightTarget({ iosBuild, releaseEvidence, finalProof, paths });
@@ -381,9 +384,24 @@ function nextActionFor(
 	if (!gate('device-run')?.ok) {
 		if (inbox?.latestCandidate) {
 			const candidate = inbox.latestCandidate;
+			if (candidate.readyForFinalIntake) {
+				return {
+					kind: 'prepare-inbox-export',
+					text: `A likely Scout Eval Lab export is already in ${inbox.path}: ${candidate.path} (${candidate.runId}, ${candidate.caseCount} cases, ${candidate.inspectionStatus}). Inspect and import it with ${DEVICE_REVIEW_PREP_COMMAND}, and do not count it as final Dad proof until intake creates a current full device-on-device-gemma run.`
+				};
+			}
+			if (candidate.readyForPartialIntake) {
+				return {
+					kind: 'finish-inbox-export',
+					text: `The latest inbox export is only a partial diagnostic: ${candidate.path} (${candidate.runId}, ${candidate.caseCount} cases, ${candidate.inspectionStatus}). Finish Run 100 on the phone, Share the final JSON, then prepare review with ${DEVICE_REVIEW_PREP_COMMAND}. Import this partial only with --allow-partial if you are debugging an interrupted run.`
+				};
+			}
+			const reasons = candidate.blockingReasons?.length
+				? ` Blocking reason(s): ${candidate.blockingReasons.join('; ')}.`
+				: '';
 			return {
-				kind: 'prepare-inbox-export',
-				text: `A likely Scout Eval Lab export is already in ${inbox.path}: ${candidate.path} (${candidate.runId}, ${candidate.caseCount} cases). Inspect and import it with ${DEVICE_REVIEW_PREP_COMMAND}. If inspection blocks it, fix that export or rerun Run 100 on the phone; do not count it as final Dad proof until intake creates a current full device-on-device-gemma run.`
+				kind: 'fix-inbox-export',
+				text: `The latest inbox export is blocked before review: ${candidate.path} (${candidate.runId}, ${candidate.caseCount} cases, ${candidate.inspectionStatus}).${reasons} Fix that export or rerun Run 100 on the phone, then prepare review with ${DEVICE_REVIEW_PREP_COMMAND}. Do not rate it until inspection says ready-for-final-intake.`
 			};
 		}
 		const latestPartialRun = currentPartialDeviceRuns.at(-1)?.value;
@@ -712,16 +730,20 @@ function hasCompleteSourceEvidence(run) {
 	return sourceEvidence.missingSourceEvidenceCases === 0;
 }
 
-async function summarizeInbox(dir) {
+async function summarizeInbox(dir, suite) {
 	if (!(await exists(dir))) {
 		return {
 			path: relative(REPO_ROOT, dir),
 			exists: false,
 			jsonFileCount: 0,
 			candidateCount: 0,
+			readyForFinalIntakeCount: 0,
+			partialDiagnosticCount: 0,
+			blockedCandidateCount: 0,
 			ignoredFileCount: 0,
 			unreadableCount: 0,
-			latestCandidate: null
+			latestCandidate: null,
+			latestReadyCandidate: null
 		};
 	}
 	const candidates = [];
@@ -737,7 +759,7 @@ async function summarizeInbox(dir) {
 		}
 		jsonFileCount += 1;
 		const stats = await stat(path);
-		const parsed = await readScoutEvalCandidate(path);
+		const parsed = await readScoutEvalCandidate(path, suite);
 		if (!parsed.readable) {
 			unreadableCount += 1;
 			continue;
@@ -754,18 +776,23 @@ async function summarizeInbox(dir) {
 	}
 	candidates.sort((left, right) => right.mtimeMs - left.mtimeMs || left.path.localeCompare(right.path));
 	const latest = candidates[0] ?? null;
+	const latestReady = candidates.find((candidate) => candidate.readyForFinalIntake) ?? null;
 	return {
 		path: relative(REPO_ROOT, dir),
 		exists: true,
 		jsonFileCount,
 		candidateCount: candidates.length,
+		readyForFinalIntakeCount: candidates.filter((candidate) => candidate.readyForFinalIntake).length,
+		partialDiagnosticCount: candidates.filter((candidate) => candidate.readyForPartialIntake).length,
+		blockedCandidateCount: candidates.filter((candidate) => !candidate.readyForFinalIntake && !candidate.readyForPartialIntake).length,
 		ignoredFileCount,
 		unreadableCount,
-		latestCandidate: latest ? withoutMtime(latest) : null
+		latestCandidate: latest ? withoutMtime(latest) : null,
+		latestReadyCandidate: latestReady ? withoutMtime(latestReady) : null
 	};
 }
 
-async function readScoutEvalCandidate(path) {
+async function readScoutEvalCandidate(path, suite) {
 	try {
 		const parsed = await readJson(path);
 		if (!parsed || typeof parsed !== 'object') return { readable: true, candidate: null };
@@ -774,6 +801,12 @@ async function readScoutEvalCandidate(path) {
 		if (typeof parsed.runId !== 'string' || !parsed.runId) return { readable: true, candidate: null };
 		if (!Array.isArray(parsed.results)) return { readable: true, candidate: null };
 		const app = parsed.runContext?.app ?? {};
+		const inspection = inspectDeviceRun({ run: parsed, suite, inputPath: path });
+		const blockingReasons = [
+			...inspection.structuralErrors,
+			...inspection.staleReasons,
+			...inspection.contextProblems
+		];
 		return {
 			readable: true,
 			candidate: {
@@ -787,7 +820,15 @@ async function readScoutEvalCandidate(path) {
 				appVersion: app.version ?? null,
 				appBuild: app.build ?? null,
 				installSource: installSourceLabel(parsed.runContext?.installSource),
-				generatedAt: parsed.generatedAt ?? '<missing>'
+				generatedAt: parsed.generatedAt ?? '<missing>',
+				inspectionStatus: inspection.status,
+				readyForFinalIntake: inspection.readyForFinalIntake,
+				readyForPartialIntake: inspection.readyForPartialIntake,
+				blockingReasonCount: blockingReasons.length,
+				blockingReasons: blockingReasons.slice(0, 6),
+				warningCount: inspection.warningCount,
+				missingSourceEvidenceCases: inspection.summary.missingSourceEvidenceCases,
+				errorCases: inspection.summary.errorCases
 			}
 		};
 	} catch {
@@ -944,7 +985,11 @@ function inboxEvidenceLines(inbox) {
 			? `, app ${candidate.appVersion} (${candidate.appBuild})`
 			: '';
 		const install = candidate.installSource ? `, ${candidate.installSource}` : '';
-		lines.push(`- Latest inbox export: \`${candidate.path}\` (${candidate.runId}, ${candidate.caseCount} cases${app}${install})`);
+		lines.push(`- Inbox final-ready exports: ${inbox.readyForFinalIntakeCount ?? 0}; partial diagnostics: ${inbox.partialDiagnosticCount ?? 0}; blocked: ${inbox.blockedCandidateCount ?? 0}`);
+		lines.push(`- Latest inbox export: \`${candidate.path}\` (${candidate.runId}, ${candidate.caseCount} cases${app}${install}, ${candidate.inspectionStatus ?? 'not inspected'})`);
+		if (candidate.blockingReasons?.length) {
+			lines.push(`- Latest inbox block: ${candidate.blockingReasons.join('; ')}`);
+		}
 		return lines;
 	}
 	lines.push(`- Latest inbox export: none; drop Dad's shared JSON into \`${path}\``);

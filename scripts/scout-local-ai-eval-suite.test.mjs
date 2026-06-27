@@ -260,6 +260,9 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(status.inbox.exists, true);
 	assert.equal(status.inbox.jsonFileCount, 2);
 	assert.equal(status.inbox.candidateCount, 1);
+	assert.equal(status.inbox.readyForFinalIntakeCount, 1);
+	assert.equal(status.inbox.partialDiagnosticCount, 0);
+	assert.equal(status.inbox.blockedCandidateCount, 0);
 	assert.equal(status.inbox.ignoredFileCount, 1);
 	assert.equal(status.inbox.latestCandidate.runId, 'device-status-inbox-latest');
 	assert.equal(status.inbox.latestCandidate.caseCount, 100);
@@ -267,12 +270,82 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(status.inbox.latestCandidate.appVersion, '1.0');
 	assert.equal(status.inbox.latestCandidate.appBuild, '13');
 	assert.equal(status.inbox.latestCandidate.installSource, 'testflight');
+	assert.equal(status.inbox.latestCandidate.inspectionStatus, 'ready-for-final-intake');
+	assert.equal(status.inbox.latestCandidate.readyForFinalIntake, true);
+	assert.equal(status.inbox.latestCandidate.readyForPartialIntake, false);
+	assert.equal(status.inbox.latestCandidate.blockingReasonCount, 0);
+	assert.equal(status.inbox.latestCandidate.missingSourceEvidenceCases, 0);
+	assert.equal(status.inbox.latestCandidate.errorCases, 0);
+	assert.equal(status.inbox.latestReadyCandidate.runId, 'device-status-inbox-latest');
 	assert.equal(status.nextAction.kind, 'prepare-inbox-export');
 	assert.match(status.nextAction.text, /likely Scout Eval Lab export is already/u);
+	assert.match(status.nextAction.text, /ready-for-final-intake/u);
 	assert.match(status.nextAction.text, /device-status-inbox-latest/u);
 	assert.match(status.nextAction.text, /prepare-review:scout-local-ai-device-run/u);
 	assert.match(status.nextAction.text, /--run inbox/u);
 	assert.match(status.nextAction.text, /do not count it as final Dad proof/u);
+});
+
+test('status command blocks stale inbox exports before review work starts', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-stale-inbox-'));
+	const runsDir = join(outputDir, 'runs');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const inboxDir = join(outputDir, 'inbox');
+	const reviewsDir = join(outputDir, 'reviews');
+	await mkdir(runsDir, { recursive: true });
+	await mkdir(inboxDir, { recursive: true });
+	const routingRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'routing-status-stale-inbox',
+		completeTools: true
+	});
+	routingRun.evidenceLane = 'scaffold-not-model';
+	routingRun.runContext = null;
+	for (const result of routingRun.results) result.answerOrigin = 'scaffold-not-model';
+	await writeFile(join(runsDir, 'routing-status-stale-inbox.json'), `${JSON.stringify(routingRun, null, 2)}\n`);
+	const staleRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-status-inbox-stale',
+		completeTools: true,
+		runContext: finalDeviceRunContext(),
+		suiteVersion: '2026-01-01.1',
+		suiteHash: 'fnv1a32:oldhash'
+	});
+	await writeFile(join(inboxDir, 'AirDrop Hoggcountry stale.json'), `${JSON.stringify(staleRun, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai.mjs',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--inbox-dir',
+			inboxDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const status = JSON.parse(result.stdout);
+
+	assert.equal(status.inbox.candidateCount, 1);
+	assert.equal(status.inbox.readyForFinalIntakeCount, 0);
+	assert.equal(status.inbox.partialDiagnosticCount, 0);
+	assert.equal(status.inbox.blockedCandidateCount, 1);
+	assert.equal(status.inbox.latestCandidate.runId, 'device-status-inbox-stale');
+	assert.equal(status.inbox.latestCandidate.inspectionStatus, 'stale-suite');
+	assert.equal(status.inbox.latestCandidate.readyForFinalIntake, false);
+	assert.equal(status.inbox.latestCandidate.readyForPartialIntake, false);
+	assert.match(status.inbox.latestCandidate.blockingReasons.join('\n'), /run\.suiteVersion/u);
+	assert.match(status.inbox.latestCandidate.blockingReasons.join('\n'), /run\.suiteHash/u);
+	assert.equal(status.inbox.latestReadyCandidate, null);
+	assert.equal(status.nextAction.kind, 'fix-inbox-export');
+	assert.match(status.nextAction.text, /blocked before review/u);
+	assert.match(status.nextAction.text, /stale-suite/u);
+	assert.match(status.nextAction.text, /run\.suiteVersion/u);
+	assert.match(status.nextAction.text, /Do not rate it/u);
 });
 
 test('status command surfaces partial TestFlight iPhone runs without counting them as final proof', async () => {
