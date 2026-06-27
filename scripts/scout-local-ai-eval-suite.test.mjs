@@ -215,6 +215,7 @@ test('package scripts expose the Scout local AI review handoff commands', async 
 	assert.equal(packageJson.scripts['message:scout-local-ai-dad'], 'node scripts/scout-local-ai-dad-handoff.mjs --dad-message');
 	assert.equal(packageJson.scripts['receive:scout-local-ai-device-run'], 'node scripts/receive-scout-local-ai-device-run.mjs');
 	assert.equal(packageJson.scripts['wait:scout-local-ai-device-run'], 'node scripts/wait-scout-local-ai-device-run.mjs');
+	assert.equal(packageJson.scripts['eval:scout-local-ai:ios-sim-gemma'], 'node scripts/run-scout-ios-sim-gemma-eval.mjs');
 });
 
 test('README documents device review acceptance states', async () => {

@@ -90,5 +90,20 @@ Engine wired:
 After a verified model is present:
 - `isAvailable()` is true, `describeModel()` returns the real descriptor, and a
   Scout answer is produced on-device with the network disabled.
+- Use the Mac mini iPhone Simulator lane as the primary local iteration method:
+
+  ```sh
+  npm run eval:scout-local-ai:ios-sim-gemma -- --limit 3
+  ```
+
+  The command builds/syncs `mobile/`, builds and installs the iOS simulator app,
+  triggers the hidden native eval probe, waits for the app to save the run JSON,
+  writes `.scout-artifacts/scout-local-ai-runs/ios-sim-gemma-<run-id>.json`,
+  and runs the device-run inspector. Use `--limit 10` for normal iteration and
+  `--limit 100` before sending a TestFlight build to Dad for the final run.
+  If you want to rate the simulator answers, import the saved artifact with the
+  printed `npm run intake:scout-local-ai-device-run -- --allow-partial` command.
+  That creates a diagnostic review packet without weakening the final
+  TestFlight/iPhone proof gate.
 - Run the Scout reliability harness in API mode against the on-device engine
   (`docs/scout-reliability-runbook.md`) before calling iOS Gemma "supported".

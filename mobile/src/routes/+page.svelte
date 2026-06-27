@@ -30,9 +30,10 @@
 			if (!Capacitor.isNativePlatform()) return;
 
 			const trigger = await Preferences.get({ key: SIM_EVAL_PROBE_KEY });
-			if (trigger.value !== 'run3' && trigger.value !== '1') return;
+			const limit = simulatorEvalLimit(trigger.value);
+			if (limit === null) return;
 			await Preferences.remove({ key: SIM_EVAL_PROBE_KEY });
-			console.info('SCOUT_GEMMA_SIM_EVAL_PROBE requested', trigger.value);
+			console.info('SCOUT_GEMMA_SIM_EVAL_PROBE requested', trigger.value, 'limit', limit ?? 'all');
 
 			const response = await fetch('/scout/dad-local-ai-100.json', { cache: 'no-store' });
 			if (!response.ok) {
@@ -42,7 +43,7 @@
 			const suite = (await response.json()) as ScoutLocalAiEvalSuite;
 			const run = await trailAssistant.runLocalAiEvalSuite({
 				suite,
-				limit: 3,
+				...(limit === undefined ? {} : { limit }),
 				onProgress: (progress) => {
 					console.info(
 						`SCOUT_GEMMA_SIM_EVAL_PROBE progress ${progress.completed}/${progress.total} case=${progress.caseId}`
@@ -76,6 +77,20 @@
 			}
 			console.error('SCOUT_GEMMA_SIM_EVAL_PROBE failed', message, error);
 		}
+	}
+
+	function simulatorEvalLimit(value: string | null): number | undefined | null {
+		const normalized = value?.trim().toLowerCase();
+		if (!normalized) return null;
+		if (normalized === '1' || normalized === 'run3') return 3;
+		if (normalized === 'all' || normalized === 'runall') return undefined;
+		const runMatch = /^run(\d+)$/u.exec(normalized);
+		const limitMatch = /^limit:(\d+)$/u.exec(normalized);
+		const numericText = runMatch?.[1] ?? limitMatch?.[1] ?? (/^\d+$/u.test(normalized) ? normalized : '');
+		if (!numericText) return null;
+		const parsed = Number.parseInt(numericText, 10);
+		if (!Number.isInteger(parsed) || parsed < 1 || parsed > 100) return null;
+		return parsed;
 	}
 </script>
 

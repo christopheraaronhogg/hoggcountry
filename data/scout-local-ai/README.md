@@ -11,8 +11,31 @@ The loop:
    npm run eval:scout-local-ai
    ```
 
-3. For quick routing smoke tests, use the default scaffold lane. It exercises Scout tools and source routing, but it is not model proof.
-4. For local model proof, set a command bridge that reads JSON from stdin and returns either raw answer text or JSON like `{ "text": "...", "truncated": false }`:
+3. Use the iPhone Simulator Gemma lane as the main local iteration loop on the
+   Mac mini. It runs the real Capacitor/iOS app, the native ScoutGemma bridge,
+   and the on-device Gemma model, then saves an inspectable device-style export:
+
+   ```sh
+   npm run eval:scout-local-ai:ios-sim-gemma -- --limit 3
+   ```
+
+   Use `--limit 10` after a targeted tool/prompt/data change. Use `--limit 100`
+   before asking Dad to spend time on a TestFlight run. Add
+   `--simulator "iPhone 16e"` if several iPhone simulators are installed. The
+   command runs `mobile` build/sync, Xcode simulator build/install, app launch,
+   eval extraction, and the read-only device-run inspector.
+   The saved artifact is a simulator diagnostic. To create a human review packet
+   from it, use the command printed at the end:
+
+   ```sh
+   npm run intake:scout-local-ai-device-run -- --run .scout-artifacts/scout-local-ai-runs/<ios-sim-gemma-run>.json --allow-partial
+   ```
+
+4. For quick routing smoke tests without a model, use the default scaffold lane.
+   It exercises Scout tools and source routing, but it is not model proof.
+5. For Mac-side non-iOS local model proof, set a command bridge that reads JSON
+   from stdin and returns either raw answer text or JSON like
+   `{ "text": "...", "truncated": false }`:
 
    ```sh
    SCOUT_LOCAL_AI_COMMAND="node path/to/local-model-bridge.mjs" npm run eval:scout-local-ai
@@ -26,20 +49,25 @@ The loop:
 
    The default model is `gpt-5.5`; override it with `SCOUT_OPENCLAW_LOCAL_MODEL=<model>`. This is useful Mac-side model evidence, but it does not replace the final TestFlight/iPhone Gemma proof.
 
-5. Create or update the review file:
+6. Create or update the review file:
 
    ```sh
    npm run review:scout-local-ai -- --run data/scout-local-ai/runs/<run-id>.json
    ```
 
-6. Rate every answer 1-5. Any answer below 5 needs failure categories and an improvement task.
-7. Improve the responsible layer: data table, source skill, tool routing, prompt, UI recovery state, or local model path.
-8. Re-run the full suite plus the regression cases until all 100 are 5/5.
+7. Rate every answer 1-5. Any answer below 5 needs failure categories and an improvement task.
+8. Improve the responsible layer: data table, source skill, tool routing, prompt, UI recovery state, or local model path.
+9. Re-run the simulator batch plus the regression cases until they are 5/5, then
+   run the simulator `--limit 100` pass before the final TestFlight/iPhone pass.
+   A simulator 100-case review can drive iteration, but it must not be promoted
+   to strict Dad proof.
 
 Proof lanes stay separate:
 
 - `scaffold-not-model`: tool/source-routing smoke only.
 - `external-local-model-command`: local model bridge proof, useful before device automation.
+- `device-on-device-gemma` from a debug iPhone Simulator build: main local
+  iteration proof for app/bridge/model behavior on the Mac mini.
 - `real TestFlight/iPhone`: final Dad-readiness proof.
 
 To see the current loop state without blending those lanes, run:
