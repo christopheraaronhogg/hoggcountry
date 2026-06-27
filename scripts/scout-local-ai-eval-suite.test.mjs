@@ -546,6 +546,78 @@ test('status command can prepare a final Run 100 export from Downloads', async (
 	assert.match(textResult.stdout, /Latest downloads handoff: Final Run 100 JSON ready for inbox review \(final-review-ready\); command: `npm run prepare-review:scout-local-ai-device-run -- --run latest`/u);
 });
 
+test('status command recognizes copied Scout export text in Downloads', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-downloads-text-'));
+	const runsDir = join(outputDir, 'runs');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const inboxDir = join(outputDir, 'inbox');
+	const downloadsDir = join(outputDir, 'Downloads');
+	const reviewsDir = join(outputDir, 'reviews');
+	await mkdir(runsDir, { recursive: true });
+	await mkdir(inboxDir, { recursive: true });
+	await mkdir(downloadsDir, { recursive: true });
+	const routingRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'routing-status-downloads-text',
+		completeTools: true
+	});
+	routingRun.evidenceLane = 'scaffold-not-model';
+	routingRun.runContext = null;
+	for (const result of routingRun.results) result.answerOrigin = 'scaffold-not-model';
+	await writeFile(join(runsDir, 'routing-status-downloads-text.json'), `${JSON.stringify(routingRun, null, 2)}\n`);
+	const copiedRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-status-downloads-text',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	copiedRun.exportHandoff = exportHandoffForRun(copiedRun, suite);
+	const copiedMessage = [
+		'Dad copied the Hoggcountry Run 100 export:',
+		'',
+		'```json',
+		JSON.stringify(copiedRun, null, 2),
+		'```'
+	].join('\n');
+	await writeFile(join(downloadsDir, 'random-settings.json'), '{"ok":true}\n');
+	await writeFile(join(downloadsDir, 'Dad copied Run 100.txt'), copiedMessage);
+	await utimes(join(downloadsDir, 'random-settings.json'), new Date('2026-06-27T01:00:00Z'), new Date('2026-06-27T01:00:00Z'));
+	await utimes(join(downloadsDir, 'Dad copied Run 100.txt'), new Date('2026-06-27T02:00:00Z'), new Date('2026-06-27T02:00:00Z'));
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai.mjs',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--inbox-dir',
+			inboxDir,
+			'--downloads-dir',
+			downloadsDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const status = JSON.parse(result.stdout);
+
+	assert.equal(status.downloads.exists, true);
+	assert.equal(status.downloads.jsonFileCount, 1);
+	assert.equal(status.downloads.textFileCount, 1);
+	assert.equal(status.downloads.supportedFileCount, 2);
+	assert.equal(status.downloads.candidateCount, 1);
+	assert.equal(status.downloads.ignoredFileCount, 1);
+	assert.equal(status.downloads.latestCandidate.runId, 'device-status-downloads-text');
+	assert.equal(status.downloads.latestCandidate.extractedJson, true);
+	assert.match(status.downloads.latestCandidate.path, /Dad copied Run 100\.txt$/u);
+	assert.equal(status.downloads.latestReadyCandidate.runId, 'device-status-downloads-text');
+	assert.equal(status.nextAction.kind, 'prepare-downloads-export');
+	assert.match(status.nextAction.text, /device-status-downloads-text/u);
+	assert.match(status.nextAction.text, /--run latest/u);
+});
+
 test('status command suggests the guarded wait command when no device export exists yet', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-wait-'));
@@ -2266,6 +2338,75 @@ test('device review preparation command can select the latest Scout export from 
 		'device-prepare-latest'
 	);
 	await assert.rejects(readFile(join(deviceRunsDir, 'device-prepare-older.json'), 'utf8'));
+});
+
+test('device review preparation command can select copied Scout export text from Downloads', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-device-prepare-text-'));
+	const downloadsDir = join(outputDir, 'Downloads');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	const packetsDir = join(outputDir, 'review-packets');
+	await mkdir(downloadsDir, { recursive: true });
+
+	const unrelatedPath = join(downloadsDir, 'random-settings.json');
+	const copiedPath = join(downloadsDir, 'Dad copied Run 100.txt');
+	const copiedRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-prepare-text',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	copiedRun.exportHandoff = exportHandoffForRun(copiedRun, suite);
+	const copiedMessage = [
+		'Dad copied this from the Scout Eval Lab share sheet:',
+		'',
+		'```json',
+		JSON.stringify(copiedRun, null, 2),
+		'```',
+		'',
+		'Sent from Messages.'
+	].join('\n');
+	await writeFile(unrelatedPath, '{"not":"a Scout export"}\n');
+	await writeFile(copiedPath, copiedMessage);
+	await utimes(unrelatedPath, new Date('2026-06-27T01:00:00Z'), new Date('2026-06-27T01:00:00Z'));
+	await utimes(copiedPath, new Date('2026-06-27T02:00:00Z'), new Date('2026-06-27T02:00:00Z'));
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/prepare-scout-local-ai-device-review.mjs',
+			'--run',
+			'latest',
+			'--downloads-dir',
+			downloadsDir,
+			'--device-run-dir',
+			deviceRunsDir,
+			'--review-dir',
+			reviewsDir,
+			'--packet-dir',
+			packetsDir,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 12 }
+	);
+	const report = JSON.parse(result.stdout);
+
+	assert.equal(report.status, 'prepared-for-final-review');
+	assert.equal(report.input.mode, 'latest-download');
+	assert.equal(report.input.runId, 'device-prepare-text');
+	assert.equal(report.input.candidateCount, 1);
+	assert.equal(report.input.selectedExtractedJson, true);
+	assert.match(report.input.selected, /Dad copied Run 100\.txt/u);
+	assert.equal(report.reviewStatus.summary.total, suite.cases.length);
+	assert.equal(
+		JSON.parse(await readFile(join(deviceRunsDir, 'device-prepare-text.json'), 'utf8')).runId,
+		'device-prepare-text'
+	);
+	assert.equal(
+		JSON.parse(await readFile(join(reviewsDir, 'device-prepare-text.review.json'), 'utf8')).runId,
+		'device-prepare-text'
+	);
+	assert.match(await readFile(join(packetsDir, 'device-prepare-text.review.md'), 'utf8'), /Scout local AI device review: device-prepare-text/u);
 });
 
 test('device review preparation command can select the latest Scout export from the repo inbox', async () => {

@@ -29,6 +29,10 @@ import {
 import {
 	scoutLocalAiSuiteIdentity
 } from './lib/scout-local-ai-suite.mjs';
+import {
+	isSupportedScoutEvalExportFileName,
+	readScoutEvalRunJson
+} from './lib/scout-local-ai-run-json.mjs';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
@@ -1050,6 +1054,8 @@ async function summarizeHandoffDirectory(dir, suite) {
 			path: displayPath(dir),
 			exists: false,
 			jsonFileCount: 0,
+			textFileCount: 0,
+			supportedFileCount: 0,
 			candidateCount: 0,
 			readyForFinalIntakeCount: 0,
 			partialDiagnosticCount: 0,
@@ -1062,16 +1068,21 @@ async function summarizeHandoffDirectory(dir, suite) {
 	}
 	const candidates = [];
 	let jsonFileCount = 0;
+	let textFileCount = 0;
+	let supportedFileCount = 0;
 	let ignoredFileCount = 0;
 	let unreadableCount = 0;
 	for (const entry of await readdir(dir, { withFileTypes: true })) {
 		if (!entry.isFile() || entry.name === '.gitkeep') continue;
 		const path = resolve(dir, entry.name);
-		if (!entry.name.toLowerCase().endsWith('.json')) {
+		if (!isSupportedScoutEvalExportFileName(entry.name)) {
 			ignoredFileCount += 1;
 			continue;
 		}
-		jsonFileCount += 1;
+		const lowerName = entry.name.toLowerCase();
+		if (lowerName.endsWith('.json')) jsonFileCount += 1;
+		if (lowerName.endsWith('.txt') || lowerName.endsWith('.text')) textFileCount += 1;
+		supportedFileCount += 1;
 		const stats = await stat(path);
 		const parsed = await readScoutEvalCandidate(path, suite);
 		if (!parsed.readable) {
@@ -1095,6 +1106,8 @@ async function summarizeHandoffDirectory(dir, suite) {
 		path: displayPath(dir),
 		exists: true,
 		jsonFileCount,
+		textFileCount,
+		supportedFileCount,
 		candidateCount: candidates.length,
 		readyForFinalIntakeCount: candidates.filter((candidate) => candidate.readyForFinalIntake).length,
 		partialDiagnosticCount: candidates.filter((candidate) => candidate.readyForPartialIntake).length,
@@ -1108,7 +1121,7 @@ async function summarizeHandoffDirectory(dir, suite) {
 
 async function readScoutEvalCandidate(path, suite) {
 	try {
-		const parsed = await readJson(path);
+		const { run: parsed, extractedJson } = await readScoutEvalRunJson(path);
 		if (!parsed || typeof parsed !== 'object') return { readable: true, candidate: null };
 		if (parsed.schemaVersion !== 1) return { readable: true, candidate: null };
 		if (parsed.suiteId !== 'dad-local-ai-100') return { readable: true, candidate: null };
@@ -1125,6 +1138,7 @@ async function readScoutEvalCandidate(path, suite) {
 			readable: true,
 			candidate: {
 				path: displayPath(path),
+				extractedJson,
 				runId: parsed.runId,
 				suiteId: parsed.suiteId,
 				suiteVersion: parsed.suiteVersion ?? '<missing>',

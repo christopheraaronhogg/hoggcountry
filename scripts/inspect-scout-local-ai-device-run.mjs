@@ -7,6 +7,9 @@ import {
 import {
 	parseCliArgs
 } from './lib/scout-local-ai-review.mjs';
+import {
+	readScoutEvalRunJson
+} from './lib/scout-local-ai-run-json.mjs';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
@@ -25,7 +28,7 @@ if (!input) {
 const inputPath = resolveInputPath(input);
 const suitePath = resolveInputPath(cli.suite ?? DEFAULT_SUITE);
 const suite = JSON.parse(await readFile(suitePath, 'utf8'));
-const run = JSON.parse(await readFile(inputPath, 'utf8'));
+const { run } = await readScoutEvalRunJson(inputPath);
 const report = inspectDeviceRun({ run, suite, inputPath });
 
 if (cli.json) {

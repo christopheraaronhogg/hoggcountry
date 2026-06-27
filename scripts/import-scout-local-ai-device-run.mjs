@@ -18,6 +18,9 @@ import {
 	sourceEvidenceProblems,
 	summarizeRunSourceEvidence
 } from './lib/scout-local-ai-source-evidence.mjs';
+import {
+	readScoutEvalRunJson
+} from './lib/scout-local-ai-run-json.mjs';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
@@ -46,7 +49,7 @@ const allowPartial = Boolean(cli.allowPartial);
 const allowNonDevice = Boolean(cli.allowNonDevice);
 const force = Boolean(cli.force);
 
-const run = JSON.parse(await readFile(inputPath, 'utf8'));
+const { run } = await readScoutEvalRunJson(inputPath);
 const suite = JSON.parse(await readFile(suitePath, 'utf8'));
 const validation = validateDeviceRun(run, suite, { allowPartial, allowNonDevice });
 

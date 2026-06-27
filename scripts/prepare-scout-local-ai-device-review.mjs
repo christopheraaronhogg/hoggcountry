@@ -9,6 +9,10 @@ import {
 import {
 	parseCliArgs
 } from './lib/scout-local-ai-review.mjs';
+import {
+	isSupportedScoutEvalExportFileName,
+	readScoutEvalRunJson
+} from './lib/scout-local-ai-run-json.mjs';
 
 const execFileAsync = promisify(execFile);
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -94,7 +98,7 @@ if (canImportPartial) importArgs.push('--allow-partial');
 if (force) importArgs.push('--force');
 
 const importOutput = await runTextScript('scripts/import-scout-local-ai-device-run.mjs', importArgs);
-const run = JSON.parse(await readFile(inputPath, 'utf8'));
+const { run } = await readScoutEvalRunJson(inputPath);
 const safeRunId = safeFileName(run.runId);
 const importedRunPath = resolve(deviceRunDir, `${safeRunId}.json`);
 const reviewPath = resolve(reviewDir, `${safeRunId}.review.json`);
@@ -190,7 +194,7 @@ async function resolveRunInput(value, options) {
 async function latestScoutEvalRun({ dir, mode, dirLabel, suite, allowPartial }) {
 	const candidates = [];
 	for (const entry of await readdir(dir, { withFileTypes: true })) {
-		if (!entry.isFile() || !entry.name.toLowerCase().endsWith('.json')) continue;
+		if (!entry.isFile() || !isSupportedScoutEvalExportFileName(entry.name)) continue;
 		const path = resolve(dir, entry.name);
 		const candidate = await readScoutEvalCandidate(path, suite);
 		if (!candidate) continue;
@@ -207,7 +211,7 @@ async function latestScoutEvalRun({ dir, mode, dirLabel, suite, allowPartial }) 
 		(allowPartial ? candidates.find((candidate) => candidate.readyForPartialIntake) : null) ??
 		latest;
 	if (!selected) {
-		throw new Error(`No likely Scout Eval Lab JSON exports found in ${dir}. Pass --run /path/to/<device-export>.json if the file is elsewhere.`);
+		throw new Error(`No likely Scout Eval Lab JSON/text exports found in ${dir}. Pass --run /path/to/<device-export>.json if the file is elsewhere.`);
 	}
 	const finalReadyCount = candidates.filter((candidate) => candidate.readyForFinalIntake).length;
 	const partialDiagnosticCount = candidates.filter((candidate) => candidate.readyForPartialIntake).length;
@@ -222,10 +226,12 @@ async function latestScoutEvalRun({ dir, mode, dirLabel, suite, allowPartial }) 
 			selectedInspectionStatus: selected.inspectionStatus,
 			selectedReadyForFinalIntake: selected.readyForFinalIntake,
 			selectedReadyForPartialIntake: selected.readyForPartialIntake,
+			selectedExtractedJson: selected.extractedJson,
 			latest: latest ? {
 				path: relative(REPO_ROOT, latest.path),
 				runId: latest.runId,
 				caseCount: latest.caseCount,
+				extractedJson: latest.extractedJson,
 				inspectionStatus: latest.inspectionStatus
 			} : null,
 			runId: selected.runId,
@@ -241,7 +247,7 @@ async function latestScoutEvalRun({ dir, mode, dirLabel, suite, allowPartial }) 
 
 async function readScoutEvalCandidate(path, suite) {
 	try {
-		const parsed = JSON.parse(await readFile(path, 'utf8'));
+		const { run: parsed, extractedJson } = await readScoutEvalRunJson(path);
 		if (!parsed || typeof parsed !== 'object') return null;
 		if (parsed.schemaVersion !== 1) return null;
 		if (parsed.suiteId !== suite.suiteId) return null;
@@ -252,6 +258,7 @@ async function readScoutEvalCandidate(path, suite) {
 			runId: parsed.runId,
 			suiteId: parsed.suiteId,
 			caseCount: typeof parsed.caseCount === 'number' ? parsed.caseCount : parsed.results.length,
+			extractedJson,
 			inspectionStatus: inspection.status,
 			readyForFinalIntake: inspection.readyForFinalIntake,
 			readyForPartialIntake: inspection.readyForPartialIntake
