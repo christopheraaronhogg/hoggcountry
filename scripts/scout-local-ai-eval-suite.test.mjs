@@ -249,6 +249,62 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.match(status.nextAction.text, /Run 100/u);
 });
 
+test('status command surfaces partial TestFlight iPhone runs without counting them as final proof', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-partial-device-'));
+	const runsDir = join(outputDir, 'runs');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	await mkdir(runsDir, { recursive: true });
+	await mkdir(deviceRunsDir, { recursive: true });
+	const routingRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'routing-partial-device-companion',
+		completeTools: true
+	});
+	routingRun.evidenceLane = 'scaffold-not-model';
+	routingRun.runContext = null;
+	for (const result of routingRun.results) result.answerOrigin = 'scaffold-not-model';
+	await writeFile(join(runsDir, 'routing-partial-device-companion.json'), `${JSON.stringify(routingRun, null, 2)}\n`);
+	const partialRun = deviceRunForCases(suite, suite.cases.slice(0, 12), {
+		runId: 'device-status-partial-12',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	await writeFile(join(deviceRunsDir, 'device-status-partial-12.json'), `${JSON.stringify(partialRun, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai.mjs',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const status = JSON.parse(result.stdout);
+	const gates = Object.fromEntries(status.gates.map((gate) => [gate.id, gate]));
+
+	assert.equal(status.runs.currentFullDeviceRuns.length, 0);
+	assert.equal(status.runs.currentPartialDeviceRuns.length, 1);
+	assert.equal(status.runs.currentPartialDeviceRuns[0].runId, 'device-status-partial-12');
+	assert.equal(status.runs.currentPartialDeviceRuns[0].caseCount, 12);
+	assert.equal(status.testflight.currentTargetDeviceRunCount, 0);
+	assert.equal(status.testflight.currentTargetPartialDeviceRunCount, 1);
+	assert.equal(gates['device-run'].ok, false);
+	assert.match(gates['device-run'].evidence, /partial device run\(s\) imported/u);
+	assert.match(gates['device-run'].evidence, /device-status-partial-12 12\/100/u);
+	assert.equal(status.nextAction.kind, 'resume-device-run');
+	assert.match(status.nextAction.text, /Partial TestFlight\/iPhone Eval Lab run device-status-partial-12 is imported at 12\/100/u);
+	assert.match(status.nextAction.text, /tap Resume/u);
+	assert.match(status.nextAction.text, /--allow-partial for diagnosis/u);
+	assert.match(status.nextAction.text, /not final Dad proof/u);
+});
+
 test('status command surfaces target TestFlight build gaps before phone eval', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-build-gap-'));
@@ -634,6 +690,7 @@ test('goal audit maps original success criteria without hiding missing device pr
 	assert.match(requirements['final-100-rated-five'].evidence, /No strict TestFlight\/iPhone proof run passes/u);
 	assert.equal(audit.currentStatus.currentFullRoutingRuns, 1);
 	assert.equal(audit.currentStatus.currentFullDeviceRuns, 0);
+	assert.equal(audit.currentStatus.currentPartialDeviceRuns, 0);
 	assert.equal(audit.currentStatus.nextAction.kind, 'get-device-run');
 });
 
@@ -701,6 +758,8 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Target build meets suite requirement: yes/u);
 	assert.match(result.stdout, /Recorded Dad Pilot build: `1\.0 \(13\)`/u);
 	assert.match(result.stdout, /Recorded Dad Pilot build meets suite requirement: yes/u);
+	assert.match(result.stdout, /Imported full device runs: 0/u);
+	assert.match(result.stdout, /Imported partial device runs: 0/u);
 	assert.match(result.stdout, /https:\/\/testflight\.apple\.com\/join\/BagBCrzf/u);
 	assert.match(result.stdout, /## Upload readiness/u);
 	assert.match(result.stdout, /Xcode Release target: `1\.0 \(13\)`/u);

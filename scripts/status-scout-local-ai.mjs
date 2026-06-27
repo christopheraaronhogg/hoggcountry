@@ -78,7 +78,9 @@ async function buildStatus(paths) {
 	const currentIterationPlans = iterationFiles.filter((entry) => isCurrentIterationPlan(entry.value, suite, suiteIdentity));
 	const currentDeviceRuns = currentRuns.filter((entry) => entry.value.evidenceLane === DEVICE_EVIDENCE_LANE);
 	const currentFullDeviceRuns = currentDeviceRuns.filter((entry) => isFullRun(entry.value, suite));
+	const currentPartialDeviceRuns = currentDeviceRuns.filter((entry) => !isFullRun(entry.value, suite));
 	testflight.currentTargetDeviceRunCount = currentFullDeviceRuns.filter((entry) => deviceRunMatchesTargetBuild(entry.value, testflight)).length;
+	testflight.currentTargetPartialDeviceRunCount = currentPartialDeviceRuns.filter((entry) => deviceRunMatchesTargetBuild(entry.value, testflight)).length;
 	testflight.targetBuildAvailableForDad = testflight.targetBuildReadyForDad || testflight.currentTargetDeviceRunCount > 0;
 	const currentFullToolCompleteRuns = currentRuns.filter(
 		(entry) => isFullRun(entry.value, suite) && hasCompleteToolExpectations(entry.value, suite) && hasCompleteSourceEvidence(entry.value)
@@ -147,6 +149,7 @@ async function buildStatus(paths) {
 		currentFullRoutingRuns,
 		currentFullToolCompleteRuns,
 		currentFullDeviceRuns,
+		currentPartialDeviceRuns,
 		completeFiveStarDeviceReviews,
 		strictDeviceProofPasses
 	});
@@ -180,6 +183,7 @@ async function buildStatus(paths) {
 			currentSuiteRuns: currentRuns.length,
 			currentFullRoutingRuns: summarizeRunList(currentFullRoutingRuns),
 			currentFullDeviceRuns: summarizeRunList(currentFullDeviceRuns),
+			currentPartialDeviceRuns: summarizeRunList(currentPartialDeviceRuns),
 			currentFullToolCompleteRuns: summarizeRunList(currentFullToolCompleteRuns),
 			byLane: countBy(allRuns, (entry) => entry.value.evidenceLane ?? '<missing>')
 		},
@@ -212,6 +216,7 @@ async function buildStatus(paths) {
 		nextAction: nextActionFor(
 			gates,
 			currentFullDeviceRuns,
+			currentPartialDeviceRuns,
 			currentDeviceReviewSummaries,
 			completeFiveStarDeviceReviews,
 			currentBacklogs,
@@ -286,6 +291,8 @@ function createGates(input) {
 			ok: deviceOk,
 			evidence: deviceOk
 				? `${input.currentFullDeviceRuns.length} current full device run(s) found`
+				: input.currentPartialDeviceRuns.length
+					? `No current full device-on-device-gemma run found; ${input.currentPartialDeviceRuns.length} partial device run(s) imported: ${input.currentPartialDeviceRuns.map((entry) => `${entry.value.runId ?? '<missing>'} ${entry.value.caseCount ?? 0}/${entry.value.totalSuiteCases ?? '?'}`).join(', ')}`
 				: 'No current full device-on-device-gemma run found'
 		},
 		{
@@ -324,6 +331,7 @@ function createGates(input) {
 function nextActionFor(
 	gates,
 	currentFullDeviceRuns,
+	currentPartialDeviceRuns,
 	currentDeviceReviewSummaries,
 	completeFiveStarDeviceReviews,
 	currentBacklogs,
@@ -363,6 +371,16 @@ function nextActionFor(
 		};
 	}
 	if (!gate('device-run')?.ok) {
+		const latestPartialRun = currentPartialDeviceRuns.at(-1)?.value;
+		if (latestPartialRun) {
+			const completed = latestPartialRun.caseCount ?? latestPartialRun.results?.length ?? 0;
+			const total = latestPartialRun.totalSuiteCases ?? 100;
+			const runPath = `data/scout-local-ai/device-runs/${latestPartialRun.runId}.json`;
+			return {
+				kind: 'resume-device-run',
+				text: `Partial TestFlight/iPhone Eval Lab run ${latestPartialRun.runId} is imported at ${completed}/${total}. Reopen the same iPhone build, go to Settings > Scout Eval Lab, tap Resume, finish Run 100, Share the final JSON, then import it with npm run intake:scout-local-ai-device-run. The partial file ${runPath} can be reviewed with --allow-partial for diagnosis, but it is not final Dad proof.`
+			};
+		}
 		return {
 			kind: 'get-device-run',
 			text: 'Install the latest TestFlight build on Dad/Chris iPhone, open Settings > Scout Eval Lab, run Run 100, Share the JSON, then import it with npm run intake:scout-local-ai-device-run.'
@@ -778,6 +796,7 @@ function createStatusMarkdown(status) {
 		`- Runs loaded: ${status.runs.totalLoaded} (${status.runs.currentSuiteRuns} current suite)`,
 		`- Full routing/tool-complete runs: ${status.runs.currentFullToolCompleteRuns.length}`,
 		`- Full device runs: ${status.runs.currentFullDeviceRuns.length}`,
+		`- Partial device runs: ${status.runs.currentPartialDeviceRuns.length}`,
 		`- Device reviews: ${status.reviews.currentDeviceReviews.length}`,
 		`- Below-5 review debt: ${status.iterations.reviewDebt.totalReviews} review(s) / ${status.iterations.reviewDebt.totalBelowFive} answer(s)`,
 		`- Below-5 debt missing backlog: ${status.iterations.reviewDebt.needsBacklog.length}`,

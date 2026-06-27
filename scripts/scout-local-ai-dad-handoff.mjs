@@ -136,6 +136,8 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		`- Target build meets suite requirement: ${status.testflight?.targetBuildMeetsSuiteRequirement ? 'yes' : 'no'}.`,
 		`- Recorded Dad Pilot build: \`${recordedDadBuild}\`.`,
 		`- Recorded Dad Pilot build meets suite requirement: ${status.testflight?.recordedDadPilotMeetsSuiteRequirement ? 'yes' : 'no'}.`,
+		`- Imported full device runs: ${status.runs?.currentFullDeviceRuns?.length ?? 0}.`,
+		`- Imported partial device runs: ${status.runs?.currentPartialDeviceRuns?.length ?? 0}.`,
 		`- Dad TestFlight link: ${publicLink}`,
 		`- iOS Release signing: team \`${iosBuild.teamId}\`, profile \`${iosBuild.releaseProfile}\`.`,
 		''

@@ -89,6 +89,7 @@ const audit = {
 		recordedDadPilotBuild: status.testflight.recordedDadPilotBuild,
 		currentFullRoutingRuns: status.runs.currentFullRoutingRuns.length,
 		currentFullDeviceRuns: status.runs.currentFullDeviceRuns.length,
+		currentPartialDeviceRuns: status.runs.currentPartialDeviceRuns.length,
 		currentDeviceReviews: status.reviews.currentDeviceReviews.length,
 		strictDeviceProofPasses: status.strictDeviceProofs.filter((proof) => proof.ok).length,
 		nextAction: status.nextAction

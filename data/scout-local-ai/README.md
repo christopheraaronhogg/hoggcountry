@@ -134,9 +134,12 @@ run being reviewed: run id, suite version/hash, evidence lane, case ids, prompts
 rubric traits, safety caveats, and required tool expectations must line up before
 an iteration backlog is written.
 
-For a quick `Run 3` smoke export, add `--allow-partial`. Do not use partial runs
-as final proof. Partial intake can warn about missing final-proof context without
-blocking the smoke packet.
+For a quick `Run 3` smoke export, or an interrupted `Run 100` export that you
+want to diagnose before Dad resumes, add `--allow-partial`. Do not use partial
+runs as final proof. Partial intake can warn about missing final-proof context
+without blocking the smoke packet, and `npm run status:scout-local-ai` will
+surface the partial device run as a resume/diagnosis lane instead of counting it
+as a completed phone proof.
 
 The in-app Eval Lab autosaves each completed question locally on the phone. If a
 100-question run is interrupted, reopen Settings, tap Resume, and export after it
