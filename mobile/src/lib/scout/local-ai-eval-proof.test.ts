@@ -11,7 +11,7 @@ const finalProof = {
 	nativePlatform: 'ios',
 	installSource: 'testflight',
 	minAppVersion: '1.0',
-	minAppBuild: 11
+	minAppBuild: 12
 };
 
 const testflightNative: ScoutLocalAiEvalNativePreflight = {
@@ -21,7 +21,7 @@ const testflightNative: ScoutLocalAiEvalNativePreflight = {
 	installSourceType: 'testflight',
 	installSourceLabel: 'TestFlight',
 	appVersion: '1.0',
-	appBuild: '11'
+	appBuild: '12'
 };
 
 test('Scout Eval Lab proof status unlocks the full run only for the required TestFlight iOS build', () => {
@@ -79,7 +79,7 @@ test('Scout Eval Lab proof status allows smoke but blocks final 100 on stale Tes
 		running: false,
 		native: {
 			...testflightNative,
-			appBuild: '10'
+			appBuild: '11'
 		},
 		finalProof
 	});
@@ -88,7 +88,7 @@ test('Scout Eval Lab proof status allows smoke but blocks final 100 on stale Tes
 	assert.equal(status.canRunFinal, false);
 	assert.equal(status.statusLabel, 'Build too old');
 	assert.equal(status.checks.find((check) => check.id === 'build')?.ok, false);
-	assert.equal(status.checks.find((check) => check.id === 'build')?.value, '1.0 (10)');
+	assert.equal(status.checks.find((check) => check.id === 'build')?.value, '1.0 (11)');
 });
 
 test('Scout Eval Lab proof status blocks web or cloud lanes', () => {
@@ -155,7 +155,7 @@ test('Scout Eval Lab run context proves a full export came from the required Tes
 			app: {
 				id: 'com.hoggcountry.trailassistant',
 				version: '1.0',
-				build: '11'
+				build: '12'
 			},
 			installSource: {
 				type: 'testflight',
@@ -181,7 +181,7 @@ test('Scout Eval Lab run context catches stale or non-TestFlight full exports be
 			app: {
 				id: 'com.hoggcountry.trailassistant',
 				version: '1.0',
-				build: '10'
+				build: '11'
 			},
 			installSource: {
 				type: 'debug'
@@ -190,7 +190,7 @@ test('Scout Eval Lab run context catches stale or non-TestFlight full exports be
 	});
 
 	assert.ok(problems.includes('not a testflight install'));
-	assert.ok(problems.includes('app build is not 1.0 (>= 11)'));
+	assert.ok(problems.includes('app build is not 1.0 (>= 12)'));
 	assert.ok(problems.includes('local runtime was not configured'));
 	assert.ok(problems.includes('model id is missing'));
 });
