@@ -5134,6 +5134,10 @@ test('review status command suggests explicit human-reviewed packet batches', as
 	assert.ok(progress.reviewBatches.length >= 1);
 	assert.deepEqual(progress.reviewBatches[0].caseIds, expectedCases);
 	assert.match(progress.reviewBatches[0].readFirstFocusedCheck, new RegExp(`--case ${expectedCases[0]}`, 'u'));
+	assert.deepEqual(
+		progress.reviewBatches[0].focusedCheckCommands.map((command) => command.match(/--case (DLA-\d{3})/u)?.[1]),
+		expectedCases
+	);
 	assert.match(progress.reviewBatches[0].rateFiveAfterReading, /rate-case:scout-local-ai/u);
 	assert.match(progress.reviewBatches[0].rateFiveAfterReading, new RegExp(`--cases ${expectedCases.join(',')}`, 'u'));
 	assert.match(progress.reviewBatches[0].rateFiveAfterReading, /--mark-all-pass/u);
@@ -5156,6 +5160,10 @@ test('review status command suggests explicit human-reviewed packet batches', as
 
 	assert.match(textResult.stdout, /## Human-reviewed batch helpers/u);
 	assert.match(textResult.stdout, /Use these only after reading every listed focused card/u);
+	assert.match(textResult.stdout, /Read every focused card before rating the batch/u);
+	for (const caseId of expectedCases) {
+		assert.match(textResult.stdout, new RegExp(`--case ${caseId}`, 'u'));
+	}
 	assert.match(textResult.stdout, new RegExp(`--cases ${expectedCases.join(',')}`, 'u'));
 	assert.match(textResult.stdout, /--rating 5/u);
 	assert.match(textResult.stdout, /--mark-all-pass/u);

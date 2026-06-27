@@ -407,6 +407,7 @@ function reviewBatchSuggestion({ label, items, reviewStatusBase, batchBase }) {
 		caseIds,
 		count: caseIds.length,
 		readFirstFocusedCheck: `${reviewStatusBase} --case ${shellArg(caseIds[0])}`,
+		focusedCheckCommands: caseIds.map((caseId) => `${reviewStatusBase} --case ${shellArg(caseId)}`),
 		nextFocusedCheck: `${reviewStatusBase} --next`,
 		rateFiveAfterReading: `${batchBase} --cases ${shellArg(caseIds.join(','))} --rating 5 --notes ${shellArg('Dad-ready answer.')} --mark-all-pass`,
 		promptPreviews: items.map((item) => ({
@@ -580,9 +581,11 @@ function formatReviewProgress(progress) {
 			for (const preview of batch.promptPreviews) {
 				lines.push(`  - ${preview.caseId}: ${preview.promptPreview}`);
 			}
-			lines.push('- Read first focused card:');
+			lines.push('- Read every focused card before rating the batch:');
 			lines.push('```sh');
-			lines.push(batch.readFirstFocusedCheck);
+			for (const command of batch.focusedCheckCommands ?? [batch.readFirstFocusedCheck]) {
+				lines.push(command);
+			}
 			lines.push('```');
 			lines.push('- Rate 5/5 after reading every listed case:');
 			lines.push('```sh');
