@@ -72,7 +72,7 @@ test('Dad local AI eval suite has 100 complete, reviewable cases', async () => {
 		nativePlatform: 'ios',
 		installSource: 'testflight',
 		minAppVersion: '1.0',
-		minAppBuild: 12
+		minAppBuild: 13
 	});
 	assert.equal(suite.cases.length, 100);
 
@@ -230,23 +230,23 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(gates.suite.ok, true);
 	assert.equal(gates.coverage.ok, true);
 	assert.equal(gates.routing.ok, true);
-	assert.equal(gates['testflight-target'].ok, true);
+	assert.equal(gates['testflight-target'].ok, false);
 	assert.equal(gates['device-run'].ok, false);
 	assert.equal(gates['iteration-loop'].ok, true);
 	assert.match(gates['iteration-loop'].evidence, /No completed below-5 device reviews yet/u);
 	assert.equal(status.runs.currentFullRoutingRuns.length, 1);
 	assert.equal(status.strictDeviceProofs.length, 0);
-	assert.equal(status.suite.finalProof.requiredApp, '1.0 (>= 12)');
-	assert.equal(status.testflight.targetBuild, '1.0 (12)');
-	assert.equal(status.testflight.suiteRequiredBuild, '1.0 (>= 12)');
+	assert.equal(status.suite.finalProof.requiredApp, '1.0 (>= 13)');
+	assert.equal(status.testflight.targetBuild, '1.0 (13)');
+	assert.equal(status.testflight.suiteRequiredBuild, '1.0 (>= 13)');
 	assert.equal(status.testflight.targetBuildMeetsSuiteRequirement, true);
 	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (12)');
-	assert.equal(status.testflight.recordedDadPilotMeetsSuiteRequirement, true);
-	assert.equal(status.testflight.targetBuildReadyForDad, true);
-	assert.equal(status.testflight.targetBuildAvailableForDad, true);
-	assert.equal(status.nextAction.kind, 'get-device-run');
-	assert.match(status.nextAction.text, /Install the latest TestFlight build/u);
-	assert.match(status.nextAction.text, /Run 100/u);
+	assert.equal(status.testflight.recordedDadPilotMeetsSuiteRequirement, false);
+	assert.equal(status.testflight.targetBuildReadyForDad, false);
+	assert.equal(status.testflight.targetBuildAvailableForDad, false);
+	assert.equal(status.nextAction.kind, 'publish-target-build');
+	assert.match(status.nextAction.text, /Upload and attach target iOS build 1\.0 \(13\)/u);
+	assert.match(status.nextAction.text, /suite requires 1\.0 \(>= 13\)/u);
 });
 
 test('status command surfaces target TestFlight build gaps before phone eval', async () => {
@@ -270,7 +270,7 @@ test('status command surfaces target TestFlight build gaps before phone eval', a
 		items: {
 			'dad-testflight-invite': {
 				status: 'verified',
-				summary: 'Dad Pilot is attached to Hoggcountry iOS build 1.0 (11), and build 12 is not attached yet.',
+				summary: 'Dad Pilot is attached to Hoggcountry iOS build 1.0 (12), and build 13 is not attached yet.',
 				publicLink: 'https://testflight.apple.com/join/BagBCrzf'
 			}
 		}
@@ -294,17 +294,17 @@ test('status command surfaces target TestFlight build gaps before phone eval', a
 	);
 	const status = JSON.parse(result.stdout);
 
-	assert.equal(status.testflight.targetBuild, '1.0 (12)');
-	assert.equal(status.testflight.suiteRequiredBuild, '1.0 (>= 12)');
+	assert.equal(status.testflight.targetBuild, '1.0 (13)');
+	assert.equal(status.testflight.suiteRequiredBuild, '1.0 (>= 13)');
 	assert.equal(status.testflight.targetBuildMeetsSuiteRequirement, true);
-	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (11)');
+	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (12)');
 	assert.equal(status.testflight.recordedDadPilotMeetsSuiteRequirement, false);
 	assert.equal(status.testflight.targetBuildReadyForDad, false);
 	assert.equal(status.testflight.targetBuildAvailableForDad, false);
 	assert.equal(status.nextAction.kind, 'publish-target-build');
-	assert.match(status.nextAction.text, /Upload and attach target iOS build 1\.0 \(12\)/u);
-	assert.match(status.nextAction.text, /Dad Pilot on 1\.0 \(11\)/u);
-	assert.match(status.nextAction.text, /suite requires 1\.0 \(>= 12\)/u);
+	assert.match(status.nextAction.text, /Upload and attach target iOS build 1\.0 \(13\)/u);
+	assert.match(status.nextAction.text, /Dad Pilot on 1\.0 \(12\)/u);
+	assert.match(status.nextAction.text, /suite requires 1\.0 \(>= 13\)/u);
 });
 
 test('status command recognizes repeated strict TestFlight iPhone proof candidates', async () => {
@@ -628,13 +628,13 @@ test('goal audit maps original success criteria without hiding missing device pr
 	assert.equal(requirements['below-five-creates-task'].ok, true);
 	assert.equal(requirements['iterations-target-responsible-layer'].ok, true);
 	assert.equal(requirements['device-proof-lane-separated'].ok, true);
-	assert.equal(requirements['target-testflight-build'].ok, true);
+	assert.equal(requirements['target-testflight-build'].ok, false);
 	assert.match(requirements['target-testflight-build'].evidence, /Dad Pilot records 1\.0 \(12\)/u);
 	assert.equal(requirements['final-100-rated-five'].ok, false);
 	assert.match(requirements['final-100-rated-five'].evidence, /No strict TestFlight\/iPhone proof run passes/u);
 	assert.equal(audit.currentStatus.currentFullRoutingRuns, 1);
 	assert.equal(audit.currentStatus.currentFullDeviceRuns, 0);
-	assert.equal(audit.currentStatus.nextAction.kind, 'get-device-run');
+	assert.equal(audit.currentStatus.nextAction.kind, 'publish-target-build');
 });
 
 test('Dad handoff command summarizes current TestFlight/iPhone eval next steps', async () => {
@@ -696,19 +696,20 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	);
 
 	assert.match(result.stdout, /# Dad Scout local AI Eval Lab handoff/u);
-	assert.match(result.stdout, /Suite final-proof app requirement: `1\.0 \(>= 12\)`/u);
-	assert.match(result.stdout, /Target iOS build for Dad Eval Lab: `1\.0 \(12\)`/u);
+	assert.match(result.stdout, /Suite final-proof app requirement: `1\.0 \(>= 13\)`/u);
+	assert.match(result.stdout, /Target iOS build for Dad Eval Lab: `1\.0 \(13\)`/u);
 	assert.match(result.stdout, /Target build meets suite requirement: yes/u);
 	assert.match(result.stdout, /Recorded Dad Pilot build: `1\.0 \(12\)`/u);
-	assert.match(result.stdout, /Recorded Dad Pilot build meets suite requirement: yes/u);
+	assert.match(result.stdout, /Recorded Dad Pilot build meets suite requirement: no/u);
 	assert.match(result.stdout, /https:\/\/testflight\.apple\.com\/join\/BagBCrzf/u);
+	assert.match(result.stdout, /recorded Dad Pilot build is not ready for this suite/u);
 	assert.match(result.stdout, /## Upload readiness/u);
-	assert.match(result.stdout, /Xcode Release target: `1\.0 \(12\)`/u);
+	assert.match(result.stdout, /Xcode Release target: `1\.0 \(13\)`/u);
 	assert.match(result.stdout, /Signing team\/profile: `3CFU9J87A5` \/ `Hoggcountry App Store Connect`/u);
 	assert.match(result.stdout, /Latest native upload proof: .*ios-testflight-attempt-2026-06-27T02-18-34-941Z\.md` \(passed/u);
 	assert.match(result.stdout, /App Store Connect API key in latest proof: yes/u);
 	assert.match(result.stdout, /APP_STORE_CONNECT_API_ISSUER_ID/u);
-	assert.match(result.stdout, /Install the latest TestFlight build/u);
+	assert.match(result.stdout, /Upload and attach target iOS build 1\.0 \(13\)/u);
 	assert.match(result.stdout, /use `Run 100` for real proof/u);
 	assert.match(result.stdout, /npm run intake:scout-local-ai-device-run/u);
 	assert.match(result.stdout, /npm run apply-review:scout-local-ai/u);
@@ -720,14 +721,14 @@ test('Dad Pilot refresh command can attach the target build and update release e
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-dad-pilot-refresh-'));
 	const fixturePath = join(outputDir, 'app-store-connect-fixture.json');
 	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
-	const proofPath = join(outputDir, 'ios-testflight-build-12.proof.md');
+	const proofPath = join(outputDir, 'ios-testflight-build-13.proof.md');
 	await writeFile(fixturePath, `${JSON.stringify(dadPilotFixture(), null, 2)}\n`);
 	await writeFile(releaseEvidencePath, `${JSON.stringify({
 		schemaVersion: 1,
 		items: {
 			'dad-testflight-invite': {
 				status: 'verified',
-				summary: 'Dad Pilot is attached to Hoggcountry iOS build 1.0 (11).',
+				summary: 'Dad Pilot is attached to Hoggcountry iOS build 1.0 (12).',
 				publicLink: 'https://testflight.apple.com/join/BagBCrzf'
 			}
 		}
@@ -744,7 +745,7 @@ test('Dad Pilot refresh command can attach the target build and update release e
 			'--proof-out',
 			proofPath,
 			'--build',
-			'12',
+			'13',
 			'--app-version',
 			'1.0',
 			'--attach',
@@ -758,19 +759,19 @@ test('Dad Pilot refresh command can attach the target build and update release e
 	const releaseEvidence = JSON.parse(await readFile(releaseEvidencePath, 'utf8'));
 	const proof = await readFile(proofPath, 'utf8');
 
-	assert.equal(summary.targetBuild, '1.0 (12)');
-	assert.equal(summary.target.id, 'build-12-id');
+	assert.equal(summary.targetBuild, '1.0 (13)');
+	assert.equal(summary.target.id, 'build-13-id');
 	assert.equal(summary.gates.buildValid, true);
 	assert.equal(summary.gates.attachedToDadPilot, true);
 	assert.equal(summary.gates.externallyAvailable, true);
 	assert.equal(summary.gates.targetReadyForDad, true);
 	assert.equal(summary.actions.attached, true);
-	assert.deepEqual(summary.actions.removedBuildIds, ['build-11-id']);
+	assert.deepEqual(summary.actions.removedBuildIds, ['build-12-id']);
 	assert.equal(summary.dadPilot.attachedBuilds.length, 1);
-	assert.equal(summary.dadPilot.attachedBuilds[0].id, 'build-12-id');
-	assert.match(proof, /Target build: `1\.0 \(12\)`/u);
+	assert.equal(summary.dadPilot.attachedBuilds[0].id, 'build-13-id');
+	assert.match(proof, /Target build: `1\.0 \(13\)`/u);
 	assert.match(proof, /This refresh only covers App Store Connect \/ Dad Pilot build availability/u);
-	assert.match(releaseEvidence.items['dad-testflight-invite'].summary, /build 1\.0 \(12\)/u);
+	assert.match(releaseEvidence.items['dad-testflight-invite'].summary, /build 1\.0 \(13\)/u);
 	assert.equal(releaseEvidence.items['dad-testflight-invite'].publicLink, 'https://testflight.apple.com/join/BagBCrzf');
 	assert.match(releaseEvidence.items['apple-archive-upload'].summary, /external state IN_BETA_TESTING/u);
 });
@@ -779,7 +780,7 @@ test('Dad Pilot refresh command can submit a valid target build for beta review 
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-dad-pilot-submit-'));
 	const fixturePath = join(outputDir, 'app-store-connect-fixture.json');
 	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
-	const proofPath = join(outputDir, 'ios-testflight-build-12-submit.proof.md');
+	const proofPath = join(outputDir, 'ios-testflight-build-13-submit.proof.md');
 	await writeFile(fixturePath, `${JSON.stringify(dadPilotReadyForBetaSubmissionFixture(), null, 2)}\n`);
 	await writeFile(releaseEvidencePath, `${JSON.stringify({ schemaVersion: 1, items: {} }, null, 2)}\n`);
 
@@ -794,7 +795,7 @@ test('Dad Pilot refresh command can submit a valid target build for beta review 
 			'--proof-out',
 			proofPath,
 			'--build',
-			'12',
+			'13',
 			'--app-version',
 			'1.0',
 			'--attach',
@@ -813,17 +814,17 @@ test('Dad Pilot refresh command can submit a valid target build for beta review 
 	const releaseEvidence = JSON.parse(await readFile(releaseEvidencePath, 'utf8'));
 	const proof = await readFile(proofPath, 'utf8');
 
-	assert.equal(summary.targetBuild, '1.0 (12)');
+	assert.equal(summary.targetBuild, '1.0 (13)');
 	assert.equal(summary.target.externalState, 'IN_BETA_TESTING');
 	assert.equal(summary.target.betaReviewState, 'APPROVED');
 	assert.equal(summary.gates.targetReadyForDad, true);
 	assert.equal(summary.actions.attached, true);
 	assert.equal(summary.actions.submittedBetaReview, true);
 	assert.equal(summary.actions.reviewPolls, 1);
-	assert.deepEqual(summary.actions.removedBuildIds, ['build-11-id']);
+	assert.deepEqual(summary.actions.removedBuildIds, ['build-12-id']);
 	assert.match(proof, /Submitted target build for beta review this run: yes/u);
 	assert.match(releaseEvidence.items['apple-archive-upload'].commands.join('\n'), /--submit-review/u);
-	assert.match(releaseEvidence.items['dad-testflight-invite'].summary, /build 1\.0 \(12\)/u);
+	assert.match(releaseEvidence.items['dad-testflight-invite'].summary, /build 1\.0 \(13\)/u);
 });
 
 test('Dad local AI eval suite routes every case through expected Scout tools', async () => {
@@ -1455,7 +1456,7 @@ test('device run intake rejects full exports without current TestFlight proof co
 		),
 		(error) => {
 			assert.match(error.stderr, /installSource\.type must be testflight/u);
-			assert.match(error.stderr, /app\.build must be >= 12/u);
+			assert.match(error.stderr, /app\.build must be >= 13/u);
 			assert.match(error.stderr, /got 9/u);
 			return true;
 		}
@@ -2668,8 +2669,8 @@ test('strict device proof accepts a full 5-star device review', async () => {
 	assert.ok(proof.includes(`Suite version: \`${suite.version}\``));
 	assert.match(proof, /Suite hash: `fnv1a32:[0-9a-f]{8}`/u);
 	assert.match(proof, /Required-tool complete: 100\/100/u);
-	assert.match(proof, /App version\/build: `1\.0 \(12\)`/u);
-	assert.match(proof, /Required app version\/build: `1\.0 \(>= 12\)`/u);
+	assert.match(proof, /App version\/build: `1\.0 \(13\)`/u);
+	assert.match(proof, /Required app version\/build: `1\.0 \(>= 13\)`/u);
 	assert.match(proof, /Install source: `testflight`/u);
 });
 
@@ -2932,7 +2933,7 @@ test('strict device proof rejects stale TestFlight app builds', async () => {
 			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
 		),
 		(error) => {
-			assert.match(error.stderr, /app\.build must be >= 12/u);
+			assert.match(error.stderr, /app\.build must be >= 13/u);
 			assert.match(error.stderr, /got 9/u);
 			return true;
 		}
@@ -3021,8 +3022,8 @@ test('stability proof accepts two full 5-star device reviews', async () => {
 	assert.match(proof, /Run 2: device-stability-pass-b/u);
 	assert.match(proof, /Run generated at: `2026-06-26T12:10:00\.000Z`/u);
 	assert.match(proof, /Install source: `testflight`/u);
-	assert.match(proof, /Required app version\/build: `1\.0 \(>= 12\)`/u);
-	assert.match(proof, /App version\/build: `1\.0 \(12\)`/u);
+	assert.match(proof, /Required app version\/build: `1\.0 \(>= 13\)`/u);
+	assert.match(proof, /App version\/build: `1\.0 \(13\)`/u);
 	assert.match(proof, /Per-case repeated 5\/5: 100\/100/u);
 });
 
@@ -3100,9 +3101,9 @@ function dadPilotFixture() {
 	const dadGroupId = 'fc963396-a087-44c6-b56b-29847da31cd4';
 	const targetBuild = {
 		type: 'builds',
-		id: 'build-12-id',
+		id: 'build-13-id',
 		attributes: {
-			version: '12',
+			version: '13',
 			uploadedDate: '2026-06-26T18:30:00-07:00',
 			processingState: 'VALID'
 		},
@@ -3111,7 +3112,7 @@ function dadPilotFixture() {
 				data: { type: 'preReleaseVersions', id: 'pre-1-0' }
 			},
 			buildBetaDetail: {
-				data: { type: 'buildBetaDetails', id: 'build-12-id' }
+				data: { type: 'buildBetaDetails', id: 'build-13-id' }
 			},
 			betaGroups: {
 				data: []
@@ -3132,7 +3133,7 @@ function dadPilotFixture() {
 				},
 				{
 					type: 'buildBetaDetails',
-					id: 'build-12-id',
+					id: 'build-13-id',
 					attributes: {
 						internalBuildState: 'READY_FOR_BETA_TESTING',
 						externalBuildState: 'IN_BETA_TESTING'
@@ -3140,7 +3141,7 @@ function dadPilotFixture() {
 				},
 				{
 					type: 'betaAppReviewSubmissions',
-					id: 'review-build-12',
+					id: 'review-build-13',
 					attributes: {
 						betaReviewState: 'APPROVED'
 					}
@@ -3162,16 +3163,16 @@ function dadPilotFixture() {
 						data: [{ type: 'betaTesters', id: 'dad-tester' }]
 					},
 					builds: {
-						data: [{ type: 'builds', id: 'build-11-id' }]
+						data: [{ type: 'builds', id: 'build-12-id' }]
 					}
 				}
 			},
 			included: [
 				{
 					type: 'builds',
-					id: 'build-11-id',
+					id: 'build-12-id',
 					attributes: {
-						version: '11',
+						version: '12',
 						uploadedDate: '2026-06-26T14:15:00-07:00',
 						processingState: 'VALID'
 					}
@@ -3190,7 +3191,7 @@ function dadPilotFixture() {
 
 function dadPilotReadyForBetaSubmissionFixture() {
 	const fixture = dadPilotFixture();
-	const betaDetail = fixture.buildQuery.included.find((entry) => entry.type === 'buildBetaDetails' && entry.id === 'build-12-id');
+	const betaDetail = fixture.buildQuery.included.find((entry) => entry.type === 'buildBetaDetails' && entry.id === 'build-13-id');
 	betaDetail.attributes.externalBuildState = 'READY_FOR_BETA_SUBMISSION';
 	fixture.buildQuery.included = fixture.buildQuery.included.filter((entry) => entry.type !== 'betaAppReviewSubmissions');
 	return fixture;
@@ -3235,7 +3236,7 @@ function finalDeviceRunContext(patch = {}) {
 			id: 'com.hoggcountry.trailassistant',
 			name: 'Hoggcountry',
 			version: '1.0',
-			build: '12'
+			build: '13'
 		},
 		installSource: {
 			type: 'testflight',

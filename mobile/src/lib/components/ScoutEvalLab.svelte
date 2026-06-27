@@ -16,6 +16,10 @@
 		getCapacitorScoutInstallSource,
 		type ScoutInstallSource
 	} from '$lib/scout/capacitor-gemma-bridge';
+	import {
+		createScoutEvalWakeLock,
+		type ScoutEvalWakeLockController
+	} from '$lib/scout/eval-wake-lock';
 
 	const SUITE_URL = '/scout/dad-local-ai-100.json';
 	const SAVED_RUN_KEY = 'hoggcountry:scout-local-ai-eval:last-run:v1';
@@ -59,6 +63,7 @@
 		installSourceType: null,
 		installSourceLabel: 'Checking'
 	});
+	let evalWakeLock: ScoutEvalWakeLockController | null = null;
 
 	const modelReady = $derived(
 		trailAssistant.modelStatus?.state === 'ready' &&
@@ -116,9 +121,16 @@
 	const runHealth = $derived(activeRun ? summarizeRunHealth(activeRun, suite) : null);
 
 	onMount(() => {
+		evalWakeLock = createScoutEvalWakeLock({
+			onError: (err) => console.warn('Scout Eval Lab screen wake lock unavailable', err)
+		});
 		loadSavedRun();
 		void loadSuite();
 		void loadNativePreflight();
+		return () => {
+			evalWakeLock?.dispose();
+			evalWakeLock = null;
+		};
 	});
 
 	async function loadSuite() {
@@ -154,6 +166,7 @@
 		progress = null;
 		if (!resume) run = null;
 		try {
+			await evalWakeLock?.request();
 			run = await trailAssistant.runLocalAiEvalSuite({
 				suite,
 				limit: runLimit,
@@ -171,6 +184,7 @@
 			void loadNativePreflight();
 		} finally {
 			running = false;
+			await evalWakeLock?.release();
 		}
 	}
 
