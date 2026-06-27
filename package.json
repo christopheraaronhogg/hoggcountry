@@ -46,6 +46,7 @@
     "review:scout-local-ai": "node scripts/review-scout-local-ai-eval.mjs",
     "plan:scout-local-ai-iteration": "node scripts/plan-scout-local-ai-iteration.mjs",
     "verify:scout-local-ai-iteration": "node scripts/verify-scout-local-ai-iteration.mjs",
+    "audit:scout-local-ai-goal": "node scripts/audit-scout-local-ai-goal.mjs",
     "intake:scout-local-ai-device-run": "node scripts/import-scout-local-ai-device-run.mjs",
     "verify:scout-local-ai-device-proof": "node scripts/verify-scout-local-ai-device-proof.mjs",
     "verify:scout-local-ai-stability-proof": "node scripts/verify-scout-local-ai-stability-proof.mjs",

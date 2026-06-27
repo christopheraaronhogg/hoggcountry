@@ -1,0 +1,362 @@
+import { execFile } from 'node:child_process';
+import { access, readFile } from 'node:fs/promises';
+import { dirname, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
+import {
+	parseCliArgs
+} from './lib/scout-local-ai-review.mjs';
+
+const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = resolve(SCRIPT_DIR, '..');
+const execFileAsync = promisify(execFile);
+
+const DEFAULT_SUITE = 'data/scout-local-ai/dad-local-ai-100.json';
+const DEFAULT_MOBILE_SUITE = 'mobile/static/scout/dad-local-ai-100.json';
+const DEFAULT_RUNS_DIR = 'data/scout-local-ai/runs';
+const DEFAULT_DEVICE_RUNS_DIR = 'data/scout-local-ai/device-runs';
+const DEFAULT_REVIEWS_DIR = 'data/scout-local-ai/reviews';
+const DEFAULT_BACKLOG_DIR = 'data/scout-local-ai/backlog';
+const DEFAULT_ITERATIONS_DIR = 'data/scout-local-ai/iterations';
+const DEFAULT_XCODE_PROJECT = 'mobile/ios/App/App.xcodeproj/project.pbxproj';
+const DEFAULT_RELEASE_EVIDENCE = 'docs/launch/release-evidence.json';
+
+const cli = parseCliArgs(process.argv.slice(2));
+const paths = {
+	suite: resolveInputPath(cli.suite ?? DEFAULT_SUITE),
+	mobileSuite: resolveInputPath(cli.mobileSuite ?? DEFAULT_MOBILE_SUITE),
+	runsDir: resolveInputPath(cli.runsDir ?? DEFAULT_RUNS_DIR),
+	deviceRunsDir: resolveInputPath(cli.deviceRunsDir ?? DEFAULT_DEVICE_RUNS_DIR),
+	reviewsDir: resolveInputPath(cli.reviewsDir ?? DEFAULT_REVIEWS_DIR),
+	backlogDir: resolveInputPath(cli.backlogDir ?? DEFAULT_BACKLOG_DIR),
+	iterationsDir: resolveInputPath(cli.iterationsDir ?? DEFAULT_ITERATIONS_DIR),
+	xcodeProject: resolveInputPath(cli.xcodeProject ?? DEFAULT_XCODE_PROJECT),
+	releaseEvidence: resolveInputPath(cli.releaseEvidence ?? DEFAULT_RELEASE_EVIDENCE)
+};
+
+const [
+	status,
+	suite,
+	packageJson,
+	reviewSource,
+	planSource,
+	verifyIterationSource
+] = await Promise.all([
+	loadStatus(paths),
+	readJson(paths.suite),
+	readJson(resolve(REPO_ROOT, 'package.json')),
+	readText(resolve(REPO_ROOT, 'scripts/lib/scout-local-ai-review.mjs')),
+	readText(resolve(REPO_ROOT, 'scripts/plan-scout-local-ai-iteration.mjs')),
+	readText(resolve(REPO_ROOT, 'scripts/verify-scout-local-ai-iteration.mjs'))
+]);
+
+const transcriptRuns = await loadTranscriptRuns(status);
+const scriptMap = packageJson.scripts ?? {};
+const gates = Object.fromEntries(status.gates.map((gate) => [gate.id, gate]));
+const requirements = createRequirementAudit({
+	status,
+	suite,
+	scriptMap,
+	reviewSource,
+	planSource,
+	verifyIterationSource,
+	transcriptRuns,
+	gates
+});
+const finalGateIds = [
+	'suite',
+	'coverage',
+	'routing',
+	'testflight-target',
+	'device-run',
+	'review',
+	'iteration-loop',
+	'strict-device-proof',
+	'stability'
+];
+const goalComplete = finalGateIds.every((id) => gates[id]?.ok === true);
+const audit = {
+	schemaVersion: 1,
+	generatedAt: new Date().toISOString(),
+	goalComplete,
+	requirements,
+	gates: status.gates,
+	currentStatus: {
+		suiteVersion: status.suite.version,
+		suiteHash: status.suite.hash,
+		caseCount: status.suite.caseCount,
+		targetBuild: status.testflight.targetBuild,
+		recordedDadPilotBuild: status.testflight.recordedDadPilotBuild,
+		currentFullRoutingRuns: status.runs.currentFullRoutingRuns.length,
+		currentFullDeviceRuns: status.runs.currentFullDeviceRuns.length,
+		currentDeviceReviews: status.reviews.currentDeviceReviews.length,
+		strictDeviceProofPasses: status.strictDeviceProofs.filter((proof) => proof.ok).length,
+		nextAction: status.nextAction
+	}
+};
+
+if (cli.json) {
+	console.log(JSON.stringify(audit, null, 2));
+} else {
+	console.log(createAuditMarkdown(audit));
+}
+
+function createRequirementAudit(input) {
+	const suiteGate = input.gates.suite;
+	const coverageGate = input.gates.coverage;
+	const routingGate = input.gates.routing;
+	const testflightGate = input.gates['testflight-target'];
+	const deviceRunGate = input.gates['device-run'];
+	const reviewGate = input.gates.review;
+	const iterationLoopGate = input.gates['iteration-loop'];
+	const strictProofGate = input.gates['strict-device-proof'];
+	const stabilityGate = input.gates.stability;
+	const transcriptEvidence = summarizeTranscriptEvidence(input.transcriptRuns);
+	const caseRubricProblems = caseRubricAudit(input.suite);
+	const scripts = input.scriptMap;
+
+	return [
+		requirement({
+			id: 'versioned-100-question-suite',
+			label: '100 realistic hiker questions exist in a versioned eval file',
+			ok: suiteGate?.ok === true && coverageGate?.ok === true,
+			evidence: `${suiteGate?.evidence ?? '<missing suite gate>'}; ${coverageGate?.evidence ?? '<missing coverage gate>'}`
+		}),
+		requirement({
+			id: 'per-case-rubrics-and-tools',
+			label: 'Each question has expected answer traits, required source/tool expectations, and safety caveats',
+			ok: caseRubricProblems.length === 0,
+			evidence: caseRubricProblems.length
+				? caseRubricProblems.slice(0, 8).join('; ')
+				: `All ${input.suite.cases?.length ?? 0} cases include non-empty expectedTraits, requiredTools, and safetyCaveats.`
+		}),
+		requirement({
+			id: 'runner-saves-transcripts',
+			label: 'Eval runner can execute all 100 and save full transcripts',
+			ok: Boolean(scripts['eval:scout-local-ai']) && routingGate?.ok === true && transcriptEvidence.ok,
+			evidence: transcriptEvidence.ok
+				? `${scripts['eval:scout-local-ai']}; ${transcriptEvidence.evidence}`
+				: transcriptEvidence.evidence
+		}),
+		requirement({
+			id: 'review-ratings-and-notes',
+			label: 'Review workflow supports 1-5 ratings plus notes',
+			ok: Boolean(scripts['review:scout-local-ai']) &&
+				input.reviewSource.includes('rating: null') &&
+				input.reviewSource.includes("notes: ''") &&
+				input.reviewSource.includes('Rate each answer 1-5'),
+			evidence: scripts['review:scout-local-ai']
+				? 'Review template records rating, notes, answer text, evidence, checklists, failure categories, owner layer, and improvement task.'
+				: 'package.json is missing review:scout-local-ai script.'
+		}),
+		requirement({
+			id: 'below-five-creates-task',
+			label: 'Any answer below 5 creates a concrete improvement task',
+			ok: Boolean(scripts['apply-review:scout-local-ai']) &&
+				iterationLoopGate?.ok === true &&
+				input.reviewSource.includes('ratings below 5 need an improvementTask') &&
+				input.reviewSource.includes('improvementTask must be concrete enough'),
+			evidence: iterationLoopGate?.evidence ?? 'iteration-loop status gate is missing'
+		}),
+		requirement({
+			id: 'iterations-target-responsible-layer',
+			label: 'Iterations improve data/tools/prompts/UI/local model rather than overfitting wording',
+			ok: Boolean(scripts['plan:scout-local-ai-iteration']) &&
+				Boolean(scripts['verify:scout-local-ai-iteration']) &&
+				input.reviewSource.includes('OVERFITTING_IMPROVEMENT_PATTERNS') &&
+				input.reviewSource.includes('rather than weakening the eval rubric') &&
+				input.planSource.includes('Fix the responsible layer named by ownerLayer') &&
+				input.verifyIterationSource.includes('stale improvementTask remains on a planned 5/5 case'),
+			evidence: 'Review rejects rubric-weakening tasks; planner groups misses by ownerLayer; verifier rejects unresolved/stale iteration closures.'
+		}),
+		requirement({
+			id: 'device-proof-lane-separated',
+			label: 'Final proof keeps local AI/device proof separate from browser/cloud/scaffold proof',
+			ok: Boolean(scripts['intake:scout-local-ai-device-run']) &&
+				Boolean(scripts['verify:scout-local-ai-device-proof']) &&
+				Boolean(scripts['verify:scout-local-ai-stability-proof']) &&
+				[deviceRunGate, strictProofGate, stabilityGate].every(Boolean),
+			evidence: [
+				deviceRunGate?.evidence ?? '<missing device-run gate>',
+				strictProofGate?.evidence ?? '<missing strict proof gate>',
+				stabilityGate?.evidence ?? '<missing stability gate>'
+			].join('; ')
+		}),
+		requirement({
+			id: 'target-testflight-build',
+			label: 'Dad Pilot has the current suite-required TestFlight build',
+			ok: testflightGate?.ok === true,
+			evidence: testflightGate?.evidence ?? '<missing TestFlight gate>'
+		}),
+		requirement({
+			id: 'final-100-rated-five',
+			label: 'Final proof includes all 100 questions rated 5/5 on TestFlight/iPhone',
+			ok: reviewGate?.ok === true && strictProofGate?.ok === true && stabilityGate?.ok === true,
+			evidence: [
+				reviewGate?.evidence ?? '<missing review gate>',
+				strictProofGate?.evidence ?? '<missing strict proof gate>',
+				stabilityGate?.evidence ?? '<missing stability gate>'
+			].join('; ')
+		})
+	];
+}
+
+function requirement(input) {
+	return {
+		id: input.id,
+		label: input.label,
+		ok: Boolean(input.ok),
+		evidence: input.evidence
+	};
+}
+
+function caseRubricAudit(suite) {
+	const problems = [];
+	if (!Array.isArray(suite.cases)) return ['suite.cases must be an array'];
+	for (const testCase of suite.cases) {
+		for (const key of ['expectedTraits', 'requiredTools', 'safetyCaveats']) {
+			if (!Array.isArray(testCase[key]) || testCase[key].length === 0) {
+				problems.push(`${testCase.id ?? '<missing-id>'}: ${key} must be a non-empty array`);
+			}
+		}
+	}
+	return problems;
+}
+
+function summarizeTranscriptEvidence(runs) {
+	if (!runs.length) {
+		return {
+			ok: false,
+			evidence: 'No current full tool-complete run is available to inspect for transcript fields.'
+		};
+	}
+	const problems = [];
+	let resultCount = 0;
+	for (const run of runs) {
+		if (!Array.isArray(run.results)) {
+			problems.push(`${run.runId ?? '<missing-run>'}: results must be an array`);
+			continue;
+		}
+		resultCount += run.results.length;
+		for (const result of run.results) {
+			const label = `${run.runId ?? '<missing-run>'}:${result.caseId ?? '<missing-case>'}`;
+			if (typeof result.answer !== 'string') problems.push(`${label}: answer must be a string`);
+			if (!Array.isArray(result.receipts)) problems.push(`${label}: receipts must be recorded`);
+			if (!Array.isArray(result.toolInvocations)) problems.push(`${label}: toolInvocations must be recorded`);
+			if (!String(result.confidence ?? '').trim()) problems.push(`${label}: confidence must be recorded`);
+			if (!Object.hasOwn(result, 'failureMode')) problems.push(`${label}: failureMode must be recorded`);
+			if (!result.toolExpectations || !Array.isArray(result.toolExpectations.missing)) {
+				problems.push(`${label}: toolExpectations.missing must be recorded`);
+			}
+		}
+	}
+	return {
+		ok: problems.length === 0,
+		evidence: problems.length
+			? problems.slice(0, 8).join('; ')
+			: `${runs.length} current full run(s) / ${resultCount} result transcript(s) include answer, receipts, toolInvocations, confidence, failureMode, and tool expectations.`
+	};
+}
+
+async function loadTranscriptRuns(status) {
+	const entries = status.runs.currentFullToolCompleteRuns.length
+		? status.runs.currentFullToolCompleteRuns
+		: status.runs.currentFullRoutingRuns;
+	const runs = [];
+	for (const entry of entries) {
+		const path = resolve(REPO_ROOT, entry.path);
+		if (!(await exists(path))) continue;
+		runs.push(await readJson(path));
+	}
+	return runs;
+}
+
+async function loadStatus(paths) {
+	const args = [
+		'scripts/status-scout-local-ai.mjs',
+		'--json',
+		'--suite',
+		relative(REPO_ROOT, paths.suite),
+		'--mobile-suite',
+		relative(REPO_ROOT, paths.mobileSuite),
+		'--runs-dir',
+		relative(REPO_ROOT, paths.runsDir),
+		'--device-runs-dir',
+		relative(REPO_ROOT, paths.deviceRunsDir),
+		'--reviews-dir',
+		relative(REPO_ROOT, paths.reviewsDir),
+		'--backlog-dir',
+		relative(REPO_ROOT, paths.backlogDir),
+		'--iterations-dir',
+		relative(REPO_ROOT, paths.iterationsDir),
+		'--xcode-project',
+		relative(REPO_ROOT, paths.xcodeProject),
+		'--release-evidence',
+		relative(REPO_ROOT, paths.releaseEvidence)
+	];
+	const result = await execFileAsync(process.execPath, args, {
+		cwd: REPO_ROOT,
+		maxBuffer: 1024 * 1024 * 6
+	});
+	return JSON.parse(result.stdout);
+}
+
+function createAuditMarkdown(audit) {
+	const lines = [
+		'# Scout local AI goal audit',
+		'',
+		`Generated at: ${audit.generatedAt}`,
+		`Goal complete: ${audit.goalComplete ? 'yes' : 'no'}`,
+		'',
+		'## Requirements',
+		''
+	];
+	for (const item of audit.requirements) {
+		lines.push(
+			`- ${item.ok ? '[x]' : '[ ]'} ${item.label}`,
+			`  Evidence: ${item.evidence}`
+		);
+	}
+	lines.push(
+		'',
+		'## Current State',
+		'',
+		`- Suite: \`${audit.currentStatus.suiteVersion}\` / \`${audit.currentStatus.suiteHash}\``,
+		`- Cases: ${audit.currentStatus.caseCount}`,
+		`- Target build: \`${audit.currentStatus.targetBuild ?? '<unknown>'}\``,
+		`- Recorded Dad Pilot build: \`${audit.currentStatus.recordedDadPilotBuild ?? '<unknown>'}\``,
+		`- Full routing runs: ${audit.currentStatus.currentFullRoutingRuns}`,
+		`- Full device runs: ${audit.currentStatus.currentFullDeviceRuns}`,
+		`- Device reviews: ${audit.currentStatus.currentDeviceReviews}`,
+		`- Strict proof passes: ${audit.currentStatus.strictDeviceProofPasses}`,
+		'',
+		'## Next Action',
+		'',
+		audit.currentStatus.nextAction.text
+	);
+	return `${lines.join('\n')}\n`;
+}
+
+async function readJson(path) {
+	return JSON.parse(await readFile(path, 'utf8'));
+}
+
+async function readText(path) {
+	return readFile(path, 'utf8');
+}
+
+async function exists(path) {
+	try {
+		await access(path);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+function resolveInputPath(value) {
+	const text = String(value);
+	if (text === '~') return process.env.HOME ?? text;
+	if (text.startsWith('~/')) return resolve(process.env.HOME ?? REPO_ROOT, text.slice(2));
+	return resolve(REPO_ROOT, text);
+}

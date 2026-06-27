@@ -572,6 +572,36 @@ test('status command follows existing below-5 backlog and iteration plan', async
 	assert.match(plannedStatus.nextAction.text, /npm run verify:scout-local-ai-iteration/u);
 });
 
+test('goal audit maps original success criteria without hiding missing device proof', async () => {
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/audit-scout-local-ai-goal.mjs',
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 4 }
+	);
+	const audit = JSON.parse(result.stdout);
+	const requirements = Object.fromEntries(audit.requirements.map((item) => [item.id, item]));
+
+	assert.equal(audit.goalComplete, false);
+	assert.equal(requirements['versioned-100-question-suite'].ok, true);
+	assert.equal(requirements['per-case-rubrics-and-tools'].ok, true);
+	assert.equal(requirements['runner-saves-transcripts'].ok, true);
+	assert.match(requirements['runner-saves-transcripts'].evidence, /100 result transcript/u);
+	assert.equal(requirements['review-ratings-and-notes'].ok, true);
+	assert.equal(requirements['below-five-creates-task'].ok, true);
+	assert.equal(requirements['iterations-target-responsible-layer'].ok, true);
+	assert.equal(requirements['device-proof-lane-separated'].ok, true);
+	assert.equal(requirements['target-testflight-build'].ok, false);
+	assert.match(requirements['target-testflight-build'].evidence, /Dad Pilot records 1\.0 \(10\)/u);
+	assert.equal(requirements['final-100-rated-five'].ok, false);
+	assert.match(requirements['final-100-rated-five'].evidence, /No strict TestFlight\/iPhone proof run passes/u);
+	assert.equal(audit.currentStatus.currentFullRoutingRuns, 1);
+	assert.equal(audit.currentStatus.currentFullDeviceRuns, 0);
+	assert.equal(audit.currentStatus.nextAction.kind, 'publish-target-build');
+});
+
 test('Dad handoff command summarizes current TestFlight/iPhone eval next steps', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-dad-handoff-'));
