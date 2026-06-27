@@ -230,7 +230,7 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(gates.suite.ok, true);
 	assert.equal(gates.coverage.ok, true);
 	assert.equal(gates.routing.ok, true);
-	assert.equal(gates['testflight-target'].ok, false);
+	assert.equal(gates['testflight-target'].ok, true);
 	assert.equal(gates['device-run'].ok, false);
 	assert.equal(gates['iteration-loop'].ok, true);
 	assert.match(gates['iteration-loop'].evidence, /No completed below-5 device reviews yet/u);
@@ -240,13 +240,13 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(status.testflight.targetBuild, '1.0 (13)');
 	assert.equal(status.testflight.suiteRequiredBuild, '1.0 (>= 13)');
 	assert.equal(status.testflight.targetBuildMeetsSuiteRequirement, true);
-	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (12)');
-	assert.equal(status.testflight.recordedDadPilotMeetsSuiteRequirement, false);
-	assert.equal(status.testflight.targetBuildReadyForDad, false);
-	assert.equal(status.testflight.targetBuildAvailableForDad, false);
-	assert.equal(status.nextAction.kind, 'publish-target-build');
-	assert.match(status.nextAction.text, /Upload and attach target iOS build 1\.0 \(13\)/u);
-	assert.match(status.nextAction.text, /suite requires 1\.0 \(>= 13\)/u);
+	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (13)');
+	assert.equal(status.testflight.recordedDadPilotMeetsSuiteRequirement, true);
+	assert.equal(status.testflight.targetBuildReadyForDad, true);
+	assert.equal(status.testflight.targetBuildAvailableForDad, true);
+	assert.equal(status.nextAction.kind, 'get-device-run');
+	assert.match(status.nextAction.text, /Install the latest TestFlight build/u);
+	assert.match(status.nextAction.text, /Run 100/u);
 });
 
 test('status command surfaces target TestFlight build gaps before phone eval', async () => {
@@ -628,13 +628,13 @@ test('goal audit maps original success criteria without hiding missing device pr
 	assert.equal(requirements['below-five-creates-task'].ok, true);
 	assert.equal(requirements['iterations-target-responsible-layer'].ok, true);
 	assert.equal(requirements['device-proof-lane-separated'].ok, true);
-	assert.equal(requirements['target-testflight-build'].ok, false);
-	assert.match(requirements['target-testflight-build'].evidence, /Dad Pilot records 1\.0 \(12\)/u);
+	assert.equal(requirements['target-testflight-build'].ok, true);
+	assert.match(requirements['target-testflight-build'].evidence, /Dad Pilot records 1\.0 \(13\)/u);
 	assert.equal(requirements['final-100-rated-five'].ok, false);
 	assert.match(requirements['final-100-rated-five'].evidence, /No strict TestFlight\/iPhone proof run passes/u);
 	assert.equal(audit.currentStatus.currentFullRoutingRuns, 1);
 	assert.equal(audit.currentStatus.currentFullDeviceRuns, 0);
-	assert.equal(audit.currentStatus.nextAction.kind, 'publish-target-build');
+	assert.equal(audit.currentStatus.nextAction.kind, 'get-device-run');
 });
 
 test('Dad handoff command summarizes current TestFlight/iPhone eval next steps', async () => {
@@ -660,15 +660,15 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 		items: {
 			'dad-testflight-invite': {
 				status: 'verified',
-				summary: 'Dad Pilot is attached to Hoggcountry iOS build 1.0 (12), the public TestFlight link is enabled with limit 5, and App Store Connect reports external state IN_BETA_TESTING.',
+				summary: 'Dad Pilot is attached to Hoggcountry iOS build 1.0 (13), the public TestFlight link is enabled with limit 5, and App Store Connect reports external state IN_BETA_TESTING.',
 				publicLink: 'https://testflight.apple.com/join/BagBCrzf'
 			}
 		}
 	}, null, 2)}\n`);
-	await writeFile(join(iosProofDir, 'ios-testflight-attempt-2026-06-27T02-18-34-941Z.md'), [
+	await writeFile(join(iosProofDir, 'ios-testflight-attempt-2026-06-27T02-39-27-165Z.md'), [
 		'# iOS TestFlight lane attempt',
 		'',
-		'Checked at: 2026-06-27T02:19:48.904Z',
+		'Checked at: 2026-06-27T02:40:36.338Z',
 		'Status: passed',
 		'',
 		'## Mode',
@@ -699,17 +699,16 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Suite final-proof app requirement: `1\.0 \(>= 13\)`/u);
 	assert.match(result.stdout, /Target iOS build for Dad Eval Lab: `1\.0 \(13\)`/u);
 	assert.match(result.stdout, /Target build meets suite requirement: yes/u);
-	assert.match(result.stdout, /Recorded Dad Pilot build: `1\.0 \(12\)`/u);
-	assert.match(result.stdout, /Recorded Dad Pilot build meets suite requirement: no/u);
+	assert.match(result.stdout, /Recorded Dad Pilot build: `1\.0 \(13\)`/u);
+	assert.match(result.stdout, /Recorded Dad Pilot build meets suite requirement: yes/u);
 	assert.match(result.stdout, /https:\/\/testflight\.apple\.com\/join\/BagBCrzf/u);
-	assert.match(result.stdout, /recorded Dad Pilot build is not ready for this suite/u);
 	assert.match(result.stdout, /## Upload readiness/u);
 	assert.match(result.stdout, /Xcode Release target: `1\.0 \(13\)`/u);
 	assert.match(result.stdout, /Signing team\/profile: `3CFU9J87A5` \/ `Hoggcountry App Store Connect`/u);
-	assert.match(result.stdout, /Latest native upload proof: .*ios-testflight-attempt-2026-06-27T02-18-34-941Z\.md` \(passed/u);
+	assert.match(result.stdout, /Latest native upload proof: .*ios-testflight-attempt-2026-06-27T02-39-27-165Z\.md` \(passed/u);
 	assert.match(result.stdout, /App Store Connect API key in latest proof: yes/u);
 	assert.match(result.stdout, /APP_STORE_CONNECT_API_ISSUER_ID/u);
-	assert.match(result.stdout, /Upload and attach target iOS build 1\.0 \(13\)/u);
+	assert.match(result.stdout, /Install the latest TestFlight build/u);
 	assert.match(result.stdout, /use `Run 100` for real proof/u);
 	assert.match(result.stdout, /npm run intake:scout-local-ai-device-run/u);
 	assert.match(result.stdout, /npm run apply-review:scout-local-ai/u);
