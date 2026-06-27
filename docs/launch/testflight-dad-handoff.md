@@ -145,6 +145,17 @@ After each successful `rate-case` update, use the printed `Next focused check`
 command. It reruns `review-status` with `--next`, so the review naturally moves
 to the next unrated case and then loops back through any below-5 fixes.
 
+When several answers have already been read and are clearly Dad-ready, update an
+explicit human-reviewed batch with the same command:
+
+```bash
+npm run rate-case:scout-local-ai -- --packet data/scout-local-ai/review-packets/<run-id>.review.md --review data/scout-local-ai/reviews/<run-id>.review.json --cases DLA-001,DLA-002,DLA-003 --rating 5 --notes "Dad-ready answer." --mark-all-pass
+```
+
+The batch form still validates every selected case before writing the packet. Do
+not use it as an auto-pass; it is just a faster way to record answers already
+checked by a human.
+
 ## Proof To Capture
 
 - Signing proof: selected team id, `security find-identity` result, and

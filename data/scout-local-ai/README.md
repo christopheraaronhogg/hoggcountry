@@ -275,6 +275,18 @@ unrated or below-5 answer:
 npm run rate-case:scout-local-ai -- --packet data/scout-local-ai/review-packets/<run-id>.review.md --review data/scout-local-ai/reviews/<run-id>.review.json --case DLA-001 --rating 5 --notes "Dad-ready answer." --mark-all-pass
 ```
 
+After reviewing several answers, you can update an explicit human-reviewed
+batch with the same 5/5 fields:
+
+```sh
+npm run rate-case:scout-local-ai -- --packet data/scout-local-ai/review-packets/<run-id>.review.md --review data/scout-local-ai/reviews/<run-id>.review.json --cases DLA-001,DLA-002,DLA-003 --rating 5 --notes "Dad-ready answer." --mark-all-pass
+```
+
+Batch updates still validate every selected case against the run evidence before
+writing the packet. Use them only for cases you have actually read; for below-5
+batches, only group cases that share the same failure categories, owner layer,
+and improvement task.
+
 For anything below 5, include the concrete owner/fix so the iteration backlog can
 be created later:
 

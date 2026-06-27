@@ -16,32 +16,39 @@ const REPO_ROOT = resolve(SCRIPT_DIR, '..');
 
 const cli = parseCliArgs(process.argv.slice(2));
 
-if (!cli.packet || !cli.review || !cli.case) {
+if (!cli.packet || !cli.review || (!cli.case && !cli.cases)) {
 	throw new Error([
 		'Usage: npm run rate-case:scout-local-ai -- --packet data/scout-local-ai/review-packets/<run>.review.md --review data/scout-local-ai/reviews/<run>.review.json --case DLA-001 --rating 5 --mark-all-pass',
+		'Batch: pass --cases DLA-001,DLA-002 after reviewing the selected answers; every selected case receives the same rating fields.',
 		'For below-5 ratings also pass --failure-categories, --owner-layer, and --improvement-task.',
 		'Optional: --run data/scout-local-ai/device-runs/<run>.json when review.runPath is unavailable.',
 		'Optional: --notes "...", --dry-run.'
 	].join('\n'));
 }
 
+const caseIds = parseCaseIds(cli);
 const packetPath = resolveInputPath(cli.packet);
 const reviewPath = resolveInputPath(cli.review);
 const packet = await readFile(packetPath, 'utf8');
 const review = JSON.parse(await readFile(reviewPath, 'utf8'));
 const run = await loadRunForReview(cli, review);
-const updatedPacket = updatePacketCase(packet, cli);
-const validation = validateSelectedCaseUpdate({
-	packet: updatedPacket,
-	review,
-	run,
-	caseId: cli.case
-});
+let updatedPacket = packet;
+const validations = [];
+for (const caseId of caseIds) {
+	updatedPacket = updatePacketCase(updatedPacket, { ...cli, case: caseId });
+	validations.push(validateSelectedCaseUpdate({
+		packet: updatedPacket,
+		review,
+		run,
+		caseId
+	}));
+}
 
-if (validation.problems.length) {
-	console.error(`Scout local AI packet case ${validation.caseId} was not updated.`);
+const problems = validations.flatMap((validation) => validation.problems);
+if (problems.length) {
+	console.error(`Scout local AI packet case${caseIds.length === 1 ? '' : 's'} ${caseIds.join(', ')} ${caseIds.length === 1 ? 'was' : 'were'} not updated.`);
 	console.error('The selected case would be invalid:');
-	for (const problem of validation.problems) console.error(`- ${problem}`);
+	for (const problem of problems) console.error(`- ${problem}`);
 	process.exit(1);
 }
 
@@ -49,15 +56,39 @@ if (!cli.dryRun) {
 	await writeFile(packetPath, updatedPacket);
 }
 
-console.log(cli.dryRun ? 'Scout local AI review packet case update is valid (dry run).' : 'Scout local AI review packet case updated.');
+console.log(cli.dryRun ? 'Scout local AI review packet case update is valid (dry run).' : `Scout local AI review packet case${caseIds.length === 1 ? '' : 's'} updated.`);
 console.log(`Packet: ${relative(REPO_ROOT, packetPath)}`);
-console.log(`Case: ${validation.caseId}`);
-console.log(`Rating: ${validation.rating ?? 'unrated'}`);
-console.log(`Notes: ${validation.notes || 'blank'}`);
+if (validations.length === 1) {
+	const [validation] = validations;
+	console.log(`Case: ${validation.caseId}`);
+	console.log(`Rating: ${validation.rating ?? 'unrated'}`);
+	console.log(`Notes: ${validation.notes || 'blank'}`);
+} else {
+	console.log(`Cases: ${validations.map((validation) => validation.caseId).join(', ')}`);
+	for (const validation of validations) {
+		console.log(`- ${validation.caseId}: rating ${validation.rating ?? 'unrated'}; notes ${validation.notes || 'blank'}`);
+	}
+}
 const reviewStatusCommand = `npm run review-status:scout-local-ai -- --run ${relative(REPO_ROOT, resolveInputPath(cli.run ?? review.runPath))} --review ${relative(REPO_ROOT, reviewPath)} --packet ${relative(REPO_ROOT, packetPath)}`;
-console.log(`Selected focused check: ${reviewStatusCommand} --case ${validation.caseId}`);
+if (validations.length === 1) {
+	console.log(`Selected focused check: ${reviewStatusCommand} --case ${validations[0].caseId}`);
+} else {
+	console.log(`First updated focused check: ${reviewStatusCommand} --case ${validations[0].caseId}`);
+	console.log(`Last updated focused check: ${reviewStatusCommand} --case ${validations.at(-1).caseId}`);
+}
 if (!cli.dryRun) {
 	console.log(`Next focused check: ${reviewStatusCommand} --next`);
+}
+
+function parseCaseIds(input) {
+	const raw = [
+		...(input.case ? [input.case] : []),
+		...(input.cases ? String(input.cases).split(/[,\s]+/u) : [])
+	].map((caseId) => String(caseId).trim()).filter(Boolean);
+	if (!raw.length) {
+		throw new Error('Pass --case DLA-001 or --cases DLA-001,DLA-002.');
+	}
+	return [...new Set(raw)];
 }
 
 function updatePacketCase(markdown, input) {

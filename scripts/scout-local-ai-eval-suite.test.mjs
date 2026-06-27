@@ -2882,6 +2882,36 @@ test('single-case rating command updates packet without touching review JSON', a
 		}
 	);
 	assert.equal(await readFile(packetPath, 'utf8'), packetBeforeInvalidUpdate);
+
+	const batchResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/rate-scout-local-ai-review-case.mjs',
+			'--packet',
+			packetPath,
+			'--review',
+			reviewPath,
+			'--cases',
+			`${firstCaseId},${secondCaseId}`,
+			'--rating',
+			'5',
+			'--notes',
+			'Batch Dad-ready answers.',
+			'--mark-all-pass'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const batchPacket = await readFile(packetPath, 'utf8');
+	const reviewAfterBatch = JSON.parse(await readFile(reviewPath, 'utf8'));
+
+	assert.match(batchResult.stdout, /Scout local AI review packet cases updated/u);
+	assert.match(batchResult.stdout, new RegExp(`Cases: ${firstCaseId}, ${secondCaseId}`, 'u'));
+	assert.match(batchResult.stdout, /First updated focused check:/u);
+	assert.match(batchResult.stdout, /Last updated focused check:/u);
+	assert.match(batchResult.stdout, /Next focused check:/u);
+	assert.match(batchPacket, new RegExp(`## ${firstCaseId} - [\\s\\S]*?- Rating: 5[\\s\\S]*?- Notes: Batch Dad-ready answers\\.`, 'u'));
+	assert.match(batchPacket, new RegExp(`## ${secondCaseId} - [\\s\\S]*?- Rating: 5[\\s\\S]*?- Notes: Batch Dad-ready answers\\.`, 'u'));
+	assert.deepEqual(reviewAfterBatch.cases.map((entry) => entry.rating), [null, null]);
 });
 
 test('review finalizer applies packet and writes below-5 iteration backlog plus plan', async () => {
