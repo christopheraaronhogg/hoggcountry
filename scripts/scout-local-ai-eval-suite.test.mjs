@@ -355,8 +355,12 @@ test('status command sends completed below-5 device reviews into iteration plann
 	const runsDir = join(outputDir, 'runs');
 	const deviceRunsDir = join(outputDir, 'device-runs');
 	const reviewsDir = join(outputDir, 'reviews');
+	const backlogDir = join(outputDir, 'backlog');
+	const iterationsDir = join(outputDir, 'iterations');
 	await mkdir(deviceRunsDir, { recursive: true });
 	await mkdir(reviewsDir, { recursive: true });
+	await mkdir(backlogDir, { recursive: true });
+	await mkdir(iterationsDir, { recursive: true });
 	const run = deviceRunForCases(suite, suite.cases, {
 		runId: 'device-status-below-five',
 		completeTools: true,
@@ -384,6 +388,10 @@ test('status command sends completed below-5 device reviews into iteration plann
 			deviceRunsDir,
 			'--reviews-dir',
 			reviewsDir,
+			'--backlog-dir',
+			backlogDir,
+			'--iterations-dir',
+			iterationsDir,
 			'--json'
 		],
 		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
@@ -397,13 +405,155 @@ test('status command sends completed below-5 device reviews into iteration plann
 	assert.equal(status.reviews.currentDeviceReviews[0].rated, 100);
 	assert.equal(status.reviews.currentDeviceReviews[0].belowFive, 2);
 	assert.equal(status.reviews.currentDeviceReviews[0].invalidCount, 0);
-	assert.equal(status.nextAction.kind, 'plan-iteration');
+	assert.equal(status.iterations.currentBacklogs.length, 0);
+	assert.equal(status.iterations.currentIterationPlans.length, 0);
+	assert.equal(status.nextAction.kind, 'write-backlog');
 	assert.match(status.nextAction.text, /complete but has 2 below-5 answer\(s\)/u);
 	assert.match(status.nextAction.text, /npm run review:scout-local-ai/u);
 	assert.match(status.nextAction.text, /npm run plan:scout-local-ai-iteration/u);
 	assert.match(status.nextAction.text, /data\/scout-local-ai\/backlog\/device-status-below-five\.backlog\.json/u);
 	assert.match(status.nextAction.text, /Fix the named owner layers/u);
 	assert.match(status.nextAction.text, /do not close the iteration by changing expected wording only/u);
+});
+
+test('status command follows existing below-5 backlog and iteration plan', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-iteration-artifacts-'));
+	const runsDir = join(outputDir, 'runs');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	const backlogDir = join(outputDir, 'backlog');
+	const iterationsDir = join(outputDir, 'iterations');
+	await mkdir(deviceRunsDir, { recursive: true });
+	await mkdir(reviewsDir, { recursive: true });
+	await mkdir(backlogDir, { recursive: true });
+	await mkdir(iterationsDir, { recursive: true });
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-status-artifacts',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	const review = reviewForRun(run, { rating: 5 });
+	const belowFiveCases = [review.cases[0], review.cases[1]];
+	belowFiveCases[0].rating = 4;
+	belowFiveCases[0].failureCategories = ['missing-data'];
+	belowFiveCases[0].ownerLayer = 'data';
+	belowFiveCases[0].improvementTask = 'Add current-section water reliability source docs for this trail context.';
+	belowFiveCases[1].rating = 3;
+	belowFiveCases[1].failureCategories = ['bad-routing', 'weak-tool'];
+	belowFiveCases[1].ownerLayer = 'tool-routing';
+	belowFiveCases[1].improvementTask = 'Fix source skill routing so Scout opens the relevant shelter source document.';
+	await writeFile(join(deviceRunsDir, 'device-status-artifacts.json'), `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(join(reviewsDir, 'device-status-artifacts.review.json'), `${JSON.stringify(review, null, 2)}\n`);
+	const backlog = {
+		schemaVersion: 1,
+		runId: run.runId,
+		suiteId: run.suiteId,
+		suiteVersion: run.suiteVersion,
+		suiteHash: run.suiteHash,
+		evidenceLane: run.evidenceLane,
+		generatedAt: '2026-06-26T12:30:00.000Z',
+		summary: {
+			rated: 100,
+			total: 100,
+			belowFive: 2,
+			unrated: 0,
+			ratingCounts: {'3': 1, '4': 1, '5': 98}
+		},
+		unratedItems: [],
+		items: belowFiveCases.map((entry) => ({
+			id: `${run.runId}:${entry.caseId}`,
+			caseId: entry.caseId,
+			domain: entry.domain,
+			phase: entry.phase,
+			rating: entry.rating,
+			failureCategories: entry.failureCategories,
+			ownerLayer: entry.ownerLayer,
+			improvementTask: entry.improvementTask,
+			requiredTools: entry.toolExpectations.required,
+			missingTools: [],
+			sourceEvidenceGaps: [],
+			answerPreview: entry.answerPreview
+		}))
+	};
+	const backlogPath = join(backlogDir, 'device-status-artifacts.backlog.json');
+	await writeFile(backlogPath, `${JSON.stringify(backlog, null, 2)}\n`);
+
+	const backlogOnlyResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai.mjs',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--backlog-dir',
+			backlogDir,
+			'--iterations-dir',
+			iterationsDir,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const backlogOnlyStatus = JSON.parse(backlogOnlyResult.stdout);
+	assert.equal(backlogOnlyStatus.iterations.currentBacklogs.length, 1);
+	assert.equal(backlogOnlyStatus.iterations.currentIterationPlans.length, 0);
+	assert.equal(backlogOnlyStatus.nextAction.kind, 'plan-iteration');
+	assert.match(backlogOnlyStatus.nextAction.text, /backlog .*device-status-artifacts\.backlog\.json already exists/u);
+	assert.doesNotMatch(backlogOnlyStatus.nextAction.text, /npm run review:scout-local-ai/u);
+
+	const plan = {
+		schemaVersion: 1,
+		planId: 'device-status-artifacts-plan',
+		generatedAt: '2026-06-26T12:35:00.000Z',
+		sourceBacklogs: [
+			{
+				path: 'data/scout-local-ai/backlog/device-status-artifacts.backlog.json',
+				runId: run.runId,
+				suiteId: run.suiteId,
+				suiteVersion: run.suiteVersion,
+				suiteHash: run.suiteHash,
+				evidenceLane: run.evidenceLane,
+				belowFive: 2,
+				unrated: 0
+			}
+		],
+		summary: {
+			itemCount: 2,
+			regressionCaseCount: 2
+		},
+		regressionCaseIds: belowFiveCases.map((entry) => entry.caseId),
+		rerunCommand: `npm run eval:scout-local-ai -- --id ${belowFiveCases.map((entry) => entry.caseId).join(',')}`
+	};
+	await writeFile(join(iterationsDir, 'device-status-artifacts-plan.iteration.json'), `${JSON.stringify(plan, null, 2)}\n`);
+	const plannedResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai.mjs',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--backlog-dir',
+			backlogDir,
+			'--iterations-dir',
+			iterationsDir,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const plannedStatus = JSON.parse(plannedResult.stdout);
+	assert.equal(plannedStatus.iterations.currentBacklogs.length, 1);
+	assert.equal(plannedStatus.iterations.currentIterationPlans.length, 1);
+	assert.equal(plannedStatus.iterations.currentIterationPlans[0].planId, 'device-status-artifacts-plan');
+	assert.equal(plannedStatus.nextAction.kind, 'execute-iteration');
+	assert.match(plannedStatus.nextAction.text, /iteration plan .*device-status-artifacts-plan\.iteration\.json is ready/u);
+	assert.match(plannedStatus.nextAction.text, /npm run eval:scout-local-ai -- --id/u);
+	assert.match(plannedStatus.nextAction.text, /npm run verify:scout-local-ai-iteration/u);
 });
 
 test('Dad handoff command summarizes current TestFlight/iPhone eval next steps', async () => {

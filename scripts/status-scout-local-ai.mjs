@@ -27,6 +27,8 @@ const DEFAULT_MOBILE_SUITE = 'mobile/static/scout/dad-local-ai-100.json';
 const DEFAULT_RUNS_DIR = 'data/scout-local-ai/runs';
 const DEFAULT_DEVICE_RUNS_DIR = 'data/scout-local-ai/device-runs';
 const DEFAULT_REVIEWS_DIR = 'data/scout-local-ai/reviews';
+const DEFAULT_BACKLOG_DIR = 'data/scout-local-ai/backlog';
+const DEFAULT_ITERATIONS_DIR = 'data/scout-local-ai/iterations';
 const DEFAULT_XCODE_PROJECT = 'mobile/ios/App/App.xcodeproj/project.pbxproj';
 const DEFAULT_RELEASE_EVIDENCE = 'docs/launch/release-evidence.json';
 
@@ -41,6 +43,8 @@ const status = await buildStatus({
 	runsDir: resolveInputPath(cli.runsDir ?? DEFAULT_RUNS_DIR),
 	deviceRunsDir: resolveInputPath(cli.deviceRunsDir ?? DEFAULT_DEVICE_RUNS_DIR),
 	reviewsDir: resolveInputPath(cli.reviewsDir ?? DEFAULT_REVIEWS_DIR),
+	backlogDir: resolveInputPath(cli.backlogDir ?? DEFAULT_BACKLOG_DIR),
+	iterationsDir: resolveInputPath(cli.iterationsDir ?? DEFAULT_ITERATIONS_DIR),
 	xcodeProjectPath: resolveInputPath(cli.xcodeProject ?? DEFAULT_XCODE_PROJECT),
 	releaseEvidencePath: resolveInputPath(cli.releaseEvidence ?? DEFAULT_RELEASE_EVIDENCE)
 });
@@ -62,12 +66,16 @@ async function buildStatus(paths) {
 	const runs = await loadJsonFiles(paths.runsDir);
 	const deviceRuns = await loadJsonFiles(paths.deviceRunsDir);
 	const reviews = await loadJsonFiles(paths.reviewsDir);
+	const backlogs = await loadJsonFiles(paths.backlogDir);
+	const iterationFiles = await loadJsonFiles(paths.iterationsDir);
 	const iosBuild = await readOptionalIosBuildSettings(paths.xcodeProjectPath);
 	const releaseEvidence = await readOptionalJson(paths.releaseEvidencePath);
 	const testflight = summarizeTestFlightTarget({ iosBuild, releaseEvidence, finalProof, paths });
 	const allRuns = [...runs, ...deviceRuns];
 	const reviewsByRunId = new Map(reviews.map((entry) => [entry.value.runId, entry]));
 	const currentRuns = allRuns.filter((entry) => isCurrentRun(entry.value, suite, suiteIdentity));
+	const currentBacklogs = backlogs.filter((entry) => isCurrentBacklog(entry.value, suite, suiteIdentity));
+	const currentIterationPlans = iterationFiles.filter((entry) => isCurrentIterationPlan(entry.value, suite, suiteIdentity));
 	const currentDeviceRuns = currentRuns.filter((entry) => entry.value.evidenceLane === DEVICE_EVIDENCE_LANE);
 	const currentFullDeviceRuns = currentDeviceRuns.filter((entry) => isFullRun(entry.value, suite));
 	testflight.currentTargetDeviceRunCount = currentFullDeviceRuns.filter((entry) => deviceRunMatchesTargetBuild(entry.value, testflight)).length;
@@ -155,6 +163,8 @@ async function buildStatus(paths) {
 			runsDir: relative(REPO_ROOT, paths.runsDir),
 			deviceRunsDir: relative(REPO_ROOT, paths.deviceRunsDir),
 			reviewsDir: relative(REPO_ROOT, paths.reviewsDir),
+			backlogDir: relative(REPO_ROOT, paths.backlogDir),
+			iterationsDir: relative(REPO_ROOT, paths.iterationsDir),
 			xcodeProject: relative(REPO_ROOT, paths.xcodeProjectPath),
 			releaseEvidence: relative(REPO_ROOT, paths.releaseEvidencePath)
 		},
@@ -184,6 +194,12 @@ async function buildStatus(paths) {
 				path: relative(REPO_ROOT, entry.path)
 			}))
 		},
+		iterations: {
+			totalBacklogsLoaded: backlogs.length,
+			currentBacklogs: summarizeBacklogList(currentBacklogs),
+			totalIterationFilesLoaded: iterationFiles.length,
+			currentIterationPlans: summarizeIterationPlanList(currentIterationPlans)
+		},
 		strictDeviceProofs,
 		gates,
 		nextAction: nextActionFor(
@@ -191,6 +207,8 @@ async function buildStatus(paths) {
 			currentFullDeviceRuns,
 			currentDeviceReviewSummaries,
 			completeFiveStarDeviceReviews,
+			currentBacklogs,
+			currentIterationPlans,
 			strictDeviceProofs,
 			testflight
 		)
@@ -289,7 +307,16 @@ function createGates(input) {
 	];
 }
 
-function nextActionFor(gates, currentFullDeviceRuns, currentDeviceReviewSummaries, completeFiveStarDeviceReviews, strictDeviceProofs, testflight) {
+function nextActionFor(
+	gates,
+	currentFullDeviceRuns,
+	currentDeviceReviewSummaries,
+	completeFiveStarDeviceReviews,
+	currentBacklogs,
+	currentIterationPlans,
+	strictDeviceProofs,
+	testflight
+) {
 	const gate = (id) => gates.find((item) => item.id === id);
 	if (!gate('suite')?.ok) {
 		return {
@@ -336,10 +363,28 @@ function nextActionFor(gates, currentFullDeviceRuns, currentDeviceReviewSummarie
 			const runPath = currentFullDeviceRuns.find((entry) => entry.value.runId === completeBelowFiveReview.runId)?.path;
 			const relativeRunPath = runPath ? relative(REPO_ROOT, runPath) : `data/scout-local-ai/device-runs/${completeBelowFiveReview.runId}.json`;
 			const relativeReviewPath = relative(REPO_ROOT, completeBelowFiveReview.path);
-			const backlogPath = `data/scout-local-ai/backlog/${completeBelowFiveReview.runId}.backlog.json`;
+			const backlogEntry = currentBacklogs.find((entry) => entry.value.runId === completeBelowFiveReview.runId);
+			const relativeBacklogPath = backlogEntry
+				? relative(REPO_ROOT, backlogEntry.path)
+				: `data/scout-local-ai/backlog/${completeBelowFiveReview.runId}.backlog.json`;
+			const iterationPlan = currentIterationPlans.find((entry) => iterationPlanIncludesRun(entry.value, completeBelowFiveReview.runId));
+			if (iterationPlan) {
+				const relativePlanPath = relative(REPO_ROOT, iterationPlan.path);
+				const rerunCommand = iterationPlan.value.rerunCommand ?? 'npm run eval:scout-local-ai -- --id <case-ids>';
+				return {
+					kind: 'execute-iteration',
+					text: `Review ${completeBelowFiveReview.runId} has ${completeBelowFiveReview.summary.belowFive} below-5 answer(s), and iteration plan ${relativePlanPath} is ready. Fix the named owner layers, rerun regression cases with ${rerunCommand}, then verify closure with npm run verify:scout-local-ai-iteration -- --plan ${relativePlanPath} --run data/scout-local-ai/device-runs/<rerun-id>.json --review data/scout-local-ai/reviews/<rerun-id>.review.json.`
+				};
+			}
+			if (backlogEntry) {
+				return {
+					kind: 'plan-iteration',
+					text: `Review ${completeBelowFiveReview.runId} is complete but has ${completeBelowFiveReview.summary.belowFive} below-5 answer(s), and backlog ${relativeBacklogPath} already exists. Run npm run plan:scout-local-ai-iteration -- --backlog ${relativeBacklogPath}. Fix the named owner layers and rerun the regression cases; do not close the iteration by changing expected wording only.`
+				};
+			}
 			return {
-				kind: 'plan-iteration',
-				text: `Review ${completeBelowFiveReview.runId} is complete but has ${completeBelowFiveReview.summary.belowFive} below-5 answer(s). Run npm run review:scout-local-ai -- --run ${relativeRunPath} --review ${relativeReviewPath} to write the backlog, then run npm run plan:scout-local-ai-iteration -- --backlog ${backlogPath}. Fix the named owner layers and rerun the regression cases; do not close the iteration by changing expected wording only.`
+				kind: 'write-backlog',
+				text: `Review ${completeBelowFiveReview.runId} is complete but has ${completeBelowFiveReview.summary.belowFive} below-5 answer(s). Run npm run review:scout-local-ai -- --run ${relativeRunPath} --review ${relativeReviewPath} to write ${relativeBacklogPath}, then run npm run plan:scout-local-ai-iteration -- --backlog ${relativeBacklogPath}. Fix the named owner layers and rerun the regression cases; do not close the iteration by changing expected wording only.`
 			};
 		}
 		return {
@@ -376,6 +421,10 @@ function isCompleteBelowFiveReview(summary) {
 		summary.invalid.length === 0;
 }
 
+function iterationPlanIncludesRun(plan, runId) {
+	return (plan?.sourceBacklogs ?? []).some((backlog) => backlog.runId === runId);
+}
+
 function summarizeRunList(entries) {
 	return entries.map((entry) => {
 		const sourceEvidence = summarizeRunSourceEvidence(entry.value.results ?? []);
@@ -392,6 +441,32 @@ function summarizeRunList(entries) {
 			missingSourceEvidenceCases: entry.value.summary?.missingSourceEvidenceCases ?? sourceEvidence.missingSourceEvidenceCases
 		};
 	});
+}
+
+function summarizeBacklogList(entries) {
+	return entries.map((entry) => ({
+		runId: entry.value.runId ?? '<missing>',
+		path: relative(REPO_ROOT, entry.path),
+		evidenceLane: entry.value.evidenceLane ?? '<missing>',
+		generatedAt: entry.value.generatedAt ?? '<missing>',
+		rated: entry.value.summary?.rated ?? 0,
+		total: entry.value.summary?.total ?? 0,
+		belowFive: entry.value.summary?.belowFive ?? entry.value.items?.length ?? 0,
+		unrated: entry.value.summary?.unrated ?? entry.value.unratedItems?.length ?? 0,
+		itemCount: entry.value.items?.length ?? 0
+	}));
+}
+
+function summarizeIterationPlanList(entries) {
+	return entries.map((entry) => ({
+		planId: entry.value.planId ?? '<missing>',
+		path: relative(REPO_ROOT, entry.path),
+		generatedAt: entry.value.generatedAt ?? '<missing>',
+		sourceRunIds: (entry.value.sourceBacklogs ?? []).map((backlog) => backlog.runId).filter(Boolean),
+		itemCount: entry.value.summary?.itemCount ?? 0,
+		regressionCaseCount: entry.value.summary?.regressionCaseCount ?? entry.value.regressionCaseIds?.length ?? 0,
+		rerunCommand: entry.value.rerunCommand ?? null
+	}));
 }
 
 async function readOptionalIosBuildSettings(path) {
@@ -515,6 +590,20 @@ function isCurrentRun(run, suite, suiteIdentity) {
 		run.suiteHash === suiteIdentity.suiteHash;
 }
 
+function isCurrentBacklog(backlog, suite, suiteIdentity) {
+	return backlog?.schemaVersion === 1 &&
+		backlog.suiteId === suite.suiteId &&
+		backlog.suiteVersion === suiteIdentity.suiteVersion &&
+		backlog.suiteHash === suiteIdentity.suiteHash;
+}
+
+function isCurrentIterationPlan(plan, suite, suiteIdentity) {
+	if (plan?.schemaVersion !== 1 || !Array.isArray(plan.sourceBacklogs)) return false;
+	return plan.sourceBacklogs.some((backlog) => backlog.suiteId === suite.suiteId &&
+		backlog.suiteVersion === suiteIdentity.suiteVersion &&
+		backlog.suiteHash === suiteIdentity.suiteHash);
+}
+
 function isFullRun(run, suite) {
 	return run.caseCount === suite.cases.length && run.totalSuiteCases === suite.cases.length;
 }
@@ -629,6 +718,8 @@ function createStatusMarkdown(status) {
 		`- Full routing/tool-complete runs: ${status.runs.currentFullToolCompleteRuns.length}`,
 		`- Full device runs: ${status.runs.currentFullDeviceRuns.length}`,
 		`- Device reviews: ${status.reviews.currentDeviceReviews.length}`,
+		`- Current below-5 backlogs: ${status.iterations.currentBacklogs.length}`,
+		`- Current iteration plans: ${status.iterations.currentIterationPlans.length}`,
 		`- Strict device proof passes: ${status.strictDeviceProofs.filter((proof) => proof.ok).length}`,
 		'',
 		'## Next Action',
