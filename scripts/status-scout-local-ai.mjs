@@ -92,6 +92,8 @@ async function buildStatus(paths) {
 	const currentDeviceRuns = currentRuns.filter((entry) => entry.value.evidenceLane === DEVICE_EVIDENCE_LANE);
 	const currentFullDeviceRuns = currentDeviceRuns.filter((entry) => isFullRun(entry.value, suite));
 	const currentPartialDeviceRuns = currentDeviceRuns.filter((entry) => !isFullRun(entry.value, suite));
+	const currentFullFinalProofDeviceRuns = currentFullDeviceRuns.filter((entry) => deviceRunSatisfiesFinalProof(entry.value, finalProof));
+	const currentFullNonFinalProofDeviceRuns = currentFullDeviceRuns.filter((entry) => !deviceRunSatisfiesFinalProof(entry.value, finalProof));
 	testflight.currentTargetDeviceRunCount = currentFullDeviceRuns.filter((entry) => deviceRunMatchesTargetBuild(entry.value, testflight)).length;
 	testflight.currentTargetPartialDeviceRunCount = currentPartialDeviceRuns.filter((entry) => deviceRunMatchesTargetBuild(entry.value, testflight)).length;
 	testflight.currentSuiteCompatibleDeviceRunCount = currentFullDeviceRuns.filter((entry) => deviceRunSatisfiesFinalProof(entry.value, finalProof)).length;
@@ -116,7 +118,7 @@ async function buildStatus(paths) {
 		summary: summarizeReview(entry.value)
 	}));
 	const currentDeviceReviewSummaries = reviewSummaries.filter((entry) => {
-		const run = currentFullDeviceRuns.find((candidate) => candidate.value.runId === entry.runId)?.value;
+		const run = currentFullFinalProofDeviceRuns.find((candidate) => candidate.value.runId === entry.runId)?.value;
 		return Boolean(run) && entry.evidenceLane === DEVICE_EVIDENCE_LANE;
 	});
 	const completeFiveStarDeviceReviews = currentDeviceReviewSummaries.filter(
@@ -131,7 +133,7 @@ async function buildStatus(paths) {
 		currentBacklogs,
 		currentIterationPlans
 	);
-	const strictDeviceProofs = currentFullDeviceRuns.map((runEntry) => {
+	const strictDeviceProofs = currentFullFinalProofDeviceRuns.map((runEntry) => {
 		const reviewEntry = reviewsByRunId.get(runEntry.value.runId);
 		if (!reviewEntry) {
 			return {
@@ -169,9 +171,12 @@ async function buildStatus(paths) {
 		currentFullRoutingRuns,
 		currentFullToolCompleteRuns,
 		currentFullDeviceRuns,
+		currentFullFinalProofDeviceRuns,
+		currentFullNonFinalProofDeviceRuns,
 		currentPartialDeviceRuns,
 		completeFiveStarDeviceReviews,
-		strictDeviceProofPasses
+		strictDeviceProofPasses,
+		finalProof
 	});
 	return {
 		schemaVersion: 1,
@@ -205,6 +210,8 @@ async function buildStatus(paths) {
 			currentSuiteRuns: currentRuns.length,
 			currentFullRoutingRuns: summarizeRunList(currentFullRoutingRuns),
 			currentFullDeviceRuns: summarizeRunList(currentFullDeviceRuns),
+			currentFullFinalProofDeviceRuns: summarizeRunList(currentFullFinalProofDeviceRuns),
+			currentFullNonFinalProofDeviceRuns: summarizeRunList(currentFullNonFinalProofDeviceRuns),
 			currentPartialDeviceRuns: summarizeRunList(currentPartialDeviceRuns),
 			currentFullToolCompleteRuns: summarizeRunList(currentFullToolCompleteRuns),
 			byLane: countBy(allRuns, (entry) => entry.value.evidenceLane ?? '<missing>')
@@ -238,6 +245,8 @@ async function buildStatus(paths) {
 		nextAction: nextActionFor(
 			gates,
 			currentFullDeviceRuns,
+			currentFullFinalProofDeviceRuns,
+			currentFullNonFinalProofDeviceRuns,
 			currentPartialDeviceRuns,
 			currentDeviceReviewSummaries,
 			completeFiveStarDeviceReviews,
@@ -245,7 +254,8 @@ async function buildStatus(paths) {
 			currentIterationPlans,
 			strictDeviceProofs,
 			testflight,
-			inbox
+			inbox,
+			finalProof
 		)
 	};
 }
@@ -272,7 +282,7 @@ function createGates(input) {
 	const coverageOk = input.suiteCoverage.ok;
 	const routingOk = input.currentFullRoutingRuns.length > 0 || input.currentFullToolCompleteRuns.length > 0;
 	const testflightOk = input.testflight.targetBuildAvailableForDad && input.testflight.targetBuildMeetsSuiteRequirement;
-	const deviceOk = input.currentFullDeviceRuns.length > 0;
+	const deviceOk = input.currentFullFinalProofDeviceRuns.length > 0;
 	const reviewOk = input.completeFiveStarDeviceReviews.length > 0;
 	const iterationDebtOk = input.iterationDebt.ok;
 	const strictOk = input.strictDeviceProofPasses.length > 0;
@@ -315,10 +325,12 @@ function createGates(input) {
 			label: 'Full TestFlight/iPhone Eval Lab run imported',
 			ok: deviceOk,
 			evidence: deviceOk
-				? `${input.currentFullDeviceRuns.length} current full device run(s) found`
-				: input.currentPartialDeviceRuns.length
-					? `No current full device-on-device-gemma run found; ${input.currentPartialDeviceRuns.length} partial device run(s) imported: ${input.currentPartialDeviceRuns.map((entry) => `${entry.value.runId ?? '<missing>'} ${entry.value.caseCount ?? 0}/${entry.value.totalSuiteCases ?? '?'}`).join(', ')}`
-				: 'No current full device-on-device-gemma run found'
+				? `${input.currentFullFinalProofDeviceRuns.length} current full suite-compatible TestFlight/iPhone device run(s) found`
+				: input.currentFullNonFinalProofDeviceRuns.length
+					? `No current full suite-compatible TestFlight/iPhone run found; ${input.currentFullNonFinalProofDeviceRuns.length} full device-on-device-gemma run(s) failed final-proof context: ${input.currentFullNonFinalProofDeviceRuns.slice(0, 3).map((entry) => deviceRunFinalProofMismatchEvidence(entry, input.finalProof)).join('; ')}`
+					: input.currentPartialDeviceRuns.length
+						? `No current full suite-compatible TestFlight/iPhone run found; ${input.currentPartialDeviceRuns.length} partial device run(s) imported: ${input.currentPartialDeviceRuns.map((entry) => `${entry.value.runId ?? '<missing>'} ${entry.value.caseCount ?? 0}/${entry.value.totalSuiteCases ?? '?'}`).join(', ')}`
+						: 'No current full suite-compatible TestFlight/iPhone run found'
 		},
 		{
 			id: 'review',
@@ -358,6 +370,8 @@ function createGates(input) {
 function nextActionFor(
 	gates,
 	currentFullDeviceRuns,
+	currentFullFinalProofDeviceRuns,
+	currentFullNonFinalProofDeviceRuns,
 	currentPartialDeviceRuns,
 	currentDeviceReviewSummaries,
 	completeFiveStarDeviceReviews,
@@ -365,7 +379,8 @@ function nextActionFor(
 	currentIterationPlans,
 	strictDeviceProofs,
 	testflight,
-	inbox
+	inbox,
+	finalProof
 ) {
 	const gate = (id) => gates.find((item) => item.id === id);
 	if (!gate('suite')?.ok) {
@@ -428,6 +443,13 @@ function nextActionFor(
 				text: `The latest inbox export is blocked before review: ${candidate.path} (${candidate.runId}, ${candidate.caseCount} cases, ${candidate.inspectionStatus}).${reasons} Fix that export or rerun Run 100 on the phone, then prepare review with ${DEVICE_REVIEW_PREP_COMMAND}. Do not rate it until inspection says ready-for-final-intake.`
 			};
 		}
+		if (currentFullNonFinalProofDeviceRuns.length) {
+			const latestNonFinalRun = currentFullNonFinalProofDeviceRuns.at(-1);
+			return {
+				kind: 'rerun-device-proof-context',
+				text: `Imported full Eval Lab run ${latestNonFinalRun.value.runId ?? '<missing>'} is not valid final Dad proof (${deviceRunFinalProofMismatchEvidence(latestNonFinalRun, finalProof)}). Rerun Run 100 on a suite-compatible TestFlight iPhone build, Share the fresh JSON, then prepare review with ${DEVICE_REVIEW_PREP_COMMAND}.`
+			};
+		}
 		const latestPartialRun = currentPartialDeviceRuns.at(-1)?.value;
 		if (latestPartialRun) {
 			const completed = latestPartialRun.caseCount ?? latestPartialRun.results?.length ?? 0;
@@ -447,7 +469,7 @@ function nextActionFor(
 			text: `Install or update ${phoneBuild} on Dad/Chris iPhone, open Settings > Scout Eval Lab, run Run 100, Share the JSON, then prepare review with ${DEVICE_REVIEW_PREP_COMMAND}.`
 		};
 	}
-	const latestDeviceRun = currentFullDeviceRuns.at(-1)?.value.runId ?? '<run-id>';
+	const latestDeviceRun = currentFullFinalProofDeviceRuns.at(-1)?.value.runId ?? currentFullDeviceRuns.at(-1)?.value.runId ?? '<run-id>';
 	if (!gate('review')?.ok) {
 		const completeBelowFiveReview = currentDeviceReviewSummaries
 			.filter((entry) => isCompleteBelowFiveReview(entry.summary))
@@ -696,6 +718,28 @@ function deviceRunSatisfiesFinalProof(run, finalProof) {
 	return installSource?.type === finalProof.installSource &&
 		native?.platform === finalProof.nativePlatform &&
 		appBuildSatisfiesFinalProof(runBuild, finalProof);
+}
+
+function deviceRunFinalProofMismatchEvidence(entry, finalProof) {
+	const run = entry?.value ?? entry;
+	const runId = run?.runId ?? '<missing>';
+	const app = run?.runContext?.app;
+	const installSource = run?.runContext?.installSource;
+	const native = run?.runContext?.native;
+	const runBuild = app?.version && app?.build ? `${app.version} (${app.build})` : '<missing app build>';
+	const installType = installSource?.type ?? '<missing install source>';
+	const nativePlatform = native?.platform ?? '<missing native platform>';
+	const problems = [];
+	if (installType !== finalProof.installSource) {
+		problems.push(`install=${installType}, expected ${finalProof.installSource}`);
+	}
+	if (nativePlatform !== finalProof.nativePlatform) {
+		problems.push(`platform=${nativePlatform}, expected ${finalProof.nativePlatform}`);
+	}
+	if (!appBuildSatisfiesFinalProof(runBuild, finalProof)) {
+		problems.push(`app=${runBuild}, expected ${finalProof.requiredApp}`);
+	}
+	return `${runId} (${problems.join(', ') || 'unknown final-proof mismatch'})`;
 }
 
 function parseAppBuildLabel(label) {

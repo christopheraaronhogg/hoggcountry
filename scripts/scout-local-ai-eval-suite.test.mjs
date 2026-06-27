@@ -658,6 +658,89 @@ test('status command lets suite-compatible TestFlight device proof override stal
 	assert.match(status.nextAction.text, /If the packet is missing, recreate it/u);
 });
 
+test('status command does not accept full device runs from non-suite-compatible TestFlight builds', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-wrong-device-build-'));
+	const runsDir = join(outputDir, 'runs');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
+	await mkdir(runsDir, { recursive: true });
+	await mkdir(deviceRunsDir, { recursive: true });
+	await mkdir(reviewsDir, { recursive: true });
+	await writeFile(releaseEvidencePath, `${JSON.stringify({
+		schemaVersion: 1,
+		items: {
+			'dad-testflight-invite': {
+				status: 'verified',
+				summary: 'Dad Pilot is attached to Hoggcountry iOS build 1.0 (13), and the public TestFlight link is enabled.',
+				publicLink: 'https://testflight.apple.com/join/BagBCrzf'
+			}
+		}
+	}, null, 2)}\n`);
+	const routingRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'routing-status-wrong-device-build',
+		completeTools: true
+	});
+	routingRun.evidenceLane = 'scaffold-not-model';
+	routingRun.runContext = null;
+	for (const result of routingRun.results) result.answerOrigin = 'scaffold-not-model';
+	await writeFile(join(runsDir, 'routing-status-wrong-device-build.json'), `${JSON.stringify(routingRun, null, 2)}\n`);
+	const staleBuildRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-status-wrong-build12',
+		completeTools: true,
+		runContext: finalDeviceRunContext({
+			app: {
+				id: 'com.hoggcountry.trailassistant',
+				name: 'Hoggcountry',
+				version: '1.0',
+				build: '12'
+			}
+		})
+	});
+	const staleBuildReview = reviewForRun(staleBuildRun, { rating: 5 });
+	await writeFile(join(deviceRunsDir, 'device-status-wrong-build12.json'), `${JSON.stringify(staleBuildRun, null, 2)}\n`);
+	await writeFile(join(reviewsDir, 'device-status-wrong-build12.review.json'), `${JSON.stringify(staleBuildReview, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai.mjs',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--release-evidence',
+			releaseEvidencePath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const status = JSON.parse(result.stdout);
+	const gates = Object.fromEntries(status.gates.map((gate) => [gate.id, gate]));
+
+	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (13)');
+	assert.equal(status.testflight.targetBuildAvailableForDad, true);
+	assert.equal(status.testflight.currentSuiteCompatibleDeviceRunCount, 0);
+	assert.equal(status.runs.currentFullDeviceRuns.length, 1);
+	assert.equal(status.runs.currentFullFinalProofDeviceRuns.length, 0);
+	assert.equal(status.runs.currentFullNonFinalProofDeviceRuns.length, 1);
+	assert.equal(status.reviews.currentDeviceReviews.length, 0);
+	assert.equal(gates['testflight-target'].ok, true);
+	assert.equal(gates['device-run'].ok, false);
+	assert.match(gates['device-run'].evidence, /No current full suite-compatible TestFlight\/iPhone run found/u);
+	assert.match(gates['device-run'].evidence, /device-status-wrong-build12/u);
+	assert.match(gates['device-run'].evidence, /app=1\.0 \(12\), expected 1\.0 \(>= 13\)/u);
+	assert.equal(gates.review.ok, false);
+	assert.equal(status.strictDeviceProofs.length, 0);
+	assert.equal(status.nextAction.kind, 'rerun-device-proof-context');
+	assert.match(status.nextAction.text, /not valid final Dad proof/u);
+	assert.match(status.nextAction.text, /Rerun Run 100 on a suite-compatible TestFlight iPhone build/u);
+	assert.match(status.nextAction.text, /prepare-review:scout-local-ai-device-run/u);
+});
+
 test('status command recognizes repeated strict TestFlight iPhone proof candidates', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-device-'));
@@ -1046,7 +1129,7 @@ test('goal audit maps original success criteria without hiding missing device pr
 	assert.equal(requirements['iterations-target-responsible-layer'].ok, true);
 	assert.equal(requirements['device-proof-lane-separated'].ok, true);
 	assert.match(requirements['device-proof-lane-separated'].evidence, /Boundary guardrail present/u);
-	assert.match(requirements['device-proof-lane-separated'].evidence, /Current device proof status: No current full device-on-device-gemma run found/u);
+	assert.match(requirements['device-proof-lane-separated'].evidence, /Current device proof status: No current full suite-compatible TestFlight\/iPhone run found/u);
 	assert.match(requirements['device-proof-lane-separated'].evidence, /No strict TestFlight\/iPhone proof run passes/u);
 	assert.equal(requirements['target-testflight-build'].ok, true);
 	assert.match(requirements['target-testflight-build'].evidence, /Dad Pilot records 1\.0 \(13\)/u);
