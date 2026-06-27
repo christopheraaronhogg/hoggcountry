@@ -9,13 +9,13 @@ use that phone to produce the final Scout local-AI `Run 100` export.
   `https://testflight.apple.com/join/BagBCrzf`.
 - App Store Connect app id `6782505691` and bundle id
   `com.hoggcountry.trailassistant` are verified.
-- Build `1.0 (18)` is live in Dad Pilot, Apple beta review is approved, and App
+- Build `1.0 (19)` is live in Dad Pilot, Apple beta review is approved, and App
   Store Connect reports external state `IN_BETA_TESTING`.
-- Latest native upload proof for build `18`:
-  `docs/launch/proof/ios-testflight-attempt-2026-06-27T12-23-42-736Z.md`.
-- Dad Pilot/App Store Connect proof for build `18`:
-  `docs/launch/proof/ios-testflight-build-18-2026-06-27.md`.
-- The Scout Eval Lab final-proof target is build `18` now. The suite allows
+- Latest native upload proof for build `19`:
+  `docs/launch/proof/ios-testflight-attempt-2026-06-27T12-39-12-099Z.md`.
+- Dad Pilot/App Store Connect proof for build `19`:
+  `docs/launch/proof/ios-testflight-build-19-2026-06-27.md`.
+- The Scout Eval Lab final-proof target is build `19` now. The suite allows
   `1.0 (>= 13)`, but Dad should use the latest Dad Pilot build so the export
   carries current UI recovery and handoff behavior.
 - The remaining goal is not TestFlight availability. It is a real
@@ -134,10 +134,10 @@ changed after the last successful upload.
 
 ## Proof Boundaries
 
-- Account/TestFlight proof: build `1.0 (18)` is attached to Dad Pilot and
+- Account/TestFlight proof: build `1.0 (19)` is attached to Dad Pilot and
   externally available.
-- Native upload proof: build `18` was archived, exported, and uploaded from the
-  native app source in commit `d59f75b2e151ccb34c6204b8ff86ed8aeaebed9c`.
+- Native upload proof: build `19` was archived, exported, and uploaded from the
+  native app source in commit `2628c58dbefd9fe5f33f0e0ecd39bf259bfe4ad1`.
 - Current repo proof: later commits may add docs/tests/proof. Check
   `npm run status:scout-local-ai` for whether native app source changed after
   the latest upload.
