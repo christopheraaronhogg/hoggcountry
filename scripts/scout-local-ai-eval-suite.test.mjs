@@ -1243,9 +1243,18 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	await mkdir(runsDir, { recursive: true });
 	await mkdir(inboxDir, { recursive: true });
 	await mkdir(iosProofDir, { recursive: true });
-	const previousRepoSha = (await execFileAsync('git', ['rev-parse', 'HEAD^'], {
+	const currentRepoSha = (await execFileAsync('git', ['rev-parse', 'HEAD'], {
 		cwd: REPO_ROOT
 	})).stdout.trim();
+	let uploadRepoSha = currentRepoSha;
+	try {
+		uploadRepoSha = (await execFileAsync('git', ['rev-parse', 'HEAD^'], {
+			cwd: REPO_ROOT
+		})).stdout.trim();
+	} catch {
+		uploadRepoSha = currentRepoSha;
+	}
+	const uploadRepoShaIsAncestor = uploadRepoSha !== currentRepoSha;
 	const routingRun = deviceRunForCases(suite, suite.cases, {
 		runId: 'routing-handoff-proof',
 		completeTools: true
@@ -1288,7 +1297,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	].join('\n'));
 	await writeFile(join(iosProofDir, '01-repo-sha.log'), [
 		'$ git rev-parse HEAD',
-		`--- stdout ---\n${previousRepoSha}`,
+		`--- stdout ---\n${uploadRepoSha}`,
 		''
 	].join('\n'));
 	await writeFile(join(iosProofDir, 'ios-testflight-build-13-2026-06-27.md'), [
@@ -1376,11 +1385,9 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Newer Xcode target pending App Store Connect: yes/u);
 	assert.match(result.stdout, /Current checkout SHA: `[0-9a-f]{40}`/u);
 	assert.match(result.stdout, /Latest native upload source: .*ios-testflight-attempt-2026-06-27T02-39-27-165Z\.md` \(repo SHA `[0-9a-f]{40}` from `.*01-repo-sha\.log`\)/u);
-	assert.match(result.stdout, /Current checkout newer than latest native upload: yes/u);
 	assert.match(result.stdout, /## Phone build path/u);
 	assert.match(result.stdout, /Use now: Dad can run the suite on the currently approved Dad Pilot build `1\.0 \(13\)`/u);
 	assert.match(result.stdout, /Latest-code target: `1\.0 \(15\)` is the Xcode target\/local candidate/u);
-	assert.match(result.stdout, /Latest-source proof: current checkout is newer than the latest native upload; Dad can still run a suite-compatible build now, but latest-source phone proof needs a fresh bumped-build upload/u);
 	assert.match(result.stdout, /targetReadyForDad/u);
 	assert.match(result.stdout, /Dad can run the suite-compatible TestFlight build already in Dad Pilot/u);
 	assert.match(result.stdout, /Imported full device runs: 0/u);
@@ -1393,8 +1400,17 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Signing team\/profile: `3CFU9J87A5` \/ `Hoggcountry App Store Connect`/u);
 	assert.match(result.stdout, /Latest native upload proof: .*ios-testflight-attempt-2026-06-27T02-39-27-165Z\.md` \(passed/u);
 	assert.match(result.stdout, /Latest native upload repo SHA: `[0-9a-f]{40}` from `.*01-repo-sha\.log`/u);
-	assert.match(result.stdout, /Current source newer than latest native upload: yes/u);
-	assert.match(result.stdout, /Latest-source upload note: bump the iOS build number above `15` before uploading this checkout/u);
+	if (uploadRepoShaIsAncestor) {
+		assert.match(result.stdout, /Current checkout newer than latest native upload: yes/u);
+		assert.match(result.stdout, /Latest-source proof: current checkout is newer than the latest native upload; Dad can still run a suite-compatible build now, but latest-source phone proof needs a fresh bumped-build upload/u);
+		assert.match(result.stdout, /Current source newer than latest native upload: yes/u);
+		assert.match(result.stdout, /Latest-source upload note: bump the iOS build number above `15` before uploading this checkout/u);
+	} else {
+		assert.match(result.stdout, /Current checkout newer than latest native upload: no/u);
+		assert.match(result.stdout, /Latest-source proof: latest native upload contains the current checkout/u);
+		assert.match(result.stdout, /Current source newer than latest native upload: no/u);
+		assert.doesNotMatch(result.stdout, /Latest-source upload note/u);
+	}
 	assert.match(result.stdout, /App Store Connect API key in latest proof: yes/u);
 	assert.match(result.stdout, /APP_STORE_CONNECT_API_ISSUER_ID/u);
 	assert.match(result.stdout, /npm run refresh:testflight-dad-pilot -- --build 15 --app-version 1\.0/u);
