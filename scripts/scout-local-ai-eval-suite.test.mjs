@@ -4793,6 +4793,37 @@ test('review status command can preview draft packet progress without writing re
 	);
 	const selectedProgress = JSON.parse(selectedResult.stdout);
 	assert.equal(selectedProgress.selectedCase.traitChecks[0].passed, null);
+	assert.match(selectedProgress.selectedCase.ratingCommands.rateFive, /rate-case:scout-local-ai/u);
+	assert.match(selectedProgress.selectedCase.ratingCommands.rateFive, new RegExp(`--case ${run.results[2].caseId}`, 'u'));
+	assert.match(selectedProgress.selectedCase.ratingCommands.rateFive, /--rating 5/u);
+	assert.match(selectedProgress.selectedCase.ratingCommands.rateFive, /--mark-all-pass/u);
+	assert.match(selectedProgress.selectedCase.ratingCommands.rateBelowFive, /--rating 4/u);
+	assert.match(selectedProgress.selectedCase.ratingCommands.rateBelowFive, /--failure-categories/u);
+	assert.match(selectedProgress.selectedCase.ratingCommands.nextFocusedCheck, /review-status:scout-local-ai/u);
+	assert.match(selectedProgress.selectedCase.ratingCommands.nextFocusedCheck, /--next/u);
+
+	const selectedTextResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			runPath,
+			'--review',
+			reviewPath,
+			'--packet',
+			packetPath,
+			'--case',
+			run.results[2].caseId
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	assert.match(selectedTextResult.stdout, /### Rating commands/u);
+	assert.match(selectedTextResult.stdout, /npm run rate-case:scout-local-ai/u);
+	assert.match(selectedTextResult.stdout, /--rating 5/u);
+	assert.match(selectedTextResult.stdout, /--mark-all-pass/u);
+	assert.match(selectedTextResult.stdout, /--rating 4/u);
+	assert.match(selectedTextResult.stdout, /--improvement-task/u);
+	assert.match(selectedTextResult.stdout, /npm run review-status:scout-local-ai.*--next/u);
 });
 
 test('review status command reports packet parse errors without touching review JSON', async () => {

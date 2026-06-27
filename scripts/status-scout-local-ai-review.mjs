@@ -144,12 +144,19 @@ function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, 
 	const nextFocusCase = nextUnrated ?? queue.find((entry) => entry.belowFive) ?? null;
 	const selectedCaseRequest = selectedCaseId ?? (selectNextCase ? nextFocusCase?.caseId : null);
 	const selectedCaseSource = selectedCaseId ? 'explicit-case' : selectNextCase ? 'next-focus-case' : null;
+	const relativePaths = {
+		suite: relative(REPO_ROOT, paths.suitePath),
+		run: relative(REPO_ROOT, paths.runPath),
+		review: relative(REPO_ROOT, paths.reviewPath),
+		packet: paths.packetPath ? relative(REPO_ROOT, paths.packetPath) : null
+	};
 	const selectedCase = selectedCaseRequest
 		? buildSelectedCase({
 			caseId: selectedCaseRequest,
 			run,
 			reviewByCaseId,
-			queue
+			queue,
+			paths: relativePaths
 		})
 		: null;
 	const fiveStar = summary.ratingCounts['5'] ?? 0;
@@ -168,12 +175,7 @@ function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, 
 		schemaVersion: 1,
 		runId: run.runId ?? review.runId ?? '<missing>',
 		evidenceLane: run.evidenceLane ?? review.evidenceLane ?? '<missing>',
-		paths: {
-			suite: relative(REPO_ROOT, paths.suitePath),
-			run: relative(REPO_ROOT, paths.runPath),
-			review: relative(REPO_ROOT, paths.reviewPath),
-			packet: paths.packetPath ? relative(REPO_ROOT, paths.packetPath) : null
-		},
+		paths: relativePaths,
 		progressSource: packetDraft ? 'packet-draft' : 'review-json',
 		packetDraft: packetDraft
 			? {
@@ -221,7 +223,7 @@ function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, 
 	};
 }
 
-function buildSelectedCase({ caseId, run, reviewByCaseId, queue }) {
+function buildSelectedCase({ caseId, run, reviewByCaseId, queue, paths }) {
 	const requested = String(caseId ?? '').trim();
 	if (!requested) return null;
 	const result = (run.results ?? []).find((entry) => sameCaseId(entry.caseId, requested));
@@ -234,6 +236,8 @@ function buildSelectedCase({ caseId, run, reviewByCaseId, queue }) {
 		result.case?.requiredTools ?? result.toolExpectations?.required ?? [],
 		result.toolInvocations ?? []
 	);
+	const suggestedFailureCategories = queueEntry.suggestedFailureCategories ?? suggestedFailureCategoriesForResult(result);
+	const suggestedOwnerLayer = queueEntry.suggestedOwnerLayer ?? inferOwnerLayer(suggestedFailureCategories, result);
 	return {
 		caseId: result.caseId,
 		index: result.index ?? queueEntry.index ?? null,
@@ -252,8 +256,8 @@ function buildSelectedCase({ caseId, run, reviewByCaseId, queue }) {
 		notes: reviewEntry.notes ?? '',
 		improvementTask: reviewEntry.improvementTask ?? '',
 		signal: queueEntry.signal ?? reviewSignal(result, sourceGaps),
-		suggestedOwnerLayer: queueEntry.suggestedOwnerLayer ?? inferOwnerLayer(suggestedFailureCategoriesForResult(result), result),
-		suggestedFailureCategories: queueEntry.suggestedFailureCategories ?? suggestedFailureCategoriesForResult(result),
+		suggestedOwnerLayer,
+		suggestedFailureCategories,
 		reviewOwnerLayer: reviewEntry.ownerLayer ?? '',
 		reviewFailureCategories: Array.isArray(reviewEntry.failureCategories) ? reviewEntry.failureCategories : [],
 		triageOwnerLayer: queueEntry.triageOwnerLayer ?? '',
@@ -272,7 +276,47 @@ function buildSelectedCase({ caseId, run, reviewByCaseId, queue }) {
 		sourceEvidenceGapExpectations: sourceGaps.map((problem) => problem.expectation),
 		requiredConfirmations: result.requiredConfirmations ?? [],
 		safetyFlags: result.safetyFlags ?? [],
-		error: result.error ?? ''
+		error: result.error ?? '',
+		ratingCommands: buildSelectedCaseRatingCommands({
+			caseId: result.caseId,
+			paths,
+			suggestedFailureCategories,
+			suggestedOwnerLayer
+		})
+	};
+}
+
+function buildSelectedCaseRatingCommands({ caseId, paths, suggestedFailureCategories, suggestedOwnerLayer }) {
+	if (!paths?.packet) return null;
+	const base = [
+		'npm run rate-case:scout-local-ai --',
+		'--packet',
+		shellArg(paths.packet),
+		'--review',
+		shellArg(paths.review),
+		'--run',
+		shellArg(paths.run),
+		'--case',
+		shellArg(caseId)
+	].join(' ');
+	const failureCategories = suggestedFailureCategories?.length
+		? suggestedFailureCategories.join(',')
+		: '<failure-category>';
+	const ownerLayer = suggestedOwnerLayer || '<owner-layer>';
+	const reviewStatusBase = [
+		'npm run review-status:scout-local-ai --',
+		'--run',
+		shellArg(paths.run),
+		'--review',
+		shellArg(paths.review),
+		'--packet',
+		shellArg(paths.packet)
+	].join(' ');
+	return {
+		selectedFocusedCheck: `${reviewStatusBase} --case ${shellArg(caseId)}`,
+		nextFocusedCheck: `${reviewStatusBase} --next`,
+		rateFive: `${base} --rating 5 --notes ${shellArg('Dad-ready answer.')} --mark-all-pass`,
+		rateBelowFive: `${base} --rating 4 --notes ${shellArg('Describe what is missing.')} --failure-categories ${shellArg(failureCategories)} --owner-layer ${shellArg(ownerLayer)} --improvement-task ${shellArg('Add or fix the responsible data/tool/prompt/UI layer.')}`
 	};
 }
 
@@ -576,6 +620,16 @@ function formatSelectedCase(selected) {
 	lines.push(`- Improvement task: ${selected.improvementTask || 'blank'}`);
 	lines.push('');
 
+	if (selected.ratingCommands) {
+		lines.push('### Rating commands', '');
+		lines.push('Use 5/5 only after the answer, sources, traits, caveats, confirmations, and safety flags actually pass:');
+		lines.push('', '```sh', selected.ratingCommands.rateFive, '```', '');
+		lines.push('For anything below 5, keep the concrete owner/fix attached so the iteration backlog is actionable:');
+		lines.push('', '```sh', selected.ratingCommands.rateBelowFive, '```', '');
+		lines.push('Then keep moving through the packet:');
+		lines.push('', '```sh', selected.ratingCommands.nextFocusedCheck, '```', '');
+	}
+
 	return lines;
 }
 
@@ -601,6 +655,12 @@ function tableCell(value) {
 function displayRating(value) {
 	if (value === null || value === undefined || value === '') return 'unrated';
 	return value;
+}
+
+function shellArg(value) {
+	const text = String(value ?? '');
+	if (/^[A-Za-z0-9_./:=@%+,~-]+$/u.test(text)) return text;
+	return `'${text.replace(/'/gu, `'\\''`)}'`;
 }
 
 function countValues(values) {

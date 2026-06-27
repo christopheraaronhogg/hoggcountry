@@ -134,7 +134,8 @@ npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<r
 
 For a case-by-case pass, add `--next` to the status command so it opens the next
 unrated answer, then update only that packet case after the answer has actually
-earned the rating:
+earned the rating. The focused card prints ready-to-edit `rate-case` commands
+for 5/5 and below-5 outcomes:
 
 ```bash
 npm run rate-case:scout-local-ai -- --packet data/scout-local-ai/review-packets/<run-id>.review.md --review data/scout-local-ai/reviews/<run-id>.review.json --case DLA-001 --rating 5 --mark-all-pass

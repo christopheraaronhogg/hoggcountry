@@ -257,7 +257,8 @@ To review one answer at a time without hunting through the whole packet, add
 falls back to the next below-5 case after every answer is rated. Use
 `--case DLA-001` when you want to jump to a specific answer. The focused card
 includes the prompt, answer, rubric traits, safety caveats, tool/source evidence,
-current reviewer fields, and likely owner/category hints:
+current reviewer fields, likely owner/category hints, and exact `rate-case`
+command templates when a packet path is available:
 
 ```sh
 npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json --packet data/scout-local-ai/review-packets/<run-id>.review.md --next
