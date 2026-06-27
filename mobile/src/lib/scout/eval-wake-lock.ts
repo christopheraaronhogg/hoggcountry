@@ -12,6 +12,10 @@ type WakeLockNavigatorLike = {
 	};
 };
 
+type NativeKeepAwakeLike = {
+	setActive(active: boolean): Promise<boolean>;
+};
+
 type VisibilityDocumentLike = {
 	visibilityState?: DocumentVisibilityState;
 	addEventListener?: (type: 'visibilitychange', listener: () => void) => void;
@@ -28,14 +32,17 @@ export type ScoutEvalWakeLockController = {
 export function createScoutEvalWakeLock(input: {
 	navigator?: WakeLockNavigatorLike;
 	document?: VisibilityDocumentLike;
+	nativeKeepAwake?: NativeKeepAwakeLike;
 	onError?: (error: unknown) => void;
 } = {}): ScoutEvalWakeLockController {
 	const nav =
 		input.navigator ?? (typeof navigator !== 'undefined' ? navigator as WakeLockNavigatorLike : undefined);
 	const doc =
 		input.document ?? (typeof document !== 'undefined' ? document as VisibilityDocumentLike : undefined);
+	const nativeKeepAwake = input.nativeKeepAwake;
 	const onError = input.onError;
 	let sentinel: WakeLockSentinelLike | null = null;
+	let nativeActive = false;
 	let requested = false;
 	let disposed = false;
 	let listening = false;
@@ -66,6 +73,23 @@ export function createScoutEvalWakeLock(input: {
 		listening = false;
 	}
 
+	async function acquireNative(): Promise<boolean> {
+		if (disposed || !requested || nativeActive || !nativeKeepAwake) return false;
+		try {
+			nativeActive = await nativeKeepAwake.setActive(true);
+			return nativeActive;
+		} catch (error) {
+			onError?.(error);
+			return false;
+		}
+	}
+
+	async function releaseNative() {
+		if (!nativeActive || !nativeKeepAwake) return;
+		nativeActive = false;
+		await nativeKeepAwake.setActive(false).catch((error) => onError?.(error));
+	}
+
 	async function acquire(): Promise<boolean> {
 		if (disposed || !requested || sentinel || !nav?.wakeLock) return false;
 		if (doc?.visibilityState === 'hidden') return false;
@@ -89,23 +113,26 @@ export function createScoutEvalWakeLock(input: {
 			if (disposed) return false;
 			requested = true;
 			addVisibilityListener();
-			return acquire();
+			const [nativeAcquired, webAcquired] = await Promise.all([acquireNative(), acquire()]);
+			return nativeAcquired || webAcquired || nativeActive || Boolean(sentinel);
 		},
 		async release() {
 			requested = false;
 			removeVisibilityListener();
 			const current = sentinel;
 			sentinel = null;
-			if (!current) return;
-			current.removeEventListener?.('release', handleSentinelRelease);
-			await current.release().catch((error) => onError?.(error));
+			current?.removeEventListener?.('release', handleSentinelRelease);
+			await Promise.all([
+				current?.release().catch((error) => onError?.(error)),
+				releaseNative()
+			]);
 		},
 		dispose() {
 			disposed = true;
 			void this.release();
 		},
 		hasLock() {
-			return Boolean(sentinel);
+			return Boolean(sentinel) || nativeActive;
 		}
 	};
 }

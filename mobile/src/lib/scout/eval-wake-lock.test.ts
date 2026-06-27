@@ -52,8 +52,15 @@ class FakeSentinel {
 test('Scout Eval Lab wake lock requests a screen lock and releases it after the run', async () => {
 	const doc = new FakeDocument();
 	const sentinels: FakeSentinel[] = [];
+	const nativeStates: boolean[] = [];
 	const lock = createScoutEvalWakeLock({
 		document: doc,
+		nativeKeepAwake: {
+			async setActive(active) {
+				nativeStates.push(active);
+				return active;
+			}
+		},
 		navigator: {
 			wakeLock: {
 				async request(type) {
@@ -69,13 +76,66 @@ test('Scout Eval Lab wake lock requests a screen lock and releases it after the 
 	assert.equal(await lock.request(), true);
 	assert.equal(lock.hasLock(), true);
 	assert.equal(sentinels.length, 1);
+	assert.deepEqual(nativeStates, [true]);
 	assert.equal(doc.listenerCount('visibilitychange'), 1);
 
 	await lock.release();
 
 	assert.equal(lock.hasLock(), false);
 	assert.equal(sentinels[0].releases, 1);
+	assert.deepEqual(nativeStates, [true, false]);
 	assert.equal(doc.listenerCount('visibilitychange'), 0);
+});
+
+test('Scout Eval Lab wake lock can use native iOS keep-awake when browser Wake Lock is unsupported', async () => {
+	const states: boolean[] = [];
+	const lock = createScoutEvalWakeLock({
+		document: new FakeDocument(),
+		navigator: {},
+		nativeKeepAwake: {
+			async setActive(active) {
+				states.push(active);
+				return active;
+			}
+		}
+	});
+
+	assert.equal(await lock.request(), true);
+	assert.equal(lock.hasLock(), true);
+
+	await lock.release();
+
+	assert.equal(lock.hasLock(), false);
+	assert.deepEqual(states, [true, false]);
+});
+
+test('Scout Eval Lab wake lock reports native keep-awake errors without blocking browser lock', async () => {
+	const errors: unknown[] = [];
+	const lock = createScoutEvalWakeLock({
+		document: new FakeDocument(),
+		nativeKeepAwake: {
+			async setActive(active) {
+				if (active) throw new Error('native unavailable');
+				return false;
+			}
+		},
+		navigator: {
+			wakeLock: {
+				async request() {
+					return new FakeSentinel();
+				}
+			}
+		},
+		onError: (error) => errors.push(error)
+	});
+
+	assert.equal(await lock.request(), true);
+	assert.equal(lock.hasLock(), true);
+	assert.equal(errors.length, 1);
+
+	await lock.release();
+
+	assert.equal(lock.hasLock(), false);
 });
 
 test('Scout Eval Lab wake lock degrades quietly when unsupported', async () => {

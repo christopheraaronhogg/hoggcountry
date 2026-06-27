@@ -249,6 +249,11 @@ The in-app Eval Lab autosaves each completed question locally on the phone. If a
 100-question run is interrupted, reopen Settings, tap Resume, and export after it
 finishes. Export also works after reopening the app because the last device run
 is restored from local storage.
+During a run, the Eval Lab requests both the browser screen Wake Lock and the
+native iOS idle-timer guard exposed by the ScoutGemma plugin, so a long `Run
+100` is less likely to be interrupted by the phone sleeping. If either guard is
+unsupported, the run still autosaves after each completed answer and can be
+resumed.
 
 The Eval Lab shows a final-proof preflight before Dad runs the suite. `Run 3`
 stays available as an iOS smoke check once the local model is ready, but `Run

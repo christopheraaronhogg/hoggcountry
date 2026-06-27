@@ -67,6 +67,8 @@ type ScoutGemmaPlugin = {
 	getNetworkStatus?: () => Promise<NetworkStatus>;
 	/** Native install-source diagnostics for release/TestFlight proof gates. */
 	getInstallSource?: () => Promise<ScoutInstallSource>;
+	/** Disable/restore native idle sleep during a long foreground Eval Lab run. */
+	setEvalKeepAwake?: (input: { active: boolean }) => Promise<ScoutEvalKeepAwakeResult>;
 	checkNotificationsPermission?: () => Promise<{ granted: boolean }>;
 	requestNotificationsPermission?: () => Promise<{ granted: boolean }>;
 	addListener?: {
@@ -120,6 +122,12 @@ export type DownloadState = {
 	active: boolean;
 	bytesDownloaded: number;
 	totalBytes: number;
+};
+
+export type ScoutEvalKeepAwakeResult = {
+	active: boolean;
+	supported?: boolean;
+	platform?: string;
 };
 
 export interface ScoutModelManager {
@@ -218,6 +226,22 @@ export async function getCapacitorScoutInstallSource(win: Window = window): Prom
 		receiptLastPathComponent:
 			typeof source.receiptLastPathComponent === 'string' ? source.receiptLastPathComponent : null,
 		installerPackage: typeof source.installerPackage === 'string' ? source.installerPackage : null
+	};
+}
+
+export async function setCapacitorScoutEvalKeepAwake(
+	active: boolean,
+	win: Window = window
+): Promise<ScoutEvalKeepAwakeResult | null> {
+	const capacitor = (win as CapacitorWindow).Capacitor;
+	if (!capacitor?.isNativePlatform?.()) return null;
+
+	const result = await capacitor.Plugins?.ScoutGemma?.setEvalKeepAwake?.({ active });
+	if (!result || typeof result !== 'object') return null;
+	return {
+		...result,
+		active: result.active === true,
+		supported: result.supported === undefined ? true : result.supported === true
 	};
 }
 

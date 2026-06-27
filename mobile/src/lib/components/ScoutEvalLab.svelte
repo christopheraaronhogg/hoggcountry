@@ -14,6 +14,7 @@
 	} from '$lib/scout/local-ai-eval-proof';
 	import {
 		getCapacitorScoutInstallSource,
+		setCapacitorScoutEvalKeepAwake,
 		type ScoutInstallSource
 	} from '$lib/scout/capacitor-gemma-bridge';
 	import {
@@ -137,6 +138,12 @@
 
 	onMount(() => {
 		evalWakeLock = createScoutEvalWakeLock({
+			nativeKeepAwake: {
+				async setActive(active) {
+					const result = await setCapacitorScoutEvalKeepAwake(active);
+					return result?.active === true;
+				}
+			},
 			onError: (err) => console.warn('Scout Eval Lab screen wake lock unavailable', err)
 		});
 		loadSavedRun();

@@ -1,6 +1,7 @@
 import Foundation
 import Network
 import Capacitor
+import UIKit
 
 /// iOS `ScoutGemma` Capacitor plugin — the Swift mirror of Android's
 /// `ScoutGemmaPlugin`. Marshals isAvailable / describeModel / generate /
@@ -30,7 +31,8 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "cancelModelDownload", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getDownloadState", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getNetworkStatus", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "getInstallSource", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "getInstallSource", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setEvalKeepAwake", returnType: CAPPluginReturnPromise)
     ]
 
     private let store = ScoutModelStore()
@@ -229,6 +231,18 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func getInstallSource(_ call: CAPPluginCall) {
         call.resolve(installSourcePayload())
+    }
+
+    @objc func setEvalKeepAwake(_ call: CAPPluginCall) {
+        let active = call.getBool("active") ?? false
+        DispatchQueue.main.async {
+            UIApplication.shared.isIdleTimerDisabled = active
+            call.resolve([
+                "active": UIApplication.shared.isIdleTimerDisabled,
+                "supported": true,
+                "platform": "ios"
+            ])
+        }
     }
 
     /// Clears the active downloader + progress under the state queue.
