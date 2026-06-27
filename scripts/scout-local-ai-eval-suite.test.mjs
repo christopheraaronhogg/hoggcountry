@@ -1210,7 +1210,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /## Valid export checklist/u);
 	assert.match(result.stdout, /Suite fields: `suiteId=dad-local-ai-100`, `suiteVersion=2026-06-27\.2`, `suiteHash=fnv1a32:[0-9a-f]+`/u);
 	assert.match(result.stdout, /Result count: `100\/100` completed results from `Run 100`, not `Run 3`/u);
-	assert.match(result.stdout, /Evidence lane: `device-on-device-gemma` with `answerOrigin=local-ai` answers/u);
+	assert.match(result.stdout, /Evidence lane: `device-on-device-gemma` with `answerOrigin=device-on-device-gemma` answers/u);
 	assert.match(result.stdout, /Native context: TestFlight iPhone install, app build satisfying `1\.0 \(>= 13\)`/u);
 	assert.match(result.stdout, /Import status: `ready-for-final-intake` from the inspector, then `prepared-for-final-review`/u);
 	assert.match(result.stdout, /Review triage: any provider error, missing required tool, or missing source evidence starts in the review-first queue/u);

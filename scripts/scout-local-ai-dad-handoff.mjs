@@ -289,7 +289,7 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		'',
 		`- Suite fields: \`suiteId=${status.suite.suiteId}\`, \`suiteVersion=${status.suite.version}\`, \`suiteHash=${status.suite.hash}\`.`,
 		`- Result count: \`${status.suite.caseCount}/100\` completed results from \`Run 100\`, not \`Run 3\` or an interrupted partial run.`,
-		'- Evidence lane: `device-on-device-gemma` with `answerOrigin=local-ai` answers.',
+		'- Evidence lane: `device-on-device-gemma` with `answerOrigin=device-on-device-gemma` answers.',
 		`- Native context: TestFlight iPhone install, app build satisfying \`${suiteRequiredBuild}\`; current Dad Pilot proof records \`${recordedDadBuild}\`, while latest Xcode target is \`${targetBuild}\`.`,
 		'- Import status: `ready-for-final-intake` from the inspector, then `prepared-for-final-review` from the prepare command.',
 		'- Review triage: any provider error, missing required tool, or missing source evidence starts in the review-first queue before normal answer-quality ratings.',
