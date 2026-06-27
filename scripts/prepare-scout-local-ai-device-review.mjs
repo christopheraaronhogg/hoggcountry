@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile, stat } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
@@ -15,19 +15,26 @@ const DEFAULT_SUITE = 'data/scout-local-ai/dad-local-ai-100.json';
 const DEFAULT_DEVICE_RUN_DIR = 'data/scout-local-ai/device-runs';
 const DEFAULT_REVIEW_DIR = 'data/scout-local-ai/reviews';
 const DEFAULT_PACKET_DIR = 'data/scout-local-ai/review-packets';
+const DEFAULT_DOWNLOADS_DIR = '~/Downloads';
+const SCOUT_SUITE_ID = 'dad-local-ai-100';
 
 const cli = parseCliArgs(process.argv.slice(2));
-const input = cli.run ?? cli.input;
+const input = cli.run ?? cli.input ?? (cli.latestDownload ? 'latest' : null);
 
 if (!input) {
 	throw new Error([
 		'Usage: npm run prepare-review:scout-local-ai-device-run -- --run ~/Downloads/<device-export>.json',
+		'       npm run prepare-review:scout-local-ai-device-run -- --run latest',
 		'This inspects first, imports only valid device exports, then prints review progress.',
+		'Add --downloads-dir <dir> with --run latest when the shared JSON is not in ~/Downloads.',
 		'Add --allow-partial only for deliberate smoke/interrupted-run diagnostics.'
 	].join('\n'));
 }
 
-const inputPath = resolveInputPath(input);
+const selectedInput = await resolveRunInput(input, {
+	downloadsDir: resolveInputPath(cli.downloadsDir ?? DEFAULT_DOWNLOADS_DIR)
+});
+const inputPath = selectedInput.path;
 const suitePath = resolveInputPath(cli.suite ?? DEFAULT_SUITE);
 const deviceRunDir = resolveInputPath(cli.deviceRunDir ?? DEFAULT_DEVICE_RUN_DIR);
 const reviewDir = resolveInputPath(cli.reviewDir ?? DEFAULT_REVIEW_DIR);
@@ -51,6 +58,7 @@ if (!canImportFinal && !canImportPartial) {
 		schemaVersion: 1,
 		status: inspection.readyForPartialIntake ? 'partial-needs-explicit-allow-partial' : 'inspection-blocked',
 		imported: false,
+		input: selectedInput.report,
 		inspection,
 		nextAction: inspection.readyForPartialIntake
 			? `Rerun with --allow-partial only if this is a deliberate smoke/interrupted-run diagnostic; otherwise finish Run 100 on the phone first.`
@@ -97,6 +105,7 @@ writeOutput({
 	status: canImportFinal ? 'prepared-for-final-review' : 'prepared-for-partial-diagnostic-review',
 	imported: true,
 	partial: canImportPartial,
+	input: selectedInput.report,
 	paths: {
 		importedRun: relative(REPO_ROOT, importedRunPath),
 		review: relative(REPO_ROOT, reviewPath),
@@ -124,6 +133,72 @@ async function runTextScript(script, args) {
 	return result.stdout;
 }
 
+async function resolveRunInput(value, options) {
+	const text = String(value);
+	if (text === 'latest' || text === 'latest-download' || text === 'latest-downloads') {
+		return latestDownloadRun(options.downloadsDir);
+	}
+	const path = resolveInputPath(text);
+	return {
+		path,
+		report: {
+			mode: 'explicit-run',
+			path: relative(REPO_ROOT, path)
+		}
+	};
+}
+
+async function latestDownloadRun(downloadsDir) {
+	const candidates = [];
+	for (const entry of await readdir(downloadsDir, { withFileTypes: true })) {
+		if (!entry.isFile() || !entry.name.toLowerCase().endsWith('.json')) continue;
+		const path = resolve(downloadsDir, entry.name);
+		const candidate = await readScoutEvalCandidate(path);
+		if (!candidate) continue;
+		const stats = await stat(path);
+		candidates.push({
+			...candidate,
+			path,
+			mtimeMs: stats.mtimeMs
+		});
+	}
+	candidates.sort((left, right) => right.mtimeMs - left.mtimeMs || left.path.localeCompare(right.path));
+	const selected = candidates[0];
+	if (!selected) {
+		throw new Error(`No likely Scout Eval Lab JSON exports found in ${downloadsDir}. Pass --run /path/to/<device-export>.json if the file is elsewhere.`);
+	}
+	return {
+		path: selected.path,
+		report: {
+			mode: 'latest-download',
+			downloadsDir: relative(REPO_ROOT, downloadsDir),
+			selected: relative(REPO_ROOT, selected.path),
+			runId: selected.runId,
+			suiteId: selected.suiteId,
+			caseCount: selected.caseCount,
+			candidateCount: candidates.length
+		}
+	};
+}
+
+async function readScoutEvalCandidate(path) {
+	try {
+		const parsed = JSON.parse(await readFile(path, 'utf8'));
+		if (!parsed || typeof parsed !== 'object') return null;
+		if (parsed.schemaVersion !== 1) return null;
+		if (parsed.suiteId !== SCOUT_SUITE_ID) return null;
+		if (typeof parsed.runId !== 'string' || !parsed.runId) return null;
+		if (!Array.isArray(parsed.results)) return null;
+		return {
+			runId: parsed.runId,
+			suiteId: parsed.suiteId,
+			caseCount: typeof parsed.caseCount === 'number' ? parsed.caseCount : parsed.results.length
+		};
+	} catch {
+		return null;
+	}
+}
+
 function writeOutput(report) {
 	if (cli.json) {
 		console.log(JSON.stringify(report, null, 2));
@@ -149,6 +224,16 @@ function formatReport(report) {
 			`- Imported run: \`${report.paths.importedRun}\``,
 			`- Review JSON: \`${report.paths.review}\``,
 			`- Review packet: \`${report.paths.packet}\``,
+			''
+		);
+	}
+	if (report.input?.mode === 'latest-download') {
+		lines.push(
+			'## Selected Export',
+			'',
+			`- Downloads dir: \`${report.input.downloadsDir}\``,
+			`- Selected: \`${report.input.selected}\``,
+			`- Candidate Scout exports: ${report.input.candidateCount}`,
 			''
 		);
 	}

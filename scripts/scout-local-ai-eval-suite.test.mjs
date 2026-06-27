@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -773,6 +773,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Install the latest TestFlight build/u);
 	assert.match(result.stdout, /use `Run 100` for real proof/u);
 	assert.match(result.stdout, /npm run prepare-review:scout-local-ai-device-run/u);
+	assert.match(result.stdout, /--run latest/u);
 	assert.match(result.stdout, /npm run inspect:scout-local-ai-device-run/u);
 	assert.match(result.stdout, /npm run intake:scout-local-ai-device-run/u);
 	assert.match(result.stdout, /npm run apply-review:scout-local-ai/u);
@@ -942,6 +943,68 @@ test('device review preparation command inspects, imports, and reports review st
 	assert.equal(review.cases.length, suite.cases.length);
 	assert.match(packet, /npm run review-status:scout-local-ai/u);
 	assert.match(report.nextAction, /review-status:scout-local-ai/u);
+});
+
+test('device review preparation command can select the latest Scout export from Downloads', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-device-prepare-latest-'));
+	const downloadsDir = join(outputDir, 'Downloads');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	const packetsDir = join(outputDir, 'review-packets');
+	await mkdir(downloadsDir, { recursive: true });
+
+	const unrelatedPath = join(downloadsDir, 'random-settings.json');
+	const olderPath = join(downloadsDir, 'scout-export-older.json');
+	const latestPath = join(downloadsDir, 'scout-export-latest.json');
+	const olderRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-prepare-older',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	const latestRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-prepare-latest',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	await writeFile(unrelatedPath, '{"not":"a Scout export"}\n');
+	await writeFile(olderPath, `${JSON.stringify(olderRun, null, 2)}\n`);
+	await writeFile(latestPath, `${JSON.stringify(latestRun, null, 2)}\n`);
+	await utimes(unrelatedPath, new Date('2026-06-27T01:00:00Z'), new Date('2026-06-27T01:00:00Z'));
+	await utimes(olderPath, new Date('2026-06-27T02:00:00Z'), new Date('2026-06-27T02:00:00Z'));
+	await utimes(latestPath, new Date('2026-06-27T03:00:00Z'), new Date('2026-06-27T03:00:00Z'));
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/prepare-scout-local-ai-device-review.mjs',
+			'--run',
+			'latest',
+			'--downloads-dir',
+			downloadsDir,
+			'--device-run-dir',
+			deviceRunsDir,
+			'--review-dir',
+			reviewsDir,
+			'--packet-dir',
+			packetsDir,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 12 }
+	);
+	const report = JSON.parse(result.stdout);
+
+	assert.equal(report.status, 'prepared-for-final-review');
+	assert.equal(report.input.mode, 'latest-download');
+	assert.equal(report.input.runId, 'device-prepare-latest');
+	assert.equal(report.input.candidateCount, 2);
+	assert.match(report.input.selected, /scout-export-latest\.json/u);
+	assert.equal(report.reviewStatus.summary.total, suite.cases.length);
+	assert.equal(
+		JSON.parse(await readFile(join(deviceRunsDir, 'device-prepare-latest.json'), 'utf8')).runId,
+		'device-prepare-latest'
+	);
+	await assert.rejects(readFile(join(deviceRunsDir, 'device-prepare-older.json'), 'utf8'));
 });
 
 test('device review preparation command refuses stale and implicit partial exports', async () => {

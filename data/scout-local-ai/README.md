@@ -104,6 +104,17 @@ For the normal Dad JSON handoff, the safest single command is:
 npm run prepare-review:scout-local-ai-device-run -- --run ~/Downloads/<device-run>.json
 ```
 
+If the export landed in Downloads but the filename is awkward, let the command
+select the newest likely Scout Eval Lab JSON first:
+
+```sh
+npm run prepare-review:scout-local-ai-device-run -- --run latest
+```
+
+Use `--downloads-dir <folder>` with `--run latest` when the shared JSON is in a
+different folder. The selected file still goes through the same read-only
+inspection gate before any review files are written.
+
 That command runs the read-only inspection first, imports only a valid final
 device export, creates the review JSON and Markdown packet, and then prints the
 read-only review-status report. It refuses partial exports unless
