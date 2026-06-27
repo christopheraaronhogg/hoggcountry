@@ -1218,6 +1218,7 @@ test('device run inspector classifies full and partial TestFlight exports before
 	assert.doesNotMatch(fullReport.nextCommand, /--allow-partial/u);
 	assert.equal(fullReport.run.appBuild, '13');
 	assert.equal(fullReport.run.installSource, 'testflight');
+	assert.equal(fullReport.run.executionId, 'fixture-scout-eval-device-inspect-full');
 	assert.equal(fullReport.summary.sourceEvidenceComplete, 100);
 
 	const partialResult = await execFileAsync(
@@ -1236,6 +1237,7 @@ test('device run inspector classifies full and partial TestFlight exports before
 	assert.equal(partialReport.readyForPartialIntake, true);
 	assert.match(partialReport.nextCommand, /--allow-partial/u);
 	assert.equal(partialReport.run.caseCount, 12);
+	assert.equal(partialReport.run.executionId, 'fixture-scout-eval-device-inspect-partial');
 	assert.match(partialReport.warnings.join('\n'), /missing 88 canonical case/u);
 });
 
@@ -4123,6 +4125,7 @@ test('strict device proof accepts a full 5-star device review', async () => {
 	assert.match(proof, /App version\/build: `1\.0 \(13\)`/u);
 	assert.match(proof, /Required app version\/build: `1\.0 \(>= 13\)`/u);
 	assert.match(proof, /Install source: `testflight`/u);
+	assert.match(proof, /Execution id: `fixture-scout-eval-device-final-proof-pass`/u);
 });
 
 test('strict device proof rejects 5-star reviews with missing required tool hits', async () => {
@@ -4753,6 +4756,8 @@ function finalDeviceRunContext(patch = {}) {
 }
 
 function deviceRunForCases(suite, cases, options = {}) {
+	const runId = options.runId ?? 'device-smoke-run';
+	const runContext = withFixtureExecutionContext(options.runContext ?? { surface: 'testflight-ios' }, runId);
 	const results = cases.map((testCase, index) => {
 		const toolInvocations = options.completeTools ? toolInvocationsFor(testCase) : [];
 		return {
@@ -4793,7 +4798,7 @@ function deviceRunForCases(suite, cases, options = {}) {
 	}
 	return {
 		schemaVersion: 1,
-		runId: options.runId ?? 'device-smoke-run',
+		runId,
 		suiteId: suite.suiteId,
 		suiteTitle: suite.title,
 		suiteVersion: options.suiteVersion ?? suite.version,
@@ -4802,7 +4807,7 @@ function deviceRunForCases(suite, cases, options = {}) {
 		generatedAt: '2026-06-26T12:00:00.000Z',
 		evidenceLane: 'device-on-device-gemma',
 		modelCommand: null,
-		runContext: options.runContext ?? { surface: 'testflight-ios' },
+		runContext,
 		caseCount: results.length,
 		totalSuiteCases: suite.cases.length,
 		filters: { id: null, domain: null, phase: null, limit: results.length },
@@ -4815,6 +4820,23 @@ function deviceRunForCases(suite, cases, options = {}) {
 			...summarizeRunSourceEvidence(results)
 		},
 		results
+	};
+}
+
+function withFixtureExecutionContext(runContext, runId) {
+	if (!runContext || typeof runContext !== 'object' || Array.isArray(runContext)) return runContext;
+	if (runContext.execution && typeof runContext.execution === 'object' && !Array.isArray(runContext.execution)) {
+		return runContext;
+	}
+	return {
+		...runContext,
+		execution: {
+			id: `fixture-scout-eval-${runId}`,
+			runId,
+			startedAt: '2026-06-26T12:00:00.000Z',
+			evidenceLane: 'device-on-device-gemma',
+			source: 'scout-local-ai-eval'
+		}
 	};
 }
 

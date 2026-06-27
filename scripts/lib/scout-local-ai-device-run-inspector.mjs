@@ -209,7 +209,8 @@ function buildReport({
 			appBuild: run?.runContext?.app?.build ?? '<missing>',
 			installSource: run?.runContext?.installSource?.type ?? '<missing>',
 			nativePlatform: run?.runContext?.native?.platform ?? '<missing>',
-			modelId: run?.runContext?.modelId ?? '<missing>'
+			modelId: run?.runContext?.modelId ?? '<missing>',
+			executionId: run?.runContext?.execution?.id ?? '<missing>'
 		},
 		suite: {
 			suiteId: suite?.suiteId ?? '<missing>',

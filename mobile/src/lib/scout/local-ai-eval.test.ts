@@ -93,7 +93,15 @@ test('runScoutLocalAiEval records on-device answers and tool expectations', asyn
 	});
 
 	assert.equal(run.evidenceLane, 'device-on-device-gemma');
-	assert.deepEqual(run.runContext, { surface: 'test-device' });
+	assert.equal(run.runContext?.surface, 'test-device');
+	assert.match(String((run.runContext?.execution as Record<string, unknown>)?.id ?? ''), /^scout-eval-20260626T120000Z-/u);
+	assert.deepEqual(run.runContext?.execution, {
+		id: (run.runContext?.execution as Record<string, unknown>).id,
+		runId: run.runId,
+		startedAt: '2026-06-26T12:00:00.000Z',
+		evidenceLane: 'device-on-device-gemma',
+		source: 'scout-local-ai-eval'
+	});
 	assert.equal(run.suiteVersion, '2026-06-26.1');
 	assert.equal(run.suiteHash, scoutLocalAiSuiteHash(suite([evalCase()])));
 	assert.equal(run.caseCount, 1);
@@ -181,6 +189,7 @@ test('runScoutLocalAiEval resumes from a saved partial run and snapshots progres
 	assert.equal(asks, 3);
 	assert.equal(resumed.runId, firstRun.runId);
 	assert.equal(resumed.generatedAt, firstRun.generatedAt);
+	assert.deepEqual(resumed.runContext?.execution, firstRun.runContext?.execution);
 	assert.equal(resumed.caseCount, 3);
 	assert.deepEqual(resumed.results.map((result) => result.caseId), ['DLA-001', 'DLA-002', 'DLA-003']);
 	assert.deepEqual(snapshots, [1, 2, 3]);

@@ -197,6 +197,7 @@ export function createDeviceProofMarkdown({ suite, run, summary, suitePath, runP
 		`- Required app version/build: \`${requiredAppLabel(suite)}\``,
 		`- Install source: \`${run.runContext?.installSource?.type ?? '<missing>'}\``,
 		`- Model id: \`${run.runContext?.modelId ?? '<missing>'}\``,
+		`- Execution id: \`${run.runContext?.execution?.id ?? '<missing>'}\``,
 		'',
 		'## Result',
 		'',

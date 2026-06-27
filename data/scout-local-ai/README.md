@@ -325,6 +325,9 @@ and no stale failure categories or improvement tasks remain. It also requires
 every expected-trait and safety-caveat rubric item to be explicitly checked as
 passed. Passing writes an ignored proof summary under
 `data/scout-local-ai/final-proof/`.
+New Eval Lab exports include `runContext.execution.id`; the inspector and final
+proof summary print it so two Dad runs can be compared without digging through
+the raw JSON.
 
 For final consistency proof, require at least two separate full TestFlight/iPhone
 runs to pass the same strict gate:

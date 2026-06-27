@@ -143,6 +143,14 @@ export async function runScoutLocalAiEval(input: {
 	const previousRun = validateReusablePreviousRun(input.previousRun, input.suite, suiteHash, input.evidenceLane);
 	const runId = input.runId ?? previousRun?.runId ?? `device-local-ai-${compactTimestamp(now)}`;
 	const generatedAt = previousRun?.generatedAt ?? now.toISOString();
+	const runContext = createEvalRunContext({
+		runContext: input.runContext ?? previousRun?.runContext,
+		previousRunContext: previousRun?.runContext,
+		runId,
+		generatedAt,
+		evidenceLane: input.evidenceLane,
+		now
+	});
 	const priorResults = new Map((previousRun?.results ?? []).map((result) => [result.caseId, result]));
 	const results: ScoutLocalAiEvalResult[] = [];
 	const snapshot = () =>
@@ -152,7 +160,7 @@ export async function runScoutLocalAiEval(input: {
 			generatedAt,
 			evidenceLane: input.evidenceLane,
 			suiteHash,
-			runContext: input.runContext ?? previousRun?.runContext,
+			runContext,
 			limit: input.limit,
 			results
 		});
@@ -498,6 +506,32 @@ function compactCase(testCase: ScoutLocalAiEvalCase): ScoutLocalAiEvalCase {
 	};
 }
 
+function createEvalRunContext(input: {
+	runContext?: Record<string, unknown>;
+	previousRunContext?: Record<string, unknown>;
+	runId: string;
+	generatedAt: string;
+	evidenceLane: ScoutLocalAiEvidenceLane;
+	now: Date;
+}): Record<string, unknown> {
+	const context = { ...(input.runContext ?? {}) };
+	const previousExecution = recordAt(input.previousRunContext, 'execution');
+	const currentExecution = recordAt(context, 'execution');
+	context.execution = currentExecution ?? previousExecution ?? {
+		id: createExecutionId(input.now),
+		runId: input.runId,
+		startedAt: input.generatedAt,
+		evidenceLane: input.evidenceLane,
+		source: 'scout-local-ai-eval'
+	};
+	return context;
+}
+
+function createExecutionId(now: Date): string {
+	const randomId = globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2, 12);
+	return `scout-eval-${compactTimestamp(now)}-${randomId}`;
+}
+
 function validateReusablePreviousRun(
 	previousRun: ScoutLocalAiEvalRun | null | undefined,
 	suite: ScoutLocalAiEvalSuite,
@@ -621,6 +655,12 @@ function sameStringArray(left: unknown, right: string[]): boolean {
 	if (!Array.isArray(left)) return false;
 	if (left.length !== right.length) return false;
 	return left.every((value, index) => value === right[index]);
+}
+
+function recordAt(value: unknown, key: string): Record<string, unknown> | null {
+	if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+	const child = (value as Record<string, unknown>)[key];
+	return child && typeof child === 'object' && !Array.isArray(child) ? child as Record<string, unknown> : null;
 }
 
 function stableJson(value: unknown): string {

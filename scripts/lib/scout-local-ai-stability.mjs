@@ -10,6 +10,13 @@ export function scoutLocalAiStabilityRunFingerprint(run) {
 			scoutLane: run.runContext?.scoutLane ?? null,
 			modelId: run.runContext?.modelId ?? null,
 			runtimeConfigured: run.runContext?.runtimeConfigured ?? null,
+			execution: {
+				id: run.runContext?.execution?.id ?? null,
+				runId: run.runContext?.execution?.runId ?? null,
+				startedAt: run.runContext?.execution?.startedAt ?? null,
+				evidenceLane: run.runContext?.execution?.evidenceLane ?? null,
+				source: run.runContext?.execution?.source ?? null
+			},
 			native: {
 				platform: run.runContext?.native?.platform ?? null,
 				isNativePlatform: run.runContext?.native?.isNativePlatform ?? null
