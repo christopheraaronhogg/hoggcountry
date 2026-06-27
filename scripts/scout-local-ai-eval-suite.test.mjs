@@ -549,6 +549,9 @@ test('device run intake validates exports and creates review packet', async () =
 	assert.match(packet, /Source evidence gaps:/u);
 	assert.match(packet, /Source receipts:/u);
 	assert.match(packet, /Failure mode: `none`/u);
+	assert.match(packet, /## Review queue summary/u);
+	assert.match(packet, /Likely owner/u);
+	assert.match(packet, /\| DLA-\d{3} \| [^|]+ \| [^|]+ \| standard \| tool-routing \| bad-routing, weak-tool \| none \|/u);
 	assert.match(packet, /## Rating scale/u);
 	assert.match(packet, /## Reviewer field choices/u);
 	assert.match(packet, /Do not use the improvement task to weaken the eval rubric/u);
@@ -710,6 +713,8 @@ test('device run intake imports truthful missing source receipts for review', as
 	assert.match(packet, new RegExp(`## ${sourceCase.id} - `, 'u'));
 	assert.match(packet, /Suggested failure categories: `weak-tool`/u);
 	assert.match(packet, /Suggested owner layer: `tool-routing`/u);
+	assert.match(packet, /review-first: source evidence gap/u);
+	assert.match(packet, /source evidence: .*:/u);
 	assert.match(packet, /Source evidence gaps:/u);
 	assert.match(packet, /must record at least one receipt or sourceDocumentId/u);
 });

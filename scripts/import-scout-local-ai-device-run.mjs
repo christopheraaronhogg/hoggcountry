@@ -272,6 +272,15 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 		lines.push('');
 	}
 
+	lines.push(
+		'## Review queue summary',
+		'',
+		'Start with `review-first` rows. Those rows have provider errors, missing required tools, or missing source evidence. The full case blocks below remain the source of truth for ratings.',
+		'',
+		...formatReviewQueueSummary(run.results),
+		''
+	);
+
 	for (const result of run.results) {
 		const suggestedFailureCategories = suggestedFailureCategoriesForResult(result);
 		const suggestedOwnerLayer = inferOwnerLayer(suggestedFailureCategories, result);
@@ -346,6 +355,49 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 	return `${lines.join('\n')}\n`;
 }
 
+function formatReviewQueueSummary(results) {
+	if (!Array.isArray(results) || !results.length) return ['No results were imported.'];
+	const rows = [
+		'| Case | Phase | Domain | Signal | Likely owner | Suggested categories | Evidence gaps | Prompt preview |',
+		'| --- | --- | --- | --- | --- | --- | --- | --- |'
+	];
+	for (const result of results) {
+		const suggestedFailureCategories = suggestedFailureCategoriesForResult(result);
+		const suggestedOwnerLayer = inferOwnerLayer(suggestedFailureCategories, result);
+		const sourceEvidenceGaps = sourceEvidenceProblems(result.case?.requiredTools ?? [], result.toolInvocations ?? []);
+		rows.push([
+			result.caseId ?? '<missing>',
+			result.case?.phase ?? '<missing>',
+			result.case?.domain ?? '<missing>',
+			reviewQueueSignal(result, sourceEvidenceGaps),
+			suggestedOwnerLayer,
+			suggestedFailureCategories.join(', ') || 'none',
+			formatReviewQueueEvidenceGaps(result, sourceEvidenceGaps),
+			truncateForTable(result.case?.prompt ?? '', 110)
+		].map(tableCell).join(' | ').replace(/^/u, '| ').replace(/$/u, ' |'));
+	}
+	return rows;
+}
+
+function reviewQueueSignal(result, sourceEvidenceGaps) {
+	if (String(result?.error ?? '').trim()) return 'review-first: provider error';
+	if ((result?.toolExpectations?.missing ?? []).length) return 'review-first: missing required tools';
+	if (sourceEvidenceGaps.length) return 'review-first: source evidence gap';
+	return 'standard';
+}
+
+function formatReviewQueueEvidenceGaps(result, sourceEvidenceGaps) {
+	const gaps = [];
+	if ((result?.toolExpectations?.missing ?? []).length) {
+		gaps.push(`missing tools: ${result.toolExpectations.missing.join(', ')}`);
+	}
+	if (sourceEvidenceGaps.length) {
+		gaps.push(`source evidence: ${sourceEvidenceGaps.map((problem) => problem.expectation ?? problem.message).join(', ')}`);
+	}
+	if (String(result?.error ?? '').trim()) gaps.push(`error: ${truncateForTable(result.error, 80)}`);
+	return gaps.join('; ') || 'none';
+}
+
 function formatSourceEvidenceCounts(counts) {
 	const entries = Object.entries(counts ?? {}).sort(([left], [right]) => left.localeCompare(right));
 	if (!entries.length) return 'none';
@@ -413,6 +465,19 @@ function formatStringList(items) {
 function compactJson(value) {
 	const text = JSON.stringify(value);
 	return text.length > 500 ? `${text.slice(0, 497)}...` : text;
+}
+
+function tableCell(value) {
+	return String(value ?? '')
+		.replace(/\r?\n/gu, ' ')
+		.replace(/\|/gu, '\\|')
+		.trim();
+}
+
+function truncateForTable(value, maxLength) {
+	const text = String(value ?? '').replace(/\s+/gu, ' ').trim();
+	if (text.length <= maxLength) return text;
+	return `${text.slice(0, Math.max(0, maxLength - 3))}...`;
 }
 
 function quoteBlock(text) {
