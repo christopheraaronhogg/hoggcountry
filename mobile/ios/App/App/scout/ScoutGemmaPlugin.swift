@@ -32,10 +32,16 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "getDownloadState", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getNetworkStatus", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getInstallSource", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "setEvalKeepAwake", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "setEvalKeepAwake", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getSimulatorEvalRequest", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setSimulatorEvalResult", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setSimulatorEvalDiagnostic", returnType: CAPPluginReturnPromise)
     ]
 
     private let store = ScoutModelStore()
+    private static let simEvalTriggerDefaultsKey = "CapacitorStorage.hoggcountry:scout-gemma-sim-eval-probe:v1"
+    private static let simEvalResultDefaultsKey = "CapacitorStorage.hoggcountry:scout-gemma-sim-eval-result:v1"
+    private static let simEvalDiagnosticDefaultsKey = "CapacitorStorage.hoggcountry:scout-gemma-sim-eval-diagnostic:v1"
 
     /// Serial queue that owns all reads and writes of `_engine`, `_downloader`,
     /// and `_lastProgress`.
@@ -250,6 +256,28 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 
+    @objc func getSimulatorEvalRequest(_ call: CAPPluginCall) {
+        #if DEBUG && targetEnvironment(simulator)
+        let payload = simulatorEvalRequestPayload()
+        NSLog(
+            "SCOUT_GEMMA_SIM_EVAL_BRIDGE request requested=%@ limit=%@ source=%@",
+            (payload["requested"] as? Bool ?? false) ? "true" : "false",
+            payload["limit"] as? String ?? "",
+            payload["source"] as? String ?? "")
+        call.resolve(payload)
+        #else
+        call.resolve(["requested": false, "source": "unavailable"])
+        #endif
+    }
+
+    @objc func setSimulatorEvalResult(_ call: CAPPluginCall) {
+        setSimulatorEvalPreference(call, key: Self.simEvalResultDefaultsKey)
+    }
+
+    @objc func setSimulatorEvalDiagnostic(_ call: CAPPluginCall) {
+        setSimulatorEvalPreference(call, key: Self.simEvalDiagnosticDefaultsKey)
+    }
+
     /// Clears the active downloader + progress under the state queue.
     private func clearDownload() {
         stateQueue.sync {
@@ -267,6 +295,37 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     #if DEBUG && targetEnvironment(simulator)
+    private func simulatorEvalRequestPayload() -> [String: Any] {
+        let process = ProcessInfo.processInfo
+        if let limit = cleanSimulatorEvalLimit(process.environment["SCOUT_GEMMA_SIM_EVAL_LIMIT"]) {
+            return ["requested": true, "limit": limit, "source": "env"]
+        }
+
+        let prefix = "--scout-gemma-sim-eval-limit="
+        for argument in process.arguments where argument.hasPrefix(prefix) {
+            let limit = String(argument.dropFirst(prefix.count))
+            return ["requested": true, "limit": cleanSimulatorEvalLimit(limit) ?? "all", "source": "launch-arg"]
+        }
+
+        if process.arguments.contains("--scout-gemma-sim-eval") {
+            let limit = UserDefaults.standard.string(forKey: Self.simEvalTriggerDefaultsKey) ?? "all"
+            return ["requested": true, "limit": cleanSimulatorEvalLimit(limit) ?? "all", "source": "launch-arg-defaults"]
+        }
+
+        if let limit = cleanSimulatorEvalLimit(UserDefaults.standard.string(forKey: Self.simEvalTriggerDefaultsKey)) {
+            UserDefaults.standard.removeObject(forKey: Self.simEvalTriggerDefaultsKey)
+            return ["requested": true, "limit": limit, "source": "defaults"]
+        }
+
+        return ["requested": false, "source": "none"]
+    }
+
+    private func cleanSimulatorEvalLimit(_ value: String?) -> String? {
+        guard let value = value else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
     private func shouldRunSimulatorGemmaProbe() -> Bool {
         let process = ProcessInfo.processInfo
         return process.environment["SCOUT_GEMMA_SIM_PROBE"] == "1"
@@ -311,6 +370,21 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
     #endif
+
+    private func setSimulatorEvalPreference(_ call: CAPPluginCall, key: String) {
+        #if DEBUG && targetEnvironment(simulator)
+        guard let value = call.getString("value") else {
+            call.reject("Must provide a value")
+            return
+        }
+        NSLog("SCOUT_GEMMA_SIM_EVAL_BRIDGE write key=%@ chars=%d", key, value.count)
+        UserDefaults.standard.set(value, forKey: key)
+        UserDefaults.standard.synchronize()
+        call.resolve(["ok": true])
+        #else
+        call.resolve(["ok": false])
+        #endif
+    }
 
     private func modelStatusPayload(_ status: ScoutModelStatus) -> [String: Any] {
         var payload = status.toDict()

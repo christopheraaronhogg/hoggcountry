@@ -20,14 +20,14 @@ const STALE_CONDITIONS_HOURS = 24;
 const SOURCE_SEARCH_LIMIT = 6;
 const SOURCE_OPEN_MAX_CHARS = 1600;
 const SOURCE_SKILL_TAG_HINTS: Record<string, string[]> = {
-	loadout: ['loadout', 'gear', 'pack'],
+	loadout: ['loadout', 'gear', 'pack', 'shakedown', 'battery', 'foot-care'],
 	'park services': ['park', 'ranger', 'visitor', 'campground', 'permit'],
-	pretrip: ['pretrip', 'prep', 'shakedown', 'foot-care', 'offline'],
-	safety: ['safety', 'risk', 'bailout', 'injury'],
+	pretrip: ['pretrip', 'prep', 'shakedown', 'foot-care', 'offline', 'local-ai', 'field-pack', 'documents'],
+	safety: ['safety', 'risk', 'bailout', 'injury', 'documents', 'offline', 'check-ins', 'family', 'emergency', 'itinerary'],
 	shelter: ['shelter', 'camping', 'campsite', 'tent'],
 	'trail conditions': ['closure', 'detour', 'hazard', 'condition'],
-	town: ['town', 'resupply', 'recovery'],
-	terrain: ['terrain', 'pace', 'mileage', 'daylight'],
+	town: ['town', 'resupply', 'recovery', 'budget'],
+	terrain: ['terrain', 'pace', 'mileage', 'daylight', 'first-week', 'recovery'],
 	water: ['water', 'spring', 'creek'],
 	weather: ['weather', 'wind', 'cold', 'rain', 'heat', 'storm']
 };
@@ -190,7 +190,7 @@ function toolArgs(args: object): Record<string, unknown> {
 function sourceSkillLabel(value: unknown): string | null {
 	if (typeof value !== 'string') return null;
 	const label = value.trim().replace(/\s+/g, ' ');
-	return label ? `${label[0].toUpperCase()}${label.slice(1)} source skill` : null;
+	return label ? `${label[0].toUpperCase()}${label.slice(1)} guidance` : null;
 }
 
 interface SourceDocument {

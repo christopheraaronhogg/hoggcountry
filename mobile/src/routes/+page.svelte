@@ -16,24 +16,47 @@
 	const tab = $derived(trailAssistant.activeTab);
 	const SIM_EVAL_PROBE_KEY = 'hoggcountry:scout-gemma-sim-eval-probe:v1';
 	const SIM_EVAL_RESULT_KEY = 'hoggcountry:scout-gemma-sim-eval-result:v1';
-
+	const SIM_EVAL_DIAGNOSTIC_KEY = 'hoggcountry:scout-gemma-sim-eval-diagnostic:v1';
+	type SimulatorEvalPlugin = {
+		getSimulatorEvalRequest?: () => Promise<{
+			requested?: boolean;
+			limit?: string | number | null;
+			source?: string;
+		}>;
+		setSimulatorEvalResult?: (input: { value: string }) => Promise<{ ok?: boolean }>;
+		setSimulatorEvalDiagnostic?: (input: { value: string }) => Promise<{ ok?: boolean }>;
+	};
 	onMount(() => {
 		void maybeRunSimulatorGemmaEvalProbe();
 	});
 
 	async function maybeRunSimulatorGemmaEvalProbe() {
 		try {
-			const [{ Capacitor }, { Preferences }] = await Promise.all([
-				import('@capacitor/core'),
-				import('@capacitor/preferences')
-			]);
-			if (!Capacitor.isNativePlatform()) return;
-
-			const trigger = await Preferences.get({ key: SIM_EVAL_PROBE_KEY });
-			const limit = simulatorEvalLimit(trigger.value);
+			const { Capacitor, registerPlugin } = await import('@capacitor/core');
+			const native = Capacitor.isNativePlatform();
+			const plugin = native ? registerPlugin<SimulatorEvalPlugin>('ScoutGemma') : null;
+			const request = native ? await plugin?.getSimulatorEvalRequest?.() : null;
+			const triggerValue = request?.limit === undefined || request?.limit === null ? null : String(request.limit);
+			const limit = simulatorEvalLimit(triggerValue);
+			await plugin?.setSimulatorEvalDiagnostic?.({
+				value: JSON.stringify({
+					generatedAt: new Date().toISOString(),
+					phase: limit === null ? 'ignored' : 'starting',
+					native,
+					requested: request?.requested === true,
+					source: request?.source ?? null,
+					triggerKey: SIM_EVAL_PROBE_KEY,
+					resultKey: SIM_EVAL_RESULT_KEY,
+					diagnosticKey: SIM_EVAL_DIAGNOSTIC_KEY,
+					triggerValue,
+					parsedLimit: limit === undefined ? 'all' : limit,
+					href: window.location.href,
+					userAgent: navigator.userAgent
+				})
+			});
+			if (!native || !plugin || request?.requested !== true) return;
 			if (limit === null) return;
-			await Preferences.remove({ key: SIM_EVAL_PROBE_KEY });
-			console.info('SCOUT_GEMMA_SIM_EVAL_PROBE requested', trigger.value, 'limit', limit ?? 'all');
+			console.info('SCOUT_GEMMA_SIM_EVAL_PROBE requested', triggerValue, 'limit', limit ?? 'all');
 
 			const response = await fetch('/scout/dad-local-ai-100.json', { cache: 'no-store' });
 			if (!response.ok) {
@@ -50,7 +73,7 @@
 					);
 				}
 			});
-			await Preferences.set({ key: SIM_EVAL_RESULT_KEY, value: JSON.stringify(run) });
+			await plugin.setSimulatorEvalResult?.({ value: JSON.stringify(run) });
 			console.info(
 				'SCOUT_GEMMA_SIM_EVAL_PROBE complete',
 				JSON.stringify({
@@ -67,9 +90,9 @@
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
 			try {
-				const { Preferences } = await import('@capacitor/preferences');
-				await Preferences.set({
-					key: SIM_EVAL_RESULT_KEY,
+				const { registerPlugin } = await import('@capacitor/core');
+				const plugin = registerPlugin<SimulatorEvalPlugin>('ScoutGemma');
+				await plugin?.setSimulatorEvalResult?.({
 					value: JSON.stringify({ ok: false, generatedAt: new Date().toISOString(), error: message })
 				});
 			} catch {

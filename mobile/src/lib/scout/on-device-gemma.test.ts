@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
 	OnDeviceGemmaProvider,
+	polishOnDeviceAnswer,
 	renderSystemContext,
 	type OnDeviceGemmaBridge
 } from './providers/on-device-gemma.ts';
@@ -97,10 +98,47 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /Do not use Markdown headings, bold markers, tables, or long bullet lists/);
 	assert.match(systemContext, /Never turn candidate water, shelters, towns, or weather into guarantees/);
 	assert.match(systemContext, /For water questions, use the next_water tool finding as the answer's spine/);
-	assert.match(systemContext, /When source_search or open_source_doc findings are labeled as source skills/);
+	assert.match(systemContext, /When tool findings are labeled as guidance/);
 	assert.match(systemContext, /When preparation or training questions have pretrip/);
 	assert.match(systemContext, /include an immediate first-week checklist/);
+	assert.match(systemContext, /End every answer with a complete sentence/);
+	assert.match(systemContext, /verify Bible text is available offline/);
+	assert.match(systemContext, /never write "if you don't hear from you\."/);
 	assert.match(systemContext, /For resupply or mail-drop questions/);
 	assert.match(systemContext, /do not tell the hiker to train through pain/);
+	assert.match(systemContext, /Do not offer terrain lookups or custom workouts at the end/);
 	assert.match(systemContext, /Use the strongest 2-4 tool findings visibly/);
+});
+
+test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions', () => {
+	assert.equal(
+		polishOnDeviceAnswer(
+			"Tell family what to do if you don't hear from you after that time.\n\nThis guidance comes from the safety guidance regarding family check-in and missed-contact discipline.",
+			'What should I tell family about check-ins and what they should do if I miss one?'
+		),
+		'Tell family what to do if they do not hear from you after that time.\n\nNormal gaps can happen from dead zones, battery conservation, rain, or town chaos; live location may be delayed or unavailable, so do not treat it as guaranteed.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer('Save ID and insurance where you can access them offline.', 'What documents and information should I keep saved offline before day one?'),
+		'Save ID and insurance where you can access them offline.\n\nDo not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat; keep those saved separately offline.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer('Download maps and refresh the field pack.', 'What phone settings and offline downloads should I set before going offline?'),
+		'Download maps and refresh the field pack.\n\nAlso verify Bible text is available offline.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer('Protect your knee. I can look up terrain, but I can', 'How should I train with a bad knee before the first week of the AT?'),
+		'Protect your knee.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Protect your knee.\n\nA shakedown hike should prove your sleep system, rain system, and offline app flow.\n\nThis approach is what the terrain guidance suggests for the first trail week.',
+			'How should I train with a bad knee before the first week of the AT?'
+		),
+		'Protect your knee.'
+	);
 });

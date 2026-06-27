@@ -2,7 +2,7 @@
 
 import { execFile, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import process from 'node:process';
@@ -18,8 +18,10 @@ const DERIVED_DATA_PATH = resolve(REPO_ROOT, '.scout-artifacts/ios-sim-gemma/Der
 const APP_PATH = resolve(DERIVED_DATA_PATH, 'Build/Products/Debug-iphonesimulator/App.app');
 const RESULT_KEY = 'hoggcountry:scout-gemma-sim-eval-result:v1';
 const TRIGGER_KEY = 'hoggcountry:scout-gemma-sim-eval-probe:v1';
+const DIAGNOSTIC_KEY = 'hoggcountry:scout-gemma-sim-eval-diagnostic:v1';
 const CAP_RESULT_KEY = `CapacitorStorage.${RESULT_KEY}`;
 const CAP_TRIGGER_KEY = `CapacitorStorage.${TRIGGER_KEY}`;
+const CAP_DIAGNOSTIC_KEY = `CapacitorStorage.${DIAGNOSTIC_KEY}`;
 
 const cli = parseCliArgs(process.argv.slice(2));
 if (cli.help) {
@@ -68,12 +70,23 @@ if (!existsSync(APP_PATH)) {
 }
 
 await run('xcrun', ['simctl', 'install', simulator.udid, APP_PATH]);
-await writePreference(simulator.udid, CAP_RESULT_KEY, '__pending__');
-await writePreference(simulator.udid, CAP_TRIGGER_KEY, triggerForLimit(limit));
+if (!cli.preserveWebCache) await clearWebViewCache(simulator.udid);
 await terminateApp(simulator.udid);
-await run('xcrun', ['simctl', 'launch', simulator.udid, BUNDLE_ID, '--scout-gemma-sim-probe']);
+await writePreference(simulator.udid, CAP_RESULT_KEY, '__pending__');
+await writePreference(simulator.udid, CAP_DIAGNOSTIC_KEY, '__pending__');
+await writePreference(simulator.udid, CAP_TRIGGER_KEY, triggerForLimit(limit));
+await flushPreferences(simulator.udid);
+await run('xcrun', [
+	'simctl',
+	'launch',
+	simulator.udid,
+	BUNDLE_ID,
+	'--scout-gemma-sim-probe',
+	`--scout-gemma-sim-eval-limit=${triggerForLimit(limit)}`
+]);
 
 const runJson = await waitForRun(simulator.udid, timeoutMs, pollMs);
+assertExpectedCaseCount(runJson, limit);
 await mkdir(outputDir, { recursive: true });
 const outputPath = resolve(outputDir, `ios-sim-gemma-${runJson.runId}.json`);
 await writeFile(outputPath, `${JSON.stringify(runJson, null, 2)}\n`);
@@ -111,7 +124,7 @@ function normalizeLimit(value) {
 
 function triggerForLimit(value) {
 	if (value === undefined) return 'all';
-	return value === 3 ? 'run3' : `limit:${value}`;
+	return String(value);
 }
 
 function timeoutForLimit(value) {
@@ -160,12 +173,50 @@ async function bootSimulator(udid) {
 	await run('xcrun', ['simctl', 'bootstatus', udid, '-b']);
 }
 
+async function clearWebViewCache(udid) {
+	const dataDir = (await execFileAsync('xcrun', ['simctl', 'get_app_container', udid, BUNDLE_ID, 'data'])).stdout.trim();
+	await Promise.all([
+		rm(resolve(dataDir, 'Library/Caches'), { recursive: true, force: true }),
+		rm(resolve(dataDir, 'Library/WebKit'), { recursive: true, force: true })
+	]);
+}
+
 function providerErrorCount(runJson) {
 	return (runJson.results ?? []).filter((result) => Boolean(result?.error)).length;
 }
 
+function assertExpectedCaseCount(runJson, value) {
+	const expected = value ?? 100;
+	if (runJson.caseCount === expected) return;
+	throw new Error(
+		`Simulator eval returned ${runJson.caseCount} case(s), but ${expected} were requested. ` +
+		`Refusing to save misleading evidence. Run id: ${runJson.runId ?? '<missing>'}.`
+	);
+}
+
 async function writePreference(udid, key, value) {
-	await run('xcrun', ['simctl', 'spawn', udid, 'defaults', 'write', BUNDLE_ID, key, '-string', value]);
+	const plistPath = await appPreferencesPlistPath(udid);
+	await mkdir(dirname(plistPath), { recursive: true });
+	const preferences = await readPreferencesPlist(plistPath);
+	preferences[key] = value;
+	const tempPath = resolve(DERIVED_DATA_PATH, `preferences-${process.pid}-${Date.now()}.json`);
+	await mkdir(dirname(tempPath), { recursive: true });
+	await writeFile(tempPath, `${JSON.stringify(preferences)}\n`);
+	try {
+		await execFileAsync('plutil', ['-convert', 'binary1', '-o', plistPath, tempPath], {
+			maxBuffer: 256 * 1024 * 1024
+		});
+	} finally {
+		await rm(tempPath, { force: true });
+	}
+}
+
+async function flushPreferences(udid) {
+	try {
+		await execFileAsync('xcrun', ['simctl', 'spawn', udid, 'killall', 'cfprefsd']);
+	} catch {
+		// cfprefsd is restarted by the simulator as needed.
+	}
 }
 
 async function terminateApp(udid) {
@@ -179,6 +230,7 @@ async function terminateApp(udid) {
 async function waitForRun(udid, timeout, interval) {
 	const started = Date.now();
 	let lastStatusAt = 0;
+	let lastDiagnostic = '';
 	while (Date.now() - started < timeout) {
 		const result = await readResultPreference(udid);
 		if (result) {
@@ -189,26 +241,80 @@ async function waitForRun(udid, timeout, interval) {
 		}
 		if (Date.now() - lastStatusAt > 30000) {
 			console.log(`- Waiting for simulator eval result (${Math.round((Date.now() - started) / 1000)}s elapsed)...`);
+			const diagnostic = await readDiagnosticPreference(udid);
+			if (diagnostic) {
+				const summary = summarizeDiagnostic(diagnostic);
+				if (summary && summary !== lastDiagnostic) {
+					console.log(`- App diagnostic: ${summary}`);
+					lastDiagnostic = summary;
+				}
+			}
 			lastStatusAt = Date.now();
 		}
 		await sleep(interval);
 	}
-	throw new Error(`Timed out after ${timeout}ms waiting for simulator eval result.`);
+	const diagnostic = await readDiagnosticPreference(udid);
+	const diagnosticSummary = summarizeDiagnostic(diagnostic);
+	throw new Error(
+		`Timed out after ${timeout}ms waiting for simulator eval result.` +
+		(diagnosticSummary ? ` Last app diagnostic: ${diagnosticSummary}` : ' No app diagnostic was written.')
+	);
 }
 
 async function readResultPreference(udid) {
+	return readJsonPreference(udid, CAP_RESULT_KEY);
+}
+
+async function readDiagnosticPreference(udid) {
+	return readJsonPreference(udid, CAP_DIAGNOSTIC_KEY);
+}
+
+async function readJsonPreference(udid, key) {
 	try {
-		const dataDir = (await execFileAsync('xcrun', ['simctl', 'get_app_container', udid, BUNDLE_ID, 'data'])).stdout.trim();
-		const plist = resolve(dataDir, `Library/Preferences/${BUNDLE_ID}.plist`);
-		if (!existsSync(plist)) return null;
-		const { stdout } = await execFileAsync('plutil', ['-convert', 'json', '-o', '-', plist], { maxBuffer: 80 * 1024 * 1024 });
-		const preferences = JSON.parse(stdout || '{}');
-		const raw = preferences[CAP_RESULT_KEY];
+		const raw = await readPreference(udid, key);
 		if (typeof raw !== 'string' || !raw.trim()) return null;
 		return JSON.parse(raw);
 	} catch {
 		return null;
 	}
+}
+
+async function readPreference(udid, key) {
+	const plistPath = await appPreferencesPlistPath(udid);
+	const preferences = await readPreferencesPlist(plistPath);
+	const value = preferences[key];
+	return typeof value === 'string' ? value : '';
+}
+
+async function appPreferencesPlistPath(udid) {
+	const dataDir = (await execFileAsync(
+		'xcrun',
+		['simctl', 'get_app_container', udid, BUNDLE_ID, 'data'],
+		{ maxBuffer: 1024 * 1024 }
+	)).stdout.trim();
+	return resolve(dataDir, 'Library/Preferences', `${BUNDLE_ID}.plist`);
+}
+
+async function readPreferencesPlist(plistPath) {
+	if (!existsSync(plistPath)) return {};
+	const raw = (await execFileAsync(
+		'plutil',
+		['-convert', 'json', '-o', '-', plistPath],
+		{ maxBuffer: 256 * 1024 * 1024 }
+	)).stdout.trim();
+	if (!raw) return {};
+	return JSON.parse(raw);
+}
+
+function summarizeDiagnostic(diagnostic) {
+	if (!diagnostic || typeof diagnostic !== 'object') return '';
+	return JSON.stringify({
+		phase: diagnostic.phase,
+		native: diagnostic.native,
+		triggerValue: diagnostic.triggerValue ?? null,
+		parsedLimit: diagnostic.parsedLimit ?? null,
+		href: diagnostic.href ?? null
+	});
 }
 
 async function run(command, args, options = {}) {
@@ -260,5 +366,6 @@ Options:
   --skip-sync               Skip npm --prefix mobile run cap:sync:ios.
   --skip-build              Skip xcodebuild and use the existing derived-data app.
   --no-inspect              Do not run the read-only device-run inspector.
+  --preserve-web-cache      Do not clear WebView cache/service-worker data before launch.
 `);
 }

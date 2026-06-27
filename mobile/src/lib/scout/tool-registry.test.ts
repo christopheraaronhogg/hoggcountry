@@ -105,12 +105,12 @@ test('runToolsFor routes keyword prompts to matching built-in tools and source s
 	assert.equal(toolIds.filter((id) => id === 'weather_lookup').length, 1);
 	assert.equal(toolIds.filter((id) => id === 'source_search').length, 3);
 	assert.equal(toolIds.filter((id) => id === 'open_source_doc').length, 3);
-	assert.ok(records.some((record) => record.summary.startsWith('Water source skill:')));
-	assert.ok(records.some((record) => record.summary.startsWith('Shelter source skill:')));
-	assert.ok(records.some((record) => record.summary.startsWith('Weather source skill:')));
-	assert.ok(records.some((record) => record.summary.startsWith('Water source skill opened')));
-	assert.ok(records.some((record) => record.summary.startsWith('Shelter source skill opened')));
-	assert.ok(records.some((record) => record.summary.startsWith('Weather source skill opened')));
+	assert.ok(records.some((record) => record.summary.startsWith('Water guidance:')));
+	assert.ok(records.some((record) => record.summary.startsWith('Shelter guidance:')));
+	assert.ok(records.some((record) => record.summary.startsWith('Weather guidance:')));
+	assert.ok(records.some((record) => record.summary.startsWith('Water guidance opened')));
+	assert.ok(records.some((record) => record.summary.startsWith('Shelter guidance opened')));
+	assert.ok(records.some((record) => record.summary.startsWith('Weather guidance opened')));
 });
 
 test('runToolsFor reads the water source skill beside next_water', async () => {
@@ -135,7 +135,7 @@ test('runToolsFor reads the water source skill beside next_water', async () => {
 		(record) => record.toolId === 'source_search' && record.args.sourceSkill === 'water'
 	);
 	assert.ok(sourceSkill);
-	assert.match(sourceSkill.summary, /^Water source skill:/);
+	assert.match(sourceSkill.summary, /^Water guidance:/);
 	assert.match(sourceSkill.summary, /Confirm mapped water before committing/);
 	assert.ok(sourceSkill.sourceDocumentIds?.includes('field-guide:pack-water-on-ridges'));
 	assert.ok(sourceSkill.receipts.some((receipt) => receipt.id === 'field-guide:pack-water-on-ridges'));
@@ -144,7 +144,7 @@ test('runToolsFor reads the water source skill beside next_water', async () => {
 		(record) => record.toolId === 'open_source_doc' && record.args.documentId === 'field-guide:pack-water-on-ridges'
 	);
 	assert.ok(openedSource);
-	assert.match(openedSource.summary, /^Water source skill opened Confirm mapped water before committing:/);
+	assert.match(openedSource.summary, /^Water guidance opened Confirm mapped water before committing:/);
 	assert.match(openedSource.summary, /Mapped water candidates are planning prompts, not promises/);
 	assert.ok(openedSource.receipts.some((receipt) => receipt.id === 'field-guide:pack-water-on-ridges'));
 });
@@ -163,7 +163,7 @@ test('runToolsFor reads shelter source skill beside next_shelter', async () => {
 		(record) => record.toolId === 'source_search' && record.args.sourceSkill === 'shelter'
 	);
 	assert.ok(sourceSkill);
-	assert.match(sourceSkill.summary, /^Shelter source skill:/);
+	assert.match(sourceSkill.summary, /^Shelter guidance:/);
 	assert.match(sourceSkill.summary, /Shelter and camping entries need rule checks/);
 	assert.ok(sourceSkill.sourceDocumentIds?.includes('field-guide:shelter-camping-discipline'));
 	assert.ok(
@@ -171,7 +171,7 @@ test('runToolsFor reads shelter source skill beside next_shelter', async () => {
 			(record) =>
 				record.toolId === 'open_source_doc' &&
 				record.args.documentId === 'field-guide:shelter-camping-discipline' &&
-				/Shelter source skill opened Shelter and camping entries need rule checks/.test(record.summary)
+				/Shelter guidance opened Shelter and camping entries need rule checks/.test(record.summary)
 		)
 	);
 });
@@ -190,15 +190,16 @@ test('runToolsFor reads town source skill beside next_town', async () => {
 		(record) => record.toolId === 'source_search' && record.args.sourceSkill === 'town'
 	);
 	assert.ok(sourceSkill);
-	assert.match(sourceSkill.summary, /^Town source skill:/);
+	assert.match(sourceSkill.summary, /^Town guidance:/);
 	assert.match(sourceSkill.summary, /Town stops are recovery first/);
+	assert.match(sourceSkill.summary, /Default resupply rule: buy common food in town/);
 	assert.ok(sourceSkill.sourceDocumentIds?.includes('field-guide:town-stop-readiness'));
 	assert.ok(
 		records.some(
 			(record) =>
 				record.toolId === 'open_source_doc' &&
 				record.args.documentId === 'field-guide:town-stop-readiness' &&
-				/Town source skill opened Town stops are recovery first/.test(record.summary)
+				/Town guidance opened Town stops are recovery first/.test(record.summary)
 		)
 	);
 });
@@ -217,7 +218,7 @@ test('runToolsFor reads loadout source skill beside pack contents', async () => 
 		(record) => record.toolId === 'source_search' && record.args.sourceSkill === 'loadout'
 	);
 	assert.ok(sourceSkill);
-	assert.match(sourceSkill.summary, /^Loadout source skill:/);
+	assert.match(sourceSkill.summary, /^Loadout guidance:/);
 	assert.match(sourceSkill.summary, /Read the pack contents before gear advice/);
 	assert.ok(sourceSkill.sourceDocumentIds?.includes('field-guide:loadout-contents-discipline'));
 	assert.ok(
@@ -225,7 +226,32 @@ test('runToolsFor reads loadout source skill beside pack contents', async () => 
 			(record) =>
 				record.toolId === 'open_source_doc' &&
 				record.args.documentId === 'field-guide:loadout-contents-discipline' &&
-				/Loadout source skill opened Read the pack contents before gear advice/.test(record.summary)
+				/Loadout guidance opened Read the pack contents before gear advice/.test(record.summary)
+		)
+	);
+});
+
+test('runToolsFor opens shakedown loadout discipline for shakedown prompts', async () => {
+	const records = await runToolsFor(
+		'What should my shakedown hike prove before I leave?',
+		packWithTrailPlanningContext(),
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	assert.ok(records.some((record) => record.toolId === 'loadout_check'));
+	const sourceSkill = records.find(
+		(record) => record.toolId === 'source_search' && record.args.sourceSkill === 'loadout'
+	);
+	assert.ok(sourceSkill);
+	assert.match(sourceSkill.summary, /sleep system, rain system, cooking and food rhythm/);
+	assert.ok(sourceSkill.sourceDocumentIds?.includes('field-guide:loadout-contents-discipline'));
+	assert.ok(
+		records.some(
+			(record) =>
+				record.toolId === 'open_source_doc' &&
+				record.args.documentId === 'field-guide:loadout-contents-discipline' &&
+				/shakedown hike should prove the sleep system/.test(record.summary)
 		)
 	);
 });
@@ -242,7 +268,7 @@ test('runToolsFor reads safety source skill for bailout and injury prompts', asy
 		(record) => record.toolId === 'source_search' && record.args.sourceSkill === 'safety'
 	);
 	assert.ok(sourceSkill);
-	assert.match(sourceSkill.summary, /^Safety source skill:/);
+	assert.match(sourceSkill.summary, /^Safety guidance:/);
 	assert.match(sourceSkill.summary, /Safety decisions prefer current checks/);
 	assert.ok(sourceSkill.sourceDocumentIds?.includes('field-guide:safety-risk-discipline'));
 	assert.ok(
@@ -250,7 +276,70 @@ test('runToolsFor reads safety source skill for bailout and injury prompts', asy
 			(record) =>
 				record.toolId === 'open_source_doc' &&
 				record.args.documentId === 'field-guide:safety-risk-discipline' &&
-				/Safety source skill opened Safety decisions prefer current checks/.test(record.summary)
+				/Safety guidance opened Safety decisions prefer current checks/.test(record.summary)
+		)
+	);
+});
+
+test('runToolsFor does not route training prompts to rain/weather', async () => {
+	const records = await runToolsFor(
+		'How should I train with a bad knee before the first week of the AT?',
+		packWithTrailPlanningContext(),
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	assert.ok(records.some((record) => record.toolId === 'source_search' && record.args.sourceSkill === 'safety'));
+	assert.ok(!records.some((record) => record.toolId === 'weather_lookup'));
+	assert.ok(!records.some((record) => record.toolId === 'source_search' && record.args.sourceSkill === 'weather'));
+});
+
+test('runToolsFor opens offline document safety discipline for day-one document prompts', async () => {
+	const records = await runToolsFor(
+		'What documents and information should I keep saved offline before day one?',
+		DEFAULT_CONTEXT_PACK,
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	const sourceSkill = records.find(
+		(record) => record.toolId === 'source_search' && record.args.sourceSkill === 'safety'
+	);
+	assert.ok(sourceSkill);
+	assert.match(sourceSkill.summary, /^Safety guidance:/);
+	assert.match(sourceSkill.summary, /Offline personal documents stay separate from Scout chat/);
+	assert.ok(sourceSkill.sourceDocumentIds?.includes('field-guide:offline-personal-documents'));
+	assert.ok(
+		records.some(
+				(record) =>
+					record.toolId === 'open_source_doc' &&
+					record.args.documentId === 'field-guide:offline-personal-documents' &&
+				/save ID, insurance, emergency contacts/i.test(record.summary)
+		)
+	);
+});
+
+test('runToolsFor opens family check-in safety discipline for missed-contact prompts', async () => {
+	const records = await runToolsFor(
+		'What should I tell family about check-ins and what they should do if I miss one?',
+		DEFAULT_CONTEXT_PACK,
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	const sourceSkill = records.find(
+		(record) => record.toolId === 'source_search' && record.args.sourceSkill === 'safety'
+	);
+	assert.ok(sourceSkill);
+	assert.match(sourceSkill.summary, /^Safety guidance:/);
+	assert.match(sourceSkill.summary, /Family check-ins need cadence and escalation rules/);
+	assert.ok(sourceSkill.sourceDocumentIds?.includes('field-guide:family-checkin-discipline'));
+	assert.ok(
+		records.some(
+			(record) =>
+				record.toolId === 'open_source_doc' &&
+				record.args.documentId === 'field-guide:family-checkin-discipline' &&
+				/Do not promise live location is always available/.test(record.summary)
 		)
 	);
 });
@@ -265,8 +354,8 @@ test('runToolsFor reads pretrip source skill for Springer preparation prompts', 
 				{
 					id: 'eval-pretrip-discipline',
 					title: 'Pretrip and first-week discipline',
-					body: 'Pretrail answers should include shakedown hikes, foot care, conservative early mileage, loadout checks, water treatment habits, and an offline app rehearsal.',
-					tags: ['pretrip', 'prep', 'shakedown', 'foot-care', 'offline'],
+					body: 'Pretrail answers should turn preparation into a short first-week plan. Include loaded shakedown walks, foot care and blister practice, gear/loadout checks, water treatment habits, conservative early mileage, field pack refresh, local AI model download, offline maps/docs, airplane-mode rehearsal, and a separate emergency communication plan.',
+					tags: ['pretrip', 'prep', 'shakedown', 'foot-care', 'offline', 'local-ai', 'field-pack'],
 					citation: 'Dad Local AI eval source skill: pretrip'
 				}
 			]
@@ -279,15 +368,15 @@ test('runToolsFor reads pretrip source skill for Springer preparation prompts', 
 		(record) => record.toolId === 'source_search' && record.args.sourceSkill === 'pretrip'
 	);
 	assert.ok(sourceSkill);
-	assert.match(sourceSkill.summary, /^Pretrip source skill:/);
-	assert.match(sourceSkill.summary, /shakedown hikes/);
+	assert.match(sourceSkill.summary, /^Pretrip guidance:/);
+	assert.match(sourceSkill.summary, /loaded shakedown walks/);
 	assert.ok(sourceSkill.sourceDocumentIds?.includes('field-guide:eval-pretrip-discipline'));
 	assert.ok(
 		records.some(
 			(record) =>
 				record.toolId === 'open_source_doc' &&
 				record.args.documentId === 'field-guide:eval-pretrip-discipline' &&
-				/Pretrip source skill opened Pretrip and first-week discipline/.test(record.summary)
+				/Pretrip guidance opened Pretrip and first-week discipline/.test(record.summary)
 		)
 	);
 });

@@ -43,6 +43,7 @@ const TIER_TO_CHARS: Record<GemmaTier, number> = {
 	balanced: 16_000,
 	small: 8_000
 };
+const ON_DEVICE_MAX_TOKENS = 640;
 
 export class OnDeviceGemmaProvider implements ScoutProvider {
 	private bridge?: OnDeviceGemmaBridge;
@@ -132,19 +133,20 @@ export class OnDeviceGemmaProvider implements ScoutProvider {
 
 		const systemContext = renderSystemContext(request);
 		const result = await this.bridge.generate(
-			{ prompt: request.prompt, systemContext, maxTokens: 512 },
+			{ prompt: request.prompt, systemContext, maxTokens: ON_DEVICE_MAX_TOKENS },
 			onToken
 		);
+		const answer = polishOnDeviceAnswer(result.text, request.prompt);
 
 		// A blank/whitespace generation is a failure, not an answer. Treat it as
 		// unavailable so the user gets an honest retry rather than an empty bubble
 		// dressed up with a confidence badge.
-		if (!result.text || !result.text.trim()) {
+		if (!answer) {
 			throw new OnDeviceModelUnavailableError('On-device model returned an empty response.');
 		}
 
 		return {
-			answer: result.text,
+			answer,
 			confidence: 'medium',
 			mode: 'on-device',
 			provider: 'on-device-gemma',
@@ -161,6 +163,100 @@ export class OnDeviceGemmaProvider implements ScoutProvider {
 			contextUsed: ['on-device-gemma']
 		};
 	}
+}
+
+export function polishOnDeviceAnswer(text: string, prompt: string): string {
+	let answer = text.replace(/\r\n/g, '\n').trim();
+	if (!answer) return '';
+
+	answer = answer.replace(/\bif you (?:do not|don't) hear from you\b/giu, 'if they do not hear from you');
+	answer = answer.replace(
+		/\bshould escalate beyond what you can handle\b/giu,
+		'should trigger the escalation plan'
+	);
+	answer = removeTrailingProvenanceParagraphs(answer);
+
+	const lowerPrompt = prompt.toLowerCase();
+	if (isInjuryPrompt(lowerPrompt)) {
+		answer = removeInjuryPrepDrift(answer);
+	}
+	if (isFamilyCheckinPrompt(lowerPrompt) && !mentionsNormalGapsAndLiveLocation(answer)) {
+		answer = appendSentence(
+			answer,
+			'Normal gaps can happen from dead zones, battery conservation, rain, or town chaos; live location may be delayed or unavailable, so do not treat it as guaranteed.'
+		);
+	}
+	if (isOfflineSetupPrompt(lowerPrompt) && !mentionsOfflineBible(answer)) {
+		answer = appendSentence(answer, 'Also verify Bible text is available offline.');
+	}
+	if (isPersonalDocumentPrompt(lowerPrompt) && !mentionsPrivateDocumentBoundary(answer)) {
+		answer = appendSentence(
+			answer,
+			'Do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat; keep those saved separately offline.'
+		);
+	}
+
+	return trimToCompleteSentence(answer);
+}
+
+function removeTrailingProvenanceParagraphs(answer: string): string {
+	const paragraphs = answer.split(/\n{2,}/u);
+	while (
+		paragraphs.length > 1 &&
+		/^This (?:guidance|approach|answer) (?:comes from|is based on|is what)\b.*\b(?:guidance|finding|discipline)\b.*\.?$/iu.test(
+			paragraphs[paragraphs.length - 1].trim()
+		)
+	) {
+		paragraphs.pop();
+	}
+	return paragraphs.join('\n\n').trim();
+}
+
+function removeInjuryPrepDrift(answer: string): string {
+	return answer
+		.split(/\n{2,}/u)
+		.filter((paragraph) => !/^A shakedown hike should prove\b/iu.test(paragraph.trim()))
+		.join('\n\n')
+		.trim();
+}
+
+function appendSentence(answer: string, sentence: string): string {
+	return `${answer.trim()}\n\n${sentence}`;
+}
+
+function trimToCompleteSentence(answer: string): string {
+	const trimmed = answer.trim();
+	if (!trimmed || /[.!?)]$/u.test(trimmed)) return trimmed;
+	const lastSentenceEnd = Math.max(trimmed.lastIndexOf('.'), trimmed.lastIndexOf('!'), trimmed.lastIndexOf('?'));
+	return lastSentenceEnd > 0 ? trimmed.slice(0, lastSentenceEnd + 1).trim() : trimmed;
+}
+
+function isOfflineSetupPrompt(prompt: string): boolean {
+	return /offline setup|offline downloads|going offline|phone settings|day-one readiness|day one readiness/u.test(prompt);
+}
+
+function isPersonalDocumentPrompt(prompt: string): boolean {
+	return /documents|personal documents|information should i keep saved offline|insurance|emergency contacts|permits|reservations/u.test(prompt);
+}
+
+function isFamilyCheckinPrompt(prompt: string): boolean {
+	return /check-ins|check ins|check-in|family|miss one|missed check-in|miss a check-in/u.test(prompt);
+}
+
+function isInjuryPrompt(prompt: string): boolean {
+	return /injury|hurt|pain|knee|ankle|rolled|symptoms|medical|sick/u.test(prompt);
+}
+
+function mentionsOfflineBible(answer: string): boolean {
+	return /bible[^.?!\n]*(?:offline|available|download)|(?:offline|available|download)[^.?!\n]*bible/iu.test(answer);
+}
+
+function mentionsPrivateDocumentBoundary(answer: string): boolean {
+	return /(?:do not|don't) paste private|private (?:id|insurance|medical|payment|reservation).*scout chat/iu.test(answer);
+}
+
+function mentionsNormalGapsAndLiveLocation(answer: string): boolean {
+	return /(?:normal gap|dead zone|battery conservation|town chaos|rain)/iu.test(answer) && /live location/iu.test(answer);
 }
 
 export class OnDeviceModelUnavailableError extends Error {
@@ -181,15 +277,24 @@ export function renderSystemContext(request: ProviderRequest): string {
 	return [
 		`You are Scout, an Appalachian Trail field companion for thru-hikers.`,
 		`Voice: calm, capable, plain-spoken, and human. Sound like a thoughtful trail partner, not a chatbot, cowboy, coach, marketer, or emergency dispatcher.`,
+		`Address the hiker directly as "you" or "your." Do not refer to Dad in third person as "your dad" or "the hiker" in the final answer.`,
 		`Do not use "howdy", "partner", "well now", fake dialect, hype, or repeated self-introductions. Do not echo the hiker's question unless you need to clarify it.`,
 		`Answer the hiker's immediate question first. Keep most replies short: 2-5 tight paragraphs or a few short lines. If the hiker sounds uncertain, steady them and give the next practical decision.`,
+		`End every answer with a complete sentence. Do not end with an unfinished offer, and do not add "I can look..." follow-up offers inside the answer. Use the loaded context to answer the current prompt.`,
 		`Use plain text only. Do not use Markdown headings, bold markers, tables, or long bullet lists; this chat renders plain text.`,
+		`Do not expose internal tool names or labels such as "source skill", "source_search", "open_source_doc", or "tool invocation" in the answer. Use the information naturally.`,
 		`Be honest about uncertainty. Use "candidate", "verify", or "I don't know" when the pack cannot prove something. Never turn candidate water, shelters, towns, or weather into guarantees.`,
 		`For water questions, use the next_water tool finding as the answer's spine. Lead with the nearest actionable water option or next reliable source from the tool finding. If no reliable water is loaded, say that after the source hierarchy; do not start with a generic refusal.`,
-		`When source_search or open_source_doc findings are labeled as source skills, treat them as topic-specific documents Scout intentionally read for this answer. Use them to shape caveats and next-step advice.`,
-		`When preparation or training questions have pretrip, terrain, loadout, safety, or offline setup findings, give Dad a concrete short plan. For "what should I focus on first" prompts, include an immediate first-week checklist, not only general training advice. Include shakedown hikes, foot care/blister practice, conservative early mileage, gear/loadout checks, water treatment habits, and an offline app/model rehearsal when those appear in the findings.`,
-		`For resupply or mail-drop questions, avoid firm mail-ahead advice until the missing inputs are named: diet restrictions, expected pace, next town timing, store/post-office hours, hostel or shuttle access, and whether the item is hard to find locally. Give the default rule after that: buy common food in town, mail only constrained or hard-to-find items to verified stops.`,
-		`For injury or pain questions, do not tell the hiker to train through pain. Lead with pain-free load reduction, low-impact conditioning, strength/mobility work, and clinician/physical-therapist guidance when pain persists, worsens, swells, or changes gait.`,
+		`When tool findings are labeled as guidance, treat them as topic-specific documents Scout intentionally read for this answer. Use them to shape caveats and next-step advice.`,
+		`When preparation or training questions have pretrip, terrain, loadout, safety, or offline setup findings, give a concrete short plan. For "what should I focus on first" prompts, include an immediate first-week checklist, not only general training advice. Include shakedown hikes, foot care/blister practice, conservative early mileage, gear/loadout checks, water treatment habits, and an offline app/model rehearsal when those appear in the findings.`,
+		`For offline setup, offline downloads, phone settings, or day-one readiness questions, distinguish phone/app readiness from personal safety readiness. Always include the exact check "verify Bible text is available offline." Also mention field-pack refresh, current mile, local AI model, offline maps/docs, battery, airplane-mode rehearsal, and that Scout does not replace inReach, PLB, 911, or the family emergency plan. For personal documents, include this safety boundary in plain words: do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat.`,
+		`For shakedown questions, name what the shakedown must prove: sleep system, rain system, cooking/food rhythm, water filtering, battery drain, pack fit, foot care, and offline app/model flow. Turn failures into specific gear or app fixes. Always say that one shakedown does not prove every condition is covered.`,
+		`For first-week mileage questions, use body condition, daylight, elevation, weather, pack weight, water spacing, foot/knee condition, and legal shelter/campsite/town spacing. Start low, protect feet and knees, and avoid fixed mileage promises.`,
+		`For heavy-rain start questions, include conservative mileage, dry sleep layers, footing caution on slick roots/rocks/descents, current forecast verification, and a bailout or stop plan for lightning, hypothermia risk, flooding, or worsening conditions.`,
+		`For family check-in questions, set cadence, content, normal gap expectations, escalation window, emergency contacts, itinerary sharing, and the live-location caveat. Use phrasing like "if they do not hear from you" or "if you miss a check-in"; never write "if you don't hear from you." Repeated missed check-ins, bad weather, health concerns, or itinerary mismatch should escalate beyond Scout.`,
+		`For trail budget questions, separate daily burn from town spikes, hostels/shuttles/laundry/meals, gear replacement, and emergency cushion. Keep advice flexible around actual pace and services, and do not provide financial guarantees.`,
+		`For resupply or mail-drop questions, avoid firm mail-ahead advice until the missing inputs are named: diet restrictions, expected pace, next town timing, store/post-office hours, hostel or shuttle access, and whether the item is hard to find locally. Give the default rule after that: buy common food in town; mail only constrained, medical, diet-specific, or hard-to-find items to verified stops. Never say hard-to-find items are better bought in town unless a current town source proves availability.`,
+		`For injury or pain questions, do not tell the hiker to train through pain. Keep the answer focused on the injury decision, not a general prep checklist. Lead with pain-free load reduction, low-impact conditioning, strength/mobility work, and clinician/physical-therapist guidance when pain persists, worsens, swells, or changes gait. Recommend low first-week mileage and stopping while normal recovery is still possible. Do not offer terrain lookups or custom workouts at the end.`,
 		`Use the strongest 2-4 tool findings visibly in the answer. Convert source-skill discipline into specific actions; do not answer with generic outdoor advice when Scout supplied concrete findings.`,
 		conversationLines.length
 			? `Recent conversation before the current prompt:\n${conversationLines.join('\n')}\nUse this for follow-ups like "last question", "that", "the message before", or "what did I just ask". The current user prompt is not part of this history.`
