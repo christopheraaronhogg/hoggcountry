@@ -55,9 +55,8 @@ When a likely inbox export exists and no final device run has been imported yet,
 the next action switches to preparing that export instead of asking Dad to run
 the phone again.
 The status output also tracks below-5 review debt explicitly: a completed
-below-5 review is marked as needing backlog generation, needing an iteration
-plan, or already planned, so improvement work cannot hide behind the broader
-"review is not 100/100" gate.
+below-5 review is marked as needing backlog/plan generation or already planned,
+so improvement work cannot hide behind the broader "review is not 100/100" gate.
 
 To audit the whole original goal against current evidence, run:
 
@@ -199,11 +198,11 @@ npm run finalize-review:scout-local-ai -- --packet data/scout-local-ai/review-pa
 ```
 
 The finalizer applies the packet, runs the read-only review status check, and
-only then runs the safe next step: write an iteration backlog for below-5
-answers, record a non-final review for smoke/partial runs, or run strict device
-proof when the full TestFlight/iPhone review is 100/100 at 5/5. If the packet is
-incomplete or invalid, it stops at review status instead of writing backlog or
-proof files.
+only then runs the safe next step: write an iteration backlog plus iteration
+plan for below-5 answers, record a non-final review for smoke/partial runs, or
+run strict device proof when the full TestFlight/iPhone review is 100/100 at
+5/5. If the packet is incomplete or invalid, it stops at review status instead
+of writing backlog, plan, or proof files.
 
 During the rating pass, use the read-only progress check as often as needed:
 
@@ -253,7 +252,8 @@ On iPhone, use Share first so the JSON can be sent through the native share
 sheet. If that is unavailable, use Copy and paste the JSON into a file or note.
 Download remains available as a browser fallback.
 
-After filling the review JSON ratings and tasks:
+If you need the lower-level manual command after filling the review JSON ratings
+and tasks:
 
 ```sh
 npm run review:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json
@@ -261,6 +261,8 @@ npm run review:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.
 
 That writes a machine-readable backlog item for every answer rated below 5 and
 a Markdown iteration backlog grouped for the next data/tool/prompt/UI fix pass.
+The normal finalizer also runs the planner immediately after this backlog step
+when any below-5 answer exists.
 Backlog items keep source-evidence gaps as first-class fields when a source-backed
 tool was called without a receipt or source document id, so the next iteration can
 fix the retrieval/evidence layer instead of rediscovering the gap from raw
@@ -281,7 +283,8 @@ and rate below 5 with a concrete improvement task. A 5/5 case must not keep
 failure categories, an owner layer, or an improvement task; clear those fields
 when a rerun actually fixes the issue.
 
-Plan the next fix pass from one or more completed backlogs:
+Plan the next fix pass from one or more completed backlogs when you are working
+from manually-created or combined backlog files:
 
 ```sh
 npm run plan:scout-local-ai-iteration -- --backlog data/scout-local-ai/backlog/<run-id>.backlog.json

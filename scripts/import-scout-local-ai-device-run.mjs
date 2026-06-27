@@ -277,10 +277,10 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 		`npm run review-status:scout-local-ai -- --run ${relative(REPO_ROOT, importedRunPath)} --review ${relative(REPO_ROOT, reviewPath)} --packet ${relative(REPO_ROOT, packetPath)}`,
 		'```',
 		'',
-		'Then validate complete ratings and create the iteration backlog:',
+		'Then validate complete ratings and run the safe next step. A below-5 review writes both an iteration backlog and an iteration plan; a full 100/100 5-star TestFlight/iPhone review runs strict device proof:',
 		'',
 		'```sh',
-		`npm run review:scout-local-ai -- --run ${relative(REPO_ROOT, importedRunPath)} --review ${relative(REPO_ROOT, reviewPath)}`,
+		`npm run finalize-review:scout-local-ai -- --packet ${relative(REPO_ROOT, packetPath)} --run ${relative(REPO_ROOT, importedRunPath)} --review ${relative(REPO_ROOT, reviewPath)}`,
 		'```',
 		''
 	];

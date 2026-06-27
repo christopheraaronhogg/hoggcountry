@@ -12,13 +12,14 @@ const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
 const DEFAULT_SUITE = 'data/scout-local-ai/dad-local-ai-100.json';
 const DEFAULT_BACKLOG_DIR = 'data/scout-local-ai/backlog';
+const DEFAULT_ITERATION_DIR = 'data/scout-local-ai/iterations';
 
 const cli = parseCliArgs(process.argv.slice(2));
 
 if (!cli.packet || !cli.review) {
 	throw new Error([
 		'Usage: npm run finalize-review:scout-local-ai -- --packet data/scout-local-ai/review-packets/<run>.review.md --review data/scout-local-ai/reviews/<run>.review.json',
-		'Optional: --run data/scout-local-ai/device-runs/<run>.json --backlog-dir data/scout-local-ai/backlog --proof-out data/scout-local-ai/final-proof/<run>.proof.md',
+		'Optional: --run data/scout-local-ai/device-runs/<run>.json --backlog-dir data/scout-local-ai/backlog --iteration-dir data/scout-local-ai/iterations --proof-out data/scout-local-ai/final-proof/<run>.proof.md',
 		'This applies the human packet, checks review status, then runs the safe next validation step only when ready.'
 	].join('\n'));
 }
@@ -27,8 +28,10 @@ const packetPath = resolveInputPath(cli.packet);
 const reviewPath = resolveInputPath(cli.review);
 const suitePath = resolveInputPath(cli.suite ?? DEFAULT_SUITE);
 const backlogDir = resolveInputPath(cli.backlogDir ?? DEFAULT_BACKLOG_DIR);
+const iterationDir = resolveInputPath(cli.iterationDir ?? DEFAULT_ITERATION_DIR);
 const proofOut = cli.proofOut ? resolveInputPath(cli.proofOut) : null;
 const runPath = await resolveRunPath({ run: cli.run, reviewPath });
+const run = JSON.parse(await readFile(runPath, 'utf8'));
 
 const commands = [];
 const applyArgs = [
@@ -53,6 +56,7 @@ const reviewStatus = await runJsonScript('scripts/status-scout-local-ai-review.m
 ]);
 let status = 'review-needs-work';
 let reviewOutput = null;
+let iterationPlanOutput = null;
 let proofOutput = null;
 let nextAction = reviewStatus.nextAction;
 
@@ -72,8 +76,10 @@ if (reviewStatus.readyForStrictDeviceProof) {
 	nextAction = 'Collect a second distinct full TestFlight/iPhone 5/5 run for stability proof.';
 } else if (reviewStatus.readyForBacklog && reviewStatus.summary.belowFive > 0) {
 	reviewOutput = await writeBacklog({ runPath, reviewPath, backlogDir });
-	status = 'iteration-backlog-written';
-	nextAction = 'Plan and execute the iteration backlog, then rerun the full device suite.';
+	const backlogPath = resolve(backlogDir, `${run.runId}.backlog.json`);
+	iterationPlanOutput = await writeIterationPlan({ backlogPath, iterationDir, planId: cli.planId ?? `${run.runId}-iteration` });
+	status = 'iteration-plan-written';
+	nextAction = 'Execute the iteration plan, fix the named owner layers, then rerun the regression cases and the full device suite.';
 } else if (reviewStatus.readyForBacklog && !reviewStatus.fullDeviceRun) {
 	reviewOutput = await writeBacklog({ runPath, reviewPath, backlogDir });
 	status = 'nonfinal-review-recorded';
@@ -91,12 +97,14 @@ const report = {
 		run: relative(REPO_ROOT, runPath),
 		review: relative(REPO_ROOT, reviewPath),
 		backlogDir: relative(REPO_ROOT, backlogDir),
+		iterationDir: relative(REPO_ROOT, iterationDir),
 		proofOut: proofOut ? relative(REPO_ROOT, proofOut) : null
 	},
 	reviewStatus,
 	commands: {
 		applyReview: textLines(commands.join('\n')),
 		review: reviewOutput ? textLines(reviewOutput) : [],
+		iterationPlan: iterationPlanOutput ? textLines(iterationPlanOutput) : [],
 		proof: proofOutput ? textLines(proofOutput) : []
 	},
 	nextAction
@@ -125,6 +133,17 @@ async function writeBacklog({ runPath, reviewPath, backlogDir }) {
 		reviewPath,
 		'--backlog-dir',
 		backlogDir
+	]);
+}
+
+async function writeIterationPlan({ backlogPath, iterationDir, planId }) {
+	return runTextScript('scripts/plan-scout-local-ai-iteration.mjs', [
+		'--backlog',
+		backlogPath,
+		'--output-dir',
+		iterationDir,
+		'--plan-id',
+		planId
 	]);
 }
 
@@ -165,6 +184,9 @@ function formatReport(report) {
 	];
 	if (report.commands.review.length) {
 		lines.push('## Review Command Output', '', ...report.commands.review.map((line) => `- ${line}`), '');
+	}
+	if (report.commands.iterationPlan.length) {
+		lines.push('## Iteration Plan Output', '', ...report.commands.iterationPlan.map((line) => `- ${line}`), '');
 	}
 	if (report.commands.proof.length) {
 		lines.push('## Proof Command Output', '', ...report.commands.proof.map((line) => `- ${line}`), '');

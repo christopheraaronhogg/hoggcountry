@@ -2413,7 +2413,7 @@ test('review packet ratings can be applied back into review JSON', async () => {
 	assert.equal(backlog.items[0].ownerLayer, 'safety-prompt');
 });
 
-test('review finalizer applies packet and writes below-5 iteration backlog', async () => {
+test('review finalizer applies packet and writes below-5 iteration backlog plus plan', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-finalize-backlog-'));
 	const inputPath = join(outputDir, 'device-export.json');
@@ -2443,6 +2443,7 @@ test('review finalizer applies packet and writes below-5 iteration backlog', asy
 	const reviewPath = join(outputDir, 'reviews', 'device-finalize-backlog.review.json');
 	const packetPath = join(outputDir, 'review-packets', 'device-finalize-backlog.review.md');
 	const backlogDir = join(outputDir, 'backlog');
+	const iterationDir = join(outputDir, 'iterations');
 	let packet = await readFile(packetPath, 'utf8');
 	packet = packet.replaceAll('- passed: null |', '- passed: true |');
 	packet = replaceReviewerFields(packet, run.results[0].caseId, {
@@ -2473,19 +2474,28 @@ test('review finalizer applies packet and writes below-5 iteration backlog', asy
 			reviewPath,
 			'--backlog-dir',
 			backlogDir,
+			'--iteration-dir',
+			iterationDir,
 			'--json'
 		],
 		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 12 }
 	);
 	const report = JSON.parse(result.stdout);
 	const backlog = JSON.parse(await readFile(join(backlogDir, 'device-finalize-backlog.backlog.json'), 'utf8'));
+	const iterationPlan = JSON.parse(await readFile(join(iterationDir, 'device-finalize-backlog-iteration.iteration.json'), 'utf8'));
 
-	assert.equal(report.status, 'iteration-backlog-written');
+	assert.equal(report.status, 'iteration-plan-written');
 	assert.equal(report.reviewStatus.summary.belowFive, 1);
 	assert.match(report.commands.review.join('\n'), /Iteration backlog written/u);
+	assert.match(report.commands.iterationPlan.join('\n'), /Scout local AI iteration plan written/u);
 	assert.equal(backlog.items.length, 1);
 	assert.equal(backlog.items[0].caseId, run.results[1].caseId);
 	assert.equal(backlog.items[0].ownerLayer, 'tool-routing');
+	assert.equal(iterationPlan.summary.itemCount, 1);
+	assert.equal(iterationPlan.summary.byOwnerLayer['tool-routing'], 1);
+	assert.deepEqual(iterationPlan.regressionCaseIds, [run.results[1].caseId]);
+	assert.match(iterationPlan.rerunCommand, new RegExp(`--id ${run.results[1].caseId}`, 'u'));
+	assert.match(report.nextAction, /Execute the iteration plan/u);
 });
 
 test('review finalizer applies a 100-case packet and writes strict device proof', async () => {
