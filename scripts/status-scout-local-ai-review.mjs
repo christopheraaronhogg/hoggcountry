@@ -2,6 +2,9 @@ import { readFile } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+	verifyScoutLocalAiDeviceProof
+} from './lib/scout-local-ai-device-proof.mjs';
+import {
 	parseCliArgs,
 	reviewRunAlignmentProblems,
 	reviewRunEvidenceProblems,
@@ -13,6 +16,7 @@ import {
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
+const DEFAULT_SUITE = 'data/scout-local-ai/dad-local-ai-100.json';
 
 const cli = parseCliArgs(process.argv.slice(2));
 
@@ -25,9 +29,11 @@ if (!cli.run || !cli.review) {
 
 const runPath = resolveInputPath(cli.run);
 const reviewPath = resolveInputPath(cli.review);
+const suitePath = resolveInputPath(cli.suite ?? DEFAULT_SUITE);
+const suite = JSON.parse(await readFile(suitePath, 'utf8'));
 const run = JSON.parse(await readFile(runPath, 'utf8'));
 const review = JSON.parse(await readFile(reviewPath, 'utf8'));
-const progress = buildReviewProgress(run, review, { runPath, reviewPath });
+const progress = buildReviewProgress({ suite, run, review, paths: { suitePath, runPath, reviewPath } });
 
 if (cli.json) {
 	console.log(JSON.stringify(progress, null, 2));
@@ -35,7 +41,7 @@ if (cli.json) {
 	console.log(formatReviewProgress(progress));
 }
 
-function buildReviewProgress(run, review, paths) {
+function buildReviewProgress({ suite, run, review, paths }) {
 	const summary = Array.isArray(review?.cases)
 		? summarizeReview(review)
 		: emptyReviewSummary();
@@ -79,13 +85,21 @@ function buildReviewProgress(run, review, paths) {
 	const fiveStar = summary.ratingCounts['5'] ?? 0;
 	const fullDeviceRun = run.evidenceLane === 'device-on-device-gemma' && run.caseCount === run.totalSuiteCases;
 	const readyForBacklog = invalidEntries.length === 0 && summary.unrated === 0;
-	const readyForStrictDeviceProof = readyForBacklog && summary.belowFive === 0 && fiveStar === summary.total && fullDeviceRun;
+	const strictDeviceProofErrors = readyForBacklog && summary.belowFive === 0 && fiveStar === summary.total && fullDeviceRun
+		? verifyScoutLocalAiDeviceProof({ suite, run, review }).errors
+		: [];
+	const readyForStrictDeviceProof = strictDeviceProofErrors.length === 0 &&
+		readyForBacklog &&
+		summary.belowFive === 0 &&
+		fiveStar === summary.total &&
+		fullDeviceRun;
 
 	return {
 		schemaVersion: 1,
 		runId: run.runId ?? review.runId ?? '<missing>',
 		evidenceLane: run.evidenceLane ?? review.evidenceLane ?? '<missing>',
 		paths: {
+			suite: relative(REPO_ROOT, paths.suitePath),
 			run: relative(REPO_ROOT, paths.runPath),
 			review: relative(REPO_ROOT, paths.reviewPath)
 		},
@@ -102,6 +116,7 @@ function buildReviewProgress(run, review, paths) {
 		fullDeviceRun,
 		readyForBacklog,
 		readyForStrictDeviceProof,
+		strictDeviceProofErrors,
 		invalidEntries,
 		nextUnrated,
 		reviewQueue: queue,
@@ -111,6 +126,7 @@ function buildReviewProgress(run, review, paths) {
 			readyForBacklog,
 			readyForStrictDeviceProof,
 			fullDeviceRun,
+			strictDeviceProofErrors,
 			summary,
 			runPath: relative(REPO_ROOT, paths.runPath),
 			reviewPath: relative(REPO_ROOT, paths.reviewPath)
@@ -149,6 +165,12 @@ function nextAction(input) {
 			`Run npm run review:scout-local-ai -- --run ${input.runPath} --review ${input.reviewPath}, then npm run verify:scout-local-ai-device-proof -- --run ${input.runPath} --review ${input.reviewPath}.`
 		].join(' ');
 	}
+	if (input.readyForBacklog && input.summary.belowFive === 0 && input.fullDeviceRun && input.strictDeviceProofErrors.length) {
+		return [
+			`Review is complete at 100% 5/5, but strict device proof still has ${input.strictDeviceProofErrors.length} issue(s).`,
+			`Fix the proof input first; starting issue: ${input.strictDeviceProofErrors[0]}`
+		].join(' ');
+	}
 	if (input.readyForBacklog && input.summary.belowFive === 0 && !input.fullDeviceRun) {
 		return [
 			'Review has no below-5 cases for this run, but the run is not a full TestFlight/iPhone device proof candidate.',
@@ -168,6 +190,7 @@ function formatReviewProgress(progress) {
 	const lines = [
 		`# Scout local AI review status: ${progress.runId}`,
 		'',
+		`Suite: \`${progress.paths.suite}\``,
 		`Run: \`${progress.paths.run}\``,
 		`Review: \`${progress.paths.review}\``,
 		`Evidence lane: \`${progress.evidenceLane}\``,
@@ -182,6 +205,7 @@ function formatReviewProgress(progress) {
 		`- Full device run: ${progress.fullDeviceRun ? 'yes' : 'no'}`,
 		`- Ready for backlog: ${progress.readyForBacklog ? 'yes' : 'no'}`,
 		`- Ready for strict device proof: ${progress.readyForStrictDeviceProof ? 'yes' : 'no'}`,
+		`- Strict proof preview issues: ${progress.strictDeviceProofErrors.length}`,
 		'',
 		'## Next action',
 		'',
@@ -201,6 +225,13 @@ function formatReviewProgress(progress) {
 		lines.push('## Invalid entries', '');
 		for (const issue of progress.invalidEntries.slice(0, 25)) lines.push(`- ${issue}`);
 		if (progress.invalidEntries.length > 25) lines.push(`- ... ${progress.invalidEntries.length - 25} more`);
+		lines.push('');
+	}
+
+	if (progress.strictDeviceProofErrors.length) {
+		lines.push('## Strict Proof Preview Issues', '');
+		for (const issue of progress.strictDeviceProofErrors.slice(0, 25)) lines.push(`- ${issue}`);
+		if (progress.strictDeviceProofErrors.length > 25) lines.push(`- ... ${progress.strictDeviceProofErrors.length - 25} more`);
 		lines.push('');
 	}
 

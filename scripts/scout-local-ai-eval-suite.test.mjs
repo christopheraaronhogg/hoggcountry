@@ -2878,15 +2878,32 @@ test('review status command only marks strict proof ready for a full device 5-st
 		runContext: finalDeviceRunContext()
 	});
 	const fullReview = reviewForRun(fullRun, { rating: 5 });
+	const staleBuildRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-review-status-proof-stale-build',
+		completeTools: true,
+		runContext: finalDeviceRunContext({
+			app: {
+				id: 'com.hoggcountry.trailassistant',
+				name: 'Hoggcountry',
+				version: '1.0',
+				build: '12'
+			}
+		})
+	});
+	const staleBuildReview = reviewForRun(staleBuildRun, { rating: 5 });
 
 	const partialRunPath = join(outputDir, 'device-review-status-proof-partial.json');
 	const partialReviewPath = join(outputDir, 'device-review-status-proof-partial.review.json');
 	const fullRunPath = join(outputDir, 'device-review-status-proof-full.json');
 	const fullReviewPath = join(outputDir, 'device-review-status-proof-full.review.json');
+	const staleBuildRunPath = join(outputDir, 'device-review-status-proof-stale-build.json');
+	const staleBuildReviewPath = join(outputDir, 'device-review-status-proof-stale-build.review.json');
 	await writeFile(partialRunPath, `${JSON.stringify(partialRun, null, 2)}\n`);
 	await writeFile(partialReviewPath, `${JSON.stringify(partialReview, null, 2)}\n`);
 	await writeFile(fullRunPath, `${JSON.stringify(fullRun, null, 2)}\n`);
 	await writeFile(fullReviewPath, `${JSON.stringify(fullReview, null, 2)}\n`);
+	await writeFile(staleBuildRunPath, `${JSON.stringify(staleBuildRun, null, 2)}\n`);
+	await writeFile(staleBuildReviewPath, `${JSON.stringify(staleBuildReview, null, 2)}\n`);
 
 	const partialResult = await execFileAsync(
 		process.execPath,
@@ -2922,8 +2939,28 @@ test('review status command only marks strict proof ready for a full device 5-st
 	assert.equal(fullProgress.readyForBacklog, true);
 	assert.equal(fullProgress.fullDeviceRun, true);
 	assert.equal(fullProgress.readyForStrictDeviceProof, true);
+	assert.equal(fullProgress.strictDeviceProofErrors.length, 0);
 	assert.equal(fullProgress.summary.fiveStar, suite.cases.length);
 	assert.match(fullProgress.nextAction, /verify:scout-local-ai-device-proof/u);
+
+	const staleBuildResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			staleBuildRunPath,
+			'--review',
+			staleBuildReviewPath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 6 }
+	);
+	const staleBuildProgress = JSON.parse(staleBuildResult.stdout);
+	assert.equal(staleBuildProgress.readyForBacklog, true);
+	assert.equal(staleBuildProgress.fullDeviceRun, true);
+	assert.equal(staleBuildProgress.readyForStrictDeviceProof, false);
+	assert.match(staleBuildProgress.strictDeviceProofErrors.join('\n'), /app\.build must be >= 13/u);
+	assert.match(staleBuildProgress.nextAction, /strict device proof still has/u);
 });
 
 test('partial review status keeps unrated cases explicit when allowed', async () => {

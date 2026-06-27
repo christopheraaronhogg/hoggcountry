@@ -145,7 +145,8 @@ npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<r
 ```
 
 It reports rated/unrated counts, below-5 debt, invalid checklist/task issues,
-and the next highest-priority unrated case. It does not write backlog files, so a
+the next highest-priority unrated case, and a strict device-proof preview when a
+full 100-case review is otherwise 5/5. It does not write backlog files, so a
 half-finished human review cannot be promoted into iteration or proof evidence
 by accident.
 
