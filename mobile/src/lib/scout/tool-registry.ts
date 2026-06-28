@@ -127,7 +127,7 @@ const SOURCE_SKILL_TRIGGERS: SourceSkillTrigger[] = [
 	},
 	{
 		id: 'pretrip',
-		keywords: ['8 weeks', 'springer', 'trail prep', 'pre-trail', 'before trail', 'before day one', 'day one', 'first week', 'train', 'training', 'shakedown', 'foot care', 'local ai', 'model download', 'offline setup', 'phone settings', 'offline downloads', 'going offline', 'field pack', 'body responds', 'mileage goals', 'documents'],
+		keywords: ['8 weeks', 'springer', 'trail prep', 'pre-trail', 'before trail', 'before day one', 'day one', 'first week', 'train', 'training', 'shakedown', 'foot care', 'local ai', 'model download', 'model is still downloading', 'still downloading', 'model status', 'offline setup', 'phone settings', 'offline downloads', 'going offline', 'field pack', 'body responds', 'mileage goals', 'documents'],
 		queryHints: ['pretrip discipline', 'shakedown', 'foot care', 'offline setup', 'local AI model', 'field pack refresh', 'phone settings', 'first week', 'day one']
 	},
 	{
@@ -184,8 +184,11 @@ function sourceSkillQuery(skill: SourceSkillTrigger, prompt: string, pack: Conte
 }
 
 function sourceSkillQueryHints(skill: SourceSkillTrigger, prompt: string): string[] {
-	if (skill.id !== 'safety') return skill.queryHints;
 	const lower = prompt.toLowerCase();
+	if (skill.id === 'pretrip' && /\b(?:model is still downloading|still downloading|model status|download(?:ing)?|not ready|stuck|failed)\b/u.test(lower)) {
+		return ['model download status discipline', 'still downloading', 'on-device local AI not ready', 'Wi-Fi power', 'download verification', 'check Scout model status progress ready', 'retry cancel restart stuck failed', 'airplane mode Scout question'];
+	}
+	if (skill.id !== 'safety') return skill.queryHints;
 	if (/\b(?:airplane mode|airplane-mode|no cell|cell service|without service|without signal|what can (?:you|scout) still answer|what still works|works? offline)\b/u.test(lower)) {
 		return ['airplane mode capability boundary', 'cached field pack', 'on-device local AI model', 'saved offline maps docs', 'Bible text', 'fresh weather', 'official closures', 'cloud sync', 'live tramily location', 'stale cached data'];
 	}

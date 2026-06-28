@@ -255,6 +255,9 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /cached field pack, on-device local AI model/);
 	assert.match(systemContext, /fresh weather, official closures\/fire alerts/);
 	assert.match(systemContext, /live\/tramily location/);
+	assert.match(systemContext, /For model-downloading, model status, stuck download, failed download/);
+	assert.match(systemContext, /not ready for offline Scout yet/);
+	assert.match(systemContext, /check Scout model status\/progress until it says ready/);
 	assert.match(systemContext, /For own-mile, manual-mile, wrong-mile, profile, GPS correction/);
 	assert.match(systemContext, /Settings > Edit hike details/);
 	assert.match(systemContext, /a wrong mile shifts water, shelter, town, terrain, and bailout answers/);
@@ -339,6 +342,19 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.match(airplaneModeAnswer, /fresh weather, official closures or fire alerts/);
 	assert.match(airplaneModeAnswer, /cloud sync\/backup, messages, or live\/tramily location/);
 	assert.match(airplaneModeAnswer, /Treat cached weather, closures, water, and services as stale/);
+
+	const modelDownloadingAnswer = polishOnDeviceAnswer(
+		"It means the system is still getting the necessary information to run the local AI model effectively. It's working to get the right knowledge base loaded for you.\n\nYou should keep your phone charged and connected to Wi-Fi if possible to let it finish downloading. If it's been a while, you can try restarting the process.",
+		'What does it mean if Scout says the model is still downloading?'
+	);
+	assert.doesNotMatch(modelDownloadingAnswer, /knowledge base/);
+	assert.match(modelDownloadingAnswer, /on-device local AI model is still downloading and verifying/);
+	assert.match(modelDownloadingAnswer, /not ready for offline Scout yet/);
+	assert.match(modelDownloadingAnswer, /Wi-Fi and power/);
+	assert.match(modelDownloadingAnswer, /check Scout model status or progress until it says ready/);
+	assert.match(modelDownloadingAnswer, /retry, cancel, or restart/);
+	assert.match(modelDownloadingAnswer, /Do not trust offline\/local AI until the model reports ready/);
+	assert.match(modelDownloadingAnswer, /airplane-mode Scout question succeeds/);
 
 	const ownMileAnswer = polishOnDeviceAnswer(
 		'You tell Scout your current mile is 0.0 of 2197.4. I will use that as the starting point for our planning.\n\nTo make Scout follow your own trail mile, you just need to tell me where you are. When you ask a question, state your current mile marker clearly. That way, I can base my advice on your actual progress on the trail.',

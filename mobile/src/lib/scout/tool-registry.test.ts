@@ -607,6 +607,27 @@ test('runToolsFor reads airplane-mode capability guidance for offline Scout prom
 	assert.match(openedDoc.summary, /Airplane mode capability boundary/);
 });
 
+test('runToolsFor opens model-download status guidance for still-downloading prompts', async () => {
+	const records = await runToolsFor(
+		'What does it mean if Scout says the model is still downloading?',
+		DEFAULT_CONTEXT_PACK,
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	assert.deepEqual(
+		records.map((record) => record.toolId),
+		['source_search', 'open_source_doc']
+	);
+	const sourceSearch = records.find((record) => record.toolId === 'source_search');
+	assert.ok(sourceSearch);
+	assert.match(sourceSearch.summary, /Model download status discipline/);
+	assert.ok(sourceSearch.sourceDocumentIds?.includes('field-guide:model-download-status-discipline'));
+	const openedDoc = records.find((record) => record.toolId === 'open_source_doc');
+	assert.ok(openedDoc);
+	assert.match(openedDoc.summary, /Model download status discipline/);
+});
+
 test('runToolsFor reads current-mile profile guidance for own-mile setup prompts', async () => {
 	const records = await runToolsFor(
 		"How do I make Scout follow my own trail mile instead of someone else's?",

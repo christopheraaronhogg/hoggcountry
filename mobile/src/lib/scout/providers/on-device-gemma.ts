@@ -55,6 +55,8 @@ const FIRST_RUN_ONBOARDING_NOTE =
 	`First-run Scout setup: set your hiker profile and current mile first, refresh the field pack, confirm the pack age/status looks current, download or update the local AI model on Wi-Fi and power, save offline maps/docs, let cloud sync finish if signed in, then turn on airplane mode, relaunch, and ask Scout a water or nearby-trail question. ${FIRST_RUN_ONBOARDING_READINESS_NOTE}`;
 const AIRPLANE_MODE_CAPABILITY_NOTE =
 	'Airplane-mode boundary: with no cell service, Scout can answer from what is already on the phone: the cached field pack, on-device local AI model, saved offline maps/docs, saved document summaries, and Bible text if it was packaged or downloaded. It cannot fetch fresh weather, official closures or fire alerts, new water reports, town or service changes, cloud sync/backup, messages, or live/tramily location until you are back online. Treat cached weather, closures, water, and services as stale until refreshed again, and keep inReach, PLB, 911, or the family emergency plan separate.';
+const MODEL_DOWNLOADING_STATUS_NOTE =
+	'Model-download status: still downloading means the on-device local AI model is not ready for offline Scout yet. Keep the phone on Wi-Fi and power, let download and verification finish, and check Scout model status or progress until it says ready. If it is stuck or failed, retry, cancel, or restart from the model download control while back on Wi-Fi. Do not trust offline/local AI until the model reports ready and an airplane-mode Scout question succeeds; Scout must not pretend a fake offline answer came from the local model.';
 const OWN_MILE_RISK_NOTE =
 	'A wrong mile shifts water, shelter, town, terrain, and bailout answers, so confirm against a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap before relying on Scout.';
 const OWN_MILE_SETUP_NOTE =
@@ -325,6 +327,12 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	}
 	if (isAirplaneModeCapabilityPrompt(lowerPrompt) && !mentionsAirplaneModeCapabilityBoundary(answer)) {
 		answer = isVagueSourceOnlyAnswer(answer) ? AIRPLANE_MODE_CAPABILITY_NOTE : appendSentence(answer, AIRPLANE_MODE_CAPABILITY_NOTE);
+	}
+	if (isModelDownloadingStatusPrompt(lowerPrompt)) {
+		answer = normalizeModelDownloadingStatusWording(answer);
+		if (!mentionsModelDownloadingStatusReadiness(answer)) {
+			answer = isVagueSourceOnlyAnswer(answer) ? MODEL_DOWNLOADING_STATUS_NOTE : appendSentence(answer, MODEL_DOWNLOADING_STATUS_NOTE);
+		}
 	}
 	if (isOwnMileSetupPrompt(lowerPrompt) && !mentionsOwnMileSetupReadiness(answer)) {
 		answer = appendSentence(answer, mentionsOwnMileSetupFlow(answer) ? OWN_MILE_RISK_NOTE : OWN_MILE_SETUP_NOTE);
@@ -796,6 +804,15 @@ function isAirplaneModeCapabilityPrompt(prompt: string): boolean {
 	const mentionsOfflineMode =
 		/\b(?:airplane mode|airplane-mode|no cell|cell service|without service|without signal|offline)\b/u.test(prompt);
 	return asksCapability && mentionsOfflineMode;
+}
+
+function isModelDownloadingStatusPrompt(prompt: string): boolean {
+	const mentionsModel = /\b(?:model|local ai|gemma)\b/u.test(prompt);
+	const mentionsDownloadState =
+		/\b(?:still downloading|downloading|download is stuck|download stuck|download failed|failed download|not ready|model status|installing|verifying)\b/u.test(
+			prompt
+		);
+	return mentionsModel && mentionsDownloadState;
 }
 
 function isFirstRunOnboardingPrompt(prompt: string): boolean {
@@ -1596,6 +1613,41 @@ function mentionsAirplaneModeCapabilityBoundary(answer: string): boolean {
 	return mentionsCachedPack && mentionsLocalModel && mentionsSavedDocs && mentionsBible && mentionsNetworkWeatherClosures && mentionsSyncLocation && mentionsStaleBoundary;
 }
 
+function normalizeModelDownloadingStatusWording(answer: string): string {
+	return answer
+		.replace(
+			/\bthe system is still getting the necessary information to run the local AI model effectively\b/giu,
+			'the on-device local AI model is still downloading and verifying'
+		)
+		.replace(
+			/\bIt'?s working to get the right knowledge base loaded for you\./giu,
+			'It is not ready for offline Scout yet.'
+		)
+		.replace(
+			/\bknowledge base\b/giu,
+			'on-device model files'
+		);
+}
+
+function mentionsModelDownloadingStatusReadiness(answer: string): boolean {
+	const mentionsNotReady =
+		/\b(?:not ready|isn't ready|not installed|still downloading|download(?:ing)? and verifying|verification)\b/iu.test(answer) &&
+		/\b(?:offline|local ai|on-device|model|gemma|scout)\b/iu.test(answer);
+	const mentionsWifiPower =
+		/\bwi[-\s]?fi\b/iu.test(answer) &&
+		/\b(?:power|charged|charger|plugged in|battery)\b/iu.test(answer);
+	const mentionsStatus =
+		/\b(?:status|progress|ready|complete|finished|verified|verification)\b/iu.test(answer) &&
+		/\b(?:check|watch|wait|until|says|reports)\b/iu.test(answer);
+	const mentionsRetry =
+		/\b(?:retry|cancel|restart|try again|stuck|failed)\b/iu.test(answer);
+	const mentionsNoFakeOffline =
+		/\b(?:do not trust|don't trust|do not rely|don't rely|not ready|until)\b/iu.test(answer) &&
+		/\b(?:offline|local ai|local model|fake offline|pretend)\b/iu.test(answer) &&
+		/\b(?:airplane[-\s]?mode|model reports ready|succeeds|successful)\b/iu.test(answer);
+	return mentionsNotReady && mentionsWifiPower && mentionsStatus && mentionsRetry && mentionsNoFakeOffline;
+}
+
 function mentionsOwnMileSetupFlow(answer: string): boolean {
 	const mentionsConcreteFlow = /\b(?:hike setup|start my hike|settings|edit hike details|current at mile)\b/iu.test(answer);
 	const mentionsVerification =
@@ -1950,6 +2002,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`When preparation or training questions have pretrip, terrain, loadout, safety, or offline setup findings, give a concrete short plan. For "what should I focus on first" prompts, include an immediate first-week checklist, not only general training advice. Include shakedown hikes, foot care/blister practice, conservative early mileage, gear/loadout checks, water treatment habits, and an offline app/model rehearsal when those appear in the findings.`,
 		`For first-run or newly installed app onboarding questions, give simple ordered setup steps: set the hiker profile/current mile, refresh the field pack, confirm pack age/status looks current, download or update the local AI model on Wi-Fi and power, save offline maps/docs, let cloud sync finish if signed in, then turn on airplane mode, relaunch, and ask Scout a water or nearby-trail question. Do not call Scout ready for offline trail use until the field-pack refresh, model download, and airplane-mode test succeed.`,
 		`For airplane-mode, no-cell, or "what works offline" Scout questions, split the answer plainly: what still works offline is the cached field pack, on-device local AI model, saved offline maps/docs, saved document summaries, and Bible text if packaged or downloaded; what needs network is fresh weather, official closures/fire alerts, new water reports, town/service changes, cloud sync/backup, messages, and live/tramily location. Say cached weather, closures, water, and services can be stale until refreshed again.`,
+		`For model-downloading, model status, stuck download, failed download, or "still downloading" questions, say the on-device local AI model is not ready for offline Scout yet. Tell the hiker to stay on Wi-Fi and power, wait for download and verification, check Scout model status/progress until it says ready, retry/cancel/restart only if stuck or failed, and not trust offline/local AI until the model reports ready and an airplane-mode Scout question succeeds.`,
 		`For own-mile, manual-mile, wrong-mile, profile, GPS correction, shuttle, or "someone else's mile" questions, explain the app flow: first-run hike setup or Settings > Edit hike details, enter Current AT mile, save, then check Today and Scout show the new mile. Warn that a wrong mile shifts water, shelter, town, terrain, and bailout answers. Tell the hiker to confirm against a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap before relying on Scout.`,
 		`For offline setup, offline downloads, phone settings, or day-one readiness questions, distinguish phone/app readiness from personal safety readiness. Always include the exact check "verify Bible text is available offline." Also mention field-pack refresh, current mile, local AI model, offline maps/docs, battery, airplane-mode rehearsal, and that Scout does not replace inReach, PLB, 911, or the family emergency plan. For personal documents, include this safety boundary in plain words: do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat.`,
 		`Do not include Bible verses, scripture, prayer, or spiritual encouragement unless the hiker explicitly asks for Bible, scripture, prayer, faith, fear comfort, or spiritual support. Safety, weather, town, water, gear, and navigation answers must stay focused on the field decision first.`,

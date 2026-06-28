@@ -48,6 +48,13 @@ export const DEFAULT_CONTEXT_PACK: ContextPack = {
 			citation: 'Hogg Country Field Guide, Section: Airplane Mode Boundaries'
 		},
 		{
+			id: 'model-download-status-discipline',
+			title: 'Model download status discipline',
+			body: 'If Scout says the model is still downloading, the on-device local AI model is not ready for offline Scout yet. Keep the phone on Wi-Fi and power, let download and verification finish, and check Scout model status or progress until it says ready. If the download is stuck or failed, retry, cancel, or restart it from the model download control while back on Wi-Fi. Do not trust offline/local AI until the model reports ready and an airplane-mode Scout question succeeds; Scout must not pretend a fake offline answer came from the local model.',
+			tags: ['pretrip', 'offline', 'local-ai', 'model-download', 'status', 'airplane-mode', 'safety'],
+			citation: 'Hogg Country Field Guide, Section: Local AI Model Download'
+		},
+		{
 			id: 'current-mile-profile-discipline',
 			title: 'Current mile and profile discipline',
 			body: 'Scout follows the hiker only after their hike profile/current mile is set. On first run, use the hike setup sheet, choose Start my hike, and enter the Current AT mile. Later, use Settings > Edit hike details or a confirmed mile update, then check Today and Scout both show the new mile. Refresh the field pack when online and re-ask water, shelter, town, terrain, or bailout questions after changing mile. A wrong mile shifts every nearby answer, especially water, shelter, town, terrain, and bailout advice. Confirm the mile against a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap before relying on Scout.',
