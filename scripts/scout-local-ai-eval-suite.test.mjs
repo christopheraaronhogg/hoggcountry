@@ -47,6 +47,7 @@ const VALID_SOURCE_SKILLS = new Set([
 	'weather',
 	'trail conditions',
 	'safety',
+	'document vault',
 	'park services',
 	'terrain',
 	'loadout'
@@ -1137,9 +1138,11 @@ test('status command does not accept full device runs from non-suite-compatible 
 test('status command treats clean simulator local AI runs as preflight, not final proof', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-local-preflight-'));
+	const runsDir = join(outputDir, 'runs');
 	const deviceRunsDir = join(outputDir, 'device-runs');
 	const reviewsDir = join(outputDir, 'reviews');
 	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
+	await mkdir(runsDir, { recursive: true });
 	await mkdir(deviceRunsDir, { recursive: true });
 	await mkdir(reviewsDir, { recursive: true });
 	await writeFile(releaseEvidencePath, `${JSON.stringify({
@@ -1162,10 +1165,12 @@ test('status command treats clean simulator local AI runs as preflight, not fina
 
 	const result = await execFileAsync(
 		process.execPath,
-		[
-			'scripts/status-scout-local-ai.mjs',
-			'--device-runs-dir',
-			deviceRunsDir,
+			[
+				'scripts/status-scout-local-ai.mjs',
+				'--runs-dir',
+				runsDir,
+				'--device-runs-dir',
+				deviceRunsDir,
 			'--reviews-dir',
 			reviewsDir,
 			'--release-evidence',
@@ -1194,10 +1199,12 @@ test('status command treats clean simulator local AI runs as preflight, not fina
 
 	const textResult = await execFileAsync(
 		process.execPath,
-		[
-			'scripts/status-scout-local-ai.mjs',
-			'--device-runs-dir',
-			deviceRunsDir,
+			[
+				'scripts/status-scout-local-ai.mjs',
+				'--runs-dir',
+				runsDir,
+				'--device-runs-dir',
+				deviceRunsDir,
 			'--reviews-dir',
 			reviewsDir,
 			'--release-evidence',
@@ -1867,7 +1874,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /device-handoff-inbox-latest/u);
 	assert.match(result.stdout, /use `Run 100` for real proof/u);
 	assert.match(result.stdout, /## Valid export checklist/u);
-	assert.match(result.stdout, /Suite fields: `suiteId=dad-local-ai-100`, `suiteVersion=2026-06-27\.2`, `suiteHash=fnv1a32:[0-9a-f]+`/u);
+	assert.match(result.stdout, /Suite fields: `suiteId=dad-local-ai-100`, `suiteVersion=2026-06-28\.1`, `suiteHash=fnv1a32:[0-9a-f]+`/u);
 	assert.match(result.stdout, /Result count: `100\/100` completed results from `Run 100`, not `Run 3`/u);
 	assert.match(result.stdout, /Evidence lane: `device-on-device-gemma` with `answerOrigin=device-on-device-gemma` answers/u);
 	assert.match(result.stdout, /Native context: TestFlight iPhone install, app build satisfying `1\.0 \(>= 13\)`/u);

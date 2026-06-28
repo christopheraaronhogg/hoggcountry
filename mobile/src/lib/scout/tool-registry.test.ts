@@ -468,6 +468,46 @@ test('runToolsFor opens offline document safety discipline for day-one document 
 	);
 });
 
+test('runToolsFor opens saved hiker documents for document-vault prompts', async () => {
+	const records = await runToolsFor(
+		'What does my document vault say about my hostel reservation and check-in plan?',
+		{
+			...DEFAULT_CONTEXT_PACK,
+			documents: [
+				{
+					id: 'hostel-reservation-note',
+					title: 'River Bend hostel reservation note',
+					source: 'manual',
+					createdAt: '2026-06-20T10:00:00.000Z',
+					updatedAt: '2026-06-20T10:00:00.000Z',
+					body: 'River Bend Hostel reservation summary: confirm shuttle from Pilot Gap Road, ask about laundry hours, and keep the private confirmation number outside Scout chat.'
+				}
+			]
+		},
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	const vaultSearch = records.find(
+		(record) => record.toolId === 'source_search' && record.args.sourceSkill === 'document vault'
+	);
+	assert.ok(vaultSearch);
+	assert.match(vaultSearch.summary, /^Document vault guidance:/);
+	assert.equal(vaultSearch.sourceDocumentIds?.[0], 'hiker-doc:hostel-reservation-note');
+	assert.ok(vaultSearch.receipts.some((receipt) => receipt.id === 'hiker-doc:hostel-reservation-note' && receipt.kind === 'hiker-input'));
+
+	const openedVaultDoc = records.find(
+		(record) =>
+			record.toolId === 'open_source_doc' &&
+			record.args.sourceSkill === 'document vault' &&
+			record.args.documentId === 'hiker-doc:hostel-reservation-note'
+	);
+	assert.ok(openedVaultDoc);
+	assert.match(openedVaultDoc.summary, /^Document vault guidance opened River Bend hostel reservation note:/);
+	assert.match(openedVaultDoc.summary, /confirm shuttle from Pilot Gap Road/);
+	assert.ok(openedVaultDoc.receipts.some((receipt) => receipt.id === 'hiker-doc:hostel-reservation-note' && receipt.kind === 'hiker-input'));
+});
+
 test('runToolsFor opens family check-in safety discipline for missed-contact prompts', async () => {
 	const records = await runToolsFor(
 		'What should I tell family about check-ins and what they should do if I miss one?',

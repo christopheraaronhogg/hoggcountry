@@ -20,6 +20,7 @@ const STALE_CONDITIONS_HOURS = 24;
 const SOURCE_SEARCH_LIMIT = 6;
 const SOURCE_OPEN_MAX_CHARS = 1600;
 const SOURCE_SKILL_TAG_HINTS: Record<string, string[]> = {
+	'document vault': ['documents', 'document-vault', 'vault', 'saved-docs', 'offline', 'itinerary', 'permits', 'reservations', 'notes'],
 	loadout: ['loadout', 'gear', 'pack', 'shakedown', 'battery', 'foot-care'],
 	'park services': ['park', 'ranger', 'visitor', 'campground', 'permit'],
 	pretrip: ['pretrip', 'prep', 'shakedown', 'foot-care', 'offline', 'local-ai', 'field-pack', 'documents'],
@@ -203,6 +204,7 @@ function sourceSkillLabel(value: unknown): string | null {
 interface SourceDocument {
 	id: string;
 	rawId: string;
+	kind: 'field-guide' | 'hiker-doc';
 	title: string;
 	body: string;
 	tags: string[];
@@ -215,6 +217,7 @@ function allSourceDocuments(pack: ContextPack): SourceDocument[] {
 	const guideDocs = pack.guideExcerpts.map((excerpt) => ({
 		id: `field-guide:${excerpt.id}`,
 		rawId: excerpt.id,
+		kind: 'field-guide' as const,
 		title: excerpt.title,
 		body: excerpt.body,
 		tags: excerpt.tags,
@@ -225,9 +228,10 @@ function allSourceDocuments(pack: ContextPack): SourceDocument[] {
 	const hikerDocs = (pack.documents ?? []).map((document) => ({
 		id: `hiker-doc:${document.id}`,
 		rawId: document.id,
+		kind: 'hiker-doc' as const,
 		title: document.title,
 		body: document.body,
-		tags: [],
+		tags: hikerDocumentTags(document),
 		searchText: `${document.title} ${document.body}`,
 		summaryPrefix: `Saved doc - ${document.title}`,
 		receipt: hikerDocumentReceipt(document)
@@ -247,9 +251,20 @@ function findSourceDocument(pack: ContextPack, documentId: string): SourceDocume
 function sourceSkillTagBoost(document: SourceDocument, sourceSkill: unknown): number {
 	if (typeof sourceSkill !== 'string') return 0;
 	const skill = sourceSkill.trim().toLowerCase();
+	if (skill === 'document vault' && document.kind === 'hiker-doc') return 100;
 	const hints = SOURCE_SKILL_TAG_HINTS[skill] ?? [skill];
 	if (!hints.length || !document.tags.length) return 0;
 	return document.tags.some((tag) => hints.includes(tag.toLowerCase())) ? 8 : 0;
+}
+
+function hikerDocumentTags(document: LocalDocumentReference): string[] {
+	const text = `${document.title} ${document.body}`.toLowerCase();
+	const tags = new Set(['documents', 'document-vault', 'saved-docs', 'offline', document.source]);
+	if (/\b(?:itinerary|check[-\s]?in|family|emergency contact|destination)\b/u.test(text)) tags.add('itinerary');
+	if (/\b(?:permit|reservation|confirmation|lodging|shuttle|hostel)\b/u.test(text)) tags.add('reservations');
+	if (/\b(?:insurance|medication|allergy|medical|id|driver)\b/u.test(text)) tags.add('sensitive');
+	if (/\b(?:setup|download|model|field[-\s]?pack|map|bible|airplane)\b/u.test(text)) tags.add('setup');
+	return Array.from(tags);
 }
 
 function describeWaterSource(source: WaterReference, fromMile: number): string {

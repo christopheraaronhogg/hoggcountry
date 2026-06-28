@@ -131,6 +131,11 @@ const SOURCE_SKILL_TRIGGERS: SourceSkillTrigger[] = [
 		queryHints: ['pretrip discipline', 'shakedown', 'foot care', 'offline setup', 'local AI model', 'field pack refresh', 'phone settings', 'first week', 'day one']
 	},
 	{
+		id: 'document vault',
+		keywords: ['document vault', 'vault', 'document', 'documents', 'offline documents', 'saved document', 'saved documents', 'saved docs', 'uploaded document', 'uploaded documents', 'my documents', 'my docs', 'my notes', 'saved note', 'saved notes', 'user document', 'user documents', 'document summaries', 'information', 'screenshot', 'screenshots', 'itinerary', 'permits', 'reservations', 'confirmation', 'check-in plan'],
+		queryHints: ['document vault', 'saved hiker documents', 'uploaded notes', 'saved document summaries', 'offline docs', 'itinerary', 'permits', 'reservations', 'confirmations', 'privacy boundary', 'do not expose private numbers']
+	},
+	{
 		id: 'park services',
 		keywords: ['visitor center', 'ranger', 'ranger station', 'campground', 'national park', 'park office', 'wayside', 'permit office'],
 		queryHints: ['park services', 'visitor center', 'ranger station', 'campground', 'permits', 'hours']
@@ -190,6 +195,9 @@ function sourceSkillQuery(skill: SourceSkillTrigger, prompt: string, pack: Conte
 
 function sourceSkillQueryHints(skill: SourceSkillTrigger, prompt: string): string[] {
 	const lower = prompt.toLowerCase();
+	if (skill.id === 'document vault') {
+		return ['document vault', 'saved hiker documents', 'uploaded notes', 'offline docs', 'source summaries', 'itinerary', 'permits', 'reservations', 'confirmations', 'privacy boundary', 'do not paste private numbers'];
+	}
 	if (isScoutFieldPackDataPrompt(lower)) {
 		return ['field pack staleness discipline', 'cached Scout trail data', 'pack age status', 'current mile downloaded region', 'source timestamps', 'refresh on Wi-Fi in town', 'weather closures water services stale', 'caution signals not current proof'];
 	}
