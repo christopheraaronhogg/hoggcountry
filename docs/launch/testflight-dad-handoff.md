@@ -43,6 +43,16 @@ This simulator path is the main local iteration loop for Scout answer quality,
 tool routing, and local Gemma behavior. It is not final Dad proof because the
 install source is debug/simulator, not TestFlight on a physical iPhone.
 
+After a simulator or device export is imported, the intake flow writes an
+answer-quality scan and embeds it in the review packet:
+
+```bash
+npm run prepare-review:scout-local-ai-device-run -- --run inbox
+```
+
+The scan is the first triage pass for likely answer-quality defects. It does
+not replace the full human 1-5 review or strict TestFlight/iPhone proof.
+
 ## Dad Instructions
 
 Use this generated message when asking Dad for the real device run:

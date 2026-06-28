@@ -21,6 +21,9 @@ import {
 import {
 	readScoutEvalRunJson
 } from './lib/scout-local-ai-run-json.mjs';
+import {
+	scanScoutLocalAiAnswerQuality
+} from './scan-scout-local-ai-answer-quality.mjs';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
@@ -28,6 +31,7 @@ const DEFAULT_SUITE = 'data/scout-local-ai/dad-local-ai-100.json';
 const DEFAULT_DEVICE_RUN_DIR = 'data/scout-local-ai/device-runs';
 const DEFAULT_REVIEW_DIR = 'data/scout-local-ai/reviews';
 const DEFAULT_PACKET_DIR = 'data/scout-local-ai/review-packets';
+const DEFAULT_SCAN_DIR_NAME = 'answer-quality-scans';
 const DEVICE_EVIDENCE_LANE = 'device-on-device-gemma';
 
 const cli = parseCliArgs(process.argv.slice(2));
@@ -45,6 +49,7 @@ const suitePath = resolveInputPath(cli.suite ?? DEFAULT_SUITE);
 const deviceRunDir = resolveInputPath(cli.deviceRunDir ?? DEFAULT_DEVICE_RUN_DIR);
 const reviewDir = resolveInputPath(cli.reviewDir ?? DEFAULT_REVIEW_DIR);
 const packetDir = resolveInputPath(cli.packetDir ?? DEFAULT_PACKET_DIR);
+const scanDir = resolveInputPath(cli.scanDir ?? resolve(dirname(deviceRunDir), DEFAULT_SCAN_DIR_NAME));
 const allowPartial = Boolean(cli.allowPartial);
 const allowNonDevice = Boolean(cli.allowNonDevice);
 const force = Boolean(cli.force);
@@ -63,17 +68,22 @@ const safeRunId = safeFileName(run.runId);
 const importedRunPath = resolve(deviceRunDir, `${safeRunId}.json`);
 const reviewPath = resolve(reviewDir, `${safeRunId}.review.json`);
 const packetPath = resolve(packetDir, `${safeRunId}.review.md`);
+const scanPath = resolve(scanDir, `${safeRunId}.scan.json`);
+const answerQualityScan = scanScoutLocalAiAnswerQuality(run);
 
 await writeJson(importedRunPath, run, { force });
+await writeJson(scanPath, answerQualityScan, { force });
 
 const review = createReviewTemplate(run, importedRunPath, REPO_ROOT);
 const reviewWritten = await writeJson(reviewPath, review, { force, skipExisting: true });
-const packetWritten = await writeText(packetPath, createReviewPacket(run, validation, importedRunPath, reviewPath, packetPath), {
+const packetWritten = await writeText(packetPath, createReviewPacket(run, validation, importedRunPath, reviewPath, packetPath, scanPath, answerQualityScan), {
 	force,
 	skipExisting: true
 });
 
 console.log(`Device run imported: ${relative(REPO_ROOT, importedRunPath)}`);
+console.log(`Answer-quality scan: ${relative(REPO_ROOT, scanPath)}`);
+console.log(`Answer-quality flags: ${answerQualityScan.flaggedCount} flagged, ${answerQualityScan.errorCount} errors, ${answerQualityScan.warningCount} warnings`);
 console.log(`Review template ${reviewWritten ? 'created' : 'already exists'}: ${relative(REPO_ROOT, reviewPath)}`);
 console.log(`Review packet ${packetWritten ? 'created' : 'already exists'}: ${relative(REPO_ROOT, packetPath)}`);
 console.log(`Evidence lane: ${run.evidenceLane}`);
@@ -243,13 +253,14 @@ function matchesToolExpectation(expectation, record) {
 	return String(record.args?.sourceSkill ?? '').toLowerCase() === sourceSkill.toLowerCase();
 }
 
-function createReviewPacket(run, validation, importedRunPath, reviewPath, packetPath) {
+function createReviewPacket(run, validation, importedRunPath, reviewPath, packetPath, scanPath, answerQualityScan) {
 	const sourceEvidenceSummary = summarizeRunSourceEvidence(run.results);
 	const lines = [
 		`# Scout local AI device review: ${run.runId}`,
 		'',
 		`Imported run: \`${relative(REPO_ROOT, importedRunPath)}\``,
 		`Review JSON: \`${relative(REPO_ROOT, reviewPath)}\``,
+		`Answer-quality scan: \`${relative(REPO_ROOT, scanPath)}\``,
 		`Evidence lane: \`${run.evidenceLane}\``,
 		`Suite version: \`${run.suiteVersion ?? '<missing>'}\``,
 		`Suite hash: \`${run.suiteHash ?? '<missing>'}\``,
@@ -305,6 +316,12 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 	}
 
 	lines.push(
+		'## Answer-quality scan',
+		'',
+		'Use this machine triage before the full human pass. It can flag likely answer-quality problems, but it never replaces 1-5 review ratings or strict TestFlight/iPhone proof.',
+		'',
+		...formatAnswerQualityScanSummary(answerQualityScan),
+		'',
 		'## Review-first triage',
 		'',
 		'Use this as the first pass before reading all 100 answers. It only counts rows with hard evidence issues: provider errors, missing required tools, or missing source evidence.',
@@ -397,6 +414,31 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 	}
 
 	return `${lines.join('\n')}\n`;
+}
+
+function formatAnswerQualityScanSummary(scan) {
+	if (!scan || typeof scan !== 'object') return ['- Scan unavailable'];
+	const lines = [
+		`- Status: ${scan.flaggedCount ? 'review-needed' : 'clean'}`,
+		`- Cases scanned: ${scan.caseCount ?? 0}`,
+		`- Flagged cases: ${scan.flaggedCount ?? 0}`,
+		`- Errors: ${scan.errorCount ?? 0}`,
+		`- Warnings: ${scan.warningCount ?? 0}`,
+		`- Boundary: ${scan.note ?? 'Heuristic scan only.'}`
+	];
+	if (Object.keys(scan.byCheck ?? {}).length) {
+		lines.push(`- Checks: ${formatCountMap(scan.byCheck)}`);
+	}
+	if (!(scan.flagged ?? []).length) {
+		lines.push('- Top flagged cases: none');
+		return lines;
+	}
+	lines.push('- Top flagged cases:');
+	for (const item of scan.flagged.slice(0, 8)) {
+		const checks = (item.checks ?? []).map((check) => `${check.id}:${check.severity}`).join(', ') || 'unknown';
+		lines.push(`  - ${item.caseId ?? '<missing>'}: ${checks}`);
+	}
+	return lines;
 }
 
 function formatReviewFirstTriage(results) {

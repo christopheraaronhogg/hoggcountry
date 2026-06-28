@@ -22,6 +22,7 @@ const DEFAULT_SUITE = 'data/scout-local-ai/dad-local-ai-100.json';
 const DEFAULT_DEVICE_RUN_DIR = 'data/scout-local-ai/device-runs';
 const DEFAULT_REVIEW_DIR = 'data/scout-local-ai/reviews';
 const DEFAULT_PACKET_DIR = 'data/scout-local-ai/review-packets';
+const DEFAULT_SCAN_DIR_NAME = 'answer-quality-scans';
 const DEFAULT_DOWNLOADS_DIR = '~/Downloads';
 const DEFAULT_INBOX_DIR = 'data/scout-local-ai/inbox';
 
@@ -53,6 +54,7 @@ const inputPath = selectedInput.path;
 const deviceRunDir = resolveInputPath(cli.deviceRunDir ?? DEFAULT_DEVICE_RUN_DIR);
 const reviewDir = resolveInputPath(cli.reviewDir ?? DEFAULT_REVIEW_DIR);
 const packetDir = resolveInputPath(cli.packetDir ?? DEFAULT_PACKET_DIR);
+const scanDir = resolveInputPath(cli.scanDir ?? resolve(dirname(deviceRunDir), DEFAULT_SCAN_DIR_NAME));
 const force = Boolean(cli.force);
 
 const inspection = await runJsonScript('scripts/inspect-scout-local-ai-device-run.mjs', [
@@ -92,7 +94,9 @@ const importArgs = [
 	'--review-dir',
 	reviewDir,
 	'--packet-dir',
-	packetDir
+	packetDir,
+	'--scan-dir',
+	scanDir
 ];
 if (canImportPartial) importArgs.push('--allow-partial');
 if (force) importArgs.push('--force');
@@ -103,9 +107,12 @@ const safeRunId = safeFileName(run.runId);
 const importedRunPath = resolve(deviceRunDir, `${safeRunId}.json`);
 const reviewPath = resolve(reviewDir, `${safeRunId}.review.json`);
 const packetPath = resolve(packetDir, `${safeRunId}.review.md`);
+const scanPath = resolve(scanDir, `${safeRunId}.scan.json`);
 const relativeImportedRunPath = relative(REPO_ROOT, importedRunPath);
 const relativeReviewPath = relative(REPO_ROOT, reviewPath);
 const relativePacketPath = relative(REPO_ROOT, packetPath);
+const relativeScanPath = relative(REPO_ROOT, scanPath);
+const answerQualityScan = JSON.parse(await readFile(scanPath, 'utf8'));
 
 const reviewStatus = await runJsonScript('scripts/status-scout-local-ai-review.mjs', [
 	'--suite',
@@ -130,9 +137,25 @@ writeOutput({
 	paths: {
 		importedRun: relativeImportedRunPath,
 		review: relativeReviewPath,
-		packet: relativePacketPath
+		packet: relativePacketPath,
+		answerQualityScan: relativeScanPath
 	},
 	inspection,
+	answerQualityScan: {
+		path: relativeScanPath,
+		status: answerQualityScan.flaggedCount ? 'review-needed' : 'clean',
+		caseCount: answerQualityScan.caseCount,
+		flaggedCount: answerQualityScan.flaggedCount,
+		errorCount: answerQualityScan.errorCount,
+		warningCount: answerQualityScan.warningCount,
+		byCheck: answerQualityScan.byCheck,
+		topFlagged: (answerQualityScan.flagged ?? []).slice(0, 8).map((item) => ({
+			caseId: item.caseId,
+			domain: item.domain,
+			checks: (item.checks ?? []).map((check) => `${check.id}:${check.severity}`)
+		})),
+		boundary: answerQualityScan.note
+	},
 	acceptance: buildReviewAcceptance({ inspection, canImportFinal, canImportPartial }),
 	reviewStatus,
 	importOutput: importOutput.trim().split(/\r?\n/u).filter(Boolean),
@@ -342,8 +365,30 @@ function formatReport(report) {
 			`- Imported run: \`${report.paths.importedRun}\``,
 			`- Review JSON: \`${report.paths.review}\``,
 			`- Review packet: \`${report.paths.packet}\``,
+			`- Answer-quality scan: \`${report.paths.answerQualityScan}\``,
 			''
 		);
+	}
+	if (report.answerQualityScan) {
+		lines.push(
+			'## Answer Quality Scan',
+			'',
+			`- Status: ${report.answerQualityScan.status}`,
+			`- Cases scanned: ${report.answerQualityScan.caseCount}`,
+			`- Flagged cases: ${report.answerQualityScan.flaggedCount}`,
+			`- Errors: ${report.answerQualityScan.errorCount}`,
+			`- Warnings: ${report.answerQualityScan.warningCount}`,
+			`- Checks: ${formatCountMap(report.answerQualityScan.byCheck)}`,
+			`- Boundary: ${report.answerQualityScan.boundary}`,
+			''
+		);
+		if (report.answerQualityScan.topFlagged?.length) {
+			lines.push(
+				'- Top flagged cases:',
+				...report.answerQualityScan.topFlagged.map((item) => `  - ${item.caseId}: ${(item.checks ?? []).join(', ')}`),
+				''
+			);
+		}
 	}
 	if (report.acceptance) {
 		lines.push(

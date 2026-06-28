@@ -24,12 +24,17 @@ The loop:
    `--simulator "iPhone 16e"` if several iPhone simulators are installed. The
    command runs `mobile` build/sync, Xcode simulator build/install, app launch,
    eval extraction, and the read-only device-run inspector.
-   The saved artifact is a simulator diagnostic. To create a human review packet
-   from it, use the command printed at the end:
+   The saved artifact is a simulator diagnostic. To create machine triage plus a
+   human review packet from it, use the command printed at the end:
 
    ```sh
    npm run intake:scout-local-ai-device-run -- --run .scout-artifacts/scout-local-ai-runs/<ios-sim-gemma-run>.json --allow-partial
    ```
+
+   Intake automatically writes an answer-quality scan to
+   `data/scout-local-ai/answer-quality-scans/<run-id>.scan.json` and embeds that
+   scan in the review packet. The scan is the first triage pass; it does not
+   replace reading and rating every answer 1-5.
 
 4. For quick routing smoke tests without a model, use the default scaffold lane.
    It exercises Scout tools and source routing, but it is not model proof.

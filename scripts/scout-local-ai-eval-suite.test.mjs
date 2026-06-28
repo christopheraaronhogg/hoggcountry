@@ -216,6 +216,7 @@ test('package scripts expose the Scout local AI review handoff commands', async 
 	assert.equal(packageJson.scripts['receive:scout-local-ai-device-run'], 'node scripts/receive-scout-local-ai-device-run.mjs');
 	assert.equal(packageJson.scripts['wait:scout-local-ai-device-run'], 'node scripts/wait-scout-local-ai-device-run.mjs');
 	assert.equal(packageJson.scripts['eval:scout-local-ai:ios-sim-gemma'], 'node scripts/run-scout-ios-sim-gemma-eval.mjs');
+	assert.equal(packageJson.scripts['scan:scout-local-ai-answers'], 'node scripts/scan-scout-local-ai-answer-quality.mjs');
 });
 
 test('README documents device review acceptance states', async () => {
@@ -225,6 +226,8 @@ test('README documents device review acceptance states', async () => {
 	assert.match(readme, /diagnostic-review-only/u);
 	assert.match(readme, /blocked-before-review/u);
 	assert.match(readme, /wait:scout-local-ai-device-run -- --timeout-ms 300000 --poll-ms 10000/u);
+	assert.match(readme, /answer-quality scan/u);
+	assert.match(readme, /does not\s+replace reading and rating every answer 1-5/u);
 	assert.match(readme, /Final Dad\s+readiness still requires all 100 cases rated 5\/5/u);
 });
 
@@ -241,6 +244,8 @@ test('Dad TestFlight handoff documents the current Dad Pilot Run 100 path', asyn
 	assert.match(handoff, /Primary Local Regression/u);
 	assert.match(handoff, /eval:scout-local-ai:ios-sim-gemma -- --full --timeout-ms 1800000/u);
 	assert.match(handoff, /install source is debug\/simulator, not TestFlight on a physical iPhone/u);
+	assert.match(handoff, /answer-quality scan/u);
+	assert.match(handoff, /does\s+not replace the full human 1-5 review/u);
 	assert.match(handoff, /Settings > Scout Eval Lab/u);
 	assert.match(handoff, /tap `Run 100`/u);
 	assert.match(handoff, /npm run receive:scout-local-ai-device-run -- --clipboard/u);
@@ -2342,9 +2347,18 @@ test('device review preparation command can select the latest Scout export from 
 	assert.equal(report.input.runId, 'device-prepare-latest');
 	assert.equal(report.input.candidateCount, 2);
 	assert.match(report.input.selected, /scout-export-latest\.json/u);
+	assert.match(report.paths.answerQualityScan, /device-prepare-latest\.scan\.json/u);
+	assert.equal(report.answerQualityScan.status, 'review-needed');
+	assert.equal(report.answerQualityScan.caseCount, suite.cases.length);
+	assert.equal(report.answerQualityScan.flaggedCount, suite.cases.length);
+	assert.equal(report.answerQualityScan.byCheck['very-short-answer'], suite.cases.length);
 	assert.equal(report.reviewStatus.summary.total, suite.cases.length);
 	assert.equal(
 		JSON.parse(await readFile(join(deviceRunsDir, 'device-prepare-latest.json'), 'utf8')).runId,
+		'device-prepare-latest'
+	);
+	assert.equal(
+		JSON.parse(await readFile(join(outputDir, 'answer-quality-scans', 'device-prepare-latest.scan.json'), 'utf8')).runId,
 		'device-prepare-latest'
 	);
 	await assert.rejects(readFile(join(deviceRunsDir, 'device-prepare-older.json'), 'utf8'));
@@ -2980,7 +2994,7 @@ test('device run intake validates exports and creates review packet', async () =
 	];
 	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
 
-	await execFileAsync(
+	const importResult = await execFileAsync(
 		process.execPath,
 		[
 			'scripts/import-scout-local-ai-device-run.mjs',
@@ -3000,10 +3014,20 @@ test('device run intake validates exports and creates review packet', async () =
 	const imported = JSON.parse(await readFile(join(outputDir, 'device-runs', `${run.runId}.json`), 'utf8'));
 	const review = JSON.parse(await readFile(join(outputDir, 'reviews', `${run.runId}.review.json`), 'utf8'));
 	const packet = await readFile(join(outputDir, 'review-packets', `${run.runId}.review.md`), 'utf8');
+	const scan = JSON.parse(await readFile(join(outputDir, 'answer-quality-scans', `${run.runId}.scan.json`), 'utf8'));
 
+	assert.match(importResult.stdout, /Answer-quality scan:/u);
+	assert.match(importResult.stdout, /Answer-quality flags: 2 flagged, 2 errors, 2 warnings/u);
 	assert.equal(imported.evidenceLane, 'device-on-device-gemma');
 	assert.equal(imported.suiteVersion, suite.version);
 	assert.equal(imported.suiteHash, scoutLocalAiSuiteHash(suite));
+	assert.equal(scan.runId, run.runId);
+	assert.equal(scan.caseCount, 2);
+	assert.equal(scan.flaggedCount, 2);
+	assert.equal(scan.errorCount, 2);
+	assert.equal(scan.warningCount, 2);
+	assert.equal(scan.byCheck['unfinished-tail'], 2);
+	assert.equal(scan.byCheck['very-short-answer'], 2);
 	assert.equal(review.cases.length, 2);
 	assert.equal(review.suiteVersion, suite.version);
 	assert.equal(review.suiteHash, scoutLocalAiSuiteHash(suite));
@@ -3036,6 +3060,10 @@ test('device run intake validates exports and creates review packet', async () =
 	assert.match(packet, /Source evidence gaps:/u);
 	assert.match(packet, /Source receipts:/u);
 	assert.match(packet, /Failure mode: `none`/u);
+	assert.match(packet, /Answer-quality scan: `/u);
+	assert.match(packet, /## Answer-quality scan/u);
+	assert.match(packet, /Flagged cases: 2/u);
+	assert.match(packet, /very-short-answer:warning/u);
 	assert.match(packet, /## Review-first triage/u);
 	assert.match(packet, /Review-first cases: 0\/2/u);
 	assert.match(packet, /Signals: none/u);
