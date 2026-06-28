@@ -118,6 +118,8 @@ async function buildStatus(paths) {
 	const currentPartialDeviceRuns = currentDeviceRuns.filter((entry) => !isFullRun(entry.value, suite));
 	const currentFullFinalProofDeviceRuns = currentFullDeviceRuns.filter((entry) => deviceRunSatisfiesFinalProof(entry.value, finalProof));
 	const currentFullNonFinalProofDeviceRuns = currentFullDeviceRuns.filter((entry) => !deviceRunSatisfiesFinalProof(entry.value, finalProof));
+	const currentFullLocalPreflightRuns = currentFullDeviceRuns.filter((entry) => isLocalPreflightRun(entry.value, finalProof));
+	const currentPartialLocalPreflightRuns = currentPartialDeviceRuns.filter((entry) => isLocalPreflightRun(entry.value, finalProof));
 	testflight.currentTargetDeviceRunCount = currentFullDeviceRuns.filter((entry) => deviceRunMatchesTargetBuild(entry.value, testflight)).length;
 	testflight.currentTargetPartialDeviceRunCount = currentPartialDeviceRuns.filter((entry) => deviceRunMatchesTargetBuild(entry.value, testflight)).length;
 	testflight.currentSuiteCompatibleDeviceRunCount = currentFullDeviceRuns.filter((entry) => deviceRunSatisfiesFinalProof(entry.value, finalProof)).length;
@@ -134,6 +136,12 @@ async function buildStatus(paths) {
 	const currentFullRoutingRuns = currentRuns.filter(
 		(entry) => entry.value.evidenceLane === SCAFFOLD_EVIDENCE_LANE && isFullRun(entry.value, suite) && hasCompleteToolExpectations(entry.value, suite) && hasCompleteSourceEvidence(entry.value)
 	);
+	const localPreflight = summarizeLocalPreflight({
+		currentFullLocalPreflightRuns,
+		currentPartialLocalPreflightRuns,
+		suite,
+		finalProof
+	});
 	const reviewSummaries = reviews.map((entry) => ({
 		path: entry.path,
 		runId: entry.value.runId ?? '<missing>',
@@ -195,6 +203,7 @@ async function buildStatus(paths) {
 		iterationDebt,
 		currentFullRoutingRuns,
 		currentFullToolCompleteRuns,
+		localPreflight,
 		currentFullDeviceRuns,
 		currentFullFinalProofDeviceRuns,
 		currentFullNonFinalProofDeviceRuns,
@@ -233,6 +242,7 @@ async function buildStatus(paths) {
 		nativeSource,
 		phoneBuildAction,
 		testflight,
+		localPreflight,
 		inbox,
 		downloads,
 		runs: {
@@ -242,6 +252,8 @@ async function buildStatus(paths) {
 			currentFullDeviceRuns: summarizeRunList(currentFullDeviceRuns),
 			currentFullFinalProofDeviceRuns: summarizeRunList(currentFullFinalProofDeviceRuns),
 			currentFullNonFinalProofDeviceRuns: summarizeRunList(currentFullNonFinalProofDeviceRuns),
+			currentFullLocalPreflightRuns: summarizeRunList(currentFullLocalPreflightRuns),
+			currentPartialLocalPreflightRuns: summarizeRunList(currentPartialLocalPreflightRuns),
 			currentPartialDeviceRuns: summarizeRunList(currentPartialDeviceRuns),
 			currentFullToolCompleteRuns: summarizeRunList(currentFullToolCompleteRuns),
 			byLane: countBy(allRuns, (entry) => entry.value.evidenceLane ?? '<missing>')
@@ -287,7 +299,8 @@ async function buildStatus(paths) {
 			inbox,
 			downloads,
 			finalProof,
-			phoneBuildAction
+			phoneBuildAction,
+			localPreflight
 		)
 	};
 }
@@ -313,6 +326,7 @@ function createGates(input) {
 	const suiteOk = input.suiteErrors.length === 0;
 	const coverageOk = input.suiteCoverage.ok;
 	const routingOk = input.currentFullRoutingRuns.length > 0 || input.currentFullToolCompleteRuns.length > 0;
+	const localPreflightOk = input.localPreflight?.ok === true;
 	const testflightOk = input.testflight.targetBuildAvailableForDad && input.testflight.targetBuildMeetsSuiteRequirement;
 	const deviceOk = input.currentFullFinalProofDeviceRuns.length > 0;
 	const reviewOk = input.completeFiveStarDeviceReviews.length > 0;
@@ -345,6 +359,12 @@ function createGates(input) {
 			evidence: routingOk
 				? `${input.currentFullToolCompleteRuns.length} current full run(s) with all required tools hit and source evidence recorded`
 				: 'No current full 100-case run has complete required-tool hits and source evidence'
+		},
+		{
+			id: 'local-preflight',
+			label: 'Simulator/debug local full-suite preflight',
+			ok: localPreflightOk,
+			evidence: input.localPreflight?.evidence ?? 'No simulator/debug local preflight summary was created'
 		},
 		{
 			id: 'testflight-target',
@@ -414,7 +434,8 @@ function nextActionFor(
 	inbox,
 	downloads,
 	finalProof,
-	phoneBuildAction
+	phoneBuildAction,
+	localPreflight
 ) {
 	const gate = (id) => gates.find((item) => item.id === id);
 	if (!gate('suite')?.ok) {
@@ -513,6 +534,12 @@ function nextActionFor(
 			return {
 				kind: 'resume-device-run',
 				text: `Partial TestFlight/iPhone Eval Lab run ${latestPartialRun.runId} is imported at ${completed}/${total}. Reopen the same iPhone build, go to Settings > Scout Eval Lab, tap Resume, finish Run 100, Share the final JSON, then prepare review with ${DEVICE_REVIEW_PREP_COMMAND}. The partial file ${runPath} can be reviewed with --allow-partial for diagnosis, but it is not final Dad proof.`
+			};
+		}
+		if (localPreflight && !localPreflight.ok) {
+			return {
+				kind: 'run-local-preflight',
+				text: `${localPreflight.evidence}. Use the Mac mini simulator lane before spending Dad's TestFlight time: ${localPreflight.command}. This is preflight only; ${localPreflight.boundary}`
 			};
 		}
 		const phoneBuild =
@@ -680,6 +707,54 @@ function summarizeAnswerQualityScan(scan) {
 		})),
 		boundary: scan.note
 	};
+}
+
+function summarizeLocalPreflight({ currentFullLocalPreflightRuns, currentPartialLocalPreflightRuns, suite, finalProof }) {
+	const latestEntry = currentFullLocalPreflightRuns.at(-1) ?? null;
+	const latestRun = latestEntry?.value ?? null;
+	const latestFullRun = latestEntry ? summarizeRunList([latestEntry])[0] : null;
+	const toolComplete = latestRun ? hasCompleteToolExpectations(latestRun, suite) : false;
+	const sourceComplete = latestRun ? hasCompleteSourceEvidence(latestRun) : false;
+	const scanClean = latestFullRun?.answerQuality?.status === 'clean';
+	const ok = Boolean(latestRun && toolComplete && sourceComplete && scanClean);
+	const command = 'npm run eval:scout-local-ai:ios-sim-gemma -- --limit 100';
+	const boundary = 'simulator/debug local preflight drives iteration but does not replace final TestFlight/iPhone proof.';
+	const latestContext = latestRun ? localPreflightContextLabel(latestRun) : null;
+	const issues = [];
+	if (!latestRun) {
+		issues.push('no full simulator/debug local run exists');
+	} else {
+		if (!toolComplete) issues.push(`${latestFullRun?.missingToolCases ?? latestRun.summary?.missingToolCases ?? '?'} missing tool case(s)`);
+		if (!sourceComplete) issues.push(`${latestFullRun?.missingSourceEvidenceCases ?? latestRun.summary?.missingSourceEvidenceCases ?? '?'} missing source-evidence case(s)`);
+		if (!scanClean) {
+			const scan = latestFullRun.answerQuality;
+			issues.push(`${scan.flaggedCount}/${scan.caseCount} answer-quality case(s) flagged`);
+		}
+	}
+	const evidence = ok
+		? `Latest simulator/debug local preflight ${latestFullRun.runId} is clean: ${latestFullRun.caseCount}/${latestFullRun.totalSuiteCases} cases, complete tools/source evidence, ${latestContext}`
+		: latestRun
+			? `Latest simulator/debug local preflight ${latestFullRun.runId} needs work: ${issues.join('; ')}, ${latestContext}`
+			: `No full simulator/debug local preflight run found; run ${command}`;
+	return {
+		ok,
+		command,
+		boundary,
+		fullRunCount: currentFullLocalPreflightRuns.length,
+		partialRunCount: currentPartialLocalPreflightRuns.length,
+		latestFullRun,
+		latestProofMismatch: latestRun ? deviceRunFinalProofMismatchEvidence(latestRun, finalProof) : null,
+		evidence
+	};
+}
+
+function localPreflightContextLabel(run) {
+	const app = run?.runContext?.app;
+	const installSource = run?.runContext?.installSource;
+	const modelId = run?.runContext?.modelId ?? '<missing model>';
+	const appLabel = app?.version && app?.build ? `${app.version} (${app.build})` : '<missing app build>';
+	const installType = installSource?.type ?? '<missing install source>';
+	return `app ${appLabel}, install=${installType}, model=${modelId}`;
 }
 
 function summarizeBacklogList(entries) {
@@ -931,6 +1006,11 @@ function deviceRunSatisfiesFinalProof(run, finalProof) {
 	return installSource?.type === finalProof.installSource &&
 		native?.platform === finalProof.nativePlatform &&
 		appBuildSatisfiesFinalProof(runBuild, finalProof);
+}
+
+function isLocalPreflightRun(run, finalProof) {
+	return run?.evidenceLane === DEVICE_EVIDENCE_LANE &&
+		run?.runContext?.installSource?.type !== finalProof.installSource;
 }
 
 function deviceRunFinalProofMismatchEvidence(entry, finalProof) {
@@ -1325,6 +1405,7 @@ function createStatusMarkdown(status) {
 		`- Full routing/tool-complete runs: ${status.runs.currentFullToolCompleteRuns.length}`,
 		`- Full device runs: ${status.runs.currentFullDeviceRuns.length}`,
 		`- Partial device runs: ${status.runs.currentPartialDeviceRuns.length}`,
+		...localPreflightEvidenceLines(status),
 		...answerQualityEvidenceLines(status),
 		...handoffEvidenceLines(status.inbox, {
 			label: 'Inbox',
@@ -1390,6 +1471,23 @@ function handoffEvidenceLines(summary, options) {
 		return lines;
 	}
 	lines.push(`- Latest ${lowerLabel} export: none; ${options.emptyAction}`);
+	return lines;
+}
+
+function localPreflightEvidenceLines(status) {
+	const preflight = status.localPreflight;
+	if (!preflight) return ['- Simulator/debug local preflight: unavailable'];
+	const lines = [
+		`- Simulator/debug local preflight: ${preflight.ok ? 'clean' : 'needs work'}; full runs ${preflight.fullRunCount}, partial runs ${preflight.partialRunCount}`,
+		`- Simulator/debug local preflight evidence: ${preflight.evidence}`,
+		`- Simulator/debug local preflight boundary: ${preflight.boundary}`
+	];
+	if (!preflight.ok) {
+		lines.push(`- Simulator/debug local preflight command: \`${preflight.command}\``);
+	}
+	if (preflight.latestProofMismatch) {
+		lines.push(`- Simulator/debug local final-proof mismatch: ${preflight.latestProofMismatch}`);
+	}
 	return lines;
 }
 

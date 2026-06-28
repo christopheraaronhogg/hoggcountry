@@ -645,7 +645,7 @@ test('status command recognizes copied Scout export text in Downloads', async ()
 	assert.match(status.nextAction.text, /--run latest/u);
 });
 
-test('status command suggests the guarded wait command when no device export exists yet', async () => {
+test('status command asks for simulator preflight when no device export exists yet', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-wait-'));
 	const runsDir = join(outputDir, 'runs');
@@ -693,17 +693,18 @@ test('status command suggests the guarded wait command when no device export exi
 		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
 	);
 	const status = JSON.parse(result.stdout);
+	const gates = Object.fromEntries(status.gates.map((gate) => [gate.id, gate]));
 
-	assert.equal(status.nextAction.kind, 'get-device-run');
+	assert.equal(gates['local-preflight'].ok, false);
+	assert.match(gates['local-preflight'].evidence, /No full simulator\/debug local preflight run found/u);
+	assert.equal(status.nextAction.kind, 'run-local-preflight');
 	assert.equal(status.phoneBuildAction.canRunNow, true);
 	assert.equal(status.phoneBuildAction.requiresNewUploadBeforeRun100, false);
 	assert.match(status.phoneBuildAction.text, /Run 100 now/u);
-	assert.match(status.nextAction.text, /Run 100 now/u);
-	assert.match(status.nextAction.text, /Run 100/u);
-	assert.match(status.nextAction.text, /Share the JSON/u);
-	assert.match(status.nextAction.text, /wait:scout-local-ai-device-run/u);
-	assert.match(status.nextAction.text, /prepare-review:scout-local-ai-device-run/u);
-	assert.match(status.nextAction.text, /--run inbox/u);
+	assert.match(status.nextAction.text, /Mac mini simulator lane/u);
+	assert.match(status.nextAction.text, /eval:scout-local-ai:ios-sim-gemma -- --limit 100/u);
+	assert.match(status.nextAction.text, /preflight only/u);
+	assert.match(status.nextAction.text, /does not replace final TestFlight\/iPhone proof/u);
 });
 
 test('status command blocks stale inbox exports before review work starts', async () => {
@@ -1129,6 +1130,82 @@ test('status command does not accept full device runs from non-suite-compatible 
 	assert.match(status.nextAction.text, /not valid final Dad proof/u);
 	assert.match(status.nextAction.text, /Rerun Run 100 on a suite-compatible TestFlight iPhone build/u);
 	assert.match(status.nextAction.text, /prepare-review:scout-local-ai-device-run/u);
+});
+
+test('status command treats clean simulator local AI runs as preflight, not final proof', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-local-preflight-'));
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
+	await mkdir(deviceRunsDir, { recursive: true });
+	await mkdir(reviewsDir, { recursive: true });
+	await writeFile(releaseEvidencePath, `${JSON.stringify({
+		schemaVersion: 1,
+		items: {
+			'dad-testflight-invite': {
+				status: 'verified',
+				summary: 'Dad Pilot is attached to Hoggcountry iOS build 1.0 (27), and the public TestFlight link is enabled.',
+				publicLink: 'https://testflight.apple.com/join/BagBCrzf'
+			}
+		}
+	}, null, 2)}\n`);
+	const simulatorRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'simulator-clean-local-preflight',
+		completeTools: true,
+		runContext: simulatorDeviceRunContext()
+	});
+	for (const result of simulatorRun.results) result.answer = cleanPreflightAnswer();
+	await writeFile(join(deviceRunsDir, 'simulator-clean-local-preflight.json'), `${JSON.stringify(simulatorRun, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai.mjs',
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--release-evidence',
+			releaseEvidencePath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const status = JSON.parse(result.stdout);
+	const gates = Object.fromEntries(status.gates.map((gate) => [gate.id, gate]));
+
+	assert.equal(gates['local-preflight'].ok, true);
+	assert.match(gates['local-preflight'].evidence, /simulator-clean-local-preflight is clean/u);
+	assert.equal(gates['device-run'].ok, false);
+	assert.equal(status.localPreflight.ok, true);
+	assert.equal(status.localPreflight.fullRunCount, 1);
+	assert.equal(status.localPreflight.partialRunCount, 0);
+	assert.equal(status.localPreflight.latestFullRun.runId, 'simulator-clean-local-preflight');
+	assert.equal(status.localPreflight.latestFullRun.answerQuality.status, 'clean');
+	assert.match(status.localPreflight.latestProofMismatch, /install=debug, expected testflight/u);
+	assert.equal(status.runs.currentFullLocalPreflightRuns.length, 1);
+	assert.equal(status.runs.currentFullFinalProofDeviceRuns.length, 0);
+	assert.equal(status.runs.currentFullNonFinalProofDeviceRuns.length, 1);
+	assert.equal(status.nextAction.kind, 'rerun-device-proof-context');
+	assert.match(status.nextAction.text, /not valid final Dad proof/u);
+
+	const textResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai.mjs',
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--release-evidence',
+			releaseEvidencePath
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	assert.match(textResult.stdout, /Simulator\/debug local preflight: clean; full runs 1, partial runs 0/u);
+	assert.match(textResult.stdout, /Simulator\/debug local preflight boundary: simulator\/debug local preflight drives iteration but does not replace final TestFlight\/iPhone proof/u);
+	assert.match(textResult.stdout, /Simulator\/debug local final-proof mismatch: simulator-clean-local-preflight \(install=debug, expected testflight\)/u);
 });
 
 test('status command recognizes repeated strict TestFlight iPhone proof candidates', async () => {
@@ -6622,6 +6699,24 @@ function finalDeviceRunContext(patch = {}) {
 		},
 		...patch
 	};
+}
+
+function simulatorDeviceRunContext(patch = {}) {
+	return finalDeviceRunContext({
+		installSource: {
+			type: 'debug',
+			platform: 'ios',
+			detectedBy: 'simulator-debug-build',
+			receiptPresent: false,
+			debugBuild: true,
+			buildConfiguration: 'debug'
+		},
+		...patch
+	});
+}
+
+function cleanPreflightAnswer() {
+	return 'Use the current forecast and cached weather note, then make the conservative field call from the local field pack. Keep the field pack refreshed, confirm local AI and the Gemma model are ready, let cloud sync finish for backup, check closures, and treat stale data as not current until refreshed again. For money planning, track daily burn, town spikes, hostel, shuttle, laundry, meal, gear replacement, and an emergency cushion. If a filter froze, treat it as potentially compromised, carry backup water tablets, and sleep with the filter in your sleeping bag.';
 }
 
 function deviceRunForCases(suite, cases, options = {}) {

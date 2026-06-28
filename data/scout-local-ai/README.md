@@ -90,6 +90,11 @@ missing TestFlight/iPhone proof stay visually separate. The coverage gate fails
 if the suite stops covering trail prep, daily hiking decisions, water, shelters,
 weather, resupply, safety, gear, Bible/spiritual support, offline/local-model
 use, or confusing edge cases at the expected minimum depth.
+The `Simulator/debug local full-suite preflight` gate is the main Mac-mini
+iteration signal: the latest debug/simulator `device-on-device-gemma` Run 100
+must have complete tool/source evidence and a clean answer-quality scan before
+we spend Dad's TestFlight time. It remains separate from final TestFlight/iPhone
+proof.
 It also checks `data/scout-local-ai/inbox/` and reports whether Dad's shared
 iPhone JSON handoff folder is empty, has ignored/unreadable files, or has a
 newest likely Scout Eval Lab export ready for `--run inbox` inspection.
