@@ -444,6 +444,14 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 
 	assert.equal(
 		polishOnDeviceAnswer(
+			'Cap your target miles and eat more often. Keep insulation and sleep layers dry, protect your hands, head, and feet, and treat wet wind as hypothermia risk.',
+			'How should I adjust for 35 degrees and wind on a ridge?'
+		),
+		'Cap your target miles and eat more often. Keep insulation and sleep layers dry, protect your hands, head, and feet, and treat wet wind as hypothermia risk.\n\nCold-wind ridge note: cap target miles, eat more often, drink steadily, protect hands, head, and feet, keep insulation and sleep layers dry, and treat wet wind on exposed ridges as hypothermia risk.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
 			'Hydrate and take shade breaks today.',
 			'It is going to be hot today. How should the plan change?'
 		),

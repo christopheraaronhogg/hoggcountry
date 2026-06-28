@@ -1029,9 +1029,10 @@ function mentionsThunderstormHikeDecision(answer: string): boolean {
 function mentionsColdWindRidgeDecision(answer: string): boolean {
 	const mentionsMileageCap = /\b(?:cap|cut|shorten|lower|conservative|reduce)\b[^.?!\n]*(?:miles?|mileage|target)|(?:miles?|mileage|target)[^.?!\n]*(?:cap|cut|shorten|lower|conservative|reduce)/iu.test(answer);
 	const mentionsExtremities = /\b(?:hands?|feet|head|extremities|gloves?|hat|socks?)\b/iu.test(answer);
-	const mentionsFoodDrink = /\b(?:eat|snack|calor(?:y|ies)|food|drink|sip|hydrate|warm fluids?)\b/iu.test(answer);
+	const mentionsFood = /\b(?:eat|snack|calor(?:y|ies)|food)\b/iu.test(answer);
+	const mentionsDrink = /\b(?:drink|sip|hydrate|hydration|water|warm fluids?)\b/iu.test(answer);
 	const mentionsHypothermia = /\bhypothermia|wet[-\s]?cold/iu.test(answer);
-	return mentionsMileageCap && mentionsExtremities && mentionsFoodDrink && mentionsHypothermia;
+	return mentionsMileageCap && mentionsExtremities && mentionsFood && mentionsDrink && mentionsHypothermia;
 }
 
 function mentionsHotDayPlan(answer: string): boolean {
