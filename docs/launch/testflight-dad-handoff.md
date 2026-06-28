@@ -24,6 +24,25 @@ use that phone to produce the final Scout local-AI `Run 100` export.
   TestFlight/iPhone `Run 100` export, import, human review, and all 100 answers
   rated 5/5 with strict device proof.
 
+## Primary Local Regression
+
+Use the Mac mini iPhone Simulator Gemma run as the default local regression
+method before spending Dad's time on another phone run:
+
+```bash
+npm run eval:scout-local-ai:ios-sim-gemma -- --full --timeout-ms 1800000
+```
+
+For a focused diagnostic rerun through a known case boundary:
+
+```bash
+npm run eval:scout-local-ai:ios-sim-gemma -- --limit 83 --timeout-ms 1500000
+```
+
+This simulator path is the main local iteration loop for Scout answer quality,
+tool routing, and local Gemma behavior. It is not final Dad proof because the
+install source is debug/simulator, not TestFlight on a physical iPhone.
+
 ## Dad Instructions
 
 Use this generated message when asking Dad for the real device run:

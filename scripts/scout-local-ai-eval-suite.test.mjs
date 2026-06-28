@@ -238,6 +238,9 @@ test('Dad TestFlight handoff documents the current Dad Pilot Run 100 path', asyn
 
 	assert.ok(handoff.includes(`Build \`${currentBuild}\` is live in Dad Pilot`));
 	assert.match(handoff, /https:\/\/testflight\.apple\.com\/join\/BagBCrzf/u);
+	assert.match(handoff, /Primary Local Regression/u);
+	assert.match(handoff, /eval:scout-local-ai:ios-sim-gemma -- --full --timeout-ms 1800000/u);
+	assert.match(handoff, /install source is debug\/simulator, not TestFlight on a physical iPhone/u);
 	assert.match(handoff, /Settings > Scout Eval Lab/u);
 	assert.match(handoff, /tap `Run 100`/u);
 	assert.match(handoff, /npm run receive:scout-local-ai-device-run -- --clipboard/u);
