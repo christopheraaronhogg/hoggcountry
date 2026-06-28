@@ -19,6 +19,12 @@ The loop:
    npm run eval:scout-local-ai:ios-sim-gemma -- --limit 3
    ```
 
+   After a below-5 review, rerun the exact regression cases first:
+
+   ```sh
+   npm run eval:scout-local-ai:ios-sim-gemma -- --cases DLA-022,DLA-026,DLA-028
+   ```
+
    Use `--limit 10` after a targeted tool/prompt/data change. Use `--limit 100`
    before asking Dad to spend time on a TestFlight run. Add
    `--simulator "iPhone 16e"` if several iPhone simulators are installed. The

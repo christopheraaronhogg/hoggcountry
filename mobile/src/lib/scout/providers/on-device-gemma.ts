@@ -51,6 +51,12 @@ const TOWN_OFFLINE_READINESS_NOTE =
 	'Before leaving service: charge the phone and battery bank, refresh the field pack, confirm your current mile, let cloud sync finish while you still have service, download or update the local AI model on Wi-Fi and power, save offline maps/docs, verify Bible text is available offline, refresh weather and closure checks, then turn on airplane mode, relaunch, and ask Scout a water question. Treat cached weather, closures, water, and services as stale until refreshed again; Scout does not replace inReach, PLB, 911, or the family emergency plan.';
 const FROZEN_FILTER_NOTE =
 	'Frozen-filter note: if a hollow-fiber water filter froze, treat it as possibly compromised. Use backup tablets or another treatment until you can replace or verify it, and prevent it by sleeping with the filter or keeping it warm overnight.';
+const SLOW_FILTER_NOTE =
+	'Water-filter troubleshooting note: backflush or clean the filter first if the model supports it, protect hollow-fiber filters from freezing, use backup tablets or another treatment if flow stays bad or the filter may be compromised, and use the next confirmed water source before deciding to push past water.';
+const RAIN_PANTS_NOTE =
+	'Rain-pants decision note: for a Georgia or March start, decide from the current forecast, wind, personal cold tolerance, and shakedown evidence; keep them until the rain system has been proven in comparable wet-cold conditions.';
+const CAMP_SHOES_NOTE =
+	'Camp-shoes decision note: weigh the 7 oz against foot recovery, shelter and camp comfort, stream crossings when appropriate, hygiene, and keeping dirty shoes out of sleep areas; test them through the first section and reassess at the first town.';
 
 export class OnDeviceGemmaProvider implements ScoutProvider {
 	private bridge?: OnDeviceGemmaBridge;
@@ -230,6 +236,15 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	}
 	if (isFrozenFilterPrompt(lowerPrompt) && !mentionsFrozenFilterSafety(answer)) {
 		answer = appendSentence(answer, FROZEN_FILTER_NOTE);
+	}
+	if (isSlowFilterPrompt(lowerPrompt) && !mentionsSlowFilterTroubleshooting(answer)) {
+		answer = appendSentence(answer, SLOW_FILTER_NOTE);
+	}
+	if (isRainPantsPrompt(lowerPrompt) && !mentionsRainPantsDecision(answer)) {
+		answer = appendSentence(answer, RAIN_PANTS_NOTE);
+	}
+	if (isCampShoesPrompt(lowerPrompt) && !mentionsCampShoesDecision(answer)) {
+		answer = appendSentence(answer, CAMP_SHOES_NOTE);
 	}
 	if (isBadWeatherNeroPrompt(lowerPrompt) && !mentionsBadWeatherNeroDecision(answer)) {
 		answer = appendSentence(
@@ -454,6 +469,21 @@ function isFrozenFilterPrompt(prompt: string): boolean {
 		/\b(?:freez\w*|frozen|froze)\b/u.test(prompt);
 }
 
+function isSlowFilterPrompt(prompt: string): boolean {
+	return /\b(?:filter|water filter|hollow[-\s]?fiber|sawyer|katadyn|befree)\b/u.test(prompt) &&
+		/\b(?:slow|slowing|clog|clogged|clogging|backflush|backflushing|flow rate|barely flowing|not flowing|clean|cleaning)\b/u.test(prompt) &&
+		!/\b(?:freez\w*|frozen|froze)\b/u.test(prompt);
+}
+
+function isRainPantsPrompt(prompt: string): boolean {
+	return /\b(?:rain pants|rain gear|rain system)\b/u.test(prompt) &&
+		/\b(?:need|carry|leave|home|drop|cut|mail|send|ditch|keep)\b/u.test(prompt);
+}
+
+function isCampShoesPrompt(prompt: string): boolean {
+	return /\b(?:camp shoes?|sandals?|z-trail|z trail)\b/u.test(prompt);
+}
+
 function weatherLookupSummary(toolInvocations: ToolInvocationRecord[]): string | null {
 	const summary = toolInvocations.find((tool) => tool.toolId === 'weather_lookup')?.summary?.trim();
 	return summary || null;
@@ -517,6 +547,27 @@ function mentionsFrozenFilterSafety(answer: string): boolean {
 	return mentionsCompromised && mentionsBackupTreatment && mentionsWarmStorage;
 }
 
+function mentionsSlowFilterTroubleshooting(answer: string): boolean {
+	const mentionsCleaning = /\b(?:backflush|backflushing|flush|clean|cleaning|rinse|shake out|debris|clog)\b/iu.test(answer);
+	const mentionsFreezeProtection = /\b(?:freez\w*|frozen|froze|keep warm|sleep(?:ing)? with (?:it|the filter)|hollow[-\s]?fiber)\b/iu.test(answer);
+	const mentionsBackupTreatment = /\b(?:backup (?:water )?(?:tablet|tablets|treatment)|water tablets|chemical treatment|chlorine dioxide|aquamira|boil)\b/iu.test(answer);
+	const mentionsNextWaterDecision = /\b(?:next (?:confirmed |loaded |reliable )?water|push past water|carry more water|verified (?:water|stop)|confirm(?:ed)? (?:flow|source))\b/iu.test(answer);
+	return mentionsCleaning && mentionsFreezeProtection && mentionsBackupTreatment && mentionsNextWaterDecision;
+}
+
+function mentionsRainPantsDecision(answer: string): boolean {
+	return /(?:personal cold tolerance|how fast you chill|your cold tolerance|if you run cold)/iu.test(answer) &&
+		/(?:shakedown|proven|test(?:ed|ing)? the rain system)/iu.test(answer) &&
+		/(?:forecast|wind|cold rain|wet-cold|wet cold)/iu.test(answer);
+}
+
+function mentionsCampShoesDecision(answer: string): boolean {
+	return /foot recovery/iu.test(answer) &&
+		/(?:shelter|camp comfort|around camp|camp chores)/iu.test(answer) &&
+		/stream crossing/iu.test(answer) &&
+		/(?:first section|first town|reassess)/iu.test(answer);
+}
+
 function containsBibleDrift(paragraph: string): boolean {
 	return /\b(?:bible|scripture|verse|verses|psalms?|isaiah|john|romans|proverbs?|timothy|lord|god|christ|jesus)\b/iu.test(paragraph) ||
 		/[“"]?[A-Z][^.!?]{10,}\b(?:I am with you|do not fear|trust in the lord|righteous right hand)\b/iu.test(paragraph);
@@ -561,7 +612,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`Do not expose internal tool names or labels such as "source skill", "source_search", "open_source_doc", or "tool invocation" in the answer. Use the information naturally.`,
 		`Be honest about uncertainty. Use "candidate", "verify", or "I don't know" when the pack cannot prove something. Never turn candidate water, shelters, towns, or weather into guarantees.`,
 		`For water questions, use the next_water tool finding as the answer's spine. Lead with the nearest actionable water option or next reliable source from the tool finding. If no reliable water is loaded, say that after the source hierarchy; do not start with a generic refusal.`,
-		`For frozen water-filter questions, say a hollow-fiber filter may be compromised, use backup treatment or replace it if unsure, and prevent the next freeze by sleeping with the filter or keeping it warm overnight.`,
+		`For frozen or failing water-filter questions, say a hollow-fiber filter may be compromised if it froze, use backup treatment or replace it if unsure, backflush or clean a slow filter when the model supports it, and prevent the next freeze by sleeping with the filter or keeping it warm overnight. Use next-water context before telling the hiker to push past water.`,
 		`When tool findings are labeled as guidance, treat them as topic-specific documents Scout intentionally read for this answer. Use them to shape caveats and next-step advice.`,
 		`When preparation or training questions have pretrip, terrain, loadout, safety, or offline setup findings, give a concrete short plan. For "what should I focus on first" prompts, include an immediate first-week checklist, not only general training advice. Include shakedown hikes, foot care/blister practice, conservative early mileage, gear/loadout checks, water treatment habits, and an offline app/model rehearsal when those appear in the findings.`,
 		`For offline setup, offline downloads, phone settings, or day-one readiness questions, distinguish phone/app readiness from personal safety readiness. Always include the exact check "verify Bible text is available offline." Also mention field-pack refresh, current mile, local AI model, offline maps/docs, battery, airplane-mode rehearsal, and that Scout does not replace inReach, PLB, 911, or the family emergency plan. For personal documents, include this safety boundary in plain words: do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat.`,
@@ -570,6 +621,8 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For shakedown questions, name what the shakedown must prove: sleep system, rain system, cooking/food rhythm, water filtering, battery drain, pack fit, foot care, and offline app/model flow. Turn failures into specific gear or app fixes. Always say that one shakedown does not prove every condition is covered.`,
 		`For first-week mileage questions, use body condition, daylight, elevation, weather, pack weight, water spacing, foot/knee condition, and legal shelter/campsite/town spacing. Start low, protect feet and knees, and avoid fixed mileage promises.`,
 		`For heavy-rain start questions, include conservative mileage, dry sleep layers, footing caution on slick roots/rocks/descents, current forecast verification, and a bailout or stop plan for lightning, hypothermia risk, flooding, or worsening conditions.`,
+		`For rain-pants or rain-gear cut/drop questions, visibly weigh cold rain, wind, personal cold tolerance, cached/current forecast uncertainty, and shakedown evidence before making a keep/drop call. For Georgia or March starts, default conservative until the hiker proves the rain system in comparable wet-cold conditions.`,
+		`For camp-shoes questions, balance foot recovery, shelter/camp comfort, stream crossings, hygiene, and weight. Do not frame recovery comfort as laziness. Suggest testing the shoes and reassessing after the first section or first town, not deciding from ounces alone.`,
 		`For family check-in questions, set cadence, content, normal gap expectations, escalation window, emergency contacts, itinerary sharing, and the live-location caveat. Use phrasing like "if they do not hear from you" or "if you miss a check-in"; never write "if you don't hear from you." Repeated missed check-ins, bad weather, health concerns, or itinerary mismatch should escalate beyond Scout.`,
 		`For trail budget questions, separate daily burn from town spikes, hostels/shuttles/laundry/meals, gear replacement, and emergency cushion. Keep advice flexible around actual pace and services, and do not provide financial guarantees.`,
 		`For zero, nero, or town-rest questions, visibly weigh body condition or injury, cached/current weather, town chores, budget, and the next section. Frame rest as an investment, not failure. If weather was fetched, include the weather summary or verification caveat in the decision.`,

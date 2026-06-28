@@ -26,6 +26,10 @@
 		setSimulatorEvalResult?: (input: { value: string }) => Promise<{ ok?: boolean }>;
 		setSimulatorEvalDiagnostic?: (input: { value: string }) => Promise<{ ok?: boolean }>;
 	};
+	type SimulatorEvalSelection = {
+		limit?: number;
+		caseIds?: string[];
+	};
 	onMount(() => {
 		void maybeRunSimulatorGemmaEvalProbe();
 	});
@@ -37,11 +41,11 @@
 			const plugin = native ? registerPlugin<SimulatorEvalPlugin>('ScoutGemma') : null;
 			const request = native ? await plugin?.getSimulatorEvalRequest?.() : null;
 			const triggerValue = request?.limit === undefined || request?.limit === null ? null : String(request.limit);
-			const limit = simulatorEvalLimit(triggerValue);
+			const selection = simulatorEvalSelection(triggerValue);
 			await plugin?.setSimulatorEvalDiagnostic?.({
 				value: JSON.stringify({
 					generatedAt: new Date().toISOString(),
-					phase: limit === null ? 'ignored' : 'starting',
+					phase: selection === null ? 'ignored' : 'starting',
 					native,
 					requested: request?.requested === true,
 					source: request?.source ?? null,
@@ -49,14 +53,22 @@
 					resultKey: SIM_EVAL_RESULT_KEY,
 					diagnosticKey: SIM_EVAL_DIAGNOSTIC_KEY,
 					triggerValue,
-					parsedLimit: limit === undefined ? 'all' : limit,
+					parsedLimit: selection?.limit === undefined ? 'all' : selection.limit,
+					parsedCaseIds: selection?.caseIds ?? null,
 					href: window.location.href,
 					userAgent: navigator.userAgent
 				})
 			});
 			if (!native || !plugin || request?.requested !== true) return;
-			if (limit === null) return;
-			console.info('SCOUT_GEMMA_SIM_EVAL_PROBE requested', triggerValue, 'limit', limit ?? 'all');
+			if (selection === null) return;
+			console.info(
+				'SCOUT_GEMMA_SIM_EVAL_PROBE requested',
+				triggerValue,
+				'limit',
+				selection.limit ?? 'all',
+				'cases',
+				selection.caseIds?.join(',') ?? 'default'
+			);
 
 			const response = await fetch('/scout/dad-local-ai-100.json', { cache: 'no-store' });
 			if (!response.ok) {
@@ -66,7 +78,8 @@
 			const suite = (await response.json()) as ScoutLocalAiEvalSuite;
 			const run = await trailAssistant.runLocalAiEvalSuite({
 				suite,
-				...(limit === undefined ? {} : { limit }),
+				...(selection.limit === undefined ? {} : { limit: selection.limit }),
+				...(selection.caseIds?.length ? { caseIds: selection.caseIds } : {}),
 				onProgress: (progress) => {
 					console.info(
 						`SCOUT_GEMMA_SIM_EVAL_PROBE progress ${progress.completed}/${progress.total} case=${progress.caseId}`
@@ -102,18 +115,26 @@
 		}
 	}
 
-	function simulatorEvalLimit(value: string | null): number | undefined | null {
+	function simulatorEvalSelection(value: string | null): SimulatorEvalSelection | null {
 		const normalized = value?.trim().toLowerCase();
 		if (!normalized) return null;
-		if (normalized === '1' || normalized === 'run3') return 3;
-		if (normalized === 'all' || normalized === 'runall') return undefined;
+		if (normalized.startsWith('cases:')) {
+			const caseIds = normalized
+				.slice('cases:'.length)
+				.split(',')
+				.map((id) => id.trim().toUpperCase())
+				.filter(Boolean);
+			return caseIds.length ? { caseIds } : null;
+		}
+		if (normalized === '1' || normalized === 'run3') return { limit: 3 };
+		if (normalized === 'all' || normalized === 'runall') return {};
 		const runMatch = /^run(\d+)$/u.exec(normalized);
 		const limitMatch = /^limit:(\d+)$/u.exec(normalized);
 		const numericText = runMatch?.[1] ?? limitMatch?.[1] ?? (/^\d+$/u.test(normalized) ? normalized : '');
 		if (!numericText) return null;
 		const parsed = Number.parseInt(numericText, 10);
 		if (!Number.isInteger(parsed) || parsed < 1 || parsed > 100) return null;
-		return parsed;
+		return { limit: parsed };
 	}
 </script>
 

@@ -201,8 +201,10 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /Do not use Markdown headings, bold markers, tables, or long bullet lists/);
 	assert.match(systemContext, /Never turn candidate water, shelters, towns, or weather into guarantees/);
 	assert.match(systemContext, /For water questions, use the next_water tool finding as the answer's spine/);
-	assert.match(systemContext, /For frozen water-filter questions/);
+	assert.match(systemContext, /For frozen or failing water-filter questions/);
 	assert.match(systemContext, /hollow-fiber filter may be compromised/);
+	assert.match(systemContext, /For rain-pants or rain-gear cut\/drop questions/);
+	assert.match(systemContext, /For camp-shoes questions/);
 	assert.match(systemContext, /When tool findings are labeled as guidance/);
 	assert.match(systemContext, /When preparation or training questions have pretrip/);
 	assert.match(systemContext, /include an immediate first-week checklist/);
@@ -350,6 +352,39 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			]
 		),
 		'If your water filter freezes, use your backup water tablets and confirm the next water source before relying on it.\n\nWeather note: Cached weather near mile 304.9: cold wind and wet exposure (high 42F / low 28F, wind 22 mph). Wet wind can turn fatigue into hypothermia risk.\n\nFrozen-filter note: if a hollow-fiber water filter froze, treat it as possibly compromised. Use backup tablets or another treatment until you can replace or verify it, and prevent it by sleeping with the filter or keeping it warm overnight.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Backflush the filter if you can, then use backup tablets if the flow stays bad. Confirm the next water source before relying on it.',
+			'My water filter is slowing way down on trail. What should I do?',
+			[
+				{
+					toolId: 'next_water',
+					args: { fromMile: 52.4 },
+					summary: 'Next loaded water: Seasonal seep ahead at mile 54.2 (1.8 mi ahead, seasonal). Seasonal open-reference candidate; confirm current flow.',
+					confidence: 'medium',
+					receipts: []
+				}
+			]
+		),
+		'Backflush the filter if you can, then use backup tablets if the flow stays bad. Confirm the next water source before relying on it.\n\nWater-filter troubleshooting note: backflush or clean the filter first if the model supports it, protect hollow-fiber filters from freezing, use backup tablets or another treatment if flow stays bad or the filter may be compromised, and use the next confirmed water source before deciding to push past water.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'You should keep the rain pants because cached weather shows showers and wind. Verify the current forecast before leaving.',
+			'Do I need rain pants in Georgia in March, or can I leave them home?'
+		),
+		'You should keep the rain pants because cached weather shows showers and wind. Verify the current forecast before leaving.\n\nRain-pants decision note: for a Georgia or March start, decide from the current forecast, wind, personal cold tolerance, and shakedown evidence; keep them until the rain system has been proven in comparable wet-cold conditions.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Camp shoes can help your feet recover and make camp more comfortable. Reassess the weight later.',
+			'Should I carry camp shoes, or is that dead weight?'
+		),
+		'Camp shoes can help your feet recover and make camp more comfortable. Reassess the weight later.\n\nCamp-shoes decision note: weigh the 7 oz against foot recovery, shelter and camp comfort, stream crossings when appropriate, hygiene, and keeping dirty shoes out of sleep areas; test them through the first section and reassess at the first town.'
 	);
 
 	assert.equal(

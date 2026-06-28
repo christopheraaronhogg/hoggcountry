@@ -240,6 +240,8 @@ test('iOS simulator Gemma runner writes answer-quality scan artifacts', async ()
 	assert.match(runner, /Saved answer-quality scan:/u);
 	assert.match(runner, /Answer-quality flags:/u);
 	assert.match(runner, /Answer-quality scan command: npm run scan:scout-local-ai-answers/u);
+	assert.match(runner, /--cases <ids>/u);
+	assert.match(runner, /cases:\$\{value\.caseIds\.join\(','\)\}/u);
 	assert.match(runner, /human 1-5 review and final\s+TestFlight\/iPhone proof remain separate/u);
 });
 

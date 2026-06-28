@@ -29,15 +29,16 @@ if (cli.help) {
 	printUsage();
 	process.exit(0);
 }
-const limit = normalizeLimit(cli.limit ?? cli.cases ?? (cli.full ? '100' : '3'));
-const timeoutMs = positiveInt(cli.timeoutMs, timeoutForLimit(limit));
+const selection = normalizeSelection(cli);
+const timeoutMs = positiveInt(cli.timeoutMs, timeoutForSelection(selection));
 const pollMs = positiveInt(cli.pollMs, 5000);
 const outputDir = resolveInputPath(cli.outputDir ?? '.scout-artifacts/scout-local-ai-runs');
 const simulator = await selectSimulator(cli.simulator ?? process.env.SCOUT_IOS_SIMULATOR);
 
 console.log(`Scout iOS Simulator Gemma eval`);
 console.log(`- Simulator: ${simulator.name} (${simulator.udid})`);
-console.log(`- Limit: ${limit ?? 'all'}`);
+console.log(`- Limit: ${selection.limit ?? 'all'}`);
+if (selection.caseIds.length) console.log(`- Cases: ${selection.caseIds.join(', ')}`);
 console.log(`- Timeout: ${timeoutMs}ms`);
 
 await bootSimulator(simulator.udid);
@@ -75,7 +76,7 @@ if (!cli.preserveWebCache) await clearWebViewCache(simulator.udid);
 await terminateApp(simulator.udid);
 await writePreference(simulator.udid, CAP_RESULT_KEY, '__pending__');
 await writePreference(simulator.udid, CAP_DIAGNOSTIC_KEY, '__pending__');
-await writePreference(simulator.udid, CAP_TRIGGER_KEY, triggerForLimit(limit));
+await writePreference(simulator.udid, CAP_TRIGGER_KEY, triggerForSelection(selection));
 await flushPreferences(simulator.udid);
 await run('xcrun', [
 	'simctl',
@@ -83,11 +84,11 @@ await run('xcrun', [
 	simulator.udid,
 	BUNDLE_ID,
 	'--scout-gemma-sim-probe',
-	`--scout-gemma-sim-eval-limit=${triggerForLimit(limit)}`
+	`--scout-gemma-sim-eval-limit=${triggerForSelection(selection)}`
 ]);
 
 const runJson = await waitForRun(simulator.udid, timeoutMs, pollMs);
-assertExpectedCaseCount(runJson, limit);
+assertExpectedCaseCount(runJson, selection);
 await mkdir(outputDir, { recursive: true });
 const outputPath = resolve(outputDir, `ios-sim-gemma-${runJson.runId}.json`);
 const scanOutputPath = resolve(outputDir, `ios-sim-gemma-${runJson.runId}.scan.json`);
@@ -119,6 +120,36 @@ console.log(`Simulator diagnostic review packet: npm run intake:scout-local-ai-d
 console.log(`Answer-quality scan command: npm run scan:scout-local-ai-answers -- --run ${relativePath(outputPath)}`);
 console.log('Boundary: simulator Gemma is the main local iteration lane; final Dad proof still requires TestFlight iPhone Run 100.');
 
+function normalizeSelection(parsedCli) {
+	const caseIds = parseCaseIds(parsedCli.case ?? parsedCli.cases ?? parsedCli.id ?? parsedCli.ids);
+	if (caseIds.length) {
+		if (parsedCli.limit || parsedCli.full) {
+			throw new Error('Use either --case/--cases for targeted runs or --limit/--full for ordered runs, not both.');
+		}
+		return { limit: undefined, caseIds };
+	}
+	return {
+		limit: normalizeLimit(parsedCli.limit ?? (parsedCli.full ? '100' : '3')),
+		caseIds: []
+	};
+}
+
+function parseCaseIds(value) {
+	if (value === undefined || value === null || value === true) return [];
+	const ids = String(value)
+		.split(',')
+		.map((id) => id.trim().toUpperCase())
+		.filter(Boolean);
+	const duplicate = ids.find((id, index) => ids.indexOf(id) !== index);
+	if (duplicate) throw new Error(`Duplicate --cases value: ${duplicate}`);
+	for (const id of ids) {
+		if (!/^DLA-\d{3}$/u.test(id)) {
+			throw new Error(`--cases values must look like DLA-028, got ${id}`);
+		}
+	}
+	return ids;
+}
+
 function normalizeLimit(value) {
 	const text = String(value ?? '').trim().toLowerCase();
 	if (!text || text === 'all' || text === 'runall') return undefined;
@@ -132,15 +163,17 @@ function normalizeLimit(value) {
 	return parsed;
 }
 
-function triggerForLimit(value) {
-	if (value === undefined) return 'all';
-	return String(value);
+function triggerForSelection(value) {
+	if (value.caseIds.length) return `cases:${value.caseIds.join(',')}`;
+	if (value.limit === undefined) return 'all';
+	return String(value.limit);
 }
 
-function timeoutForLimit(value) {
-	if (value === undefined || value >= 100) return 60 * 60 * 1000;
-	if (value >= 25) return 25 * 60 * 1000;
-	if (value >= 10) return 15 * 60 * 1000;
+function timeoutForSelection(value) {
+	const count = value.caseIds.length || value.limit;
+	if (count === undefined || count >= 100) return 60 * 60 * 1000;
+	if (count >= 25) return 25 * 60 * 1000;
+	if (count >= 10) return 15 * 60 * 1000;
 	return 5 * 60 * 1000;
 }
 
@@ -205,8 +238,18 @@ function formatTopAnswerQualityCases(flagged) {
 }
 
 function assertExpectedCaseCount(runJson, value) {
-	const expected = value ?? 100;
-	if (runJson.caseCount === expected) return;
+	const expected = value.caseIds.length || value.limit || 100;
+	if (runJson.caseCount === expected) {
+		if (value.caseIds.length) {
+			const actualIds = (runJson.results ?? []).map((result) => result.caseId);
+			if (actualIds.join(',') !== value.caseIds.join(',')) {
+				throw new Error(
+					`Simulator eval returned case ids ${actualIds.join(',') || '<none>'}, but ${value.caseIds.join(',')} were requested.`
+				);
+			}
+		}
+		return;
+	}
 	throw new Error(
 		`Simulator eval returned ${runJson.caseCount} case(s), but ${expected} were requested. ` +
 		`Refusing to save misleading evidence. Run id: ${runJson.runId ?? '<missing>'}.`
@@ -332,6 +375,7 @@ function summarizeDiagnostic(diagnostic) {
 		native: diagnostic.native,
 		triggerValue: diagnostic.triggerValue ?? null,
 		parsedLimit: diagnostic.parsedLimit ?? null,
+		parsedCaseIds: diagnostic.parsedCaseIds ?? null,
 		href: diagnostic.href ?? null
 	});
 }
@@ -378,6 +422,8 @@ Runs Scout's local-AI eval inside the real iOS Simulator app with the native Gem
 Options:
   --limit <1-100|all>       Number of canonical cases to run. Default: 3.
   --full                    Shortcut for --limit 100.
+  --case <DLA-###>          Run one specific case as diagnostic iteration.
+  --cases <ids>             Comma-separated case IDs to run, e.g. DLA-022,DLA-028.
   --simulator <name|udid>   iPhone simulator to use. Default: iPhone 16e, then any booted iPhone.
   --timeout-ms <ms>         Override eval wait timeout.
   --poll-ms <ms>            Override result polling interval. Default: 5000.

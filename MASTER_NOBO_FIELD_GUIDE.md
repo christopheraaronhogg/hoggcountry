@@ -754,6 +754,8 @@ Base weight is the foundation of sustainable long-distance hiking. Every ounce c
 | Opsack 12L (odor-proof food bag) | 0.5 oz |
 | **Category Total** | **31.1 oz (1.94 lb)** |
 
+**Camp shoes decision rule:** Camp shoes are not just comfort weight. They protect recovery time by letting feet air out, make shelter/camp chores easier, help with wet crossings when appropriate, and keep dirty shoes out of sleep areas. They still have to earn their 7 oz: test them during the first section, then decide at the first town whether foot recovery, stream crossings, and camp comfort are worth the weight for your actual feet.
+
 #### Bear Hang System
 | Item | Weight |
 |------|--------|
@@ -1016,6 +1018,10 @@ Repackage into 3-5 day amounts: toothpaste, soap, sunscreen, wet wipes, meds.
 | Camp/Static (Any Temp) | Mountain Hardwear puffy ON immediately, OR rain jacket over puffy if windy, never rely on Alpha Freak for static warmth |
 | Sleep (Every Night) | Smartwool 250 sleep top and sleep pants, sleep socks, puffy inside quilt if temps drop |
 
+### Rain Pants Decision Rule
+
+For a February or March southern start, rain pants stay in the system until the rain system has been proven in comparable cold rain and wind. Do not make the keep/drop call from weight alone. Weigh the current forecast, wind, personal cold tolerance, how fast you chill when wet, whether the dry sleep layer is protected, and what the next safe town or bailout looks like. If the answer is uncertain, keep them until a shakedown or first section proves they are unnecessary.
+
 ## 72-Hour Cold/Wet Survival Protocol
 
 ### Morning
@@ -1266,6 +1272,16 @@ Drop 1 chlorine dioxide tablet into bottle. Cap and gently shake.
 
 ### Step 5 — Drink
 Water is now safe from bacteria, viruses, and protozoa.
+
+## Slow Filter Workflow
+
+If the filter slows down on trail:
+- Check for sediment or debris before assuming the source is the problem
+- Backflush or clean the filter if that model supports it
+- Shake out excess water after filtering
+- Protect hollow-fiber filters from freezing; if a filter may have frozen, treat it as possibly compromised
+- Use chlorine dioxide tablets or another backup treatment if flow stays bad, the filter may be damaged, or you cannot verify it
+- Do not push past a usable source just because the filter is annoying; compare the next confirmed water, daylight, heat, and current carry first
 
 ## Freeze Protection Rules
 

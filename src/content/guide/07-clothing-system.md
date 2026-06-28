@@ -97,6 +97,10 @@ icon: "shirt"
 | Camp/Static (Any Temp) | Mountain Hardwear puffy ON immediately, OR rain jacket over puffy if windy, never rely on Alpha Freak for static warmth |
 | Sleep (Every Night) | Smartwool 250 sleep top and sleep pants, sleep socks, puffy inside quilt if temps drop |
 
+### Rain Pants Decision Rule
+
+For a February or March southern start, rain pants stay in the system until the rain system has been proven in comparable cold rain and wind. Do not make the keep/drop call from weight alone. Weigh the current forecast, wind, personal cold tolerance, how fast you chill when wet, whether the dry sleep layer is protected, and what the next safe town or bailout looks like. If the answer is uncertain, keep them until a shakedown or first section proves they are unnecessary.
+
 ## 72-Hour Cold/Wet Survival Protocol
 
 ### Morning

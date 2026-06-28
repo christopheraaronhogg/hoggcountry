@@ -56,6 +56,16 @@ Drop 1 chlorine dioxide tablet into bottle. Cap and gently shake.
 ### Step 5 — Drink
 Water is now safe from bacteria, viruses, and protozoa.
 
+## Slow Filter Workflow
+
+If the filter slows down on trail:
+- Check for sediment or debris before assuming the source is the problem
+- Backflush or clean the filter if that model supports it
+- Shake out excess water after filtering
+- Protect hollow-fiber filters from freezing; if a filter may have frozen, treat it as possibly compromised
+- Use chlorine dioxide tablets or another backup treatment if flow stays bad, the filter may be damaged, or you cannot verify it
+- Do not push past a usable source just because the filter is annoying; compare the next confirmed water, daylight, heat, and current carry first
+
 ## Freeze Protection Rules
 
 ### Night Rule (Non-Negotiable)

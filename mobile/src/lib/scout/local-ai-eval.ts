@@ -158,6 +158,7 @@ export async function runScoutLocalAiEval(input: {
 	evidenceLane: ScoutLocalAiEvidenceLane;
 	runId?: string;
 	limit?: number;
+	caseIds?: string[];
 	now?: Date;
 	onProgress?: (progress: ScoutLocalAiEvalProgress) => void;
 	onSnapshot?: (run: ScoutLocalAiEvalRun) => void;
@@ -170,7 +171,7 @@ export async function runScoutLocalAiEval(input: {
 	}) => Promise<ScoutAnswer>;
 }): Promise<ScoutLocalAiEvalRun> {
 	const now = input.now ?? new Date();
-	const selectedCases = input.limit ? input.suite.cases.slice(0, input.limit) : input.suite.cases;
+	const selectedCases = selectScoutLocalAiEvalCases(input.suite, input.caseIds, input.limit);
 	const suiteHash = scoutLocalAiSuiteHash(input.suite);
 	const previousRun = validateReusablePreviousRun(input.previousRun, input.suite, suiteHash, input.evidenceLane);
 	const runId = input.runId ?? previousRun?.runId ?? `device-local-ai-${compactTimestamp(now)}`;
@@ -194,6 +195,7 @@ export async function runScoutLocalAiEval(input: {
 			suiteHash,
 			runContext,
 			limit: input.limit,
+			caseIds: input.caseIds,
 			results
 		});
 
@@ -252,6 +254,27 @@ export async function runScoutLocalAiEval(input: {
 	return snapshot();
 }
 
+function selectScoutLocalAiEvalCases(
+	suite: ScoutLocalAiEvalSuite,
+	caseIds: string[] | undefined,
+	limit: number | undefined
+): ScoutLocalAiEvalCase[] {
+	const requestedIds = (caseIds ?? []).map((id) => id.trim()).filter(Boolean);
+	if (!requestedIds.length) {
+		return limit ? suite.cases.slice(0, limit) : suite.cases;
+	}
+	const duplicate = requestedIds.find((id, index) => requestedIds.indexOf(id) !== index);
+	if (duplicate) {
+		throw new Error(`Duplicate Scout local AI eval case id requested: ${duplicate}`);
+	}
+	const byId = new Map(suite.cases.map((testCase) => [testCase.id, testCase]));
+	return requestedIds.map((id) => {
+		const testCase = byId.get(id);
+		if (!testCase) throw new Error(`Unknown Scout local AI eval case id requested: ${id}`);
+		return testCase;
+	});
+}
+
 function createScoutLocalAiEvalRun(input: {
 	suite: ScoutLocalAiEvalSuite;
 	runId: string;
@@ -260,6 +283,7 @@ function createScoutLocalAiEvalRun(input: {
 	suiteHash: string;
 	runContext?: Record<string, unknown>;
 	limit?: number;
+	caseIds?: string[];
 	results: ScoutLocalAiEvalResult[];
 }): ScoutLocalAiEvalRun {
 	return {
@@ -278,7 +302,7 @@ function createScoutLocalAiEvalRun(input: {
 		caseCount: input.results.length,
 		totalSuiteCases: input.suite.cases.length,
 		filters: {
-			id: null,
+			id: input.caseIds?.length ? input.caseIds.join(',') : null,
 			domain: null,
 			phase: null,
 			limit: input.limit ?? null
@@ -297,11 +321,12 @@ function createScoutLocalAiEvalExportHandoff(input: {
 	suiteHash: string;
 	runContext?: Record<string, unknown>;
 	limit?: number;
+	caseIds?: string[];
 	results: ScoutLocalAiEvalResult[];
 }): ScoutLocalAiEvalExportHandoff {
 	const completedCases = input.results.length;
 	const suiteCaseCount = input.suite.cases.length;
-	const targetCases = input.limit ?? suiteCaseCount;
+	const targetCases = input.caseIds?.length ? input.caseIds.length : (input.limit ?? suiteCaseCount);
 	const fullSuiteTarget = suiteCaseCount > 0 && completedCases >= suiteCaseCount && targetCases >= suiteCaseCount;
 	const deviceLane = input.evidenceLane === 'device-on-device-gemma';
 	const proofContextProblems = fullSuiteTarget && deviceLane

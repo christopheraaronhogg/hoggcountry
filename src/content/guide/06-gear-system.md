@@ -120,6 +120,8 @@ Base weight is the foundation of sustainable long-distance hiking. Every ounce c
 | Opsack 12L (odor-proof food bag) | 0.5 oz |
 | **Category Total** | **31.1 oz (1.94 lb)** |
 
+**Camp shoes decision rule:** Camp shoes are not just comfort weight. They protect recovery time by letting feet air out, make shelter/camp chores easier, help with wet crossings when appropriate, and keep dirty shoes out of sleep areas. They still have to earn their 7 oz: test them during the first section, then decide at the first town whether foot recovery, stream crossings, and camp comfort are worth the weight for your actual feet.
+
 #### Bear Hang System
 | Item | Weight |
 |------|--------|

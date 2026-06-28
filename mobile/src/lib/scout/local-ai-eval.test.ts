@@ -136,6 +136,47 @@ test('runScoutLocalAiEval records on-device answers and tool expectations', asyn
 	assert.equal(run.results[0].rating, null);
 });
 
+test('runScoutLocalAiEval can target explicit case ids for diagnostic reruns', async () => {
+	const testSuite = suite([
+		evalCase({ id: 'DLA-001', prompt: 'first case' }),
+		evalCase({ id: 'DLA-022', prompt: 'rain pants case' }),
+		evalCase({ id: 'DLA-028', prompt: 'slow filter case' })
+	]);
+	const seen: string[] = [];
+
+	const run = await runScoutLocalAiEval({
+		suite: testSuite,
+		evidenceLane: 'device-on-device-gemma',
+		caseIds: ['DLA-028', 'DLA-022'],
+		now: new Date('2026-06-26T12:00:00.000Z'),
+		ask: ({ testCase }) => {
+			seen.push(testCase.id);
+			return Promise.resolve(answer(testCase.prompt));
+		}
+	});
+
+	assert.deepEqual(seen, ['DLA-028', 'DLA-022']);
+	assert.deepEqual(run.results.map((result) => result.caseId), ['DLA-028', 'DLA-022']);
+	assert.equal(run.caseCount, 2);
+	assert.equal(run.filters.id, 'DLA-028,DLA-022');
+	assert.equal(run.filters.limit, null);
+	assert.equal(run.exportHandoff?.expectedAcceptanceStatus, 'diagnostic-review-only');
+	assert.equal(run.exportHandoff?.run.targetCases, 2);
+});
+
+test('runScoutLocalAiEval rejects unknown targeted case ids before running', async () => {
+	await assert.rejects(
+		() =>
+			runScoutLocalAiEval({
+				suite: suite([evalCase({ id: 'DLA-001' })]),
+				evidenceLane: 'device-on-device-gemma',
+				caseIds: ['DLA-404'],
+				ask: ({ testCase }) => Promise.resolve(answer(testCase.prompt))
+			}),
+		/Unknown Scout local AI eval case id requested: DLA-404/u
+	);
+});
+
 test('runScoutLocalAiEval embeds final inbox handoff when device proof context matches', async () => {
 	const testSuite = {
 		...suite([evalCase()]),

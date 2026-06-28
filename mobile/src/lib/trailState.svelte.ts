@@ -1056,6 +1056,7 @@ class TrailAssistantStore {
 	async runLocalAiEvalSuite(input: {
 		suite: ScoutLocalAiEvalSuite;
 		limit?: number;
+		caseIds?: string[];
 		onProgress?: (progress: ScoutLocalAiEvalProgress) => void;
 		onSnapshot?: (run: ScoutLocalAiEvalRun) => void;
 		previousRun?: ScoutLocalAiEvalRun | null;
@@ -1072,6 +1073,7 @@ class TrailAssistantStore {
 		return runScoutLocalAiEval({
 			suite: input.suite,
 			limit: input.limit,
+			caseIds: input.caseIds,
 			evidenceLane: 'device-on-device-gemma',
 			runContext: await this.#buildLocalAiEvalRunContext(),
 			onProgress: input.onProgress,
