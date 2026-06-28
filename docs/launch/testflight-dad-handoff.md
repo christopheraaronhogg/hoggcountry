@@ -9,17 +9,17 @@ use that phone to produce the final Scout local-AI `Run 100` export.
   `https://testflight.apple.com/join/BagBCrzf`.
 - App Store Connect app id `6782505691` and bundle id
   `com.hoggcountry.trailassistant` are verified.
-- Build `1.0 (23)` is live in Dad Pilot, Apple beta review is approved, and App
+- Build `1.0 (24)` is live in Dad Pilot, Apple beta review is approved, and App
   Store Connect reports external state `IN_BETA_TESTING`.
-- Latest native upload proof for build `23`:
-  `docs/launch/proof/ios-testflight-attempt-2026-06-28T00-17-00-252Z.md`.
-- Dad Pilot/App Store Connect proof for build `23`:
-  `docs/launch/proof/ios-testflight-build-23-2026-06-27.md`.
-- Build `22` was removed from Dad Pilot only after build `23` was attached and
+- Latest native upload proof for build `24`:
+  `docs/launch/proof/ios-testflight-attempt-2026-06-28T00-56-49-962Z.md`.
+- Dad Pilot/App Store Connect proof for build `24`:
+  `docs/launch/proof/ios-testflight-build-24-2026-06-27.md`.
+- Build `23` was removed from Dad Pilot only after build `24` was attached and
   externally available.
-- The local Xcode target is build `23`, matching the current Dad Pilot build.
-- Dad should now run `Run 100` on build `23`; the suite allows `1.0 (>= 13)`,
-  but build `23` is the latest-source TestFlight proof.
+- The local Xcode target is build `24`, matching the current Dad Pilot build.
+- Dad should now run `Run 100` on build `24`; the suite allows `1.0 (>= 13)`,
+  but build `24` is the latest-source TestFlight proof.
 - The remaining goal is not TestFlight availability. It is a real
   TestFlight/iPhone `Run 100` export, import, human review, and all 100 answers
   rated 5/5 with strict device proof.
@@ -152,14 +152,14 @@ changed after the last successful upload.
 
 ## Proof Boundaries
 
-- Account/TestFlight proof: build `1.0 (23)` is attached to Dad Pilot and
+- Account/TestFlight proof: build `1.0 (24)` is attached to Dad Pilot and
   externally available.
-- Native upload proof: build `23` was archived, exported, and uploaded from the
-  native app source in commit `f176e510cd061ac0b95098030663f2231d000d93`.
-- Previous Dad Pilot upload: build `22` was archived and uploaded from commit
-  `ed706558fe1ee05c6e6dd3de54d9396f052b39a0`, then replaced by build `23`.
-- Latest-source TestFlight proof: local Xcode target `1.0 (23)` matches Dad
-  Pilot build `1.0 (23)`.
+- Native upload proof: build `24` was archived, exported, and uploaded from the
+  native app source in commit `18f9d11baa4e2f5f3c6e569748e612c11e8834bf`.
+- Previous Dad Pilot upload: build `23` was archived and uploaded from commit
+  `f176e510cd061ac0b95098030663f2231d000d93`, then replaced by build `24`.
+- Latest-source TestFlight proof: local Xcode target `1.0 (24)` matches Dad
+  Pilot build `1.0 (24)`.
 - Current repo proof: later commits may add docs/tests/proof. Check
   `npm run status:scout-local-ai` for whether native app source changed after
   the latest upload.
