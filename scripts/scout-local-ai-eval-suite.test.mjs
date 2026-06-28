@@ -204,6 +204,8 @@ test('Dad local AI eval suite covers requested hiker objective areas', async () 
 	assert.ok(byId.gear.count >= 10);
 	assert.ok(byId['bible-spiritual-support'].count >= 5);
 	assert.ok(byId['offline-local-ai-use'].count >= 10);
+	assert.ok(byId['document-vault-user-docs'].count >= 2);
+	assert.ok(byId['domain-transfer-readiness'].count >= 2);
 	assert.ok(byId['confusing-edge-cases'].count >= 10);
 });
 
@@ -1595,6 +1597,9 @@ test('goal audit maps original success criteria without hiding missing device pr
 	assert.equal(audit.goalComplete, false);
 	assert.equal(requirements['versioned-100-question-suite'].ok, true);
 	assert.equal(requirements['per-case-rubrics-and-tools'].ok, true);
+	assert.equal(requirements['document-grounded-system-goal'].ok, true);
+	assert.match(requirements['document-grounded-system-goal'].evidence, /local-first, model-agnostic, document-grounded assistant/u);
+	assert.match(requirements['document-grounded-system-goal'].evidence, /internal company documents, SOPs, project notes, customer docs/u);
 	assert.equal(requirements['runner-saves-transcripts'].ok, true);
 	assert.match(requirements['runner-saves-transcripts'].evidence, /100 result transcript/u);
 	assert.equal(requirements['review-ratings-and-notes'].ok, true);
@@ -1874,7 +1879,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /device-handoff-inbox-latest/u);
 	assert.match(result.stdout, /use `Run 100` for real proof/u);
 	assert.match(result.stdout, /## Valid export checklist/u);
-	assert.match(result.stdout, /Suite fields: `suiteId=dad-local-ai-100`, `suiteVersion=2026-06-28\.1`, `suiteHash=fnv1a32:[0-9a-f]+`/u);
+	assert.match(result.stdout, /Suite fields: `suiteId=dad-local-ai-100`, `suiteVersion=2026-06-28\.2`, `suiteHash=fnv1a32:[0-9a-f]+`/u);
 	assert.match(result.stdout, /Result count: `100\/100` completed results from `Run 100`, not `Run 3`/u);
 	assert.match(result.stdout, /Evidence lane: `device-on-device-gemma` with `answerOrigin=device-on-device-gemma` answers/u);
 	assert.match(result.stdout, /Native context: TestFlight iPhone install, app build satisfying `1\.0 \(>= 13\)`/u);

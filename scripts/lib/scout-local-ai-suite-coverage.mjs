@@ -60,6 +60,19 @@ export const SCOUT_LOCAL_AI_OBJECTIVE_COVERAGE_AREAS = [
 		matches: (testCase) => /\b(offline|airplane|download|cell service|signal|field pack|cache|stale|screenshot|local ai model|model download|share sheet|copy)\b/iu.test(caseBodyText(testCase))
 	},
 	{
+		id: 'document-vault-user-docs',
+		label: 'Document-vault and user-document grounding',
+		minCases: 2,
+		matches: (testCase) => hasRequiredTool(testCase, 'source_search:document vault') && hasRequiredTool(testCase, 'open_source_doc:document vault')
+	},
+	{
+		id: 'domain-transfer-readiness',
+		label: 'Reusable document-assistant transfer readiness',
+		minCases: 2,
+		matches: (testCase) => hasRequiredTool(testCase, 'source_search:document vault') &&
+			/\b(document vault|saved docs?|uploaded notes?|source summaries|personal documents|user documents|privacy boundary|private numbers)\b/iu.test(caseBodyText(testCase))
+	},
+	{
 		id: 'confusing-edge-cases',
 		label: 'Confusing edge cases and recovery',
 		minCases: 10,

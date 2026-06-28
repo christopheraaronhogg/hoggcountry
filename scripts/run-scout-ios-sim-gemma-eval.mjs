@@ -373,9 +373,18 @@ function summarizeDiagnostic(diagnostic) {
 	return JSON.stringify({
 		phase: diagnostic.phase,
 		native: diagnostic.native,
+		requested: diagnostic.requested ?? null,
+		source: diagnostic.source ?? null,
 		triggerValue: diagnostic.triggerValue ?? null,
 		parsedLimit: diagnostic.parsedLimit ?? null,
 		parsedCaseIds: diagnostic.parsedCaseIds ?? null,
+		suiteVersion: diagnostic.suiteVersion ?? null,
+		suiteCaseCount: diagnostic.suiteCaseCount ?? null,
+		completed: diagnostic.completed ?? null,
+		total: diagnostic.total ?? null,
+		caseId: diagnostic.caseId ?? null,
+		caseIndex: diagnostic.caseIndex ?? null,
+		runId: diagnostic.runId ?? null,
 		href: diagnostic.href ?? null
 	});
 }

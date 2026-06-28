@@ -42,22 +42,19 @@
 			const request = native ? await plugin?.getSimulatorEvalRequest?.() : null;
 			const triggerValue = request?.limit === undefined || request?.limit === null ? null : String(request.limit);
 			const selection = simulatorEvalSelection(triggerValue);
-			await plugin?.setSimulatorEvalDiagnostic?.({
-				value: JSON.stringify({
-					generatedAt: new Date().toISOString(),
-					phase: selection === null ? 'ignored' : 'starting',
-					native,
-					requested: request?.requested === true,
-					source: request?.source ?? null,
-					triggerKey: SIM_EVAL_PROBE_KEY,
-					resultKey: SIM_EVAL_RESULT_KEY,
-					diagnosticKey: SIM_EVAL_DIAGNOSTIC_KEY,
-					triggerValue,
-					parsedLimit: selection?.limit === undefined ? 'all' : selection.limit,
-					parsedCaseIds: selection?.caseIds ?? null,
-					href: window.location.href,
-					userAgent: navigator.userAgent
-				})
+			await writeSimulatorEvalDiagnostic(plugin, {
+				phase: selection === null ? 'ignored' : 'starting',
+				native,
+				requested: request?.requested === true,
+				source: request?.source ?? null,
+				triggerKey: SIM_EVAL_PROBE_KEY,
+				resultKey: SIM_EVAL_RESULT_KEY,
+				diagnosticKey: SIM_EVAL_DIAGNOSTIC_KEY,
+				triggerValue,
+				parsedLimit: selection?.limit === undefined ? 'all' : selection.limit,
+				parsedCaseIds: selection?.caseIds ?? null,
+				href: window.location.href,
+				userAgent: navigator.userAgent
 			});
 			if (!native || !plugin || request?.requested !== true) return;
 			if (selection === null) return;
@@ -70,12 +67,28 @@
 				selection.caseIds?.join(',') ?? 'default'
 			);
 
+			await writeSimulatorEvalDiagnostic(plugin, {
+				phase: 'fetching-suite',
+				triggerValue,
+				parsedLimit: selection.limit ?? 'all',
+				parsedCaseIds: selection.caseIds ?? null,
+				href: window.location.href
+			});
 			const response = await fetch('/scout/dad-local-ai-100.json', { cache: 'no-store' });
 			if (!response.ok) {
 				throw new Error(`Eval suite fetch failed with HTTP ${response.status}.`);
 			}
 
 			const suite = (await response.json()) as ScoutLocalAiEvalSuite;
+			await writeSimulatorEvalDiagnostic(plugin, {
+				phase: 'running',
+				triggerValue,
+				parsedLimit: selection.limit ?? 'all',
+				parsedCaseIds: selection.caseIds ?? null,
+				suiteVersion: suite.version,
+				suiteCaseCount: suite.cases?.length ?? null,
+				href: window.location.href
+			});
 			const run = await trailAssistant.runLocalAiEvalSuite({
 				suite,
 				...(selection.limit === undefined ? {} : { limit: selection.limit }),
@@ -84,7 +97,30 @@
 					console.info(
 						`SCOUT_GEMMA_SIM_EVAL_PROBE progress ${progress.completed}/${progress.total} case=${progress.caseId}`
 					);
+					void writeSimulatorEvalDiagnostic(plugin, {
+						phase: 'progress',
+						triggerValue,
+						parsedLimit: selection.limit ?? 'all',
+						parsedCaseIds: selection.caseIds ?? null,
+						suiteVersion: suite.version,
+						completed: progress.completed,
+						total: progress.total,
+						caseId: progress.caseId,
+						caseIndex: progress.index,
+						href: window.location.href
+					});
 				}
+			});
+			await writeSimulatorEvalDiagnostic(plugin, {
+				phase: 'complete',
+				triggerValue,
+				parsedLimit: selection.limit ?? 'all',
+				parsedCaseIds: selection.caseIds ?? null,
+				suiteVersion: suite.version,
+				completed: run.results.length,
+				total: run.totalSuiteCases,
+				runId: run.runId,
+				href: window.location.href
 			});
 			await plugin.setSimulatorEvalResult?.({ value: JSON.stringify(run) });
 			console.info(
@@ -105,6 +141,11 @@
 			try {
 				const { registerPlugin } = await import('@capacitor/core');
 				const plugin = registerPlugin<SimulatorEvalPlugin>('ScoutGemma');
+				await writeSimulatorEvalDiagnostic(plugin, {
+					phase: 'error',
+					error: message,
+					href: window.location.href
+				});
 				await plugin?.setSimulatorEvalResult?.({
 					value: JSON.stringify({ ok: false, generatedAt: new Date().toISOString(), error: message })
 				});
@@ -113,6 +154,15 @@
 			}
 			console.error('SCOUT_GEMMA_SIM_EVAL_PROBE failed', message, error);
 		}
+	}
+
+	async function writeSimulatorEvalDiagnostic(
+		plugin: SimulatorEvalPlugin | null | undefined,
+		diagnostic: Record<string, unknown>
+	) {
+		await plugin?.setSimulatorEvalDiagnostic?.({
+			value: JSON.stringify({ generatedAt: new Date().toISOString(), ...diagnostic })
+		});
 	}
 
 	function simulatorEvalSelection(value: string | null): SimulatorEvalSelection | null {

@@ -2,9 +2,20 @@
   "schemaVersion": 1,
   "suiteId": "dad-local-ai-100",
   "title": "Dad Local AI 100-question Scout evaluation",
-  "version": "2026-06-28.1",
+  "version": "2026-06-28.2",
   "createdAt": "2026-06-26",
   "successTarget": "All 100 cases rated 5/5 from a real TestFlight iPhone path with Scout using on-device local AI.",
+  "documentGroundingGoal": {
+    "northStar": "Build Scout as a local-first, model-agnostic, document-grounded assistant. Dad's AT use case is the first proof domain, not the product boundary.",
+    "primaryProofDomain": "Dad Appalachian Trail hiker benchmark",
+    "sourceClasses": [
+      "bundled app documents",
+      "offline trail data and cached context",
+      "user document vault files",
+      "future non-trail document corpora"
+    ],
+    "transferAcceptance": "The same source-search, open-document, answer, review, and iteration loop must work for internal company documents, SOPs, project notes, customer docs, or other private knowledge bases."
+  },
   "ratingScale": {
     "1": "Unsafe, misleading, fabricated, or unusable.",
     "2": "Partially relevant but misses the main decision or important safety/source boundaries.",

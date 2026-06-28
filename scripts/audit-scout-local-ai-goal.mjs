@@ -127,6 +127,7 @@ function createRequirementAudit(input) {
 	const scripts = input.scriptMap;
 	const reviewWorkflowEvidence = summarizeReviewWorkflowEvidence({ scripts, reviewSource: input.reviewSource, iterationLoopGate });
 	const deviceProofBoundaryEvidence = summarizeDeviceProofBoundaryEvidence({ scripts, deviceRunGate, strictProofGate, stabilityGate });
+	const documentGroundingEvidence = summarizeDocumentGroundingGoal(input);
 
 	return [
 		requirement({
@@ -142,6 +143,12 @@ function createRequirementAudit(input) {
 			evidence: caseRubricProblems.length
 				? caseRubricProblems.slice(0, 8).join('; ')
 				: `All ${input.suite.cases?.length ?? 0} cases include non-empty expectedTraits, requiredTools, and safetyCaveats.`
+		}),
+		requirement({
+			id: 'document-grounded-system-goal',
+			label: 'Goal covers a model-agnostic document-grounded assistant beyond AT-specific content',
+			ok: documentGroundingEvidence.ok,
+			evidence: documentGroundingEvidence.evidence
 		}),
 		requirement({
 			id: 'runner-saves-transcripts',
@@ -202,6 +209,35 @@ function createRequirementAudit(input) {
 			].join('; ')
 		})
 	];
+}
+
+function summarizeDocumentGroundingGoal(input) {
+	const problems = [];
+	const goal = input.suite.documentGroundingGoal ?? {};
+	const northStar = String(goal.northStar ?? '');
+	const sourceClasses = Array.isArray(goal.sourceClasses) ? goal.sourceClasses.map((item) => String(item).toLowerCase()) : [];
+	const transferAcceptance = String(goal.transferAcceptance ?? '');
+	const coverageAreas = new Map((input.status.suite?.coverage?.areas ?? []).map((area) => [area.id, area]));
+	const vaultCoverage = coverageAreas.get('document-vault-user-docs');
+	const transferCoverage = coverageAreas.get('domain-transfer-readiness');
+
+	if (!/\blocal-first\b/i.test(northStar)) problems.push('documentGroundingGoal.northStar must state local-first behavior.');
+	if (!/\bmodel-agnostic\b/i.test(northStar)) problems.push('documentGroundingGoal.northStar must state model-agnostic behavior.');
+	if (!/\bdocument-grounded\b/i.test(northStar)) problems.push('documentGroundingGoal.northStar must state document-grounded behavior.');
+	if (!sourceClasses.some((item) => item.includes('user document vault'))) problems.push('documentGroundingGoal.sourceClasses must include user document vault files.');
+	if (!sourceClasses.some((item) => item.includes('non-trail document corpora'))) problems.push('documentGroundingGoal.sourceClasses must include future non-trail document corpora.');
+	if (!/\b(internal company documents|sops|project notes|customer docs|private knowledge bases)\b/i.test(transferAcceptance)) {
+		problems.push('documentGroundingGoal.transferAcceptance must name non-trail document corpora.');
+	}
+	if (vaultCoverage?.ok !== true) problems.push(`document-vault coverage is not satisfied: ${vaultCoverage?.count ?? 0}/${vaultCoverage?.minCases ?? '?'}.`);
+	if (transferCoverage?.ok !== true) problems.push(`domain-transfer readiness coverage is not satisfied: ${transferCoverage?.count ?? 0}/${transferCoverage?.minCases ?? '?'}.`);
+
+	return {
+		ok: problems.length === 0,
+		evidence: problems.length
+			? problems.join('; ')
+			: `${northStar} Source classes include ${goal.sourceClasses.join(', ')}. Transfer target: ${transferAcceptance} Coverage: document vault ${vaultCoverage.count}/${vaultCoverage.minCases}, transfer readiness ${transferCoverage.count}/${transferCoverage.minCases}.`
+	};
 }
 
 function summarizeReviewWorkflowEvidence({ scripts, reviewSource, iterationLoopGate }) {

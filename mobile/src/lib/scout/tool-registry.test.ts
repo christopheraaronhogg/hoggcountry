@@ -508,6 +508,44 @@ test('runToolsFor opens saved hiker documents for document-vault prompts', async
 	assert.ok(openedVaultDoc.receipts.some((receipt) => receipt.id === 'hiker-doc:hostel-reservation-note' && receipt.kind === 'hiker-input'));
 });
 
+test('runToolsFor opens non-trail saved documents through the same document-vault lane', async () => {
+	const records = await runToolsFor(
+		'What do my saved docs say about the warehouse lockup SOP?',
+		{
+			...DEFAULT_CONTEXT_PACK,
+			documents: [
+				{
+					id: 'warehouse-lockup-sop',
+					title: 'Warehouse lockup SOP',
+					source: 'manual',
+					createdAt: '2026-06-20T10:00:00.000Z',
+					updatedAt: '2026-06-20T10:00:00.000Z',
+					body: 'Internal company SOP summary: before closing, verify bay doors are latched, turn off the heat press, arm the alarm, and log exceptions in the shift notes.'
+				}
+			]
+		},
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	const vaultSearch = records.find(
+		(record) => record.toolId === 'source_search' && record.args.sourceSkill === 'document vault'
+	);
+	assert.ok(vaultSearch);
+	assert.equal(vaultSearch.sourceDocumentIds?.[0], 'hiker-doc:warehouse-lockup-sop');
+	assert.ok(vaultSearch.receipts.some((receipt) => receipt.id === 'hiker-doc:warehouse-lockup-sop' && receipt.kind === 'hiker-input'));
+
+	const openedVaultDoc = records.find(
+		(record) =>
+			record.toolId === 'open_source_doc' &&
+			record.args.sourceSkill === 'document vault' &&
+			record.args.documentId === 'hiker-doc:warehouse-lockup-sop'
+	);
+	assert.ok(openedVaultDoc);
+	assert.match(openedVaultDoc.summary, /^Document vault guidance opened Warehouse lockup SOP:/);
+	assert.match(openedVaultDoc.summary, /turn off the heat press/);
+});
+
 test('runToolsFor opens family check-in safety discipline for missed-contact prompts', async () => {
 	const records = await runToolsFor(
 		'What should I tell family about check-ins and what they should do if I miss one?',
