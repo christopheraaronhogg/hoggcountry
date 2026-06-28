@@ -198,6 +198,9 @@ function sourceSkillQueryHints(skill: SourceSkillTrigger, prompt: string): strin
 	if (/\b(?:wrong trail mile|wrong mile|enter(?:ed)? .*wrong .*mile|mile .*mistake|mistake .*mile)\b/u.test(lower)) {
 		return ['wrong mile recovery discipline', 'current mile profile discipline', 'wrong mile shifts water shelter town terrain bailout', 'correct Current AT mile', 'Settings Edit hike details', 'manual mile update', 'refresh field pack', 're-ask Scout', 'do not make water shelter town safety decisions'];
 	}
+	if (/\b(?:test|rehearsal|rehearse|try|verify)\b.*\b(?:airplane mode|airplane-mode|offline)\b/u.test(lower)) {
+		return ['pretrip offline readiness real rehearsal', 'airplane mode capability boundary', 'charge phone battery bank', 'refresh field pack current mile', 'download local AI model offline maps docs', 'turn on airplane mode relaunch', 'ask Scout water weather offline question', 'cached answers versus live data', 'return online stale safety-critical data'];
+	}
 	if (/\b(?:airplane mode|airplane-mode|no cell|cell service|without service|without signal|what can (?:you|scout) still answer|what still works|works? offline)\b/u.test(lower)) {
 		return ['airplane mode capability boundary', 'cached field pack', 'on-device local AI model', 'saved offline maps docs', 'Bible text', 'fresh weather', 'official closures', 'cloud sync', 'live tramily location', 'stale cached data'];
 	}

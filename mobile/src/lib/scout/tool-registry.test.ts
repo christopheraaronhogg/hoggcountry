@@ -607,6 +607,22 @@ test('runToolsFor reads airplane-mode capability guidance for offline Scout prom
 	assert.match(openedDoc.summary, /Airplane mode capability boundary/);
 });
 
+test('runToolsFor prioritizes airplane-mode rehearsal guidance before leaving town', async () => {
+	const records = await runToolsFor(
+		'How do I test airplane mode before leaving town?',
+		DEFAULT_CONTEXT_PACK,
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	assert.ok(records.some((record) => record.toolId === 'next_town'));
+	const safetySource = records.find((record) => record.toolId === 'source_search' && record.args.sourceSkill === 'safety');
+	assert.ok(safetySource);
+	assert.match(safetySource.summary, /Pretrip offline readiness needs a real rehearsal/);
+	assert.ok(safetySource.sourceDocumentIds?.includes('field-guide:pretrip-offline-readiness'));
+	assert.ok(safetySource.sourceDocumentIds?.includes('field-guide:airplane-mode-capability-boundary'));
+});
+
 test('runToolsFor opens model-download status guidance for still-downloading prompts', async () => {
 	const records = await runToolsFor(
 		'What does it mean if Scout says the model is still downloading?',

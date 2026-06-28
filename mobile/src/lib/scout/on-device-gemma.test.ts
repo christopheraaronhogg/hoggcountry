@@ -255,6 +255,9 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /cached field pack, on-device local AI model/);
 	assert.match(systemContext, /fresh weather, official closures\/fire alerts/);
 	assert.match(systemContext, /live\/tramily location/);
+	assert.match(systemContext, /For "test airplane mode" or offline rehearsal questions/);
+	assert.match(systemContext, /ask a water, weather, or offline Scout question/);
+	assert.match(systemContext, /go back online and refresh before relying on weather, closures, water reports, town services, or safety-critical facts/);
 	assert.match(systemContext, /For model-downloading, model status, stuck download, failed download/);
 	assert.match(systemContext, /not ready for offline Scout yet/);
 	assert.match(systemContext, /check Scout model status\/progress until it says ready/);
@@ -429,6 +432,18 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.match(wrongMileAnswer, /re-ask Scout for water, shelter, town, terrain, and bailout/);
 	assert.match(wrongMileAnswer, /A wrong mile shifts water, shelter, town, terrain, and bailout answers/);
 	assert.match(wrongMileAnswer, /do not make water, shelter, town, or safety decisions from a wrong mile/);
+
+	const airplaneModeRehearsalAnswer = polishOnDeviceAnswer(
+		'First, charge your phone and battery bank. Then, refresh your field pack and current mile. Next, finish cloud sync while online. After that, update the local AI model on Wi-Fi and power. Then, save offline maps and documents. You should also test airplane mode with a water question.',
+		'How do I test airplane mode before leaving town?'
+	);
+	assert.match(airplaneModeRehearsalAnswer, /Airplane-mode rehearsal/);
+	assert.match(airplaneModeRehearsalAnswer, /turn on airplane mode or disable network/);
+	assert.match(airplaneModeRehearsalAnswer, /fully relaunch Scout/);
+	assert.match(airplaneModeRehearsalAnswer, /ask a water, weather, or offline Scout question/);
+	assert.match(airplaneModeRehearsalAnswer, /cached field pack\/local model\/saved docs/);
+	assert.match(airplaneModeRehearsalAnswer, /not that live data is current/);
+	assert.match(airplaneModeRehearsalAnswer, /Go back online and refresh before relying on weather, closures, water reports, town services, or other safety-critical facts/);
 
 	assert.equal(
 		polishOnDeviceAnswer(
