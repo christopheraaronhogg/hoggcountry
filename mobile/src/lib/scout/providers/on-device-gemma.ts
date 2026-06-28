@@ -125,6 +125,8 @@ const LIGHTNING_RIDGE_NOTE =
 	'Lightning ridge note: if it is safe to move, leave exposed high ground and ridgelines immediately. Avoid lone trees, open knobs, metal objects, and water; spread out from partners, wait well after the last thunder before resuming, and do not keep hiking exposed terrain.';
 const TOWN_GEAR_DRYING_NOTE =
 	'Town gear-drying note: sequence the chores: sleeping bag or quilt and insulation first, then socks, shoes or liners, wet clothes, and rain gear. Use a laundromat, dryer on safe settings, hostel drying room, or motel room airflow before charging, repacking, and leaving town.';
+const HOSTEL_FULL_TOWN_NOTE =
+	'One more boundary: treat hostels, visitor centers, campgrounds, shuttles, and road crossings as candidates until confirmed. Call or message ahead while you still have service; confirm same-day bed space, shuttle or pickup, visitor-center hours, campground reservations or seasonal status, and legal overnight rules. Use backup lodging, a legal campground or public/legal overnight option, or an earlier legal stop, short day, or nero if tired or injured. Do not invent availability or sleep in unsafe or illegal spots.';
 const BAD_WEATHER_NERO_NOTE =
 	'Nero weather note: choose a short day, town stop, or early legal stop when storm severity, temperature, footing, exposure, daylight, body condition, or town access makes the full plan less safe. Rest is a safety and recovery decision, not failure.';
 const LIVE_WEATHER_FACTS_NOTE =
@@ -385,6 +387,9 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	}
 	if (isTownGearDryingPrompt(lowerPrompt) && !mentionsTownGearDryingSequence(answer)) {
 		answer = appendSentence(answer, TOWN_GEAR_DRYING_NOTE);
+	}
+	if (isHostelFullTownPrompt(lowerPrompt) && !mentionsHostelFullTownBackup(answer, toolInvocations)) {
+		answer = appendSentence(answer, buildHostelFullTownNote(toolInvocations));
 	}
 	if (isFrozenFilterPrompt(lowerPrompt) && !mentionsFrozenFilterSafety(answer)) {
 		answer = appendSentence(answer, FROZEN_FILTER_NOTE);
@@ -858,6 +863,11 @@ function isTownGearDryingPrompt(prompt: string): boolean {
 		/\b(?:town|laundry|laundromat|hostel|motel|day)\b/u.test(prompt);
 }
 
+function isHostelFullTownPrompt(prompt: string): boolean {
+	return /\b(?:hostel|lodging|motel|hotel|bunkhouse)\b/u.test(prompt) &&
+		/\b(?:full|booked|sold out|no room|no bed|no beds|no vacancy)\b/u.test(prompt);
+}
+
 function isBadWeatherNeroPrompt(prompt: string): boolean {
 	return /\b(?:zero|nero)\b/u.test(prompt) &&
 		/\b(?:weather|rains?|rainy|raining|storms?|thunderstorms?|thunder|lightning|winds?|cold|heat|hot|hypothermia|freez\w*|bad weather)\b/u.test(prompt);
@@ -1139,6 +1149,32 @@ function buildPrayerSafePlanNote(toolInvocations: ToolInvocationRecord[], includ
 	return `${note} Loaded context: ${context.join('; ')}. Treat those as candidates, not guarantees, and choose the lower-risk option if anything cannot be verified.`;
 }
 
+function buildHostelFullTownNote(toolInvocations: ToolInvocationRecord[]): string {
+	const town = toolSummary(toolInvocations, 'next_town');
+	const park = toolSummary(toolInvocations, 'park_services');
+	const context: string[] = [];
+	if (town) {
+		const townClause = trimToolClause(town).split('. ')[0];
+		const guarantee = /\bno guaranteed services\b/iu.test(town) ? '; no guaranteed services at the crossing' : '';
+		context.push(`Nearby access context: ${townClause}${guarantee}.`);
+	}
+	if (park) {
+		const parkBits = [
+			/\bvisitor center\b/iu.test(park) ? 'visitor-center candidate' : '',
+			/\bcampground\b/iu.test(park) ? 'campground candidate' : '',
+			/\bnot thru[-\s]?hiker shelters?\b/iu.test(park) ? 'not thru-hiker shelters' : '',
+			/\b(?:reservations?|seasonal status)\b/iu.test(park) ? 'confirm reservations or seasonal status' : ''
+		].filter(Boolean);
+		context.push(
+			parkBits.length
+				? `Park-service context: ${parkBits.join(', ')}.`
+				: `Park-service context: ${trimToolClause(park).split('\n')[0]}.`
+		);
+	}
+	if (!context.length) return HOSTEL_FULL_TOWN_NOTE;
+	return `${HOSTEL_FULL_TOWN_NOTE} ${context.join(' ')}`;
+}
+
 function buildSevereFatigueClearThinkingNote(toolInvocations: ToolInvocationRecord[]): string {
 	const water = toolSummary(toolInvocations, 'next_water');
 	const shelter = toolSummary(toolInvocations, 'next_shelter');
@@ -1403,6 +1439,25 @@ function mentionsTownGearDryingSequence(answer: string): boolean {
 	const mentionsLaundryDryer = /\b(?:laundry|laundromat|dryer|drying room|motel room|hostel)\b/iu.test(answer);
 	const mentionsSequence = /\b(?:first|then|next|before leaving|sequence|priority|prioritize)\b/iu.test(answer);
 	return mentionsSleep && mentionsShoesSocks && mentionsLaundryDryer && mentionsSequence;
+}
+
+function mentionsHostelFullTownBackup(answer: string, toolInvocations: ToolInvocationRecord[]): boolean {
+	const mentionsCallAhead =
+		/\b(?:call|text|message|phone|confirm|verify)\b[^.?!\n]*(?:ahead|same[-\s]?day|bed|beds|space|hostel|shuttle|pickup|hours|reservations?|seasonal|legal)|(?:ahead|same[-\s]?day|bed|beds|space|hostel|shuttle|pickup|hours|reservations?|seasonal|legal)[^.?!\n]*(?:call|text|message|phone|confirm|verify)\b/iu.test(answer);
+	const mentionsBackupOptions =
+		/\b(?:backup lodging|lodging|motel|hotel|hostel|bunk|bed)\b/iu.test(answer) &&
+		/\b(?:campground|legal public|legal overnight|visitor center|ranger|public option|legal option)\b/iu.test(answer);
+	const treatsServicesAsCandidates =
+		/\b(?:candidate|not guaranteed|do not assume|don't assume|not thru[-\s]?hiker shelter|verify|confirm)\b/iu.test(answer);
+	const keepsTiredSafe =
+		/\b(?:tired|injured|injury|fatigue|body condition)\b/iu.test(answer) &&
+		/\b(?:short day|nero|early legal stop|town stop|stop earlier|safer legal stop)\b/iu.test(answer);
+	const avoidsUnsafeIllegal =
+		/\b(?:do not|don't|never|avoid)\b[^.?!\n]*(?:unsafe|illegal|stealth|unverified|sleeping spot|sleep spot)|(?:unsafe|illegal|stealth|unverified|sleeping spot|sleep spot)[^.?!\n]*(?:do not|don't|never|avoid)\b/iu.test(answer);
+	const usesLoadedContext =
+		(!toolSummary(toolInvocations, 'next_town') || mentionsToolPlace(answer, toolSummary(toolInvocations, 'next_town'))) &&
+		(!toolSummary(toolInvocations, 'park_services') || /\b(?:visitor center|campground|park service|ranger|nps|developed campground)\b/iu.test(answer));
+	return mentionsCallAhead && mentionsBackupOptions && treatsServicesAsCandidates && keepsTiredSafe && avoidsUnsafeIllegal && usesLoadedContext;
 }
 
 function mentionsLiveWeatherFacts(answer: string): boolean {
@@ -1808,6 +1863,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For trail budget questions, separate daily burn from town spikes, hostels/shuttles/laundry/meals, gear replacement, and emergency cushion. Keep advice flexible around actual pace and services, and do not provide financial guarantees.`,
 		`For zero, nero, or town-rest questions, visibly weigh body condition or injury, cached/current weather, town chores, budget, and the next section. Frame rest as an investment, not failure. If weather was fetched, include the weather summary or verification caveat in the decision.`,
 		`For bad-weather nero questions, compare storm severity, temperature, footing, exposure, daylight, body condition, terrain, and town access. Recommend a short day, town stop, or early legal stop when those risks make the full plan less safe; never frame rest as failure.`,
+		`For hostel-full or lodging-full town questions, treat hostels, visitor centers, campgrounds, shuttles, and road crossings as candidates until confirmed. Tell the hiker to call or message ahead while they have service, confirm same-day bed space, shuttle/pickup, visitor-center hours, campground reservations/seasonal status, and legal overnight rules. Suggest backup lodging, legal campground or public/legal overnight options, or a short day, nero, town stop, or earlier legal stop if tired or injured. Do not invent availability or unsafe/illegal sleeping spots.`,
 		`For drying gear in town, sequence the chores: sleeping bag or quilt and insulation first, then socks, shoes or liners, wet clothes, and rain gear; use laundry, safe dryer settings, drying room, or motel airflow before charging, repacking, and leaving town.`,
 		`For town questions about charging, refreshing, downloading, updating Scout, or leaving service, give a concrete pre-departure checklist: charge phone and battery bank, refresh field pack/current mile, finish cloud sync while online, update the local AI model on Wi-Fi and power, save offline maps/docs, verify Bible text is available offline, refresh weather and closure checks, then airplane-mode test with a water question. Say cached weather, closures, water, and services can go stale.`,
 		`For "what must Scout verify live" weather questions, name storms/lightning, heat/cold exposure, wind, flooding or high water, closures or fire/smoke alerts, and stale cache boundaries. Explain cached versus live data plainly.`,

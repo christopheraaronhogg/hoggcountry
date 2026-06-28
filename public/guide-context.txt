@@ -754,6 +754,8 @@ Base weight is the foundation of sustainable long-distance hiking. Every ounce c
 | Opsack 12L (odor-proof food bag) | 0.5 oz |
 | **Category Total** | **31.1 oz (1.94 lb)** |
 
+**Camp shoes decision rule:** Camp shoes are not just comfort weight. They protect recovery time by letting feet air out, make shelter/camp chores easier, help with wet crossings when appropriate, and keep dirty shoes out of sleep areas. They still have to earn their 7 oz: test them during the first section, then decide at the first town whether foot recovery, stream crossings, and camp comfort are worth the weight for your actual feet.
+
 #### Bear Hang System
 | Item | Weight |
 |------|--------|
@@ -1016,6 +1018,10 @@ Repackage into 3-5 day amounts: toothpaste, soap, sunscreen, wet wipes, meds.
 | Camp/Static (Any Temp) | Mountain Hardwear puffy ON immediately, OR rain jacket over puffy if windy, never rely on Alpha Freak for static warmth |
 | Sleep (Every Night) | Smartwool 250 sleep top and sleep pants, sleep socks, puffy inside quilt if temps drop |
 
+### Rain Pants Decision Rule
+
+For a February or March southern start, rain pants stay in the system until the rain system has been proven in comparable cold rain and wind. Do not make the keep/drop call from weight alone. Weigh the current forecast, wind, personal cold tolerance, how fast you chill when wet, whether the dry sleep layer is protected, and what the next safe town or bailout looks like. If the answer is uncertain, keep them until a shakedown or first section proves they are unnecessary.
+
 ## 72-Hour Cold/Wet Survival Protocol
 
 ### Morning
@@ -1057,6 +1063,50 @@ Repackage into 3-5 day amounts: toothpaste, soap, sunscreen, wet wipes, meds.
 - Shelters are a safety tool, not a comfort choice
 - Poor sleep and mouse exposure are accepted costs only when risk outweighs discomfort
 - Decisions are made using objective triggers, not mood or convenience
+
+## Scout Shelter Decision Rules
+
+Before committing to any shelter, campsite, hut, or tent site, check:
+
+- Daylight remaining
+- Water before and after the stop
+- Current shelter status, crowding, and water reliability
+- Legal camping rules and land-manager restrictions
+- Weather exposure, fatigue, and backup options
+
+If fatigue is driving the decision, choose the safer legal stop rather than extra miles for pride.
+
+If the shelter is full:
+
+- Stay courteous and do not make crowding worse
+- Use legal established overflow tenting only if allowed
+- Choose a backup before dark
+- Avoid unsafe or illegal camping
+
+If you are exhausted, do not use exhaustion as permission to stealth camp in regulated or prohibited areas. Choose a safer legal shelter, campsite, town stop, or established legal site and stop earlier.
+
+For storm camps:
+
+- Set up early in a protected legal spot
+- Avoid exposed ridges, dead trees or widow makers, drainages, creek bottoms, and flood-prone ground
+- Keep dry sleep layers protected
+- Stop or bail out if lightning, flooding, hypothermia risk, or worsening conditions appear
+
+For low-impact camping:
+
+- Use established or durable surfaces
+- Stay roughly 200 feet from water and trail when local rules allow
+- Keep hygiene water and toothpaste away from camp and water
+- Follow posted land-manager rules over general advice
+
+For climbs near camp time:
+
+- Stop before the climb if daylight, legs, water, weather, or legal camp options are weak
+- Climb only when you have enough daylight, water, energy, and a known legal stop after it
+
+For after-dark shelter arrivals, do not think in terms of choosing a backup before dark. It is already dark. Slow down, use the headlamp, avoid risky night navigation when tired, take the nearest safe legal option rather than adding extra night miles, and keep a fallback plan if the shelter is full.
+
+For shelters with no reliable water, top off before the shelter, carry enough to the next verified source, or stop where both legal sleep and water are workable.
 
 ---
 
@@ -1267,6 +1317,16 @@ Drop 1 chlorine dioxide tablet into bottle. Cap and gently shake.
 ### Step 5 — Drink
 Water is now safe from bacteria, viruses, and protozoa.
 
+## Slow Filter Workflow
+
+If the filter slows down on trail:
+- Check for sediment or debris before assuming the source is the problem
+- Backflush or clean the filter if that model supports it
+- Shake out excess water after filtering
+- Protect hollow-fiber filters from freezing; if a filter may have frozen, treat it as possibly compromised
+- Use chlorine dioxide tablets or another backup treatment if flow stays bad, the filter may be damaged, or you cannot verify it
+- Do not push past a usable source just because the filter is annoying; compare the next confirmed water, daylight, heat, and current carry first
+
 ## Freeze Protection Rules
 
 ### Night Rule (Non-Negotiable)
@@ -1313,6 +1373,13 @@ For all listed reliable sources:
 - Filter + drops (your system) provides maximum margin
 
 **Treatment is assumed every time.**
+
+When daylight is low or you are tired, do not shortcut this rule.
+
+- Filter questionable water, and backflush or clean the filter if flow is poor
+- Use backup tablets or boil if the filter is slow, frozen, damaged, or suspect
+- Do not drink untreated questionable water to save time
+- Choose a safe legal stop before dark if treatment or verification will delay the push
 
 ### When to Pause Even at a Listed Source
 
@@ -1536,6 +1603,17 @@ If forced:
 
 *Carrying extra temporarily is smart, not failure.*
 
+## Heat Water Safety
+
+In hot or humid weather, water decisions are also heat-illness decisions.
+
+- Start early when possible
+- Use shade breaks before you feel desperate
+- Sip treated water steadily; add electrolytes if you have them
+- Top off before exposed or uncertain stretches
+- Stop hiking, get shade, and cool down if dizziness, confusion, headache, nausea, cramps, chills, stopped sweating, or worsening symptoms show up
+- Escalate through your emergency plan if symptoms do not improve
+
 ## Section-Specific Water Reliability
 
 ### Standing Bear Farm to Hot Springs, NC
@@ -1634,6 +1712,12 @@ If forced:
 - Springs = verify
 - Seeps = ignore
 - Never skip water before a ridge
+- Camel up at the last confirmed source before a ridge
+- Carry extra when the next water is seasonal, unverified, exposed, hot, or after a hard climb
+- Use the lighter carry only when the next reliable water is confirmed and conditions are mild
+- For a dry stretch, start from roughly 0.5-1 liter per 3-5 miles, then increase for heat, exposure, climbing, slow pace, or personal thirst
+- Top off at the last confirmed source before any uncertain dry stretch
+- Carry enough to reach the next reliable source when the next source is seasonal or unverified
 - Carry extra when shelter water is spring-fed
 - Ask: "What's my next guaranteed creek?"
 
@@ -3288,6 +3372,10 @@ A consistent morning routine prevents forgotten gear, reduces decision fatigue, 
 - Trail mix
 - Jerky
 - Pop-Tarts (half at a time)
+
+### Food On The Move
+
+Each morning, split the day's food before leaving camp. Put the next 3-4 hours of snacks and lunch where they can be reached without unpacking: hip belt pockets, shoulder pouch, top pocket, or the outside mesh. Keep cook/camp meals, extra days of food, and trash packed separately so hiking food does not get buried. The goal is steady calories while moving, not saving everything for camp. If food is hard to reach, you will under-eat, get cold or foggy, and make worse mileage, water, and shelter decisions.
 
 **Rule:** Calories = warmth = energy = miles. Never "save food for later."
 

@@ -260,6 +260,9 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /never write "if you don't hear from you\."/);
 	assert.match(systemContext, /For zero, nero, or town-rest questions/);
 	assert.match(systemContext, /cached\/current weather, town chores, budget, and the next section/);
+	assert.match(systemContext, /For hostel-full or lodging-full town questions/);
+	assert.match(systemContext, /same-day bed space, shuttle\/pickup/);
+	assert.match(systemContext, /Do not invent availability or unsafe\/illegal sleeping spots/);
 	assert.match(systemContext, /For resupply or mail-drop questions/);
 	assert.match(systemContext, /diet restrictions, expected pace, next town timing/);
 	assert.match(systemContext, /For first-aid kit or blister questions/);
@@ -444,6 +447,39 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 		),
 		'Weigh body condition, weather, chores, budget, and the next section. Rest is an investment, not failure.\n\nWeather note: Cached weather near mile 101.1: partly cloudy with changing mountain conditions (high 67F / low 51F, wind 9 mph). Mountain weather changes quickly; refresh before safety-critical choices.'
 	);
+
+	const hostelFullAnswer = polishOnDeviceAnswer(
+		'If the hostel is full when you reach the town, weigh your body condition and injury against the current weather and next trail section. Rest is an investment, not failure.\n\nLook at options available at the town, like the visitor center or developed campground, to see if there is any legal overnight option. If those are full, consider a short day or an early legal stop based on the current forecast and your fatigue level.',
+		'What if the hostel is full when I reach town?',
+		[
+			{
+				toolId: 'next_town',
+				args: { fromMile: 287.5 },
+				summary: 'Pilot Gap Road at mile 292.3 (4.8 mi ahead via road crossing; emergency exit candidate, confirm shuttle or pickup). No guaranteed services at the crossing.',
+				confidence: 'medium',
+				receipts: []
+			},
+			{
+				toolId: 'park_services',
+				args: { park: 'Appalachian Trail' },
+				summary: 'NPS facilities for Appalachian National Scenic Trail (info/permits/resupply + legal overnight options, NOT thru-hiker shelters - confirm hours & reservations): Visitor center - Eval Visitor Contact Station (Appalachian Trail): Information, current conditions, and permit/ranger questions; verify hours before relying on it. Campground - Eval Developed Campground (Appalachian Trail): Legal developed camping example for backup planning; reservations and seasonal status must be confirmed.',
+				confidence: 'medium',
+				receipts: []
+			}
+		]
+	);
+	assert.match(hostelFullAnswer, /One more boundary/);
+	assert.match(hostelFullAnswer, /Call or message ahead/);
+	assert.match(hostelFullAnswer, /same-day bed space/);
+	assert.match(hostelFullAnswer, /shuttle or pickup/);
+	assert.match(hostelFullAnswer, /visitor-center hours/);
+	assert.match(hostelFullAnswer, /campground reservations or seasonal status/);
+	assert.match(hostelFullAnswer, /Do not invent availability or sleep in unsafe or illegal spots/);
+	assert.match(hostelFullAnswer, /Pilot Gap Road at mile 292\.3/);
+	assert.match(hostelFullAnswer, /no guaranteed services at the crossing/);
+	assert.match(hostelFullAnswer, /visitor-center candidate/);
+	assert.doesNotMatch(hostelFullAnswer, /Loaded context/);
+	assert.doesNotMatch(hostelFullAnswer, /https:\/\//);
 
 	assert.equal(
 		polishOnDeviceAnswer(
