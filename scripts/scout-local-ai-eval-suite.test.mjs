@@ -1627,6 +1627,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
 	const iosProofDir = join(outputDir, 'proof');
 	await mkdir(runsDir, { recursive: true });
+	await mkdir(deviceRunsDir, { recursive: true });
 	await mkdir(inboxDir, { recursive: true });
 	await mkdir(iosProofDir, { recursive: true });
 	const currentRepoSha = (await execFileAsync('git', ['rev-parse', 'HEAD'], {
@@ -1655,6 +1656,13 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	routingRun.runContext = null;
 	for (const result of routingRun.results) result.answerOrigin = 'scaffold-not-model';
 	await writeFile(join(runsDir, 'routing-handoff-proof.json'), `${JSON.stringify(routingRun, null, 2)}\n`);
+	const simulatorRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'simulator-handoff-clean-preflight',
+		completeTools: true,
+		runContext: simulatorDeviceRunContext()
+	});
+	for (const result of simulatorRun.results) result.answer = cleanPreflightAnswer();
+	await writeFile(join(deviceRunsDir, 'simulator-handoff-clean-preflight.json'), `${JSON.stringify(simulatorRun, null, 2)}\n`);
 	const inboxRun = deviceRunForCases(suite, suite.cases, {
 		runId: 'device-handoff-inbox-latest',
 		completeTools: true,
@@ -1807,8 +1815,15 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Use now: Dad can run the suite on the currently approved Dad Pilot build `1\.0 \(13\)`/u);
 	assert.match(result.stdout, /Latest-code target: `1\.0 \(27\)` is the Xcode target\/local candidate/u);
 	assert.match(result.stdout, /targetReadyForDad/u);
+	assert.match(result.stdout, /## Main local test method/u);
+	assert.match(result.stdout, /Main local iteration lane: iPhone Simulator Gemma on the Mac mini/u);
+	assert.match(result.stdout, /eval:scout-local-ai:ios-sim-gemma -- --limit 100/u);
+	assert.match(result.stdout, /Current simulator preflight: clean/u);
+	assert.match(result.stdout, /Latest simulator Run 100: `simulator-handoff-clean-preflight` \(100\/100 cases, tools complete 100\/100, sources complete 100\/100, answer scan clean with 0 flagged\)/u);
+	assert.match(result.stdout, /Final-proof mismatch by design: simulator-handoff-clean-preflight \(install=debug, expected testflight\)/u);
+	assert.match(result.stdout, /does not replace final TestFlight\/iPhone proof/u);
 	assert.match(result.stdout, /Dad can run the suite-compatible TestFlight build already in Dad Pilot/u);
-	assert.match(result.stdout, /Imported full device runs: 0/u);
+	assert.match(result.stdout, /Imported full device runs: 1/u);
 	assert.match(result.stdout, /Imported partial device runs: 0/u);
 	assert.match(result.stdout, /Inbox candidate exports: 1/u);
 	assert.match(result.stdout, /Latest inbox export: .*device-handoff-inbox-latest, 100 cases/u);
@@ -1947,6 +1962,8 @@ test('Dad handoff command can print a concise Run 100 message for Dad', async ()
 
 	assert.match(result.stdout, /Dad, can you help me run the Hoggcountry local AI test/u);
 	assert.match(result.stdout, /Hoggcountry TestFlight build 1\.0 \(15\) can run this suite now/u);
+	assert.match(result.stdout, /iPhone Simulator local-AI run as the main preflight/u);
+	assert.match(result.stdout, /phone run is the final TestFlight proof/u);
 	assert.match(result.stdout, /https:\/\/testflight\.apple\.com\/join\/BagBCrzf/u);
 	assert.match(result.stdout, /Open TestFlight and update Hoggcountry/u);
 	assert.match(result.stdout, /Settings > Scout Eval Lab/u);

@@ -311,6 +311,13 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		''
 	);
 
+	lines.push(
+		'## Main local test method',
+		'',
+		...localPreflightHandoffLines(status),
+		''
+	);
+
 	if (!status.testflight?.targetBuildAvailableForDad) {
 		lines.push(
 			'> Important: the recorded Dad Pilot build is not ready for this suite. Do not treat the final Eval Lab run as valid until App Store Connect shows Dad Pilot on the target build, or a current full TestFlight/iPhone export proves the target build was installed.',
@@ -479,6 +486,38 @@ function nativeSourceBoundary(status) {
 	return 'latest native upload source is unknown';
 }
 
+function localPreflightHandoffLines(status) {
+	const preflight = status.localPreflight;
+	if (!preflight) {
+		return [
+			'- Main local iteration lane: iPhone Simulator Gemma on the Mac mini.',
+			'- Current simulator preflight: unavailable; run `npm run status:scout-local-ai` and fix the missing local-preflight summary before asking Dad for final proof.',
+			'- Boundary: simulator/debug local preflight drives iteration but does not replace final TestFlight/iPhone proof.'
+		];
+	}
+	const latest = preflight.latestFullRun;
+	const lines = [
+		`- Main local iteration lane: iPhone Simulator Gemma on the Mac mini (\`${preflight.command}\`).`,
+		`- Current simulator preflight: ${preflight.ok ? 'clean' : 'needs work'}.`,
+		`- Simulator preflight evidence: ${preflight.evidence}.`,
+		`- Simulator full runs: ${preflight.fullRunCount ?? 0}; partial runs: ${preflight.partialRunCount ?? 0}.`,
+		`- Boundary: ${preflight.boundary}`
+	];
+	if (latest) {
+		const answerQuality = latest.answerQuality;
+		lines.push(
+			`- Latest simulator Run 100: \`${latest.runId}\` (${latest.caseCount}/${latest.totalSuiteCases} cases, tools complete ${latest.toolExpectationComplete}/${latest.caseCount}, sources complete ${latest.sourceEvidenceComplete}/${latest.caseCount}, answer scan ${answerQuality?.status ?? 'unknown'} with ${answerQuality?.flaggedCount ?? 0} flagged).`
+		);
+	}
+	if (preflight.latestProofMismatch) {
+		lines.push(`- Final-proof mismatch by design: ${preflight.latestProofMismatch}.`);
+	}
+	if (!preflight.ok) {
+		lines.push('- Use this simulator lane before spending Dad TestFlight time, then rerun the handoff.');
+	}
+	return lines;
+}
+
 function createDadMessageText({ status, releaseEvidence }) {
 	const dadTestFlightEvidence = releaseEvidenceItem(releaseEvidence, 'dad-testflight-invite');
 	const publicLink = dadTestFlightEvidence?.publicLink ?? status.testflight?.publicLink ?? 'https://testflight.apple.com/join/BagBCrzf';
@@ -494,10 +533,14 @@ function createDadMessageText({ status, releaseEvidence }) {
 		: status.testflight?.recordedDadPilotMeetsSuiteRequirement
 			? `Hoggcountry TestFlight build ${buildLabel} can run this suite now; Chris may still refresh you to the latest build later.`
 			: `Hold off on the final Run 100 until Chris says TestFlight has a build matching ${suiteRequiredBuild}.`;
+	const preflightLine = status.localPreflight?.ok
+		? 'The iPhone Simulator local-AI preflight is already clean; this phone run is the final TestFlight proof.'
+		: 'Chris is using the iPhone Simulator local-AI run as the main preflight; this phone run is the final TestFlight proof.';
 	const lines = [
 		'Dad, can you help me run the Hoggcountry local AI test?',
 		'',
 		readyLine,
+		preflightLine,
 		`TestFlight link: ${publicLink}`,
 		'',
 		'1. Open TestFlight and update Hoggcountry. If it only says Open, that is fine.',
