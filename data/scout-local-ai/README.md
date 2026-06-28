@@ -24,6 +24,8 @@ UX.
 The loop:
 
 1. Keep the 100-question suite in `dad-local-ai-100.json`.
+   Every case carries `documentTask`, which makes the reading/writing boundary
+   explicit: `reading`, `writing`, `reading-writing`, or `none`.
 2. Run the suite:
 
    ```sh

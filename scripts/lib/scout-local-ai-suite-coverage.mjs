@@ -63,13 +63,16 @@ export const SCOUT_LOCAL_AI_OBJECTIVE_COVERAGE_AREAS = [
 		id: 'document-vault-user-docs',
 		label: 'Document-vault and user-document grounding',
 		minCases: 2,
-		matches: (testCase) => hasRequiredTool(testCase, 'source_search:document vault') && hasRequiredTool(testCase, 'open_source_doc:document vault')
+		matches: (testCase) => isDocumentReadingCase(testCase) &&
+			hasRequiredTool(testCase, 'source_search:document vault') &&
+			hasRequiredTool(testCase, 'open_source_doc:document vault')
 	},
 	{
 		id: 'document-writing-user-docs',
 		label: 'Document drafting and user-owned document updates',
 		minCases: 2,
-		matches: (testCase) => hasRequiredTool(testCase, 'source_search:document vault') &&
+		matches: (testCase) => isDocumentWritingCase(testCase) &&
+			hasRequiredTool(testCase, 'source_search:document vault') &&
 			hasRequiredTool(testCase, 'open_source_doc:document vault') &&
 			(hasImprovementTag(testCase, 'document-writing') || /\b(draft|write|update|save|create|revise)\b/iu.test(caseBodyText(testCase))) &&
 			/\b(reviewable|confirmation|overwrite|document vault|user-owned|private values|open questions)\b/iu.test(caseBodyText(testCase))
@@ -126,9 +129,18 @@ function hasRequiredTool(testCase, toolId) {
 	return (testCase?.requiredTools ?? []).includes(toolId);
 }
 
+function isDocumentReadingCase(testCase) {
+	return testCase?.documentTask === 'reading' || testCase?.documentTask === 'reading-writing';
+}
+
+function isDocumentWritingCase(testCase) {
+	return testCase?.documentTask === 'writing' || testCase?.documentTask === 'reading-writing';
+}
+
 function caseBodyText(testCase) {
 	return [
 		testCase?.phase,
+		testCase?.documentTask,
 		testCase?.prompt,
 		...(testCase?.requiredTools ?? []),
 		...(testCase?.expectedTraits ?? []),

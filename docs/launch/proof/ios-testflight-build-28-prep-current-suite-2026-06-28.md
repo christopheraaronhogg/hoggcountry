@@ -1,19 +1,19 @@
 # iOS TestFlight build 28 current-suite prep
 
-Checked at: 2026-06-28T21:56:52Z
+Checked at: 2026-06-28T23:13:46Z
 
 ## Local Candidate
 
-- Repo SHA: `497290f2610a8e0bb6bc1710d233960a42ba608a`
+- Repo SHA at status check: `dd6038121e427cdf2c38022a06e4055d6fe01c02`
 - Local iOS target: `1.0 (28)`
-- Current eval suite: `2026-06-28.3` / `fnv1a32:9ceae11d`
+- Current eval suite: `2026-06-28.4` / `fnv1a32:5eba0f98`
 - Dad Pilot currently verified on: `1.0 (27)`
 - Public TestFlight link: https://testflight.apple.com/join/BagBCrzf
 
 ## Current Proof
 
 - Current simulator Gemma preflight passed:
-  `docs/launch/proof/scout-local-ai-sim-preflight-2026-06-28T21-33-17Z.md`.
+  `docs/launch/proof/scout-local-ai-sim-preflight-2026-06-28T22-57-05Z.md`.
 - Current TestFlight diagnose-only signing check passed:
   `docs/launch/proof/ios-testflight-attempt-2026-06-28T21-56-50-936Z.md`.
 - App Store Connect read-only refresh confirms build `1.0 (28)` is not uploaded

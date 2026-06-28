@@ -78,6 +78,9 @@ export function inspectDeviceRun({ run, suite, inputPath }) {
 			if (result.case?.prompt !== expectedCase.prompt) {
 				structuralErrors.push(`${result.caseId}: prompt does not match canonical suite`);
 			}
+			if (result.case?.documentTask !== expectedCase.documentTask) {
+				structuralErrors.push(`${result.caseId}: documentTask does not match canonical suite`);
+			}
 			if (!sameStringArray(result.case?.requiredTools, expectedCase.requiredTools)) {
 				structuralErrors.push(`${result.caseId}: requiredTools do not match canonical suite`);
 			}

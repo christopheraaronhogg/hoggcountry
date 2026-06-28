@@ -135,6 +135,9 @@ function validateDeviceRun(run, suite, options) {
 			continue;
 		}
 		if (result.case?.prompt !== expectedCase.prompt) errors.push(`${result.caseId}: prompt does not match canonical suite`);
+		if (result.case?.documentTask !== expectedCase.documentTask) {
+			errors.push(`${result.caseId}: documentTask does not match canonical suite`);
+		}
 		if (!sameStringArray(result.case?.requiredTools, expectedCase.requiredTools)) {
 			errors.push(`${result.caseId}: requiredTools do not match canonical suite`);
 		}

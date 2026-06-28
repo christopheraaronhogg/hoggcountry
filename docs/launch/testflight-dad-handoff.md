@@ -21,10 +21,12 @@ use that phone to produce the final Scout local-AI `Run 100` export.
 - The local Xcode target is build `28`, which is the next upload target.
 - Current-suite local build `28` prep proof:
   `docs/launch/proof/ios-testflight-build-28-prep-current-suite-2026-06-28.md`.
+- Current simulator/Gemma preflight proof:
+  `docs/launch/proof/scout-local-ai-sim-preflight-2026-06-28T22-57-05Z.md`.
 - Read-only App Store Connect refresh confirms build `28` is not uploaded yet:
   `docs/launch/proof/ios-testflight-build-28-missing-2026-06-28.md`.
 - Dad should not run the current `Run 100` yet. The current suite is
-  `2026-06-28.3`, so build `28` needs to be uploaded, attached to Dad Pilot,
+  `2026-06-28.4`, so build `28` needs to be uploaded, attached to Dad Pilot,
   and verified through TestFlight first.
 - The remaining goal is not TestFlight availability. It is a real
   TestFlight/iPhone `Run 100` export, import, human review, and all 100 answers

@@ -32,6 +32,7 @@ export interface ScoutLocalAiEvalCase {
 	requiredTools: string[];
 	expectedTraits: string[];
 	safetyCaveats: string[];
+	documentTask: 'none' | 'reading' | 'writing' | 'reading-writing';
 	improvementTags: string[];
 }
 
@@ -671,6 +672,7 @@ function compactCase(testCase: ScoutLocalAiEvalCase): ScoutLocalAiEvalCase {
 		requiredTools: testCase.requiredTools,
 		expectedTraits: testCase.expectedTraits,
 		safetyCaveats: testCase.safetyCaveats,
+		documentTask: testCase.documentTask,
 		improvementTags: testCase.improvementTags
 	};
 }
@@ -732,6 +734,7 @@ function canReusePriorResult(
 	if (result.answerOrigin !== evidenceLane) return false;
 	if (!result.answer || result.error) return false;
 	if (result.case?.prompt !== testCase.prompt) return false;
+	if (result.case?.documentTask !== testCase.documentTask) return false;
 	if (!sameStringArray(result.case?.requiredTools, testCase.requiredTools)) return false;
 	return true;
 }

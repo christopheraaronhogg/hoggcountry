@@ -116,6 +116,7 @@ export function verifyScoutLocalAiDeviceProof({ suite, run, review }) {
 		}
 		if (!reviewCase) errors.push(`${testCase.id}: missing from review cases.`);
 		if (runResult.case?.prompt !== testCase.prompt) errors.push(`${testCase.id}: run prompt does not match canonical suite.`);
+		if (runResult.case?.documentTask !== testCase.documentTask) errors.push(`${testCase.id}: run documentTask does not match canonical suite.`);
 		if (!sameStringArray(runResult.case?.requiredTools, testCase.requiredTools)) {
 			errors.push(`${testCase.id}: run requiredTools do not match canonical suite.`);
 		}

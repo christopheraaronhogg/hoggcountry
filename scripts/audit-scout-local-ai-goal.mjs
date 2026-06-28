@@ -138,11 +138,11 @@ function createRequirementAudit(input) {
 		}),
 		requirement({
 			id: 'per-case-rubrics-and-tools',
-			label: 'Each question has expected answer traits, required source/tool expectations, and safety caveats',
+			label: 'Each question has expected answer traits, required source/tool expectations, safety caveats, and reading/writing classification',
 			ok: caseRubricProblems.length === 0,
 			evidence: caseRubricProblems.length
 				? caseRubricProblems.slice(0, 8).join('; ')
-				: `All ${input.suite.cases?.length ?? 0} cases include non-empty expectedTraits, requiredTools, and safetyCaveats.`
+				: `All ${input.suite.cases?.length ?? 0} cases include non-empty expectedTraits, requiredTools, safetyCaveats, and documentTask.`
 		}),
 		requirement({
 			id: 'document-grounded-system-goal',
@@ -304,11 +304,15 @@ function requirement(input) {
 function caseRubricAudit(suite) {
 	const problems = [];
 	if (!Array.isArray(suite.cases)) return ['suite.cases must be an array'];
+	const validDocumentTasks = new Set(['none', 'reading', 'writing', 'reading-writing']);
 	for (const testCase of suite.cases) {
 		for (const key of ['expectedTraits', 'requiredTools', 'safetyCaveats']) {
 			if (!Array.isArray(testCase[key]) || testCase[key].length === 0) {
 				problems.push(`${testCase.id ?? '<missing-id>'}: ${key} must be a non-empty array`);
 			}
+		}
+		if (!validDocumentTasks.has(testCase.documentTask)) {
+			problems.push(`${testCase.id ?? '<missing-id>'}: documentTask must be one of ${[...validDocumentTasks].join(', ')}`);
 		}
 	}
 	return problems;

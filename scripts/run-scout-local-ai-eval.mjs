@@ -228,6 +228,7 @@ function compactCase(testCase) {
 		requiredTools: testCase.requiredTools,
 		expectedTraits: testCase.expectedTraits,
 		safetyCaveats: testCase.safetyCaveats,
+		documentTask: testCase.documentTask,
 		improvementTags: testCase.improvementTags
 	};
 }
