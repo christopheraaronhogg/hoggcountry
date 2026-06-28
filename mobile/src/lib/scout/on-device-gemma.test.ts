@@ -203,6 +203,9 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /For water questions, use the next_water tool finding as the answer's spine/);
 	assert.match(systemContext, /visually confirm current flow/);
 	assert.match(systemContext, /filter or treat collected water/);
+	assert.match(systemContext, /For "skip this spring and make the next reliable water" questions/);
+	assert.match(systemContext, /current treated water carry, heat, exposure, climbing or effort, pace, daylight, and risk tolerance/);
+	assert.match(systemContext, /Do not guarantee the seasonal source is flowing/);
 	assert.match(systemContext, /For heat-wave water questions/);
 	assert.match(systemContext, /move hard miles into the cooler part of the day/);
 	assert.match(systemContext, /dizziness, confusion, headache, nausea, cramps, chills, stopped sweating/);
@@ -536,6 +539,35 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 		polishOnDeviceAnswer('The next water is at mile 138.3. The reliable creek is at mile 142.7.', 'Should I camel up?'),
 		'The next water is at mile 138.3. The reliable creek is at mile 142.7.\n\nRidge-water decision note: camel up at the last confirmed source and carry extra over the ridge when the next source is seasonal, unverified, exposed, hot, or after a hard climb; only carry the lighter plan when the next reliable water is confirmed and conditions are mild.'
 	);
+
+	const skipSeasonalWaterAnswer = polishOnDeviceAnswer(
+		"You can't skip the next reliable water source. The next reliable water is a creek crossing at mile 49.3, which is 6.2 miles ahead. You should plan to reach that source.\n\nThe seasonal seep ahead at mile 44.9 is unconfirmed and seasonal, so it is not a reliable source to rely on. You should plan to carry enough water to make it to the creek crossing.\n\nYou should plan to carry water based on the dry-stretch guidance: roughly 0.5 to 1 liter per 3 to 5 miles as a starting point, increasing that amount for heat, exposure, climbing, slow pace, or personal thirst. Top off your water at the last confirmed source before you reach the creek crossing.",
+		'Can I skip this next spring and make the next reliable water source?',
+		[
+			{
+				toolId: 'next_water',
+				args: { fromMile: 43.1 },
+				summary: 'Next reliable water loaded: Reliable creek crossing at mile 49.3 (6.2 mi ahead, reliable). Treat/filter before drinking. Closer unconfirmed water before that: Seasonal seep ahead at mile 44.9 (1.8 mi ahead, seasonal). Seasonal open-reference candidate; confirm current flow.',
+				confidence: 'medium',
+				receipts: []
+			}
+		]
+	);
+	assert.doesNotMatch(skipSeasonalWaterAnswer, /You can't skip the next reliable water source/);
+	assert.match(skipSeasonalWaterAnswer, /Do not count the seasonal spring as reliable/);
+	assert.match(skipSeasonalWaterAnswer, /current treated carry/);
+	assert.match(skipSeasonalWaterAnswer, /heat, exposure, climbing, slow pace, daylight, and your risk tolerance/);
+	assert.match(skipSeasonalWaterAnswer, /visually confirm it is flowing/);
+	assert.match(skipSeasonalWaterAnswer, /filter or treat at the spring/);
+	assert.match(skipSeasonalWaterAnswer, /do not assume seasonal water is flowing/);
+
+	const directSkipSeasonalWaterAnswer = polishOnDeviceAnswer(
+		'You can skip the seasonal seep at mile 44.9 and make the reliable creek crossing at mile 49.3 your next water source. The creek crossing is the next reliable water, which is what you should plan for.',
+		'Can I skip this next spring and make the next reliable water source?'
+	);
+	assert.doesNotMatch(directSkipSeasonalWaterAnswer, /You can skip the seasonal seep/);
+	assert.match(directSkipSeasonalWaterAnswer, /Use the reliable creek crossing at mile 49\.3 as the planning target/);
+	assert.match(directSkipSeasonalWaterAnswer, /skip the seasonal seep at mile 44\.9 only if your current treated carry and conditions give you enough margin/);
 
 	assert.equal(
 		polishOnDeviceAnswer(
