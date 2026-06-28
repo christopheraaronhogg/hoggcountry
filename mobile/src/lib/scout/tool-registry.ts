@@ -43,7 +43,7 @@ const TOOL_TRIGGERS: ToolTrigger[] = [
 	{ keywords: ['town', 'resupply', 'hostel', 'shuttle', 'outfitter', 'laundry', 'groceries', 'mail drop', 'road crossing', 'bailout', 'exit', 'nero', 'zero', 'food', 'lodging', 'unsafe', 'overdue', 'ankle', 'budget'], toolId: 'next_town' },
 	{ keywords: ['weather', 'wind', 'cold', 'rain', 'storm', 'thunderstorm', 'thunderstorms', 'forecast', 'heat', 'hot', 'thunder', 'lightning', 'hypothermia', 'freez', 'dizzy', 'ridge', 'push past', 'stop there', 'dry gear', 'bad weather', 'tomorrow', 'dry stretch', 'smoke', 'fire', 'zero', 'nero', 'stop hiking'], toolId: 'weather_lookup' },
 	{
-		keywords: ['closure', 'closed', 'detour', 'reroute', 'fire', 'smoke', 'burn ban', 'washout', 'bridge out', 'blowdown', 'high water', 'alert', 'bear activity', 'bear reports'],
+		keywords: ['closure', 'closed', 'detour', 'reroute', 'fire', 'smoke', 'burn ban', 'washout', 'bridge out', 'blowdown', 'high water', 'alert', 'bear activity', 'bear reports', 'bear near', 'bear in camp', 'bear at camp'],
 		toolId: 'trail_conditions'
 	},
 	{
@@ -117,7 +117,7 @@ const SOURCE_SKILL_TRIGGERS: SourceSkillTrigger[] = [
 	},
 	{
 		id: 'trail conditions',
-		keywords: ['closure', 'closed', 'detour', 'reroute', 'fire', 'smoke', 'burn ban', 'washout', 'bridge out', 'blowdown', 'high water', 'alert', 'bear activity', 'bear reports'],
+		keywords: ['closure', 'closed', 'detour', 'reroute', 'fire', 'smoke', 'burn ban', 'washout', 'bridge out', 'blowdown', 'high water', 'alert', 'bear activity', 'bear reports', 'bear near', 'bear in camp', 'bear at camp'],
 		queryHints: ['trail conditions', 'closures', 'detours', 'hazards', 'official source', 'verify live']
 	},
 	{

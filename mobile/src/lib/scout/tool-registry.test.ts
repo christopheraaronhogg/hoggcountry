@@ -91,6 +91,19 @@ test('runToolsFor routes closure/detour prompts to trail_conditions', async () =
 	assert.ok(records.some((record) => record.toolId === 'trail_conditions'));
 });
 
+test('runToolsFor routes bear near camp prompts to conditions and safety guidance', async () => {
+	const records = await runToolsFor(
+		'How do I handle a bear near camp without making things worse?',
+		DEFAULT_CONTEXT_PACK,
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	assert.ok(records.some((record) => record.toolId === 'trail_conditions'));
+	assert.ok(records.some((record) => record.toolId === 'next_shelter'));
+	assert.ok(records.some((record) => record.toolId === 'source_search' && record.args.sourceSkill === 'safety'));
+});
+
 test('runToolsFor routes keyword prompts to matching built-in tools and source skills', async () => {
 	const records = await runToolsFor(
 		'water water shelter and weather ahead',

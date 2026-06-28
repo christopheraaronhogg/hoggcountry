@@ -109,6 +109,8 @@ const WATERLESS_SHELTER_NOTE =
 	'Waterless-shelter note: do not assume shelter water is flowing; top off before the shelter, carry enough to the next verified source, or stop where both legal sleep and water are workable.';
 const BEAR_ACTIVITY_SHELTER_NOTE =
 	'Bear-activity shelter note: verify current local guidance, alerts, closures, and required food storage before committing. Use proper food storage and odor control such as a bear box, cable, canister, or approved hang as local rules require, keep food and scented items away from sleep, and choose an alternate legal stop if the report cannot be cleared.';
+const BEAR_NEAR_CAMP_NOTE =
+	'Bear-near-camp note: stay calm, create distance, do not run, and give the bear an exit. Secure food, trash, and scented items away from sleep; do not approach, feed, corner, or try to retrieve food from the bear. Verify current local bear guidance, alerts, and food-storage rules when available, and avoid species- or park-specific rules unless they are loaded. Use emergency communication or local authorities/rangers if there is immediate danger.';
 const UNSAFE_PERSON_SHELTER_NOTE =
 	'Unsafe-person shelter note: trust the concern and do not confront, negotiate, or stay to be polite. Create distance, move toward a safer public or known place when you can do so safely, contact a trusted person, hostel or shuttle, ridgerunner, land manager, or authorities, and use emergency communication immediately if there is danger.';
 const THUNDERSTORM_HIKE_NOTE =
@@ -321,6 +323,12 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	}
 	if (isUnsafePersonShelterPrompt(lowerPrompt) && !mentionsUnsafePersonShelterSafety(answer, toolInvocations)) {
 		answer = appendSentence(answer, buildUnsafePersonShelterNote(toolInvocations));
+	}
+	if (isBearNearCampPrompt(lowerPrompt)) {
+		answer = removeBearNearCampDrift(answer);
+	}
+	if (isBearNearCampPrompt(lowerPrompt) && !mentionsBearNearCampSafety(answer)) {
+		answer = appendSentence(answer, buildBearNearCampNote(toolInvocations));
 	}
 	if ((isLightningRidgePrompt(lowerPrompt) || isWetHypothermiaPrompt(lowerPrompt)) && !isHeatWaterPrompt(lowerPrompt)) {
 		answer = removeMisappliedHeatIllnessDrift(answer);
@@ -574,6 +582,21 @@ function removeUnsafePersonShelterDrift(answer: string): string {
 			const sentences = splitSentences(paragraph)
 				.map((sentence) => sentence.trim())
 				.filter((sentence) => sentence && !containsUnsafePersonShelterDrift(sentence));
+			return sentences.join(' ');
+		})
+		.filter(Boolean)
+		.join('\n\n')
+		.trim();
+	return filtered || answer;
+}
+
+function removeBearNearCampDrift(answer: string): string {
+	const filtered = answer
+		.split(/\n{2,}/u)
+		.map((paragraph) => {
+			const sentences = splitSentences(paragraph)
+				.map((sentence) => sentence.trim())
+				.filter((sentence) => sentence && !containsBearNearCampDrift(sentence));
 			return sentences.join(' ');
 		})
 		.filter(Boolean)
@@ -904,8 +927,13 @@ function isWaterlessShelterPrompt(prompt: string): boolean {
 }
 
 function isBearActivityShelterPrompt(prompt: string): boolean {
-	return /\b(?:bear|bear activity|bear report|bear reports|bear warning|bear alert|bear closure)\b/u.test(prompt) &&
+	return /\b(?:bear activity|bear reports?|bear warning|bear alert|bear closure)\b/u.test(prompt) &&
 		/\b(?:shelter|camp|campsite|sleep|overnight|nearby|near)\b/u.test(prompt);
+}
+
+function isBearNearCampPrompt(prompt: string): boolean {
+	return /\bbear\b/u.test(prompt) &&
+		/\b(?:near camp|near my camp|near the camp|in camp|around camp|at camp|campsite|tent|food)\b/u.test(prompt);
 }
 
 function isUnsafePersonShelterPrompt(prompt: string): boolean {
@@ -971,6 +999,10 @@ function containsUnsafePersonShelterDrift(sentence: string): boolean {
 	return /\b(?:speak|talk|go)\b[^.?!\n]*(?:shelter staff|shelter manager|manager|staff)|\b(?:de[-\s]?escalate|resolve the issue|resolve it|clear about your concerns|confront|negotiate)\b/iu.test(sentence);
 }
 
+function containsBearNearCampDrift(sentence: string): boolean {
+	return /\b(?:make yourself look big|waving your arms?|stand your ground|bear spray|keep(?:ing)? your eyes on it|talk to it calmly|curious|aggressive)\b/iu.test(sentence);
+}
+
 function mentionsClosureDetourRoutingBoundary(answer: string, toolInvocations: ToolInvocationRecord[]): boolean {
 	const hasLoadedAlert = Boolean(toolSummary(toolInvocations, 'trail_conditions'));
 	const mentionsLoadedAlert = !hasLoadedAlert ||
@@ -994,6 +1026,12 @@ function buildUnsafePersonShelterNote(toolInvocations: ToolInvocationRecord[]): 
 	const exit = toolSummary(toolInvocations, 'next_town');
 	if (!exit) return UNSAFE_PERSON_SHELTER_NOTE;
 	return `${UNSAFE_PERSON_SHELTER_NOTE} Loaded exit context: ${trimToolClause(exit)}.`;
+}
+
+function buildBearNearCampNote(toolInvocations: ToolInvocationRecord[]): string {
+	const condition = toolSummary(toolInvocations, 'trail_conditions');
+	if (!condition) return BEAR_NEAR_CAMP_NOTE;
+	return `${BEAR_NEAR_CAMP_NOTE} Loaded alert context: ${trimToolClause(condition)}.`;
 }
 
 function buildNearestWaterVerificationNote(toolInvocations: ToolInvocationRecord[]): string {
@@ -1341,6 +1379,19 @@ function mentionsBearActivityShelterPlan(answer: string): boolean {
 	return mentionsCurrentGuidance && mentionsConcreteStorage && mentionsAlternateStop;
 }
 
+function mentionsBearNearCampSafety(answer: string): boolean {
+	const mentionsCalmNoRun = /\b(?:stay calm|keep calm|calm)\b/iu.test(answer) &&
+		/\b(?:do not run|don't run|not run|never run)\b/iu.test(answer);
+	const mentionsDistance = /\b(?:create distance|back away|move away|give the bear an exit|do not approach|don't approach|do not corner|don't corner)\b/iu.test(answer);
+	const mentionsFoodStorage =
+		/\b(?:food|trash|scented|odor)\b/iu.test(answer) &&
+		/\b(?:away from sleep|away from your tent|bear box|bear cable|canister|approved hang|hang|secure)\b/iu.test(answer);
+	const mentionsCurrentGuidance = /\b(?:current local bear guidance|current local guidance|current alerts?|local alerts?|food-storage rules?|verify|confirm)\b/iu.test(answer);
+	const avoidsInventedRules = /\b(?:avoid|do not|don't|unless)\b[^.?!\n]*(?:species|park-specific|loaded)|(?:species|park-specific)[^.?!\n]*(?:unless|loaded|do not invent|don't invent|avoid)/iu.test(answer);
+	const mentionsEmergency = /\b(?:emergency|911|inreach|plb|authorities|rangers?|local authorities|immediate danger)\b/iu.test(answer);
+	return mentionsCalmNoRun && mentionsDistance && mentionsFoodStorage && mentionsCurrentGuidance && avoidsInventedRules && mentionsEmergency;
+}
+
 function mentionsUnsafePersonShelterSafety(answer: string, toolInvocations: ToolInvocationRecord[]): boolean {
 	const mentionsValidation = /\b(?:trust|valid|take it seriously|you do not have to stay|don't have to stay|do not stay|leave)\b/iu.test(answer);
 	const avoidsConfrontation =
@@ -1498,6 +1549,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For shelter and camping decisions, use the next_shelter and upcoming_terrain findings as planning candidates, not guarantees. Name daylight, water, current shelter status/crowding, legal rules, weather, fatigue, and a backup option before committing to a sleep plan.`,
 		`For full-shelter, stealth-camping, storm-campsite, low-impact campsite, climb-stop, or waterless-shelter questions, keep the legal/safety boundary explicit: no illegal camping, choose backups before dark when there is still daylight, use established or durable surfaces, keep roughly 200 feet from water and trail when rules allow, avoid exposed ridges/dead trees/drainages/flood-prone ground in storms, and top off/carry enough water when shelter water is uncertain.`,
 		`For bear-activity shelter questions, verify current local guidance, alerts, closures, and required food storage before committing. Name proper food storage and odor control such as a bear box, cable, canister, or approved hang as local rules require, keep food and scented items away from sleep, and choose an alternate legal stop if the report cannot be cleared.`,
+		`For bear-near-camp questions, stay calm, create distance, do not run, give the bear an exit, secure food/trash/scented items away from sleep, and do not approach, feed, corner, or retrieve food from the bear. Verify current local bear guidance, alerts, and food-storage rules when available; do not invent species- or park-specific rules unless they are loaded. Use emergency communication or local authorities/rangers for immediate danger.`,
 		`For unsafe-person shelter or campsite questions, validate the concern without dramatizing, do not suggest confrontation, negotiation, de-escalation with the person, or staying to be polite. Create distance, move toward a safer public or known place or loaded exit when safe, contact trusted support or authorities, and use emergency communication immediately for danger.`,
 		`For closure or detour routing questions, summarize loaded official alerts when present, say Scout is giving advisory context rather than turn-by-turn detour routing, verify the current managing-agency detour and posted signage, follow official route guidance, and never invent alternate route details.`,
 		`For after-dark shelter arrivals, do not tell the hiker to choose a backup before dark. Say to slow down, use the headlamp, avoid risky tired night navigation, take the nearest safe legal option rather than adding extra night miles, and keep a fallback plan if the shelter is full.`,

@@ -222,6 +222,8 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /For full-shelter, stealth-camping, storm-campsite/);
 	assert.match(systemContext, /For bear-activity shelter questions/);
 	assert.match(systemContext, /proper food storage and odor control/);
+	assert.match(systemContext, /For bear-near-camp questions/);
+	assert.match(systemContext, /do not invent species- or park-specific rules/);
 	assert.match(systemContext, /For unsafe-person shelter or campsite questions/);
 	assert.match(systemContext, /do not suggest confrontation/);
 	assert.match(systemContext, /For closure or detour routing questions/);
@@ -650,6 +652,23 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			'What if there are bear activity reports near the shelter?'
 		),
 		'Check current alerts and any required food storage protocols. If you cannot confirm the current situation, choose the safer legal stop. Remember to use proper food storage and keep all scented items away from your sleeping area.\n\nBear-activity shelter note: verify current local guidance, alerts, closures, and required food storage before committing. Use proper food storage and odor control such as a bear box, cable, canister, or approved hang as local rules require, keep food and scented items away from sleep, and choose an alternate legal stop if the report cannot be cleared.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'If you find a bear near camp, the first thing is to stop and stay calm. Do not run. Make yourself look big by talking loudly and waving your arms. If the bear approaches, back away slowly while keeping your eyes on it. If the bear is curious, you can try to talk to it calmly. If the bear is aggressive, stand your ground and make yourself look as large as possible.\n\nIf you have food, keep it stored properly, away from your tent, and use bear canisters or hanging systems if available. If you are in an area where bears are known to be active, be extra vigilant about food storage and making noise while hiking.\n\nIf you are in a situation where you feel threatened, you can consider using bear spray as a deterrent if you are trained and comfortable doing so. Always prioritize your safety and follow the guidance of local safety protocols.',
+			'How do I handle a bear near camp without making things worse?',
+			[
+				{
+					toolId: 'trail_conditions',
+					args: {},
+					summary: 'Active trail conditions: Eval bear activity caution. Bear activity reports are volatile; confirm current local guidance and use proper food storage.',
+					confidence: 'medium',
+					receipts: []
+				}
+			]
+		),
+		'If you find a bear near camp, the first thing is to stop and stay calm. Do not run.\n\nIf you have food, keep it stored properly, away from your tent, and use bear canisters or hanging systems if available. If you are in an area where bears are known to be active, be extra vigilant about food storage and making noise while hiking.\n\nAlways prioritize your safety and follow the guidance of local safety protocols.\n\nBear-near-camp note: stay calm, create distance, do not run, and give the bear an exit. Secure food, trash, and scented items away from sleep; do not approach, feed, corner, or try to retrieve food from the bear. Verify current local bear guidance, alerts, and food-storage rules when available, and avoid species- or park-specific rules unless they are loaded. Use emergency communication or local authorities/rangers if there is immediate danger. Loaded alert context: Active trail conditions: Eval bear activity caution. Bear activity reports are volatile; confirm current local guidance and use proper food storage.'
 	);
 
 	assert.equal(
