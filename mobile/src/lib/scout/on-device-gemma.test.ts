@@ -233,6 +233,10 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /For severe fatigue or "too tired to keep going" prompts/);
 	assert.match(systemContext, /stop hiking, sit in a safe spot, eat, drink treated water or electrolytes/);
 	assert.match(systemContext, /use loaded water, shelter, town, or bailout context/);
+	assert.match(systemContext, /For prayer plus safe-plan prompts/);
+	assert.match(systemContext, /do not refuse to pray/);
+	assert.match(systemContext, /Prayer alone is not a request for Bible quotes/);
+	assert.match(systemContext, /prayer is support, not a substitute/);
 	assert.match(systemContext, /For after-dark shelter arrivals/);
 	assert.match(systemContext, /do not tell the hiker to choose a backup before dark/);
 	assert.match(systemContext, /roughly 200 feet from water and trail/);
@@ -649,6 +653,29 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.match(severeFatigueAnswer, /water: Next loaded water: Seasonal seep ahead at mile 191\.1/);
 	assert.match(severeFatigueAnswer, /shelter: Near Ridge Shelter at mile 192\.7/);
 	assert.match(severeFatigueAnswer, /inability to make decisions/);
+
+	const prayerSafePlanAnswer = polishOnDeviceAnswer(
+		"I can help you make a safe plan. I can't pray, but I can help you think through the next steps.\n\nThe nearest option is Ridge Shelter ahead. Check weather, shelter status, and water before committing. If you are in danger, use your emergency plan.\n\nThe King James Bible offers verses like Esther 4:8 — \"Also he gave him the copy of the writing of the decree that was given at Shushan to destroy them...\" and Psalms 38:22 — \"Make haste to help me, O Lord my salvation.\"",
+		'Can you pray with me but also help me make a safe plan?',
+		[
+			{
+				toolId: 'next_shelter',
+				args: { fromMile: 246.8 },
+				summary: 'Near Ridge Shelter at mile 250.2 (3.4 mi ahead). Open-data candidate; verify current status, water, and crowding.',
+				confidence: 'medium',
+				receipts: []
+			}
+		]
+	);
+	assert.doesNotMatch(prayerSafePlanAnswer, /\b(?:can't|cannot) pray\b/i);
+	assert.doesNotMatch(prayerSafePlanAnswer, /Esther 4:8|destroy them|The King James Bible offers/i);
+	assert.match(prayerSafePlanAnswer, /Yes\. Here is a short prayer you can pray: Lord, steady me, give me wisdom, and help me choose the safe next step\. Amen\./);
+	assert.match(prayerSafePlanAnswer, /Prayer and safety note: make the plan practical/);
+	assert.match(prayerSafePlanAnswer, /Lord, steady me, give me wisdom, and help me choose the safe next step/);
+	assert.match(prayerSafePlanAnswer, /Ridge Shelter at mile 250\.2/);
+	assert.match(prayerSafePlanAnswer, /verify current status, water, and crowding/);
+	assert.match(prayerSafePlanAnswer, /Prayer is support, not a substitute for help/);
+	assert.match(prayerSafePlanAnswer, /911, inReach\/PLB, rangers\/authorities, or the emergency plan/);
 
 	assert.equal(
 		polishOnDeviceAnswer(

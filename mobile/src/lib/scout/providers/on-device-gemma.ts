@@ -137,6 +137,8 @@ const SCARED_ALONE_NIGHT_NOTE =
 	'Night support note: take the loaded KJV scripture as comfort, then make the next hour concrete. Check immediate hazards, weather, and alerts if possible; get warm and dry, eat or drink if needed, use your headlamp, and choose the nearest safe legal sleep option or known public/help option. Do not let comfort verses override danger; use 911, inReach/PLB, ranger/authorities, or the emergency plan for real danger, injury, exposure, or repeated panic.';
 const SEVERE_FATIGUE_CLEAR_THINKING_NOTE =
 	'Severe-fatigue note: stop hiking now and sit in a safe spot. Eat a snack, drink treated water or electrolytes, adjust layers for warmth or cooling, and check daylight, weather, body symptoms, and whether you can think clearly. Choose the nearest lower-risk legal stop or help option; do not add miles for pride if your thinking is foggy. Use 911, inReach/PLB, rangers/authorities, or the emergency plan for confusion, worsening symptoms, injury, exposure, inability to continue safely, or inability to make decisions.';
+const PRAYER_SAFE_PLAN_NOTE =
+	'Prayer and safety note: yes. Here is a short prayer you can pray: Lord, steady me, give me wisdom, and help me choose the safe next step. Amen. Then make the plan practical: check immediate danger, weather, daylight, body symptoms, and alerts if possible; treat loaded shelter, water, town, or bailout context as candidates; verify status, water, crowding, and legal options; choose the nearest lower-risk option. Prayer is support, not a substitute for help; use 911, inReach/PLB, rangers/authorities, or the emergency plan for real danger, injury, exposure, confusion, or inability to continue safely.';
 
 export class OnDeviceGemmaProvider implements ScoutProvider {
 	private bridge?: OnDeviceGemmaBridge;
@@ -314,6 +316,15 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	}
 	if (isScaredAloneNightPrompt(lowerPrompt) && !mentionsScaredAloneNightPlan(answer, toolInvocations)) {
 		answer = appendSentence(answer, buildScaredAloneNightNote(toolInvocations));
+	}
+	if (isPrayerSafePlanPrompt(lowerPrompt)) {
+		answer = normalizePrayerSafePlanWording(answer);
+	}
+	if (isPrayerSafePlanPrompt(lowerPrompt) && !wantsScriptureQuotePrompt(lowerPrompt)) {
+		answer = removePrayerSafePlanScriptureDrift(answer);
+	}
+	if (isPrayerSafePlanPrompt(lowerPrompt) && !mentionsPrayerSafePlan(answer, toolInvocations)) {
+		answer = appendSentence(answer, buildPrayerSafePlanNote(toolInvocations, !hasPrayerSafePlanSupport(answer)));
 	}
 	if (isPersonalDocumentPrompt(lowerPrompt) && !mentionsPrivateDocumentBoundary(answer)) {
 		answer = appendSentence(
@@ -783,6 +794,15 @@ function isScaredAloneNightPrompt(prompt: string): boolean {
 		/\b(?:tonight|night|dark|alone|by myself)\b/u.test(prompt);
 }
 
+function isPrayerSafePlanPrompt(prompt: string): boolean {
+	return /\b(?:pray|prayer)\b/u.test(prompt) &&
+		/\b(?:safe plan|safety plan|make a plan|safe next step|safe next steps|plan)\b/u.test(prompt);
+}
+
+function wantsScriptureQuotePrompt(prompt: string): boolean {
+	return /\b(?:bible|scripture|verse|verses|psalm|psalms|proverb|proverbs|john|romans|timothy)\b/u.test(prompt);
+}
+
 function isBudgetPrompt(prompt: string): boolean {
 	return /\b(?:budget|overplanning|over-plan|money|cost|spend|spending)\b/u.test(prompt);
 }
@@ -1103,6 +1123,22 @@ function buildScaredAloneNightNote(toolInvocations: ToolInvocationRecord[]): str
 	return `${SCARED_ALONE_NIGHT_NOTE} Loaded shelter context: ${trimToolClause(shelter)}. Treat that as a candidate, not a guarantee; verify status, water, and crowding when possible, and do not add risky night miles if it is not the safer legal option.`;
 }
 
+function buildPrayerSafePlanNote(toolInvocations: ToolInvocationRecord[], includePrayer = true): string {
+	const shelter = toolSummary(toolInvocations, 'next_shelter');
+	const water = toolSummary(toolInvocations, 'next_water');
+	const town = toolSummary(toolInvocations, 'next_town');
+	const context = [
+		shelter ? `shelter: ${trimToolClause(shelter)}` : '',
+		water ? `water: ${trimToolClause(water)}` : '',
+		town ? `town/help: ${trimToolClause(town)}` : ''
+	].filter(Boolean);
+	const note = includePrayer
+		? PRAYER_SAFE_PLAN_NOTE
+		: 'Prayer and safety note: make the plan practical: check immediate danger, weather, daylight, body symptoms, and alerts if possible; treat loaded shelter, water, town, or bailout context as candidates; verify status, water, crowding, and legal options; choose the nearest lower-risk option. Prayer is support, not a substitute for help; use 911, inReach/PLB, rangers/authorities, or the emergency plan for real danger, injury, exposure, confusion, or inability to continue safely.';
+	if (!context.length) return note;
+	return `${note} Loaded context: ${context.join('; ')}. Treat those as candidates, not guarantees, and choose the lower-risk option if anything cannot be verified.`;
+}
+
 function buildSevereFatigueClearThinkingNote(toolInvocations: ToolInvocationRecord[]): string {
 	const water = toolSummary(toolInvocations, 'next_water');
 	const shelter = toolSummary(toolInvocations, 'next_shelter');
@@ -1177,6 +1213,32 @@ function normalizeScaredAloneNightWording(answer: string): string {
 		.replace(/\bscared,\s+or alone\b/giu, 'scared or alone');
 }
 
+function normalizePrayerSafePlanWording(answer: string): string {
+	return answer
+		.replace(
+			/\bYes\.\s*Here is a short prayer you can pray, and then we will make the safety plan concrete\./giu,
+			'Yes. Here is a short prayer you can pray: Lord, steady me, give me wisdom, and help me choose the safe next step. Amen. Then we will make the safety plan concrete.'
+		)
+		.replace(
+			/\bI can help you make a safe plan\.\s*I can't pray, but I can help you think through the next steps\./giu,
+			'Yes. Here is a short prayer you can pray: Lord, steady me, give me wisdom, and help me choose the safe next step. Amen. Then we will make the safety plan concrete.'
+		)
+		.replace(/\bI can't pray, but\b/giu, 'I can keep this prayer short, and')
+		.replace(/\bI cannot pray, but\b/giu, 'I can keep this prayer short, and');
+}
+
+function removePrayerSafePlanScriptureDrift(answer: string): string {
+	return answer
+		.split(/\n{2,}/u)
+		.filter((paragraph) => {
+			if (!/\b(?:King James Bible|Bible offers|verses? like|Esther\s+4:8|Psalms?\s+\d+:\d+|Proverbs?\s+\d+:\d+|John\s+\d+:\d+|Romans\s+\d+:\d+)\b/iu.test(paragraph)) {
+				return true;
+			}
+			return /\b(?:prayer you can pray|short prayer|Amen)\b/iu.test(paragraph);
+		})
+		.join('\n\n');
+}
+
 function mentionsScaredAloneNightPlan(answer: string, toolInvocations: ToolInvocationRecord[]): boolean {
 	const hasLoadedShelter = Boolean(toolSummary(toolInvocations, 'next_shelter'));
 	const mentionsComfortScripture =
@@ -1193,6 +1255,30 @@ function mentionsScaredAloneNightPlan(answer: string, toolInvocations: ToolInvoc
 	const escalatesRealDanger =
 		/\b(?:real danger|immediate danger|injury|exposure|repeated panic|911|inReach|PLB|emergency plan|ranger|authorities)\b/iu.test(answer);
 	return mentionsComfortScripture && checksImmediateHazards && coversBodyBasics && makesOneHourPlan && usesShelterOrSafeSleep && escalatesRealDanger;
+}
+
+function mentionsPrayerSafePlan(answer: string, toolInvocations: ToolInvocationRecord[]): boolean {
+	const hasLoadedShelter = Boolean(toolSummary(toolInvocations, 'next_shelter'));
+	const doesNotRefusePrayer = !/\b(?:can't|cannot) pray\b/iu.test(answer);
+	const includesPrayerSupport = hasPrayerSafePlanSupport(answer);
+	const separatesPrayerFromSafety =
+		/\b(?:prayer is support|not a substitute for help|not a substitute for evacuation|not replace help)\b/iu.test(answer);
+	const usesLoadedShelter =
+		!hasLoadedShelter || /\b(?:loaded shelter|next shelter|Ridge Shelter|shelter|mile\s+250\.2)\b/iu.test(answer);
+	const verifiesCandidates =
+		/\b(?:verify|check)\b[^.?!\n]*(?:status|water|crowding|weather|alerts?|legal|danger)|(?:status|water|crowding|weather|alerts?|legal)[^.?!\n]*(?:verify|check)/iu.test(answer);
+	const choosesLowerRisk =
+		/\b(?:lower[-\s]?risk|safer|nearest|safe legal|do not push|don't push|choose the safer|choose the lower)\b/iu.test(answer);
+	const escalatesDanger =
+		/\b(?:911|inReach|PLB|rangers?|authorities|emergency plan)\b/iu.test(answer) &&
+		/\b(?:real danger|injury|exposure|confusion|cannot continue|can't continue|evacuation|help|inability to continue)\b/iu.test(answer);
+	return doesNotRefusePrayer && includesPrayerSupport && separatesPrayerFromSafety && usesLoadedShelter && verifiesCandidates && choosesLowerRisk && escalatesDanger;
+}
+
+function hasPrayerSafePlanSupport(answer: string): boolean {
+	return /\b(?:prayer|pray)\b/iu.test(answer) &&
+		/\b(?:Lord|God)\b/iu.test(answer) &&
+		/\b(?:Amen|steady me|wisdom|help me choose|safe next step)\b/iu.test(answer);
 }
 
 function mentionsSevereFatigueClearThinkingPlan(answer: string, toolInvocations: ToolInvocationRecord[]): boolean {
@@ -1702,6 +1788,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For offline setup, offline downloads, phone settings, or day-one readiness questions, distinguish phone/app readiness from personal safety readiness. Always include the exact check "verify Bible text is available offline." Also mention field-pack refresh, current mile, local AI model, offline maps/docs, battery, airplane-mode rehearsal, and that Scout does not replace inReach, PLB, 911, or the family emergency plan. For personal documents, include this safety boundary in plain words: do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat.`,
 		`Do not include Bible verses, scripture, prayer, or spiritual encouragement unless the hiker explicitly asks for Bible, scripture, prayer, faith, fear comfort, or spiritual support. Safety, weather, town, water, gear, and navigation answers must stay focused on the field decision first.`,
 		`For Bible or scripture questions, quote only verses returned by bible_search and keep the reference with each quote. For fear, scared, alone, or nighttime comfort prompts, use direct comfort verses when present, such as Psalms 56:3, Isaiah 41:10, 2 Timothy 1:7, Psalms 23:4, Psalms 4:8, or John 14:27. Do not use disturbing, violent, judgment, or famine passages as comfort unless the hiker explicitly asked about that passage. If the hiker sounds scared or alone, pair scripture with immediate safety steps: check weather and hazards, get warm and dry, eat or drink if needed, use the headlamp, make a one-hour plan, and use loaded shelter context as a candidate rather than a guarantee. Escalate through 911, inReach/PLB, ranger/authorities, or the emergency plan if there is real danger, injury, exposure, or repeated panic; do not spiritualize away real danger or symptoms.`,
+		`For prayer plus safe-plan prompts, do not refuse to pray. Give one short plain prayer-like sentence or paragraph if asked, then clearly separate encouragement from verified trail facts. Prayer alone is not a request for Bible quotes; quote only loaded KJV verses if the hiker explicitly asks for scripture or verses. Use loaded shelter, water, town, or bailout context as candidates, verify status/water/crowding/weather/alerts/legal options, choose the lower-risk option, and say prayer is support, not a substitute for evacuation or help. Escalate through 911, inReach/PLB, rangers/authorities, or the emergency plan for real danger, injury, exposure, confusion, or inability to continue safely.`,
 		`For shakedown questions, name what the shakedown must prove: sleep system, rain system, cooking/food rhythm, water filtering, battery drain, pack fit, foot care, and offline app/model flow. Turn failures into specific gear or app fixes. Always say that one shakedown does not prove every condition is covered.`,
 		`For first-week mileage questions, use body condition, daylight, elevation, weather, pack weight, water spacing, foot/knee condition, and legal shelter/campsite/town spacing. Start low, protect feet and knees, and avoid fixed mileage promises.`,
 		`For heavy-rain start questions, include conservative mileage, dry sleep layers, footing caution on slick roots/rocks/descents, current forecast verification, and a bailout or stop plan for lightning, hypothermia risk, flooding, or worsening conditions.`,
