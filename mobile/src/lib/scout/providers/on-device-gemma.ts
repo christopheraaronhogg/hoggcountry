@@ -111,6 +111,8 @@ const DRY_STRETCH_WATER_NOTE =
 	'Dry-stretch water note: for a 10-mile dry stretch, start from roughly 0.5-1 liter per 3-5 miles, increase for heat, exposed climbing, slow pace, or personal thirst, top off at the last confirmed source, and carry enough to reach the next reliable source when the next source is seasonal or unverified.';
 const SKIP_SEASONAL_WATER_NOTE =
 	'Skip-water decision: treat the nearer seasonal or unconfirmed spring as a candidate, not the plan. You can pass it only if your current treated carry comfortably covers the full distance to the next reliable water plus margin for heat, exposure, climbing, slow pace, daylight, and your risk tolerance. If your current carry is low, effort or heat is high, or you are not sure, top off at the last confirmed source or collect and filter or treat at the spring only after you visually confirm it is flowing; do not assume seasonal water is flowing.';
+const WATER_REPORT_CONFLICT_NOTE =
+	"Water-report conflict: trust a current observed or recent dry report for current flow over Scout's cached field-pack listing. Use the Scout pack as planning context, not proof of flow; treat the listed spring or seep as dry until you visually confirm flowing water or a fresher reliable report says otherwise. Carry enough from the last confirmed source to reach the next reliable or verified water, and filter or treat anything you collect.";
 const QUESTIONABLE_WATER_LOW_DAYLIGHT_NOTE =
 	'Questionable-water note: treatment is non-negotiable even when tired or low on daylight; filter or backflush if needed, use backup tablets or boil if the filter is slow or suspect, do not drink untreated questionable water, and choose a safe legal stop before dark if treatment or verification will delay the push.';
 const WATER_SOURCE_VERIFICATION_NOTE =
@@ -490,6 +492,12 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 		answer = normalizeSkipSeasonalWaterWording(answer);
 		if (!mentionsSkipSeasonalWaterDecision(answer)) {
 			answer = appendSentence(answer, SKIP_SEASONAL_WATER_NOTE);
+		}
+	}
+	if (isWaterReportConflictPrompt(lowerPrompt)) {
+		answer = normalizeWaterReportConflictWording(answer);
+		if (!mentionsWaterReportConflictDecision(answer)) {
+			answer = appendSentence(answer, WATER_REPORT_CONFLICT_NOTE);
 		}
 	}
 	if (isWaterDecisionPrompt(lowerPrompt) && toolSummary(toolInvocations, 'next_water') && !mentionsWaterVerificationAndTreatment(answer)) {
@@ -890,7 +898,7 @@ function isModelDownloadingStatusPrompt(prompt: string): boolean {
 function isFieldPackStalenessPrompt(prompt: string): boolean {
 	const mentionsFieldPack = /\b(?:field[-\s]?pack|scout\s+pack|cached\s+(?:trail\s+)?pack|trail\s+data\s+pack)\b/u.test(prompt);
 	const asksFreshness = /\b(?:stale|fresh|current|trust|age|status|refresh|old|outdated|valid|expired)\b/u.test(prompt);
-	return mentionsFieldPack && asksFreshness;
+	return mentionsFieldPack && asksFreshness && !isWaterReportConflictPrompt(prompt);
 }
 
 function isSignInBeforeTrailPrompt(prompt: string): boolean {
@@ -1076,6 +1084,15 @@ function isSkipSeasonalWaterPrompt(prompt: string): boolean {
 	return asksSkip && mentionsCandidate && mentionsReliable;
 }
 
+function isWaterReportConflictPrompt(prompt: string): boolean {
+	const mentionsReport = /\b(?:farout|report|reports|reported|says|comments?|other hikers?|recent)\b/u.test(prompt);
+	const mentionsDry = /\b(?:dry|not flowing|no flow|not running|empty)\b/u.test(prompt);
+	const mentionsScoutPack = /\b(?:scout|pack|field[-\s]?pack|cached|listed|shows|has it)\b/u.test(prompt);
+	const mentionsWaterSource = /\b(?:spring|seep|water source|source|water)\b/u.test(prompt);
+	const asksTrust = /\b(?:trust|believe|rely|which|who)\b/u.test(prompt);
+	return mentionsReport && mentionsDry && mentionsScoutPack && mentionsWaterSource && asksTrust;
+}
+
 function isNearestWaterPrompt(prompt: string): boolean {
 	return /\b(?:what water is ahead|water ahead|next water|nearest water)\b/u.test(prompt) &&
 		!isDryStretchWaterPrompt(prompt) &&
@@ -1083,7 +1100,8 @@ function isNearestWaterPrompt(prompt: string): boolean {
 		!isHeatWaterPrompt(prompt) &&
 		!isQuestionableWaterLowDaylightPrompt(prompt) &&
 		!isUnknownWaterFlowPrompt(prompt) &&
-		!isSkipSeasonalWaterPrompt(prompt);
+		!isSkipSeasonalWaterPrompt(prompt) &&
+		!isWaterReportConflictPrompt(prompt);
 }
 
 function isWaterDecisionPrompt(prompt: string): boolean {
@@ -1093,7 +1111,8 @@ function isWaterDecisionPrompt(prompt: string): boolean {
 		isDryStretchWaterPrompt(prompt) ||
 		isQuestionableWaterLowDaylightPrompt(prompt) ||
 		isUnknownWaterFlowPrompt(prompt) ||
-		isSkipSeasonalWaterPrompt(prompt);
+		isSkipSeasonalWaterPrompt(prompt) ||
+		isWaterReportConflictPrompt(prompt);
 }
 
 function isShelterFatigueDecisionPrompt(prompt: string): boolean {
@@ -1375,6 +1394,18 @@ function normalizeSkipSeasonalWaterWording(answer: string): string {
 		.replace(
 			/\bYou can skip the ((?:seasonal|unconfirmed|unverified)\s+(?:spring|seep)(?:\s+at\s+mile\s+\d+(?:\.\d+)?)?)\s+and make the ((?:reliable\s+)?(?:creek crossing|water source|spring|source)(?:\s+at\s+mile\s+\d+(?:\.\d+)?)?) your next water source\.?/giu,
 			'Use the $2 as the planning target; skip the $1 only if your current treated carry and conditions give you enough margin.'
+		);
+}
+
+function normalizeWaterReportConflictWording(answer: string): string {
+	return answer
+		.replace(
+			/\bYou should trust what is in your pack(?:, especially when it comes to water)?\.?/giu,
+			"Trust the current dry report for flow; use Scout's cached pack only as planning context."
+		)
+		.replace(
+			/\bTrust (?:Scout|the Scout pack|Scout's pack|your pack) (?:over|instead of) (?:FarOut|the report|the current report|a current report)[^.?!\n]*\.?/giu,
+			"Trust the current dry report for flow; use Scout's cached pack only as planning context."
 		);
 }
 
@@ -1972,6 +2003,21 @@ function mentionsSkipSeasonalWaterDecision(answer: string): boolean {
 	return mentionsSeasonalCandidate && mentionsCurrentCarry && mentionsReliableTarget && mentionsRiskFactors && mentionsVisualConfirmation;
 }
 
+function mentionsWaterReportConflictDecision(answer: string): boolean {
+	const mentionsCurrentDryReport =
+		/\b(?:current|recent|observed)[^.?!\n]*(?:dry report|report|says? dry|flow)|(?:dry report|report says dry)[^.?!\n]*(?:current|recent|observed)\b/iu.test(answer);
+	const mentionsCachedPlanningOnly =
+		/\b(?:scout|pack|field[-\s]?pack|cached)\b/iu.test(answer) &&
+		/\b(?:planning context|not proof|does not prove|doesn't prove|not current proof|caution signal)\b/iu.test(answer);
+	const treatsListedSourceAsDry =
+		/\b(?:treat|assume)[^.?!\n]*(?:spring|seep|source)[^.?!\n]*(?:dry|not flowing)|(?:spring|seep|source)[^.?!\n]*(?:dry|not flowing)[^.?!\n]*(?:until|unless|verify|confirm)\b/iu.test(answer);
+	const mentionsReliableCarry =
+		/\b(?:carry enough|top off|carry conservatively|conservative carry)\b/iu.test(answer) &&
+		/\b(?:next reliable|verified water|verified source|reliable source|creek crossing)\b/iu.test(answer);
+	const mentionsTreatment = mentionsWaterTreatmentMethod(answer);
+	return mentionsCurrentDryReport && mentionsCachedPlanningOnly && treatsListedSourceAsDry && mentionsReliableCarry && mentionsTreatment;
+}
+
 function mentionsQuestionableWaterLowDaylight(answer: string): boolean {
 	const mentionsTreatmentRequired = /\b(?:treatment is non-negotiable|treat(?:ment)? (?:all|any|the) questionable|do not drink untreated|don't drink untreated|never drink untreated)\b/iu.test(answer);
 	const mentionsMethod = /\b(?:filter|backflush|backup tablets?|water tablets?|chemical treatment|chlorine dioxide|aquamira|boil)\b/iu.test(answer);
@@ -2230,6 +2276,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`Be honest about uncertainty. Use "candidate", "verify", or "I don't know" when the pack cannot prove something. Never turn candidate water, shelters, towns, or weather into guarantees.`,
 		`For water questions, use the next_water tool finding as the answer's spine. Lead with the nearest actionable water option or next reliable source from the tool finding. If the source is seasonal or unverified, say it is a candidate, visually confirm current flow, filter or treat collected water, and carry enough to reach a verified source if it is dry. If no reliable water is loaded, say that after the source hierarchy; do not start with a generic refusal.`,
 		`For "skip this spring and make the next reliable water" questions, compare the nearer seasonal/unconfirmed source with the next reliable source. Make the decision depend on current treated water carry, heat, exposure, climbing or effort, pace, daylight, and risk tolerance. Do not guarantee the seasonal source is flowing; say to visually confirm and filter/treat if collecting.`,
+		`For current water-report conflicts, such as another report saying a spring is dry while Scout's cached field pack lists it, trust the current observed or recent dry report for flow. Use Scout's cached pack as planning context, not proof of current flow; treat the listed source as dry until visually confirmed or a fresher reliable report says otherwise, and carry to the next reliable or verified water.`,
 		`For heat-wave water questions, combine planning and emergency thresholds: move hard miles into the cooler part of the day, schedule shade breaks, eat salty food or use electrolytes if available, carry conservatively to verified water, and escalate if dizziness, confusion, headache, nausea, cramps, chills, stopped sweating, or worsening symptoms appear.`,
 		`For active heat illness or dizziness in heat, lead with immediate safety: do not keep hiking through symptoms, stop, find shade, cool down, sip treated water with electrolytes if safe, and seek urgent help or use the emergency plan for confusion, fainting, stopped sweating, or symptoms that worsen or do not improve.`,
 		`For camel-up or ridge-water questions, give a clear decision: camel up at the last confirmed source and carry extra when the next water is seasonal, unverified, exposed, hot, or after a hard climb; only use the lighter carry when the next reliable water is confirmed and conditions are mild. When tool findings name a seasonal source and a reliable source, name both and make the carry decision from those facts.`,

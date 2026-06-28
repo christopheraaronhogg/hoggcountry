@@ -206,6 +206,9 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /For "skip this spring and make the next reliable water" questions/);
 	assert.match(systemContext, /current treated water carry, heat, exposure, climbing or effort, pace, daylight, and risk tolerance/);
 	assert.match(systemContext, /Do not guarantee the seasonal source is flowing/);
+	assert.match(systemContext, /For current water-report conflicts/);
+	assert.match(systemContext, /trust the current observed or recent dry report for flow/);
+	assert.match(systemContext, /Scout's cached pack as planning context, not proof of current flow/);
 	assert.match(systemContext, /For heat-wave water questions/);
 	assert.match(systemContext, /move hard miles into the cooler part of the day/);
 	assert.match(systemContext, /dizziness, confusion, headache, nausea, cramps, chills, stopped sweating/);
@@ -568,6 +571,27 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.doesNotMatch(directSkipSeasonalWaterAnswer, /You can skip the seasonal seep/);
 	assert.match(directSkipSeasonalWaterAnswer, /Use the reliable creek crossing at mile 49\.3 as the planning target/);
 	assert.match(directSkipSeasonalWaterAnswer, /skip the seasonal seep at mile 44\.9 only if your current treated carry and conditions give you enough margin/);
+
+	const waterReportConflictAnswer = polishOnDeviceAnswer(
+		'You should trust what is in your pack, especially when it comes to water. The next reliable water source is a creek crossing at mile 108.8, which is about six and a half miles ahead. There is also a seasonal seep ahead at mile 104.4, but that is unconfirmed.\n\nSince the spring is dry, you should plan to carry water conservatively for the next stretch. You should focus on ensuring your water filter and backup tablets are ready for the creek crossing at mile 108.8.',
+		'FarOut says the spring is dry but my Scout pack has it listed. Which should I trust?',
+		[
+			{
+				toolId: 'next_water',
+				args: { fromMile: 102.6 },
+				summary: 'Next reliable water loaded: Reliable creek crossing at mile 108.8 (6.2 mi ahead, reliable). Treat/filter before drinking. Closer unconfirmed water before that: Seasonal seep ahead at mile 104.4 (1.8 mi ahead, seasonal). Seasonal open-reference candidate; confirm current flow.',
+				confidence: 'medium',
+				receipts: []
+			}
+		]
+	);
+	assert.doesNotMatch(waterReportConflictAnswer, /trust what is in your pack/i);
+	assert.match(waterReportConflictAnswer, /Trust the current dry report for flow/);
+	assert.match(waterReportConflictAnswer, /use Scout's cached pack only as planning context/);
+	assert.match(waterReportConflictAnswer, /treat the listed spring or seep as dry/);
+	assert.match(waterReportConflictAnswer, /visually confirm flowing water/);
+	assert.match(waterReportConflictAnswer, /next reliable or verified water/);
+	assert.match(waterReportConflictAnswer, /filter or treat anything you collect/);
 
 	assert.equal(
 		polishOnDeviceAnswer(
