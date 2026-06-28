@@ -335,6 +335,17 @@ If forced:
 
 *Carrying extra temporarily is smart, not failure.*
 
+## Heat Water Safety
+
+In hot or humid weather, water decisions are also heat-illness decisions.
+
+- Start early when possible
+- Use shade breaks before you feel desperate
+- Sip treated water steadily; add electrolytes if you have them
+- Top off before exposed or uncertain stretches
+- Stop hiking, get shade, and cool down if dizziness, confusion, headache, nausea, cramps, chills, stopped sweating, or worsening symptoms show up
+- Escalate through your emergency plan if symptoms do not improve
+
 ## Section-Specific Water Reliability
 
 ### Standing Bear Farm to Hot Springs, NC
@@ -433,6 +444,9 @@ If forced:
 - Springs = verify
 - Seeps = ignore
 - Never skip water before a ridge
+- Camel up at the last confirmed source before a ridge
+- Carry extra when the next water is seasonal, unverified, exposed, hot, or after a hard climb
+- Use the lighter carry only when the next reliable water is confirmed and conditions are mild
 - Carry extra when shelter water is spring-fed
 - Ask: "What's my next guaranteed creek?"
 

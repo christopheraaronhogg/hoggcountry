@@ -61,6 +61,10 @@ const FOOD_ON_MOVE_NOTE =
 	'Food-packing note: before leaving camp, split out the next 3-4 hours of snacks and lunch into reachable pockets or the top/outside of the pack; keep cook/camp meals, extra days of food, and trash separate so hiking food stays accessible for steady energy and better decisions.';
 const COLD_RAIN_CAMP_NOTE =
 	'Cold-rain camping note: treat wet-cold exposure as hypothermia risk, protect the dry sleep layer and warm layer first, set up early in a legal protected spot, keep the filter warm, and stop or bail out if the sleep system or camp setup cannot stay dry.';
+const HEAT_WATER_NOTE =
+	'Heat-water safety note: if dizziness, confusion, headache, nausea, cramps, chills, stopped sweating, or worsening symptoms show up, stop hiking, get shade, cool down, sip treated water with electrolytes if available, and escalate through the emergency plan if symptoms do not improve.';
+const RIDGE_WATER_NOTE =
+	'Ridge-water decision note: camel up at the last confirmed source and carry extra over the ridge when the next source is seasonal, unverified, exposed, hot, or after a hard climb; only carry the lighter plan when the next reliable water is confirmed and conditions are mild.';
 
 export class OnDeviceGemmaProvider implements ScoutProvider {
 	private bridge?: OnDeviceGemmaBridge;
@@ -243,6 +247,12 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	}
 	if (isSlowFilterPrompt(lowerPrompt) && !mentionsSlowFilterTroubleshooting(answer)) {
 		answer = appendSentence(answer, SLOW_FILTER_NOTE);
+	}
+	if (isHeatWaterPrompt(lowerPrompt) && !mentionsHeatWaterSafety(answer)) {
+		answer = appendSentence(answer, HEAT_WATER_NOTE);
+	}
+	if (isRidgeWaterDecisionPrompt(lowerPrompt) && !mentionsRidgeWaterDecision(answer)) {
+		answer = appendSentence(answer, RIDGE_WATER_NOTE);
 	}
 	if (isRainPantsPrompt(lowerPrompt) && !mentionsRainPantsDecision(answer)) {
 		answer = appendSentence(answer, RAIN_PANTS_NOTE);
@@ -485,6 +495,15 @@ function isSlowFilterPrompt(prompt: string): boolean {
 		!/\b(?:freez\w*|frozen|froze)\b/u.test(prompt);
 }
 
+function isHeatWaterPrompt(prompt: string): boolean {
+	return /\b(?:heat|hot|heat wave|humid|dehydrat\w*|heat illness)\b/u.test(prompt) &&
+		/\b(?:water|hydrate|hydration|drink|shade|harder|dizzy|confusion|cramps|heat illness)\b/u.test(prompt);
+}
+
+function isRidgeWaterDecisionPrompt(prompt: string): boolean {
+	return /\b(?:camel up|carry extra water|water over the ridge|before a ridge|over the ridge|dry ridge|long dry stretch)\b/u.test(prompt);
+}
+
 function isRainPantsPrompt(prompt: string): boolean {
 	return /\b(?:rain pants|rain gear|rain system)\b/u.test(prompt) &&
 		/\b(?:need|carry|leave|home|drop|cut|mail|send|ditch|keep)\b/u.test(prompt);
@@ -575,6 +594,20 @@ function mentionsSlowFilterTroubleshooting(answer: string): boolean {
 	return mentionsCleaning && mentionsFreezeProtection && mentionsBackupTreatment && mentionsNextWaterDecision;
 }
 
+function mentionsHeatWaterSafety(answer: string): boolean {
+	const mentionsStopCool = /\b(?:stop hiking|stop and cool|cool down|get shade|find shade|shade)\b/iu.test(answer);
+	const mentionsSymptoms = /\b(?:dizz\w*|confus\w*|headache|nausea|cramps?|chills?|stopped sweating|worsening symptoms|heat illness)\b/iu.test(answer);
+	const mentionsEscalation = /\b(?:emergency plan|911|inreach|plb|medical help)\b/iu.test(answer);
+	return mentionsStopCool && mentionsSymptoms && mentionsEscalation;
+}
+
+function mentionsRidgeWaterDecision(answer: string): boolean {
+	const mentionsCamelUp = /\b(?:camel up|top off|drink at the source|last confirmed source)\b/iu.test(answer);
+	const mentionsCarryExtra = /\b(?:carry extra|more water|safer carry|heavier carry)\b/iu.test(answer);
+	const mentionsUncertaintyOrRidge = /\b(?:ridge|seasonal|unverified|unknown|confirmed|reliable|exposed|hot|dry stretch)\b/iu.test(answer);
+	return mentionsCamelUp && mentionsCarryExtra && mentionsUncertaintyOrRidge;
+}
+
 function mentionsRainPantsDecision(answer: string): boolean {
 	return /(?:personal cold tolerance|how fast you chill|your cold tolerance|if you run cold)/iu.test(answer) &&
 		/(?:shakedown|proven|test(?:ed|ing)? the rain system)/iu.test(answer) &&
@@ -647,6 +680,8 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`Do not expose internal tool names or labels such as "source skill", "source_search", "open_source_doc", or "tool invocation" in the answer. Use the information naturally.`,
 		`Be honest about uncertainty. Use "candidate", "verify", or "I don't know" when the pack cannot prove something. Never turn candidate water, shelters, towns, or weather into guarantees.`,
 		`For water questions, use the next_water tool finding as the answer's spine. Lead with the nearest actionable water option or next reliable source from the tool finding. If no reliable water is loaded, say that after the source hierarchy; do not start with a generic refusal.`,
+		`For heat-wave water questions, tell the hiker to stop, find shade, cool down, sip treated water with electrolytes if available, and escalate if dizziness, confusion, headache, nausea, cramps, chills, stopped sweating, or worsening symptoms appear.`,
+		`For camel-up or ridge-water questions, give a clear decision: camel up at the last confirmed source and carry extra when the next water is seasonal, unverified, exposed, hot, or after a hard climb; only use the lighter carry when the next reliable water is confirmed and conditions are mild.`,
 		`For frozen or failing water-filter questions, say a hollow-fiber filter may be compromised if it froze, use backup treatment or replace it if unsure, backflush or clean a slow filter when the model supports it, and prevent the next freeze by sleeping with the filter or keeping it warm overnight. Use next-water context before telling the hiker to push past water.`,
 		`When tool findings are labeled as guidance, treat them as topic-specific documents Scout intentionally read for this answer. Use them to shape caveats and next-step advice.`,
 		`When preparation or training questions have pretrip, terrain, loadout, safety, or offline setup findings, give a concrete short plan. For "what should I focus on first" prompts, include an immediate first-week checklist, not only general training advice. Include shakedown hikes, foot care/blister practice, conservative early mileage, gear/loadout checks, water treatment habits, and an offline app/model rehearsal when those appear in the findings.`,

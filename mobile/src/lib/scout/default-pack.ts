@@ -22,8 +22,8 @@ export const DEFAULT_CONTEXT_PACK: ContextPack = {
 		{
 			id: 'pack-water-on-ridges',
 			title: 'Confirm mapped water before committing',
-			body: 'Mapped water candidates are planning prompts, not promises. Top off at the last confirmed source before committing to a longer warm-weather push.',
-			tags: ['water', 'planning', 'ridge'],
+			body: 'Mapped water candidates are planning prompts, not promises. Camel up at the last confirmed source and carry extra before a ridge when the next water is seasonal, unverified, exposed, hot, or after a hard climb. Only choose the lighter carry when the next reliable water is confirmed and conditions are mild.',
+			tags: ['water', 'planning', 'ridge', 'heat'],
 			citation: 'Hogg Country Field Guide, Section: Water Discipline'
 		},
 		{
@@ -64,8 +64,8 @@ export const DEFAULT_CONTEXT_PACK: ContextPack = {
 		{
 			id: 'safety-risk-discipline',
 			title: 'Safety decisions prefer current checks and safer stops',
-			body: 'Closures, fires, high water, injury, bear activity, heat, cold, and bailout decisions need current source checks when online. If Scout cannot verify a live risk, choose the lower-mileage or safer-stop option and name what still needs confirmation. First-aid and blister advice should stay compact and personal: prevention tape, blister treatment, wound basics, normal personal meds, and a clear warning to stop or get medical help for spreading redness, drainage, fever, worsening pain, swelling, or changed gait. Scout must not diagnose, replace emergency services, or replace a dedicated emergency communicator.',
-			tags: ['safety', 'risk', 'closure', 'bailout', 'first-aid', 'blisters', 'wound', 'infection'],
+			body: 'Closures, fires, high water, injury, bear activity, heat, cold, and bailout decisions need current source checks when online. If Scout cannot verify a live risk, choose the lower-mileage or safer-stop option and name what still needs confirmation. For heat illness risk, stop hiking, find shade, cool down, sip treated water with electrolytes if available, and escalate if dizziness, confusion, headache, nausea, cramps, chills, stopped sweating, or worsening symptoms appear. First-aid and blister advice should stay compact and personal: prevention tape, blister treatment, wound basics, normal personal meds, and a clear warning to stop or get medical help for spreading redness, drainage, fever, worsening pain, swelling, or changed gait. Scout must not diagnose, replace emergency services, or replace a dedicated emergency communicator.',
+			tags: ['safety', 'risk', 'closure', 'bailout', 'first-aid', 'blisters', 'wound', 'infection', 'heat'],
 			citation: 'Hogg Country Field Guide, Section: Safety and Emergency'
 		},
 		{

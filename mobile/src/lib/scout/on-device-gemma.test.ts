@@ -201,6 +201,10 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /Do not use Markdown headings, bold markers, tables, or long bullet lists/);
 	assert.match(systemContext, /Never turn candidate water, shelters, towns, or weather into guarantees/);
 	assert.match(systemContext, /For water questions, use the next_water tool finding as the answer's spine/);
+	assert.match(systemContext, /For heat-wave water questions/);
+	assert.match(systemContext, /dizziness, confusion, headache, nausea, cramps, chills, stopped sweating/);
+	assert.match(systemContext, /For camel-up or ridge-water questions/);
+	assert.match(systemContext, /camel up at the last confirmed source and carry extra/);
 	assert.match(systemContext, /For frozen or failing water-filter questions/);
 	assert.match(systemContext, /hollow-fiber filter may be compromised/);
 	assert.match(systemContext, /For rain-pants or rain-gear cut\/drop questions/);
@@ -284,7 +288,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 
 	assert.equal(
 		polishOnDeviceAnswer('The next water is at mile 138.3. The reliable creek is at mile 142.7.', 'Should I camel up?'),
-		'The next water is at mile 138.3. The reliable creek is at mile 142.7.'
+		'The next water is at mile 138.3. The reliable creek is at mile 142.7.\n\nRidge-water decision note: camel up at the last confirmed source and carry extra over the ridge when the next source is seasonal, unverified, exposed, hot, or after a hard climb; only carry the lighter plan when the next reliable water is confirmed and conditions are mild.'
 	);
 
 	assert.equal(
@@ -369,6 +373,22 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			]
 		),
 		'Backflush the filter if you can, then use backup tablets if the flow stays bad. Confirm the next water source before relying on it.\n\nWater-filter troubleshooting note: backflush or clean the filter first if the model supports it, protect hollow-fiber filters from freezing, use backup tablets or another treatment if flow stays bad or the filter may be compromised, and use the next confirmed water source before deciding to push past water.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Heat makes water decisions harder. Carry more water if the next source is not confirmed and look for shade when you can.',
+			'How do I decide water in a heat wave when everything feels harder?'
+		),
+		'Heat makes water decisions harder. Carry more water if the next source is not confirmed and look for shade when you can.\n\nHeat-water safety note: if dizziness, confusion, headache, nausea, cramps, chills, stopped sweating, or worsening symptoms show up, stop hiking, get shade, cool down, sip treated water with electrolytes if available, and escalate through the emergency plan if symptoms do not improve.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Check the current flow before deciding whether to carry extra water over the ridge.',
+			'Should I camel up here or carry extra water over the ridge?'
+		),
+		'Check the current flow before deciding whether to carry extra water over the ridge.\n\nRidge-water decision note: camel up at the last confirmed source and carry extra over the ridge when the next source is seasonal, unverified, exposed, hot, or after a hard climb; only carry the lighter plan when the next reliable water is confirmed and conditions are mild.'
 	);
 
 	assert.equal(
