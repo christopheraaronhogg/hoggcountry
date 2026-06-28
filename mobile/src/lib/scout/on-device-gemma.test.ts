@@ -201,10 +201,14 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /Do not use Markdown headings, bold markers, tables, or long bullet lists/);
 	assert.match(systemContext, /Never turn candidate water, shelters, towns, or weather into guarantees/);
 	assert.match(systemContext, /For water questions, use the next_water tool finding as the answer's spine/);
+	assert.match(systemContext, /visually confirm current flow/);
+	assert.match(systemContext, /filter or treat collected water/);
 	assert.match(systemContext, /For heat-wave water questions/);
+	assert.match(systemContext, /move hard miles into the cooler part of the day/);
 	assert.match(systemContext, /dizziness, confusion, headache, nausea, cramps, chills, stopped sweating/);
 	assert.match(systemContext, /For camel-up or ridge-water questions/);
 	assert.match(systemContext, /camel up at the last confirmed source and carry extra/);
+	assert.match(systemContext, /name both and make the carry decision/);
 	assert.match(systemContext, /For dry-stretch water-carry questions/);
 	assert.match(systemContext, /0\.5-1 liter per 3-5 miles/);
 	assert.match(systemContext, /For questionable-water, tired, or low-daylight treatment questions/);
@@ -324,6 +328,37 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 
 	assert.equal(
 		polishOnDeviceAnswer(
+			'I would top off here and keep the carry conservative until water is confirmed.',
+			'Should I camel up here or carry extra water over the ridge?',
+			[
+				{
+					toolId: 'next_water',
+					args: { fromMile: 137.2 },
+					summary: 'Next loaded water: Seasonal seep ahead at mile 138.3 (1.1 mi ahead, seasonal). Seasonal open-reference candidate; confirm current flow.',
+					confidence: 'medium',
+					receipts: []
+				},
+				{
+					toolId: 'upcoming_terrain',
+					args: { fromMile: 137.2 },
+					summary: 'Upcoming terrain: exposed ridge climb, then Reliable creek crossing (mi 142.7) after the descent.',
+					confidence: 'medium',
+					receipts: []
+				},
+				{
+					toolId: 'weather_lookup',
+					args: { fromMile: 137.2 },
+					summary: 'Cached weather near mile 137.2: hot and humid (high 88F / low 69F). Heat makes dry climbs riskier.',
+					confidence: 'medium',
+					receipts: []
+				}
+			]
+		),
+		'I would top off here and keep the carry conservative until water is confirmed.\n\nWeather note: Cached weather near mile 137.2: hot and humid (high 88F / low 69F). Heat makes dry climbs riskier.\n\nRidge-water decision note: camel up at the last confirmed source and carry extra over the ridge when the next source is seasonal, unverified, exposed, hot, or after a hard climb; only carry the lighter plan when the next reliable water is confirmed and conditions are mild.\n\nRidge-water context: next water is Next loaded water: Seasonal seep ahead at mile 138.3 (1.1 mi ahead, seasonal). Seasonal open-reference candidate; confirm current flow; the next reliable loaded option is Reliable creek crossing (mi 142.7); weather context is Cached weather near mile 137.2: hot and humid (high 88F / low 69F). Heat makes dry climbs riskier. Decision: camel up at the last confirmed source and carry extra until reliable water is confirmed.\n\nWater verification note: Next loaded water: Seasonal seep ahead at mile 138.3 (1.1 mi ahead, seasonal). Seasonal open-reference candidate; confirm current flow. Visually confirm flow before relying on it, filter or treat any water you collect, and carry enough to reach a verified source if it is dry.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
 			'Stop at Ridge Shelter [source_search]. Verify water and crowding [next_shelter].',
 			'Where should I sleep tonight?'
 		),
@@ -336,6 +371,23 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			'What water is ahead from my current mile?'
 		),
 		'The nearest loaded water is about 1.8 miles ahead of you.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'The next loaded water is a seasonal seep ahead at mile 33.5, about 1.8 miles away. Since it is seasonal and unverified, carry extra.',
+			'What water is ahead from my current mile?',
+			[
+				{
+					toolId: 'next_water',
+					args: { fromMile: 31.7 },
+					summary: 'Next loaded water: Seasonal seep ahead at mile 33.5 (1.8 mi ahead, seasonal). Seasonal open-reference candidate; confirm current flow.',
+					confidence: 'medium',
+					receipts: []
+				}
+			]
+		),
+		'The next loaded water is a seasonal seep ahead at mile 33.5, about 1.8 miles away. Since it is seasonal and unverified, carry extra.\n\nWater verification note: Next loaded water: Seasonal seep ahead at mile 33.5 (1.8 mi ahead, seasonal). Seasonal open-reference candidate; confirm current flow. Visually confirm flow before relying on it, filter or treat any water you collect, and carry enough to reach a verified source if it is dry.'
 	);
 
 	assert.equal(
@@ -435,7 +487,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			'Heat makes water decisions harder. Carry more water if the next source is not confirmed and look for shade when you can.',
 			'How do I decide water in a heat wave when everything feels harder?'
 		),
-		'Heat makes water decisions harder. Carry more water if the next source is not confirmed and look for shade when you can.\n\nHeat-water safety note: if dizziness, confusion, headache, nausea, cramps, chills, stopped sweating, or worsening symptoms show up, stop hiking, get shade, cool down, sip treated water with electrolytes if available, and escalate through the emergency plan if symptoms do not improve.'
+		'Heat makes water decisions harder. Carry more water if the next source is not confirmed and look for shade when you can.\n\nHeat-water safety note: if dizziness, confusion, headache, nausea, cramps, chills, stopped sweating, or worsening symptoms show up, stop hiking, get shade, cool down, sip treated water with electrolytes if available, and escalate through the emergency plan if symptoms do not improve.\n\nHeat-water planning note: move harder miles into the cooler part of the day, schedule shade breaks, eat salty food or use electrolytes if available, and carry conservatively to verified water when the next source is seasonal, unverified, exposed, or after a hard climb.'
 	);
 
 	assert.equal(
@@ -444,6 +496,23 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			'Should I camel up here or carry extra water over the ridge?'
 		),
 		'Check the current flow before deciding whether to carry extra water over the ridge.\n\nRidge-water decision note: camel up at the last confirmed source and carry extra over the ridge when the next source is seasonal, unverified, exposed, hot, or after a hard climb; only carry the lighter plan when the next reliable water is confirmed and conditions are mild.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Scout cannot verify current flow from the cache. The seasonal seep may be dry, so be conservative.',
+			'If Scout does not know current water flow, how should I decide whether to rely on the next source?',
+			[
+				{
+					toolId: 'next_water',
+					args: { fromMile: 227.9 },
+					summary: 'Next loaded water: Seasonal seep ahead at mile 230.1 (2.2 mi ahead, seasonal). Seasonal open-reference candidate; confirm current flow.',
+					confidence: 'medium',
+					receipts: []
+				}
+			]
+		),
+		'Scout cannot verify current flow from the cache. The seasonal seep may be dry, so be conservative.\n\nUnknown-flow note: cached water context is Next loaded water: Seasonal seep ahead at mile 230.1 (2.2 mi ahead, seasonal). Seasonal open-reference candidate; confirm current flow. This does not prove current flow. Verify flow at the source or with a current report, filter or treat any water you collect, and choose a safer carry or stop as if the source may be dry until confirmed.'
 	);
 
 	assert.equal(

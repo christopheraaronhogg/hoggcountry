@@ -81,12 +81,16 @@ const MAIL_HOME_GEAR_NOTE =
 	'Mail-home gear note: do not mail home rain protection, insulation or warm layers, water treatment, first aid, battery or navigation power, or sleep safety just because one forecast looks warm. Recheck the forecast, next town timing, and replacement options before sending gear forward or home.';
 const HEAT_WATER_NOTE =
 	'Heat-water safety note: if dizziness, confusion, headache, nausea, cramps, chills, stopped sweating, or worsening symptoms show up, stop hiking, get shade, cool down, sip treated water with electrolytes if available, and escalate through the emergency plan if symptoms do not improve.';
+const HEAT_WATER_PLANNING_NOTE =
+	'Heat-water planning note: move harder miles into the cooler part of the day, schedule shade breaks, eat salty food or use electrolytes if available, and carry conservatively to verified water when the next source is seasonal, unverified, exposed, or after a hard climb.';
 const RIDGE_WATER_NOTE =
 	'Ridge-water decision note: camel up at the last confirmed source and carry extra over the ridge when the next source is seasonal, unverified, exposed, hot, or after a hard climb; only carry the lighter plan when the next reliable water is confirmed and conditions are mild.';
 const DRY_STRETCH_WATER_NOTE =
 	'Dry-stretch water note: for a 10-mile dry stretch, start from roughly 0.5-1 liter per 3-5 miles, increase for heat, exposed climbing, slow pace, or personal thirst, top off at the last confirmed source, and carry enough to reach the next reliable source when the next source is seasonal or unverified.';
 const QUESTIONABLE_WATER_LOW_DAYLIGHT_NOTE =
 	'Questionable-water note: treatment is non-negotiable even when tired or low on daylight; filter or backflush if needed, use backup tablets or boil if the filter is slow or suspect, do not drink untreated questionable water, and choose a safe legal stop before dark if treatment or verification will delay the push.';
+const WATER_SOURCE_VERIFICATION_NOTE =
+	'Water verification note: seasonal or mapped water is a candidate, not a guarantee. Visually confirm flow before relying on it, filter or treat any water you collect, and carry enough to reach a verified source if it is dry.';
 const SHELTER_DECISION_NOTE =
 	'Shelter-decision note: when fatigue drives the sleep choice, choose the safer legal stop and check daylight, water, current shelter status or crowding, local rules, and a backup option before committing.';
 const FULL_SHELTER_NOTE =
@@ -333,14 +337,26 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	if (isHeatWaterPrompt(lowerPrompt) && !mentionsHeatWaterSafety(answer)) {
 		answer = appendSentence(answer, HEAT_WATER_NOTE);
 	}
+	if (isHeatWaterPrompt(lowerPrompt) && !mentionsHeatWaterPlanning(answer)) {
+		answer = appendSentence(answer, HEAT_WATER_PLANNING_NOTE);
+	}
 	if (isRidgeWaterDecisionPrompt(lowerPrompt) && !mentionsRidgeWaterDecision(answer)) {
 		answer = appendSentence(answer, RIDGE_WATER_NOTE);
+	}
+	if (isRidgeWaterDecisionPrompt(lowerPrompt) && !mentionsConcreteRidgeWaterContext(answer, toolInvocations)) {
+		answer = appendSentence(answer, buildRidgeWaterContextNote(toolInvocations));
 	}
 	if (isDryStretchWaterPrompt(lowerPrompt) && !mentionsDryStretchWaterCarry(answer)) {
 		answer = appendSentence(answer, DRY_STRETCH_WATER_NOTE);
 	}
 	if (isQuestionableWaterLowDaylightPrompt(lowerPrompt) && !mentionsQuestionableWaterLowDaylight(answer)) {
 		answer = appendSentence(answer, QUESTIONABLE_WATER_LOW_DAYLIGHT_NOTE);
+	}
+	if (isUnknownWaterFlowPrompt(lowerPrompt) && !mentionsUnknownWaterFlowContext(answer)) {
+		answer = appendSentence(answer, buildUnknownWaterFlowNote(toolInvocations));
+	}
+	if (isWaterDecisionPrompt(lowerPrompt) && toolSummary(toolInvocations, 'next_water') && !mentionsWaterVerificationAndTreatment(answer)) {
+		answer = appendSentence(answer, buildNearestWaterVerificationNote(toolInvocations));
 	}
 	if (isAfterDarkShelterPrompt(lowerPrompt)) {
 		answer = removeAfterDarkBeforeDarkContradiction(answer);
@@ -420,6 +436,7 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	if (isTownOfflineReadinessPrompt(lowerPrompt) && !mentionsTownOfflineReadiness(answer)) {
 		answer = isVagueSourceOnlyAnswer(answer) ? TOWN_OFFLINE_READINESS_NOTE : appendSentence(answer, TOWN_OFFLINE_READINESS_NOTE);
 	}
+	answer = removeRedundantWaterCarryAdvice(answer);
 
 	return trimToCompleteSentence(answer);
 }
@@ -568,6 +585,36 @@ function removeRepeatedSentences(answer: string): string {
 		.filter(Boolean)
 		.join('\n\n')
 		.trim();
+}
+
+function removeRedundantWaterCarryAdvice(answer: string): string {
+	const seenTargets = new Set<string>();
+	return answer
+		.split(/\n{2,}/u)
+		.map((paragraph) => {
+			const sentences = splitSentences(paragraph);
+			return sentences
+				.map((sentence) => sentence.trim())
+				.filter((sentence) => {
+					const target = waterCarryTargetForDedupe(sentence);
+					if (!target) return true;
+					if (seenTargets.has(target)) return false;
+					seenTargets.add(target);
+					return true;
+				})
+				.join(' ');
+		})
+		.map((paragraph) => paragraph.trim())
+		.filter(Boolean)
+		.join('\n\n')
+		.trim();
+}
+
+function waterCarryTargetForDedupe(sentence: string): string | null {
+	const normalized = sentence.toLowerCase().replace(/\s+/gu, ' ').trim();
+	if (!/\bcarry enough water\b/u.test(normalized)) return null;
+	const target = normalized.match(/\b(?:to reach|reach) (?:that |the )?(?:next )?(seep|source|verified source|reliable source)\b/u)?.[1];
+	return target ? `carry-water:${target}` : null;
 }
 
 function splitSentences(paragraph: string): string[] {
@@ -745,6 +792,30 @@ function isQuestionableWaterLowDaylightPrompt(prompt: string): boolean {
 		/\b(?:tired|fatigue|low on daylight|low daylight|dark|after dark|dusk|night|late)\b/u.test(prompt);
 }
 
+function isUnknownWaterFlowPrompt(prompt: string): boolean {
+	return /\b(?:do(?:es)? not know|don't know|unknown|not know|cannot verify|can't verify)\b[^.?!\n]*(?:current )?(?:water )?flow|(?:current )?(?:water )?flow[^.?!\n]*(?:unknown|do(?:es)? not know|don't know|not know|cannot verify|can't verify)\b/u.test(
+		prompt
+	);
+}
+
+function isNearestWaterPrompt(prompt: string): boolean {
+	return /\b(?:what water is ahead|water ahead|next water|nearest water)\b/u.test(prompt) &&
+		!isDryStretchWaterPrompt(prompt) &&
+		!isRidgeWaterDecisionPrompt(prompt) &&
+		!isHeatWaterPrompt(prompt) &&
+		!isQuestionableWaterLowDaylightPrompt(prompt) &&
+		!isUnknownWaterFlowPrompt(prompt);
+}
+
+function isWaterDecisionPrompt(prompt: string): boolean {
+	return isNearestWaterPrompt(prompt) ||
+		isHeatWaterPrompt(prompt) ||
+		isRidgeWaterDecisionPrompt(prompt) ||
+		isDryStretchWaterPrompt(prompt) ||
+		isQuestionableWaterLowDaylightPrompt(prompt) ||
+		isUnknownWaterFlowPrompt(prompt);
+}
+
 function isShelterFatigueDecisionPrompt(prompt: string): boolean {
 	return /\b(?:tired|fatigue|exhausted)\b/u.test(prompt) &&
 		/\b(?:where should i sleep|sleep tonight|sleep|shelter|camp|campsite)\b/u.test(prompt);
@@ -835,6 +906,49 @@ function isMailHomeGearSafetyPrompt(prompt: string): boolean {
 function weatherLookupSummary(toolInvocations: ToolInvocationRecord[]): string | null {
 	const summary = toolInvocations.find((tool) => tool.toolId === 'weather_lookup')?.summary?.trim();
 	return summary || null;
+}
+
+function toolSummary(toolInvocations: ToolInvocationRecord[], toolId: string): string | null {
+	const summary = toolInvocations.find((tool) => tool.toolId === toolId)?.summary?.trim();
+	return summary || null;
+}
+
+function buildNearestWaterVerificationNote(toolInvocations: ToolInvocationRecord[]): string {
+	const nextWater = toolSummary(toolInvocations, 'next_water');
+	if (!nextWater) return WATER_SOURCE_VERIFICATION_NOTE;
+	return `Water verification note: ${nextWater} Visually confirm flow before relying on it, filter or treat any water you collect, and carry enough to reach a verified source if it is dry.`;
+}
+
+function buildUnknownWaterFlowNote(toolInvocations: ToolInvocationRecord[]): string {
+	const nextWater = toolSummary(toolInvocations, 'next_water');
+	if (!nextWater) {
+		return 'Unknown-flow note: Scout does not know current flow. Verify flow at the source or with a current report, filter or treat any water you collect, and choose a safer carry or stop as if the source may be dry until confirmed.';
+	}
+	return `Unknown-flow note: cached water context is ${nextWater} This does not prove current flow. Verify flow at the source or with a current report, filter or treat any water you collect, and choose a safer carry or stop as if the source may be dry until confirmed.`;
+}
+
+function buildRidgeWaterContextNote(toolInvocations: ToolInvocationRecord[]): string {
+	const nextWater = toolSummary(toolInvocations, 'next_water');
+	const weather = toolSummary(toolInvocations, 'weather_lookup');
+	const reliableWater = extractReliableWaterFromTerrain(toolSummary(toolInvocations, 'upcoming_terrain'));
+	const parts = [
+		nextWater ? `next water is ${trimToolClause(nextWater)}` : 'next water is not proven reliable from the cached pack',
+		reliableWater ? `the next reliable loaded option is ${reliableWater}` : 'use the next reliable or verified source as the safer target',
+		weather ? `weather context is ${trimToolClause(weather)}` : ''
+	].filter(Boolean);
+	return `Ridge-water context: ${parts.join('; ')}. Decision: camel up at the last confirmed source and carry extra until reliable water is confirmed.`;
+}
+
+function trimToolClause(summary: string): string {
+	return summary.trim().replace(/[.;:\s]+$/u, '');
+}
+
+function extractReliableWaterFromTerrain(summary: string | null): string | null {
+	if (!summary) return null;
+	const withMile = summary.match(/\bReliable[^|,.]*\([^)]*\)/iu);
+	if (withMile) return withMile[0].trim();
+	const withoutMile = summary.match(/\bReliable[^|,.]*/iu);
+	return withoutMile?.[0]?.trim() ?? null;
 }
 
 function mentionsOfflineBible(answer: string): boolean {
@@ -1013,11 +1127,27 @@ function mentionsHeatWaterSafety(answer: string): boolean {
 	return mentionsStopCool && mentionsSymptoms && mentionsEscalation;
 }
 
+function mentionsHeatWaterPlanning(answer: string): boolean {
+	const mentionsTiming = /\b(?:early|earlier|morning|cooler part|cooler hours|midday heat|heat of the day)\b/iu.test(answer);
+	const mentionsShade = /\b(?:shade|shade breaks?|rest breaks?)\b/iu.test(answer);
+	const mentionsElectrolytesFood = /\b(?:electrolytes?|salty food|salt|eat|food|snack)\b/iu.test(answer);
+	const mentionsConservativeCarry = /\b(?:carry more water|carry extra|conservative carry|more water|verified water|reliable water|seasonal|unverified)\b/iu.test(answer);
+	return mentionsTiming && mentionsShade && mentionsElectrolytesFood && mentionsConservativeCarry;
+}
+
 function mentionsRidgeWaterDecision(answer: string): boolean {
 	const mentionsCamelUp = /\b(?:camel up|top off|drink at the source|last confirmed source)\b/iu.test(answer);
 	const mentionsCarryExtra = /\b(?:carry extra|more water|safer carry|heavier carry)\b/iu.test(answer);
 	const mentionsUncertaintyOrRidge = /\b(?:ridge|seasonal|unverified|unknown|confirmed|reliable|exposed|hot|dry stretch)\b/iu.test(answer);
 	return mentionsCamelUp && mentionsCarryExtra && mentionsUncertaintyOrRidge;
+}
+
+function mentionsConcreteRidgeWaterContext(answer: string, toolInvocations: ToolInvocationRecord[]): boolean {
+	if (!toolSummary(toolInvocations, 'next_water')) return true;
+	const mentionsSpecificSource = /\b(?:seasonal seep|creek crossing|thin mapped branch|water at mile|mile\s+\d|\d+(?:\.\d+)?\s*mi ahead)\b/iu.test(answer);
+	const mentionsReliableTarget = /\b(?:reliable creek|next reliable|reliable water|verified source|verified water)\b/iu.test(answer);
+	const mentionsDecision = /\b(?:camel up|top off)\b/iu.test(answer) && /\b(?:carry extra|carry enough|safer carry|heavier carry)\b/iu.test(answer);
+	return mentionsSpecificSource && mentionsReliableTarget && mentionsDecision;
 }
 
 function mentionsDryStretchWaterCarry(answer: string): boolean {
@@ -1034,6 +1164,26 @@ function mentionsQuestionableWaterLowDaylight(answer: string): boolean {
 	const mentionsMethod = /\b(?:filter|backflush|backup tablets?|water tablets?|chemical treatment|chlorine dioxide|aquamira|boil)\b/iu.test(answer);
 	const mentionsDarkStop = /\b(?:safe legal stop|stop before dark|before dark|low daylight|dark|headlamp|do not push into darkness|don't push into darkness)\b/iu.test(answer);
 	return mentionsTreatmentRequired && mentionsMethod && mentionsDarkStop;
+}
+
+function mentionsUnknownWaterFlowContext(answer: string): boolean {
+	const mentionsUnknown = /\b(?:do not know|don't know|unknown|not proven|not know|cannot verify|can't verify|does not prove current flow)\b/iu.test(answer);
+	const mentionsCachedCandidate = /\b(?:cached|candidate|seasonal|mapped|next loaded water|seasonal seep)\b/iu.test(answer);
+	const mentionsVerify = /\b(?:verify|confirm|current report|visual|visually|flow)\b/iu.test(answer);
+	const mentionsTreatment = mentionsWaterTreatmentMethod(answer);
+	const mentionsSaferChoice = /\b(?:safer carry|carry extra|carry enough|safer stop|verified source|reliable source)\b/iu.test(answer);
+	return mentionsUnknown && mentionsCachedCandidate && mentionsVerify && mentionsTreatment && mentionsSaferChoice;
+}
+
+function mentionsWaterVerificationAndTreatment(answer: string): boolean {
+	const mentionsVerify = /\b(?:verify|confirm|visual|visually|current flow|flow before relying)\b/iu.test(answer);
+	const mentionsTreatment = mentionsWaterTreatmentMethod(answer);
+	const mentionsSaferCarry = /\b(?:carry extra|carry enough|safer carry|verified source|reliable source|if it is dry)\b/iu.test(answer);
+	return mentionsVerify && mentionsTreatment && mentionsSaferCarry;
+}
+
+function mentionsWaterTreatmentMethod(answer: string): boolean {
+	return /\b(?:filter|filtering|filtered|treat\/filter|filter\/treat|filter or treat|treat or filter|treat(?:ed|ing)? (?:all|any|the|collected|questionable|source|water)|water treatment|backup tablets?|water tablets?|chemical treatment|chlorine dioxide|aquamira|boil)\b/iu.test(answer);
 }
 
 function mentionsShelterDecisionFactors(answer: string): boolean {
@@ -1225,9 +1375,9 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`Use plain text only. Do not use Markdown headings, bold markers, tables, or long bullet lists; this chat renders plain text.`,
 		`Do not expose internal tool names or labels such as "source skill", "source_search", "open_source_doc", or "tool invocation" in the answer. Use the information naturally.`,
 		`Be honest about uncertainty. Use "candidate", "verify", or "I don't know" when the pack cannot prove something. Never turn candidate water, shelters, towns, or weather into guarantees.`,
-		`For water questions, use the next_water tool finding as the answer's spine. Lead with the nearest actionable water option or next reliable source from the tool finding. If no reliable water is loaded, say that after the source hierarchy; do not start with a generic refusal.`,
-		`For heat-wave water questions, tell the hiker to stop, find shade, cool down, sip treated water with electrolytes if available, and escalate if dizziness, confusion, headache, nausea, cramps, chills, stopped sweating, or worsening symptoms appear.`,
-		`For camel-up or ridge-water questions, give a clear decision: camel up at the last confirmed source and carry extra when the next water is seasonal, unverified, exposed, hot, or after a hard climb; only use the lighter carry when the next reliable water is confirmed and conditions are mild.`,
+		`For water questions, use the next_water tool finding as the answer's spine. Lead with the nearest actionable water option or next reliable source from the tool finding. If the source is seasonal or unverified, say it is a candidate, visually confirm current flow, filter or treat collected water, and carry enough to reach a verified source if it is dry. If no reliable water is loaded, say that after the source hierarchy; do not start with a generic refusal.`,
+		`For heat-wave water questions, combine planning and emergency thresholds: move hard miles into the cooler part of the day, schedule shade breaks, eat salty food or use electrolytes if available, carry conservatively to verified water, and escalate if dizziness, confusion, headache, nausea, cramps, chills, stopped sweating, or worsening symptoms appear.`,
+		`For camel-up or ridge-water questions, give a clear decision: camel up at the last confirmed source and carry extra when the next water is seasonal, unverified, exposed, hot, or after a hard climb; only use the lighter carry when the next reliable water is confirmed and conditions are mild. When tool findings name a seasonal source and a reliable source, name both and make the carry decision from those facts.`,
 		`For dry-stretch water-carry questions, give a practical conservative range: roughly 0.5-1 liter per 3-5 miles as a starting point, more for heat, exposure, climbing, slow pace, or personal thirst. Tell the hiker to top off at the last confirmed source and carry enough to reach the next reliable source when the next source is seasonal or unverified.`,
 		`For questionable-water, tired, or low-daylight treatment questions, keep the answer focused on water safety unless heat symptoms are explicit. Say treatment is non-negotiable, use filter/backflush or backup tablets/boil, do not drink untreated questionable water, and choose a safe legal stop before dark if treatment or verification will delay the push.`,
 		`For frozen or failing water-filter questions, say a hollow-fiber filter may be compromised if it froze, use backup treatment or replace it if unsure, backflush or clean a slow filter when the model supports it, and prevent the next freeze by sleeping with the filter or keeping it warm overnight. Use next-water context before telling the hiker to push past water.`,
