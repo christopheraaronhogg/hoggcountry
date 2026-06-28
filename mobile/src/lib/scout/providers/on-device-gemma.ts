@@ -85,6 +85,22 @@ const BAILOUT_INJURY_EXIT_FALLBACK_NOTE =
 	'Bailout planning note: next loaded bailout/access candidate is not available in the current pack. Treat this as incomplete context: for worsening knee pain, swelling, changed gait, or inability to continue safely, do not push through it. Back off or stop, confirm the nearest road, town, shuttle, pickup, and services when possible, and use 911, inReach/PLB, rangers/authorities, or the emergency plan for real danger or if you cannot continue safely.';
 const OFFLINE_EMERGENCY_BOUNDARY_NOTE =
 	'Emergency boundary: Scout and the phone do not replace inReach, PLB, 911, or the family emergency plan.';
+const MANUAL_MILE_AFTER_SHUTTLE_NOTE =
+	'Manual-mile update after a shuttle or missed GPS fix: confirm where you actually are first, then set Current AT mile from a reliable reference such as a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap. In the app, use first-run hike setup or Settings > Edit hike details, enter Current AT mile, save, then check Today and Scout show the new mile. Refresh the field pack when online and re-ask Scout for water, shelter, town, terrain, and bailout because downstream answers depend on that mile. If signed in, let cloud sync/backup catch up when you have service; do not make water, shelter, town, or safety decisions from an unconfirmed mile.';
+const CONFUSING_JUNCTION_NOTE =
+	'Confusing-junction note: stop at the junction, do not guess, and do not keep hiking just because a line on the phone looks plausible. Compare the blaze, sign, map, compass, GPS, and last known clear blaze or landmark. Backtrack only on the obvious safe route to the last confirmed point if needed, and wait or ask another reliable source when visibility, weather, injury, or darkness makes the choice unsafe.';
+const ROLLED_ANKLE_NOW_NOTE =
+	'Rolled-ankle note: stop and assess pain, swelling, weight-bearing, and gait before making miles. Reduce load and pace, choose the nearest safe legal stop or loaded exit candidate, and do not push through worsening pain, swelling, numbness, deformity, changed gait, or inability to walk normally. Get medical help or use 911, inReach/PLB, rangers/authorities, or the emergency plan for severe pain, instability, worsening symptoms, exposure, or if you cannot continue safely.';
+const SOS_SUPPORT_CIRCLE_NOTE =
+	'SOS/support-circle note: Scout cannot call 911, trigger SOS, or rescue you. For immediate danger, use phone SOS/911 if available or your inReach/PLB/emergency device, then contact your support circle when safe. Send concise facts: current mile/location or last known point, what happened, injury/weather/urgency, what you plan to do next, and when you will check in again. If it is not immediate danger, use your family emergency plan and escalation window, but do not wait on Scout for rescue.';
+const NO_SIGNAL_HELP_SOON_NOTE =
+	'No-signal help note: if you need help soon, first get to a safe stable spot and conserve battery. Use inReach/PLB or 911/SOS if available; if not, send a text/call attempt with current mile or last known point, issue, plan, and check-in time because queued texts may send when service returns. Move for signal only if the route is obvious and safer than staying put; do not wander, climb exposed terrain, or leave a known safe location just to chase bars.';
+const OVERDUE_PARTNER_NOTE =
+	'Overdue-partner note: start from the agreed check-in plan, last known mile/location, intended stop, route, and how overdue they are. Try direct call/text and contact the support circle named in the plan. If they are beyond the escalation window, injured, exposed, missing in bad weather/darkness, or the situation feels unsafe, escalate to 911, rangers/authorities, hostel/shuttle/ridgerunner, or the emergency plan with the last known facts. Do not create a second emergency by leaving your own safe location without a clear plan.';
+const MEDICAL_ADVICE_BOUNDARY_NOTE =
+	'Medical-advice boundary: Scout can help you make a conservative field decision, but it cannot diagnose, clear you to keep hiking, or replace a clinician or emergency services. For symptoms, describe red flags, stop or reduce exertion, choose a safer stop or exit, and seek medical help or use 911/inReach/PLB for chest pain, trouble breathing, severe allergic reaction, head injury, fainting, confusion, severe bleeding, signs of stroke, severe/worsening pain, infection signs, heat illness, hypothermia, or inability to continue safely.';
+const STOP_HIKING_IMMEDIATE_NOTE =
+	'Stop-hiking-immediately note: stop making miles for heat illness signs, hypothermia signs, lightning/exposed ridge danger, smoke/fire, flooding/high water, being lost or off trail, unsafe people, severe fatigue with foggy thinking, worsening injury, swelling, changed gait, chest pain, trouble breathing, fainting, confusion, or darkness/weather that makes navigation unsafe. Get to a safe stable spot, choose the nearest lower-risk legal stop or exit, and use 911, inReach/PLB, rangers/authorities, or the emergency plan when danger, exposure, injury, or confusion is present.';
 const RESUPPLY_MAIL_DROP_NOTE =
 	'Before making a firm mail-versus-town call, confirm diet restrictions, expected pace, next town timing, store and post-office hours, hostel or shuttle access, and whether the item is hard to find locally. Default rule: buy common food in town; mail only constrained, medical, diet-specific, or hard-to-find items to verified stops.';
 const INJURY_PAIN_SAFETY_NOTE =
@@ -397,13 +413,22 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	if (isNoBasemapNavigationPrompt(lowerPrompt) && !mentionsNoBasemapNavigationBoundary(answer)) {
 		answer = isVagueSourceOnlyAnswer(answer) ? NO_BASEMAP_NAVIGATION_NOTE : appendSentence(answer, NO_BASEMAP_NAVIGATION_NOTE);
 	}
+	if (isManualMileAfterShuttlePrompt(lowerPrompt) && !mentionsManualMileAfterShuttle(answer)) {
+		answer = MANUAL_MILE_AFTER_SHUTTLE_NOTE;
+	}
+	if (isConfusingJunctionPrompt(lowerPrompt)) {
+		answer = removeConfusingJunctionDrift(answer);
+		if (!mentionsConfusingJunctionSafety(answer)) {
+			answer = isVagueSourceOnlyAnswer(answer) ? CONFUSING_JUNCTION_NOTE : appendSentence(answer, CONFUSING_JUNCTION_NOTE);
+		}
+	}
 	if (isOffTrailImmediatePrompt(lowerPrompt)) {
 		answer = normalizeOffTrailImmediateWording(answer);
 		if (!mentionsOffTrailImmediateContext(answer)) {
 			answer = appendSentence(answer, buildOffTrailImmediateNote(toolInvocations));
 		}
 	}
-	if (isOwnMileSetupPrompt(lowerPrompt) && !mentionsOwnMileSetupReadiness(answer)) {
+	if (!isManualMileAfterShuttlePrompt(lowerPrompt) && isOwnMileSetupPrompt(lowerPrompt) && !mentionsOwnMileSetupReadiness(answer)) {
 		answer = appendSentence(answer, mentionsOwnMileSetupFlow(answer) ? OWN_MILE_RISK_NOTE : OWN_MILE_SETUP_NOTE);
 	}
 	if (isOfflineSetupPrompt(lowerPrompt) && !mentionsOfflineBible(answer)) {
@@ -447,6 +472,27 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	}
 	if (isSmokeFireTrailPrompt(lowerPrompt) && !mentionsSmokeFireTrailSafety(answer, toolInvocations)) {
 		answer = appendSentence(answer, buildSmokeFireTrailNote(toolInvocations));
+	}
+	if (isRolledAnkleNowPrompt(lowerPrompt)) {
+		answer = removeMisappliedHeatIllnessDrift(answer);
+		if (!mentionsRolledAnklePlan(answer, toolInvocations)) {
+			answer = appendSentence(answer, buildRolledAnkleNowNote(toolInvocations));
+		}
+	}
+	if (isSosSupportCirclePrompt(lowerPrompt) && !mentionsSosSupportCircleBoundary(answer)) {
+		answer = SOS_SUPPORT_CIRCLE_NOTE;
+	}
+	if (isNoSignalHelpSoonPrompt(lowerPrompt) && !mentionsNoSignalHelpSoon(answer)) {
+		answer = NO_SIGNAL_HELP_SOON_NOTE;
+	}
+	if (isOverduePartnerPrompt(lowerPrompt) && !mentionsOverduePartnerPlan(answer)) {
+		answer = buildOverduePartnerNote(toolInvocations);
+	}
+	if (isMedicalAdviceBoundaryPrompt(lowerPrompt)) {
+		answer = MEDICAL_ADVICE_BOUNDARY_NOTE;
+	}
+	if (isStopHikingImmediatePrompt(lowerPrompt) && !mentionsStopHikingImmediateBoundary(answer)) {
+		answer = appendSentence(answer, STOP_HIKING_IMMEDIATE_NOTE);
 	}
 	if (isUnsafePersonShelterPrompt(lowerPrompt)) {
 		answer = removeUnsafePersonShelterDrift(answer);
@@ -997,6 +1043,17 @@ function isOffTrailImmediatePrompt(prompt: string): boolean {
 	return mentionsLostOrOffTrail && asksImmediateAction;
 }
 
+function isManualMileAfterShuttlePrompt(prompt: string): boolean {
+	const asksManualMile = /\b(?:set|update|change|enter|correct)\b[^.?!\n]*(?:mile|current at mile|trail mile)|\b(?:mile|current at mile|trail mile)\b[^.?!\n]*(?:manual|manually|after a shuttle|missed gps|missed gps fix)\b/u.test(prompt);
+	const mentionsShuttleOrGps = /\b(?:shuttle|missed gps|gps fix|manual|manually)\b/u.test(prompt);
+	return asksManualMile && mentionsShuttleOrGps;
+}
+
+function isConfusingJunctionPrompt(prompt: string): boolean {
+	return /\b(?:confusing junction|junction|intersection|fork|turn)\b/u.test(prompt) &&
+		/\b(?:blaze|blazes|unclear|not clear|can't tell|cannot tell|which way|wrong way)\b/u.test(prompt);
+}
+
 function isBailoutInjuryExitPrompt(prompt: string): boolean {
 	const mentionsExitIntent = /\b(?:bailout|bail out|exit|access|road crossing|road|town|shuttle|pickup|get off trail|evacuat\w*)\b/u.test(prompt);
 	const mentionsInjuryRisk =
@@ -1018,6 +1075,32 @@ function isFamilyCheckinPrompt(prompt: string): boolean {
 
 function isInjuryPrompt(prompt: string): boolean {
 	return /injury|hurt|pain|knee|ankle|rolled|symptoms|medical|sick/u.test(prompt);
+}
+
+function isRolledAnkleNowPrompt(prompt: string): boolean {
+	return /\b(?:rolled|twisted|sprained)\b[^.?!\n]*\bankle\b|\bankle\b[^.?!\n]*(?:rolled|twisted|sprained)\b/u.test(prompt);
+}
+
+function isSosSupportCirclePrompt(prompt: string): boolean {
+	return /\b(?:sos|support circle|emergency contacts?|contact my support|contact support|call for help)\b/u.test(prompt);
+}
+
+function isNoSignalHelpSoonPrompt(prompt: string): boolean {
+	return /\b(?:lose|lost|no|without)\b[^.?!\n]*(?:phone signal|cell signal|signal|service)\b/u.test(prompt) &&
+		/\b(?:need help soon|need help|help soon|emergency|something goes wrong)\b/u.test(prompt);
+}
+
+function isOverduePartnerPrompt(prompt: string): boolean {
+	return /\b(?:partner|hiking partner|tramily|friend|someone)\b/u.test(prompt) &&
+		/\b(?:overdue|late|cannot reach|can't reach|not back|missing|hasn't checked in|has not checked in)\b/u.test(prompt);
+}
+
+function isMedicalAdviceBoundaryPrompt(prompt: string): boolean {
+	return /\b(?:medical advice|symptoms?|diagnos\w*|sick|illness|what should scout handle)\b/u.test(prompt);
+}
+
+function isStopHikingImmediatePrompt(prompt: string): boolean {
+	return /\b(?:stop hiking immediately|stop hiking|stop instead of trying to make miles|instead of trying to make miles|make miles)\b/u.test(prompt);
 }
 
 function isZeroNeroPrompt(prompt: string): boolean {
@@ -1508,6 +1591,26 @@ function normalizeOffTrailImmediateWording(answer: string): string {
 	return answer.replace(/\b(?:find|get to|move to) a safe spot away from the trail\b/giu, 'Get to a safe stable spot out of immediate hazards');
 }
 
+function removeConfusingJunctionDrift(answer: string): string {
+	const filtered = answer
+		.split(/\n{2,}/u)
+		.map((paragraph) => {
+			const sentences = splitSentences(paragraph)
+				.map((sentence) => sentence.trim())
+				.filter((sentence) => sentence && !containsConfusingJunctionDrift(sentence));
+			return sentences.join(' ');
+		})
+		.filter(Boolean)
+		.join('\n\n')
+		.trim();
+	return filtered || answer;
+}
+
+function containsConfusingJunctionDrift(sentence: string): boolean {
+	return /\b(?:fire|smoke|high water|weather|current conditions|current source checks?|live risk|lower-mileage|safer-stop|hazards?)\b/iu.test(sentence) &&
+		!/\b(?:blaze|junction|map|compass|gps|backtrack|last known)\b/iu.test(sentence);
+}
+
 function buildGuidebookMileMismatchNote(toolInvocations: ToolInvocationRecord[]): string {
 	const current = toolSummary(toolInvocations, 'current_mile');
 	if (!current) {
@@ -1538,6 +1641,23 @@ function buildBailoutInjuryExitNote(toolInvocations: ToolInvocationRecord[]): st
 		town ? `nearest loaded bailout/access candidate is ${trimToolClause(town)}` : 'nearest loaded bailout/access candidate is not available in the current pack'
 	].filter(Boolean);
 	return `Bailout planning note: ${parts.join('; ')}. Treat this as approximate loaded context: for worsening knee pain, swelling, changed gait, or inability to continue safely, do not push through it. Back off or stop, confirm shuttle/pickup and services when possible, and use 911, inReach/PLB, rangers/authorities, or the emergency plan for real danger or if you cannot continue safely.`;
+}
+
+function buildRolledAnkleNowNote(toolInvocations: ToolInvocationRecord[]): string {
+	const current = toolSummary(toolInvocations, 'current_mile');
+	const town = toolSummary(toolInvocations, 'next_town');
+	const context = [
+		current ? trimToolClause(current) : '',
+		town ? `loaded exit candidate: ${trimToolClause(town)}` : ''
+	].filter(Boolean);
+	if (!context.length) return ROLLED_ANKLE_NOW_NOTE;
+	return `${ROLLED_ANKLE_NOW_NOTE} Loaded context: ${context.join('; ')}. Treat that exit as a candidate, not a guarantee; confirm shuttle, pickup, services, weather, and whether walking to it is safer than stopping.`;
+}
+
+function buildOverduePartnerNote(toolInvocations: ToolInvocationRecord[]): string {
+	const town = toolSummary(toolInvocations, 'next_town');
+	if (!town) return OVERDUE_PARTNER_NOTE;
+	return `${OVERDUE_PARTNER_NOTE} Loaded nearby help/access context: ${trimToolClause(town)}. Treat it as a candidate for contacting help or arranging pickup, not proof that services are available.`;
 }
 
 function buildOffTrailImmediateNote(toolInvocations: ToolInvocationRecord[]): string {
@@ -2109,6 +2229,31 @@ function mentionsNoBasemapNavigationBoundary(answer: string): boolean {
 	return mentionsMissingTiles && mentionsScoutLine && mentionsExternalMap && mentionsComplexBoundary;
 }
 
+function mentionsManualMileAfterShuttle(answer: string): boolean {
+	const mentionsAppFlow = /\b(?:Current AT mile|current mile|hike setup|Settings > Edit hike details|edit hike details)\b/iu.test(answer) &&
+		/\b(?:save|enter|set|update)\b/iu.test(answer);
+	const mentionsVerification =
+		/\b(?:trail sign|blaze|shelter|road crossing|guide source|map|GPS snap|gps)\b/iu.test(answer) &&
+		/\b(?:confirm|verify|reliable reference|actually are)\b/iu.test(answer);
+	const mentionsTodayScout = /\bToday\b/iu.test(answer) && /\bScout\b/iu.test(answer);
+	const mentionsRefreshReask =
+		/\bfield[-\s]?pack\b/iu.test(answer) &&
+		/\brefresh\b/iu.test(answer) &&
+		/\bre-?ask Scout\b/iu.test(answer) &&
+		/\b(?:water|shelter|town|terrain|bailout)\b/iu.test(answer);
+	const mentionsSyncBoundary = /\bif signed in\b/iu.test(answer) && /\b(?:cloud sync|backup|sync)\b/iu.test(answer);
+	const mentionsDecisionBoundary = /\bdo not\b/iu.test(answer) && /\bunconfirmed mile\b/iu.test(answer);
+	return mentionsAppFlow && mentionsVerification && mentionsTodayScout && mentionsRefreshReask && mentionsSyncBoundary && mentionsDecisionBoundary;
+}
+
+function mentionsConfusingJunctionSafety(answer: string): boolean {
+	const mentionsStop = /\b(?:stop|slow down)\b/iu.test(answer);
+	const mentionsNoGuess = /\b(?:do not|don't|never)\b[^.?!\n]*(?:guess|keep hiking|continue blindly|continue)|\bnot guess\b/iu.test(answer);
+	const mentionsPositionChecks = /\b(?:blaze|blazes|sign|map|compass|gps|last known clear|last known)\b/iu.test(answer);
+	const mentionsSafeBacktrack = /\bbacktrack\b[^.?!\n]*(?:obvious|safe|last confirmed|last known|clear)|\b(?:obvious|safe|last confirmed|last known|clear)\b[^.?!\n]*\bbacktrack\b/iu.test(answer);
+	return mentionsStop && mentionsNoGuess && mentionsPositionChecks && mentionsSafeBacktrack;
+}
+
 function mentionsOffTrailImmediateContext(answer: string): boolean {
 	const mentionsStop = /\b(?:stop moving|stop hiking|stay put|do not keep hiking|don't keep hiking|stop)\b/iu.test(answer);
 	const mentionsBattery = /\b(?:conserve|save|preserve)\b[^.?!\n]*(?:battery|phone power)|\bbattery\b[^.?!\n]*(?:conserve|save|preserve|low power)\b/iu.test(answer);
@@ -2132,6 +2277,68 @@ function mentionsBailoutInjuryExitContext(answer: string, toolInvocations: ToolI
 		/\b(?:back off|stop|stop hiking)\b[^.?!\n]*(?:worsen|worsens|worsening|swelling|gait|cannot continue|can't continue|safely)\b/iu.test(answer);
 	const mentionsEmergencyEscalation = /\b(?:911|inReach|PLB|rangers?|authorities|emergency plan|get help|medical help)\b/iu.test(answer);
 	return mentionsLoadedExit && mentionsDistance && mentionsExit && mentionsConfirmation && mentionsInjuryStop && mentionsEmergencyEscalation;
+}
+
+function mentionsRolledAnklePlan(answer: string, toolInvocations: ToolInvocationRecord[]): boolean {
+	const town = toolSummary(toolInvocations, 'next_town');
+	const mentionsAssessment = /\b(?:pain|swelling|weight-bearing|weight bearing|gait)\b/iu.test(answer);
+	const mentionsReduceLoad = /\b(?:reduce load|reduce.*pace|slow|lower-mileage|low[-\s]?impact|nearest safe|safe legal stop|exit)\b/iu.test(answer);
+	const mentionsLoadedExit = !town || mentionsToolPlace(answer, town);
+	const mentionsHelpCriteria =
+		/\b(?:worsening pain|swelling|numbness|deformity|changed gait|cannot walk|can't walk|inability to walk|severe pain|instability|cannot continue)\b/iu.test(answer) &&
+		/\b(?:medical help|911|inReach|PLB|rangers?|authorities|emergency plan|get help)\b/iu.test(answer);
+	const refusesPushThrough = /\b(?:do not|don't|never)\b[^.?!\n]*(?:push through|keep hiking|continue through)\b/iu.test(answer);
+	return mentionsAssessment && mentionsReduceLoad && mentionsLoadedExit && mentionsHelpCriteria && refusesPushThrough;
+}
+
+function mentionsSosSupportCircleBoundary(answer: string): boolean {
+	const mentionsCannotRescue = /\bScout\b[^.?!\n]*(?:cannot|can't|does not|doesn't)\b[^.?!\n]*(?:call 911|trigger SOS|rescue)|\b(?:cannot|can't|does not|doesn't)\b[^.?!\n]*(?:call 911|trigger SOS|rescue)\b[^.?!\n]*Scout/iu.test(answer);
+	const mentionsEmergencyDevice = /\b(?:phone SOS|911|inReach|PLB|emergency device)\b/iu.test(answer);
+	const mentionsFactsToSend =
+		/\b(?:current mile|location|last known point)\b/iu.test(answer) &&
+		/\b(?:what happened|issue|injury|weather|urgency|plan|check in|check-in)\b/iu.test(answer);
+	const mentionsEscalationWindow = /\b(?:support circle|family emergency plan|escalation window|emergency plan)\b/iu.test(answer);
+	return mentionsCannotRescue && mentionsEmergencyDevice && mentionsFactsToSend && mentionsEscalationWindow;
+}
+
+function mentionsNoSignalHelpSoon(answer: string): boolean {
+	const mentionsStableSpot = /\b(?:safe stable spot|stay put|safe place|conserve battery)\b/iu.test(answer);
+	const mentionsEmergencyDevice = /\b(?:inReach|PLB|911|SOS|emergency device)\b/iu.test(answer);
+	const mentionsQueuedMessage =
+		/\b(?:text|call)\b/iu.test(answer) &&
+		/\b(?:current mile|last known point|issue|plan|check-in|check in)\b/iu.test(answer) &&
+		/\b(?:service returns|queued|send when service|signal returns)\b/iu.test(answer);
+	const mentionsNoChasingBars =
+		/\b(?:do not|don't|never)\b[^.?!\n]*(?:wander|chase bars|climb exposed|leave a known safe location)|\bmove for signal only if\b/iu.test(answer);
+	return mentionsStableSpot && mentionsEmergencyDevice && mentionsQueuedMessage && mentionsNoChasingBars;
+}
+
+function mentionsOverduePartnerPlan(answer: string): boolean {
+	const mentionsLastKnown =
+		/\b(?:last known mile|last known location|last known facts|last known point|intended stop|route|how overdue|agreed check-in|check-in plan)\b/iu.test(answer);
+	const mentionsDirectAndSupport = /\b(?:call|text)\b/iu.test(answer) && /\b(?:support circle|support|emergency contact|family|trusted)\b/iu.test(answer);
+	const mentionsEscalation =
+		/\b(?:escalation window|beyond the escalation window|911|rangers?|authorities|ridgerunner|hostel|shuttle|emergency plan)\b/iu.test(answer);
+	const mentionsNoSecondEmergency = /\b(?:do not|don't|avoid)\b[^.?!\n]*(?:second emergency|risk yourself|leave your own safe location)|\bwithout a clear plan\b/iu.test(answer);
+	return mentionsLastKnown && mentionsDirectAndSupport && mentionsEscalation && mentionsNoSecondEmergency;
+}
+
+function mentionsMedicalAdviceBoundary(answer: string): boolean {
+	const mentionsNoDiagnosis =
+		/\b(?:cannot|can't|does not|doesn't|not)\b[^.?!\n]*(?:diagnose|clear you|replace a clinician|replace emergency services)|\bnot medical diagnosis\b/iu.test(answer);
+	const mentionsConservativeDecision = /\b(?:conservative field decision|stop|reduce exertion|safer stop|exit)\b/iu.test(answer);
+	const mentionsRedFlags =
+		/\b(?:chest pain|trouble breathing|allergic reaction|head injury|fainting|confusion|severe bleeding|stroke|worsening pain|infection|heat illness|hypothermia|cannot continue)\b/iu.test(answer);
+	const mentionsEmergency = /\b(?:clinician|medical help|911|inReach|PLB|emergency services)\b/iu.test(answer);
+	return mentionsNoDiagnosis && mentionsConservativeDecision && mentionsRedFlags && mentionsEmergency;
+}
+
+function mentionsStopHikingImmediateBoundary(answer: string): boolean {
+	const mentionsMultipleStopReasons =
+		/\b(?:heat illness|hypothermia|lightning|smoke|fire|flooding|lost|off trail|unsafe people|severe fatigue|worsening injury|changed gait|chest pain|trouble breathing|fainting|confusion|darkness)\b/iu.test(answer);
+	const mentionsSafeSpot = /\b(?:safe stable spot|lower-risk legal stop|nearest lower-risk|stop making miles|stop hiking)\b/iu.test(answer);
+	const mentionsEmergency = /\b(?:911|inReach|PLB|rangers?|authorities|emergency plan)\b/iu.test(answer);
+	return mentionsMultipleStopReasons && mentionsSafeSpot && mentionsEmergency;
 }
 
 function mentionsOwnMileSetupFlow(answer: string): boolean {
@@ -2556,10 +2763,16 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For sign-in, login, account, cloud sync, backup, restore, or "can I wait to sign in" questions, say accounts are invite-only. Recommend signing in before trail on Wi-Fi if the hiker has an invite so backup/restore and cloud sync can finish. Keep offline Scout/local AI separate: once the field pack, on-device model, and saved maps/docs are downloaded, offline use does not require a live login. Do not imply sign-in or cloud sync is emergency safety; keep inReach, PLB, 911, and the family emergency plan separate.`,
 		`For own-mile, manual-mile, wrong-mile, profile, GPS correction, shuttle, or "someone else's mile" questions, explain the app flow: first-run hike setup or Settings > Edit hike details, enter Current AT mile, save, then check Today and Scout show the new mile. If the hiker entered the wrong mile, tell them to correct it, refresh the field pack when online, and re-ask Scout for water, shelter, town, terrain, and bailout. Warn that a wrong mile shifts water, shelter, town, terrain, and bailout answers, and not to make water, shelter, town, or safety decisions from a wrong mile. Tell the hiker to confirm against a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap before relying on Scout.`,
 		`For GPS jumping, bad GPS fixes, or Scout showing the wrong spot, tell the hiker to stop in a safe place, wait for GPS to settle with clearer sky view, compare Scout against blazes, signs, landmarks, map, compass, and last known point, then set Current AT mile only from a confirmed location. Tell them to refresh the field pack/current mile when online and re-ask water, shelter, town, terrain, and bailout questions because downstream tools can be wrong until the mile/location is corrected.`,
+		`For manual-mile updates after a shuttle or missed GPS fix, answer the app flow directly: confirm the real location from a reliable reference, use first-run hike setup or Settings > Edit hike details, enter Current AT mile, save, check Today and Scout, refresh the field pack when online, re-ask water/shelter/town/terrain/bailout, and mention cloud sync/backup only if signed in.`,
 		`For guidebook, trail-sign, Scout, GPS, or map mile-mismatch questions, explain that Scout uses a calibrated AT mile frame and that guidebook editions, reroutes or relocations, rounded/local signs, side-trail distances, GPS snap, or manual Current AT mile entry can differ. Ask which guidebook, sign, edition, map, or source the hiker is comparing. Tell the hiker to confirm real position against a blaze, road or shelter sign, map, or GPS snap, update Scout only when the app position is wrong, and do not let Scout mileage override posted signs, closures, or current official safety guidance.`,
 		`For no-basemap, missing-map-tiles, no-cell, or offline map navigation questions, do not pretend basemap tiles are available unless cached. Say Scout's cached trail line and field-pack mile context are only rough trail-corridor checks. Use an external offline map/GPS app or paper map and compass when available. For complex navigation, confusing junctions, off-trail uncertainty, bad weather, or safety decisions, stop and verify with blazes, signs, map, and GPS instead of continuing just because Scout shows a line.`,
+		`For confusing-junction or unclear-blaze questions, keep it immediate: stop at the junction, do not guess, compare blaze/sign/map/compass/GPS/last known clear blaze, backtrack only on the obvious safe route to the last confirmed point, and wait or ask a reliable source when visibility, weather, injury, or darkness makes the choice unsafe.`,
 		`For lost or off-trail prompts, keep it immediate: stop moving, get to a safe stable spot, conserve battery, verify position against map/GPS, compass, blazes, signs, and last known point, backtrack only if the route back is obvious and safe, and do not bushwhack, shortcut, or route through unknown terrain. Escalate through 911, inReach/PLB, rangers/authorities, or the emergency plan for injury, exposure, confusion, worsening weather or darkness, or inability to regain the trail safely.`,
 		`For bailout, exit, or worsening-injury questions, start from the current_mile finding and the next_town road/town/access finding. Name the nearest loaded bailout or access candidate and approximate distance. Say if it is only a road crossing or emergency-exit candidate, confirm shuttle, pickup, and services when possible, choose conservative exit or rest planning, and do not tell the hiker to push through worsening knee or joint pain.`,
+		`For rolled-ankle or acute injury questions, stop first, assess pain/swelling/weight-bearing/gait, reduce load and pace, use loaded exit context when available, and set clear help criteria. Do not diagnose or tell the hiker to push through worsening pain, swelling, changed gait, deformity, numbness, exposure, or inability to continue safely.`,
+		`For SOS, no signal, support-circle, or overdue-partner questions, separate Scout from rescue. Scout cannot call 911, trigger SOS, or rescue the hiker. Tell the hiker what facts to send: current mile/location or last known point, issue, urgency, plan, and next check-in. Use 911, phone SOS, inReach/PLB, rangers/authorities, or the emergency plan for danger, and do not create a second emergency while searching or chasing signal.`,
+		`For medical-advice questions, Scout can support conservative field decisions but cannot diagnose, clear the hiker to continue, or replace clinicians/emergency services. Name red flags and tell the hiker to stop, choose a safer stop or exit, and get medical/emergency help when symptoms are serious, worsening, confusing, or unsafe.`,
+		`For "when should I stop hiking immediately" questions, cover multiple stop-now categories, not only heat: heat illness, hypothermia, lightning/exposed ridge danger, smoke/fire, flooding/high water, lost/off-trail, unsafe people, severe fatigue/foggy thinking, worsening injury, chest pain, breathing trouble, fainting, confusion, and unsafe darkness/weather.`,
 		`For "where am I relative to the next road crossing or town" questions, start from the current_mile finding and the next_town road/town access finding. State the approximate distance, say when the loaded place is only a road crossing or emergency-exit candidate, confirm shuttle or pickup when needed, and do not assume services at a crossing unless loaded current service data proves them. Do not drift into water or shelter unless asked; if nearby water is mentioned, never call seasonal water reliable.`,
 		`For "next climb", "how hard is the terrain ahead", elevation, gain/loss, or grade questions, use the upcoming_terrain finding as the loaded window. If that finding lacks verified climb, elevation profile, gain/loss, or grade detail, say so plainly, do not invent climb distance or difficulty, use the window only as landmark spacing, and tell the hiker to verify with an offline map, guide, GPS/elevation profile, or trail sign. Give pace-impact guidance from daylight, water spacing, pack weight, feet/knees, weather, and the next legal stop.`,
 		`For offline setup, offline downloads, phone settings, or day-one readiness questions, distinguish phone/app readiness from personal safety readiness. Always include the exact check "verify Bible text is available offline." Also mention field-pack refresh, current mile, local AI model, offline maps/docs, battery, airplane-mode rehearsal, and that Scout does not replace inReach, PLB, 911, or the family emergency plan. For personal documents, include this safety boundary in plain words: do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat.`,

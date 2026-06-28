@@ -484,6 +484,15 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.match(gpsWrongSpotAnswer, /do not make water, shelter, town, terrain, or safety decisions from the bad GPS location/);
 	assert.doesNotMatch(gpsWrongSpotAnswer, /Own-mile setup/);
 
+	const manualMileAfterShuttleAnswer = polishOnDeviceAnswer(
+		"If you lose your GPS fix or miss a shuttle, the best thing to do is stop and assess your situation. Check your phone's battery and try to get a signal. If you are unsure of your location, use any map you have.",
+		'How do I set my mile manually after a shuttle or missed GPS fix?'
+	);
+	assert.equal(
+		manualMileAfterShuttleAnswer,
+		'Manual-mile update after a shuttle or missed GPS fix: confirm where you actually are first, then set Current AT mile from a reliable reference such as a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap. In the app, use first-run hike setup or Settings > Edit hike details, enter Current AT mile, save, then check Today and Scout show the new mile. Refresh the field pack when online and re-ask Scout for water, shelter, town, terrain, and bailout because downstream answers depend on that mile. If signed in, let cloud sync/backup catch up when you have service; do not make water, shelter, town, or safety decisions from an unconfirmed mile.'
+	);
+
 	const airplaneModeRehearsalAnswer = polishOnDeviceAnswer(
 		'First, charge your phone and battery bank. Then, refresh your field pack and current mile. Next, finish cloud sync while online. After that, update the local AI model on Wi-Fi and power. Then, save offline maps and documents. You should also test airplane mode with a water question.',
 		'How do I test airplane mode before leaving town?'
@@ -552,6 +561,15 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.match(noBasemapAnswer, /complex navigation, confusing junctions, off-trail uncertainty, bad weather, or safety decisions/);
 	assert.match(noBasemapAnswer, /do not keep hiking just because Scout shows a line/);
 
+	const confusingJunctionAnswer = polishOnDeviceAnswer(
+		'At a confusing junction where the blaze is unclear, slow down and stop. Use your map to confirm the correct path before proceeding.',
+		'What should I do at a confusing junction where the blaze is unclear?'
+	);
+	assert.match(confusingJunctionAnswer, /Confusing-junction note/);
+	assert.match(confusingJunctionAnswer, /do not guess/);
+	assert.match(confusingJunctionAnswer, /blaze, sign, map, compass, GPS, and last known clear blaze/);
+	assert.match(confusingJunctionAnswer, /Backtrack only on the obvious safe route/);
+
 	const offTrailAnswer = polishOnDeviceAnswer(
 		'Stop hiking immediately. Find a safe spot away from the trail and assess your condition. Check your body for any signs of injury, heat illness, or confusion. If you are in immediate danger, use your emergency communication device or call for help.\n\nIf you are unsure of your exact location, try to recall any recent landmarks or trail markers. If you are in a remote area, stay put and conserve energy. You need to make a decision based on your current safety and physical state.',
 		'I think I am off trail. What should I do right now?',
@@ -574,6 +592,82 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.match(offTrailAnswer, /Backtrack only if the route back is obvious and safe/);
 	assert.match(offTrailAnswer, /Do not bushwhack, shortcut, or let Scout route you through unknown terrain/);
 	assert.match(offTrailAnswer, /911, inReach\/PLB, rangers\/authorities, or the emergency plan/);
+
+	const rolledAnkleAnswer = polishOnDeviceAnswer(
+		'Stop hiking and find a safe place to rest. Since you have an ankle issue, you need to assess the pain and swelling. If the pain is worsening, stop immediately and consider getting help.',
+		'I rolled my ankle but can still walk. What should I do now?',
+		[
+			{
+				toolId: 'next_town',
+				args: {},
+				summary: 'Pilot Gap Road at mile 57.0 (4.8 mi ahead via road crossing; emergency exit candidate, confirm shuttle or pickup). No guaranteed services at the crossing.',
+				confidence: 'medium',
+				receipts: []
+			}
+		]
+	);
+	assert.match(rolledAnkleAnswer, /Rolled-ankle note/);
+	assert.match(rolledAnkleAnswer, /assess pain, swelling, weight-bearing, and gait/);
+	assert.match(rolledAnkleAnswer, /loaded exit candidate: Pilot Gap Road at mile 57\.0/);
+	assert.match(rolledAnkleAnswer, /do not push through worsening pain/);
+	assert.match(rolledAnkleAnswer, /911, inReach\/PLB, rangers\/authorities, or the emergency plan/);
+
+	const sosSupportAnswer = polishOnDeviceAnswer(
+		'If something goes wrong, you should use your personal emergency plan. For immediate danger, follow your established emergency protocol.',
+		'How do I use SOS or contact my support circle if something goes wrong?'
+	);
+	assert.match(sosSupportAnswer, /SOS\/support-circle note/);
+	assert.match(sosSupportAnswer, /Scout cannot call 911, trigger SOS, or rescue you/);
+	assert.match(sosSupportAnswer, /current mile\/location or last known point/);
+	assert.match(sosSupportAnswer, /what happened, injury\/weather\/urgency, what you plan to do next/);
+
+	const noSignalHelpAnswer = polishOnDeviceAnswer(
+		'If you lose signal and need help, your first priority is to stay put and assess your immediate situation.',
+		'What do I do if I lose phone signal but I need help soon?'
+	);
+	assert.match(noSignalHelpAnswer, /No-signal help note/);
+	assert.match(noSignalHelpAnswer, /conserve battery/);
+	assert.match(noSignalHelpAnswer, /inReach\/PLB or 911\/SOS/);
+	assert.match(noSignalHelpAnswer, /queued texts may send when service returns/);
+	assert.match(noSignalHelpAnswer, /do not wander, climb exposed terrain, or leave a known safe location just to chase bars/);
+
+	const overduePartnerAnswer = polishOnDeviceAnswer(
+		'If you cannot reach your hiking partner, your first priority is to stay put and assess the situation.',
+		'What if my hiking partner is overdue and I cannot reach them?',
+		[
+			{
+				toolId: 'next_town',
+				args: {},
+				summary: 'Pilot Gap Road at mile 180.4 (3.1 mi ahead via road crossing; emergency exit candidate, confirm shuttle or pickup). No guaranteed services at the crossing.',
+				confidence: 'medium',
+				receipts: []
+			}
+		]
+	);
+	assert.match(overduePartnerAnswer, /Overdue-partner note/);
+	assert.match(overduePartnerAnswer, /last known mile\/location, intended stop, route, and how overdue/);
+	assert.match(overduePartnerAnswer, /beyond the escalation window/);
+	assert.match(overduePartnerAnswer, /Do not create a second emergency/);
+	assert.match(overduePartnerAnswer, /Pilot Gap Road at mile 180\.4/);
+
+	const medicalAdviceAnswer = polishOnDeviceAnswer(
+		'If you tell me about symptoms, I will tell you to stop hiking, find shade, cool down, and sip treated water with electrolytes if available. I will also tell you to escalate for dizziness or confusion.',
+		'How should Scout handle medical advice if I ask about symptoms?'
+	);
+	assert.doesNotMatch(medicalAdviceAnswer, /find shade, cool down/);
+	assert.match(medicalAdviceAnswer, /Medical-advice boundary/);
+	assert.match(medicalAdviceAnswer, /cannot diagnose, clear you to keep hiking, or replace a clinician or emergency services/);
+	assert.match(medicalAdviceAnswer, /chest pain, trouble breathing/);
+	assert.match(medicalAdviceAnswer, /911\/inReach\/PLB/);
+
+	const stopHikingImmediateAnswer = polishOnDeviceAnswer(
+		'You should stop hiking immediately for dizziness, confusion, headache, nausea, cramps, chills, stopped sweating, or worsening symptoms.',
+		'When should I stop hiking immediately instead of trying to make miles?'
+	);
+	assert.match(stopHikingImmediateAnswer, /Stop-hiking-immediately note/);
+	assert.match(stopHikingImmediateAnswer, /heat illness signs, hypothermia signs, lightning\/exposed ridge danger, smoke\/fire/);
+	assert.match(stopHikingImmediateAnswer, /lost or off trail, unsafe people, severe fatigue with foggy thinking/);
+	assert.match(stopHikingImmediateAnswer, /chest pain, trouble breathing, fainting, confusion/);
 
 	const guidebookMileMismatchAnswer = polishOnDeviceAnswer(
 		"Your mile doesn't match because the trail you are on might have a different numbering system than the guidebook you are using, or the guidebook might be referencing a different section or route.\n\nThe guidance says mileage decisions start with body condition, daylight, elevation, water spacing, weather, pack weight, foot or knee condition, and the next legal shelter, campsite, or town stop.",
