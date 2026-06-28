@@ -71,6 +71,8 @@ const OWN_MILE_SETUP_NOTE =
 	`Own-mile setup: on first run, use the hike setup sheet, choose Start my hike, and enter the Current AT mile; later use Settings > Edit hike details or a confirmed mile update. Then check Today and Scout both show the new mile, refresh the field pack when online, and re-ask water, shelter, town, terrain, or bailout questions. ${OWN_MILE_RISK_NOTE}`;
 const WRONG_MILE_RECOVERY_NOTE =
 	'Wrong-mile recovery: correct the Current AT mile in first-run hike setup, Settings > Edit hike details, or a confirmed manual mile update. Confirm the corrected mile against a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap. Then check Today and Scout both show the corrected mile, refresh the field pack when online, and re-ask Scout for water, shelter, town, terrain, and bailout. A wrong mile shifts water, shelter, town, terrain, and bailout answers; do not make water, shelter, town, or safety decisions from a wrong mile.';
+const GUIDEBOOK_MILE_MISMATCH_NOTE =
+	"Your mile can differ because Scout's trail miles come from a calibrated AT mile frame, while guidebook editions, reroutes or relocations, rounded or local trail signs, side-trail distances, GPS snap, or a manual Current AT mile entry can differ. Ask which guidebook, sign, edition, or source you are comparing, confirm your real position against a blaze, road or shelter sign, map, or GPS snap, then update Scout's Current AT mile and refresh the field pack online if Scout is wrong. Do not let Scout mileage override posted signs, closures, or current official guidance for safety decisions.";
 const OFFLINE_EMERGENCY_BOUNDARY_NOTE =
 	'Emergency boundary: Scout and the phone do not replace inReach, PLB, 911, or the family emergency plan.';
 const RESUPPLY_MAIL_DROP_NOTE =
@@ -373,6 +375,11 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 		answer = isVagueSourceOnlyAnswer(answer) || isWrongMilePartialAnswer(answer)
 			? WRONG_MILE_RECOVERY_NOTE
 			: appendSentence(answer, WRONG_MILE_RECOVERY_NOTE);
+	}
+	if (isGuidebookMileMismatchPrompt(lowerPrompt) && !mentionsGuidebookMileMismatchContext(answer)) {
+		answer = isVagueSourceOnlyAnswer(answer) || isGuidebookMileMismatchPartialAnswer(answer)
+			? buildGuidebookMileMismatchNote(toolInvocations)
+			: appendSentence(answer, buildGuidebookMileMismatchNote(toolInvocations));
 	}
 	if (isOwnMileSetupPrompt(lowerPrompt) && !mentionsOwnMileSetupReadiness(answer)) {
 		answer = appendSentence(answer, mentionsOwnMileSetupFlow(answer) ? OWN_MILE_RISK_NOTE : OWN_MILE_SETUP_NOTE);
@@ -931,6 +938,13 @@ function isWrongMileRecoveryPrompt(prompt: string): boolean {
 	return /\b(?:wrong trail mile|wrong mile|enter(?:ed)? .*wrong .*mile|mile .*mistake|mistake .*mile)\b/u.test(prompt);
 }
 
+function isGuidebookMileMismatchPrompt(prompt: string): boolean {
+	const mentionsMismatch = /\b(?:not match|doesn'?t match|do not match|different|disagree|off by|mismatch|wrong)\b/u.test(prompt);
+	const mentionsMile = /\b(?:mile|mileage|milepost|mile marker|trail mile)\b/u.test(prompt);
+	const mentionsReference = /\b(?:guidebook|guide book|guide|trail sign|sign|map|gps|scout|farout|source)\b/u.test(prompt);
+	return mentionsMismatch && mentionsMile && mentionsReference;
+}
+
 function isPersonalDocumentPrompt(prompt: string): boolean {
 	return /documents|personal documents|information should i keep saved offline|insurance|emergency contacts|permits|reservations/u.test(prompt);
 }
@@ -1423,6 +1437,15 @@ function normalizeWaterReportConflictWording(answer: string): string {
 
 function normalizeRoadTownNavigationWording(answer: string): string {
 	return answer.replace(/\bThe next reliable water source is a seasonal seep\b/giu, 'The closest loaded water candidate is a seasonal seep');
+}
+
+function buildGuidebookMileMismatchNote(toolInvocations: ToolInvocationRecord[]): string {
+	const current = toolSummary(toolInvocations, 'current_mile');
+	if (!current) {
+		return GUIDEBOOK_MILE_MISMATCH_NOTE;
+	}
+	const currentPosition = trimToolClause(current).replace(/^Currently\b/u, 'currently');
+	return `Scout's loaded position is ${currentPosition}. ${GUIDEBOOK_MILE_MISMATCH_NOTE}`;
 }
 
 function buildRoadTownNavigationNote(toolInvocations: ToolInvocationRecord[]): string {
@@ -1931,6 +1954,23 @@ function isWrongMilePartialAnswer(answer: string): boolean {
 	return /\b(?:wrong mile|trail mile|map|gps|position|location|re-establish|verify)\b/iu.test(answer);
 }
 
+function isGuidebookMileMismatchPartialAnswer(answer: string): boolean {
+	return /\b(?:numbering system|guidebook|guide book|trail sign|mileage|trail mile|map|gps|source)\b/iu.test(answer);
+}
+
+function mentionsGuidebookMileMismatchContext(answer: string): boolean {
+	const mentionsCalibration = /\b(?:calibrated AT mile frame|calibration|mile frame|mileage frame|mile numbering)\b/iu.test(answer);
+	const mentionsEditionOrReroute = /\b(?:guidebook editions?|edition|year|reroute|reroutes|relocation|relocations|trail signs?|local signs?)\b/iu.test(answer);
+	const mentionsGpsOrManual = /\b(?:gps|manual Current AT mile|manual mile|app position|current mile)\b/iu.test(answer);
+	const asksComparedSource =
+		/\b(?:which|what)\b[^.?!\n]*(?:guidebook|sign|source|edition|map)\b/iu.test(answer) ||
+		/\b(?:ask|compare|comparing)\b[^.?!\n]*(?:guidebook|sign|source|edition|map)\b/iu.test(answer);
+	const mentionsNoScoutOverride =
+		/\b(?:do not|don't|does not|doesn't)\b[^.?!\n]*(?:override|overrule|replace)\b[^.?!\n]*(?:posted signs?|signs?|closures?|official guidance|safety)\b/iu.test(answer) ||
+		/\b(?:posted signs?|closures?|official guidance)\b[^.?!\n]*(?:safety decisions?|override|overrule)\b/iu.test(answer);
+	return mentionsCalibration && mentionsEditionOrReroute && mentionsGpsOrManual && asksComparedSource && mentionsNoScoutOverride;
+}
+
 function mentionsOwnMileSetupFlow(answer: string): boolean {
 	const mentionsConcreteFlow = /\b(?:hike setup|start my hike|settings|edit hike details|current at mile)\b/iu.test(answer);
 	const mentionsVerification =
@@ -2337,6 +2377,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For stale field-pack, field-pack status, or "can I trust Scout's field pack" questions, field pack means cached Scout trail data on the phone, not the physical backpack or loadout. Tell the hiker to check pack age/status, current mile or downloaded region, and source timestamps when shown. If the pack is old, expired, wrong-mile/wrong-region, or loaded before weather, closures, water, or services changed, treat it as stale. Refresh on Wi-Fi or in town before water, weather, closure, bailout, or town-service decisions, and use stale cached data only as caution, not current proof.`,
 		`For sign-in, login, account, cloud sync, backup, restore, or "can I wait to sign in" questions, say accounts are invite-only. Recommend signing in before trail on Wi-Fi if the hiker has an invite so backup/restore and cloud sync can finish. Keep offline Scout/local AI separate: once the field pack, on-device model, and saved maps/docs are downloaded, offline use does not require a live login. Do not imply sign-in or cloud sync is emergency safety; keep inReach, PLB, 911, and the family emergency plan separate.`,
 		`For own-mile, manual-mile, wrong-mile, profile, GPS correction, shuttle, or "someone else's mile" questions, explain the app flow: first-run hike setup or Settings > Edit hike details, enter Current AT mile, save, then check Today and Scout show the new mile. If the hiker entered the wrong mile, tell them to correct it, refresh the field pack when online, and re-ask Scout for water, shelter, town, terrain, and bailout. Warn that a wrong mile shifts water, shelter, town, terrain, and bailout answers, and not to make water, shelter, town, or safety decisions from a wrong mile. Tell the hiker to confirm against a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap before relying on Scout.`,
+		`For guidebook, trail-sign, Scout, GPS, or map mile-mismatch questions, explain that Scout uses a calibrated AT mile frame and that guidebook editions, reroutes or relocations, rounded/local signs, side-trail distances, GPS snap, or manual Current AT mile entry can differ. Ask which guidebook, sign, edition, map, or source the hiker is comparing. Tell the hiker to confirm real position against a blaze, road or shelter sign, map, or GPS snap, update Scout only when the app position is wrong, and do not let Scout mileage override posted signs, closures, or current official safety guidance.`,
 		`For "where am I relative to the next road crossing or town" questions, start from the current_mile finding and the next_town road/town access finding. State the approximate distance, say when the loaded place is only a road crossing or emergency-exit candidate, confirm shuttle or pickup when needed, and do not assume services at a crossing unless loaded current service data proves them. Do not drift into water or shelter unless asked; if nearby water is mentioned, never call seasonal water reliable.`,
 		`For offline setup, offline downloads, phone settings, or day-one readiness questions, distinguish phone/app readiness from personal safety readiness. Always include the exact check "verify Bible text is available offline." Also mention field-pack refresh, current mile, local AI model, offline maps/docs, battery, airplane-mode rehearsal, and that Scout does not replace inReach, PLB, 911, or the family emergency plan. For personal documents, include this safety boundary in plain words: do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat.`,
 		`Do not include Bible verses, scripture, prayer, or spiritual encouragement unless the hiker explicitly asks for Bible, scripture, prayer, faith, fear comfort, or spiritual support. Safety, weather, town, water, gear, and navigation answers must stay focused on the field decision first.`,

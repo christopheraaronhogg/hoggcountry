@@ -281,6 +281,10 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /refresh the field pack when online, and re-ask Scout for water, shelter, town, terrain, and bailout/);
 	assert.match(systemContext, /a wrong mile shifts water, shelter, town, terrain, and bailout answers/);
 	assert.match(systemContext, /not to make water, shelter, town, or safety decisions from a wrong mile/);
+	assert.match(systemContext, /For guidebook, trail-sign, Scout, GPS, or map mile-mismatch questions/);
+	assert.match(systemContext, /Scout uses a calibrated AT mile frame/);
+	assert.match(systemContext, /guidebook editions, reroutes or relocations/);
+	assert.match(systemContext, /do not let Scout mileage override posted signs, closures, or current official safety guidance/);
 	assert.match(systemContext, /For "where am I relative to the next road crossing or town" questions/);
 	assert.match(systemContext, /start from the current_mile finding and the next_town road\/town access finding/);
 	assert.match(systemContext, /do not assume services at a crossing unless loaded current service data proves them/);
@@ -502,6 +506,28 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 		),
 		'Use the cached trail line and external offline maps if they are available. Do not rely on missing basemap tiles for complex navigation.'
 	);
+
+	const guidebookMileMismatchAnswer = polishOnDeviceAnswer(
+		"Your mile doesn't match because the trail you are on might have a different numbering system than the guidebook you are using, or the guidebook might be referencing a different section or route.\n\nThe guidance says mileage decisions start with body condition, daylight, elevation, water spacing, weather, pack weight, foot or knee condition, and the next legal shelter, campsite, or town stop.",
+		'Why does my mile not match the guidebook or trail sign?',
+		[
+			{
+				toolId: 'current_mile',
+				args: {},
+				summary: 'Currently at mile 87.8 of 2197.4 (4.0% complete, 2109.6 mi remaining).',
+				confidence: 'high',
+				receipts: []
+			}
+		]
+	);
+	assert.match(guidebookMileMismatchAnswer, /Scout's loaded position is currently at mile 87\.8/);
+	assert.match(guidebookMileMismatchAnswer, /Your mile can differ because Scout's trail miles/);
+	assert.match(guidebookMileMismatchAnswer, /calibrated AT mile frame/);
+	assert.match(guidebookMileMismatchAnswer, /guidebook editions, reroutes or relocations/);
+	assert.match(guidebookMileMismatchAnswer, /manual Current AT mile entry/);
+	assert.match(guidebookMileMismatchAnswer, /Ask which guidebook, sign, edition, or source you are comparing/);
+	assert.match(guidebookMileMismatchAnswer, /Do not let Scout mileage override posted signs, closures, or current official guidance/);
+	assert.doesNotMatch(guidebookMileMismatchAnswer, /Mileage decisions start with body condition/i);
 
 	const roadTownNavigationAnswer = polishOnDeviceAnswer(
 		'You are about 4.8 miles from the Pilot Gap Road at mile 49.5, which is a road crossing with an emergency exit candidate. The next reliable water source is a seasonal seep ahead at mile 46.5, followed by a reliable creek crossing at mile 50.9. You are also near the Ridge Shelter at mile 48.1 and the Pine Gap Campsite at mile 53.6.',
