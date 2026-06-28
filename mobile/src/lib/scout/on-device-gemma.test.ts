@@ -201,6 +201,8 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /Do not use Markdown headings, bold markers, tables, or long bullet lists/);
 	assert.match(systemContext, /Never turn candidate water, shelters, towns, or weather into guarantees/);
 	assert.match(systemContext, /For water questions, use the next_water tool finding as the answer's spine/);
+	assert.match(systemContext, /For frozen water-filter questions/);
+	assert.match(systemContext, /hollow-fiber filter may be compromised/);
 	assert.match(systemContext, /When tool findings are labeled as guidance/);
 	assert.match(systemContext, /When preparation or training questions have pretrip/);
 	assert.match(systemContext, /include an immediate first-week checklist/);
@@ -331,6 +333,23 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			]
 		),
 		'Keep mileage conservative and protect your dry sleep layers. Verify the current forecast before exposed terrain, especially if thunderstorms are possible.\n\nWeather note: Cached weather near mile 0.0: showers and possible thunderstorms (high 67F / low 51F, wind 22 mph). Lightning and wet-cold exposure are possible; verify live before exposed terrain.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'If your water filter freezes, use your backup water tablets and confirm the next water source before relying on it.',
+			'What if my water filter freezes overnight?',
+			[
+				{
+					toolId: 'weather_lookup',
+					args: { fromMile: 304.9 },
+					summary: 'Cached weather near mile 304.9: cold wind and wet exposure (high 42F / low 28F, wind 22 mph). Wet wind can turn fatigue into hypothermia risk.',
+					confidence: 'medium',
+					receipts: []
+				}
+			]
+		),
+		'If your water filter freezes, use your backup water tablets and confirm the next water source before relying on it.\n\nWeather note: Cached weather near mile 304.9: cold wind and wet exposure (high 42F / low 28F, wind 22 mph). Wet wind can turn fatigue into hypothermia risk.\n\nFrozen-filter note: if a hollow-fiber water filter froze, treat it as possibly compromised. Use backup tablets or another treatment until you can replace or verify it, and prevent it by sleeping with the filter or keeping it warm overnight.'
 	);
 
 	assert.equal(

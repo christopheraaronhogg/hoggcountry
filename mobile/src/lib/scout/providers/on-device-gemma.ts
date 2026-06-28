@@ -49,6 +49,8 @@ const SYSTEM_CONTEXT_TRIM_MARKER =
 	'\n\n[Middle context trimmed to fit the on-device model window. Use only retained tool findings and cite only supplied sources.]\n\n';
 const TOWN_OFFLINE_READINESS_NOTE =
 	'Before leaving service: charge the phone and battery bank, refresh the field pack, confirm your current mile, let cloud sync finish while you still have service, download or update the local AI model on Wi-Fi and power, save offline maps/docs, verify Bible text is available offline, refresh weather and closure checks, then turn on airplane mode, relaunch, and ask Scout a water question. Treat cached weather, closures, water, and services as stale until refreshed again; Scout does not replace inReach, PLB, 911, or the family emergency plan.';
+const FROZEN_FILTER_NOTE =
+	'Frozen-filter note: if a hollow-fiber water filter froze, treat it as possibly compromised. Use backup tablets or another treatment until you can replace or verify it, and prevent it by sleeping with the filter or keeping it warm overnight.';
 
 export class OnDeviceGemmaProvider implements ScoutProvider {
 	private bridge?: OnDeviceGemmaBridge;
@@ -225,6 +227,9 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 		if (weatherSummary && !mentionsWeatherLookupSummary(answer, weatherSummary)) {
 			answer = appendSentence(answer, `Weather note: ${weatherSummary}`);
 		}
+	}
+	if (isFrozenFilterPrompt(lowerPrompt) && !mentionsFrozenFilterSafety(answer)) {
+		answer = appendSentence(answer, FROZEN_FILTER_NOTE);
 	}
 	if (isBadWeatherNeroPrompt(lowerPrompt) && !mentionsBadWeatherNeroDecision(answer)) {
 		answer = appendSentence(
@@ -436,12 +441,17 @@ function isTownOfflineReadinessPrompt(prompt: string): boolean {
 }
 
 function isWeatherSensitivePrompt(prompt: string): boolean {
-	return /\b(?:weather|rain|storm|thunder|lightning|wind|cold|heat|hot|hypothermia|freez|ridge|dry stretch|bad weather|zero|nero|stop hiking)\b/u.test(prompt);
+	return /\b(?:weather|rains?|rainy|raining|storms?|thunderstorms?|thunder|lightning|winds?|cold|heat|hot|hypothermia|freez\w*|ridge|dry stretch|bad weather|zeros?|neros?|stop hiking)\b/u.test(prompt);
 }
 
 function isBadWeatherNeroPrompt(prompt: string): boolean {
 	return /\b(?:zero|nero)\b/u.test(prompt) &&
-		/\b(?:weather|rain|storm|thunder|lightning|wind|cold|heat|hot|hypothermia|freez|bad weather)\b/u.test(prompt);
+		/\b(?:weather|rains?|rainy|raining|storms?|thunderstorms?|thunder|lightning|winds?|cold|heat|hot|hypothermia|freez\w*|bad weather)\b/u.test(prompt);
+}
+
+function isFrozenFilterPrompt(prompt: string): boolean {
+	return /\b(?:filter|water filter|hollow[-\s]?fiber|sawyer|katadyn|befree)\b/u.test(prompt) &&
+		/\b(?:freez\w*|frozen|froze)\b/u.test(prompt);
 }
 
 function weatherLookupSummary(toolInvocations: ToolInvocationRecord[]): string | null {
@@ -500,6 +510,13 @@ function mentionsTownOfflineReadiness(answer: string): boolean {
 		/(?:stale|not current|until refreshed|refresh again|remains current indefinitely)/iu.test(answer);
 }
 
+function mentionsFrozenFilterSafety(answer: string): boolean {
+	const mentionsCompromised = /\b(?:compromis\w*|not definitely safe|may not be safe|could be unsafe|replace|retire)\b/iu.test(answer);
+	const mentionsBackupTreatment = /\b(?:backup (?:water )?(?:tablet|tablets|treatment)|water tablets|chemical treatment|chlorine dioxide|aquamira|boil)\b/iu.test(answer);
+	const mentionsWarmStorage = /\b(?:sleep(?:ing)? with (?:it|the filter)|filter[^.?!\n]*(?:sleeping bag|keep warm|inside your bag|warm overnight)|keep[^.?!\n]*filter[^.?!\n]*warm)\b/iu.test(answer);
+	return mentionsCompromised && mentionsBackupTreatment && mentionsWarmStorage;
+}
+
 function containsBibleDrift(paragraph: string): boolean {
 	return /\b(?:bible|scripture|verse|verses|psalms?|isaiah|john|romans|proverbs?|timothy|lord|god|christ|jesus)\b/iu.test(paragraph) ||
 		/[“"]?[A-Z][^.!?]{10,}\b(?:I am with you|do not fear|trust in the lord|righteous right hand)\b/iu.test(paragraph);
@@ -544,6 +561,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`Do not expose internal tool names or labels such as "source skill", "source_search", "open_source_doc", or "tool invocation" in the answer. Use the information naturally.`,
 		`Be honest about uncertainty. Use "candidate", "verify", or "I don't know" when the pack cannot prove something. Never turn candidate water, shelters, towns, or weather into guarantees.`,
 		`For water questions, use the next_water tool finding as the answer's spine. Lead with the nearest actionable water option or next reliable source from the tool finding. If no reliable water is loaded, say that after the source hierarchy; do not start with a generic refusal.`,
+		`For frozen water-filter questions, say a hollow-fiber filter may be compromised, use backup treatment or replace it if unsure, and prevent the next freeze by sleeping with the filter or keeping it warm overnight.`,
 		`When tool findings are labeled as guidance, treat them as topic-specific documents Scout intentionally read for this answer. Use them to shape caveats and next-step advice.`,
 		`When preparation or training questions have pretrip, terrain, loadout, safety, or offline setup findings, give a concrete short plan. For "what should I focus on first" prompts, include an immediate first-week checklist, not only general training advice. Include shakedown hikes, foot care/blister practice, conservative early mileage, gear/loadout checks, water treatment habits, and an offline app/model rehearsal when those appear in the findings.`,
 		`For offline setup, offline downloads, phone settings, or day-one readiness questions, distinguish phone/app readiness from personal safety readiness. Always include the exact check "verify Bible text is available offline." Also mention field-pack refresh, current mile, local AI model, offline maps/docs, battery, airplane-mode rehearsal, and that Scout does not replace inReach, PLB, 911, or the family emergency plan. For personal documents, include this safety boundary in plain words: do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat.`,
