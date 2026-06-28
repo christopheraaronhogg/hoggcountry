@@ -145,7 +145,7 @@ async function buildStatus(paths) {
 	const currentFullRoutingRuns = currentRuns.filter(
 		(entry) => entry.value.evidenceLane === SCAFFOLD_EVIDENCE_LANE && isFullRun(entry.value, suite) && hasCompleteToolExpectations(entry.value, suite) && hasCompleteSourceEvidence(entry.value)
 	);
-	const localPreflight = summarizeLocalPreflight({
+	const localPreflight = await summarizeLocalPreflight({
 		currentFullLocalPreflightRuns,
 		currentPartialLocalPreflightRuns,
 		suite,
@@ -721,14 +721,18 @@ function summarizeAnswerQualityScan(scan) {
 	};
 }
 
-function summarizeLocalPreflight({ currentFullLocalPreflightRuns, currentPartialLocalPreflightRuns, suite, finalProof }) {
+async function summarizeLocalPreflight({ currentFullLocalPreflightRuns, currentPartialLocalPreflightRuns, suite, finalProof }) {
 	const latestEntry = currentFullLocalPreflightRuns.at(-1) ?? null;
 	const latestRun = latestEntry?.value ?? null;
 	const latestFullRun = latestEntry ? summarizeRunList([latestEntry])[0] : null;
 	const toolComplete = latestRun ? hasCompleteToolExpectations(latestRun, suite) : false;
 	const sourceComplete = latestRun ? hasCompleteSourceEvidence(latestRun) : false;
 	const scanClean = latestFullRun?.answerQuality?.status === 'clean';
-	const ok = Boolean(latestRun && toolComplete && sourceComplete && scanClean);
+	const sourceFreshness = latestRun
+		? await summarizeLocalPreflightSourceFreshness(latestRun)
+		: null;
+	const baseOk = Boolean(latestRun && toolComplete && sourceComplete && scanClean);
+	const ok = Boolean(baseOk && sourceFreshness?.ok);
 	const command = 'npm run eval:scout-local-ai:ios-sim-gemma -- --limit 100';
 	const boundary = 'simulator/debug local preflight drives iteration but does not replace final TestFlight/iPhone proof.';
 	const latestContext = latestRun ? localPreflightContextLabel(latestRun) : null;
@@ -742,6 +746,9 @@ function summarizeLocalPreflight({ currentFullLocalPreflightRuns, currentPartial
 			const scan = latestFullRun.answerQuality;
 			issues.push(`${scan.flaggedCount}/${scan.caseCount} answer-quality case(s) flagged`);
 		}
+		if (sourceFreshness && !sourceFreshness.ok) {
+			issues.push(sourceFreshness.evidence);
+		}
 	}
 	const evidence = ok
 		? `Latest simulator/debug local preflight ${latestFullRun.runId} is clean: ${latestFullRun.caseCount}/${latestFullRun.totalSuiteCases} cases, complete tools/source evidence, ${latestContext}`
@@ -754,10 +761,150 @@ function summarizeLocalPreflight({ currentFullLocalPreflightRuns, currentPartial
 		boundary,
 		fullRunCount: currentFullLocalPreflightRuns.length,
 		partialRunCount: currentPartialLocalPreflightRuns.length,
+		baseOk,
+		sourceFresh: sourceFreshness?.ok ?? false,
+		sourceFreshness,
 		latestFullRun,
 		latestProofMismatch: latestRun ? deviceRunFinalProofMismatchEvidence(latestRun, finalProof) : null,
 		evidence
 	};
+}
+
+async function summarizeLocalPreflightSourceFreshness(run) {
+	const timestamp = localPreflightSourceTimestamp(run);
+	if (!timestamp) {
+		return {
+			ok: false,
+			timestamp: null,
+			commitCount: 0,
+			changedFileCount: 0,
+			changedFiles: [],
+			latestCommit: null,
+			evidence: 'local preflight run has no timestamp for source freshness comparison'
+		};
+	}
+	const commits = await gitCommitsAfter(timestamp);
+	const relevantCommits = commits
+		.map((commit) => ({
+			...commit,
+			files: commit.files.filter(isLocalPreflightSourcePath)
+		}))
+		.filter((commit) => commit.files.length > 0);
+	const changedFiles = [...new Set(relevantCommits.flatMap((commit) => commit.files))]
+		.sort((left, right) => left.localeCompare(right));
+	const latestCommit = relevantCommits[0] ?? null;
+	if (!changedFiles.length) {
+		return {
+			ok: true,
+			timestamp,
+			commitCount: 0,
+			changedFileCount: 0,
+			changedFiles: [],
+			latestCommit: null,
+			evidence: `no app/eval/source changes after ${timestamp}`
+		};
+	}
+	const sample = changedFiles.slice(0, 6).join(', ');
+	const more = changedFiles.length > 6 ? `, +${changedFiles.length - 6} more` : '';
+	return {
+		ok: false,
+		timestamp,
+		commitCount: relevantCommits.length,
+		changedFileCount: changedFiles.length,
+		changedFiles: changedFiles.slice(0, 20),
+		latestCommit: latestCommit
+			? {
+				sha: latestCommit.sha,
+				committedAt: latestCommit.committedAt,
+				subject: latestCommit.subject
+			}
+			: null,
+		evidence: `source changed after run: ${relevantCommits.length} relevant commit(s), ${changedFiles.length} file(s): ${sample}${more}`
+	};
+}
+
+function localPreflightSourceTimestamp(run) {
+	const candidates = [
+		run?.runContext?.execution?.completedAt,
+		run?.runContext?.execution?.finishedAt,
+		run?.runContext?.execution?.endedAt,
+		run?.generatedAt,
+		run?.runContext?.execution?.startedAt
+	];
+	for (const candidate of candidates) {
+		const iso = normalizeIsoTimestamp(candidate);
+		if (iso) return iso;
+	}
+	return null;
+}
+
+function normalizeIsoTimestamp(value) {
+	const time = Date.parse(String(value ?? ''));
+	if (!Number.isFinite(time)) return null;
+	return new Date(time).toISOString();
+}
+
+async function gitCommitsAfter(timestamp) {
+	const sinceMs = Date.parse(timestamp);
+	if (!Number.isFinite(sinceMs)) return [];
+	try {
+		const result = await execFileAsync('git', [
+			'log',
+			`--since=${timestamp}`,
+			'--name-only',
+			'--format=%x1e%H%x09%cI%x09%s'
+		], {
+			cwd: REPO_ROOT,
+			maxBuffer: 1024 * 1024 * 8
+		});
+		return parseGitNameOnlyLog(result.stdout)
+			.filter((commit) => {
+				const committedMs = Date.parse(commit.committedAt);
+				return Number.isFinite(committedMs) && committedMs > sinceMs;
+			});
+	} catch {
+		return [];
+	}
+}
+
+function parseGitNameOnlyLog(text) {
+	const commits = [];
+	let current = null;
+	for (const rawLine of String(text ?? '').split('\n')) {
+		const line = rawLine.trim();
+		if (!line) continue;
+		if (line.startsWith('\x1e')) {
+			if (current) commits.push(current);
+			const [sha, committedAt, subject] = line.slice(1).split('\t');
+			current = {
+				sha: sha ?? '<unknown>',
+				committedAt: committedAt ?? '<unknown>',
+				subject: subject ?? '<unknown>',
+				files: []
+			};
+			continue;
+		}
+		if (current) current.files.push(line);
+	}
+	if (current) commits.push(current);
+	return commits;
+}
+
+function isLocalPreflightSourcePath(path) {
+	const normalized = String(path ?? '').trim();
+	if (!normalized) return false;
+	if (isNativeAppSourcePath(normalized)) return true;
+	if (normalized === DEFAULT_SUITE || normalized === DEFAULT_MOBILE_SUITE) return true;
+	if (/^scripts\/run-scout-(?:local-ai|ios-sim-gemma)-eval\.mjs$/u.test(normalized)) return true;
+	if (/^scripts\/eval-scout-/u.test(normalized)) return true;
+	if (/^scripts\/status-scout-local-ai\.mjs$/u.test(normalized)) return true;
+	if (/^scripts\/scan-scout-local-ai-answer-quality\.mjs$/u.test(normalized)) return true;
+	if (/^scripts\/lib\/scout-local-ai-(?:device-run-inspector|run-json|source-evidence|suite|suite-coverage)\.mjs$/u.test(normalized)) return true;
+	if (/^data\/at-/u.test(normalized)) return true;
+	if (/^public\/at-/u.test(normalized)) return true;
+	if (/^public\/scout\//u.test(normalized)) return true;
+	if (/^apps\/openclaw-web\/src\/lib\/server\/public-mobile-field-pack\//u.test(normalized)) return true;
+	return false;
 }
 
 function localPreflightContextLabel(run) {

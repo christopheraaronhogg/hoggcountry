@@ -22,6 +22,7 @@ const IOS_SIM_GEMMA_RUNNER_PATH = new URL('../scripts/run-scout-ios-sim-gemma-ev
 const PACKAGE_PATH = new URL('../package.json', import.meta.url);
 const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
 const execFileAsync = promisify(execFile);
+const FRESH_FIXTURE_RUN_TIME = '2099-01-01T00:00:00.000Z';
 
 process.env.SCOUT_LOCAL_AI_DOWNLOADS_DIR ??= join(tmpdir(), 'scout-local-ai-default-downloads-empty');
 
@@ -972,6 +973,7 @@ test('status command surfaces target TestFlight build gaps before phone eval', a
 	const simulatorRun = deviceRunForCases(suite, suite.cases, {
 		runId: 'simulator-status-build-gap-preflight',
 		completeTools: true,
+		generatedAt: FRESH_FIXTURE_RUN_TIME,
 		runContext: simulatorDeviceRunContext()
 	});
 	for (const result of simulatorRun.results) result.answer = cleanPreflightAnswer();
@@ -1220,6 +1222,7 @@ test('status command treats clean simulator local AI runs as preflight, not fina
 	const simulatorRun = deviceRunForCases(suite, suite.cases, {
 		runId: 'simulator-clean-local-preflight',
 		completeTools: true,
+		generatedAt: FRESH_FIXTURE_RUN_TIME,
 		runContext: simulatorDeviceRunContext()
 	});
 	for (const result of simulatorRun.results) result.answer = cleanPreflightAnswer();
@@ -1277,6 +1280,72 @@ test('status command treats clean simulator local AI runs as preflight, not fina
 	assert.match(textResult.stdout, /Simulator\/debug local preflight: clean; full runs 1, partial runs 0/u);
 	assert.match(textResult.stdout, /Simulator\/debug local preflight boundary: simulator\/debug local preflight drives iteration but does not replace final TestFlight\/iPhone proof/u);
 	assert.match(textResult.stdout, /Simulator\/debug local final-proof mismatch: simulator-clean-local-preflight \(install=debug, expected testflight\)/u);
+});
+
+test('status command marks simulator local AI preflight stale after relevant source changes', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-stale-preflight-'));
+	const runsDir = join(outputDir, 'runs');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
+	await mkdir(runsDir, { recursive: true });
+	await mkdir(deviceRunsDir, { recursive: true });
+	await mkdir(reviewsDir, { recursive: true });
+	const routingRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'routing-stale-preflight-proof',
+		completeTools: true
+	});
+	routingRun.evidenceLane = 'scaffold-not-model';
+	routingRun.runContext = null;
+	for (const result of routingRun.results) result.answerOrigin = 'scaffold-not-model';
+	await writeFile(join(runsDir, 'routing-stale-preflight-proof.json'), `${JSON.stringify(routingRun, null, 2)}\n`);
+	const simulatorRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'simulator-stale-local-preflight',
+		completeTools: true,
+		runContext: simulatorDeviceRunContext()
+	});
+	for (const result of simulatorRun.results) result.answer = cleanPreflightAnswer();
+	await writeFile(join(deviceRunsDir, 'simulator-stale-local-preflight.json'), `${JSON.stringify(simulatorRun, null, 2)}\n`);
+	await writeFile(releaseEvidencePath, `${JSON.stringify({
+		schemaVersion: 1,
+		items: {
+			'dad-testflight-invite': {
+				status: 'verified',
+				summary: 'Dad Pilot is attached to Hoggcountry iOS build 1.0 (27), and the public TestFlight link is enabled.',
+				publicLink: 'https://testflight.apple.com/join/BagBCrzf'
+			}
+		}
+	}, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai.mjs',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--release-evidence',
+			releaseEvidencePath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const status = JSON.parse(result.stdout);
+	const gates = Object.fromEntries(status.gates.map((gate) => [gate.id, gate]));
+
+	assert.equal(status.localPreflight.baseOk, true);
+	assert.equal(status.localPreflight.sourceFresh, false);
+	assert.equal(gates['local-preflight'].ok, false);
+	assert.match(gates['local-preflight'].evidence, /source changed after run/u);
+	assert.ok(status.localPreflight.sourceFreshness.commitCount > 0);
+	assert.ok(status.localPreflight.sourceFreshness.changedFileCount > 0);
+	assert.equal(status.nextAction.kind, 'run-local-preflight');
+	assert.match(status.nextAction.text, /Mac mini simulator lane/u);
+	assert.match(status.nextAction.text, /eval:scout-local-ai:ios-sim-gemma -- --limit 100/u);
 });
 
 test('status command recognizes repeated strict TestFlight iPhone proof candidates', async () => {
@@ -1732,6 +1801,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	const simulatorRun = deviceRunForCases(suite, suite.cases, {
 		runId: 'simulator-handoff-clean-preflight',
 		completeTools: true,
+		generatedAt: FRESH_FIXTURE_RUN_TIME,
 		runContext: simulatorDeviceRunContext()
 	});
 	for (const result of simulatorRun.results) result.answer = cleanPreflightAnswer();
@@ -6922,7 +6992,8 @@ function cleanPreflightAnswer() {
 
 function deviceRunForCases(suite, cases, options = {}) {
 	const runId = options.runId ?? 'device-smoke-run';
-	const runContext = withFixtureExecutionContext(options.runContext ?? { surface: 'testflight-ios' }, runId);
+	const generatedAt = options.generatedAt ?? '2026-06-26T12:00:00.000Z';
+	const runContext = withFixtureExecutionContext(options.runContext ?? { surface: 'testflight-ios' }, runId, generatedAt);
 	const results = cases.map((testCase, index) => {
 		const toolInvocations = options.completeTools ? toolInvocationsFor(testCase) : [];
 		return {
@@ -6934,7 +7005,7 @@ function deviceRunForCases(suite, cases, options = {}) {
 			confidence: 'medium',
 			mode: 'on-device',
 			provider: 'on-device-gemma',
-			generatedAt: '2026-06-26T12:00:00.000Z',
+			generatedAt,
 			durationMs: 1200 + index,
 			contextUsed: ['on-device-gemma'],
 			receipts: toolInvocations.flatMap((record) => record.receipts),
@@ -6969,7 +7040,7 @@ function deviceRunForCases(suite, cases, options = {}) {
 		suiteVersion: options.suiteVersion ?? suite.version,
 		suiteHash: options.suiteHash ?? scoutLocalAiSuiteHash(suite),
 		suitePath: 'mobile/static/scout/dad-local-ai-100.json',
-		generatedAt: '2026-06-26T12:00:00.000Z',
+		generatedAt,
 		evidenceLane: 'device-on-device-gemma',
 		modelCommand: null,
 		runContext,
@@ -6988,7 +7059,7 @@ function deviceRunForCases(suite, cases, options = {}) {
 	};
 }
 
-function withFixtureExecutionContext(runContext, runId) {
+function withFixtureExecutionContext(runContext, runId, generatedAt = '2026-06-26T12:00:00.000Z') {
 	if (!runContext || typeof runContext !== 'object' || Array.isArray(runContext)) return runContext;
 	if (runContext.execution && typeof runContext.execution === 'object' && !Array.isArray(runContext.execution)) {
 		return runContext;
@@ -6998,7 +7069,7 @@ function withFixtureExecutionContext(runContext, runId) {
 		execution: {
 			id: `fixture-scout-eval-${runId}`,
 			runId,
-			startedAt: '2026-06-26T12:00:00.000Z',
+			startedAt: generatedAt,
 			evidenceLane: 'device-on-device-gemma',
 			source: 'scout-local-ai-eval'
 		}
