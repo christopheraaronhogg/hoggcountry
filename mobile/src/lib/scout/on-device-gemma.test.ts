@@ -242,6 +242,22 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	);
 
 	assert.equal(
+		polishOnDeviceAnswer(
+			'This covers the offline readiness steps mentioned in the safety guidance.',
+			'What should I charge, refresh, and download in town before I lose service again?'
+		),
+		'Before leaving service: charge the phone and battery bank, refresh the field pack, confirm your current mile, let cloud sync finish while you still have service, download or update the local AI model on Wi-Fi and power, save offline maps/docs, verify Bible text is available offline, refresh weather and closure checks, then turn on airplane mode, relaunch, and ask Scout a water question. Treat cached weather, closures, water, and services as stale until refreshed again; Scout does not replace inReach, PLB, 911, or the family emergency plan.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Use the cached trail line and external offline maps if they are available. Do not rely on missing basemap tiles for complex navigation.',
+			'How do I use the map when there is no basemap or cell signal?'
+		),
+		'Use the cached trail line and external offline maps if they are available. Do not rely on missing basemap tiles for complex navigation.'
+	);
+
+	assert.equal(
 		polishOnDeviceAnswer('Protect your knee. I can look up terrain, but I can', 'How should I train with a bad knee before the first week of the AT?'),
 		'Protect your knee.'
 	);

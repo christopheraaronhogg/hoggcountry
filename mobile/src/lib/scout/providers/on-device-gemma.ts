@@ -47,6 +47,8 @@ const TIER_TO_CHARS: Record<GemmaTier, number> = {
 const ON_DEVICE_MAX_TOKENS = 640;
 const SYSTEM_CONTEXT_TRIM_MARKER =
 	'\n\n[Middle context trimmed to fit the on-device model window. Use only retained tool findings and cite only supplied sources.]\n\n';
+const TOWN_OFFLINE_READINESS_NOTE =
+	'Before leaving service: charge the phone and battery bank, refresh the field pack, confirm your current mile, let cloud sync finish while you still have service, download or update the local AI model on Wi-Fi and power, save offline maps/docs, verify Bible text is available offline, refresh weather and closure checks, then turn on airplane mode, relaunch, and ask Scout a water question. Treat cached weather, closures, water, and services as stale until refreshed again; Scout does not replace inReach, PLB, 911, or the family emergency plan.';
 
 export class OnDeviceGemmaProvider implements ScoutProvider {
 	private bridge?: OnDeviceGemmaBridge;
@@ -236,6 +238,9 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 			'Budget note: separate daily burn from town spikes like hostels, shuttles, laundry, and meals; include gear replacement and an emergency cushion, and keep it flexible around actual pace and services rather than treating it as a guarantee.'
 		);
 	}
+	if (isTownOfflineReadinessPrompt(lowerPrompt) && !mentionsTownOfflineReadiness(answer)) {
+		answer = isVagueSourceOnlyAnswer(answer) ? TOWN_OFFLINE_READINESS_NOTE : appendSentence(answer, TOWN_OFFLINE_READINESS_NOTE);
+	}
 
 	return trimToCompleteSentence(answer);
 }
@@ -424,6 +429,12 @@ function isBudgetPrompt(prompt: string): boolean {
 	return /\b(?:budget|overplanning|over-plan|money|cost|spend|spending)\b/u.test(prompt);
 }
 
+function isTownOfflineReadinessPrompt(prompt: string): boolean {
+	const townOrService = /\b(?:town|service|cell signal|wi-?fi|before leaving|lose service|no signal)\b/u.test(prompt);
+	const readinessAction = /\b(?:charge|refresh|download|update|field pack|local ai|model|cloud sync|battery bank)\b/u.test(prompt);
+	return townOrService && readinessAction;
+}
+
 function isWeatherSensitivePrompt(prompt: string): boolean {
 	return /\b(?:weather|rain|storm|thunder|lightning|wind|cold|heat|hot|hypothermia|freez|ridge|dry stretch|bad weather|zero|nero|stop hiking)\b/u.test(prompt);
 }
@@ -469,6 +480,24 @@ function mentionsBudgetCategories(answer: string): boolean {
 		/(hostel|shuttle|laundry|meal)/iu.test(answer) &&
 		/gear replacement/iu.test(answer) &&
 		/emergency cushion/iu.test(answer);
+}
+
+function isVagueSourceOnlyAnswer(answer: string): boolean {
+	return /^(?:this|that) (?:covers|summarizes|is based on)\b.*\b(?:guidance|steps|readiness|safety)\b\.?$/iu.test(answer.trim());
+}
+
+function mentionsTownOfflineReadiness(answer: string): boolean {
+	return /phone/iu.test(answer) &&
+		/(?:battery bank|battery|power|charge)/iu.test(answer) &&
+		/field[-\s]?pack/iu.test(answer) &&
+		/(?:current mile|mile)/iu.test(answer) &&
+		/(?:local ai|model|gemma)/iu.test(answer) &&
+		/(?:offline maps?|offline docs?|offline references?|maps\/docs|maps or docs)/iu.test(answer) &&
+		/bible/iu.test(answer) &&
+		/weather/iu.test(answer) &&
+		/closure/iu.test(answer) &&
+		/(?:cloud sync|sync finish|finish.*sync|backup)/iu.test(answer) &&
+		/(?:stale|not current|until refreshed|refresh again|remains current indefinitely)/iu.test(answer);
 }
 
 function containsBibleDrift(paragraph: string): boolean {
@@ -526,6 +555,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For family check-in questions, set cadence, content, normal gap expectations, escalation window, emergency contacts, itinerary sharing, and the live-location caveat. Use phrasing like "if they do not hear from you" or "if you miss a check-in"; never write "if you don't hear from you." Repeated missed check-ins, bad weather, health concerns, or itinerary mismatch should escalate beyond Scout.`,
 		`For trail budget questions, separate daily burn from town spikes, hostels/shuttles/laundry/meals, gear replacement, and emergency cushion. Keep advice flexible around actual pace and services, and do not provide financial guarantees.`,
 		`For zero, nero, or town-rest questions, visibly weigh body condition or injury, cached/current weather, town chores, budget, and the next section. Frame rest as an investment, not failure. If weather was fetched, include the weather summary or verification caveat in the decision.`,
+		`For town questions about charging, refreshing, downloading, updating Scout, or leaving service, give a concrete pre-departure checklist: charge phone and battery bank, refresh field pack/current mile, finish cloud sync while online, update the local AI model on Wi-Fi and power, save offline maps/docs, verify Bible text is available offline, refresh weather and closure checks, then airplane-mode test with a water question. Say cached weather, closures, water, and services can go stale.`,
 		`For resupply or mail-drop questions, avoid firm mail-ahead advice until the missing inputs are named: diet restrictions, expected pace, next town timing, store/post-office hours, hostel or shuttle access, and whether the item is hard to find locally. Give the default rule after that: buy common food in town; mail only constrained, medical, diet-specific, or hard-to-find items to verified stops. Never say hard-to-find items are better bought in town unless a current town source proves availability.`,
 		`For first-aid kit or blister questions, keep the kit compact and personal. Include prevention tape, blister treatment, wound basics, normal personal meds, and a warning to stop or get medical help for spreading redness, drainage, fever, worsening pain, swelling, or changed gait. Do not diagnose.`,
 		`For injury or pain questions, do not tell the hiker to train through pain. Keep the answer focused on the injury decision, not a general prep checklist. Lead with pain-free load reduction, low-impact conditioning, strength/mobility work, and clinician/physical-therapist guidance when pain persists, worsens, swells, or changes gait. Recommend low first-week mileage and stopping while normal recovery is still possible. Do not offer terrain lookups or custom workouts at the end.`,
