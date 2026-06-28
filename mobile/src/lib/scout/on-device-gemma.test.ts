@@ -228,6 +228,8 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /do not suggest confrontation/);
 	assert.match(systemContext, /For closure or detour routing questions/);
 	assert.match(systemContext, /advisory context rather than turn-by-turn detour routing/);
+	assert.match(systemContext, /For smoke or fire near trail questions/);
+	assert.match(systemContext, /never invent a safe route through the hazard/);
 	assert.match(systemContext, /For after-dark shelter arrivals/);
 	assert.match(systemContext, /do not tell the hiker to choose a backup before dark/);
 	assert.match(systemContext, /roughly 200 feet from water and trail/);
@@ -855,6 +857,30 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			]
 		),
 		"I can't route you around a closure or detour without knowing exactly where you are and what the current official management agency says. You need to verify the current managing-agency route before committing.\n\nClosure/detour note: loaded official alert says Active official trail conditions: HIGH CLOSURE - Eval closure near current section. A short official closure/detour example is loaded so Scout must say to verify the current managing-agency route before committing. Scout can summarize that alert as advisory context, not turn-by-turn detour routing. Verify the current managing-agency detour and posted signage before committing, follow official route guidance, and do not invent alternate route details."
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			"If you smell smoke or see fire near the trail, stop hiking immediately. You need to check for official alerts right away.\n\nThe trail conditions guidance says that smoke or fire reports should trigger an official alert check and a safer route or exit decision. Since I cannot verify live conditions, you need to check for any official alerts immediately. If you can't confirm the situation, choose a lower-mileage or safer stop option and name what still needs confirmation.\n\nYou should move away from the smoke and fire source and seek a safe area. If you are in immediate danger, use your emergency plan.",
+			'What if I smell smoke or see fire near the trail?',
+			[
+				{
+					toolId: 'weather_lookup',
+					args: { fromMile: 438.9 },
+					summary: 'Cached weather near mile 438.9: partly cloudy with changing mountain conditions (high 67F / low 51F, wind 9 mph). Mountain weather changes quickly; refresh before safety-critical choices.',
+					confidence: 'medium',
+					receipts: []
+				},
+				{
+					toolId: 'trail_conditions',
+					args: { fromMile: 438.9 },
+					summary: 'Active official trail conditions: HIGH FIRE - Eval fire/smoke caution. Smoke or fire reports should trigger an official alert check and a safer route or exit decision.',
+					confidence: 'high',
+					receipts: []
+				}
+			]
+		),
+		"If you smell smoke or see fire near the trail, do not continue toward the smoke or fire. You need to check for official alerts right away.\n\nThe trail conditions guidance says that smoke or fire reports should trigger an official alert check and a safer route or exit decision. Since I cannot verify live conditions, you need to check for any official alerts immediately. If you can't confirm the situation, choose a lower-mileage or safer stop option and name what still needs confirmation.\n\nYou should move away from the smoke and fire source and seek a safe area. If you are in immediate danger, use your emergency plan.\n\nSmoke/fire trail note: loaded official alert says Active official trail conditions: HIGH FIRE - Eval fire/smoke caution. Smoke or fire reports should trigger an official alert check and a safer route or exit decision. Weather context: Cached weather near mile 438.9: partly cloudy with changing mountain conditions (high 67F / low 51F, wind 9 mph). Mountain weather changes quickly; refresh before safety-critical choices. Do not continue toward or through smoke or visible fire; move away toward a known safe road, town, ranger station, or public area when you can do so safely. Follow official closures, evacuation orders, ranger, 911, or emergency-device instructions; do not invent a safe route through the hazard. Escalate immediately for visible flames, heavy smoke, blocked exits, fast-changing wind, or immediate danger."
 	);
 
 	assert.equal(

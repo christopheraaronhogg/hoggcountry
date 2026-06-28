@@ -131,6 +131,8 @@ const LIVE_WEATHER_FACTS_NOTE =
 	'Live-weather verification note: verify storms and lightning, heat or cold exposure, wind, flooding or high water, closures or fire/smoke alerts, and whether the cache is stale before relying on the answer for exposed terrain or a safety-critical decision.';
 const CLOSURE_DETOUR_ROUTING_NOTE =
 	'Closure/detour note: Scout can summarize loaded official alerts, but it is advisory context, not turn-by-turn detour routing. Verify the current managing-agency detour and posted signage before committing, follow official route guidance, and do not invent alternate route details.';
+const SMOKE_FIRE_TRAIL_NOTE =
+	'Smoke/fire trail note: treat smoke or visible fire near trail as a serious hazard. Do not continue toward or through smoke or visible fire; move away toward a known safe road, town, ranger station, or public area when you can do so safely. Follow official closures, evacuation orders, ranger, 911, or emergency-device instructions; do not invent a safe route through the hazard. Escalate immediately for visible flames, heavy smoke, blocked exits, fast-changing wind, or immediate danger.';
 
 export class OnDeviceGemmaProvider implements ScoutProvider {
 	private bridge?: OnDeviceGemmaBridge;
@@ -317,6 +319,12 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	}
 	if (isClosureDetourRoutingPrompt(lowerPrompt) && !mentionsClosureDetourRoutingBoundary(answer, toolInvocations)) {
 		answer = appendSentence(answer, buildClosureDetourRoutingNote(toolInvocations));
+	}
+	if (isSmokeFireTrailPrompt(lowerPrompt)) {
+		answer = normalizeSmokeFireTrailWording(answer);
+	}
+	if (isSmokeFireTrailPrompt(lowerPrompt) && !mentionsSmokeFireTrailSafety(answer, toolInvocations)) {
+		answer = appendSentence(answer, buildSmokeFireTrailNote(toolInvocations));
 	}
 	if (isUnsafePersonShelterPrompt(lowerPrompt)) {
 		answer = removeUnsafePersonShelterDrift(answer);
@@ -985,6 +993,11 @@ function isClosureDetourRoutingPrompt(prompt: string): boolean {
 		/\b(?:route|routing|around|detour|closed|closure|trail|scout)\b/u.test(prompt);
 }
 
+function isSmokeFireTrailPrompt(prompt: string): boolean {
+	return /\b(?:smoke|fire|wildfire|flames?|burning|burn)\b/u.test(prompt) &&
+		/\b(?:trail|near|ahead|smell|smelling|see|seeing|hike|hiking|route|section)\b/u.test(prompt);
+}
+
 function weatherLookupSummary(toolInvocations: ToolInvocationRecord[]): string | null {
 	const summary = toolInvocations.find((tool) => tool.toolId === 'weather_lookup')?.summary?.trim();
 	return summary || null;
@@ -1003,6 +1016,10 @@ function containsBearNearCampDrift(sentence: string): boolean {
 	return /\b(?:make yourself look big|waving your arms?|stand your ground|bear spray|keep(?:ing)? your eyes on it|talk to it calmly|curious|aggressive)\b/iu.test(sentence);
 }
 
+function normalizeSmokeFireTrailWording(answer: string): string {
+	return answer.replace(/\bstop hiking immediately\b/giu, 'do not continue toward the smoke or fire');
+}
+
 function mentionsClosureDetourRoutingBoundary(answer: string, toolInvocations: ToolInvocationRecord[]): boolean {
 	const hasLoadedAlert = Boolean(toolSummary(toolInvocations, 'trail_conditions'));
 	const mentionsLoadedAlert = !hasLoadedAlert ||
@@ -1016,10 +1033,38 @@ function mentionsClosureDetourRoutingBoundary(answer: string, toolInvocations: T
 	return mentionsLoadedAlert && mentionsAdvisoryBoundary && mentionsAgencyRoute && refusesInventedRoute;
 }
 
+function mentionsSmokeFireTrailSafety(answer: string, toolInvocations: ToolInvocationRecord[]): boolean {
+	const hasLoadedAlert = Boolean(toolSummary(toolInvocations, 'trail_conditions'));
+	const mentionsLoadedAlert = !hasLoadedAlert ||
+		/\b(?:loaded|active official|official alert|official trail condition|trail conditions guidance|trail update|alert says|fire alert|smoke alert)\b/iu.test(answer);
+	const avoidsHazard =
+		/\b(?:do not|don't|avoid|never|must not|cannot|can't)\b[^.?!\n]*(?:continue|enter|walk|hike|go|push|proceed|route)[^.?!\n]*(?:smoke|fire|flames?|hazard)|\b(?:do not|don't|avoid|never|must not|cannot|can't)\b[^.?!\n]*(?:smoke|fire|flames?)/iu.test(answer);
+	const movesAwayOrExits =
+		/\b(?:move away|get away|back away|exit|evacuat|bail out|leave the area|known safe|safe road|road|town|ranger station|public area|safer area)\b/iu.test(answer);
+	const followsOfficialInstructions =
+		/\b(?:official|closure|evacuation|ranger|911|emergency|authorit|managing[-\s]?agency|posted)\b/iu.test(answer);
+	const refusesInventedRoute =
+		/\b(?:do not|don't|must not|never|cannot|can't|avoid)\b[^.?!\n]*(?:invent|improvise|make up|guess)[^.?!\n]*(?:route|detour|safe route|path)|\b(?:invented|guessed|improvised)\b[^.?!\n]*(?:route|detour|safe route|path)|\b(?:safe route through|route through)\b[^.?!\n]*(?:smoke|fire|hazard)/iu.test(answer);
+	const escalatesImmediateDanger =
+		/\b(?:visible flames|heavy smoke|blocked exits?|fast-changing wind|immediate danger|911|emergency|inreach|plb|emergency device|emergency plan)\b/iu.test(answer);
+	return mentionsLoadedAlert && avoidsHazard && movesAwayOrExits && followsOfficialInstructions && refusesInventedRoute && escalatesImmediateDanger;
+}
+
 function buildClosureDetourRoutingNote(toolInvocations: ToolInvocationRecord[]): string {
 	const alert = toolSummary(toolInvocations, 'trail_conditions');
 	if (!alert) return CLOSURE_DETOUR_ROUTING_NOTE;
 	return `Closure/detour note: loaded official alert says ${trimToolClause(alert)}. Scout can summarize that alert as advisory context, not turn-by-turn detour routing. Verify the current managing-agency detour and posted signage before committing, follow official route guidance, and do not invent alternate route details.`;
+}
+
+function buildSmokeFireTrailNote(toolInvocations: ToolInvocationRecord[]): string {
+	const alert = toolSummary(toolInvocations, 'trail_conditions');
+	const weather = toolSummary(toolInvocations, 'weather_lookup');
+	const intro = alert
+		? `Smoke/fire trail note: loaded official alert says ${trimToolClause(alert)}.`
+		: SMOKE_FIRE_TRAIL_NOTE;
+	const weatherContext = weather ? ` Weather context: ${trimToolClause(weather)}.` : '';
+	if (!alert) return `${intro}${weatherContext}`;
+	return `${intro}${weatherContext} Do not continue toward or through smoke or visible fire; move away toward a known safe road, town, ranger station, or public area when you can do so safely. Follow official closures, evacuation orders, ranger, 911, or emergency-device instructions; do not invent a safe route through the hazard. Escalate immediately for visible flames, heavy smoke, blocked exits, fast-changing wind, or immediate danger.`;
 }
 
 function buildUnsafePersonShelterNote(toolInvocations: ToolInvocationRecord[]): string {
@@ -1552,6 +1597,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For bear-near-camp questions, stay calm, create distance, do not run, give the bear an exit, secure food/trash/scented items away from sleep, and do not approach, feed, corner, or retrieve food from the bear. Verify current local bear guidance, alerts, and food-storage rules when available; do not invent species- or park-specific rules unless they are loaded. Use emergency communication or local authorities/rangers for immediate danger.`,
 		`For unsafe-person shelter or campsite questions, validate the concern without dramatizing, do not suggest confrontation, negotiation, de-escalation with the person, or staying to be polite. Create distance, move toward a safer public or known place or loaded exit when safe, contact trusted support or authorities, and use emergency communication immediately for danger.`,
 		`For closure or detour routing questions, summarize loaded official alerts when present, say Scout is giving advisory context rather than turn-by-turn detour routing, verify the current managing-agency detour and posted signage, follow official route guidance, and never invent alternate route details.`,
+		`For smoke or fire near trail questions, treat smoke or visible fire as a serious hazard. Use loaded fire/smoke trail conditions and weather as risk context, do not continue toward or through smoke or visible fire, move away toward a known safe road, town, ranger station, or public area when safe, follow official closures, evacuation orders, ranger/911/emergency-device instructions, and never invent a safe route through the hazard.`,
 		`For after-dark shelter arrivals, do not tell the hiker to choose a backup before dark. Say to slow down, use the headlamp, avoid risky tired night navigation, take the nearest safe legal option rather than adding extra night miles, and keep a fallback plan if the shelter is full.`,
 		`When tool findings are labeled as guidance, treat them as topic-specific documents Scout intentionally read for this answer. Use them to shape caveats and next-step advice.`,
 		`When preparation or training questions have pretrip, terrain, loadout, safety, or offline setup findings, give a concrete short plan. For "what should I focus on first" prompts, include an immediate first-week checklist, not only general training advice. Include shakedown hikes, foot care/blister practice, conservative early mileage, gear/loadout checks, water treatment habits, and an offline app/model rehearsal when those appear in the findings.`,
