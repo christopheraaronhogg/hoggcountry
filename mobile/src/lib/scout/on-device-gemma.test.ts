@@ -233,9 +233,11 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /For zero, nero, or town-rest questions/);
 	assert.match(systemContext, /cached\/current weather, town chores, budget, and the next section/);
 	assert.match(systemContext, /For resupply or mail-drop questions/);
+	assert.match(systemContext, /diet restrictions, expected pace, next town timing/);
 	assert.match(systemContext, /For first-aid kit or blister questions/);
 	assert.match(systemContext, /spreading redness, drainage, fever, worsening pain/);
 	assert.match(systemContext, /do not tell the hiker to train through pain/);
+	assert.match(systemContext, /pain persists, worsens, swells, or changes gait/);
 	assert.match(systemContext, /Do not offer terrain lookups or custom workouts at the end/);
 	assert.match(systemContext, /Use the strongest 2-4 tool findings visibly/);
 });
@@ -256,7 +258,15 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 
 	assert.equal(
 		polishOnDeviceAnswer('Download maps and refresh the field pack.', 'What phone settings and offline downloads should I set before going offline?'),
-		'Download maps and refresh the field pack.\n\nAlso verify Bible text is available offline.'
+		'Download maps and refresh the field pack.\n\nAlso verify Bible text is available offline.\n\nEmergency boundary: Scout and the phone do not replace inReach, PLB, 911, or the family emergency plan.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Buy common food in town. Mail special items to verified stops and confirm store hours.',
+			'What should I mail ahead versus buy in town for resupply?'
+		),
+		'Before making a firm mail-versus-town call, confirm diet restrictions, expected pace, next town timing, store and post-office hours, hostel or shuttle access, and whether the item is hard to find locally. Default rule: buy common food in town; mail only constrained, medical, diet-specific, or hard-to-find items to verified stops.\n\nBuy common food in town. Mail special items to verified stops and confirm store hours.'
 	);
 
 	assert.equal(
@@ -277,7 +287,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 
 	assert.equal(
 		polishOnDeviceAnswer('Protect your knee. I can look up terrain, but I can', 'How should I train with a bad knee before the first week of the AT?'),
-		'Protect your knee.'
+		'First: do not train through worsening pain. Back off or stop if pain worsens, swelling appears, or your gait changes; use pain-free load reduction, low-impact conditioning, and clinician or physical-therapist guidance before building mileage.\n\nProtect your knee.'
 	);
 
 	assert.equal(
@@ -285,7 +295,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			'Protect your knee.\n\nA shakedown hike should prove your sleep system, rain system, and offline app flow.\n\nThis approach is what the terrain guidance suggests for the first trail week.',
 			'How should I train with a bad knee before the first week of the AT?'
 		),
-		'Protect your knee.'
+		'First: do not train through worsening pain. Back off or stop if pain worsens, swelling appears, or your gait changes; use pain-free load reduction, low-impact conditioning, and clinician or physical-therapist guidance before building mileage.\n\nProtect your knee.'
 	);
 
 	assert.equal(
@@ -348,7 +358,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 				}
 			]
 		),
-		'Keep mileage conservative and protect your dry sleep layers. Verify the current forecast before exposed terrain, especially if thunderstorms are possible.\n\nWeather note: Cached weather near mile 0.0: showers and possible thunderstorms (high 67F / low 51F, wind 22 mph). Lightning and wet-cold exposure are possible; verify live before exposed terrain.'
+		'Keep mileage conservative and protect your dry sleep layers. Verify the current forecast before exposed terrain, especially if thunderstorms are possible.\n\nWeather note: Cached weather near mile 0.0: showers and possible thunderstorms (high 67F / low 51F, wind 22 mph). Lightning and wet-cold exposure are possible; verify live before exposed terrain.\n\nHeavy-rain start note: keep mileage conservative, protect dry sleep layers, watch footing on slick roots, rocks, bog boards, and descents, verify the current forecast, and stop or bail out for lightning, hypothermia risk, flooding, or worsening conditions.'
 	);
 
 	assert.equal(
@@ -551,6 +561,14 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			'How should I pack for cold rain tonight if I am camping?'
 		),
 		'Cold rain brings wet-cold exposure. Protect the dry sleep layer and warm layer first, set up early in a legal protected spot, and stop or bail out if the sleep system cannot stay dry.\n\nCold-rain camping note: treat wet-cold exposure as hypothermia risk, protect the dry sleep layer and warm layer first, set up early in a legal protected spot, keep the filter warm, and stop or bail out if the sleep system or camp setup cannot stay dry.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Keep mileage conservative and protect your dry sleep layers. Verify the current forecast before exposed terrain and be careful on slick roots and rocks. Stop or bail out if lightning, flooding, wet-cold exposure, or worsening weather appears.',
+			'What is a safe plan if I start the AT in heavy rain?'
+		),
+		'Keep mileage conservative and protect your dry sleep layers. Verify the current forecast before exposed terrain and be careful on slick roots and rocks. Stop or bail out if lightning, flooding, wet-cold exposure, or worsening weather appears.\n\nHeavy-rain start note: keep mileage conservative, protect dry sleep layers, watch footing on slick roots, rocks, bog boards, and descents, verify the current forecast, and stop or bail out for lightning, hypothermia risk, flooding, or worsening conditions.'
 	);
 
 	assert.equal(

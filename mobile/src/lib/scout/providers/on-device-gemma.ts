@@ -49,6 +49,14 @@ const SYSTEM_CONTEXT_TRIM_MARKER =
 	'\n\n[Middle context trimmed to fit the on-device model window. Use only retained tool findings and cite only supplied sources.]\n\n';
 const TOWN_OFFLINE_READINESS_NOTE =
 	'Before leaving service: charge the phone and battery bank, refresh the field pack, confirm your current mile, let cloud sync finish while you still have service, download or update the local AI model on Wi-Fi and power, save offline maps/docs, verify Bible text is available offline, refresh weather and closure checks, then turn on airplane mode, relaunch, and ask Scout a water question. Treat cached weather, closures, water, and services as stale until refreshed again; Scout does not replace inReach, PLB, 911, or the family emergency plan.';
+const OFFLINE_EMERGENCY_BOUNDARY_NOTE =
+	'Emergency boundary: Scout and the phone do not replace inReach, PLB, 911, or the family emergency plan.';
+const RESUPPLY_MAIL_DROP_NOTE =
+	'Before making a firm mail-versus-town call, confirm diet restrictions, expected pace, next town timing, store and post-office hours, hostel or shuttle access, and whether the item is hard to find locally. Default rule: buy common food in town; mail only constrained, medical, diet-specific, or hard-to-find items to verified stops.';
+const INJURY_PAIN_SAFETY_NOTE =
+	'First: do not train through worsening pain. Back off or stop if pain worsens, swelling appears, or your gait changes; use pain-free load reduction, low-impact conditioning, and clinician or physical-therapist guidance before building mileage.';
+const HEAVY_RAIN_START_NOTE =
+	'Heavy-rain start note: keep mileage conservative, protect dry sleep layers, watch footing on slick roots, rocks, bog boards, and descents, verify the current forecast, and stop or bail out for lightning, hypothermia risk, flooding, or worsening conditions.';
 const FROZEN_FILTER_NOTE =
 	'Frozen-filter note: if a hollow-fiber water filter froze, treat it as possibly compromised. Use backup tablets or another treatment until you can replace or verify it, and prevent it by sleeping with the filter or keeping it warm overnight.';
 const SLOW_FILTER_NOTE =
@@ -246,6 +254,7 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	answer = normalizeSpelledDecimalDistances(answer);
 	answer = removeTrailingProvenanceParagraphs(answer);
 	answer = removeRepeatedSentences(answer);
+	answer = trimToCompleteSentence(answer);
 
 	const lowerPrompt = prompt.toLowerCase();
 	if (!isBiblePrompt(lowerPrompt)) {
@@ -257,6 +266,9 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	if (isInjuryPrompt(lowerPrompt)) {
 		answer = removeInjuryPrepDrift(answer);
 	}
+	if (isInjuryPrompt(lowerPrompt) && !firstParagraphMentionsInjuryStopBoundary(answer)) {
+		answer = prependSentence(answer, INJURY_PAIN_SAFETY_NOTE);
+	}
 	if (isFamilyCheckinPrompt(lowerPrompt) && !mentionsNormalGapsAndLiveLocation(answer)) {
 		answer = appendSentence(
 			answer,
@@ -265,6 +277,9 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	}
 	if (isOfflineSetupPrompt(lowerPrompt) && !mentionsOfflineBible(answer)) {
 		answer = appendSentence(answer, 'Also verify Bible text is available offline.');
+	}
+	if (isOfflineSetupPrompt(lowerPrompt) && !mentionsEmergencyCommunicationBoundary(answer)) {
+		answer = appendSentence(answer, OFFLINE_EMERGENCY_BOUNDARY_NOTE);
 	}
 	if (isPersonalDocumentPrompt(lowerPrompt) && !mentionsPrivateDocumentBoundary(answer)) {
 		answer = appendSentence(
@@ -362,6 +377,12 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	if (isLiveWeatherFactsPrompt(lowerPrompt) && !mentionsLiveWeatherFacts(answer)) {
 		answer = appendSentence(answer, LIVE_WEATHER_FACTS_NOTE);
 	}
+	if (isHeavyRainStartPrompt(lowerPrompt) && !mentionsHeavyRainStartSafety(answer)) {
+		answer = appendSentence(answer, HEAVY_RAIN_START_NOTE);
+	}
+	if (isResupplyMailDropPrompt(lowerPrompt) && !firstParagraphMentionsResupplyMailDropInputs(answer)) {
+		answer = prependSentence(answer, RESUPPLY_MAIL_DROP_NOTE);
+	}
 	if (isBudgetPrompt(lowerPrompt) && !mentionsBudgetCategories(answer)) {
 		answer = appendSentence(
 			answer,
@@ -400,6 +421,8 @@ function removeInjuryPrepDrift(answer: string): string {
 	return answer
 		.split(/\n{2,}/u)
 		.filter((paragraph) => !/^A shakedown hike should prove\b/iu.test(paragraph.trim()))
+		.filter((paragraph) => !/^For your first week, the plan should include\b/iu.test(paragraph.trim()))
+		.filter((paragraph) => !/^Terrain guidance says\b/iu.test(paragraph.trim()))
 		.join('\n\n')
 		.trim();
 }
@@ -542,6 +565,10 @@ function appendSentence(answer: string, sentence: string): string {
 	return `${answer.trim()}\n\n${sentence}`;
 }
 
+function prependSentence(answer: string, sentence: string): string {
+	return `${sentence}\n\n${answer.trim()}`;
+}
+
 function trimToCompleteSentence(answer: string): string {
 	const trimmed = answer.trim();
 	if (!trimmed || /[.!?)]$/u.test(trimmed)) return trimmed;
@@ -555,6 +582,10 @@ function isOfflineSetupPrompt(prompt: string): boolean {
 
 function isPersonalDocumentPrompt(prompt: string): boolean {
 	return /documents|personal documents|information should i keep saved offline|insurance|emergency contacts|permits|reservations/u.test(prompt);
+}
+
+function isResupplyMailDropPrompt(prompt: string): boolean {
+	return /\b(?:resupply|mail ahead|mail drop|mail-drop|mail box|ship a box|shipping a box|buy in town|buy as i go)\b/u.test(prompt);
 }
 
 function isFamilyCheckinPrompt(prompt: string): boolean {
@@ -595,6 +626,11 @@ function isThunderstormHikePrompt(prompt: string): boolean {
 	return /\b(?:thunderstorms?|storm|lightning)\b/u.test(prompt) &&
 		/\b(?:today|afternoon|hike|mileage|miles|ridge|ridges|exposed)\b/u.test(prompt) &&
 		!isStormCampsitePrompt(prompt);
+}
+
+function isHeavyRainStartPrompt(prompt: string): boolean {
+	return /\b(?:heavy rain|hard rain|rain start|start(?:ing)? the at in rain|start(?:ing)? in rain)\b/u.test(prompt) &&
+		/\b(?:start|springer|at|trail|plan|safe|safety)\b/u.test(prompt);
 }
 
 function isColdWindRidgePrompt(prompt: string): boolean {
@@ -742,6 +778,37 @@ function mentionsPrivateDocumentBoundary(answer: string): boolean {
 	return /(?:do not|don't) paste private|private (?:id|insurance|medical|payment|reservation).*scout chat/iu.test(answer);
 }
 
+function mentionsEmergencyCommunicationBoundary(answer: string): boolean {
+	return /(?:scout|phone)[^.?!\n]*(?:does not|do not|doesn't|don't|not)[^.?!\n]*(?:replace|substitute)[^.?!\n]*(?:inreach|plb|911|family emergency plan)|(?:inreach|plb|911|family emergency plan)[^.?!\n]*(?:separate|emergency plan|backup)/iu.test(answer);
+}
+
+function mentionsResupplyMailDropInputs(answer: string): boolean {
+	const mentionsDiet = /\bdiet|dietary|medical|restricted|restriction/iu.test(answer);
+	const mentionsPace = /\bpace|daily miles?|mileage/iu.test(answer);
+	const mentionsTiming = /\bnext town|town timing|arrival|when you reach|days? to town/iu.test(answer);
+	const mentionsHours = /\bstore[^.?!\n]*hours?|post[-\s]?office[^.?!\n]*hours?|hours?[^.?!\n]*(?:store|post[-\s]?office)/iu.test(answer);
+	const mentionsAccess = /\bhostel|shuttle|access|hard[-\s]?to[-\s]?find|locally/iu.test(answer);
+	return mentionsDiet && mentionsPace && mentionsTiming && mentionsHours && mentionsAccess;
+}
+
+function firstParagraphMentionsResupplyMailDropInputs(answer: string): boolean {
+	return mentionsResupplyMailDropInputs(firstParagraph(answer));
+}
+
+function firstParagraphMentionsInjuryStopBoundary(answer: string): boolean {
+	return mentionsInjuryStopBoundary(firstParagraph(answer));
+}
+
+function mentionsInjuryStopBoundary(answer: string): boolean {
+	const mentionsStopOrBackOff = /\b(?:stop|back off|reduce|cut back|do not train through|don't train through|medical help|clinician|physical therapist)\b/iu.test(answer);
+	const mentionsWorsening = /\b(?:pain worsens|worsening pain|worse pain|swelling|swells|changed gait|changes gait|gait changes)\b/iu.test(answer);
+	return mentionsStopOrBackOff && mentionsWorsening;
+}
+
+function firstParagraph(answer: string): string {
+	return answer.split(/\n{2,}/u)[0] ?? answer;
+}
+
 function mentionsNormalGapsAndLiveLocation(answer: string): boolean {
 	return /(?:normal gap|dead zone|battery conservation|town chaos|rain)/iu.test(answer) && /live location/iu.test(answer);
 }
@@ -814,6 +881,15 @@ function mentionsLiveWeatherFacts(answer: string): boolean {
 	const mentionsClosures = /\b(?:closure|closures|fire|smoke|alert)\b/iu.test(answer);
 	const mentionsStaleCache = /\b(?:stale|cache|cached|live|current)\b/iu.test(answer);
 	return mentionsStorms && mentionsHeatCold && mentionsWindFlood && mentionsClosures && mentionsStaleCache;
+}
+
+function mentionsHeavyRainStartSafety(answer: string): boolean {
+	const mentionsConservativeMileage = /\b(?:conservative|shorten|short|lower|reduce|cap)\b[^.?!\n]*(?:mileage|miles?)|(?:mileage|miles?)[^.?!\n]*(?:conservative|shorten|short|lower|reduce|cap)/iu.test(answer);
+	const mentionsDrySleep = /\b(?:dry sleep|sleep layers?|sleep system|quilt|bag|insulation)\b/iu.test(answer);
+	const mentionsFooting = /\b(?:footing|slick|roots?|rocks?|bog boards?|descents?)\b/iu.test(answer);
+	const mentionsForecast = /\b(?:current|live|verify|refresh|forecast|radar)\b/iu.test(answer);
+	const mentionsBailHypothermia = /\b(?:stop|bail|bailout)\b/iu.test(answer) && /\bhypothermia\b/iu.test(answer);
+	return mentionsConservativeMileage && mentionsDrySleep && mentionsFooting && mentionsForecast && mentionsBailHypothermia;
 }
 
 function mentionsBudgetCategories(answer: string): boolean {
