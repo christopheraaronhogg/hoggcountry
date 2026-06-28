@@ -491,7 +491,12 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 			'Do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat; keep those saved separately offline.'
 		);
 	}
-	if (isDirectNextWaterDistancePrompt(lowerPrompt) && toolSummary(toolInvocations, 'next_water') && !mentionsToolPlace(answer, toolSummary(toolInvocations, 'next_water'))) {
+	const directNextWaterSummary = toolSummary(toolInvocations, 'next_water');
+	if (
+		isDirectNextWaterDistancePrompt(lowerPrompt) &&
+		hasActionableWaterSummary(directNextWaterSummary) &&
+		!mentionsToolPlace(answer, directNextWaterSummary)
+	) {
 		answer = buildDirectNextWaterDistanceAnswer(toolInvocations);
 	}
 	if (isWeatherSensitivePrompt(lowerPrompt)) {
@@ -1560,6 +1565,10 @@ function toolSummary(toolInvocations: ToolInvocationRecord[], toolId: string): s
 	return summary || null;
 }
 
+function hasActionableWaterSummary(summary: string | null): summary is string {
+	return Boolean(summary && !/\bNo water source or mapped water candidate found\b/iu.test(summary));
+}
+
 function containsUnsafePersonShelterDrift(sentence: string): boolean {
 	return /\b(?:speak|talk|go)\b[^.?!\n]*(?:shelter staff|shelter manager|manager|staff)|\b(?:de[-\s]?escalate|resolve the issue|resolve it|clear about your concerns|confront|negotiate)\b/iu.test(sentence);
 }
@@ -1700,7 +1709,7 @@ function buildNearestWaterVerificationNote(toolInvocations: ToolInvocationRecord
 
 function buildDirectNextWaterDistanceAnswer(toolInvocations: ToolInvocationRecord[]): string {
 	const nextWater = toolSummary(toolInvocations, 'next_water');
-	if (!nextWater) {
+	if (!hasActionableWaterSummary(nextWater)) {
 		return 'I do not have a loaded water source ahead in this cached field pack. Refresh when online or verify from a current source before planning a carry.';
 	}
 	return `Next water from the cached field pack: ${trimToolClause(nextWater)}. Visually confirm current flow before relying on it, filter or treat anything you collect, and carry enough to reach a verified source if it is dry.`;
