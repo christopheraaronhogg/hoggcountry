@@ -135,6 +135,8 @@ const SMOKE_FIRE_TRAIL_NOTE =
 	'Smoke/fire trail note: treat smoke or visible fire near trail as a serious hazard. Do not continue toward or through smoke or visible fire; move away toward a known safe road, town, ranger station, or public area when you can do so safely. Follow official closures, evacuation orders, ranger, 911, or emergency-device instructions; do not invent a safe route through the hazard. Escalate immediately for visible flames, heavy smoke, blocked exits, fast-changing wind, or immediate danger.';
 const SCARED_ALONE_NIGHT_NOTE =
 	'Night support note: take the loaded KJV scripture as comfort, then make the next hour concrete. Check immediate hazards, weather, and alerts if possible; get warm and dry, eat or drink if needed, use your headlamp, and choose the nearest safe legal sleep option or known public/help option. Do not let comfort verses override danger; use 911, inReach/PLB, ranger/authorities, or the emergency plan for real danger, injury, exposure, or repeated panic.';
+const SEVERE_FATIGUE_CLEAR_THINKING_NOTE =
+	'Severe-fatigue note: stop hiking now and sit in a safe spot. Eat a snack, drink treated water or electrolytes, adjust layers for warmth or cooling, and check daylight, weather, body symptoms, and whether you can think clearly. Choose the nearest lower-risk legal stop or help option; do not add miles for pride if your thinking is foggy. Use 911, inReach/PLB, rangers/authorities, or the emergency plan for confusion, worsening symptoms, injury, exposure, inability to continue safely, or inability to make decisions.';
 
 export class OnDeviceGemmaProvider implements ScoutProvider {
 	private bridge?: OnDeviceGemmaBridge;
@@ -348,6 +350,12 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	}
 	if ((isLightningRidgePrompt(lowerPrompt) || isWetHypothermiaPrompt(lowerPrompt)) && !isHeatWaterPrompt(lowerPrompt)) {
 		answer = removeMisappliedHeatIllnessDrift(answer);
+	}
+	if (isSevereFatigueClearThinkingPrompt(lowerPrompt)) {
+		answer = removeMisappliedHeatIllnessDrift(answer);
+	}
+	if (isSevereFatigueClearThinkingPrompt(lowerPrompt) && !mentionsSevereFatigueClearThinkingPlan(answer, toolInvocations)) {
+		answer = appendSentence(answer, buildSevereFatigueClearThinkingNote(toolInvocations));
 	}
 	if (isThunderstormHikePrompt(lowerPrompt) && !isLightningRidgePrompt(lowerPrompt) && !mentionsThunderstormHikeDecision(answer)) {
 		answer = appendSentence(answer, THUNDERSTORM_HIKE_NOTE);
@@ -903,6 +911,15 @@ function isShelterFatigueDecisionPrompt(prompt: string): boolean {
 		/\b(?:where should i sleep|sleep tonight|sleep|shelter|camp|campsite)\b/u.test(prompt);
 }
 
+function isSevereFatigueClearThinkingPrompt(prompt: string): boolean {
+	return /\b(?:too tired|too exhausted|can't keep going|cannot keep going|keep going|too wiped out|think clearly|clear[-\s]?headed)\b/u.test(prompt) &&
+		/\b(?:keep going|think clearly|clear[-\s]?headed|what should i do|help me|continue safely)\b/u.test(prompt) &&
+		!isSpecificShelterSafetyPrompt(prompt) &&
+		!isShelterFatigueDecisionPrompt(prompt) &&
+		!isQuestionableWaterLowDaylightPrompt(prompt) &&
+		!isAcuteHeatIllnessPrompt(prompt);
+}
+
 function isSpecificShelterSafetyPrompt(prompt: string): boolean {
 	return isFullShelterPrompt(prompt) ||
 		isStealthCampPrompt(prompt) ||
@@ -1086,6 +1103,19 @@ function buildScaredAloneNightNote(toolInvocations: ToolInvocationRecord[]): str
 	return `${SCARED_ALONE_NIGHT_NOTE} Loaded shelter context: ${trimToolClause(shelter)}. Treat that as a candidate, not a guarantee; verify status, water, and crowding when possible, and do not add risky night miles if it is not the safer legal option.`;
 }
 
+function buildSevereFatigueClearThinkingNote(toolInvocations: ToolInvocationRecord[]): string {
+	const water = toolSummary(toolInvocations, 'next_water');
+	const shelter = toolSummary(toolInvocations, 'next_shelter');
+	const town = toolSummary(toolInvocations, 'next_town');
+	const context = [
+		water ? `water: ${trimToolClause(water)}` : '',
+		shelter ? `shelter: ${trimToolClause(shelter)}` : '',
+		town ? `town/help: ${trimToolClause(town)}` : ''
+	].filter(Boolean);
+	if (!context.length) return SEVERE_FATIGUE_CLEAR_THINKING_NOTE;
+	return `${SEVERE_FATIGUE_CLEAR_THINKING_NOTE} Loaded context: ${context.join('; ')}. Treat those as candidates, not guarantees; verify water, shelter status, daylight, weather, and legal options before committing.`;
+}
+
 function buildUnsafePersonShelterNote(toolInvocations: ToolInvocationRecord[]): string {
 	const exit = toolSummary(toolInvocations, 'next_town');
 	if (!exit) return UNSAFE_PERSON_SHELTER_NOTE;
@@ -1163,6 +1193,29 @@ function mentionsScaredAloneNightPlan(answer: string, toolInvocations: ToolInvoc
 	const escalatesRealDanger =
 		/\b(?:real danger|immediate danger|injury|exposure|repeated panic|911|inReach|PLB|emergency plan|ranger|authorities)\b/iu.test(answer);
 	return mentionsComfortScripture && checksImmediateHazards && coversBodyBasics && makesOneHourPlan && usesShelterOrSafeSleep && escalatesRealDanger;
+}
+
+function mentionsSevereFatigueClearThinkingPlan(answer: string, toolInvocations: ToolInvocationRecord[]): boolean {
+	const hasLoadedWater = Boolean(toolSummary(toolInvocations, 'next_water'));
+	const hasLoadedShelter = Boolean(toolSummary(toolInvocations, 'next_shelter'));
+	const stopsAndSits =
+		/\b(?:stop hiking|stop moving|stop now|sit down|sit in a safe spot|pause)\b/iu.test(answer);
+	const eatsAndDrinks =
+		/\b(?:eat|snack|food)\b/iu.test(answer) && /\b(?:drink|sip|water|electrolytes?)\b/iu.test(answer);
+	const coversLayers =
+		/\b(?:layer|layers|warm|insulation|rain shell|temperature)\b/iu.test(answer);
+	const checksDecisionFacts =
+		/\bdaylight\b/iu.test(answer) &&
+		/\b(?:weather|forecast|conditions)\b/iu.test(answer) &&
+		/\b(?:symptoms?|body|confusion|thinking|clear(?:ly)?|foggy)\b/iu.test(answer);
+	const usesLoadedDecisionContext =
+		(!hasLoadedWater || /\b(?:loaded water|next water|seasonal seep|seep|creek|water source|mile\s+191\.1)\b/iu.test(answer)) &&
+		(!hasLoadedShelter || /\b(?:loaded shelter|next shelter|shelter|Ridge Shelter|mile\s+192\.7)\b/iu.test(answer));
+	const choosesLowerRisk =
+		/\b(?:lower[-\s]?risk|safer|safe legal|nearest|do not add miles|don't add miles|stop earlier|help option)\b/iu.test(answer);
+	const escalatesIfImpaired =
+		/\b(?:911|inReach|PLB|emergency plan|rangers?|authorities|confusion|worsening symptoms|injury|exposure|cannot continue|can't continue|cannot think|can't think|make decisions)\b/iu.test(answer);
+	return stopsAndSits && eatsAndDrinks && coversLayers && checksDecisionFacts && usesLoadedDecisionContext && choosesLowerRisk && escalatesIfImpaired;
 }
 
 function mentionsPrivateDocumentBoundary(answer: string): boolean {
@@ -1587,7 +1640,7 @@ function containsFearComfortDrift(paragraph: string): boolean {
 }
 
 function containsHeatIllnessDrift(sentence: string): boolean {
-	return /\b(?:find (?:immediate )?shade|cool down|heat illness|stopped sweating|nausea|cramps)\b/iu.test(sentence);
+	return /\b(?:find (?:immediate )?shade|cool(?:ing)? down|heat illness|stopped sweating|nausea|cramps)\b/iu.test(sentence);
 }
 
 function mentionsBadWeatherNeroDecision(answer: string): boolean {
@@ -1642,6 +1695,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For unsafe-person shelter or campsite questions, validate the concern without dramatizing, do not suggest confrontation, negotiation, de-escalation with the person, or staying to be polite. Create distance, move toward a safer public or known place or loaded exit when safe, contact trusted support or authorities, and use emergency communication immediately for danger.`,
 		`For closure or detour routing questions, summarize loaded official alerts when present, say Scout is giving advisory context rather than turn-by-turn detour routing, verify the current managing-agency detour and posted signage, follow official route guidance, and never invent alternate route details.`,
 		`For smoke or fire near trail questions, treat smoke or visible fire as a serious hazard. Use loaded fire/smoke trail conditions and weather as risk context, do not continue toward or through smoke or visible fire, move away toward a known safe road, town, ranger station, or public area when safe, follow official closures, evacuation orders, ranger/911/emergency-device instructions, and never invent a safe route through the hazard.`,
+		`For severe fatigue or "too tired to keep going" prompts, do not jump to heat illness unless heat, dizziness, or hot-weather symptoms are explicit. Start with immediate clarity: stop hiking, sit in a safe spot, eat, drink treated water or electrolytes, adjust layers for warmth or cooling, check daylight, weather, body symptoms, and whether the hiker can think clearly. Then use loaded water, shelter, town, or bailout context to choose the nearest lower-risk legal stop or help option. Escalate through 911, inReach/PLB, rangers/authorities, or the emergency plan for confusion, worsening symptoms, injury, exposure, inability to continue safely, or inability to make decisions.`,
 		`For after-dark shelter arrivals, do not tell the hiker to choose a backup before dark. Say to slow down, use the headlamp, avoid risky tired night navigation, take the nearest safe legal option rather than adding extra night miles, and keep a fallback plan if the shelter is full.`,
 		`When tool findings are labeled as guidance, treat them as topic-specific documents Scout intentionally read for this answer. Use them to shape caveats and next-step advice.`,
 		`When preparation or training questions have pretrip, terrain, loadout, safety, or offline setup findings, give a concrete short plan. For "what should I focus on first" prompts, include an immediate first-week checklist, not only general training advice. Include shakedown hikes, foot care/blister practice, conservative early mileage, gear/loadout checks, water treatment habits, and an offline app/model rehearsal when those appear in the findings.`,

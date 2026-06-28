@@ -230,6 +230,9 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /advisory context rather than turn-by-turn detour routing/);
 	assert.match(systemContext, /For smoke or fire near trail questions/);
 	assert.match(systemContext, /never invent a safe route through the hazard/);
+	assert.match(systemContext, /For severe fatigue or "too tired to keep going" prompts/);
+	assert.match(systemContext, /stop hiking, sit in a safe spot, eat, drink treated water or electrolytes/);
+	assert.match(systemContext, /use loaded water, shelter, town, or bailout context/);
 	assert.match(systemContext, /For after-dark shelter arrivals/);
 	assert.match(systemContext, /do not tell the hiker to choose a backup before dark/);
 	assert.match(systemContext, /roughly 200 feet from water and trail/);
@@ -618,6 +621,34 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 		),
 		'If you are tired and low on daylight, treatment is non-negotiable. Filter or backflush if needed, use backup tablets or boil, do not drink untreated questionable water, and choose a safe legal stop before dark.'
 	);
+
+	const severeFatigueAnswer = polishOnDeviceAnswer(
+		'You need to slow down and focus on your immediate safety. The safety guidance suggests that for severe fatigue, you should choose a lower-risk stop. You should stop hiking, find shade, and cool down. Sip treated water with electrolytes if you have them, and watch for any signs of heat illness like dizziness, confusion, headache, nausea, cramps, chills, stopped sweating, or worsening symptoms.\n\nThe trail tool findings indicate that you are near a potential water source at mile 191.1, which is seasonal and open-reference, so you should consider that as a potential stop if you need to rest. You are also near a Ridge Shelter at mile 192.7, which is an open-data candidate, so you should check its current status, water, and crowding before deciding on a sleep plan.\n\nIf you are feeling too tired to think clearly, the best immediate action is to stop, sit down, and focus on your body. Take a few minutes to breathe and assess your physical state before making any major decisions about where to go next.',
+		'I feel too tired to keep going. Help me think clearly.',
+		[
+			{
+				toolId: 'next_water',
+				args: { fromMile: 189.3 },
+				summary: 'Next loaded water: Seasonal seep ahead at mile 191.1 (1.8 mi ahead, seasonal). Seasonal open-reference candidate; confirm current flow.',
+				confidence: 'medium',
+				receipts: []
+			},
+			{
+				toolId: 'next_shelter',
+				args: { fromMile: 189.3 },
+				summary: 'Near Ridge Shelter at mile 192.7 (3.4 mi ahead). Open-data candidate; verify current status, water, and crowding.',
+				confidence: 'medium',
+				receipts: []
+			}
+		]
+	);
+	assert.doesNotMatch(severeFatigueAnswer, /\bheat illness\b|find shade|cool down|nausea|cramps|stopped sweating/);
+	assert.match(severeFatigueAnswer, /Severe-fatigue note: stop hiking now and sit in a safe spot/);
+	assert.match(severeFatigueAnswer, /Eat a snack, drink treated water or electrolytes, adjust layers/);
+	assert.match(severeFatigueAnswer, /check daylight, weather, body symptoms/);
+	assert.match(severeFatigueAnswer, /water: Next loaded water: Seasonal seep ahead at mile 191\.1/);
+	assert.match(severeFatigueAnswer, /shelter: Near Ridge Shelter at mile 192\.7/);
+	assert.match(severeFatigueAnswer, /inability to make decisions/);
 
 	assert.equal(
 		polishOnDeviceAnswer(
