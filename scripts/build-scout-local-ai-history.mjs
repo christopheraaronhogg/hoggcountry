@@ -97,6 +97,7 @@ export async function buildScoutLocalAiHistory({
 
 	runRecords.sort(compareBySortTime);
 	attachRunInterventions(runRecords, commits);
+	const pendingInterventions = pendingInterventionsAfterLastRun(runRecords, commits);
 	const runOrder = new Map(runRecords.map((run, index) => [run.runId, index]));
 	const runById = new Map(runRecords.map((run) => [run.runId, run]));
 	const cases = [...caseMap.values()]
@@ -119,7 +120,8 @@ export async function buildScoutLocalAiHistory({
 			scanDir: relative(repoRoot, scanDir),
 			gitCommitCount: commits.length
 		},
-		summary: buildHistorySummary(runRecords, cases),
+		summary: buildHistorySummary(runRecords, cases, pendingInterventions),
+		pendingInterventions,
 		runs: runRecords,
 		cases
 	};
@@ -172,6 +174,13 @@ h1 { margin: 0 0 8px; font-size: 28px; line-height: 1.15; }
 .metric { padding: 12px; }
 .metric span, .label { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
 .metric strong { display: block; font-size: 22px; margin-top: 4px; }
+.pending {
+	max-width: 1280px;
+	margin: 0 auto 16px;
+}
+.pending[data-empty="true"] { display: none; }
+.pending h2 { margin: 0 0 6px; font-size: 16px; }
+.pending p { margin: 0; color: var(--muted); line-height: 1.4; }
 main {
 	max-width: 1280px;
 	margin: 0 auto;
@@ -247,6 +256,7 @@ input, select {
 <p class="meta" id="meta"></p>
 </header>
 <section class="metrics" id="metrics"></section>
+<section class="panel pending" id="pendingChanges"></section>
 <main>
 <section class="panel">
 <div class="controls">
@@ -283,7 +293,21 @@ domain.innerHTML = ['all', ...new Set(historyData.cases.map((item) => item.domai
 search.addEventListener('input', () => { state.search = search.value.toLowerCase(); render(); });
 domain.addEventListener('change', () => { state.domain = domain.value; render(); });
 runSlider.addEventListener('input', () => { state.runIndex = Number(runSlider.value); render(); });
+renderPendingChanges();
 render();
+function renderPendingChanges() {
+	const pending = historyData.pendingInterventions;
+	const element = document.getElementById('pendingChanges');
+	const count = pending?.commitCount ?? 0;
+	element.dataset.empty = String(count === 0);
+	if (!count) {
+		element.innerHTML = '';
+		return;
+	}
+	const commits = (pending.commits ?? []).slice(0, 4).map((commit) => commit.sha.slice(0, 8) + ' ' + commit.subject).join('; ');
+	element.innerHTML = '<h2>Pending changes not yet measured by a run</h2>' +
+		'<p>' + escapeHtml([count + ' commit(s)', pending.summary, 'since ' + (pending.pendingSinceRunId ?? 'start'), commits].filter(Boolean).join(' | ')) + '</p>';
+}
 function render() {
 	const run = runs[state.runIndex] ?? null;
 	renderMetrics(run);
@@ -490,7 +514,7 @@ function finalizeCaseHistory(record, runOrder, runById) {
 	return record;
 }
 
-function buildHistorySummary(runs, cases) {
+function buildHistorySummary(runs, cases, pendingInterventions = summarizeCommitInterventions([])) {
 	const reviewedEntryCount = cases.reduce((count, item) => count + item.history.filter((entry) => entry.rating !== null).length, 0);
 	const improvedToFive = cases.filter((item) => item.history.some((entry) => entry.improvementSincePrevious)).length;
 	const latestRatings = {};
@@ -509,7 +533,9 @@ function buildHistorySummary(runs, cases) {
 		fullRunCount: runs.filter((run) => run.fullRun).length,
 		partialRunCount: runs.filter((run) => !run.fullRun).length,
 		interventionCounts: Object.fromEntries(countBy(runs.flatMap((run) => run.interventions?.categories ?? []), (item) => item)),
-		interventionCommitCount: runs.reduce((count, run) => count + (run.interventions?.commitCount ?? 0), 0)
+		interventionCommitCount: runs.reduce((count, run) => count + (run.interventions?.commitCount ?? 0), 0),
+		pendingInterventionCommitCount: pendingInterventions.commitCount ?? 0,
+		pendingInterventionCategories: pendingInterventions.categories ?? []
 	};
 }
 
@@ -532,6 +558,7 @@ function formatHistorySummary(history, { jsonPath, htmlPath }) {
 		`- Cases: ${history.summary.caseCount}`,
 		`- Reviewed entries: ${history.summary.reviewedEntryCount}`,
 		`- Improved to 5/5: ${history.summary.improvedToFive}`,
+		`- Pending changes needing rerun: ${history.summary.pendingInterventionCommitCount}`,
 		`- JSON: ${relative(REPO_ROOT, jsonPath)}`,
 		`- Timeline: ${relative(REPO_ROOT, htmlPath)}`,
 		''
@@ -602,6 +629,25 @@ function attachRunInterventions(runs, commits) {
 		run.interventions = summarizeCommitInterventions(changedCommits);
 		if (Number.isInteger(currentIndex) && currentIndex > previousIndex) previousIndex = currentIndex;
 	}
+}
+
+function pendingInterventionsAfterLastRun(runs, commits) {
+	const latestRun = runs.at(-1) ?? null;
+	const commitIndexes = new Map(commits.map((commit, index) => [commit.sha, index]));
+	let pendingCommits = commits;
+	if (latestRun?.commit?.sha && commitIndexes.has(latestRun.commit.sha)) {
+		pendingCommits = commits.slice(commitIndexes.get(latestRun.commit.sha) + 1);
+	} else if (latestRun?.sortTime) {
+		const latestRunTime = new Date(latestRun.sortTime).getTime();
+		pendingCommits = commits.filter((commit) => new Date(commit.committedAt).getTime() > latestRunTime);
+	}
+	const summary = summarizeCommitInterventions(pendingCommits);
+	return {
+		...summary,
+		pendingSinceRunId: latestRun?.runId ?? null,
+		pendingSinceCommit: latestRun?.commit?.sha ?? null,
+		requiresRerun: summary.commitCount > 0
+	};
 }
 
 export function summarizeCommitInterventions(commits) {

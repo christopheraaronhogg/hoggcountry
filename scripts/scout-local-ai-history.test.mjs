@@ -80,6 +80,12 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 				committedAt: '2026-06-28T14:00:00.000Z',
 				subject: 'Fix Scout GPS recovery source routing',
 				files: ['mobile/src/lib/scout/built-in-tools.ts', 'packages/scout-skills/src/index.ts']
+			},
+			{
+				sha: '3333333333333333333333333333333333333333',
+				committedAt: '2026-06-28T15:00:00.000Z',
+				subject: 'Track Scout eval interventions in history',
+				files: ['scripts/build-scout-local-ai-history.mjs', 'scripts/scout-local-ai-history.test.mjs']
 			}
 		]
 	});
@@ -94,6 +100,10 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 	assert.deepEqual(history.runs[1].interventions.categories, ['document-grounding', 'tool-routing/source-retrieval']);
 	assert.equal(history.summary.interventionCounts['prompt/answer-contract'], 1);
 	assert.equal(history.summary.interventionCounts['tool-routing/source-retrieval'], 1);
+	assert.equal(history.summary.pendingInterventionCommitCount, 1);
+	assert.deepEqual(history.summary.pendingInterventionCategories, ['eval-review-process']);
+	assert.equal(history.pendingInterventions.pendingSinceRunId, 'device-local-ai-20260628T143612Z');
+	assert.equal(history.pendingInterventions.requiresRerun, true);
 	const gpsCase = history.cases[0];
 	assert.equal(gpsCase.caseId, 'DLA-067');
 	assert.equal(gpsCase.firstRating, 3);
@@ -113,6 +123,8 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 	assert.match(html, /GPS jumps/u);
 	assert.match(html, /Changes since previous run/u);
 	assert.match(html, /Fix Scout GPS recovery source routing/u);
+	assert.match(html, /Pending changes not yet measured by a run/u);
+	assert.match(html, /Track Scout eval interventions in history/u);
 	assert.doesNotMatch(html, /<\/script><script/u);
 });
 
