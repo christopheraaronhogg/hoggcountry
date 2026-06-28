@@ -299,6 +299,10 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /For "where am I relative to the next road crossing or town" questions/);
 	assert.match(systemContext, /start from the current_mile finding and the next_town road\/town access finding/);
 	assert.match(systemContext, /do not assume services at a crossing unless loaded current service data proves them/);
+	assert.match(systemContext, /For "next climb", "how hard is the terrain ahead", elevation, gain\/loss, or grade questions/);
+	assert.match(systemContext, /lacks verified climb, elevation profile, gain\/loss, or grade detail/);
+	assert.match(systemContext, /do not invent climb distance or difficulty/);
+	assert.match(systemContext, /Give pace-impact guidance from daylight, water spacing, pack weight, feet\/knees/);
 	assert.match(systemContext, /End every answer with a complete sentence/);
 	assert.match(systemContext, /verify Bible text is available offline/);
 	assert.match(systemContext, /Do not include Bible verses, scripture, prayer, or spiritual encouragement unless the hiker explicitly asks/);
@@ -599,6 +603,29 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.match(roadTownNavigationAnswer, /next loaded road\/town access is Pilot Gap Road at mile 49\.5/);
 	assert.match(roadTownNavigationAnswer, /confirm shuttle or pickup/i);
 	assert.match(roadTownNavigationAnswer, /do not assume services at a road crossing/i);
+
+	const climbTerrainAnswer = polishOnDeviceAnswer(
+		'The next section of the trail is about 20 miles long. The terrain ahead involves a seasonal seep around mile 249.1, a reliable creek crossing at mile 253.5, and a thin mapped branch at mile 258.7.\n\nFor the first week, you should start low mileage and focus on protecting your feet and knees. Adjust your pace based on your body condition, daylight, elevation, water spacing, weather, pack weight, and your foot or knee condition. You should stop while you can still recover normally and adjust only after several normal mornings.',
+		'How far to the next climb and how hard is the terrain ahead?',
+		[
+			{
+				toolId: 'upcoming_terrain',
+				args: {},
+				summary:
+					'Next 20 mi from 247.3: Water: Seasonal seep ahead (mi 249.1), Reliable creek crossing (mi 253.5), Thin mapped branch (mi 258.7) | Shelter: Near Ridge Shelter (mi 250.7), Pine Gap Campsite (mi 256.2), Long Hollow Shelter (mi 261.5) | Town: Pilot Gap Road (mi 252.1), Trail Town Market (mi 265.9)',
+				confidence: 'medium',
+				receipts: []
+			}
+		]
+	);
+	assert.match(climbTerrainAnswer, /Climb\/terrain note/);
+	assert.match(climbTerrainAnswer, /loaded upcoming window is Next 20 mi from 247\.3/);
+	assert.match(climbTerrainAnswer, /does not include a verified climb, elevation profile, gain\/loss, or grade/);
+	assert.match(climbTerrainAnswer, /do not invent a climb distance or difficulty/);
+	assert.match(climbTerrainAnswer, /Use it as landmark spacing/);
+	assert.match(climbTerrainAnswer, /offline map, guide, GPS\/elevation profile, or trail sign/);
+	assert.match(climbTerrainAnswer, /Pace impact: slow the target pace/);
+	assert.match(climbTerrainAnswer, /daylight, water spacing, pack weight, feet\/knees, weather, and the next legal stop/);
 
 	const bailoutInjuryAnswer = polishOnDeviceAnswer(
 		'If your knee starts to get worse, stop hiking immediately. Focus on reducing the load and finding a safe place to rest. You should use your first-aid kit to treat any immediate issues, but if the pain worsens, swells, or changes your gait, you need to stop and get help.\n\nFor pain or injury, do not push through it. Focus on low-impact conditioning and strength work, and if pain persists or worsens, you need to consult a clinician or physical therapist. You should back off your mileage and adjust your pace based on what your body is telling you.\n\nIf you are in a situation where you feel you cannot continue safely, choose the nearest safe legal stop or exit. If you are in immediate danger, use your emergency plan.',

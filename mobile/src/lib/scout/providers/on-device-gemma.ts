@@ -77,6 +77,8 @@ const NO_BASEMAP_NAVIGATION_NOTE =
 	"If basemap tiles are not cached, do not pretend they are available. Use Scout's cached trail line and field-pack mile context only as a rough trail-corridor check, and use an external offline map/GPS app or paper map and compass if available. For complex navigation, confusing junctions, off-trail uncertainty, bad weather, or safety decisions, stop and verify with blazes, signs, map, and GPS; do not keep hiking just because Scout shows a line.";
 const OFF_TRAIL_IMMEDIATE_FALLBACK_NOTE =
 	'Off-trail immediate note: stop moving, get to a safe stable spot, and conserve battery. Verify your position against map/GPS, compass, blazes, signs, and your last known point. Backtrack only if the route back is obvious and safe. Do not bushwhack, shortcut, or let Scout route you through unknown terrain. Escalate with 911, inReach/PLB, rangers/authorities, or the emergency plan if you are injured, exposed, confused, weather or darkness is closing in, or you cannot regain the trail safely.';
+const CLIMB_TERRAIN_AHEAD_FALLBACK_NOTE =
+	'Climb/terrain note: Scout does not have a verified climb, elevation profile, gain/loss, or grade for this question, so do not invent a climb distance or difficulty. Use the loaded pack only as landmark spacing until an offline map, guide, GPS/elevation profile, or trail sign confirms the climb. Pace impact: slow the target pace, budget daylight, water spacing, pack weight, feet/knees, weather, and the next legal stop before committing to miles.';
 const BAILOUT_INJURY_EXIT_FALLBACK_NOTE =
 	'Bailout planning note: next loaded bailout/access candidate is not available in the current pack. Treat this as incomplete context: for worsening knee pain, swelling, changed gait, or inability to continue safely, do not push through it. Back off or stop, confirm the nearest road, town, shuttle, pickup, and services when possible, and use 911, inReach/PLB, rangers/authorities, or the emergency plan for real danger or if you cannot continue safely.';
 const OFFLINE_EMERGENCY_BOUNDARY_NOTE =
@@ -530,6 +532,9 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 		if (!mentionsRoadTownNavigationContext(answer, toolInvocations)) {
 			answer = appendSentence(answer, buildRoadTownNavigationNote(toolInvocations));
 		}
+	}
+	if (isClimbTerrainAheadPrompt(lowerPrompt) && !mentionsClimbTerrainAheadBoundary(answer)) {
+		answer = appendSentence(answer, buildClimbTerrainAheadNote(toolInvocations));
 	}
 	if (isWaterDecisionPrompt(lowerPrompt) && toolSummary(toolInvocations, 'next_water') && !mentionsWaterVerificationAndTreatment(answer)) {
 		answer = appendSentence(answer, buildNearestWaterVerificationNote(toolInvocations));
@@ -1159,6 +1164,12 @@ function isRoadTownRelativePrompt(prompt: string): boolean {
 	return asksPosition && mentionsAccess;
 }
 
+function isClimbTerrainAheadPrompt(prompt: string): boolean {
+	const asksClimbDetail = /\b(?:how far|how hard|next climb|climb ahead|terrain ahead|elevation|gain|loss|grade)\b/u.test(prompt);
+	const mentionsClimbOrTerrain = /\b(?:climb|terrain|elevation|gain|loss|grade)\b/u.test(prompt);
+	return asksClimbDetail && mentionsClimbOrTerrain;
+}
+
 function isNearestWaterPrompt(prompt: string): boolean {
 	return /\b(?:what water is ahead|water ahead|next water|nearest water)\b/u.test(prompt) &&
 		!isDryStretchWaterPrompt(prompt) &&
@@ -1522,6 +1533,14 @@ function buildOffTrailImmediateNote(toolInvocations: ToolInvocationRecord[]): st
 	}
 	const currentPosition = trimToolClause(current).replace(/^Currently\b/u, 'currently');
 	return `Off-trail immediate note: Scout's loaded position is ${currentPosition}. Stop moving, get to a safe stable spot, and conserve battery. Verify your position against map/GPS, compass, blazes, signs, and your last known point. Backtrack only if the route back is obvious and safe. Do not bushwhack, shortcut, or let Scout route you through unknown terrain. Escalate with 911, inReach/PLB, rangers/authorities, or the emergency plan if you are injured, exposed, confused, weather or darkness is closing in, or you cannot regain the trail safely.`;
+}
+
+function buildClimbTerrainAheadNote(toolInvocations: ToolInvocationRecord[]): string {
+	const terrain = toolSummary(toolInvocations, 'upcoming_terrain');
+	if (!terrain) {
+		return CLIMB_TERRAIN_AHEAD_FALLBACK_NOTE;
+	}
+	return `Climb/terrain note: loaded upcoming window is ${trimToolClause(terrain)}. That window does not include a verified climb, elevation profile, gain/loss, or grade, so do not invent a climb distance or difficulty. Use it as landmark spacing until an offline map, guide, GPS/elevation profile, or trail sign confirms the climb. Pace impact: slow the target pace, budget daylight, water spacing, pack weight, feet/knees, weather, and the next legal stop before committing to miles.`;
 }
 
 function buildUnknownWaterFlowNote(toolInvocations: ToolInvocationRecord[]): string {
@@ -2197,6 +2216,21 @@ function mentionsRoadTownNavigationContext(answer: string, toolInvocations: Tool
 	return mentionsCurrent && mentionsTown && mentionsDistance && mentionsUncertainty && avoidsSeasonalReliable;
 }
 
+function mentionsClimbTerrainAheadBoundary(answer: string): boolean {
+	const mentionsMissingElevation =
+		/\b(?:does not include|doesn't include|lacks?|not have|no verified|cannot verify|can't verify)\b[^.?!\n]*(?:climb|elevation|gain\/loss|gain|loss|grade|profile)\b/iu.test(
+			answer
+		);
+	const avoidsFabrication =
+		/\b(?:do not|don't|cannot|can't|should not|shouldn't)\b[^.?!\n]*(?:invent|guess|pretend|call|rate|rank)\b[^.?!\n]*(?:climb|difficulty|hard|elevation|grade|distance)\b/iu.test(
+			answer
+		);
+	const mentionsLoadedContext = /\b(?:loaded upcoming window|upcoming terrain|landmark spacing|water spacing|shelter|town|mile\s+\d+(?:\.\d+)?)\b/iu.test(answer);
+	const mentionsExternalVerification = /\b(?:offline map|guide|gps\/elevation profile|elevation profile|trail sign|verify|confirm)\b/iu.test(answer);
+	const mentionsPaceImpact = /\b(?:pace impact|slow|slower|target pace|budget daylight|daylight|pack weight|feet\/knees|feet|knees|next legal stop)\b/iu.test(answer);
+	return mentionsMissingElevation && avoidsFabrication && mentionsLoadedContext && mentionsExternalVerification && mentionsPaceImpact;
+}
+
 function mentionsQuestionableWaterLowDaylight(answer: string): boolean {
 	const mentionsTreatmentRequired = /\b(?:treatment is non-negotiable|treat(?:ment)? (?:all|any|the) questionable|do not drink untreated|don't drink untreated|never drink untreated)\b/iu.test(answer);
 	const mentionsMethod = /\b(?:filter|backflush|backup tablets?|water tablets?|chemical treatment|chlorine dioxide|aquamira|boil)\b/iu.test(answer);
@@ -2486,6 +2520,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For lost or off-trail prompts, keep it immediate: stop moving, get to a safe stable spot, conserve battery, verify position against map/GPS, compass, blazes, signs, and last known point, backtrack only if the route back is obvious and safe, and do not bushwhack, shortcut, or route through unknown terrain. Escalate through 911, inReach/PLB, rangers/authorities, or the emergency plan for injury, exposure, confusion, worsening weather or darkness, or inability to regain the trail safely.`,
 		`For bailout, exit, or worsening-injury questions, start from the current_mile finding and the next_town road/town/access finding. Name the nearest loaded bailout or access candidate and approximate distance. Say if it is only a road crossing or emergency-exit candidate, confirm shuttle, pickup, and services when possible, choose conservative exit or rest planning, and do not tell the hiker to push through worsening knee or joint pain.`,
 		`For "where am I relative to the next road crossing or town" questions, start from the current_mile finding and the next_town road/town access finding. State the approximate distance, say when the loaded place is only a road crossing or emergency-exit candidate, confirm shuttle or pickup when needed, and do not assume services at a crossing unless loaded current service data proves them. Do not drift into water or shelter unless asked; if nearby water is mentioned, never call seasonal water reliable.`,
+		`For "next climb", "how hard is the terrain ahead", elevation, gain/loss, or grade questions, use the upcoming_terrain finding as the loaded window. If that finding lacks verified climb, elevation profile, gain/loss, or grade detail, say so plainly, do not invent climb distance or difficulty, use the window only as landmark spacing, and tell the hiker to verify with an offline map, guide, GPS/elevation profile, or trail sign. Give pace-impact guidance from daylight, water spacing, pack weight, feet/knees, weather, and the next legal stop.`,
 		`For offline setup, offline downloads, phone settings, or day-one readiness questions, distinguish phone/app readiness from personal safety readiness. Always include the exact check "verify Bible text is available offline." Also mention field-pack refresh, current mile, local AI model, offline maps/docs, battery, airplane-mode rehearsal, and that Scout does not replace inReach, PLB, 911, or the family emergency plan. For personal documents, include this safety boundary in plain words: do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat.`,
 		`Do not include Bible verses, scripture, prayer, or spiritual encouragement unless the hiker explicitly asks for Bible, scripture, prayer, faith, fear comfort, or spiritual support. Safety, weather, town, water, gear, and navigation answers must stay focused on the field decision first.`,
 		`For Bible or scripture questions, quote only verses returned by bible_search and keep the reference with each quote. For fear, scared, alone, or nighttime comfort prompts, use direct comfort verses when present, such as Psalms 56:3, Isaiah 41:10, 2 Timothy 1:7, Psalms 23:4, Psalms 4:8, or John 14:27. Do not use disturbing, violent, judgment, or famine passages as comfort unless the hiker explicitly asked about that passage. If the hiker sounds scared or alone, pair scripture with immediate safety steps: check weather and hazards, get warm and dry, eat or drink if needed, use the headlamp, make a one-hour plan, and use loaded shelter context as a candidate rather than a guarantee. Escalate through 911, inReach/PLB, ranger/authorities, or the emergency plan if there is real danger, injury, exposure, or repeated panic; do not spiritualize away real danger or symptoms.`,
