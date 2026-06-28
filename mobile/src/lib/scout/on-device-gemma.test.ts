@@ -248,6 +248,8 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /Psalms 56:3, Isaiah 41:10, 2 Timothy 1:7/);
 	assert.match(systemContext, /Do not use disturbing, violent, judgment, or famine passages as comfort/);
 	assert.match(systemContext, /make a one-hour plan/);
+	assert.match(systemContext, /use loaded shelter context as a candidate rather than a guarantee/);
+	assert.match(systemContext, /do not spiritualize away real danger or symptoms/);
 	assert.match(systemContext, /never write "if you don't hear from you\."/);
 	assert.match(systemContext, /For zero, nero, or town-rest questions/);
 	assert.match(systemContext, /cached\/current weather, town chores, budget, and the next section/);
@@ -330,7 +332,24 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			'For practical next steps, first, check the weather and any immediate hazards around you. If you are cold or wet, get warm and dry immediately. Eat or drink if you have food or water available. Make a one-hour plan for what you need to do next, focusing on immediate safety. If you feel you are in immediate danger, use your emergency plan.\n\nYou need to check the weather and any immediate hazards around you. If you are cold or wet, get warm and dry immediately. Eat or drink if you have food or water available. Make a one-hour plan for what you need to do next, focusing on immediate safety. If you feel you are in immediate danger, use your emergency plan.',
 			'I am scared and alone tonight. Give me scripture and practical next steps.'
 		),
-		'For practical next steps, first, check the weather and any immediate hazards around you. If you are cold or wet, get warm and dry immediately. Eat or drink if you have food or water available. Make a one-hour plan for what you need to do next, focusing on immediate safety. If you feel you are in immediate danger, use your emergency plan.'
+		'For practical next steps, first, check the weather and any immediate hazards around you. If you are cold or wet, get warm and dry immediately. Eat or drink if you have food or water available. Make a one-hour plan for what you need to do next, focusing on immediate safety. If you feel you are in immediate danger, use your emergency plan.\n\nNight support note: take the loaded KJV scripture as comfort, then make the next hour concrete. Check immediate hazards, weather, and alerts if possible; get warm and dry, eat or drink if needed, use your headlamp, and choose the nearest safe legal sleep option or known public/help option. Do not let comfort verses override danger; use 911, inReach/PLB, ranger/authorities, or the emergency plan for real danger, injury, exposure, or repeated panic.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'It sounds like you are feeling really scared and alone right now. Remember what you said: "What time I am afraid, I will trust in thee" (Psalms 56:3). You are not alone in this moment, and there are people who care.\n\nFor right now, your first step is to focus on immediate safety. Check the weather and any local alerts for any immediate danger like severe weather or hazards. If you are feeling overwhelmed, take a moment to breathe. If you are in immediate danger, use your emergency plan right away.\n\nIf you are feeling scared or alone, remember that you have resources. You can call for help or reach out to someone you trust. If you are feeling scared, scared, or alone, remember that you are supported. You can find comfort in the verses that remind you that you are not facing this alone.',
+			'I am scared and alone tonight. Give me scripture and practical next steps.',
+			[
+				{
+					toolId: 'next_shelter',
+					args: { fromMile: 71.9 },
+					summary: 'Near Ridge Shelter at mile 75.3 (3.4 mi ahead). Open-data candidate; verify current status, water, and crowding.',
+					confidence: 'medium',
+					receipts: []
+				}
+			]
+		),
+		'It sounds like you are feeling really scared and alone right now. Remember the loaded verse: "What time I am afraid, I will trust in thee" (Psalms 56:3). You are not alone in this moment, and there are people who care.\n\nFor right now, your first step is to focus on immediate safety. Check the weather and any local alerts for any immediate danger like severe weather or hazards. If you are feeling overwhelmed, take a moment to breathe. If you are in immediate danger, use your emergency plan right away.\n\nIf you are feeling scared or alone, remember that you have resources. You can call for help or reach out to someone you trust. If you are feeling scared or alone, remember that you are supported. You can find comfort in the verses that remind you that you are not facing this alone.\n\nNight support note: take the loaded KJV scripture as comfort, then make the next hour concrete. Check immediate hazards, weather, and alerts if possible; get warm and dry, eat or drink if needed, use your headlamp, and choose the nearest safe legal sleep option or known public/help option. Do not let comfort verses override danger; use 911, inReach/PLB, ranger/authorities, or the emergency plan for real danger, injury, exposure, or repeated panic. Loaded shelter context: Near Ridge Shelter at mile 75.3 (3.4 mi ahead). Open-data candidate; verify current status, water, and crowding. Treat that as a candidate, not a guarantee; verify status, water, and crowding when possible, and do not add risky night miles if it is not the safer legal option.'
 	);
 
 	assert.equal(

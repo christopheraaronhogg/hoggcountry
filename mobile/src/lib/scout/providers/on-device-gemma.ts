@@ -133,6 +133,8 @@ const CLOSURE_DETOUR_ROUTING_NOTE =
 	'Closure/detour note: Scout can summarize loaded official alerts, but it is advisory context, not turn-by-turn detour routing. Verify the current managing-agency detour and posted signage before committing, follow official route guidance, and do not invent alternate route details.';
 const SMOKE_FIRE_TRAIL_NOTE =
 	'Smoke/fire trail note: treat smoke or visible fire near trail as a serious hazard. Do not continue toward or through smoke or visible fire; move away toward a known safe road, town, ranger station, or public area when you can do so safely. Follow official closures, evacuation orders, ranger, 911, or emergency-device instructions; do not invent a safe route through the hazard. Escalate immediately for visible flames, heavy smoke, blocked exits, fast-changing wind, or immediate danger.';
+const SCARED_ALONE_NIGHT_NOTE =
+	'Night support note: take the loaded KJV scripture as comfort, then make the next hour concrete. Check immediate hazards, weather, and alerts if possible; get warm and dry, eat or drink if needed, use your headlamp, and choose the nearest safe legal sleep option or known public/help option. Do not let comfort verses override danger; use 911, inReach/PLB, ranger/authorities, or the emergency plan for real danger, injury, exposure, or repeated panic.';
 
 export class OnDeviceGemmaProvider implements ScoutProvider {
 	private bridge?: OnDeviceGemmaBridge;
@@ -304,6 +306,12 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	}
 	if (isOfflineSetupPrompt(lowerPrompt) && !mentionsEmergencyCommunicationBoundary(answer)) {
 		answer = appendSentence(answer, OFFLINE_EMERGENCY_BOUNDARY_NOTE);
+	}
+	if (isScaredAloneNightPrompt(lowerPrompt)) {
+		answer = normalizeScaredAloneNightWording(answer);
+	}
+	if (isScaredAloneNightPrompt(lowerPrompt) && !mentionsScaredAloneNightPlan(answer, toolInvocations)) {
+		answer = appendSentence(answer, buildScaredAloneNightNote(toolInvocations));
 	}
 	if (isPersonalDocumentPrompt(lowerPrompt) && !mentionsPrivateDocumentBoundary(answer)) {
 		answer = appendSentence(
@@ -762,6 +770,11 @@ function isFearComfortPrompt(prompt: string): boolean {
 	return /\b(?:scared|afraid|alone|anxious|anxiety|panic|fear|fearful|comfort|nighttime support|night support)\b/u.test(prompt);
 }
 
+function isScaredAloneNightPrompt(prompt: string): boolean {
+	return /\b(?:scared|afraid|alone|anxious|panic|fearful)\b/u.test(prompt) &&
+		/\b(?:tonight|night|dark|alone|by myself)\b/u.test(prompt);
+}
+
 function isBudgetPrompt(prompt: string): boolean {
 	return /\b(?:budget|overplanning|over-plan|money|cost|spend|spending)\b/u.test(prompt);
 }
@@ -1067,6 +1080,12 @@ function buildSmokeFireTrailNote(toolInvocations: ToolInvocationRecord[]): strin
 	return `${intro}${weatherContext} Do not continue toward or through smoke or visible fire; move away toward a known safe road, town, ranger station, or public area when you can do so safely. Follow official closures, evacuation orders, ranger, 911, or emergency-device instructions; do not invent a safe route through the hazard. Escalate immediately for visible flames, heavy smoke, blocked exits, fast-changing wind, or immediate danger.`;
 }
 
+function buildScaredAloneNightNote(toolInvocations: ToolInvocationRecord[]): string {
+	const shelter = toolSummary(toolInvocations, 'next_shelter');
+	if (!shelter) return SCARED_ALONE_NIGHT_NOTE;
+	return `${SCARED_ALONE_NIGHT_NOTE} Loaded shelter context: ${trimToolClause(shelter)}. Treat that as a candidate, not a guarantee; verify status, water, and crowding when possible, and do not add risky night miles if it is not the safer legal option.`;
+}
+
 function buildUnsafePersonShelterNote(toolInvocations: ToolInvocationRecord[]): string {
 	const exit = toolSummary(toolInvocations, 'next_town');
 	if (!exit) return UNSAFE_PERSON_SHELTER_NOTE;
@@ -1119,6 +1138,31 @@ function extractReliableWaterFromTerrain(summary: string | null): string | null 
 
 function mentionsOfflineBible(answer: string): boolean {
 	return /bible[^.?!\n]*(?:offline|available|download)|(?:offline|available|download)[^.?!\n]*bible/iu.test(answer);
+}
+
+function normalizeScaredAloneNightWording(answer: string): string {
+	return answer
+		.replace(/\bRemember what you said:\s*/giu, 'Remember the loaded verse: ')
+		.replace(/\bscared,\s*scared\b/giu, 'scared')
+		.replace(/\bscared,\s+or alone\b/giu, 'scared or alone');
+}
+
+function mentionsScaredAloneNightPlan(answer: string, toolInvocations: ToolInvocationRecord[]): boolean {
+	const hasLoadedShelter = Boolean(toolSummary(toolInvocations, 'next_shelter'));
+	const mentionsComfortScripture =
+		/\b(?:Psalms?\s+56:3|Isaiah\s+41:10|2\s+Timothy\s+1:7|Psalms?\s+23:4|Psalms?\s+4:8|John\s+14:27|loaded KJV|loaded verse|scripture|verse)\b/iu.test(answer);
+	const checksImmediateHazards =
+		/\b(?:check|look|verify)\b[^.?!\n]*(?:weather|alerts?|hazards?|danger)|\b(?:weather|alerts?|hazards?)\b[^.?!\n]*(?:check|verify)/iu.test(answer);
+	const coversBodyBasics =
+		/\b(?:warm|dry)\b/iu.test(answer) && /\b(?:eat|drink|water|food)\b/iu.test(answer);
+	const makesOneHourPlan =
+		/\b(?:one-hour|one hour|next hour|for the next hour|next 60 minutes|right now)\b/iu.test(answer);
+	const usesShelterOrSafeSleep =
+		!hasLoadedShelter ||
+		/\b(?:shelter|safe legal sleep|sleep option|legal option|known public|help option|Ridge Shelter)\b/iu.test(answer);
+	const escalatesRealDanger =
+		/\b(?:real danger|immediate danger|injury|exposure|repeated panic|911|inReach|PLB|emergency plan|ranger|authorities)\b/iu.test(answer);
+	return mentionsComfortScripture && checksImmediateHazards && coversBodyBasics && makesOneHourPlan && usesShelterOrSafeSleep && escalatesRealDanger;
 }
 
 function mentionsPrivateDocumentBoundary(answer: string): boolean {
@@ -1603,7 +1647,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`When preparation or training questions have pretrip, terrain, loadout, safety, or offline setup findings, give a concrete short plan. For "what should I focus on first" prompts, include an immediate first-week checklist, not only general training advice. Include shakedown hikes, foot care/blister practice, conservative early mileage, gear/loadout checks, water treatment habits, and an offline app/model rehearsal when those appear in the findings.`,
 		`For offline setup, offline downloads, phone settings, or day-one readiness questions, distinguish phone/app readiness from personal safety readiness. Always include the exact check "verify Bible text is available offline." Also mention field-pack refresh, current mile, local AI model, offline maps/docs, battery, airplane-mode rehearsal, and that Scout does not replace inReach, PLB, 911, or the family emergency plan. For personal documents, include this safety boundary in plain words: do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat.`,
 		`Do not include Bible verses, scripture, prayer, or spiritual encouragement unless the hiker explicitly asks for Bible, scripture, prayer, faith, fear comfort, or spiritual support. Safety, weather, town, water, gear, and navigation answers must stay focused on the field decision first.`,
-		`For Bible or scripture questions, quote only verses returned by bible_search and keep the reference with each quote. For fear, scared, alone, or nighttime comfort prompts, use direct comfort verses when present, such as Psalms 56:3, Isaiah 41:10, 2 Timothy 1:7, Psalms 23:4, Psalms 4:8, or John 14:27. Do not use disturbing, violent, judgment, or famine passages as comfort unless the hiker explicitly asked about that passage. If the hiker sounds scared or alone, pair scripture with immediate safety steps: check weather and hazards, get warm and dry, eat or drink if needed, make a one-hour plan, and escalate through the emergency plan if there is real danger, injury, exposure, or repeated panic.`,
+		`For Bible or scripture questions, quote only verses returned by bible_search and keep the reference with each quote. For fear, scared, alone, or nighttime comfort prompts, use direct comfort verses when present, such as Psalms 56:3, Isaiah 41:10, 2 Timothy 1:7, Psalms 23:4, Psalms 4:8, or John 14:27. Do not use disturbing, violent, judgment, or famine passages as comfort unless the hiker explicitly asked about that passage. If the hiker sounds scared or alone, pair scripture with immediate safety steps: check weather and hazards, get warm and dry, eat or drink if needed, use the headlamp, make a one-hour plan, and use loaded shelter context as a candidate rather than a guarantee. Escalate through 911, inReach/PLB, ranger/authorities, or the emergency plan if there is real danger, injury, exposure, or repeated panic; do not spiritualize away real danger or symptoms.`,
 		`For shakedown questions, name what the shakedown must prove: sleep system, rain system, cooking/food rhythm, water filtering, battery drain, pack fit, foot care, and offline app/model flow. Turn failures into specific gear or app fixes. Always say that one shakedown does not prove every condition is covered.`,
 		`For first-week mileage questions, use body condition, daylight, elevation, weather, pack weight, water spacing, foot/knee condition, and legal shelter/campsite/town spacing. Start low, protect feet and knees, and avoid fixed mileage promises.`,
 		`For heavy-rain start questions, include conservative mileage, dry sleep layers, footing caution on slick roots/rocks/descents, current forecast verification, and a bailout or stop plan for lightning, hypothermia risk, flooding, or worsening conditions.`,
