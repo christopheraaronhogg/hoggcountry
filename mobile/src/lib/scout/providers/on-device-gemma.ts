@@ -3,6 +3,7 @@ import type {
 	ProviderRequest,
 	ProviderResponse,
 	ScoutProvider,
+	ToolInvocationRecord,
 	TokenSink
 } from '../types.ts';
 
@@ -149,7 +150,7 @@ export class OnDeviceGemmaProvider implements ScoutProvider {
 				throw error;
 			}
 		}
-		const answer = polishOnDeviceAnswer(result.text, request.prompt);
+		const answer = polishOnDeviceAnswer(result.text, request.prompt, request.toolInvocations);
 
 		// A blank/whitespace generation is a failure, not an answer. Treat it as
 		// unavailable so the user gets an honest retry rather than an empty bubble
@@ -178,7 +179,7 @@ export class OnDeviceGemmaProvider implements ScoutProvider {
 	}
 }
 
-export function polishOnDeviceAnswer(text: string, prompt: string): string {
+export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocations: ToolInvocationRecord[] = []): string {
 	let answer = text.replace(/\r\n/g, '\n').trim();
 	if (!answer) return '';
 
@@ -210,6 +211,12 @@ export function polishOnDeviceAnswer(text: string, prompt: string): string {
 			answer,
 			'Do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat; keep those saved separately offline.'
 		);
+	}
+	if (isZeroNeroPrompt(lowerPrompt)) {
+		const weatherSummary = toolInvocations.find((tool) => tool.toolId === 'weather_lookup')?.summary.trim();
+		if (weatherSummary && !mentionsWeatherLookupSummary(answer, weatherSummary)) {
+			answer = appendSentence(answer, `Weather note: ${weatherSummary}`);
+		}
 	}
 
 	return trimToCompleteSentence(answer);
@@ -353,6 +360,10 @@ function isInjuryPrompt(prompt: string): boolean {
 	return /injury|hurt|pain|knee|ankle|rolled|symptoms|medical|sick/u.test(prompt);
 }
 
+function isZeroNeroPrompt(prompt: string): boolean {
+	return /\b(?:zero|nero)\b|town[-\s]?rest|rest day/u.test(prompt);
+}
+
 function mentionsOfflineBible(answer: string): boolean {
 	return /bible[^.?!\n]*(?:offline|available|download)|(?:offline|available|download)[^.?!\n]*bible/iu.test(answer);
 }
@@ -363,6 +374,18 @@ function mentionsPrivateDocumentBoundary(answer: string): boolean {
 
 function mentionsNormalGapsAndLiveLocation(answer: string): boolean {
 	return /(?:normal gap|dead zone|battery conservation|town chaos|rain)/iu.test(answer) && /live location/iu.test(answer);
+}
+
+function mentionsWeatherLookupSummary(answer: string, summary: string): boolean {
+	const lowerAnswer = answer.toLowerCase();
+	const lowerSummary = summary.toLowerCase();
+	const numberMatches = lowerSummary.match(/\b\d+\s*(?:f|mph)\b/giu) ?? [];
+	const matchedNumbers = numberMatches.filter((value) => lowerAnswer.includes(value.toLowerCase())).length;
+	if (matchedNumbers >= Math.min(2, numberMatches.length)) return true;
+	if (/partly cloudy|cloudy|rain|storm|snow|wind|hot|cold|high|low/iu.test(lowerSummary)) {
+		return /partly cloudy|cloudy|rain|storm|snow|wind\s+\d|high\s+\d|low\s+\d/iu.test(lowerAnswer);
+	}
+	return /refresh|verify|current forecast|cached weather/iu.test(lowerAnswer);
 }
 
 export class OnDeviceModelUnavailableError extends Error {

@@ -281,4 +281,21 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 		),
 		'The nearest loaded water is about 1.8 miles ahead of you.'
 	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Weigh body condition, weather, chores, budget, and the next section. Rest is an investment, not failure.',
+			'Should I take a zero or nero in this town?',
+			[
+				{
+					toolId: 'weather_lookup',
+					args: { fromMile: 101.1 },
+					summary: 'Cached weather near mile 101.1: partly cloudy with changing mountain conditions (high 67F / low 51F, wind 9 mph). Mountain weather changes quickly; refresh before safety-critical choices.',
+					confidence: 'medium',
+					receipts: []
+				}
+			]
+		),
+		'Weigh body condition, weather, chores, budget, and the next section. Rest is an investment, not failure.\n\nWeather note: Cached weather near mile 101.1: partly cloudy with changing mountain conditions (high 67F / low 51F, wind 9 mph). Mountain weather changes quickly; refresh before safety-critical choices.'
+	);
 });
