@@ -281,6 +281,9 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /refresh the field pack when online, and re-ask Scout for water, shelter, town, terrain, and bailout/);
 	assert.match(systemContext, /a wrong mile shifts water, shelter, town, terrain, and bailout answers/);
 	assert.match(systemContext, /not to make water, shelter, town, or safety decisions from a wrong mile/);
+	assert.match(systemContext, /For "where am I relative to the next road crossing or town" questions/);
+	assert.match(systemContext, /start from the current_mile finding and the next_town road\/town access finding/);
+	assert.match(systemContext, /do not assume services at a crossing unless loaded current service data proves them/);
 	assert.match(systemContext, /End every answer with a complete sentence/);
 	assert.match(systemContext, /verify Bible text is available offline/);
 	assert.match(systemContext, /Do not include Bible verses, scripture, prayer, or spiritual encouragement unless the hiker explicitly asks/);
@@ -499,6 +502,33 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 		),
 		'Use the cached trail line and external offline maps if they are available. Do not rely on missing basemap tiles for complex navigation.'
 	);
+
+	const roadTownNavigationAnswer = polishOnDeviceAnswer(
+		'You are about 4.8 miles from the Pilot Gap Road at mile 49.5, which is a road crossing with an emergency exit candidate. The next reliable water source is a seasonal seep ahead at mile 46.5, followed by a reliable creek crossing at mile 50.9. You are also near the Ridge Shelter at mile 48.1 and the Pine Gap Campsite at mile 53.6.',
+		'Where am I relative to the next road crossing or town?',
+		[
+			{
+				toolId: 'current_mile',
+				args: {},
+				summary: 'Currently at mile 44.7 of 2197.4 (2.0% complete, 2152.7 mi remaining).',
+				confidence: 'high',
+				receipts: []
+			},
+			{
+				toolId: 'next_town',
+				args: { fromMile: 44.7 },
+				summary: 'Pilot Gap Road at mile 49.5 (4.8 mi ahead via road crossing; emergency exit candidate, confirm shuttle or pickup). No guaranteed services at the crossing.',
+				confidence: 'medium',
+				receipts: []
+			}
+		]
+	);
+	assert.doesNotMatch(roadTownNavigationAnswer, /reliable water source is a seasonal seep/i);
+	assert.match(roadTownNavigationAnswer, /closest loaded water candidate is a seasonal seep/);
+	assert.match(roadTownNavigationAnswer, /Currently at mile 44\.7/);
+	assert.match(roadTownNavigationAnswer, /next loaded road\/town access is Pilot Gap Road at mile 49\.5/);
+	assert.match(roadTownNavigationAnswer, /confirm shuttle or pickup/i);
+	assert.match(roadTownNavigationAnswer, /do not assume services at a road crossing/i);
 
 	assert.equal(
 		polishOnDeviceAnswer('Protect your knee. I can look up terrain, but I can', 'How should I train with a bad knee before the first week of the AT?'),

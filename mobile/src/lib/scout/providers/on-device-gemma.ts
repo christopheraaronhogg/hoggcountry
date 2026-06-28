@@ -500,6 +500,12 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 			answer = appendSentence(answer, WATER_REPORT_CONFLICT_NOTE);
 		}
 	}
+	if (isRoadTownRelativePrompt(lowerPrompt)) {
+		answer = normalizeRoadTownNavigationWording(answer);
+		if (!mentionsRoadTownNavigationContext(answer, toolInvocations)) {
+			answer = appendSentence(answer, buildRoadTownNavigationNote(toolInvocations));
+		}
+	}
 	if (isWaterDecisionPrompt(lowerPrompt) && toolSummary(toolInvocations, 'next_water') && !mentionsWaterVerificationAndTreatment(answer)) {
 		answer = appendSentence(answer, buildNearestWaterVerificationNote(toolInvocations));
 	}
@@ -1093,6 +1099,12 @@ function isWaterReportConflictPrompt(prompt: string): boolean {
 	return mentionsReport && mentionsDry && mentionsScoutPack && mentionsWaterSource && asksTrust;
 }
 
+function isRoadTownRelativePrompt(prompt: string): boolean {
+	const asksPosition = /\b(?:where am i|relative to|how far (?:am i )?(?:from|to)|nearest|next)\b/u.test(prompt);
+	const mentionsAccess = /\b(?:road crossing|road|crossing|town|bailout|exit|access)\b/u.test(prompt);
+	return asksPosition && mentionsAccess;
+}
+
 function isNearestWaterPrompt(prompt: string): boolean {
 	return /\b(?:what water is ahead|water ahead|next water|nearest water)\b/u.test(prompt) &&
 		!isDryStretchWaterPrompt(prompt) &&
@@ -1407,6 +1419,20 @@ function normalizeWaterReportConflictWording(answer: string): string {
 			/\bTrust (?:Scout|the Scout pack|Scout's pack|your pack) (?:over|instead of) (?:FarOut|the report|the current report|a current report)[^.?!\n]*\.?/giu,
 			"Trust the current dry report for flow; use Scout's cached pack only as planning context."
 		);
+}
+
+function normalizeRoadTownNavigationWording(answer: string): string {
+	return answer.replace(/\bThe next reliable water source is a seasonal seep\b/giu, 'The closest loaded water candidate is a seasonal seep');
+}
+
+function buildRoadTownNavigationNote(toolInvocations: ToolInvocationRecord[]): string {
+	const current = toolSummary(toolInvocations, 'current_mile');
+	const town = toolSummary(toolInvocations, 'next_town');
+	const parts = [
+		current ? trimToolClause(current) : '',
+		town ? `next loaded road/town access is ${trimToolClause(town)}` : 'next loaded road/town access is not available in the current pack'
+	].filter(Boolean);
+	return `Road/town navigation note: ${parts.join('; ')}. Treat this as approximate loaded context. Confirm shuttle or pickup and do not assume services at a road crossing unless current service data proves them.`;
 }
 
 function buildUnknownWaterFlowNote(toolInvocations: ToolInvocationRecord[]): string {
@@ -2018,6 +2044,15 @@ function mentionsWaterReportConflictDecision(answer: string): boolean {
 	return mentionsCurrentDryReport && mentionsCachedPlanningOnly && treatsListedSourceAsDry && mentionsReliableCarry && mentionsTreatment;
 }
 
+function mentionsRoadTownNavigationContext(answer: string, toolInvocations: ToolInvocationRecord[]): boolean {
+	const mentionsCurrent = !toolSummary(toolInvocations, 'current_mile') || mentionsToolPlace(answer, toolSummary(toolInvocations, 'current_mile'));
+	const mentionsTown = !toolSummary(toolInvocations, 'next_town') || mentionsToolPlace(answer, toolSummary(toolInvocations, 'next_town'));
+	const mentionsDistance = /\b(?:about|approx(?:\.|imately)?|roughly)?\s*\d+(?:\.\d+)?\s*(?:mi|miles?)\s+(?:ahead|away|from|to)\b/iu.test(answer);
+	const mentionsUncertainty = /\b(?:confirm|candidate|not guaranteed|no guaranteed|approximate|loaded context|shuttle|pickup|services?)\b/iu.test(answer);
+	const avoidsSeasonalReliable = !/\breliable water source is a seasonal\b/iu.test(answer);
+	return mentionsCurrent && mentionsTown && mentionsDistance && mentionsUncertainty && avoidsSeasonalReliable;
+}
+
 function mentionsQuestionableWaterLowDaylight(answer: string): boolean {
 	const mentionsTreatmentRequired = /\b(?:treatment is non-negotiable|treat(?:ment)? (?:all|any|the) questionable|do not drink untreated|don't drink untreated|never drink untreated)\b/iu.test(answer);
 	const mentionsMethod = /\b(?:filter|backflush|backup tablets?|water tablets?|chemical treatment|chlorine dioxide|aquamira|boil)\b/iu.test(answer);
@@ -2302,6 +2337,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For stale field-pack, field-pack status, or "can I trust Scout's field pack" questions, field pack means cached Scout trail data on the phone, not the physical backpack or loadout. Tell the hiker to check pack age/status, current mile or downloaded region, and source timestamps when shown. If the pack is old, expired, wrong-mile/wrong-region, or loaded before weather, closures, water, or services changed, treat it as stale. Refresh on Wi-Fi or in town before water, weather, closure, bailout, or town-service decisions, and use stale cached data only as caution, not current proof.`,
 		`For sign-in, login, account, cloud sync, backup, restore, or "can I wait to sign in" questions, say accounts are invite-only. Recommend signing in before trail on Wi-Fi if the hiker has an invite so backup/restore and cloud sync can finish. Keep offline Scout/local AI separate: once the field pack, on-device model, and saved maps/docs are downloaded, offline use does not require a live login. Do not imply sign-in or cloud sync is emergency safety; keep inReach, PLB, 911, and the family emergency plan separate.`,
 		`For own-mile, manual-mile, wrong-mile, profile, GPS correction, shuttle, or "someone else's mile" questions, explain the app flow: first-run hike setup or Settings > Edit hike details, enter Current AT mile, save, then check Today and Scout show the new mile. If the hiker entered the wrong mile, tell them to correct it, refresh the field pack when online, and re-ask Scout for water, shelter, town, terrain, and bailout. Warn that a wrong mile shifts water, shelter, town, terrain, and bailout answers, and not to make water, shelter, town, or safety decisions from a wrong mile. Tell the hiker to confirm against a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap before relying on Scout.`,
+		`For "where am I relative to the next road crossing or town" questions, start from the current_mile finding and the next_town road/town access finding. State the approximate distance, say when the loaded place is only a road crossing or emergency-exit candidate, confirm shuttle or pickup when needed, and do not assume services at a crossing unless loaded current service data proves them. Do not drift into water or shelter unless asked; if nearby water is mentioned, never call seasonal water reliable.`,
 		`For offline setup, offline downloads, phone settings, or day-one readiness questions, distinguish phone/app readiness from personal safety readiness. Always include the exact check "verify Bible text is available offline." Also mention field-pack refresh, current mile, local AI model, offline maps/docs, battery, airplane-mode rehearsal, and that Scout does not replace inReach, PLB, 911, or the family emergency plan. For personal documents, include this safety boundary in plain words: do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat.`,
 		`Do not include Bible verses, scripture, prayer, or spiritual encouragement unless the hiker explicitly asks for Bible, scripture, prayer, faith, fear comfort, or spiritual support. Safety, weather, town, water, gear, and navigation answers must stay focused on the field decision first.`,
 		`For Bible or scripture questions, quote only verses returned by bible_search and keep the reference with each quote. For fear, scared, alone, or nighttime comfort prompts, use direct comfort verses when present, such as Psalms 56:3, Isaiah 41:10, 2 Timothy 1:7, Psalms 23:4, Psalms 4:8, or John 14:27. Do not use disturbing, violent, judgment, or famine passages as comfort unless the hiker explicitly asked about that passage. If the hiker sounds scared or alone, pair scripture with immediate safety steps: check weather and hazards, get warm and dry, eat or drink if needed, use the headlamp, make a one-hour plan, and use loaded shelter context as a candidate rather than a guarantee. Escalate through 911, inReach/PLB, ranger/authorities, or the emergency plan if there is real danger, injury, exposure, or repeated panic; do not spiritualize away real danger or symptoms.`,
