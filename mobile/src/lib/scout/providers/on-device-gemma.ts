@@ -80,7 +80,7 @@ const FIRST_AID_KIT_NOTE =
 const MAIL_HOME_GEAR_NOTE =
 	'Mail-home gear note: do not mail home rain protection, insulation or warm layers, water treatment, first aid, battery or navigation power, or sleep safety just because one forecast looks warm. Recheck the forecast, next town timing, and replacement options before sending gear forward or home.';
 const HEAT_WATER_NOTE =
-	'Heat-water safety note: if dizziness, confusion, headache, nausea, cramps, chills, stopped sweating, or worsening symptoms show up, stop hiking, get shade, cool down, sip treated water with electrolytes if available, and escalate through the emergency plan if symptoms do not improve.';
+	'Heat-water safety note: do not keep hiking through dizziness. Stop, get shade, cool down, and sip treated water with electrolytes if safe. Seek urgent help or use the emergency plan for confusion, fainting, stopped sweating, or symptoms that worsen or do not improve.';
 const HEAT_WATER_PLANNING_NOTE =
 	'Heat-water planning note: move harder miles into the cooler part of the day, schedule shade breaks, eat salty food or use electrolytes if available, and carry conservatively to verified water when the next source is seasonal, unverified, exposed, or after a hard climb.';
 const RIDGE_WATER_NOTE =
@@ -344,7 +344,7 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	if (isHeatWaterPrompt(lowerPrompt) && !mentionsHeatWaterSafety(answer)) {
 		answer = appendSentence(answer, HEAT_WATER_NOTE);
 	}
-	if (isHeatWaterPrompt(lowerPrompt) && !mentionsHeatWaterPlanning(answer)) {
+	if (isHeatWaterPrompt(lowerPrompt) && !isAcuteHeatIllnessPrompt(lowerPrompt) && !mentionsHeatWaterPlanning(answer)) {
 		answer = appendSentence(answer, HEAT_WATER_PLANNING_NOTE);
 	}
 	if (isRidgeWaterDecisionPrompt(lowerPrompt) && !mentionsRidgeWaterDecision(answer)) {
@@ -788,6 +788,11 @@ function isHeatWaterPrompt(prompt: string): boolean {
 		/\b(?:water|hydrate|hydration|drink|shade|harder|dizzy|confusion|cramps|heat illness)\b/u.test(prompt);
 }
 
+function isAcuteHeatIllnessPrompt(prompt: string): boolean {
+	return /\b(?:heat|hot|humid|dehydrat\w*|heat illness)\b/u.test(prompt) &&
+		/\b(?:dizz\w*|confus\w*|faint\w*|passed out|passing out|nausea|cramps?|stopped sweating|chills?|symptoms?)\b/u.test(prompt);
+}
+
 function isRidgeWaterDecisionPrompt(prompt: string): boolean {
 	return /\b(?:camel up|carry extra water|water over the ridge|before a ridge|over the ridge|dry ridge|long dry stretch)\b/u.test(prompt);
 }
@@ -1162,10 +1167,12 @@ function mentionsSlowFilterTroubleshooting(answer: string): boolean {
 }
 
 function mentionsHeatWaterSafety(answer: string): boolean {
-	const mentionsStopCool = /\b(?:stop hiking|stop and cool|cool down|get shade|find shade|shade)\b/iu.test(answer);
-	const mentionsSymptoms = /\b(?:dizz\w*|confus\w*|headache|nausea|cramps?|chills?|stopped sweating|worsening symptoms|heat illness)\b/iu.test(answer);
-	const mentionsEscalation = /\b(?:emergency plan|911|inreach|plb|medical help)\b/iu.test(answer);
-	return mentionsStopCool && mentionsSymptoms && mentionsEscalation;
+	const mentionsStopCool = /\b(?:stop hiking|stop, get shade|stop and cool|cool down|get shade|find shade|shade)\b/iu.test(answer);
+	const mentionsFluids = /\b(?:sip|drink)[^.?!\n]*(?:water|electrolytes?)|(?:water|electrolytes?)[^.?!\n]*(?:sip|drink)\b/iu.test(answer);
+	const mentionsNoHikingThrough = /\b(?:do not|don't|not|never)\b[^.?!\n]*(?:keep hiking|hike through|continue hiking|push through)|\bstop hiking\b/iu.test(answer);
+	const mentionsFainting = /\b(?:faint\w*|passed out|passing out)\b/iu.test(answer);
+	const mentionsFaintingEscalation = /\b(?:urgent help|emergency plan|911|inreach|plb|medical help|get help|seek help)\b[^.?!\n]*(?:confus\w*|faint\w*|passed out|stopped sweating|worsen\w*|do not improve|does not improve)|(?:confus\w*|faint\w*|passed out|stopped sweating|worsen\w*|do not improve|does not improve)[^.?!\n]*(?:urgent help|emergency plan|911|inreach|plb|medical help|get help|seek help)\b/iu.test(answer);
+	return mentionsStopCool && mentionsFluids && mentionsNoHikingThrough && mentionsFainting && mentionsFaintingEscalation;
 }
 
 function mentionsHeatWaterPlanning(answer: string): boolean {
@@ -1425,6 +1432,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`Be honest about uncertainty. Use "candidate", "verify", or "I don't know" when the pack cannot prove something. Never turn candidate water, shelters, towns, or weather into guarantees.`,
 		`For water questions, use the next_water tool finding as the answer's spine. Lead with the nearest actionable water option or next reliable source from the tool finding. If the source is seasonal or unverified, say it is a candidate, visually confirm current flow, filter or treat collected water, and carry enough to reach a verified source if it is dry. If no reliable water is loaded, say that after the source hierarchy; do not start with a generic refusal.`,
 		`For heat-wave water questions, combine planning and emergency thresholds: move hard miles into the cooler part of the day, schedule shade breaks, eat salty food or use electrolytes if available, carry conservatively to verified water, and escalate if dizziness, confusion, headache, nausea, cramps, chills, stopped sweating, or worsening symptoms appear.`,
+		`For active heat illness or dizziness in heat, lead with immediate safety: do not keep hiking through symptoms, stop, find shade, cool down, sip treated water with electrolytes if safe, and seek urgent help or use the emergency plan for confusion, fainting, stopped sweating, or symptoms that worsen or do not improve.`,
 		`For camel-up or ridge-water questions, give a clear decision: camel up at the last confirmed source and carry extra when the next water is seasonal, unverified, exposed, hot, or after a hard climb; only use the lighter carry when the next reliable water is confirmed and conditions are mild. When tool findings name a seasonal source and a reliable source, name both and make the carry decision from those facts.`,
 		`For dry-stretch water-carry questions, give a practical conservative range: roughly 0.5-1 liter per 3-5 miles as a starting point, more for heat, exposure, climbing, slow pace, or personal thirst. Tell the hiker to top off at the last confirmed source and carry enough to reach the next reliable source when the next source is seasonal or unverified.`,
 		`For questionable-water, tired, or low-daylight treatment questions, keep the answer focused on water safety unless heat symptoms are explicit. Say treatment is non-negotiable, use filter/backflush or backup tablets/boil, do not drink untreated questionable water, and choose a safe legal stop before dark if treatment or verification will delay the push.`,

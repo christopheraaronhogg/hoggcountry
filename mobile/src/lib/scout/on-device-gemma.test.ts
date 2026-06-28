@@ -206,6 +206,8 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /For heat-wave water questions/);
 	assert.match(systemContext, /move hard miles into the cooler part of the day/);
 	assert.match(systemContext, /dizziness, confusion, headache, nausea, cramps, chills, stopped sweating/);
+	assert.match(systemContext, /For active heat illness or dizziness in heat/);
+	assert.match(systemContext, /confusion, fainting, stopped sweating/);
 	assert.match(systemContext, /For camel-up or ridge-water questions/);
 	assert.match(systemContext, /camel up at the last confirmed source and carry extra/);
 	assert.match(systemContext, /name both and make the carry decision/);
@@ -499,7 +501,48 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			'Heat makes water decisions harder. Carry more water if the next source is not confirmed and look for shade when you can.',
 			'How do I decide water in a heat wave when everything feels harder?'
 		),
-		'Heat makes water decisions harder. Carry more water if the next source is not confirmed and look for shade when you can.\n\nHeat-water safety note: if dizziness, confusion, headache, nausea, cramps, chills, stopped sweating, or worsening symptoms show up, stop hiking, get shade, cool down, sip treated water with electrolytes if available, and escalate through the emergency plan if symptoms do not improve.\n\nHeat-water planning note: move harder miles into the cooler part of the day, schedule shade breaks, eat salty food or use electrolytes if available, and carry conservatively to verified water when the next source is seasonal, unverified, exposed, or after a hard climb.'
+		'Heat makes water decisions harder. Carry more water if the next source is not confirmed and look for shade when you can.\n\nHeat-water safety note: do not keep hiking through dizziness. Stop, get shade, cool down, and sip treated water with electrolytes if safe. Seek urgent help or use the emergency plan for confusion, fainting, stopped sweating, or symptoms that worsen or do not improve.\n\nHeat-water planning note: move harder miles into the cooler part of the day, schedule shade breaks, eat salty food or use electrolytes if available, and carry conservatively to verified water when the next source is seasonal, unverified, exposed, or after a hard climb.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Stop hiking right now. Find some shade and cool down. Sip on any treated water you have, and if you feel dizzy, confused, have a headache, nausea, cramps, chills, stopped sweating, or worsening symptoms, you need to escalate your situation.\n\nThe weather is hot, and you are showing signs of heat illness. You need to stop moving and focus on cooling down immediately.\n\nYou should stop hiking and find shade to cool down.',
+			'I am dizzy and it is hot. What should I do?',
+			[
+				{
+					toolId: 'weather_lookup',
+					args: { fromMile: 93.9 },
+					summary: 'Cached weather near mile 93.9: hot, humid afternoon (high 88F / low 51F, wind 9 mph). Heat illness risk increases if water or shade is limited.',
+					confidence: 'medium',
+					receipts: []
+				}
+			]
+		),
+		'Stop hiking right now. Find some shade and cool down. Sip on any treated water you have, and if you feel dizzy, confused, have a headache, nausea, cramps, chills, stopped sweating, or worsening symptoms, you need to escalate your situation.\n\nThe weather is hot, and you are showing signs of heat illness. You need to stop moving and focus on cooling down immediately.\n\nYou should stop hiking and find shade to cool down.\n\nWeather note: Cached weather near mile 93.9: hot, humid afternoon (high 88F / low 51F, wind 9 mph). Heat illness risk increases if water or shade is limited.\n\nHeat-water safety note: do not keep hiking through dizziness. Stop, get shade, cool down, and sip treated water with electrolytes if safe. Seek urgent help or use the emergency plan for confusion, fainting, stopped sweating, or symptoms that worsen or do not improve.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Stop hiking right now. Find some shade immediately and cool down. Sip water with electrolytes if you have them. If you feel dizzy, confused, or have any of the other symptoms you mentioned, you need to stop and assess the situation.\n\nIf your symptoms worsen or you feel like you are in danger, you need to use your emergency plan or call for help. Do not keep hiking through these symptoms.\n\nI recommend you stop, find shade, and focus on cooling down and hydrating safely.',
+			'I am dizzy and it is hot. What should I do?',
+			[
+				{
+					toolId: 'weather_lookup',
+					args: { fromMile: 93.9 },
+					summary: 'Cached weather near mile 93.9: hot, humid afternoon (high 88F / low 51F, wind 9 mph). Heat illness risk increases if water or shade is limited.',
+					confidence: 'medium',
+					receipts: []
+				},
+				{
+					toolId: 'next_water',
+					args: {},
+					summary: 'Next loaded water: Seasonal seep ahead at mile 95.7 (1.8 mi ahead, seasonal). Seasonal open-reference candidate; confirm current flow.',
+					confidence: 'low',
+					receipts: []
+				}
+			]
+		),
+		'Stop hiking right now. Find some shade immediately and cool down. Sip water with electrolytes if you have them. If you feel dizzy, confused, or have any of the other symptoms you mentioned, you need to stop and assess the situation.\n\nIf your symptoms worsen or you feel like you are in danger, you need to use your emergency plan or call for help. Do not keep hiking through these symptoms.\n\nI recommend you stop, find shade, and focus on cooling down and hydrating safely.\n\nWeather note: Cached weather near mile 93.9: hot, humid afternoon (high 88F / low 51F, wind 9 mph). Heat illness risk increases if water or shade is limited.\n\nHeat-water safety note: do not keep hiking through dizziness. Stop, get shade, cool down, and sip treated water with electrolytes if safe. Seek urgent help or use the emergency plan for confusion, fainting, stopped sweating, or symptoms that worsen or do not improve.\n\nWater verification note: Next loaded water: Seasonal seep ahead at mile 95.7 (1.8 mi ahead, seasonal). Seasonal open-reference candidate; confirm current flow. Visually confirm flow before relying on it, filter or treat any water you collect, and carry enough to reach a verified source if it is dry.'
 	);
 
 	assert.equal(
