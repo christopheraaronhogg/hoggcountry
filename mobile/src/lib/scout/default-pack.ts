@@ -29,8 +29,8 @@ export const DEFAULT_CONTEXT_PACK: ContextPack = {
 		{
 			id: 'town-stop-readiness',
 			title: 'Town stops are recovery first, logistics second',
-			body: 'Treat town as a recovery interval. Calories, foot care, sleep, charging, downloads, then logistics. Logistics-first town stops cost mileage two days later. Default resupply rule: buy common food in town; mail only constrained, medical, diet-specific, or hard-to-find items to verified stops. Never say hard-to-find items are better bought in town unless a current town source proves availability. Budget planning should separate normal daily burn from town spikes like hostels, shuttles, laundry, meals, replacement gear, and emergency cushion; never present budget advice as a guarantee.',
-			tags: ['town', 'recovery', 'budget', 'mail-drop'],
+			body: 'Treat town as a recovery interval. Calories, foot care, sleep, charging, downloads, then logistics. Logistics-first town stops cost mileage two days later. Zero and nero decisions should weigh body condition or injury, cached/current weather, chores, budget, and the next section; rest is an investment, not failure. Default resupply rule: buy common food in town; mail only constrained, medical, diet-specific, or hard-to-find items to verified stops. Never say hard-to-find items are better bought in town unless a current town source proves availability. Budget planning should separate normal daily burn from town spikes like hostels, shuttles, laundry, meals, replacement gear, and emergency cushion; never present budget advice as a guarantee.',
+			tags: ['town', 'recovery', 'budget', 'mail-drop', 'zero', 'nero', 'weather'],
 			citation: 'Hogg Country Field Guide, Section: Town Discipline'
 		},
 		{

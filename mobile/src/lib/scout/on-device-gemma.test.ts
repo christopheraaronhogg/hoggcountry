@@ -211,6 +211,8 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /Do not use disturbing, violent, judgment, or famine passages as comfort/);
 	assert.match(systemContext, /make a one-hour plan/);
 	assert.match(systemContext, /never write "if you don't hear from you\."/);
+	assert.match(systemContext, /For zero, nero, or town-rest questions/);
+	assert.match(systemContext, /cached\/current weather, town chores, budget, and the next section/);
 	assert.match(systemContext, /For resupply or mail-drop questions/);
 	assert.match(systemContext, /For first-aid kit or blister questions/);
 	assert.match(systemContext, /spreading redness, drainage, fever, worsening pain/);

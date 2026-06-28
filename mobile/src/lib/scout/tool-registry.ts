@@ -108,7 +108,7 @@ const SOURCE_SKILL_TRIGGERS: SourceSkillTrigger[] = [
 	{
 		id: 'town',
 		keywords: ['town', 'resupply', 'hostel', 'shuttle', 'laundry', 'groceries', 'outfitter', 'mail drop', 'motel', 'restaurant', 'road crossing', 'bailout', 'exit', 'nero', 'zero', 'food', 'charge', 'download', 'lodging', 'budget', 'overplanning', 'daily burn', 'emergency cushion'],
-		queryHints: ['town discipline', 'resupply', 'recovery', 'services', 'access', 'same day confirmation', 'budget', 'town spikes', 'gear replacement', 'emergency cushion']
+		queryHints: ['town discipline', 'zero', 'nero', 'weather', 'next section', 'resupply', 'recovery', 'services', 'access', 'same day confirmation', 'budget', 'town spikes', 'gear replacement', 'emergency cushion']
 	},
 	{
 		id: 'weather',

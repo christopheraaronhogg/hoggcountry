@@ -192,6 +192,7 @@ test('runToolsFor reads town source skill beside next_town', async () => {
 	assert.ok(sourceSkill);
 	assert.match(sourceSkill.summary, /^Town guidance:/);
 	assert.match(sourceSkill.summary, /Town stops are recovery first/);
+	assert.match(sourceSkill.summary, /Zero and nero decisions should weigh body condition or injury, cached\/current weather, chores, budget, and the next section/);
 	assert.match(sourceSkill.summary, /Default resupply rule: buy common food in town/);
 	assert.ok(sourceSkill.sourceDocumentIds?.includes('field-guide:town-stop-readiness'));
 	assert.ok(
