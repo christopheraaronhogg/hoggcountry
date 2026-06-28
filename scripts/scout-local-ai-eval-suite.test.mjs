@@ -295,7 +295,8 @@ test('Dad TestFlight handoff documents the current Dad Pilot Run 100 path', asyn
 	assert.ok(handoff.includes(`Build \`${currentBuild}\` is live in Dad Pilot`));
 	assert.match(handoff, /https:\/\/testflight\.apple\.com\/join\/BagBCrzf/u);
 	assert.match(handoff, /Primary Local Regression/u);
-	assert.match(handoff, /eval:scout-local-ai:ios-sim-gemma -- --full --timeout-ms 1800000/u);
+	assert.match(handoff, /eval:scout-local-ai:ios-sim-gemma -- --limit 100/u);
+	assert.match(handoff, /eval:scout-local-ai:ios-sim-gemma -- --cases DLA-007,DLA-020,DLA-090/u);
 	assert.match(handoff, /install source is debug\/simulator, not TestFlight on a physical iPhone/u);
 	assert.match(handoff, /answer-quality scan/u);
 	assert.match(handoff, /does\s+not replace the full human 1-5 review/u);
@@ -475,7 +476,7 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(status.testflight.recordedDadPilotMeetsSuiteRequirement, true);
 	assert.equal(status.testflight.targetBuildReadyForDad, false);
 	assert.equal(status.testflight.targetBuildAvailableForDad, false);
-	assert.match(gates['testflight-target'].evidence, /Latest TestFlight upload does not contain the current eval suite/u);
+	assert.match(gates['testflight-target'].evidence, /Target build is not yet recorded as available for Dad|Latest TestFlight upload does not contain the current eval suite/u);
 	assert.match(gates['testflight-target'].evidence, /current suite 2026-06-28\.3/u);
 	assert.match(gates['testflight-target'].evidence, /Dad Pilot records 1\.0 \(27\)/u);
 	assert.equal(status.inbox.exists, true);

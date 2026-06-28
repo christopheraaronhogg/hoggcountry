@@ -19,10 +19,12 @@ use that phone to produce the final Scout local-AI `Run 100` export.
 - Build `26` was removed from Dad Pilot only after build `27` was attached and
   externally available.
 - The local Xcode target is build `28`, which is the next upload target.
-- Local build `28` prep proof:
-  `docs/launch/proof/ios-testflight-build-28-prep-2026-06-28.md`.
+- Current-suite local build `28` prep proof:
+  `docs/launch/proof/ios-testflight-build-28-prep-current-suite-2026-06-28.md`.
+- Read-only App Store Connect refresh confirms build `28` is not uploaded yet:
+  `docs/launch/proof/ios-testflight-build-28-missing-2026-06-28.md`.
 - Dad should not run the current `Run 100` yet. The current suite is
-  `2026-06-28.2`, so build `28` needs to be uploaded, attached to Dad Pilot,
+  `2026-06-28.3`, so build `28` needs to be uploaded, attached to Dad Pilot,
   and verified through TestFlight first.
 - The remaining goal is not TestFlight availability. It is a real
   TestFlight/iPhone `Run 100` export, import, human review, and all 100 answers
@@ -34,13 +36,13 @@ Use the Mac mini iPhone Simulator Gemma run as the default local regression
 method before spending Dad's time on another phone run:
 
 ```bash
-npm run eval:scout-local-ai:ios-sim-gemma -- --full --timeout-ms 1800000
+npm run eval:scout-local-ai:ios-sim-gemma -- --limit 100
 ```
 
 For a focused diagnostic rerun through a known case boundary:
 
 ```bash
-npm run eval:scout-local-ai:ios-sim-gemma -- --limit 83 --timeout-ms 1500000
+npm run eval:scout-local-ai:ios-sim-gemma -- --cases DLA-007,DLA-020,DLA-090
 ```
 
 This simulator path is the main local iteration loop for Scout answer quality,
