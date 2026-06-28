@@ -261,6 +261,9 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /For stale field-pack, field-pack status/);
 	assert.match(systemContext, /cached Scout trail data on the phone, not the physical backpack or loadout/);
 	assert.match(systemContext, /check pack age\/status, current mile or downloaded region/);
+	assert.match(systemContext, /For sign-in, login, account, cloud sync, backup, restore/);
+	assert.match(systemContext, /accounts are invite-only/);
+	assert.match(systemContext, /offline use does not require a live login/);
 	assert.match(systemContext, /For own-mile, manual-mile, wrong-mile, profile, GPS correction/);
 	assert.match(systemContext, /Settings > Edit hike details/);
 	assert.match(systemContext, /a wrong mile shifts water, shelter, town, terrain, and bailout answers/);
@@ -370,6 +373,20 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.match(staleFieldPackAnswer, /weather, closures, water, or services changed/);
 	assert.match(staleFieldPackAnswer, /Refresh on Wi-Fi or in town before water, weather, closure, bailout, or town-service decisions/);
 	assert.match(staleFieldPackAnswer, /caution signals, not current proof/);
+
+	const signInAnswer = polishOnDeviceAnswer(
+		'You can sign in before the trail if you need to access specific offline maps or documents, but you should also make sure your phone and battery are ready for offline use. The findings state that signing in helps recover data and sync changes between devices.',
+		'Should I sign in before the trail, or can I wait?'
+	);
+	assert.doesNotMatch(signInAnswer, /findings state/);
+	assert.match(signInAnswer, /accounts are invite-only/);
+	assert.match(signInAnswer, /sign in before the trail on Wi-Fi/);
+	assert.match(signInAnswer, /backup, restore, and cloud sync/);
+	assert.match(signInAnswer, /recover data if the phone is replaced/);
+	assert.match(signInAnswer, /Offline Scout\/local AI is separate/);
+	assert.match(signInAnswer, /downloaded field pack, on-device model, and saved maps\/docs/);
+	assert.match(signInAnswer, /without a live login/);
+	assert.match(signInAnswer, /not an emergency safety system/);
 
 	const ownMileAnswer = polishOnDeviceAnswer(
 		'You tell Scout your current mile is 0.0 of 2197.4. I will use that as the starting point for our planning.\n\nTo make Scout follow your own trail mile, you just need to tell me where you are. When you ask a question, state your current mile marker clearly. That way, I can base my advice on your actual progress on the trail.',

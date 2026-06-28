@@ -59,6 +59,8 @@ const MODEL_DOWNLOADING_STATUS_NOTE =
 	'Model-download status: still downloading means the on-device local AI model is not ready for offline Scout yet. Keep the phone on Wi-Fi and power, let download and verification finish, and check Scout model status or progress until it says ready. If it is stuck or failed, retry, cancel, or restart from the model download control while back on Wi-Fi. Do not trust offline/local AI until the model reports ready and an airplane-mode Scout question succeeds; Scout must not pretend a fake offline answer came from the local model.';
 const FIELD_PACK_STALENESS_NOTE =
 	"Field-pack status: Scout's field pack is the cached trail data on the phone, not the physical backpack. Before trusting it, check the pack age/status, current mile or downloaded region, and source timestamps when shown. If it is old, expired, for the wrong mile/region, or was loaded before weather, closures, water, or services changed, treat it as stale. Refresh on Wi-Fi or in town before water, weather, closure, bailout, or town-service decisions. Until refreshed, cached weather, closures, water, and services are caution signals, not current proof.";
+const SIGN_IN_CLOUD_SYNC_NOTE =
+	'Sign-in boundary: accounts are invite-only. If you have an invite, sign in before the trail on Wi-Fi so backup, restore, and cloud sync can finish before you leave service. Sign-in helps recover data if the phone is replaced, restore documents/settings, and sync changes between devices. Offline Scout/local AI is separate: after setup, it can work from the downloaded field pack, on-device model, and saved maps/docs without a live login. Cloud sync and sign-in are not an emergency safety system and do not replace inReach, PLB, 911, or the family emergency plan.';
 const OWN_MILE_RISK_NOTE =
 	'A wrong mile shifts water, shelter, town, terrain, and bailout answers, so confirm against a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap before relying on Scout.';
 const OWN_MILE_SETUP_NOTE =
@@ -297,6 +299,7 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 		'should trigger the escalation plan'
 	);
 	answer = stripInternalToolReferences(answer);
+	answer = removeInlineProvenanceSentences(answer);
 	answer = normalizeSpelledDecimalDistances(answer);
 	answer = removeTrailingProvenanceParagraphs(answer);
 	answer = removeRepeatedSentences(answer);
@@ -340,6 +343,11 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 		answer = isPhysicalPackStalenessAnswer(answer) || isVagueSourceOnlyAnswer(answer)
 			? FIELD_PACK_STALENESS_NOTE
 			: appendSentence(answer, FIELD_PACK_STALENESS_NOTE);
+	}
+	if (isSignInBeforeTrailPrompt(lowerPrompt) && !mentionsSignInCloudSyncBoundary(answer)) {
+		answer = isVagueSourceOnlyAnswer(answer) || isSignInPartialAnswer(answer)
+			? SIGN_IN_CLOUD_SYNC_NOTE
+			: appendSentence(answer, SIGN_IN_CLOUD_SYNC_NOTE);
 	}
 	if (isOwnMileSetupPrompt(lowerPrompt) && !mentionsOwnMileSetupReadiness(answer)) {
 		answer = appendSentence(answer, mentionsOwnMileSetupFlow(answer) ? OWN_MILE_RISK_NOTE : OWN_MILE_SETUP_NOTE);
@@ -563,6 +571,20 @@ function removeTrailingProvenanceParagraphs(answer: string): string {
 		paragraphs.pop();
 	}
 	return paragraphs.join('\n\n').trim();
+}
+
+function removeInlineProvenanceSentences(answer: string): string {
+	return answer
+		.split(/\n{2,}/u)
+		.map((paragraph) =>
+			paragraph
+				.replace(/\b(?:The|These) findings state that\b[^.?!]*(?:[.?!]|$)/giu, '')
+				.replace(/\bThis (?:guidance|approach|answer|advice) (?:comes from|is based on)\b[^.?!]*(?:[.?!]|$)/giu, '')
+				.replace(/[ \t]{2,}/gu, ' ')
+				.trim()
+		)
+		.filter(Boolean)
+		.join('\n\n');
 }
 
 function removeInjuryPrepDrift(answer: string): string {
@@ -826,6 +848,12 @@ function isFieldPackStalenessPrompt(prompt: string): boolean {
 	const mentionsFieldPack = /\b(?:field[-\s]?pack|scout\s+pack|cached\s+(?:trail\s+)?pack|trail\s+data\s+pack)\b/u.test(prompt);
 	const asksFreshness = /\b(?:stale|fresh|current|trust|age|status|refresh|old|outdated|valid|expired)\b/u.test(prompt);
 	return mentionsFieldPack && asksFreshness;
+}
+
+function isSignInBeforeTrailPrompt(prompt: string): boolean {
+	const mentionsAccount = /\b(?:sign in|log in|login|account|invite-only|invited|cloud sync|backup|restore)\b/u.test(prompt);
+	const mentionsTiming = /\b(?:before (?:the )?trail|before leaving|can i wait|wait|trail|service|town|wi[-\s]?fi)\b/u.test(prompt);
+	return mentionsAccount && mentionsTiming;
 }
 
 function isFirstRunOnboardingPrompt(prompt: string): boolean {
@@ -1687,6 +1715,26 @@ function mentionsFieldPackStalenessReadiness(answer: string): boolean {
 	return mentionsDataPack && mentionsAgeOrStatus && mentionsMileOrRegion && mentionsVolatileData && mentionsRefresh && mentionsSafetyTrust;
 }
 
+function mentionsSignInCloudSyncBoundary(answer: string): boolean {
+	const mentionsInviteOnly = /\b(?:invite-only|invite only|invited|invite)\b/iu.test(answer);
+	const mentionsCloudValue =
+		/\b(?:backup|restore|recover|recovery|cloud sync|sync)\b/iu.test(answer) &&
+		/\b(?:documents?|settings?|data|devices?|phone)\b/iu.test(answer);
+	const mentionsBeforeTrail =
+		/\b(?:before (?:the )?trail|before leaving|while .*wi[-\s]?fi|on wi[-\s]?fi|before .*service)\b/iu.test(answer);
+	const separatesOffline =
+		/\b(?:offline scout|offline|local ai|on-device model)\b/iu.test(answer) &&
+		/\b(?:separate|without a live login|downloaded field pack|saved maps|maps\/docs|after setup)\b/iu.test(answer);
+	const mentionsEmergencyBoundary =
+		/\b(?:not an emergency|do not replace|does not replace|not a safety system)\b/iu.test(answer) &&
+		/\b(?:inreach|plb|911|family emergency plan|emergency plan)\b/iu.test(answer);
+	return mentionsInviteOnly && mentionsCloudValue && mentionsBeforeTrail && separatesOffline && mentionsEmergencyBoundary;
+}
+
+function isSignInPartialAnswer(answer: string): boolean {
+	return /\b(?:sign in|log in|login|account|cloud sync|backup|restore|recover|offline maps?|documents?)\b/iu.test(answer);
+}
+
 function mentionsOwnMileSetupFlow(answer: string): boolean {
 	const mentionsConcreteFlow = /\b(?:hike setup|start my hike|settings|edit hike details|current at mile)\b/iu.test(answer);
 	const mentionsVerification =
@@ -2043,6 +2091,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For airplane-mode, no-cell, or "what works offline" Scout questions, split the answer plainly: what still works offline is the cached field pack, on-device local AI model, saved offline maps/docs, saved document summaries, and Bible text if packaged or downloaded; what needs network is fresh weather, official closures/fire alerts, new water reports, town/service changes, cloud sync/backup, messages, and live/tramily location. Say cached weather, closures, water, and services can be stale until refreshed again.`,
 		`For model-downloading, model status, stuck download, failed download, or "still downloading" questions, say the on-device local AI model is not ready for offline Scout yet. Tell the hiker to stay on Wi-Fi and power, wait for download and verification, check Scout model status/progress until it says ready, retry/cancel/restart only if stuck or failed, and not trust offline/local AI until the model reports ready and an airplane-mode Scout question succeeds.`,
 		`For stale field-pack, field-pack status, or "can I trust Scout's field pack" questions, field pack means cached Scout trail data on the phone, not the physical backpack or loadout. Tell the hiker to check pack age/status, current mile or downloaded region, and source timestamps when shown. If the pack is old, expired, wrong-mile/wrong-region, or loaded before weather, closures, water, or services changed, treat it as stale. Refresh on Wi-Fi or in town before water, weather, closure, bailout, or town-service decisions, and use stale cached data only as caution, not current proof.`,
+		`For sign-in, login, account, cloud sync, backup, restore, or "can I wait to sign in" questions, say accounts are invite-only. Recommend signing in before trail on Wi-Fi if the hiker has an invite so backup/restore and cloud sync can finish. Keep offline Scout/local AI separate: once the field pack, on-device model, and saved maps/docs are downloaded, offline use does not require a live login. Do not imply sign-in or cloud sync is emergency safety; keep inReach, PLB, 911, and the family emergency plan separate.`,
 		`For own-mile, manual-mile, wrong-mile, profile, GPS correction, shuttle, or "someone else's mile" questions, explain the app flow: first-run hike setup or Settings > Edit hike details, enter Current AT mile, save, then check Today and Scout show the new mile. Warn that a wrong mile shifts water, shelter, town, terrain, and bailout answers. Tell the hiker to confirm against a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap before relying on Scout.`,
 		`For offline setup, offline downloads, phone settings, or day-one readiness questions, distinguish phone/app readiness from personal safety readiness. Always include the exact check "verify Bible text is available offline." Also mention field-pack refresh, current mile, local AI model, offline maps/docs, battery, airplane-mode rehearsal, and that Scout does not replace inReach, PLB, 911, or the family emergency plan. For personal documents, include this safety boundary in plain words: do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat.`,
 		`Do not include Bible verses, scripture, prayer, or spiritual encouragement unless the hiker explicitly asks for Bible, scripture, prayer, faith, fear comfort, or spiritual support. Safety, weather, town, water, gear, and navigation answers must stay focused on the field decision first.`,

@@ -127,7 +127,7 @@ const SOURCE_SKILL_TRIGGERS: SourceSkillTrigger[] = [
 	},
 	{
 		id: 'pretrip',
-		keywords: ['8 weeks', 'springer', 'trail prep', 'pre-trail', 'before trail', 'before day one', 'day one', 'first week', 'train', 'training', 'shakedown', 'foot care', 'local ai', 'model download', 'model is still downloading', 'still downloading', 'model status', 'offline setup', 'phone settings', 'offline downloads', 'going offline', 'field pack', 'body responds', 'mileage goals', 'documents'],
+		keywords: ['8 weeks', 'springer', 'trail prep', 'pre-trail', 'before trail', 'before day one', 'day one', 'first week', 'train', 'training', 'shakedown', 'foot care', 'local ai', 'model download', 'model is still downloading', 'still downloading', 'model status', 'offline setup', 'phone settings', 'offline downloads', 'going offline', 'field pack', 'sign in', 'log in', 'login', 'account', 'invite-only', 'invited', 'cloud sync', 'backup', 'restore', 'body responds', 'mileage goals', 'documents'],
 		queryHints: ['pretrip discipline', 'shakedown', 'foot care', 'offline setup', 'local AI model', 'field pack refresh', 'phone settings', 'first week', 'day one']
 	},
 	{
@@ -187,6 +187,9 @@ function sourceSkillQueryHints(skill: SourceSkillTrigger, prompt: string): strin
 	const lower = prompt.toLowerCase();
 	if (isScoutFieldPackDataPrompt(lower)) {
 		return ['field pack staleness discipline', 'cached Scout trail data', 'pack age status', 'current mile downloaded region', 'source timestamps', 'refresh on Wi-Fi in town', 'weather closures water services stale', 'caution signals not current proof'];
+	}
+	if (skill.id === 'pretrip' && /\b(?:sign in|log in|login|account|invite-only|invited|cloud sync|backup|restore)\b/u.test(lower)) {
+		return ['sign-in and cloud sync discipline', 'invite-only account', 'backup restore', 'cloud sync on Wi-Fi', 'offline Scout local AI separate', 'downloaded field pack model maps docs', 'not emergency safety'];
 	}
 	if (skill.id === 'pretrip' && /\b(?:model is still downloading|still downloading|model status|download(?:ing)?|not ready|stuck|failed)\b/u.test(lower)) {
 		return ['model download status discipline', 'still downloading', 'on-device local AI not ready', 'Wi-Fi power', 'download verification', 'check Scout model status progress ready', 'retry cancel restart stuck failed', 'airplane mode Scout question'];

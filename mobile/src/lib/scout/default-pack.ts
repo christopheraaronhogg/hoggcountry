@@ -62,6 +62,13 @@ export const DEFAULT_CONTEXT_PACK: ContextPack = {
 			citation: 'Hogg Country Field Guide, Section: Field Pack Freshness'
 		},
 		{
+			id: 'signin-cloud-sync-discipline',
+			title: 'Sign-in and cloud sync discipline',
+			body: 'Accounts are invite-only. If the hiker has an invite, sign in before trail on Wi-Fi so backup, restore, and cloud sync can finish before leaving service. Sign-in helps recover data if the phone is replaced, restore documents/settings, and sync changes between devices. Offline Scout/local AI is separate: after setup, it can work from the downloaded field pack, on-device model, and saved maps/docs without a live login. Cloud sync and sign-in are not an emergency safety system and do not replace inReach, PLB, 911, or the family emergency plan.',
+			tags: ['pretrip', 'account', 'sign-in', 'cloud-sync', 'backup', 'restore', 'offline', 'safety'],
+			citation: 'Hogg Country Field Guide, Section: Account and Sync Readiness'
+		},
+		{
 			id: 'current-mile-profile-discipline',
 			title: 'Current mile and profile discipline',
 			body: 'Scout follows the hiker only after their hike profile/current mile is set. On first run, use the hike setup sheet, choose Start my hike, and enter the Current AT mile. Later, use Settings > Edit hike details or a confirmed mile update, then check Today and Scout both show the new mile. Refresh the field pack when online and re-ask water, shelter, town, terrain, or bailout questions after changing mile. A wrong mile shifts every nearby answer, especially water, shelter, town, terrain, and bailout advice. Confirm the mile against a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap before relying on Scout.',

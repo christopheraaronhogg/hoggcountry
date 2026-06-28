@@ -644,6 +644,23 @@ test('runToolsFor opens field-pack staleness guidance without treating field pac
 	assert.ok(records.some((record) => record.sourceDocumentIds?.includes('field-guide:field-pack-staleness-discipline')));
 });
 
+test('runToolsFor opens sign-in cloud sync guidance for account timing prompts', async () => {
+	const records = await runToolsFor(
+		'Should I sign in before the trail, or can I wait?',
+		DEFAULT_CONTEXT_PACK,
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	assert.deepEqual(
+		records.map((record) => record.toolId),
+		['source_search', 'open_source_doc']
+	);
+	const combinedSummary = records.map((record) => record.summary).join('\n');
+	assert.match(combinedSummary, /Sign-in and cloud sync discipline/);
+	assert.ok(records.some((record) => record.sourceDocumentIds?.includes('field-guide:signin-cloud-sync-discipline')));
+});
+
 test('runToolsFor reads current-mile profile guidance for own-mile setup prompts', async () => {
 	const records = await runToolsFor(
 		"How do I make Scout follow my own trail mile instead of someone else's?",
