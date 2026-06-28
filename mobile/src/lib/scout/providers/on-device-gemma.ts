@@ -107,6 +107,8 @@ const AFTER_DARK_SHELTER_NOTE =
 	'After-dark shelter note: slow down, use the headlamp, avoid risky night navigation when tired, take the nearest safe legal option rather than adding extra night miles, and keep a fallback plan in case the shelter is full.';
 const WATERLESS_SHELTER_NOTE =
 	'Waterless-shelter note: do not assume shelter water is flowing; top off before the shelter, carry enough to the next verified source, or stop where both legal sleep and water are workable.';
+const BEAR_ACTIVITY_SHELTER_NOTE =
+	'Bear-activity shelter note: verify current local guidance, alerts, closures, and required food storage before committing. Use proper food storage and odor control such as a bear box, cable, canister, or approved hang as local rules require, keep food and scented items away from sleep, and choose an alternate legal stop if the report cannot be cleared.';
 const THUNDERSTORM_HIKE_NOTE =
 	'Thunderstorm hike note: check live forecast or radar if available, avoid exposed ridges and high points during the storm window, shorten or shift mileage earlier, and stop or bail out if lightning, flooding, wet-cold exposure, or worsening weather appears.';
 const COLD_WIND_RIDGE_NOTE =
@@ -384,6 +386,9 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	}
 	if (isWaterlessShelterPrompt(lowerPrompt) && !mentionsWaterlessShelterPlanning(answer)) {
 		answer = appendSentence(answer, WATERLESS_SHELTER_NOTE);
+	}
+	if (isBearActivityShelterPrompt(lowerPrompt) && !mentionsBearActivityShelterPlan(answer)) {
+		answer = appendSentence(answer, BEAR_ACTIVITY_SHELTER_NOTE);
 	}
 	if (isRainPantsPrompt(lowerPrompt) && !mentionsRainPantsDecision(answer)) {
 		answer = appendSentence(answer, RAIN_PANTS_NOTE);
@@ -828,7 +833,8 @@ function isSpecificShelterSafetyPrompt(prompt: string): boolean {
 		isLowImpactCampsitePrompt(prompt) ||
 		isClimbStopPrompt(prompt) ||
 		isAfterDarkShelterPrompt(prompt) ||
-		isWaterlessShelterPrompt(prompt);
+		isWaterlessShelterPrompt(prompt) ||
+		isBearActivityShelterPrompt(prompt);
 }
 
 function isFullShelterPrompt(prompt: string): boolean {
@@ -862,6 +868,11 @@ function isAfterDarkShelterPrompt(prompt: string): boolean {
 function isWaterlessShelterPrompt(prompt: string): boolean {
 	return /\b(?:shelter|camp|sleep)\b/u.test(prompt) &&
 		/\b(?:no reliable water|without reliable water|waterless|no water|dry shelter|shelter water)\b/u.test(prompt);
+}
+
+function isBearActivityShelterPrompt(prompt: string): boolean {
+	return /\b(?:bear|bear activity|bear report|bear reports|bear warning|bear alert|bear closure)\b/u.test(prompt) &&
+		/\b(?:shelter|camp|campsite|sleep|overnight|nearby|near)\b/u.test(prompt);
 }
 
 function isRainPantsPrompt(prompt: string): boolean {
@@ -1248,6 +1259,13 @@ function mentionsWaterlessShelterPlanning(answer: string): boolean {
 	return mentionsNoAssumption && mentionsTopOffCarry && mentionsVerifiedSource && mentionsSleepWater;
 }
 
+function mentionsBearActivityShelterPlan(answer: string): boolean {
+	const mentionsCurrentGuidance = /\b(?:current local guidance|latest guidance|current guidance|current alerts?|local alerts?|closures?|bear report|bear activity report|verify|confirm)\b/iu.test(answer);
+	const mentionsConcreteStorage = /\b(?:store food|bear box|bear cable|bear canister|approved hang|hang food)\b/iu.test(answer);
+	const mentionsAlternateStop = /\b(?:alternate legal stop|alternative legal stop|safer legal stop|different legal stop|lower-mileage|move on to another legal|choose another legal|if the report cannot be cleared)\b/iu.test(answer);
+	return mentionsCurrentGuidance && mentionsConcreteStorage && mentionsAlternateStop;
+}
+
 function mentionsRainPantsDecision(answer: string): boolean {
 	return /(?:personal cold tolerance|how fast you chill|your cold tolerance|if you run cold)/iu.test(answer) &&
 		/(?:shakedown|proven|test(?:ed|ing)? the rain system)/iu.test(answer) &&
@@ -1383,6 +1401,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For frozen or failing water-filter questions, say a hollow-fiber filter may be compromised if it froze, use backup treatment or replace it if unsure, backflush or clean a slow filter when the model supports it, and prevent the next freeze by sleeping with the filter or keeping it warm overnight. Use next-water context before telling the hiker to push past water.`,
 		`For shelter and camping decisions, use the next_shelter and upcoming_terrain findings as planning candidates, not guarantees. Name daylight, water, current shelter status/crowding, legal rules, weather, fatigue, and a backup option before committing to a sleep plan.`,
 		`For full-shelter, stealth-camping, storm-campsite, low-impact campsite, climb-stop, or waterless-shelter questions, keep the legal/safety boundary explicit: no illegal camping, choose backups before dark when there is still daylight, use established or durable surfaces, keep roughly 200 feet from water and trail when rules allow, avoid exposed ridges/dead trees/drainages/flood-prone ground in storms, and top off/carry enough water when shelter water is uncertain.`,
+		`For bear-activity shelter questions, verify current local guidance, alerts, closures, and required food storage before committing. Name proper food storage and odor control such as a bear box, cable, canister, or approved hang as local rules require, keep food and scented items away from sleep, and choose an alternate legal stop if the report cannot be cleared.`,
 		`For after-dark shelter arrivals, do not tell the hiker to choose a backup before dark. Say to slow down, use the headlamp, avoid risky tired night navigation, take the nearest safe legal option rather than adding extra night miles, and keep a fallback plan if the shelter is full.`,
 		`When tool findings are labeled as guidance, treat them as topic-specific documents Scout intentionally read for this answer. Use them to shape caveats and next-step advice.`,
 		`When preparation or training questions have pretrip, terrain, loadout, safety, or offline setup findings, give a concrete short plan. For "what should I focus on first" prompts, include an immediate first-week checklist, not only general training advice. Include shakedown hikes, foot care/blister practice, conservative early mileage, gear/loadout checks, water treatment habits, and an offline app/model rehearsal when those appear in the findings.`,

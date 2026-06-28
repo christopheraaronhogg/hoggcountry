@@ -218,6 +218,8 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /For shelter and camping decisions/);
 	assert.match(systemContext, /daylight, water, current shelter status\/crowding/);
 	assert.match(systemContext, /For full-shelter, stealth-camping, storm-campsite/);
+	assert.match(systemContext, /For bear-activity shelter questions/);
+	assert.match(systemContext, /proper food storage and odor control/);
 	assert.match(systemContext, /For after-dark shelter arrivals/);
 	assert.match(systemContext, /do not tell the hiker to choose a backup before dark/);
 	assert.match(systemContext, /roughly 200 feet from water and trail/);
@@ -577,6 +579,22 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			'How do I avoid camping too close to water or damaging the place?'
 		),
 		'Look for established campsites and verify local rules before setting up.\n\nLow-impact campsite note: use established or durable surfaces, stay roughly 200 feet from water and trail when local rules allow, keep hygiene water and toothpaste away from camp and water, and follow posted land-manager rules over general advice.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Confirm the current local guidance on bear activity before committing to an overnight plan. If you cannot verify the live risk, choose a lower-mileage or safer-stop option.',
+			'What if there are bear activity reports near the shelter?'
+		),
+		'Confirm the current local guidance on bear activity before committing to an overnight plan. If you cannot verify the live risk, choose a lower-mileage or safer-stop option.\n\nBear-activity shelter note: verify current local guidance, alerts, closures, and required food storage before committing. Use proper food storage and odor control such as a bear box, cable, canister, or approved hang as local rules require, keep food and scented items away from sleep, and choose an alternate legal stop if the report cannot be cleared.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Check current alerts and any required food storage protocols. If you cannot confirm the current situation, choose the safer legal stop. Remember to use proper food storage and keep all scented items away from your sleeping area.',
+			'What if there are bear activity reports near the shelter?'
+		),
+		'Check current alerts and any required food storage protocols. If you cannot confirm the current situation, choose the safer legal stop. Remember to use proper food storage and keep all scented items away from your sleeping area.\n\nBear-activity shelter note: verify current local guidance, alerts, closures, and required food storage before committing. Use proper food storage and odor control such as a bear box, cable, canister, or approved hang as local rules require, keep food and scented items away from sleep, and choose an alternate legal stop if the report cannot be cleared.'
 	);
 
 	assert.equal(
