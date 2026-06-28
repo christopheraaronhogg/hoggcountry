@@ -194,6 +194,12 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	answer = removeRepeatedSentences(answer);
 
 	const lowerPrompt = prompt.toLowerCase();
+	if (!isBiblePrompt(lowerPrompt)) {
+		answer = removeUnaskedBibleDrift(answer);
+	}
+	if (!isFearComfortPrompt(lowerPrompt)) {
+		answer = removeUnaskedFearComfortDrift(answer);
+	}
 	if (isInjuryPrompt(lowerPrompt)) {
 		answer = removeInjuryPrepDrift(answer);
 	}
@@ -212,11 +218,23 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 			'Do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat; keep those saved separately offline.'
 		);
 	}
-	if (isZeroNeroPrompt(lowerPrompt)) {
-		const weatherSummary = toolInvocations.find((tool) => tool.toolId === 'weather_lookup')?.summary.trim();
+	if (isWeatherSensitivePrompt(lowerPrompt)) {
+		const weatherSummary = weatherLookupSummary(toolInvocations);
 		if (weatherSummary && !mentionsWeatherLookupSummary(answer, weatherSummary)) {
 			answer = appendSentence(answer, `Weather note: ${weatherSummary}`);
 		}
+	}
+	if (isBadWeatherNeroPrompt(lowerPrompt) && !mentionsBadWeatherNeroDecision(answer)) {
+		answer = appendSentence(
+			answer,
+			'Nero note: choose a short day, town stop, or early stop when the forecast, footing, exposure, daylight, or body condition makes pushing the full plan less safe.'
+		);
+	}
+	if (isBudgetPrompt(lowerPrompt) && !mentionsBudgetCategories(answer)) {
+		answer = appendSentence(
+			answer,
+			'Budget note: separate daily burn from town spikes like hostels, shuttles, laundry, and meals; include gear replacement and an emergency cushion, and keep it flexible around actual pace and services rather than treating it as a guarantee.'
+		);
 	}
 
 	return trimToCompleteSentence(answer);
@@ -249,6 +267,36 @@ function removeInjuryPrepDrift(answer: string): string {
 		.filter((paragraph) => !/^A shakedown hike should prove\b/iu.test(paragraph.trim()))
 		.join('\n\n')
 		.trim();
+}
+
+function removeUnaskedBibleDrift(answer: string): string {
+	const filtered = answer
+		.split(/\n{2,}/u)
+		.map((paragraph) => {
+			const sentences = splitSentences(paragraph)
+				.map((sentence) => sentence.trim())
+				.filter((sentence) => sentence && !containsBibleDrift(sentence));
+			return sentences.join(' ');
+		})
+		.filter(Boolean)
+		.join('\n\n')
+		.trim();
+	return filtered || answer;
+}
+
+function removeUnaskedFearComfortDrift(answer: string): string {
+	const filtered = answer
+		.split(/\n{2,}/u)
+		.map((paragraph) => {
+			const sentences = splitSentences(paragraph)
+				.map((sentence) => sentence.trim())
+				.filter((sentence) => sentence && !containsFearComfortDrift(sentence));
+			return sentences.join(' ');
+		})
+		.filter(Boolean)
+		.join('\n\n')
+		.trim();
+	return filtered || answer;
 }
 
 function stripInternalToolReferences(answer: string): string {
@@ -364,6 +412,32 @@ function isZeroNeroPrompt(prompt: string): boolean {
 	return /\b(?:zero|nero)\b|town[-\s]?rest|rest day/u.test(prompt);
 }
 
+function isBiblePrompt(prompt: string): boolean {
+	return /\b(?:bible|scripture|verse|pray|prayer|psalm|proverb|john|romans|jesus|christ|lord|god|faith|spiritual|fear while|scared and alone)\b/u.test(prompt);
+}
+
+function isFearComfortPrompt(prompt: string): boolean {
+	return /\b(?:scared|afraid|alone|anxious|anxiety|panic|fear|fearful|comfort|nighttime support|night support)\b/u.test(prompt);
+}
+
+function isBudgetPrompt(prompt: string): boolean {
+	return /\b(?:budget|overplanning|over-plan|money|cost|spend|spending)\b/u.test(prompt);
+}
+
+function isWeatherSensitivePrompt(prompt: string): boolean {
+	return /\b(?:weather|rain|storm|thunder|lightning|wind|cold|heat|hot|hypothermia|freez|ridge|dry stretch|bad weather|zero|nero|stop hiking)\b/u.test(prompt);
+}
+
+function isBadWeatherNeroPrompt(prompt: string): boolean {
+	return /\b(?:zero|nero)\b/u.test(prompt) &&
+		/\b(?:weather|rain|storm|thunder|lightning|wind|cold|heat|hot|hypothermia|freez|bad weather)\b/u.test(prompt);
+}
+
+function weatherLookupSummary(toolInvocations: ToolInvocationRecord[]): string | null {
+	const summary = toolInvocations.find((tool) => tool.toolId === 'weather_lookup')?.summary?.trim();
+	return summary || null;
+}
+
 function mentionsOfflineBible(answer: string): boolean {
 	return /bible[^.?!\n]*(?:offline|available|download)|(?:offline|available|download)[^.?!\n]*bible/iu.test(answer);
 }
@@ -382,10 +456,32 @@ function mentionsWeatherLookupSummary(answer: string, summary: string): boolean 
 	const numberMatches = lowerSummary.match(/\b\d+\s*(?:f|mph)\b/giu) ?? [];
 	const matchedNumbers = numberMatches.filter((value) => lowerAnswer.includes(value.toLowerCase())).length;
 	if (matchedNumbers >= Math.min(2, numberMatches.length)) return true;
-	if (/partly cloudy|cloudy|rain|storm|snow|wind|hot|cold|high|low/iu.test(lowerSummary)) {
-		return /partly cloudy|cloudy|rain|storm|snow|wind\s+\d|high\s+\d|low\s+\d/iu.test(lowerAnswer);
+	if (numberMatches.length) return false;
+	if (/\b(?:partly cloudy|cloudy|showers?|rain|storms?|thunderstorms?|snow|wind|hot|cold|high|low)\b/iu.test(lowerSummary)) {
+		return /\b(?:partly cloudy|cloudy|showers?|rain|storms?|thunderstorms?|snow|wind\s+\d|high\s+\d|low\s+\d|hot|cold)\b/iu.test(lowerAnswer);
 	}
 	return /refresh|verify|current forecast|cached weather/iu.test(lowerAnswer);
+}
+
+function mentionsBudgetCategories(answer: string): boolean {
+	return /daily burn/iu.test(answer) &&
+		/town spikes?/iu.test(answer) &&
+		/(hostel|shuttle|laundry|meal)/iu.test(answer) &&
+		/gear replacement/iu.test(answer) &&
+		/emergency cushion/iu.test(answer);
+}
+
+function containsBibleDrift(paragraph: string): boolean {
+	return /\b(?:bible|scripture|verse|verses|psalms?|isaiah|john|romans|proverbs?|timothy|lord|god|christ|jesus)\b/iu.test(paragraph) ||
+		/[“"]?[A-Z][^.!?]{10,}\b(?:I am with you|do not fear|trust in the lord|righteous right hand)\b/iu.test(paragraph);
+}
+
+function containsFearComfortDrift(paragraph: string): boolean {
+	return /\b(?:scared|afraid|alone|anxious|anxiety|panic|comfort verses?)\b/iu.test(paragraph);
+}
+
+function mentionsBadWeatherNeroDecision(answer: string): boolean {
+	return /\b(?:nero|short day|town stop|early stop|stop early)\b/iu.test(answer);
 }
 
 export class OnDeviceModelUnavailableError extends Error {
@@ -422,6 +518,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`When tool findings are labeled as guidance, treat them as topic-specific documents Scout intentionally read for this answer. Use them to shape caveats and next-step advice.`,
 		`When preparation or training questions have pretrip, terrain, loadout, safety, or offline setup findings, give a concrete short plan. For "what should I focus on first" prompts, include an immediate first-week checklist, not only general training advice. Include shakedown hikes, foot care/blister practice, conservative early mileage, gear/loadout checks, water treatment habits, and an offline app/model rehearsal when those appear in the findings.`,
 		`For offline setup, offline downloads, phone settings, or day-one readiness questions, distinguish phone/app readiness from personal safety readiness. Always include the exact check "verify Bible text is available offline." Also mention field-pack refresh, current mile, local AI model, offline maps/docs, battery, airplane-mode rehearsal, and that Scout does not replace inReach, PLB, 911, or the family emergency plan. For personal documents, include this safety boundary in plain words: do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat.`,
+		`Do not include Bible verses, scripture, prayer, or spiritual encouragement unless the hiker explicitly asks for Bible, scripture, prayer, faith, fear comfort, or spiritual support. Safety, weather, town, water, gear, and navigation answers must stay focused on the field decision first.`,
 		`For Bible or scripture questions, quote only verses returned by bible_search and keep the reference with each quote. For fear, scared, alone, or nighttime comfort prompts, use direct comfort verses when present, such as Psalms 56:3, Isaiah 41:10, 2 Timothy 1:7, Psalms 23:4, Psalms 4:8, or John 14:27. Do not use disturbing, violent, judgment, or famine passages as comfort unless the hiker explicitly asked about that passage. If the hiker sounds scared or alone, pair scripture with immediate safety steps: check weather and hazards, get warm and dry, eat or drink if needed, make a one-hour plan, and escalate through the emergency plan if there is real danger, injury, exposure, or repeated panic.`,
 		`For shakedown questions, name what the shakedown must prove: sleep system, rain system, cooking/food rhythm, water filtering, battery drain, pack fit, foot care, and offline app/model flow. Turn failures into specific gear or app fixes. Always say that one shakedown does not prove every condition is covered.`,
 		`For first-week mileage questions, use body condition, daylight, elevation, weather, pack weight, water spacing, foot/knee condition, and legal shelter/campsite/town spacing. Start low, protect feet and knees, and avoid fixed mileage promises.`,

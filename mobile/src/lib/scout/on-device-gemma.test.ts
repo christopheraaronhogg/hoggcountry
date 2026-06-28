@@ -206,6 +206,7 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /include an immediate first-week checklist/);
 	assert.match(systemContext, /End every answer with a complete sentence/);
 	assert.match(systemContext, /verify Bible text is available offline/);
+	assert.match(systemContext, /Do not include Bible verses, scripture, prayer, or spiritual encouragement unless the hiker explicitly asks/);
 	assert.match(systemContext, /For Bible or scripture questions/);
 	assert.match(systemContext, /Psalms 56:3, Isaiah 41:10, 2 Timothy 1:7/);
 	assert.match(systemContext, /Do not use disturbing, violent, judgment, or famine passages as comfort/);
@@ -297,5 +298,47 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			]
 		),
 		'Weigh body condition, weather, chores, budget, and the next section. Rest is an investment, not failure.\n\nWeather note: Cached weather near mile 101.1: partly cloudy with changing mountain conditions (high 67F / low 51F, wind 9 mph). Mountain weather changes quickly; refresh before safety-critical choices.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Keep mileage conservative and protect your dry sleep layers. Verify the current forecast before exposed terrain, especially if thunderstorms are possible.',
+			'What is a safe plan if I start the AT in heavy rain?',
+			[
+				{
+					toolId: 'weather_lookup',
+					args: { fromMile: 0 },
+					summary: 'Cached weather near mile 0.0: showers and possible thunderstorms (high 67F / low 51F, wind 22 mph). Lightning and wet-cold exposure are possible; verify live before exposed terrain.',
+					confidence: 'medium',
+					receipts: []
+				}
+			]
+		),
+		'Keep mileage conservative and protect your dry sleep layers. Verify the current forecast before exposed terrain, especially if thunderstorms are possible.\n\nWeather note: Cached weather near mile 0.0: showers and possible thunderstorms (high 67F / low 51F, wind 22 mph). Lightning and wet-cold exposure are possible; verify live before exposed terrain.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'When the weather is bad, stop and reassess. If you are feeling scared, use the comfort verses. Psalms 56:3 says, "I trust in the Lord." Check the current forecast and choose a safer stop. If you are feeling scared or alone, make a one-hour plan.',
+			'When should I nero instead of pushing through a bad weather day?',
+			[
+				{
+					toolId: 'weather_lookup',
+					args: { fromMile: 468.4 },
+					summary: 'Cached weather near mile 468.4: partly cloudy with changing mountain conditions (high 67F / low 51F, wind 9 mph). Mountain weather changes quickly; refresh before safety-critical choices.',
+					confidence: 'medium',
+					receipts: []
+				}
+			]
+		),
+		'When the weather is bad, stop and reassess. Check the current forecast and choose a safer stop.\n\nWeather note: Cached weather near mile 468.4: partly cloudy with changing mountain conditions (high 67F / low 51F, wind 9 mph). Mountain weather changes quickly; refresh before safety-critical choices.\n\nNero note: choose a short day, town stop, or early stop when the forecast, footing, exposure, daylight, or body condition makes pushing the full plan less safe.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Think about your budget in terms of daily burn versus town spikes. Keep it flexible around your pace.',
+			'How should I think about trail budget without overplanning every town?'
+		),
+		'Think about your budget in terms of daily burn versus town spikes. Keep it flexible around your pace.\n\nBudget note: separate daily burn from town spikes like hostels, shuttles, laundry, and meals; include gear replacement and an emergency cushion, and keep it flexible around actual pace and services rather than treating it as a guarantee.'
 	);
 });
