@@ -6,6 +6,8 @@ import {
 	parseReviewPacket
 } from './apply-scout-local-ai-review-packet.mjs';
 import {
+	requiredAppLabel,
+	validateScoutLocalAiDeviceRunContext,
 	verifyScoutLocalAiDeviceProof
 } from './lib/scout-local-ai-device-proof.mjs';
 import {
@@ -168,15 +170,29 @@ function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, 
 	});
 	const fiveStar = summary.ratingCounts['5'] ?? 0;
 	const fullDeviceRun = run.evidenceLane === 'device-on-device-gemma' && run.caseCount === run.totalSuiteCases;
+	const finalProofContextErrors = fullDeviceRun
+		? validateScoutLocalAiDeviceRunContext({ suite, run })
+		: [];
+	const finalProofContext = {
+		ok: fullDeviceRun && finalProofContextErrors.length === 0,
+		requiredApp: requiredAppLabel(suite),
+		appVersion: String(run.runContext?.app?.version ?? '').trim() || '<missing>',
+		appBuild: String(run.runContext?.app?.build ?? '').trim() || '<missing>',
+		installSource: String(run.runContext?.installSource?.type ?? '').trim() || '<missing>',
+		nativePlatform: String(run.runContext?.native?.platform ?? '').trim() || '<missing>',
+		surface: String(run.runContext?.surface ?? '').trim() || '<missing>',
+		errors: finalProofContextErrors
+	};
 	const readyForBacklog = invalidEntries.length === 0 && summary.unrated === 0;
 	const strictDeviceProofErrors = readyForBacklog && summary.belowFive === 0 && fiveStar === summary.total && fullDeviceRun
 		? verifyScoutLocalAiDeviceProof({ suite, run, review }).errors
-		: [];
+		: finalProofContextErrors;
 	const readyForStrictDeviceProof = strictDeviceProofErrors.length === 0 &&
 		readyForBacklog &&
 		summary.belowFive === 0 &&
 		fiveStar === summary.total &&
-		fullDeviceRun;
+		fullDeviceRun &&
+		finalProofContext.ok;
 
 	return {
 		schemaVersion: 1,
@@ -204,6 +220,7 @@ function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, 
 			invalidCount: invalidEntries.length
 		},
 		fullDeviceRun,
+		finalProofContext,
 		readyForBacklog,
 		readyForStrictDeviceProof,
 		strictDeviceProofErrors,
@@ -221,6 +238,7 @@ function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, 
 			readyForBacklog,
 			readyForStrictDeviceProof,
 			fullDeviceRun,
+			finalProofContext,
 			strictDeviceProofErrors,
 			summary,
 			runPath: relative(REPO_ROOT, paths.runPath),
@@ -507,7 +525,10 @@ function nextAction(input) {
 	if (input.readyForBacklog && input.summary.belowFive === 0 && input.fullDeviceRun && input.strictDeviceProofErrors.length) {
 		return [
 			`Review is complete at 100% 5/5, but strict device proof still has ${input.strictDeviceProofErrors.length} issue(s).`,
-			`Fix the proof input first; starting issue: ${input.strictDeviceProofErrors[0]}`
+			input.finalProofContext?.ok === false
+				? 'Use this review for simulator/local iteration only; final Dad proof still needs a TestFlight/iPhone Run 100 export.'
+				: 'Fix the proof input first.',
+			`Starting issue: ${input.strictDeviceProofErrors[0]}`
 		].join(' ');
 	}
 	if (input.readyForBacklog && input.summary.belowFive === 0 && !input.fullDeviceRun) {
@@ -544,6 +565,10 @@ function formatReviewProgress(progress) {
 		`- Unrated: ${progress.summary.unrated}`,
 		`- Invalid review issues: ${progress.summary.invalidCount}`,
 		`- Full device run: ${progress.fullDeviceRun ? 'yes' : 'no'}`,
+		`- Final TestFlight/iPhone context: ${progress.finalProofContext.ok ? 'yes' : 'no'}`,
+		`- Final proof app requirement: \`${progress.finalProofContext.requiredApp}\``,
+		`- App/install context: \`${progress.finalProofContext.appVersion} (${progress.finalProofContext.appBuild})\`, install \`${progress.finalProofContext.installSource}\`, platform \`${progress.finalProofContext.nativePlatform}\``,
+		`- Final proof context issues: ${progress.finalProofContext.errors.length}`,
 		`- Ready for backlog: ${progress.readyForBacklog ? 'yes' : 'no'}`,
 		`- Ready for strict device proof: ${progress.readyForStrictDeviceProof ? 'yes' : 'no'}`,
 		`- Strict proof preview issues: ${progress.strictDeviceProofErrors.length}`,

@@ -5825,6 +5825,12 @@ test('review status command only marks strict proof ready for a full device 5-st
 		})
 	});
 	const staleBuildReview = reviewForRun(staleBuildRun, { rating: 5 });
+	const simulatorRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-review-status-proof-simulator',
+		completeTools: true,
+		runContext: simulatorDeviceRunContext()
+	});
+	const simulatorReview = reviewForRun(simulatorRun, { rating: 5 });
 
 	const partialRunPath = join(outputDir, 'device-review-status-proof-partial.json');
 	const partialReviewPath = join(outputDir, 'device-review-status-proof-partial.review.json');
@@ -5832,12 +5838,16 @@ test('review status command only marks strict proof ready for a full device 5-st
 	const fullReviewPath = join(outputDir, 'device-review-status-proof-full.review.json');
 	const staleBuildRunPath = join(outputDir, 'device-review-status-proof-stale-build.json');
 	const staleBuildReviewPath = join(outputDir, 'device-review-status-proof-stale-build.review.json');
+	const simulatorRunPath = join(outputDir, 'device-review-status-proof-simulator.json');
+	const simulatorReviewPath = join(outputDir, 'device-review-status-proof-simulator.review.json');
 	await writeFile(partialRunPath, `${JSON.stringify(partialRun, null, 2)}\n`);
 	await writeFile(partialReviewPath, `${JSON.stringify(partialReview, null, 2)}\n`);
 	await writeFile(fullRunPath, `${JSON.stringify(fullRun, null, 2)}\n`);
 	await writeFile(fullReviewPath, `${JSON.stringify(fullReview, null, 2)}\n`);
 	await writeFile(staleBuildRunPath, `${JSON.stringify(staleBuildRun, null, 2)}\n`);
 	await writeFile(staleBuildReviewPath, `${JSON.stringify(staleBuildReview, null, 2)}\n`);
+	await writeFile(simulatorRunPath, `${JSON.stringify(simulatorRun, null, 2)}\n`);
+	await writeFile(simulatorReviewPath, `${JSON.stringify(simulatorReview, null, 2)}\n`);
 
 	const partialResult = await execFileAsync(
 		process.execPath,
@@ -5892,9 +5902,46 @@ test('review status command only marks strict proof ready for a full device 5-st
 	const staleBuildProgress = JSON.parse(staleBuildResult.stdout);
 	assert.equal(staleBuildProgress.readyForBacklog, true);
 	assert.equal(staleBuildProgress.fullDeviceRun, true);
+	assert.equal(staleBuildProgress.finalProofContext.ok, false);
 	assert.equal(staleBuildProgress.readyForStrictDeviceProof, false);
 	assert.match(staleBuildProgress.strictDeviceProofErrors.join('\n'), /app\.build must be >= 13/u);
 	assert.match(staleBuildProgress.nextAction, /strict device proof still has/u);
+
+	const simulatorResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			simulatorRunPath,
+			'--review',
+			simulatorReviewPath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 6 }
+	);
+	const simulatorProgress = JSON.parse(simulatorResult.stdout);
+	assert.equal(simulatorProgress.readyForBacklog, true);
+	assert.equal(simulatorProgress.fullDeviceRun, true);
+	assert.equal(simulatorProgress.finalProofContext.ok, false);
+	assert.equal(simulatorProgress.finalProofContext.installSource, 'debug');
+	assert.equal(simulatorProgress.readyForStrictDeviceProof, false);
+	assert.match(simulatorProgress.strictDeviceProofErrors.join('\n'), /installSource\.type must be testflight/u);
+	assert.match(simulatorProgress.nextAction, /simulator\/local iteration only/u);
+
+	const simulatorTextResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			simulatorRunPath,
+			'--review',
+			simulatorReviewPath
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 6 }
+	);
+	assert.match(simulatorTextResult.stdout, /Final TestFlight\/iPhone context: no/u);
+	assert.match(simulatorTextResult.stdout, /Final proof context issues: 1/u);
+	assert.match(simulatorTextResult.stdout, /install `debug`/u);
 });
 
 test('partial review status keeps unrated cases explicit when allowed', async () => {
