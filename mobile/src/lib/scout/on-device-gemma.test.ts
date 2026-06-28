@@ -248,6 +248,9 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /For mail-home gear questions/);
 	assert.match(systemContext, /When preparation or training questions have pretrip/);
 	assert.match(systemContext, /include an immediate first-week checklist/);
+	assert.match(systemContext, /For first-run or newly installed app onboarding questions/);
+	assert.match(systemContext, /set the hiker profile\/current mile/);
+	assert.match(systemContext, /Do not call Scout ready for offline trail use until/);
 	assert.match(systemContext, /End every answer with a complete sentence/);
 	assert.match(systemContext, /verify Bible text is available offline/);
 	assert.match(systemContext, /Do not include Bible verses, scripture, prayer, or spiritual encouragement unless the hiker explicitly asks/);
@@ -291,6 +294,31 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 		polishOnDeviceAnswer('Download maps and refresh the field pack.', 'What phone settings and offline downloads should I set before going offline?'),
 		'Download maps and refresh the field pack.\n\nAlso verify Bible text is available offline.\n\nEmergency boundary: Scout and the phone do not replace inReach, PLB, 911, or the family emergency plan.'
 	);
+
+	const firstRunAnswer = polishOnDeviceAnswer(
+		'First, you need to get your phone and battery bank charged. Then, refresh your field pack and confirm your current mile. Next, download the local AI model on Wi-Fi and power. Make sure you download offline maps and any other necessary documents.\n\nThis will get Scout set up to help you with navigation, planning, and other trail-related questions.',
+		'I just installed the app. What do I do first so Scout is useful on trail?'
+	);
+	assert.match(firstRunAnswer, /First-run Scout setup/);
+	assert.match(firstRunAnswer, /hiker profile and current mile/);
+	assert.match(firstRunAnswer, /confirm the pack age\/status looks current/);
+	assert.match(firstRunAnswer, /download or update the local AI model on Wi-Fi and power/);
+	assert.match(firstRunAnswer, /save offline maps\/docs/);
+	assert.match(firstRunAnswer, /let cloud sync finish if signed in/);
+	assert.match(firstRunAnswer, /turn on airplane mode, relaunch, and ask Scout a water or nearby-trail question/);
+	assert.match(firstRunAnswer, /Do not rely on Scout offline until the field-pack refresh, model download, and airplane-mode test succeed/);
+	assert.doesNotMatch(firstRunAnswer, /Bible/);
+
+	const nearCompleteFirstRunAnswer = polishOnDeviceAnswer(
+		"First, set up your profile and current mile. Then, refresh your field pack and check the pack's age and status. Next, download or update the local AI model on Wi-Fi and power. Save your offline maps and documents, and let the cloud sync finish if you are signed in. After that, turn on airplane mode, relaunch the app, and ask Scout a question about water or the trail.",
+		'I just installed the app. What do I do first so Scout is useful on trail?'
+	);
+	assert.doesNotMatch(nearCompleteFirstRunAnswer, /First-run Scout setup/);
+	assert.match(
+		nearCompleteFirstRunAnswer,
+		/Do not rely on Scout offline until the field-pack refresh, model download, and airplane-mode test succeed/
+	);
+	assert.doesNotMatch(nearCompleteFirstRunAnswer, /Bible/);
 
 	assert.equal(
 		polishOnDeviceAnswer(

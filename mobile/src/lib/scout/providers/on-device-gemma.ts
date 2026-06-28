@@ -49,6 +49,10 @@ const SYSTEM_CONTEXT_TRIM_MARKER =
 	'\n\n[Middle context trimmed to fit the on-device model window. Use only retained tool findings and cite only supplied sources.]\n\n';
 const TOWN_OFFLINE_READINESS_NOTE =
 	'Before leaving service: charge the phone and battery bank, refresh the field pack, confirm your current mile, let cloud sync finish while you still have service, download or update the local AI model on Wi-Fi and power, save offline maps/docs, verify Bible text is available offline, refresh weather and closure checks, then turn on airplane mode, relaunch, and ask Scout a water question. Treat cached weather, closures, water, and services as stale until refreshed again; Scout does not replace inReach, PLB, 911, or the family emergency plan.';
+const FIRST_RUN_ONBOARDING_READINESS_NOTE =
+	'Do not rely on Scout offline until the field-pack refresh, model download, and airplane-mode test succeed; keep inReach, PLB, 911, or the family emergency plan separate.';
+const FIRST_RUN_ONBOARDING_NOTE =
+	`First-run Scout setup: set your hiker profile and current mile first, refresh the field pack, confirm the pack age/status looks current, download or update the local AI model on Wi-Fi and power, save offline maps/docs, let cloud sync finish if signed in, then turn on airplane mode, relaunch, and ask Scout a water or nearby-trail question. ${FIRST_RUN_ONBOARDING_READINESS_NOTE}`;
 const OFFLINE_EMERGENCY_BOUNDARY_NOTE =
 	'Emergency boundary: Scout and the phone do not replace inReach, PLB, 911, or the family emergency plan.';
 const RESUPPLY_MAIL_DROP_NOTE =
@@ -305,6 +309,12 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 		answer = appendSentence(
 			answer,
 			'Normal gaps can happen from dead zones, battery conservation, rain, or town chaos; live location may be delayed or unavailable, so do not treat it as guaranteed.'
+		);
+	}
+	if (isFirstRunOnboardingPrompt(lowerPrompt) && !mentionsFirstRunOnboardingReadiness(answer)) {
+		answer = appendSentence(
+			answer,
+			mentionsFirstRunOnboardingSetupSequence(answer) ? FIRST_RUN_ONBOARDING_READINESS_NOTE : FIRST_RUN_ONBOARDING_NOTE
 		);
 	}
 	if (isOfflineSetupPrompt(lowerPrompt) && !mentionsOfflineBible(answer)) {
@@ -764,6 +774,11 @@ function trimToCompleteSentence(answer: string): string {
 
 function isOfflineSetupPrompt(prompt: string): boolean {
 	return /offline setup|offline downloads|going offline|phone settings|day-one readiness|day one readiness/u.test(prompt);
+}
+
+function isFirstRunOnboardingPrompt(prompt: string): boolean {
+	return /\b(?:just installed|new install|first run|first use|first[-\s]?time|newly installed|set up scout|setup scout|scout useful|useful on trail)\b/u.test(prompt) &&
+		/\b(?:app|scout|trail|start|first|useful)\b/u.test(prompt);
 }
 
 function isPersonalDocumentPrompt(prompt: string): boolean {
@@ -1510,6 +1525,28 @@ function mentionsTownOfflineReadiness(answer: string): boolean {
 		/(?:stale|not current|until refreshed|refresh again|remains current indefinitely)/iu.test(answer);
 }
 
+function mentionsFirstRunOnboardingSetupSequence(answer: string): boolean {
+	const mentionsProfileMile = /\b(?:profile|hiker profile|setup|set up)\b/iu.test(answer) &&
+		/\b(?:current mile|mile)\b/iu.test(answer);
+	const mentionsPack = /\bfield[-\s]?pack\b/iu.test(answer) &&
+		/\b(?:refresh|current|age|status|succeed|success)\b/iu.test(answer);
+	const mentionsModel = /\b(?:local ai|model|gemma)\b/iu.test(answer) &&
+		/\b(?:download|update|wi[-\s]?fi|power|succeed|success)\b/iu.test(answer);
+	const mentionsOfflineSaved =
+		/\b(?:offline maps?(?:\s*(?:\/|and|or)\s*(?:docs?|documents?))?|offline docs?|offline documents?|offline references?|maps\/docs|maps and documents|maps or documents)\b/iu.test(
+			answer
+		);
+	const mentionsOfflineTest = /\b(?:airplane mode|airplane-mode)\b/iu.test(answer) &&
+		/\b(?:relaunch|reopen|ask scout|water question|nearby[-\s]?trail question|test)\b/iu.test(answer);
+	return mentionsProfileMile && mentionsPack && mentionsModel && mentionsOfflineSaved && mentionsOfflineTest;
+}
+
+function mentionsFirstRunOnboardingReadiness(answer: string): boolean {
+	const avoidsPrematureReady = /\b(?:do not rely|don't rely|not ready|until|before relying)\b/iu.test(answer) &&
+		/\b(?:succeed|success|successful|field[-\s]?pack refresh|model download|airplane[-\s]?mode test)\b/iu.test(answer);
+	return mentionsFirstRunOnboardingSetupSequence(answer) && avoidsPrematureReady;
+}
+
 function mentionsFrozenFilterSafety(answer: string): boolean {
 	const mentionsCompromised = /\b(?:compromis\w*|not definitely safe|may not be safe|could be unsafe|replace|retire)\b/iu.test(answer);
 	const mentionsBackupTreatment = /\b(?:backup (?:water )?(?:tablet|tablets|treatment)|water tablets|chemical treatment|chlorine dioxide|aquamira|boil)\b/iu.test(answer);
@@ -1840,6 +1877,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For after-dark shelter arrivals, do not tell the hiker to choose a backup before dark. Say to slow down, use the headlamp, avoid risky tired night navigation, take the nearest safe legal option rather than adding extra night miles, and keep a fallback plan if the shelter is full.`,
 		`When tool findings are labeled as guidance, treat them as topic-specific documents Scout intentionally read for this answer. Use them to shape caveats and next-step advice.`,
 		`When preparation or training questions have pretrip, terrain, loadout, safety, or offline setup findings, give a concrete short plan. For "what should I focus on first" prompts, include an immediate first-week checklist, not only general training advice. Include shakedown hikes, foot care/blister practice, conservative early mileage, gear/loadout checks, water treatment habits, and an offline app/model rehearsal when those appear in the findings.`,
+		`For first-run or newly installed app onboarding questions, give simple ordered setup steps: set the hiker profile/current mile, refresh the field pack, confirm pack age/status looks current, download or update the local AI model on Wi-Fi and power, save offline maps/docs, let cloud sync finish if signed in, then turn on airplane mode, relaunch, and ask Scout a water or nearby-trail question. Do not call Scout ready for offline trail use until the field-pack refresh, model download, and airplane-mode test succeed.`,
 		`For offline setup, offline downloads, phone settings, or day-one readiness questions, distinguish phone/app readiness from personal safety readiness. Always include the exact check "verify Bible text is available offline." Also mention field-pack refresh, current mile, local AI model, offline maps/docs, battery, airplane-mode rehearsal, and that Scout does not replace inReach, PLB, 911, or the family emergency plan. For personal documents, include this safety boundary in plain words: do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat.`,
 		`Do not include Bible verses, scripture, prayer, or spiritual encouragement unless the hiker explicitly asks for Bible, scripture, prayer, faith, fear comfort, or spiritual support. Safety, weather, town, water, gear, and navigation answers must stay focused on the field decision first.`,
 		`For Bible or scripture questions, quote only verses returned by bible_search and keep the reference with each quote. For fear, scared, alone, or nighttime comfort prompts, use direct comfort verses when present, such as Psalms 56:3, Isaiah 41:10, 2 Timothy 1:7, Psalms 23:4, Psalms 4:8, or John 14:27. Do not use disturbing, violent, judgment, or famine passages as comfort unless the hiker explicitly asked about that passage. If the hiker sounds scared or alone, pair scripture with immediate safety steps: check weather and hazards, get warm and dry, eat or drink if needed, use the headlamp, make a one-hour plan, and use loaded shelter context as a candidate rather than a guarantee. Escalate through 911, inReach/PLB, ranger/authorities, or the emergency plan if there is real danger, injury, exposure, or repeated panic; do not spiritualize away real danger or symptoms.`,

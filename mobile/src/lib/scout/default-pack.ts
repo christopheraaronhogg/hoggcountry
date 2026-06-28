@@ -36,7 +36,7 @@ export const DEFAULT_CONTEXT_PACK: ContextPack = {
 		{
 			id: 'pretrip-offline-readiness',
 			title: 'Pretrip offline readiness needs a real rehearsal',
-			body: 'Before leaving service, charge the phone and battery bank, refresh the field pack, confirm current mile, download the local AI model on Wi-Fi and power, download offline maps and references, verify the Bible text is available offline, then turn on airplane mode, relaunch, and ask Scout a water question. Scout and the phone do not replace inReach, PLB, 911, or the family emergency plan.',
+			body: 'Before leaving service, charge the phone and battery bank, refresh the field pack, confirm current mile, download the local AI model on Wi-Fi and power, download offline maps and references, verify the Bible text is available offline, then turn on airplane mode, relaunch, and ask Scout a water question. On first install, set the hiker profile and current mile first, refresh the field pack, confirm the pack age/status looks current, download or update the local AI model on Wi-Fi and power, save offline maps/docs, let cloud sync finish if signed in, then run the airplane-mode test. Scout is not ready for offline trail use until the field-pack refresh, model download, and airplane-mode test succeed. Scout and the phone do not replace inReach, PLB, 911, or the family emergency plan.',
 			tags: ['pretrip', 'offline', 'local-ai', 'field-pack', 'safety', 'bible'],
 			citation: 'Hogg Country Field Guide, Section: Offline Readiness'
 		},
