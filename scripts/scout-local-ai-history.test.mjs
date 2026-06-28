@@ -5,7 +5,8 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import {
 	buildScoutLocalAiHistory,
-	renderScoutLocalAiHistoryHtml
+	renderScoutLocalAiHistoryHtml,
+	summarizeCommitInterventions
 } from './build-scout-local-ai-history.mjs';
 
 test('Scout local AI history tracks answer evolution and score deltas', async () => {
@@ -67,7 +68,20 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 		runDirs: [runDir],
 		reviewDir,
 		scanDir,
-		includeGit: false
+		gitCommits: [
+			{
+				sha: '1111111111111111111111111111111111111111',
+				committedAt: '2026-06-28T08:00:00.000Z',
+				subject: 'Clarify Scout GPS recovery answer contract',
+				files: ['mobile/src/lib/scout/scout-runtime.ts']
+			},
+			{
+				sha: '2222222222222222222222222222222222222222',
+				committedAt: '2026-06-28T14:00:00.000Z',
+				subject: 'Fix Scout GPS recovery source routing',
+				files: ['mobile/src/lib/scout/built-in-tools.ts', 'packages/scout-skills/src/index.ts']
+			}
+		]
 	});
 
 	assert.equal(history.summary.runCount, 2);
@@ -76,6 +90,10 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 	assert.equal(history.summary.improvedToFive, 1);
 	assert.equal(history.runs[0].runId, 'device-local-ai-20260628T081954Z');
 	assert.equal(history.runs[1].reviewSummary.ratingCounts['5'], 1);
+	assert.equal(history.runs[1].interventions.commitCount, 1);
+	assert.deepEqual(history.runs[1].interventions.categories, ['document-grounding', 'tool-routing/source-retrieval']);
+	assert.equal(history.summary.interventionCounts['prompt/answer-contract'], 1);
+	assert.equal(history.summary.interventionCounts['tool-routing/source-retrieval'], 1);
 	const gpsCase = history.cases[0];
 	assert.equal(gpsCase.caseId, 'DLA-067');
 	assert.equal(gpsCase.firstRating, 3);
@@ -86,13 +104,40 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 	assert.equal(gpsCase.history[1].scoreDeltaFromPreviousRated, 2);
 	assert.equal(gpsCase.history[1].improvementSincePrevious, true);
 	assert.equal(gpsCase.history[1].sourceEvidenceComplete, true);
+	assert.equal(gpsCase.history[1].interventions.commitCount, 1);
 
 	const html = renderScoutLocalAiHistoryHtml(history);
 	assert.match(html, /type="range"/u);
 	assert.match(html, /Scout Local AI History/u);
 	assert.match(html, /DLA-067/u);
 	assert.match(html, /GPS jumps/u);
+	assert.match(html, /Changes since previous run/u);
+	assert.match(html, /Fix Scout GPS recovery source routing/u);
 	assert.doesNotMatch(html, /<\/script><script/u);
+});
+
+test('Scout local AI history classifies document-grounding and release interventions', () => {
+	const summary = summarizeCommitInterventions([
+		{
+			sha: '3333333333333333333333333333333333333333',
+			committedAt: '2026-06-28T18:00:00.000Z',
+			subject: 'Add Scout document vault eval routing',
+			files: ['data/scout-local-ai/dad-local-ai-100.json', 'mobile/static/scout/dad-local-ai-100.json']
+		},
+		{
+			sha: '4444444444444444444444444444444444444444',
+			committedAt: '2026-06-28T19:00:00.000Z',
+			subject: 'Document Scout build 28 upload handoff',
+			files: ['docs/launch/testflight-dad-handoff.md']
+		}
+	]);
+
+	assert.equal(summary.commitCount, 2);
+	assert.ok(summary.categories.includes('suite-question-set'));
+	assert.ok(summary.categories.includes('document-grounding'));
+	assert.ok(summary.categories.includes('testflight/release-proof'));
+	assert.equal(summary.categoryCounts['suite-question-set'], 1);
+	assert.equal(summary.categoryCounts['testflight/release-proof'], 1);
 });
 
 async function writeRunAndReview({

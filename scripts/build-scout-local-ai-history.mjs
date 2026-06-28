@@ -48,12 +48,13 @@ export async function buildScoutLocalAiHistory({
 	runDirs = DEFAULT_RUN_DIRS.map((path) => resolve(repoRoot, path)),
 	reviewDir = resolve(repoRoot, DEFAULT_REVIEW_DIR),
 	scanDir = resolve(repoRoot, DEFAULT_SCAN_DIR),
-	includeGit = true
+	includeGit = true,
+	gitCommits = null
 } = {}) {
 	const suite = await readJsonFile(suitePath);
 	const reviews = await loadJsonMap(reviewDir, (file, value) => reviewRunId(value) ?? runIdFromFile(file, '.review.json'));
 	const scans = await loadJsonMap(scanDir, (file, value) => value?.runId ?? runIdFromFile(file, '.scan.json'));
-	const commits = includeGit ? await loadGitCommits(repoRoot) : [];
+	const commits = Array.isArray(gitCommits) ? normalizeGitCommits(gitCommits) : (includeGit ? await loadGitCommits(repoRoot) : []);
 	const runFiles = [];
 	for (const runDir of runDirs) {
 		runFiles.push(...await listJsonFiles(runDir));
@@ -95,10 +96,12 @@ export async function buildScoutLocalAiHistory({
 	}
 
 	runRecords.sort(compareBySortTime);
+	attachRunInterventions(runRecords, commits);
 	const runOrder = new Map(runRecords.map((run, index) => [run.runId, index]));
+	const runById = new Map(runRecords.map((run) => [run.runId, run]));
 	const cases = [...caseMap.values()]
 		.sort((a, b) => a.caseId.localeCompare(b.caseId))
-		.map((record) => finalizeCaseHistory(record, runOrder));
+		.map((record) => finalizeCaseHistory(record, runOrder, runById));
 
 	return {
 		schemaVersion: 1,
@@ -297,13 +300,14 @@ function renderMetrics(run) {
 		['Cases', historyData.summary.caseCount],
 		['Reviewed Entries', historyData.summary.reviewedEntryCount],
 		['Current Run Rated', run?.reviewSummary?.rated ?? 0],
-		['Current Run 5/5', run?.reviewSummary?.ratingCounts?.['5'] ?? 0]
+		['Current Run 5/5', run?.reviewSummary?.ratingCounts?.['5'] ?? 0],
+		['Run Changes', run?.interventions?.commitCount ?? 0]
 	];
 	document.getElementById('metrics').innerHTML = metrics.map(([label, value]) => '<div class="metric"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(String(value ?? 0)) + '</strong></div>').join('');
 }
 function renderTimeline(run) {
 	document.getElementById('timelineRun').textContent = run ? shortRun(run) : 'No run selected';
-	document.getElementById('timelineStats').textContent = run ? [run.evidenceLane, run.caseCount + '/' + run.totalSuiteCases + ' cases', run.reviewSummary ? run.reviewSummary.rated + ' rated' : 'unreviewed'].filter(Boolean).join(' | ') : '';
+	document.getElementById('timelineStats').textContent = run ? [run.evidenceLane, run.caseCount + '/' + run.totalSuiteCases + ' cases', run.reviewSummary ? run.reviewSummary.rated + ' rated' : 'unreviewed', formatRunInterventions(run)].filter(Boolean).join(' | ') : '';
 }
 function filteredCases(run) {
 	const needle = state.search;
@@ -311,7 +315,7 @@ function filteredCases(run) {
 		if (state.domain !== 'all' && item.domain !== state.domain) return false;
 		if (!needle) return true;
 		const entry = entryAtRun(item, run);
-		return [item.caseId, item.domain, item.prompt, entry?.answer, entry?.notes, entry?.improvementTask].some((value) => String(value ?? '').toLowerCase().includes(needle));
+		return [item.caseId, item.domain, item.prompt, entry?.answer, entry?.notes, entry?.improvementTask, ...(entry?.interventions?.categories ?? []), ...(entry?.interventions?.commits ?? []).map((commit) => commit.subject)].some((value) => String(value ?? '').toLowerCase().includes(needle));
 	});
 }
 function caseButton(item, run) {
@@ -338,6 +342,7 @@ function answerCard(entry, current) {
 		'<p class="answer-text">' + escapeHtml(entry.answer || entry.error || '') + '</p>' +
 		'<p class="notes">' + escapeHtml(entry.notes || entry.improvementTask || '') + '</p>' +
 		'<p class="tools">' + escapeHtml('Tools: ' + (entry.toolHit ?? []).join(', ') + ' | missing: ' + (entry.missingTools ?? []).join(', ') + ' | source evidence: ' + (entry.sourceEvidenceComplete ? 'complete' : 'gaps')) + '</p>' +
+		'<p class="tools">' + escapeHtml('Changes since previous run: ' + formatEntryInterventions(entry.interventions)) + '</p>' +
 		(entry.commit?.sha ? '<p class="tools">' + escapeHtml('Commit at run: ' + entry.commit.sha.slice(0, 8) + ' ' + entry.commit.subject) + '</p>' : '') +
 		'</article>';
 }
@@ -352,6 +357,17 @@ function entryAtRun(item, run) {
 function shortRun(run) { return [run.runId, formatDate(run.sortTime)].filter(Boolean).join(' | '); }
 function formatDate(value) { return value ? new Date(value).toLocaleString() : ''; }
 function signed(value) { return value > 0 ? '+' + value : String(value); }
+function formatRunInterventions(run) {
+	const interventions = run?.interventions;
+	if (!interventions?.commitCount) return 'no recorded code/data changes';
+	return interventions.categories?.length ? 'changes: ' + interventions.categories.join(', ') : interventions.commitCount + ' change commits';
+}
+function formatEntryInterventions(interventions) {
+	if (!interventions?.commitCount) return 'none recorded';
+	const subjects = (interventions.commits ?? []).slice(0, 3).map((commit) => commit.subject).filter(Boolean);
+	const suffix = subjects.length ? ' - ' + subjects.join('; ') : '';
+	return (interventions.summary || (interventions.commitCount + ' commit(s)')) + suffix;
+}
 function escapeHtml(value) {
 	return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 }
@@ -436,7 +452,7 @@ function buildCaseEntry({ result, reviewEntry, scanEntry, runRecord }) {
 	};
 }
 
-function finalizeCaseHistory(record, runOrder) {
+function finalizeCaseHistory(record, runOrder, runById) {
 	record.history.sort((a, b) => {
 		const orderDiff = (runOrder.get(a.runId) ?? 0) - (runOrder.get(b.runId) ?? 0);
 		return orderDiff || a.runId.localeCompare(b.runId);
@@ -446,6 +462,7 @@ function finalizeCaseHistory(record, runOrder) {
 	let answerChangeCount = 0;
 	for (const entry of record.history) {
 		entry.runOrder = runOrder.get(entry.runId) ?? 0;
+		entry.interventions = runById.get(entry.runId)?.interventions ?? summarizeCommitInterventions([]);
 		if (previousAnswer !== null) {
 			entry.answerChangedFromPrevious = normalizeAnswer(entry.answer) !== previousAnswer;
 			if (entry.answerChangedFromPrevious) answerChangeCount += 1;
@@ -490,7 +507,9 @@ function buildHistorySummary(runs, cases) {
 		improvedToFive,
 		latestRatings,
 		fullRunCount: runs.filter((run) => run.fullRun).length,
-		partialRunCount: runs.filter((run) => !run.fullRun).length
+		partialRunCount: runs.filter((run) => !run.fullRun).length,
+		interventionCounts: Object.fromEntries(countBy(runs.flatMap((run) => run.interventions?.categories ?? []), (item) => item)),
+		interventionCommitCount: runs.reduce((count, run) => count + (run.interventions?.commitCount ?? 0), 0)
 	};
 }
 
@@ -548,15 +567,112 @@ async function readJsonFile(path) {
 
 async function loadGitCommits(repoRoot) {
 	try {
-		const { stdout } = await execFileAsync('git', ['log', '--all', '--format=%H%x09%cI%x09%s', '--max-count=500'], { cwd: repoRoot });
-		return stdout.trim().split('\n').filter(Boolean).map((line) => {
-			const [sha, committedAt, ...subjectParts] = line.split('\t');
-			return { sha, committedAt, subject: subjectParts.join('\t') };
-		}).filter((commit) => commit.sha && commit.committedAt)
-			.sort((a, b) => new Date(a.committedAt) - new Date(b.committedAt));
+		const { stdout } = await execFileAsync('git', ['log', '--all', '--name-only', '--format=%x1e%H%x09%cI%x09%s', '--max-count=500'], { cwd: repoRoot });
+		return normalizeGitCommits(stdout.split('\x1e').filter(Boolean).map((section) => {
+			const lines = section.trim().split('\n');
+			const [sha, committedAt, ...subjectParts] = String(lines.shift() ?? '').split('\t');
+			const files = lines.map((line) => line.trim()).filter(Boolean);
+			return { sha, committedAt, subject: subjectParts.join('\t'), files };
+		}));
 	} catch {
 		return [];
 	}
+}
+
+function normalizeGitCommits(commits) {
+	return commits
+		.map((commit) => ({
+			sha: String(commit.sha ?? ''),
+			committedAt: commit.committedAt ?? null,
+			subject: String(commit.subject ?? ''),
+			files: [...new Set((commit.files ?? []).map((file) => String(file).trim()).filter(Boolean))]
+		}))
+		.filter((commit) => commit.sha && commit.committedAt)
+		.sort((a, b) => new Date(a.committedAt) - new Date(b.committedAt) || a.sha.localeCompare(b.sha));
+}
+
+function attachRunInterventions(runs, commits) {
+	const commitIndexes = new Map(commits.map((commit, index) => [commit.sha, index]));
+	let previousIndex = -1;
+	for (const run of runs) {
+		const currentIndex = run.commit?.sha ? commitIndexes.get(run.commit.sha) : -1;
+		const changedCommits = Number.isInteger(currentIndex) && currentIndex > previousIndex
+			? commits.slice(previousIndex + 1, currentIndex + 1)
+			: [];
+		run.interventions = summarizeCommitInterventions(changedCommits);
+		if (Number.isInteger(currentIndex) && currentIndex > previousIndex) previousIndex = currentIndex;
+	}
+}
+
+export function summarizeCommitInterventions(commits) {
+	const normalized = normalizeGitCommits(commits);
+	const categories = [...new Set(normalized.flatMap((commit) => classifyCommitIntervention(commit)))].sort();
+	const changedFiles = [...new Set(normalized.flatMap((commit) => commit.files ?? []))].sort();
+	const categoryCounts = Object.fromEntries(countBy(normalized.flatMap((commit) => classifyCommitIntervention(commit)), (item) => item));
+	return {
+		commitCount: normalized.length,
+		fileCount: changedFiles.length,
+		categories,
+		categoryCounts,
+		summary: categories.length ? categories.map((category) => `${category}: ${categoryCounts[category]}`).join(', ') : '',
+		changedFiles: changedFiles.slice(0, 80),
+		changedFileCount: changedFiles.length,
+		commits: normalized.map((commit) => ({
+			sha: commit.sha,
+			committedAt: commit.committedAt,
+			subject: commit.subject,
+			categories: classifyCommitIntervention(commit),
+			fileCount: commit.files.length,
+			files: commit.files.slice(0, 20)
+		}))
+	};
+}
+
+function classifyCommitIntervention(commit) {
+	const categories = new Set();
+	const subject = commit.subject.toLowerCase();
+	const files = commit.files ?? [];
+	for (const file of files) {
+		const path = file.toLowerCase();
+		if (path === 'data/scout-local-ai/dad-local-ai-100.json' || path === 'mobile/static/scout/dad-local-ai-100.json') {
+			categories.add('suite-question-set');
+		}
+		if (path.startsWith('data/at-open-reference/') || path.includes('/generated/awol-water-reference') || path.startsWith('packages/trail-data/')) {
+			categories.add('offline-data');
+		}
+		if (path.includes('tool-registry') || path.includes('built-in-tools') || path.startsWith('packages/scout-skills/') || path.startsWith('packages/scout-sources/') || path.includes('offline-source-docs')) {
+			categories.add('tool-routing/source-retrieval');
+		}
+		if (path.includes('scout-runtime') || path.includes('model-policy') || path.includes('on-device-gemma')) {
+			categories.add('prompt/answer-contract');
+		}
+		if (path.includes('capacitor-gemma') || path.includes('model-router') || path.includes('scout_gemma_bridge') || path.includes('/android/') || path.includes('/ios/')) {
+			categories.add('local-model/native-runtime');
+		}
+		if (path.includes('scoutevallab') || path.includes('local-ai-eval') || path.includes('local-ai-history') || (path.startsWith('scripts/') && path.includes('scout-local-ai')) || path.startsWith('data/scout-local-ai/readme')) {
+			categories.add('eval-review-process');
+		}
+		if (path.startsWith('docs/launch/') || path.includes('release-evidence') || path.includes('testflight')) {
+			categories.add('testflight/release-proof');
+		}
+		if (path.startsWith('docs/') || path.endsWith('readme.md')) {
+			categories.add('docs/runbook');
+		}
+	}
+	if (subject.includes('water') || subject.includes('town') || subject.includes('shelter') || subject.includes('weather') || subject.includes('terrain') || subject.includes('resupply')) {
+		categories.add('field-domain-polish');
+	}
+	if (subject.includes('safety') || subject.includes('injury') || subject.includes('bailout') || subject.includes('emergency')) {
+		categories.add('safety-contract');
+	}
+	if (subject.includes('document') || subject.includes('vault') || subject.includes('source')) {
+		categories.add('document-grounding');
+	}
+	if (subject.includes('testflight') || subject.includes('upload') || subject.includes('build ')) {
+		categories.add('testflight/release-proof');
+	}
+	if (!categories.size && files.length) categories.add('other-code-change');
+	return [...categories].sort();
 }
 
 function commitAtOrBefore(commits, sortTime) {
@@ -606,6 +722,15 @@ function compact(value, max) {
 	const text = normalizeAnswer(value);
 	if (text.length <= max) return text;
 	return `${text.slice(0, Math.max(0, max - 1)).trim()}…`;
+}
+
+function countBy(items, keyFor) {
+	const counts = new Map();
+	for (const item of items) {
+		const key = keyFor(item);
+		counts.set(key, (counts.get(key) ?? 0) + 1);
+	}
+	return [...counts.entries()].sort(([left], [right]) => String(left).localeCompare(String(right)));
 }
 
 function parseList(value, fallback) {
