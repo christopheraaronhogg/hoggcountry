@@ -71,6 +71,8 @@ const OWN_MILE_SETUP_NOTE =
 	`Own-mile setup: on first run, use the hike setup sheet, choose Start my hike, and enter the Current AT mile; later use Settings > Edit hike details or a confirmed mile update. Then check Today and Scout both show the new mile, refresh the field pack when online, and re-ask water, shelter, town, terrain, or bailout questions. ${OWN_MILE_RISK_NOTE}`;
 const WRONG_MILE_RECOVERY_NOTE =
 	'Wrong-mile recovery: correct the Current AT mile in first-run hike setup, Settings > Edit hike details, or a confirmed manual mile update. Confirm the corrected mile against a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap. Then check Today and Scout both show the corrected mile, refresh the field pack when online, and re-ask Scout for water, shelter, town, terrain, and bailout. A wrong mile shifts water, shelter, town, terrain, and bailout answers; do not make water, shelter, town, or safety decisions from a wrong mile.';
+const GPS_WRONG_SPOT_RECOVERY_NOTE =
+	'GPS wrong-spot recovery: stop in a safe place and give GPS time to settle with a clearer sky view. Compare Scout against blazes, trail signs, landmarks, map, compass, and your last known point. If Scout is still wrong, set Current AT mile only from a confirmed location in Settings > Edit hike details or with a confirmed manual mile update, then check Today and Scout show the corrected mile. Refresh the field pack/current mile when online and re-ask Scout for water, shelter, town, terrain, and bailout. A bad GPS fix or wrong spot shifts water, shelter, town, terrain, and bailout answers; do not make water, shelter, town, terrain, or safety decisions from the bad GPS location.';
 const GUIDEBOOK_MILE_MISMATCH_NOTE =
 	"Your mile can differ because Scout's trail miles come from a calibrated AT mile frame, while guidebook editions, reroutes or relocations, rounded or local trail signs, side-trail distances, GPS snap, or a manual Current AT mile entry can differ. Ask which guidebook, sign, edition, or source you are comparing, confirm your real position against a blaze, road or shelter sign, map, or GPS snap, then update Scout's Current AT mile and refresh the field pack online if Scout is wrong. Do not let Scout mileage override posted signs, closures, or current official guidance for safety decisions.";
 const NO_BASEMAP_NAVIGATION_NOTE =
@@ -383,6 +385,9 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 		answer = isVagueSourceOnlyAnswer(answer) || isWrongMilePartialAnswer(answer)
 			? WRONG_MILE_RECOVERY_NOTE
 			: appendSentence(answer, WRONG_MILE_RECOVERY_NOTE);
+	}
+	if (isGpsWrongSpotPrompt(lowerPrompt) && !mentionsGpsWrongSpotRecovery(answer)) {
+		answer = isVagueSourceOnlyAnswer(answer) ? GPS_WRONG_SPOT_RECOVERY_NOTE : appendSentence(answer, GPS_WRONG_SPOT_RECOVERY_NOTE);
 	}
 	if (isGuidebookMileMismatchPrompt(lowerPrompt) && !mentionsGuidebookMileMismatchContext(answer)) {
 		answer = isVagueSourceOnlyAnswer(answer) || isGuidebookMileMismatchPartialAnswer(answer)
@@ -959,6 +964,15 @@ function isOwnMileSetupPrompt(prompt: string): boolean {
 
 function isWrongMileRecoveryPrompt(prompt: string): boolean {
 	return /\b(?:wrong trail mile|wrong mile|enter(?:ed)? .*wrong .*mile|mile .*mistake|mistake .*mile)\b/u.test(prompt);
+}
+
+function isGpsWrongSpotPrompt(prompt: string): boolean {
+	const mentionsGpsProblem =
+		/\b(?:gps jumps?|gps jump(?:ing)?|gps drift|gps bounces?|gps is wrong|bad gps|missed gps|wrong gps|wrong spot|wrong location|wrong position|shows? (?:the )?wrong spot|shows? .*wrong (?:spot|location|position))\b/u.test(
+			prompt
+		);
+	const mentionsScoutOrLocation = /\b(?:scout|gps|spot|location|position|mile|fix)\b/u.test(prompt);
+	return mentionsGpsProblem && mentionsScoutOrLocation;
 }
 
 function isGuidebookMileMismatchPrompt(prompt: string): boolean {
@@ -2035,6 +2049,32 @@ function mentionsWrongMileRecovery(answer: string): boolean {
 	return mentionsShiftedAnswers && mentionsCorrection && mentionsConfirmation && mentionsRefreshAndReask && mentionsDecisionBoundary;
 }
 
+function mentionsGpsWrongSpotRecovery(answer: string): boolean {
+	const mentionsSettle = /\b(?:settle|clearer sky|sky view|wait)\b/iu.test(answer) && /\bgps\b/iu.test(answer);
+	const mentionsConfirmation =
+		/\b(?:blaze|blazes|trail sign|signs|landmarks?|map|compass|last known point|last known location)\b/iu.test(answer) &&
+		/\b(?:compare|confirm|verify|check)\b/iu.test(answer);
+	const mentionsManualCorrection =
+		/\b(?:Current AT mile|current mile|Settings > Edit hike details|manual mile update)\b/iu.test(answer) &&
+		/\b(?:confirmed location|confirmed mile|set|update|corrected mile)\b/iu.test(answer);
+	const mentionsRefreshAndReask =
+		/\bfield[-\s]?pack\b/iu.test(answer) &&
+		/\brefresh\b/iu.test(answer) &&
+		/\bre-?ask Scout\b/iu.test(answer);
+	const mentionsDownstreamRisk =
+		/\b(?:bad GPS|wrong spot|wrong location|wrong position|bad fix)\b/iu.test(answer) &&
+		/\bwater\b/iu.test(answer) &&
+		/\bshelter\b/iu.test(answer) &&
+		/\btown\b/iu.test(answer) &&
+		/\bterrain\b/iu.test(answer) &&
+		/\bbailout\b/iu.test(answer);
+	const mentionsDecisionBoundary =
+		/\bdo not\b/iu.test(answer) &&
+		/\b(?:water|shelter|town|terrain|safety)\b/iu.test(answer) &&
+		/\bdecisions?\b/iu.test(answer);
+	return mentionsSettle && mentionsConfirmation && mentionsManualCorrection && mentionsRefreshAndReask && mentionsDownstreamRisk && mentionsDecisionBoundary;
+}
+
 function isWrongMilePartialAnswer(answer: string): boolean {
 	return /\b(?:wrong mile|trail mile|map|gps|position|location|re-establish|verify)\b/iu.test(answer);
 }
@@ -2515,6 +2555,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For stale field-pack, field-pack status, or "can I trust Scout's field pack" questions, field pack means cached Scout trail data on the phone, not the physical backpack or loadout. Tell the hiker to check pack age/status, current mile or downloaded region, and source timestamps when shown. If the pack is old, expired, wrong-mile/wrong-region, or loaded before weather, closures, water, or services changed, treat it as stale. Refresh on Wi-Fi or in town before water, weather, closure, bailout, or town-service decisions, and use stale cached data only as caution, not current proof.`,
 		`For sign-in, login, account, cloud sync, backup, restore, or "can I wait to sign in" questions, say accounts are invite-only. Recommend signing in before trail on Wi-Fi if the hiker has an invite so backup/restore and cloud sync can finish. Keep offline Scout/local AI separate: once the field pack, on-device model, and saved maps/docs are downloaded, offline use does not require a live login. Do not imply sign-in or cloud sync is emergency safety; keep inReach, PLB, 911, and the family emergency plan separate.`,
 		`For own-mile, manual-mile, wrong-mile, profile, GPS correction, shuttle, or "someone else's mile" questions, explain the app flow: first-run hike setup or Settings > Edit hike details, enter Current AT mile, save, then check Today and Scout show the new mile. If the hiker entered the wrong mile, tell them to correct it, refresh the field pack when online, and re-ask Scout for water, shelter, town, terrain, and bailout. Warn that a wrong mile shifts water, shelter, town, terrain, and bailout answers, and not to make water, shelter, town, or safety decisions from a wrong mile. Tell the hiker to confirm against a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap before relying on Scout.`,
+		`For GPS jumping, bad GPS fixes, or Scout showing the wrong spot, tell the hiker to stop in a safe place, wait for GPS to settle with clearer sky view, compare Scout against blazes, signs, landmarks, map, compass, and last known point, then set Current AT mile only from a confirmed location. Tell them to refresh the field pack/current mile when online and re-ask water, shelter, town, terrain, and bailout questions because downstream tools can be wrong until the mile/location is corrected.`,
 		`For guidebook, trail-sign, Scout, GPS, or map mile-mismatch questions, explain that Scout uses a calibrated AT mile frame and that guidebook editions, reroutes or relocations, rounded/local signs, side-trail distances, GPS snap, or manual Current AT mile entry can differ. Ask which guidebook, sign, edition, map, or source the hiker is comparing. Tell the hiker to confirm real position against a blaze, road or shelter sign, map, or GPS snap, update Scout only when the app position is wrong, and do not let Scout mileage override posted signs, closures, or current official safety guidance.`,
 		`For no-basemap, missing-map-tiles, no-cell, or offline map navigation questions, do not pretend basemap tiles are available unless cached. Say Scout's cached trail line and field-pack mile context are only rough trail-corridor checks. Use an external offline map/GPS app or paper map and compass when available. For complex navigation, confusing junctions, off-trail uncertainty, bad weather, or safety decisions, stop and verify with blazes, signs, map, and GPS instead of continuing just because Scout shows a line.`,
 		`For lost or off-trail prompts, keep it immediate: stop moving, get to a safe stable spot, conserve battery, verify position against map/GPS, compass, blazes, signs, and last known point, backtrack only if the route back is obvious and safe, and do not bushwhack, shortcut, or route through unknown terrain. Escalate through 911, inReach/PLB, rangers/authorities, or the emergency plan for injury, exposure, confusion, worsening weather or darkness, or inability to regain the trail safely.`,

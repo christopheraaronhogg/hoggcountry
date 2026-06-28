@@ -281,6 +281,10 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /refresh the field pack when online, and re-ask Scout for water, shelter, town, terrain, and bailout/);
 	assert.match(systemContext, /a wrong mile shifts water, shelter, town, terrain, and bailout answers/);
 	assert.match(systemContext, /not to make water, shelter, town, or safety decisions from a wrong mile/);
+	assert.match(systemContext, /For GPS jumping, bad GPS fixes, or Scout showing the wrong spot/);
+	assert.match(systemContext, /wait for GPS to settle with clearer sky view/);
+	assert.match(systemContext, /set Current AT mile only from a confirmed location/);
+	assert.match(systemContext, /downstream tools can be wrong until the mile\/location is corrected/);
 	assert.match(systemContext, /For guidebook, trail-sign, Scout, GPS, or map mile-mismatch questions/);
 	assert.match(systemContext, /Scout uses a calibrated AT mile frame/);
 	assert.match(systemContext, /guidebook editions, reroutes or relocations/);
@@ -463,6 +467,22 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.match(wrongMileAnswer, /re-ask Scout for water, shelter, town, terrain, and bailout/);
 	assert.match(wrongMileAnswer, /A wrong mile shifts water, shelter, town, terrain, and bailout answers/);
 	assert.match(wrongMileAnswer, /do not make water, shelter, town, or safety decisions from a wrong mile/);
+
+	const gpsWrongSpotAnswer = polishOnDeviceAnswer(
+		"If your GPS is jumping around and showing the wrong spot, stop immediately and rely on your physical senses and the map you have. Check your compass bearing against the trail markers or landmarks you can see. If you are unsure, backtrack to the last known good spot and try to reorient yourself using the terrain features around you.\n\nSafety guidance says that safety decisions prefer current checks and safer stops when you can't trust your navigation. If you can't verify your location, choose the lower-mileage or safer-stop option and name what still needs confirmation. You should stop hiking until you can confirm your position with reliable means.\n\nYou need to check your battery and phone settings to make sure your offline maps and other necessary tools are functioning correctly.",
+		'What should I do if GPS jumps around and Scout shows the wrong spot?'
+	);
+	assert.match(gpsWrongSpotAnswer, /GPS wrong-spot recovery/);
+	assert.match(gpsWrongSpotAnswer, /give GPS time to settle with a clearer sky view/);
+	assert.match(gpsWrongSpotAnswer, /blazes, trail signs, landmarks, map, compass, and your last known point/);
+	assert.match(gpsWrongSpotAnswer, /set Current AT mile only from a confirmed location/);
+	assert.match(gpsWrongSpotAnswer, /Settings > Edit hike details/);
+	assert.match(gpsWrongSpotAnswer, /check Today and Scout show the corrected mile/);
+	assert.match(gpsWrongSpotAnswer, /Refresh the field pack\/current mile when online/);
+	assert.match(gpsWrongSpotAnswer, /re-ask Scout for water, shelter, town, terrain, and bailout/);
+	assert.match(gpsWrongSpotAnswer, /bad GPS fix or wrong spot shifts water, shelter, town, terrain, and bailout answers/);
+	assert.match(gpsWrongSpotAnswer, /do not make water, shelter, town, terrain, or safety decisions from the bad GPS location/);
+	assert.doesNotMatch(gpsWrongSpotAnswer, /Own-mile setup/);
 
 	const airplaneModeRehearsalAnswer = polishOnDeviceAnswer(
 		'First, charge your phone and battery bank. Then, refresh your field pack and current mile. Next, finish cloud sync while online. After that, update the local AI model on Wi-Fi and power. Then, save offline maps and documents. You should also test airplane mode with a water question.',
