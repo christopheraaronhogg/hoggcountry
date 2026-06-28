@@ -125,6 +125,8 @@ const BAD_WEATHER_NERO_NOTE =
 	'Nero weather note: choose a short day, town stop, or early legal stop when storm severity, temperature, footing, exposure, daylight, body condition, or town access makes the full plan less safe. Rest is a safety and recovery decision, not failure.';
 const LIVE_WEATHER_FACTS_NOTE =
 	'Live-weather verification note: verify storms and lightning, heat or cold exposure, wind, flooding or high water, closures or fire/smoke alerts, and whether the cache is stale before relying on the answer for exposed terrain or a safety-critical decision.';
+const CLOSURE_DETOUR_ROUTING_NOTE =
+	'Closure/detour note: Scout can summarize loaded official alerts, but it is advisory context, not turn-by-turn detour routing. Verify the current managing-agency detour and posted signage before committing, follow official route guidance, and do not invent alternate route details.';
 
 export class OnDeviceGemmaProvider implements ScoutProvider {
 	private bridge?: OnDeviceGemmaBridge;
@@ -308,6 +310,9 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 		if (weatherSummary && !mentionsWeatherLookupSummary(answer, weatherSummary)) {
 			answer = appendSentence(answer, `Weather note: ${weatherSummary}`);
 		}
+	}
+	if (isClosureDetourRoutingPrompt(lowerPrompt) && !mentionsClosureDetourRoutingBoundary(answer, toolInvocations)) {
+		answer = appendSentence(answer, buildClosureDetourRoutingNote(toolInvocations));
 	}
 	if ((isLightningRidgePrompt(lowerPrompt) || isWetHypothermiaPrompt(lowerPrompt)) && !isHeatWaterPrompt(lowerPrompt)) {
 		answer = removeMisappliedHeatIllnessDrift(answer);
@@ -914,6 +919,11 @@ function isMailHomeGearSafetyPrompt(prompt: string): boolean {
 		/\b(?:gear|rain|warm|weather|looks warm|warm spell|insulation|water treatment|battery|sleep)\b/u.test(prompt);
 }
 
+function isClosureDetourRoutingPrompt(prompt: string): boolean {
+	return /\b(?:closure|closed|detour|reroute|route around|route me around|alternate route|alternate path)\b/u.test(prompt) &&
+		/\b(?:route|routing|around|detour|closed|closure|trail|scout)\b/u.test(prompt);
+}
+
 function weatherLookupSummary(toolInvocations: ToolInvocationRecord[]): string | null {
 	const summary = toolInvocations.find((tool) => tool.toolId === 'weather_lookup')?.summary?.trim();
 	return summary || null;
@@ -922,6 +932,25 @@ function weatherLookupSummary(toolInvocations: ToolInvocationRecord[]): string |
 function toolSummary(toolInvocations: ToolInvocationRecord[], toolId: string): string | null {
 	const summary = toolInvocations.find((tool) => tool.toolId === toolId)?.summary?.trim();
 	return summary || null;
+}
+
+function mentionsClosureDetourRoutingBoundary(answer: string, toolInvocations: ToolInvocationRecord[]): boolean {
+	const hasLoadedAlert = Boolean(toolSummary(toolInvocations, 'trail_conditions'));
+	const mentionsLoadedAlert = !hasLoadedAlert ||
+		/\b(?:loaded|active official|official alert|official trail condition|trail update|alert says|closure.*loaded|detour.*loaded)\b/iu.test(answer);
+	const mentionsAdvisoryBoundary =
+		/\b(?:advisory context|not turn[-\s]?by[-\s]?turn|not a route planner|cannot provide turn[-\s]?by[-\s]?turn|can't provide turn[-\s]?by[-\s]?turn)\b/iu.test(answer);
+	const mentionsAgencyRoute =
+		/\b(?:managing[-\s]?agency|land[-\s]?manager|official detour|official route guidance|posted sign(?:age|s)?|posted detour)\b/iu.test(answer);
+	const refusesInventedRoute =
+		/\b(?:do not invent|don't invent|must not invent|cannot invent|can't invent|no invented|not invent)\b[^.?!\n]*(?:route|detour|alternate|details?)|(?:route|detour|alternate|details?)[^.?!\n]*(?:do not invent|don't invent|must not invent|cannot invent|can't invent|no invented|not invent)/iu.test(answer);
+	return mentionsLoadedAlert && mentionsAdvisoryBoundary && mentionsAgencyRoute && refusesInventedRoute;
+}
+
+function buildClosureDetourRoutingNote(toolInvocations: ToolInvocationRecord[]): string {
+	const alert = toolSummary(toolInvocations, 'trail_conditions');
+	if (!alert) return CLOSURE_DETOUR_ROUTING_NOTE;
+	return `Closure/detour note: loaded official alert says ${trimToolClause(alert)}. Scout can summarize that alert as advisory context, not turn-by-turn detour routing. Verify the current managing-agency detour and posted signage before committing, follow official route guidance, and do not invent alternate route details.`;
 }
 
 function buildNearestWaterVerificationNote(toolInvocations: ToolInvocationRecord[]): string {
@@ -1403,6 +1432,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For shelter and camping decisions, use the next_shelter and upcoming_terrain findings as planning candidates, not guarantees. Name daylight, water, current shelter status/crowding, legal rules, weather, fatigue, and a backup option before committing to a sleep plan.`,
 		`For full-shelter, stealth-camping, storm-campsite, low-impact campsite, climb-stop, or waterless-shelter questions, keep the legal/safety boundary explicit: no illegal camping, choose backups before dark when there is still daylight, use established or durable surfaces, keep roughly 200 feet from water and trail when rules allow, avoid exposed ridges/dead trees/drainages/flood-prone ground in storms, and top off/carry enough water when shelter water is uncertain.`,
 		`For bear-activity shelter questions, verify current local guidance, alerts, closures, and required food storage before committing. Name proper food storage and odor control such as a bear box, cable, canister, or approved hang as local rules require, keep food and scented items away from sleep, and choose an alternate legal stop if the report cannot be cleared.`,
+		`For closure or detour routing questions, summarize loaded official alerts when present, say Scout is giving advisory context rather than turn-by-turn detour routing, verify the current managing-agency detour and posted signage, follow official route guidance, and never invent alternate route details.`,
 		`For after-dark shelter arrivals, do not tell the hiker to choose a backup before dark. Say to slow down, use the headlamp, avoid risky tired night navigation, take the nearest safe legal option rather than adding extra night miles, and keep a fallback plan if the shelter is full.`,
 		`When tool findings are labeled as guidance, treat them as topic-specific documents Scout intentionally read for this answer. Use them to shape caveats and next-step advice.`,
 		`When preparation or training questions have pretrip, terrain, loadout, safety, or offline setup findings, give a concrete short plan. For "what should I focus on first" prompts, include an immediate first-week checklist, not only general training advice. Include shakedown hikes, foot care/blister practice, conservative early mileage, gear/loadout checks, water treatment habits, and an offline app/model rehearsal when those appear in the findings.`,

@@ -220,6 +220,8 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /For full-shelter, stealth-camping, storm-campsite/);
 	assert.match(systemContext, /For bear-activity shelter questions/);
 	assert.match(systemContext, /proper food storage and odor control/);
+	assert.match(systemContext, /For closure or detour routing questions/);
+	assert.match(systemContext, /advisory context rather than turn-by-turn detour routing/);
 	assert.match(systemContext, /For after-dark shelter arrivals/);
 	assert.match(systemContext, /do not tell the hiker to choose a backup before dark/);
 	assert.match(systemContext, /roughly 200 feet from water and trail/);
@@ -748,6 +750,23 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			'What weather facts must Scout verify live before I rely on an answer?'
 		),
 		'Verify lightning, heat, cold rain, wind, and flooding before relying on weather.\n\nLive-weather verification note: verify storms and lightning, heat or cold exposure, wind, flooding or high water, closures or fire/smoke alerts, and whether the cache is stale before relying on the answer for exposed terrain or a safety-critical decision.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			"I can't route you around a closure or detour without knowing exactly where you are and what the current official management agency says. You need to verify the current managing-agency route before committing.",
+			'Can Scout route me around a closure or detour?',
+			[
+				{
+					toolId: 'trail_conditions',
+					args: { fromMile: 300 },
+					summary: 'Active official trail conditions: HIGH CLOSURE - Eval closure near current section. A short official closure/detour example is loaded so Scout must say to verify the current managing-agency route before committing.',
+					confidence: 'high',
+					receipts: []
+				}
+			]
+		),
+		"I can't route you around a closure or detour without knowing exactly where you are and what the current official management agency says. You need to verify the current managing-agency route before committing.\n\nClosure/detour note: loaded official alert says Active official trail conditions: HIGH CLOSURE - Eval closure near current section. A short official closure/detour example is loaded so Scout must say to verify the current managing-agency route before committing. Scout can summarize that alert as advisory context, not turn-by-turn detour routing. Verify the current managing-agency detour and posted signage before committing, follow official route guidance, and do not invent alternate route details."
 	);
 
 	assert.equal(
