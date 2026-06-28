@@ -8,11 +8,13 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { createScoutLocalAiPhoneBuildAction } from './lib/scout-local-ai-phone-build-action.mjs';
+import { inferOwnerLayer, ownerLayerProblems } from './lib/scout-local-ai-review.mjs';
 import { summarizeRunSourceEvidence } from './lib/scout-local-ai-source-evidence.mjs';
 import { summarizeScoutLocalAiSuiteCoverage } from './lib/scout-local-ai-suite-coverage.mjs';
 import { scoutLocalAiSuiteHash } from './lib/scout-local-ai-suite.mjs';
 
 const SUITE_PATH = new URL('../data/scout-local-ai/dad-local-ai-100.json', import.meta.url);
+const HARNESS_CONTRACT_PATH = new URL('../data/scout-local-ai/harness-contract.json', import.meta.url);
 const README_PATH = new URL('../data/scout-local-ai/README.md', import.meta.url);
 const TESTFLIGHT_HANDOFF_PATH = new URL('../docs/launch/testflight-dad-handoff.md', import.meta.url);
 const RELEASE_EVIDENCE_PATH = new URL('../docs/launch/release-evidence.json', import.meta.url);
@@ -60,6 +62,7 @@ const VALID_FAILURES = new Set([
 	'bad-prompt',
 	'unsafe-wording',
 	'poor-ux',
+	'poor-document-writing-flow',
 	'local-model-limitation'
 ]);
 const EXPECTED_DOMAINS = [
@@ -243,6 +246,91 @@ test('Dad local AI eval suite covers requested hiker objective areas', async () 
 	assert.ok(byId['document-writing-user-docs'].count >= 2);
 	assert.ok(byId['domain-transfer-readiness'].count >= 2);
 	assert.ok(byId['confusing-edge-cases'].count >= 10);
+});
+
+test('Scout local AI harness contract preserves model-agnostic document-agent boundaries', async () => {
+	const contract = JSON.parse(await readFile(HARNESS_CONTRACT_PATH, 'utf8'));
+	assert.equal(contract.schemaVersion, 1);
+	assert.equal(contract.contractId, 'scout-local-ai-sovereign-harness');
+	assert.match(contract.version, /^\d{4}-\d{2}-\d{2}\.\d+$/u);
+	assert.match(contract.northStar, /model can be swapped/u);
+	assert.match(contract.proofDomain.rule, /not a prompt-memorization target/u);
+
+	const ownedAssetIds = new Set(contract.ownedAssets.map((asset) => asset.id));
+	for (const id of [
+		'versioned_eval_suite',
+		'mobile_eval_suite_copy',
+		'offline_source_docs',
+		'structured_trail_data',
+		'review_and_iteration_tools'
+	]) {
+		assert.ok(ownedAssetIds.has(id), `missing owned asset ${id}`);
+	}
+
+	const sourceClasses = new Set(contract.sourceClasses);
+	for (const sourceClass of [
+		'bundled_app_documents',
+		'structured_trail_data',
+		'cached_field_pack_data',
+		'user_document_vault_files',
+		'user_owned_drafts_and_updates',
+		'future_private_document_corpora'
+	]) {
+		assert.ok(sourceClasses.has(sourceClass), `missing source class ${sourceClass}`);
+	}
+
+	const intelligenceLanes = new Map(contract.swappableIntelligenceLayers.map((lane) => [lane.id, lane]));
+	assert.equal(intelligenceLanes.get('scaffold-not-model')?.mayCountAsFinalProof, false);
+	assert.equal(intelligenceLanes.get('external-local-model-command')?.mayCountAsFinalProof, false);
+	assert.equal(intelligenceLanes.get('device-on-device-gemma')?.mayCountAsFinalProof, false);
+	assert.equal(intelligenceLanes.get('real-testflight-iphone')?.mayCountAsFinalProof, true);
+
+	const toolContracts = new Map(contract.toolContracts.map((tool) => [tool.toolId, tool]));
+	for (const toolId of ['source_search', 'open_source_doc', 'current_mile', 'next_water', 'next_town', 'weather_lookup']) {
+		assert.ok(VALID_TOOL_IDS.has(toolId), `${toolId} must be a known eval-suite tool`);
+		assert.ok(toolContracts.has(toolId), `missing tool contract ${toolId}`);
+		assertNonEmptyStringArray(toolContracts.get(toolId).mustRecord, `${toolId} mustRecord`);
+		assert.match(toolContracts.get(toolId).rule, /\S/u);
+	}
+	assert.ok(toolContracts.get('source_search').mustRecord.includes('candidate_source_document_ids'));
+	assert.ok(toolContracts.get('open_source_doc').mustRecord.includes('source_document_id'));
+
+	assert.ok(contract.answerContract.requiredFields.includes('direct_answer'));
+	assert.ok(contract.answerContract.requiredFields.includes('sources_or_tools_used'));
+	assert.ok(contract.answerContract.requiredFields.includes('uncertainty_or_missing_data'));
+	assert.match(contract.answerContract.rules.join(' '), /deterministic tools before prose/u);
+
+	assert.equal(contract.documentWritingContract.requiredConfirmation, true);
+	assert.ok(contract.documentWritingContract.allowedActions.includes('draft_checklist'));
+	assert.ok(contract.documentWritingContract.allowedActions.includes('draft_update'));
+	assert.match(contract.documentWritingContract.saveRules.join(' '), /Never save or overwrite without explicit user confirmation/u);
+	assert.match(contract.documentWritingContract.saveRules.join(' '), /recoverable or versioned changes/u);
+
+	const failureTaxonomy = new Map(contract.failureTaxonomy.map((failure) => [failure.id, failure]));
+	assert.equal(failureTaxonomy.get('poor-document-writing-flow')?.defaultOwnerLayer, 'ui');
+	assert.equal(failureTaxonomy.get('local-model-limitation')?.defaultOwnerLayer, 'local-model');
+
+	const reviewGates = new Set(contract.reviewGates.map((gate) => gate.id));
+	for (const gate of [
+		'tool_source_evidence',
+		'human_1_to_5_rating',
+		'below_five_task',
+		'strict_testflight_iphone',
+		'stability_repeat'
+	]) {
+		assert.ok(reviewGates.has(gate), `missing review gate ${gate}`);
+	}
+	assert.match(contract.antiOverfitRules.join(' '), /Do not weaken expected traits/u);
+	assert.match(contract.antiOverfitRules.join(' '), /neighboring hiker\/document-agent questions/u);
+});
+
+test('review taxonomy keeps document-writing flow misses distinct from generic UX', () => {
+	assert.deepEqual(ownerLayerProblems(['poor-document-writing-flow'], 'ui'), []);
+	assert.equal(inferOwnerLayer(['poor-document-writing-flow']), 'ui');
+	assert.match(
+		ownerLayerProblems(['poor-document-writing-flow'], 'prompt').join('\n'),
+		/ownerLayer prompt does not match failureCategories poor-document-writing-flow/u
+	);
 });
 
 test('package scripts expose the Scout local AI review handoff commands', async () => {

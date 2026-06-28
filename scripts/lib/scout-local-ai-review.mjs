@@ -11,6 +11,7 @@ export const VALID_FAILURE_CATEGORIES = [
 	'bad-prompt',
 	'unsafe-wording',
 	'poor-ux',
+	'poor-document-writing-flow',
 	'local-model-limitation'
 ];
 
@@ -31,6 +32,7 @@ const FAILURE_CATEGORY_OWNER_LAYERS = {
 	'bad-prompt': ['prompt'],
 	'unsafe-wording': ['safety-prompt'],
 	'poor-ux': ['ui'],
+	'poor-document-writing-flow': ['ui'],
 	'local-model-limitation': ['local-model']
 };
 const IMPROVEMENT_ACTION_RE =
@@ -577,7 +579,7 @@ export function inferOwnerLayer(categories, result) {
 	if (categories.includes('weak-tool') || (result?.toolExpectations?.missing ?? []).length) return 'tool-routing';
 	if (categories.includes('bad-prompt')) return 'prompt';
 	if (categories.includes('unsafe-wording')) return 'safety-prompt';
-	if (categories.includes('poor-ux')) return 'ui';
+	if (categories.includes('poor-ux') || categories.includes('poor-document-writing-flow')) return 'ui';
 	if (categories.includes('local-model-limitation')) return 'local-model';
 	return 'unknown';
 }

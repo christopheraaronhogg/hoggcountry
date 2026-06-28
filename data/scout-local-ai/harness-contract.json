@@ -1,0 +1,229 @@
+{
+  "schemaVersion": 1,
+  "contractId": "scout-local-ai-sovereign-harness",
+  "version": "2026-06-28.1",
+  "northStar": "Keep Scout's useful behavior in owned, testable harness assets so the model can be swapped without changing what field-ready answers require.",
+  "proofDomain": {
+    "current": "Appalachian Trail hiker and document-agent questions for Dad's Hoggcountry app",
+    "transferTarget": "Private document corpora such as company SOPs, project notes, customer documents, and user-owned vault notes",
+    "rule": "The AT suite is the narrow proof domain, not a prompt-memorization target or product boundary."
+  },
+  "ownedAssets": [
+    {
+      "id": "versioned_eval_suite",
+      "path": "data/scout-local-ai/dad-local-ai-100.json",
+      "purpose": "Stable benchmark cases with expected traits, required tools, safety caveats, and reading/writing coverage."
+    },
+    {
+      "id": "mobile_eval_suite_copy",
+      "path": "mobile/static/scout/dad-local-ai-100.json",
+      "purpose": "The same suite embedded in the app path Dad will run."
+    },
+    {
+      "id": "offline_source_docs",
+      "path": "mobile/static/scout/offline-source-docs.json",
+      "purpose": "Bundled searchable documents that support offline source-backed answers."
+    },
+    {
+      "id": "structured_trail_data",
+      "paths": [
+        "public/at-mileposts.json",
+        "data/at-open-reference"
+      ],
+      "purpose": "Deterministic location, water, shelter, town, terrain, park-service, and trail-condition context."
+    },
+    {
+      "id": "review_and_iteration_tools",
+      "paths": [
+        "scripts/status-scout-local-ai.mjs",
+        "scripts/audit-scout-local-ai-goal.mjs",
+        "scripts/run-scout-local-ai-eval.mjs",
+        "scripts/run-scout-ios-sim-gemma-eval.mjs",
+        "scripts/prepare-scout-local-ai-device-review.mjs",
+        "scripts/plan-scout-local-ai-iteration.mjs",
+        "scripts/verify-scout-local-ai-iteration.mjs",
+        "scripts/verify-scout-local-ai-device-proof.mjs"
+      ],
+      "purpose": "Owned runners, reviewers, planners, status checks, and proof gates."
+    }
+  ],
+  "swappableIntelligenceLayers": [
+    {
+      "id": "scaffold-not-model",
+      "role": "Tool and source-routing smoke tests only",
+      "mayCountAsFinalProof": false
+    },
+    {
+      "id": "external-local-model-command",
+      "role": "Mac-side local model bridge for iteration before iOS proof",
+      "mayCountAsFinalProof": false
+    },
+    {
+      "id": "device-on-device-gemma",
+      "role": "Debug iPhone Simulator or device lane using the native ScoutGemma bridge",
+      "mayCountAsFinalProof": false
+    },
+    {
+      "id": "real-testflight-iphone",
+      "role": "Dad final proof lane through the installed TestFlight iPhone app",
+      "mayCountAsFinalProof": true
+    }
+  ],
+  "sourceClasses": [
+    "bundled_app_documents",
+    "structured_trail_data",
+    "cached_field_pack_data",
+    "user_document_vault_files",
+    "user_owned_drafts_and_updates",
+    "future_private_document_corpora"
+  ],
+  "toolContracts": [
+    {
+      "toolId": "source_search",
+      "mustRecord": [
+        "query_or_source_skill",
+        "candidate_source_document_ids",
+        "receipts"
+      ],
+      "rule": "Use search to select candidate sources, not to silently answer from memory."
+    },
+    {
+      "toolId": "open_source_doc",
+      "mustRecord": [
+        "source_document_id",
+        "citation",
+        "receipt"
+      ],
+      "rule": "Open the selected document before relying on specific source text or user vault content."
+    },
+    {
+      "toolId": "current_mile",
+      "mustRecord": [
+        "mile",
+        "source",
+        "freshness"
+      ],
+      "rule": "Location-aware answers must identify the mile basis and caveat uncertain or stale position."
+    },
+    {
+      "toolId": "next_water",
+      "mustRecord": [
+        "distance",
+        "candidate_reliability",
+        "receipts"
+      ],
+      "rule": "Water answers must separate known distance from flow, treatment, and freshness uncertainty."
+    },
+    {
+      "toolId": "next_town",
+      "mustRecord": [
+        "distance",
+        "services",
+        "receipts"
+      ],
+      "rule": "Town answers must use structured service context or say when details are missing."
+    },
+    {
+      "toolId": "weather_lookup",
+      "mustRecord": [
+        "forecast_time",
+        "source",
+        "freshness"
+      ],
+      "rule": "Weather answers must cite cached or fetched forecast timing and avoid pretending stale weather is live."
+    }
+  ],
+  "answerContract": {
+    "requiredFields": [
+      "direct_answer",
+      "sources_or_tools_used",
+      "confidence",
+      "uncertainty_or_missing_data",
+      "next_action_when_useful"
+    ],
+    "rules": [
+      "Answer the hiker's decision first.",
+      "Use deterministic tools before prose for water, shelter, town, weather, distance, terrain, safety, and document-vault questions.",
+      "Name source-backed facts separately from assumptions, estimates, or user-provided context.",
+      "Prefer concise field wording over generic AI filler."
+    ]
+  },
+  "documentWritingContract": {
+    "allowedActions": [
+      "draft_checklist",
+      "draft_plan",
+      "draft_note",
+      "draft_update",
+      "summarize_saved_decision"
+    ],
+    "saveRules": [
+      "Never save or overwrite without explicit user confirmation.",
+      "Show a reviewable draft before saving.",
+      "Separate source-backed facts, assumptions, private placeholders, and open questions.",
+      "Preserve recoverable or versioned changes for user-owned vault documents."
+    ],
+    "requiredConfirmation": true
+  },
+  "failureTaxonomy": [
+    {
+      "id": "missing-data",
+      "defaultOwnerLayer": "data"
+    },
+    {
+      "id": "weak-tool",
+      "defaultOwnerLayer": "tool-routing"
+    },
+    {
+      "id": "bad-routing",
+      "defaultOwnerLayer": "tool-routing"
+    },
+    {
+      "id": "bad-prompt",
+      "defaultOwnerLayer": "prompt"
+    },
+    {
+      "id": "unsafe-wording",
+      "defaultOwnerLayer": "safety-prompt"
+    },
+    {
+      "id": "poor-ux",
+      "defaultOwnerLayer": "ui"
+    },
+    {
+      "id": "poor-document-writing-flow",
+      "defaultOwnerLayer": "ui"
+    },
+    {
+      "id": "local-model-limitation",
+      "defaultOwnerLayer": "local-model"
+    }
+  ],
+  "reviewGates": [
+    {
+      "id": "tool_source_evidence",
+      "rule": "Required tool hits must be backed by actual toolInvocations, receipts, or sourceDocumentIds."
+    },
+    {
+      "id": "human_1_to_5_rating",
+      "rule": "Final answer quality is human-rated 1-5 with notes and rubric checks."
+    },
+    {
+      "id": "below_five_task",
+      "rule": "Any rating below 5 requires failure categories, owner layer, and a concrete improvement task."
+    },
+    {
+      "id": "strict_testflight_iphone",
+      "rule": "Final proof requires a full current-suite TestFlight iPhone run with all 100 cases rated 5/5."
+    },
+    {
+      "id": "stability_repeat",
+      "rule": "Final stability requires two distinct strict TestFlight iPhone runs."
+    }
+  ],
+  "antiOverfitRules": [
+    "Do not weaken expected traits or safety caveats to close a review item.",
+    "Do not fix a miss by memorizing one prompt when the failure belongs to a tool, source, data table, prompt policy, UI recovery state, or local model lane.",
+    "Prefer improvements that help neighboring hiker/document-agent questions.",
+    "Keep simulator, browser, cloud, scaffold, and TestFlight iPhone proof lanes separate."
+  ]
+}

@@ -11,6 +11,16 @@ domain, but the same harness should generalize to other document corpora where
 an agent must search, open, summarize, compare, cite, draft, update, and preserve
 reviewable user-owned notes.
 
+The machine-readable boundary for that principle is
+`harness-contract.json`. It defines the owned assets, swappable model lanes,
+source classes, tool contracts, answer contract, document-writing contract,
+review failure taxonomy, review gates, and anti-overfit rules. If a future model
+swap, new document corpus, or TestFlight proof change conflicts with that
+contract, change the harness deliberately and keep the tests updated. The review
+engine accepts `poor-document-writing-flow` as its own failure category so draft,
+confirmation, save-preview, or versioning misses do not get hidden under generic
+UX.
+
 The loop:
 
 1. Keep the 100-question suite in `dad-local-ai-100.json`.
