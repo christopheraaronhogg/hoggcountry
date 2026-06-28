@@ -258,6 +258,9 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /For model-downloading, model status, stuck download, failed download/);
 	assert.match(systemContext, /not ready for offline Scout yet/);
 	assert.match(systemContext, /check Scout model status\/progress until it says ready/);
+	assert.match(systemContext, /For stale field-pack, field-pack status/);
+	assert.match(systemContext, /cached Scout trail data on the phone, not the physical backpack or loadout/);
+	assert.match(systemContext, /check pack age\/status, current mile or downloaded region/);
 	assert.match(systemContext, /For own-mile, manual-mile, wrong-mile, profile, GPS correction/);
 	assert.match(systemContext, /Settings > Edit hike details/);
 	assert.match(systemContext, /a wrong mile shifts water, shelter, town, terrain, and bailout answers/);
@@ -355,6 +358,18 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.match(modelDownloadingAnswer, /retry, cancel, or restart/);
 	assert.match(modelDownloadingAnswer, /Do not trust offline\/local AI until the model reports ready/);
 	assert.match(modelDownloadingAnswer, /airplane-mode Scout question succeeds/);
+
+	const staleFieldPackAnswer = polishOnDeviceAnswer(
+		"You can check your pack for signs of staleness by looking at the condition of your gear and your own physical state. A stale pack often shows up as gear that is damaged, worn out, or not functioning as expected.\n\nYou should check your sleep system, rain gear, water filter, first aid kit, and battery bank. If any of these items are showing signs of wear, damage, or poor performance, that's a sign to re-evaluate them.",
+		'How do I know if my field pack is stale before I trust Scout?'
+	);
+	assert.doesNotMatch(staleFieldPackAnswer, /sleep system|rain gear|physical state/);
+	assert.match(staleFieldPackAnswer, /Scout's field pack is the cached trail data on the phone, not the physical backpack/);
+	assert.match(staleFieldPackAnswer, /check the pack age\/status, current mile or downloaded region, and source timestamps/);
+	assert.match(staleFieldPackAnswer, /wrong mile\/region/);
+	assert.match(staleFieldPackAnswer, /weather, closures, water, or services changed/);
+	assert.match(staleFieldPackAnswer, /Refresh on Wi-Fi or in town before water, weather, closure, bailout, or town-service decisions/);
+	assert.match(staleFieldPackAnswer, /caution signals, not current proof/);
 
 	const ownMileAnswer = polishOnDeviceAnswer(
 		'You tell Scout your current mile is 0.0 of 2197.4. I will use that as the starting point for our planning.\n\nTo make Scout follow your own trail mile, you just need to tell me where you are. When you ask a question, state your current mile marker clearly. That way, I can base my advice on your actual progress on the trail.',

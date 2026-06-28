@@ -55,6 +55,13 @@ export const DEFAULT_CONTEXT_PACK: ContextPack = {
 			citation: 'Hogg Country Field Guide, Section: Local AI Model Download'
 		},
 		{
+			id: 'field-pack-staleness-discipline',
+			title: 'Field pack staleness discipline',
+			body: "Scout's field pack is the cached trail data on the phone, not the physical backpack. Before trusting it, check the pack age/status, current mile or downloaded region, and source timestamps when shown. If it is old, expired, for the wrong mile/region, or was loaded before weather, closures, water, or services changed, treat it as stale. Refresh on Wi-Fi or in town before water, weather, closure, bailout, or town-service decisions. Until refreshed, cached weather, closures, water, and services are caution signals, not current proof.",
+			tags: ['pretrip', 'offline', 'field-pack', 'stale', 'weather', 'closures', 'water', 'safety'],
+			citation: 'Hogg Country Field Guide, Section: Field Pack Freshness'
+		},
+		{
 			id: 'current-mile-profile-discipline',
 			title: 'Current mile and profile discipline',
 			body: 'Scout follows the hiker only after their hike profile/current mile is set. On first run, use the hike setup sheet, choose Start my hike, and enter the Current AT mile. Later, use Settings > Edit hike details or a confirmed mile update, then check Today and Scout both show the new mile. Refresh the field pack when online and re-ask water, shelter, town, terrain, or bailout questions after changing mile. A wrong mile shifts every nearby answer, especially water, shelter, town, terrain, and bailout advice. Confirm the mile against a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap before relying on Scout.',

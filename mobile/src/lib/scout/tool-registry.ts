@@ -185,6 +185,9 @@ function sourceSkillQuery(skill: SourceSkillTrigger, prompt: string, pack: Conte
 
 function sourceSkillQueryHints(skill: SourceSkillTrigger, prompt: string): string[] {
 	const lower = prompt.toLowerCase();
+	if (isScoutFieldPackDataPrompt(lower)) {
+		return ['field pack staleness discipline', 'cached Scout trail data', 'pack age status', 'current mile downloaded region', 'source timestamps', 'refresh on Wi-Fi in town', 'weather closures water services stale', 'caution signals not current proof'];
+	}
 	if (skill.id === 'pretrip' && /\b(?:model is still downloading|still downloading|model status|download(?:ing)?|not ready|stuck|failed)\b/u.test(lower)) {
 		return ['model download status discipline', 'still downloading', 'on-device local AI not ready', 'Wi-Fi power', 'download verification', 'check Scout model status progress ready', 'retry cancel restart stuck failed', 'airplane mode Scout question'];
 	}
@@ -204,6 +207,16 @@ function sourceSkillQueryHints(skill: SourceSkillTrigger, prompt: string): strin
 		return ['first aid', 'blisters', 'wound basics', 'infection warning', 'injury', 'knee pain', 'joint pain', 'do not train through pain', 'clinician', 'physical therapist', 'stop if pain worsens', 'bailout'];
 	}
 	return skill.queryHints;
+}
+
+function isScoutFieldPackDataPrompt(prompt: string): boolean {
+	const mentionsScoutDataPack = /\b(?:field[-\s]?pack|scout\s+pack|cached\s+(?:trail\s+)?pack|trail\s+data\s+pack)\b/u.test(prompt);
+	const asksFreshness = /\b(?:stale|fresh|current|trust|age|status|refresh|old|outdated|valid|expired)\b/u.test(prompt);
+	return mentionsScoutDataPack && asksFreshness;
+}
+
+function shouldSkipToolTrigger(trigger: ToolTrigger, prompt: string): boolean {
+	return trigger.toolId === 'loadout_check' && isScoutFieldPackDataPrompt(prompt);
 }
 
 function firstSourceDocumentId(record: ToolInvocationRecord): string | null {
@@ -239,7 +252,7 @@ export async function runToolsFor(
 	const openedSourceDocuments = new Set<string>();
 
 	for (const trigger of TOOL_TRIGGERS) {
-		if (!promptMatchesAnyKeyword(lower, trigger.keywords) || fired.has(trigger.toolId)) {
+		if (shouldSkipToolTrigger(trigger, lower) || !promptMatchesAnyKeyword(lower, trigger.keywords) || fired.has(trigger.toolId)) {
 			continue;
 		}
 

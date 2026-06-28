@@ -628,6 +628,22 @@ test('runToolsFor opens model-download status guidance for still-downloading pro
 	assert.match(openedDoc.summary, /Model download status discipline/);
 });
 
+test('runToolsFor opens field-pack staleness guidance without treating field pack as loadout', async () => {
+	const records = await runToolsFor(
+		'How do I know if my field pack is stale before I trust Scout?',
+		DEFAULT_CONTEXT_PACK,
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	assert.ok(!records.some((record) => record.toolId === 'loadout_check'));
+	assert.ok(records.some((record) => record.toolId === 'source_search'));
+	assert.ok(records.some((record) => record.toolId === 'open_source_doc'));
+	const combinedSummary = records.map((record) => record.summary).join('\n');
+	assert.match(combinedSummary, /Field pack staleness discipline/);
+	assert.ok(records.some((record) => record.sourceDocumentIds?.includes('field-guide:field-pack-staleness-discipline')));
+});
+
 test('runToolsFor reads current-mile profile guidance for own-mile setup prompts', async () => {
 	const records = await runToolsFor(
 		"How do I make Scout follow my own trail mile instead of someone else's?",
