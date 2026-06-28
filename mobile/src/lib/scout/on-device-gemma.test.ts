@@ -222,6 +222,8 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /For full-shelter, stealth-camping, storm-campsite/);
 	assert.match(systemContext, /For bear-activity shelter questions/);
 	assert.match(systemContext, /proper food storage and odor control/);
+	assert.match(systemContext, /For unsafe-person shelter or campsite questions/);
+	assert.match(systemContext, /do not suggest confrontation/);
 	assert.match(systemContext, /For closure or detour routing questions/);
 	assert.match(systemContext, /advisory context rather than turn-by-turn detour routing/);
 	assert.match(systemContext, /For after-dark shelter arrivals/);
@@ -648,6 +650,30 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			'What if there are bear activity reports near the shelter?'
 		),
 		'Check current alerts and any required food storage protocols. If you cannot confirm the current situation, choose the safer legal stop. Remember to use proper food storage and keep all scented items away from your sleeping area.\n\nBear-activity shelter note: verify current local guidance, alerts, closures, and required food storage before committing. Use proper food storage and odor control such as a bear box, cable, canister, or approved hang as local rules require, keep food and scented items away from sleep, and choose an alternate legal stop if the report cannot be cleared.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'If you feel unsafe at a shelter, your first step is to prioritize your safety. You should immediately speak to the shelter staff or manager about how you are feeling. If you feel the situation is escalating or you are in immediate danger, you need to follow the emergency plan you have in place.\n\nIf you are in a situation where you feel threatened, you should try to de-escalate the situation by remaining calm and clear about your concerns. If you feel you cannot resolve the issue with the staff, you need to look for a safe, legal option to move to a different location.\n\nIf you are in immediate danger, you should use your emergency communication device to contact help or follow the established emergency protocol. You should not feel obligated to stay in a situation that makes you feel unsafe.',
+			'I feel unsafe around someone at a shelter. What should I do?',
+			[
+				{
+					toolId: 'next_town',
+					args: {},
+					summary: 'Pilot Gap Road at mile 124.2 (4.8 mi ahead via road crossing; emergency exit candidate, confirm shuttle or pickup). No guaranteed services at the crossing.',
+					confidence: 'medium',
+					receipts: []
+				},
+				{
+					toolId: 'next_shelter',
+					args: {},
+					summary: 'Near Ridge Shelter at mile 122.8 (3.4 mi ahead). Open-data candidate; verify current status, water, and crowding.',
+					confidence: 'medium',
+					receipts: []
+				}
+			]
+		),
+		'If you feel unsafe at a shelter, your first step is to prioritize your safety. If you feel the situation is escalating or you are in immediate danger, you need to follow the emergency plan you have in place.\n\nIf you are in immediate danger, you should use your emergency communication device to contact help or follow the established emergency protocol. You should not feel obligated to stay in a situation that makes you feel unsafe.\n\nUnsafe-person shelter note: trust the concern and do not confront, negotiate, or stay to be polite. Create distance, move toward a safer public or known place when you can do so safely, contact a trusted person, hostel or shuttle, ridgerunner, land manager, or authorities, and use emergency communication immediately if there is danger. Loaded exit context: Pilot Gap Road at mile 124.2 (4.8 mi ahead via road crossing; emergency exit candidate, confirm shuttle or pickup). No guaranteed services at the crossing.'
 	);
 
 	assert.equal(

@@ -109,6 +109,8 @@ const WATERLESS_SHELTER_NOTE =
 	'Waterless-shelter note: do not assume shelter water is flowing; top off before the shelter, carry enough to the next verified source, or stop where both legal sleep and water are workable.';
 const BEAR_ACTIVITY_SHELTER_NOTE =
 	'Bear-activity shelter note: verify current local guidance, alerts, closures, and required food storage before committing. Use proper food storage and odor control such as a bear box, cable, canister, or approved hang as local rules require, keep food and scented items away from sleep, and choose an alternate legal stop if the report cannot be cleared.';
+const UNSAFE_PERSON_SHELTER_NOTE =
+	'Unsafe-person shelter note: trust the concern and do not confront, negotiate, or stay to be polite. Create distance, move toward a safer public or known place when you can do so safely, contact a trusted person, hostel or shuttle, ridgerunner, land manager, or authorities, and use emergency communication immediately if there is danger.';
 const THUNDERSTORM_HIKE_NOTE =
 	'Thunderstorm hike note: check live forecast or radar if available, avoid exposed ridges and high points during the storm window, shorten or shift mileage earlier, and stop or bail out if lightning, flooding, wet-cold exposure, or worsening weather appears.';
 const COLD_WIND_RIDGE_NOTE =
@@ -313,6 +315,12 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	}
 	if (isClosureDetourRoutingPrompt(lowerPrompt) && !mentionsClosureDetourRoutingBoundary(answer, toolInvocations)) {
 		answer = appendSentence(answer, buildClosureDetourRoutingNote(toolInvocations));
+	}
+	if (isUnsafePersonShelterPrompt(lowerPrompt)) {
+		answer = removeUnsafePersonShelterDrift(answer);
+	}
+	if (isUnsafePersonShelterPrompt(lowerPrompt) && !mentionsUnsafePersonShelterSafety(answer, toolInvocations)) {
+		answer = appendSentence(answer, buildUnsafePersonShelterNote(toolInvocations));
 	}
 	if ((isLightningRidgePrompt(lowerPrompt) || isWetHypothermiaPrompt(lowerPrompt)) && !isHeatWaterPrompt(lowerPrompt)) {
 		answer = removeMisappliedHeatIllnessDrift(answer);
@@ -551,6 +559,21 @@ function removeMisappliedHeatIllnessDrift(answer: string): string {
 			const sentences = splitSentences(paragraph)
 				.map((sentence) => sentence.trim())
 				.filter((sentence) => sentence && !containsHeatIllnessDrift(sentence));
+			return sentences.join(' ');
+		})
+		.filter(Boolean)
+		.join('\n\n')
+		.trim();
+	return filtered || answer;
+}
+
+function removeUnsafePersonShelterDrift(answer: string): string {
+	const filtered = answer
+		.split(/\n{2,}/u)
+		.map((paragraph) => {
+			const sentences = splitSentences(paragraph)
+				.map((sentence) => sentence.trim())
+				.filter((sentence) => sentence && !containsUnsafePersonShelterDrift(sentence));
 			return sentences.join(' ');
 		})
 		.filter(Boolean)
@@ -885,6 +908,11 @@ function isBearActivityShelterPrompt(prompt: string): boolean {
 		/\b(?:shelter|camp|campsite|sleep|overnight|nearby|near)\b/u.test(prompt);
 }
 
+function isUnsafePersonShelterPrompt(prompt: string): boolean {
+	return /\b(?:unsafe|threatened|creep\w*|harass\w*|scared|afraid|uncomfortable)\b/u.test(prompt) &&
+		/\b(?:person|someone|guy|hiker|people|shelter|camp|campsite)\b/u.test(prompt);
+}
+
 function isRainPantsPrompt(prompt: string): boolean {
 	return /\b(?:rain pants|rain gear|rain system)\b/u.test(prompt) &&
 		/\b(?:need|carry|leave|home|drop|cut|mail|send|ditch|keep)\b/u.test(prompt);
@@ -939,6 +967,10 @@ function toolSummary(toolInvocations: ToolInvocationRecord[], toolId: string): s
 	return summary || null;
 }
 
+function containsUnsafePersonShelterDrift(sentence: string): boolean {
+	return /\b(?:speak|talk|go)\b[^.?!\n]*(?:shelter staff|shelter manager|manager|staff)|\b(?:de[-\s]?escalate|resolve the issue|resolve it|clear about your concerns|confront|negotiate)\b/iu.test(sentence);
+}
+
 function mentionsClosureDetourRoutingBoundary(answer: string, toolInvocations: ToolInvocationRecord[]): boolean {
 	const hasLoadedAlert = Boolean(toolSummary(toolInvocations, 'trail_conditions'));
 	const mentionsLoadedAlert = !hasLoadedAlert ||
@@ -956,6 +988,12 @@ function buildClosureDetourRoutingNote(toolInvocations: ToolInvocationRecord[]):
 	const alert = toolSummary(toolInvocations, 'trail_conditions');
 	if (!alert) return CLOSURE_DETOUR_ROUTING_NOTE;
 	return `Closure/detour note: loaded official alert says ${trimToolClause(alert)}. Scout can summarize that alert as advisory context, not turn-by-turn detour routing. Verify the current managing-agency detour and posted signage before committing, follow official route guidance, and do not invent alternate route details.`;
+}
+
+function buildUnsafePersonShelterNote(toolInvocations: ToolInvocationRecord[]): string {
+	const exit = toolSummary(toolInvocations, 'next_town');
+	if (!exit) return UNSAFE_PERSON_SHELTER_NOTE;
+	return `${UNSAFE_PERSON_SHELTER_NOTE} Loaded exit context: ${trimToolClause(exit)}.`;
 }
 
 function buildNearestWaterVerificationNote(toolInvocations: ToolInvocationRecord[]): string {
@@ -1303,6 +1341,26 @@ function mentionsBearActivityShelterPlan(answer: string): boolean {
 	return mentionsCurrentGuidance && mentionsConcreteStorage && mentionsAlternateStop;
 }
 
+function mentionsUnsafePersonShelterSafety(answer: string, toolInvocations: ToolInvocationRecord[]): boolean {
+	const mentionsValidation = /\b(?:trust|valid|take it seriously|you do not have to stay|don't have to stay|do not stay|leave)\b/iu.test(answer);
+	const avoidsConfrontation =
+		/\b(?:do not|don't|avoid|not)\b[^.?!\n]*(?:confront|negotiate|de[-\s]?escalate|stay to be polite)|(?:do not|don't|avoid|not)[^.?!\n]*(?:stay|remain)[^.?!\n]*(?:polite|courteous)/iu.test(answer);
+	const mentionsDistanceOrExit =
+		/\b(?:create distance|move away|leave|safer public|known place|road crossing|town|exit|bail out|public place|safe legal option)\b/iu.test(answer);
+	const mentionsSupport =
+		/\b(?:trusted person|family|friend|support|authorities|911|inreach|plb|emergency|ridgerunner|land manager|shuttle|hostel)\b/iu.test(answer);
+	const usesLoadedExit = !toolSummary(toolInvocations, 'next_town') || mentionsToolPlace(answer, toolSummary(toolInvocations, 'next_town'));
+	return mentionsValidation && avoidsConfrontation && mentionsDistanceOrExit && mentionsSupport && usesLoadedExit;
+}
+
+function mentionsToolPlace(answer: string, summary: string | null): boolean {
+	if (!summary) return true;
+	const name = summary.split(' at mile ')[0]?.replace(/^(?:Next loaded town:|Next town:)\s*/iu, '').trim();
+	if (name && answer.toLowerCase().includes(name.toLowerCase())) return true;
+	const mile = summary.match(/\bmile\s+(\d+(?:\.\d+)?)\b/iu)?.[1];
+	return Boolean(mile && answer.includes(mile));
+}
+
 function mentionsRainPantsDecision(answer: string): boolean {
 	return /(?:personal cold tolerance|how fast you chill|your cold tolerance|if you run cold)/iu.test(answer) &&
 		/(?:shakedown|proven|test(?:ed|ing)? the rain system)/iu.test(answer) &&
@@ -1440,6 +1498,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For shelter and camping decisions, use the next_shelter and upcoming_terrain findings as planning candidates, not guarantees. Name daylight, water, current shelter status/crowding, legal rules, weather, fatigue, and a backup option before committing to a sleep plan.`,
 		`For full-shelter, stealth-camping, storm-campsite, low-impact campsite, climb-stop, or waterless-shelter questions, keep the legal/safety boundary explicit: no illegal camping, choose backups before dark when there is still daylight, use established or durable surfaces, keep roughly 200 feet from water and trail when rules allow, avoid exposed ridges/dead trees/drainages/flood-prone ground in storms, and top off/carry enough water when shelter water is uncertain.`,
 		`For bear-activity shelter questions, verify current local guidance, alerts, closures, and required food storage before committing. Name proper food storage and odor control such as a bear box, cable, canister, or approved hang as local rules require, keep food and scented items away from sleep, and choose an alternate legal stop if the report cannot be cleared.`,
+		`For unsafe-person shelter or campsite questions, validate the concern without dramatizing, do not suggest confrontation, negotiation, de-escalation with the person, or staying to be polite. Create distance, move toward a safer public or known place or loaded exit when safe, contact trusted support or authorities, and use emergency communication immediately for danger.`,
 		`For closure or detour routing questions, summarize loaded official alerts when present, say Scout is giving advisory context rather than turn-by-turn detour routing, verify the current managing-agency detour and posted signage, follow official route guidance, and never invent alternate route details.`,
 		`For after-dark shelter arrivals, do not tell the hiker to choose a backup before dark. Say to slow down, use the headlamp, avoid risky tired night navigation, take the nearest safe legal option rather than adding extra night miles, and keep a fallback plan if the shelter is full.`,
 		`When tool findings are labeled as guidance, treat them as topic-specific documents Scout intentionally read for this answer. Use them to shape caveats and next-step advice.`,
