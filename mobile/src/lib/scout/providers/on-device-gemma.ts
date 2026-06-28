@@ -57,6 +57,8 @@ const INJURY_PAIN_SAFETY_NOTE =
 	'First: do not train through worsening pain. Back off or stop if pain worsens, swelling appears, or your gait changes; use pain-free load reduction, low-impact conditioning, and clinician or physical-therapist guidance before building mileage.';
 const HEAVY_RAIN_START_NOTE =
 	'Heavy-rain start note: keep mileage conservative, protect dry sleep layers, watch footing on slick roots, rocks, bog boards, and descents, verify the current forecast, and stop or bail out for lightning, hypothermia risk, flooding, or worsening conditions.';
+const SHAKEDOWN_CAVEAT_NOTE =
+	'Shakedown caveat: one shakedown does not prove every condition is covered. Treat failures as specific gear, app, food, water, foot-care, sleep, rain, battery, or pack-fit fixes before Springer.';
 const FROZEN_FILTER_NOTE =
 	'Frozen-filter note: if a hollow-fiber water filter froze, treat it as possibly compromised. Use backup tablets or another treatment until you can replace or verify it, and prevent it by sleeping with the filter or keeping it warm overnight.';
 const SLOW_FILTER_NOTE =
@@ -377,6 +379,9 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	if (isLiveWeatherFactsPrompt(lowerPrompt) && !mentionsLiveWeatherFacts(answer)) {
 		answer = appendSentence(answer, LIVE_WEATHER_FACTS_NOTE);
 	}
+	if (isShakedownPrompt(lowerPrompt) && !mentionsShakedownCaveat(answer)) {
+		answer = appendSentence(answer, SHAKEDOWN_CAVEAT_NOTE);
+	}
 	if (isHeavyRainStartPrompt(lowerPrompt) && !mentionsHeavyRainStartSafety(answer)) {
 		answer = appendSentence(answer, HEAVY_RAIN_START_NOTE);
 	}
@@ -631,6 +636,10 @@ function isThunderstormHikePrompt(prompt: string): boolean {
 function isHeavyRainStartPrompt(prompt: string): boolean {
 	return /\b(?:heavy rain|hard rain|rain start|start(?:ing)? the at in rain|start(?:ing)? in rain)\b/u.test(prompt) &&
 		/\b(?:start|springer|at|trail|plan|safe|safety)\b/u.test(prompt);
+}
+
+function isShakedownPrompt(prompt: string): boolean {
+	return /\b(?:shakedown|shake down|test hike|practice hike)\b/u.test(prompt);
 }
 
 function isColdWindRidgePrompt(prompt: string): boolean {
@@ -890,6 +899,12 @@ function mentionsHeavyRainStartSafety(answer: string): boolean {
 	const mentionsForecast = /\b(?:current|live|verify|refresh|forecast|radar)\b/iu.test(answer);
 	const mentionsBailHypothermia = /\b(?:stop|bail|bailout)\b/iu.test(answer) && /\bhypothermia\b/iu.test(answer);
 	return mentionsConservativeMileage && mentionsDrySleep && mentionsFooting && mentionsForecast && mentionsBailHypothermia;
+}
+
+function mentionsShakedownCaveat(answer: string): boolean {
+	return /\bone shakedown\b/iu.test(answer) &&
+		/\b(?:does not|doesn't|do not|don't|not)\b[^.?!\n]*(?:prove|cover|solve)/iu.test(answer) &&
+		/\b(?:condition|everything|every condition|all conditions)\b/iu.test(answer);
 }
 
 function mentionsBudgetCategories(answer: string): boolean {

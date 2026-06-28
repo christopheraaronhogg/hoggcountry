@@ -279,6 +279,14 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 
 	assert.equal(
 		polishOnDeviceAnswer(
+			'Your shakedown hike should prove the sleep system, rain system, cooking and food rhythm, water filtering, battery drain, pack fit, foot care, and offline app/model flow.',
+			'What should my shakedown hike prove before I leave?'
+		),
+		'Your shakedown hike should prove the sleep system, rain system, cooking and food rhythm, water filtering, battery drain, pack fit, foot care, and offline app/model flow.\n\nShakedown caveat: one shakedown does not prove every condition is covered. Treat failures as specific gear, app, food, water, foot-care, sleep, rain, battery, or pack-fit fixes before Springer.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
 			'Use the cached trail line and external offline maps if they are available. Do not rely on missing basemap tiles for complex navigation.',
 			'How do I use the map when there is no basemap or cell signal?'
 		),
