@@ -289,6 +289,10 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /cached trail line and field-pack mile context are only rough trail-corridor checks/);
 	assert.match(systemContext, /external offline map\/GPS app or paper map and compass/);
 	assert.match(systemContext, /stop and verify with blazes, signs, map, and GPS/);
+	assert.match(systemContext, /For lost or off-trail prompts/);
+	assert.match(systemContext, /conserve battery/);
+	assert.match(systemContext, /backtrack only if the route back is obvious and safe/);
+	assert.match(systemContext, /do not bushwhack, shortcut, or route through unknown terrain/);
 	assert.match(systemContext, /For bailout, exit, or worsening-injury questions/);
 	assert.match(systemContext, /nearest loaded bailout or access candidate/);
 	assert.match(systemContext, /do not tell the hiker to push through worsening knee or joint pain/);
@@ -523,6 +527,29 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.match(noBasemapAnswer, /external offline map\/GPS app or paper map and compass/);
 	assert.match(noBasemapAnswer, /complex navigation, confusing junctions, off-trail uncertainty, bad weather, or safety decisions/);
 	assert.match(noBasemapAnswer, /do not keep hiking just because Scout shows a line/);
+
+	const offTrailAnswer = polishOnDeviceAnswer(
+		'Stop hiking immediately. Find a safe spot away from the trail and assess your condition. Check your body for any signs of injury, heat illness, or confusion. If you are in immediate danger, use your emergency communication device or call for help.\n\nIf you are unsure of your exact location, try to recall any recent landmarks or trail markers. If you are in a remote area, stay put and conserve energy. You need to make a decision based on your current safety and physical state.',
+		'I think I am off trail. What should I do right now?',
+		[
+			{
+				toolId: 'current_mile',
+				args: {},
+				summary: 'Currently at mile 198.4 of 2197.4 (9.0% complete, 1999.0 mi remaining).',
+				confidence: 'high',
+				receipts: []
+			}
+		]
+	);
+	assert.match(offTrailAnswer, /Off-trail immediate note/);
+	assert.doesNotMatch(offTrailAnswer, /safe spot away from the trail/i);
+	assert.match(offTrailAnswer, /Get to a safe stable spot out of immediate hazards/);
+	assert.match(offTrailAnswer, /Scout's loaded position is currently at mile 198\.4/);
+	assert.match(offTrailAnswer, /conserve battery/);
+	assert.match(offTrailAnswer, /map\/GPS, compass, blazes, signs, and your last known point/);
+	assert.match(offTrailAnswer, /Backtrack only if the route back is obvious and safe/);
+	assert.match(offTrailAnswer, /Do not bushwhack, shortcut, or let Scout route you through unknown terrain/);
+	assert.match(offTrailAnswer, /911, inReach\/PLB, rangers\/authorities, or the emergency plan/);
 
 	const guidebookMileMismatchAnswer = polishOnDeviceAnswer(
 		"Your mile doesn't match because the trail you are on might have a different numbering system than the guidebook you are using, or the guidebook might be referencing a different section or route.\n\nThe guidance says mileage decisions start with body condition, daylight, elevation, water spacing, weather, pack weight, foot or knee condition, and the next legal shelter, campsite, or town stop.",
