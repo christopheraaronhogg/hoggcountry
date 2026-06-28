@@ -285,6 +285,10 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /Scout uses a calibrated AT mile frame/);
 	assert.match(systemContext, /guidebook editions, reroutes or relocations/);
 	assert.match(systemContext, /do not let Scout mileage override posted signs, closures, or current official safety guidance/);
+	assert.match(systemContext, /For no-basemap, missing-map-tiles, no-cell, or offline map navigation questions/);
+	assert.match(systemContext, /cached trail line and field-pack mile context are only rough trail-corridor checks/);
+	assert.match(systemContext, /external offline map\/GPS app or paper map and compass/);
+	assert.match(systemContext, /stop and verify with blazes, signs, map, and GPS/);
 	assert.match(systemContext, /For "where am I relative to the next road crossing or town" questions/);
 	assert.match(systemContext, /start from the current_mile finding and the next_town road\/town access finding/);
 	assert.match(systemContext, /do not assume services at a crossing unless loaded current service data proves them/);
@@ -506,6 +510,16 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 		),
 		'Use the cached trail line and external offline maps if they are available. Do not rely on missing basemap tiles for complex navigation.'
 	);
+
+	const noBasemapAnswer = polishOnDeviceAnswer(
+		'When you lose cell signal or a basemap, you need to rely on your offline maps and your compass. You should have downloaded the necessary maps before you leave, and you need to know how to use your compass to navigate by landmarks and terrain features.',
+		'How do I use the map when there is no basemap or cell signal?'
+	);
+	assert.match(noBasemapAnswer, /If basemap tiles are not cached, do not pretend they are available/);
+	assert.match(noBasemapAnswer, /Scout's cached trail line and field-pack mile context only as a rough trail-corridor check/);
+	assert.match(noBasemapAnswer, /external offline map\/GPS app or paper map and compass/);
+	assert.match(noBasemapAnswer, /complex navigation, confusing junctions, off-trail uncertainty, bad weather, or safety decisions/);
+	assert.match(noBasemapAnswer, /do not keep hiking just because Scout shows a line/);
 
 	const guidebookMileMismatchAnswer = polishOnDeviceAnswer(
 		"Your mile doesn't match because the trail you are on might have a different numbering system than the guidebook you are using, or the guidebook might be referencing a different section or route.\n\nThe guidance says mileage decisions start with body condition, daylight, elevation, water spacing, weather, pack weight, foot or knee condition, and the next legal shelter, campsite, or town stop.",
