@@ -205,6 +205,10 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /dizziness, confusion, headache, nausea, cramps, chills, stopped sweating/);
 	assert.match(systemContext, /For camel-up or ridge-water questions/);
 	assert.match(systemContext, /camel up at the last confirmed source and carry extra/);
+	assert.match(systemContext, /For dry-stretch water-carry questions/);
+	assert.match(systemContext, /0\.5-1 liter per 3-5 miles/);
+	assert.match(systemContext, /For questionable-water, tired, or low-daylight treatment questions/);
+	assert.match(systemContext, /do not drink untreated questionable water/);
 	assert.match(systemContext, /For frozen or failing water-filter questions/);
 	assert.match(systemContext, /hollow-fiber filter may be compromised/);
 	assert.match(systemContext, /For rain-pants or rain-gear cut\/drop questions/);
@@ -389,6 +393,30 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			'Should I camel up here or carry extra water over the ridge?'
 		),
 		'Check the current flow before deciding whether to carry extra water over the ridge.\n\nRidge-water decision note: camel up at the last confirmed source and carry extra over the ridge when the next source is seasonal, unverified, exposed, hot, or after a hard climb; only carry the lighter plan when the next reliable water is confirmed and conditions are mild.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Carry enough water for the distance plus a buffer, and verify the seasonal seep before relying on it.',
+			'How much water should I carry for a 10 mile dry stretch today?'
+		),
+		'Carry enough water for the distance plus a buffer, and verify the seasonal seep before relying on it.\n\nDry-stretch water note: for a 10-mile dry stretch, start from roughly 0.5-1 liter per 3-5 miles, increase for heat, exposed climbing, slow pace, or personal thirst, top off at the last confirmed source, and carry enough to reach the next reliable source when the next source is seasonal or unverified.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'If you are tired and low on daylight, slow down and think through the water choice.',
+			'How do I treat questionable water if I am tired and low on daylight?'
+		),
+		'If you are tired and low on daylight, slow down and think through the water choice.\n\nQuestionable-water note: treatment is non-negotiable even when tired or low on daylight; filter or backflush if needed, use backup tablets or boil if the filter is slow or suspect, do not drink untreated questionable water, and choose a safe legal stop before dark if treatment or verification will delay the push.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'If you are tired and low on daylight, treatment is non-negotiable. Filter or backflush if needed, use backup tablets or boil, do not drink untreated questionable water, and choose a safe legal stop before dark.\n\nThis advice comes from the safety guidance found in the open_source_doc.',
+			'How do I treat questionable water if I am tired and low on daylight?'
+		),
+		'If you are tired and low on daylight, treatment is non-negotiable. Filter or backflush if needed, use backup tablets or boil, do not drink untreated questionable water, and choose a safe legal stop before dark.'
 	);
 
 	assert.equal(

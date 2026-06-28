@@ -1330,6 +1330,13 @@ For all listed reliable sources:
 
 **Treatment is assumed every time.**
 
+When daylight is low or you are tired, do not shortcut this rule.
+
+- Filter questionable water, and backflush or clean the filter if flow is poor
+- Use backup tablets or boil if the filter is slow, frozen, damaged, or suspect
+- Do not drink untreated questionable water to save time
+- Choose a safe legal stop before dark if treatment or verification will delay the push
+
 ### When to Pause Even at a Listed Source
 
 Reassess or skip a listed source if you see:
@@ -1664,6 +1671,9 @@ In hot or humid weather, water decisions are also heat-illness decisions.
 - Camel up at the last confirmed source before a ridge
 - Carry extra when the next water is seasonal, unverified, exposed, hot, or after a hard climb
 - Use the lighter carry only when the next reliable water is confirmed and conditions are mild
+- For a dry stretch, start from roughly 0.5-1 liter per 3-5 miles, then increase for heat, exposure, climbing, slow pace, or personal thirst
+- Top off at the last confirmed source before any uncertain dry stretch
+- Carry enough to reach the next reliable source when the next source is seasonal or unverified
 - Carry extra when shelter water is spring-fed
 - Ask: "What's my next guaranteed creek?"
 

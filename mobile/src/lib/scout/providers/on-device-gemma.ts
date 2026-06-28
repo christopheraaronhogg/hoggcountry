@@ -65,6 +65,10 @@ const HEAT_WATER_NOTE =
 	'Heat-water safety note: if dizziness, confusion, headache, nausea, cramps, chills, stopped sweating, or worsening symptoms show up, stop hiking, get shade, cool down, sip treated water with electrolytes if available, and escalate through the emergency plan if symptoms do not improve.';
 const RIDGE_WATER_NOTE =
 	'Ridge-water decision note: camel up at the last confirmed source and carry extra over the ridge when the next source is seasonal, unverified, exposed, hot, or after a hard climb; only carry the lighter plan when the next reliable water is confirmed and conditions are mild.';
+const DRY_STRETCH_WATER_NOTE =
+	'Dry-stretch water note: for a 10-mile dry stretch, start from roughly 0.5-1 liter per 3-5 miles, increase for heat, exposed climbing, slow pace, or personal thirst, top off at the last confirmed source, and carry enough to reach the next reliable source when the next source is seasonal or unverified.';
+const QUESTIONABLE_WATER_LOW_DAYLIGHT_NOTE =
+	'Questionable-water note: treatment is non-negotiable even when tired or low on daylight; filter or backflush if needed, use backup tablets or boil if the filter is slow or suspect, do not drink untreated questionable water, and choose a safe legal stop before dark if treatment or verification will delay the push.';
 
 export class OnDeviceGemmaProvider implements ScoutProvider {
 	private bridge?: OnDeviceGemmaBridge;
@@ -254,6 +258,12 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	if (isRidgeWaterDecisionPrompt(lowerPrompt) && !mentionsRidgeWaterDecision(answer)) {
 		answer = appendSentence(answer, RIDGE_WATER_NOTE);
 	}
+	if (isDryStretchWaterPrompt(lowerPrompt) && !mentionsDryStretchWaterCarry(answer)) {
+		answer = appendSentence(answer, DRY_STRETCH_WATER_NOTE);
+	}
+	if (isQuestionableWaterLowDaylightPrompt(lowerPrompt) && !mentionsQuestionableWaterLowDaylight(answer)) {
+		answer = appendSentence(answer, QUESTIONABLE_WATER_LOW_DAYLIGHT_NOTE);
+	}
 	if (isRainPantsPrompt(lowerPrompt) && !mentionsRainPantsDecision(answer)) {
 		answer = appendSentence(answer, RAIN_PANTS_NOTE);
 	}
@@ -297,7 +307,7 @@ function removeTrailingProvenanceParagraphs(answer: string): string {
 	const paragraphs = answer.split(/\n{2,}/u);
 	while (
 		paragraphs.length > 1 &&
-		/^This (?:guidance|approach|answer) (?:comes from|is based on|is what)\b.*\b(?:guidance|finding|discipline)\b.*\.?$/iu.test(
+		/^This (?:guidance|approach|answer|advice) (?:comes from|is based on|is what)\b.*\b(?:guidance|finding|discipline|source_search|open_source_doc|tool)\b.*\.?$/iu.test(
 			paragraphs[paragraphs.length - 1].trim()
 		)
 	) {
@@ -504,6 +514,16 @@ function isRidgeWaterDecisionPrompt(prompt: string): boolean {
 	return /\b(?:camel up|carry extra water|water over the ridge|before a ridge|over the ridge|dry ridge|long dry stretch)\b/u.test(prompt);
 }
 
+function isDryStretchWaterPrompt(prompt: string): boolean {
+	return /\b(?:dry stretch|dry miles?|water carry|carry water|how much water|10 mile|ten mile)\b/u.test(prompt) &&
+		/\b(?:water|hydrate|hydration|liter|liters|litre|litres|carry)\b/u.test(prompt);
+}
+
+function isQuestionableWaterLowDaylightPrompt(prompt: string): boolean {
+	return /\b(?:questionable water|treat questionable|treat water|water treatment|untreated water)\b/u.test(prompt) &&
+		/\b(?:tired|fatigue|low on daylight|low daylight|dark|after dark|dusk|night|late)\b/u.test(prompt);
+}
+
 function isRainPantsPrompt(prompt: string): boolean {
 	return /\b(?:rain pants|rain gear|rain system)\b/u.test(prompt) &&
 		/\b(?:need|carry|leave|home|drop|cut|mail|send|ditch|keep)\b/u.test(prompt);
@@ -608,6 +628,22 @@ function mentionsRidgeWaterDecision(answer: string): boolean {
 	return mentionsCamelUp && mentionsCarryExtra && mentionsUncertaintyOrRidge;
 }
 
+function mentionsDryStretchWaterCarry(answer: string): boolean {
+	const mentionsRange = /\b(?:0\.5|half|1)\s*(?:-|to|and)?\s*(?:1)?\s*(?:l|liter|liters|litre|litres)\b/iu.test(answer) ||
+		/\b(?:3-5|3 to 5|three to five)\s*miles?\b/iu.test(answer);
+	const mentionsTopOff = /\b(?:top off|camel up|last confirmed source|confirmed source)\b/iu.test(answer);
+	const mentionsAdjustment = /\b(?:heat|hot|exposed|climb|slow pace|pace|personal thirst|thirst)\b/iu.test(answer);
+	const mentionsReliableTarget = /\b(?:next reliable|reliable source|seasonal|unverified|verified source)\b/iu.test(answer);
+	return mentionsRange && mentionsTopOff && mentionsAdjustment && mentionsReliableTarget;
+}
+
+function mentionsQuestionableWaterLowDaylight(answer: string): boolean {
+	const mentionsTreatmentRequired = /\b(?:treatment is non-negotiable|treat(?:ment)? (?:all|any|the) questionable|do not drink untreated|don't drink untreated|never drink untreated)\b/iu.test(answer);
+	const mentionsMethod = /\b(?:filter|backflush|backup tablets?|water tablets?|chemical treatment|chlorine dioxide|aquamira|boil)\b/iu.test(answer);
+	const mentionsDarkStop = /\b(?:safe legal stop|stop before dark|before dark|low daylight|dark|headlamp|do not push into darkness|don't push into darkness)\b/iu.test(answer);
+	return mentionsTreatmentRequired && mentionsMethod && mentionsDarkStop;
+}
+
 function mentionsRainPantsDecision(answer: string): boolean {
 	return /(?:personal cold tolerance|how fast you chill|your cold tolerance|if you run cold)/iu.test(answer) &&
 		/(?:shakedown|proven|test(?:ed|ing)? the rain system)/iu.test(answer) &&
@@ -682,6 +718,8 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For water questions, use the next_water tool finding as the answer's spine. Lead with the nearest actionable water option or next reliable source from the tool finding. If no reliable water is loaded, say that after the source hierarchy; do not start with a generic refusal.`,
 		`For heat-wave water questions, tell the hiker to stop, find shade, cool down, sip treated water with electrolytes if available, and escalate if dizziness, confusion, headache, nausea, cramps, chills, stopped sweating, or worsening symptoms appear.`,
 		`For camel-up or ridge-water questions, give a clear decision: camel up at the last confirmed source and carry extra when the next water is seasonal, unverified, exposed, hot, or after a hard climb; only use the lighter carry when the next reliable water is confirmed and conditions are mild.`,
+		`For dry-stretch water-carry questions, give a practical conservative range: roughly 0.5-1 liter per 3-5 miles as a starting point, more for heat, exposure, climbing, slow pace, or personal thirst. Tell the hiker to top off at the last confirmed source and carry enough to reach the next reliable source when the next source is seasonal or unverified.`,
+		`For questionable-water, tired, or low-daylight treatment questions, keep the answer focused on water safety unless heat symptoms are explicit. Say treatment is non-negotiable, use filter/backflush or backup tablets/boil, do not drink untreated questionable water, and choose a safe legal stop before dark if treatment or verification will delay the push.`,
 		`For frozen or failing water-filter questions, say a hollow-fiber filter may be compromised if it froze, use backup treatment or replace it if unsure, backflush or clean a slow filter when the model supports it, and prevent the next freeze by sleeping with the filter or keeping it warm overnight. Use next-water context before telling the hiker to push past water.`,
 		`When tool findings are labeled as guidance, treat them as topic-specific documents Scout intentionally read for this answer. Use them to shape caveats and next-step advice.`,
 		`When preparation or training questions have pretrip, terrain, loadout, safety, or offline setup findings, give a concrete short plan. For "what should I focus on first" prompts, include an immediate first-week checklist, not only general training advice. Include shakedown hikes, foot care/blister practice, conservative early mileage, gear/loadout checks, water treatment habits, and an offline app/model rehearsal when those appear in the findings.`,

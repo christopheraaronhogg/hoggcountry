@@ -22,8 +22,8 @@ export const DEFAULT_CONTEXT_PACK: ContextPack = {
 		{
 			id: 'pack-water-on-ridges',
 			title: 'Confirm mapped water before committing',
-			body: 'Mapped water candidates are planning prompts, not promises. Camel up at the last confirmed source and carry extra before a ridge when the next water is seasonal, unverified, exposed, hot, or after a hard climb. Only choose the lighter carry when the next reliable water is confirmed and conditions are mild.',
-			tags: ['water', 'planning', 'ridge', 'heat'],
+			body: 'Mapped water candidates are planning prompts, not promises. Camel up at the last confirmed source and carry extra before a ridge when the next water is seasonal, unverified, exposed, hot, or after a hard climb. Only choose the lighter carry when the next reliable water is confirmed and conditions are mild. For a dry stretch, start from roughly 0.5-1 liter per 3-5 miles, then increase for heat, exposure, climbing, slow pace, or personal thirst. Treatment is non-negotiable for questionable water: filter, backflush if needed, use backup tablets or boil if the filter is suspect, and choose a safe legal stop before dark rather than drinking untreated water or rushing into darkness.',
+			tags: ['water', 'planning', 'ridge', 'heat', 'treatment', 'daylight'],
 			citation: 'Hogg Country Field Guide, Section: Water Discipline'
 		},
 		{
