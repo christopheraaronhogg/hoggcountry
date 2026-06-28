@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import process from 'node:process';
 import { promisify } from 'node:util';
 import { parseCliArgs } from './lib/scout-local-ai-review.mjs';
+import { scanScoutLocalAiAnswerQuality } from './scan-scout-local-ai-answer-quality.mjs';
 
 const execFileAsync = promisify(execFile);
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -89,15 +90,23 @@ const runJson = await waitForRun(simulator.udid, timeoutMs, pollMs);
 assertExpectedCaseCount(runJson, limit);
 await mkdir(outputDir, { recursive: true });
 const outputPath = resolve(outputDir, `ios-sim-gemma-${runJson.runId}.json`);
+const scanOutputPath = resolve(outputDir, `ios-sim-gemma-${runJson.runId}.scan.json`);
+const answerQualityScan = scanScoutLocalAiAnswerQuality(runJson);
 await writeFile(outputPath, `${JSON.stringify(runJson, null, 2)}\n`);
+await writeFile(scanOutputPath, `${JSON.stringify(answerQualityScan, null, 2)}\n`);
 
 console.log(`\nSaved simulator Gemma eval: ${relativePath(outputPath)}`);
+console.log(`Saved answer-quality scan: ${relativePath(scanOutputPath)}`);
 console.log(`- Run: ${runJson.runId}`);
 console.log(`- Lane: ${runJson.evidenceLane}`);
 console.log(`- Cases: ${runJson.caseCount}/${runJson.totalSuiteCases}`);
 console.log(`- Required-tool complete: ${runJson.summary?.toolExpectationComplete ?? 'unknown'}/${runJson.caseCount}`);
 console.log(`- Source-evidence complete: ${runJson.summary?.sourceEvidenceComplete ?? 'unknown'}/${runJson.caseCount}`);
 console.log(`- Provider errors: ${providerErrorCount(runJson)}`);
+console.log(`- Answer-quality flags: ${answerQualityScan.flaggedCount} flagged, ${answerQualityScan.errorCount} errors, ${answerQualityScan.warningCount} warnings`);
+if (answerQualityScan.flagged.length) {
+	console.log(`- Top answer-quality cases: ${formatTopAnswerQualityCases(answerQualityScan.flagged)}`);
+}
 
 if (!cli.noInspect) {
 	await run('node', [
@@ -107,6 +116,7 @@ if (!cli.noInspect) {
 	]);
 }
 console.log(`Simulator diagnostic review packet: npm run intake:scout-local-ai-device-run -- --run ${relativePath(outputPath)} --allow-partial`);
+console.log(`Answer-quality scan command: npm run scan:scout-local-ai-answers -- --run ${relativePath(outputPath)}`);
 console.log('Boundary: simulator Gemma is the main local iteration lane; final Dad proof still requires TestFlight iPhone Run 100.');
 
 function normalizeLimit(value) {
@@ -183,6 +193,15 @@ async function clearWebViewCache(udid) {
 
 function providerErrorCount(runJson) {
 	return (runJson.results ?? []).filter((result) => Boolean(result?.error)).length;
+}
+
+function formatTopAnswerQualityCases(flagged) {
+	return flagged.slice(0, 8)
+		.map((item) => {
+			const checks = (item.checks ?? []).map((check) => check.id).join(',') || 'unknown';
+			return `${item.caseId}:${checks}`;
+		})
+		.join('; ');
 }
 
 function assertExpectedCaseCount(runJson, value) {
@@ -367,5 +386,9 @@ Options:
   --skip-build              Skip xcodebuild and use the existing derived-data app.
   --no-inspect              Do not run the read-only device-run inspector.
   --preserve-web-cache      Do not clear WebView cache/service-worker data before launch.
+
+The runner saves both the raw simulator export and a sibling .scan.json
+answer-quality scan. The scan is a triage aid only; human 1-5 review and final
+TestFlight/iPhone proof remain separate.
 `);
 }

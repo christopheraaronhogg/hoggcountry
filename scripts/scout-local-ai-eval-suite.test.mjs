@@ -18,6 +18,7 @@ const TESTFLIGHT_HANDOFF_PATH = new URL('../docs/launch/testflight-dad-handoff.m
 const RELEASE_EVIDENCE_PATH = new URL('../docs/launch/release-evidence.json', import.meta.url);
 const MOBILE_SUITE_PATH = new URL('../mobile/static/scout/dad-local-ai-100.json', import.meta.url);
 const MOBILE_EVAL_LAB_PATH = new URL('../mobile/src/lib/components/ScoutEvalLab.svelte', import.meta.url);
+const IOS_SIM_GEMMA_RUNNER_PATH = new URL('../scripts/run-scout-ios-sim-gemma-eval.mjs', import.meta.url);
 const PACKAGE_PATH = new URL('../package.json', import.meta.url);
 const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
 const execFileAsync = promisify(execFile);
@@ -227,8 +228,19 @@ test('README documents device review acceptance states', async () => {
 	assert.match(readme, /blocked-before-review/u);
 	assert.match(readme, /wait:scout-local-ai-device-run -- --timeout-ms 300000 --poll-ms 10000/u);
 	assert.match(readme, /answer-quality scan/u);
+	assert.match(readme, /sibling\s+`\.scan\.json` answer-quality scan/u);
 	assert.match(readme, /does not\s+replace reading and rating every answer 1-5/u);
 	assert.match(readme, /Final Dad\s+readiness still requires all 100 cases rated 5\/5/u);
+});
+
+test('iOS simulator Gemma runner writes answer-quality scan artifacts', async () => {
+	const runner = await readFile(IOS_SIM_GEMMA_RUNNER_PATH, 'utf8');
+	assert.match(runner, /scanScoutLocalAiAnswerQuality/u);
+	assert.match(runner, /ios-sim-gemma-\$\{runJson\.runId\}\.scan\.json/u);
+	assert.match(runner, /Saved answer-quality scan:/u);
+	assert.match(runner, /Answer-quality flags:/u);
+	assert.match(runner, /Answer-quality scan command: npm run scan:scout-local-ai-answers/u);
+	assert.match(runner, /human 1-5 review and final\s+TestFlight\/iPhone proof remain separate/u);
 });
 
 test('Dad TestFlight handoff documents the current Dad Pilot Run 100 path', async () => {
