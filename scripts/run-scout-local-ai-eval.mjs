@@ -401,6 +401,7 @@ function buildEvalPack(testCase, now) {
 	pack.shelters = sheltersFor(mile);
 	pack.towns = townsFor(mile);
 	pack.weather = weatherFor(mile, prompt, now);
+	pack.terrain = terrainFor(mile, generatedAt);
 	pack.conditions = conditionsFor(prompt, now);
 	pack.parkServices = parkServicesFor(now);
 	pack.loadout = loadoutFor(prompt);
@@ -408,6 +409,37 @@ function buildEvalPack(testCase, now) {
 	pack.documents = evalDocuments(now);
 	pack.pilotNotice = 'Eval pack for Dad local-AI review. Use it to exercise Scout tools; verify volatile facts before relying on them.';
 	return pack;
+}
+
+function terrainFor(mile, generatedAt) {
+	return {
+		fromMile: Number(mile.toFixed(1)),
+		toMile: Number((mile + 15).toFixed(1)),
+		lookaheadMiles: 15,
+		gainFt: 1420,
+		lossFt: 760,
+		maxGradePercent: 14.8,
+		difficultyScore: 6.8,
+		difficultyLabel: 'moderate-hard',
+		climbs: [
+			{
+				startMile: Number((mile + 2.1).toFixed(1)),
+				endMile: Number((mile + 3.3).toFixed(1)),
+				direction: 'climb',
+				gradePercent: 14.8,
+				verticalFt: 640
+			},
+			{
+				startMile: Number((mile + 8.4).toFixed(1)),
+				endMile: Number((mile + 9.2).toFixed(1)),
+				direction: 'descent',
+				gradePercent: 11.2,
+				verticalFt: -420
+			}
+		],
+		sourceLabel: 'Scout eval cached terrain: synthetic USGS-style elevation summary for local-AI regression testing',
+		generatedAt
+	};
 }
 
 function waterFor(mile, prompt) {

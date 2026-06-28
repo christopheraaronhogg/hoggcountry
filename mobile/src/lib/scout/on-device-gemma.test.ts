@@ -303,9 +303,10 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /For "where am I relative to the next road crossing or town" questions/);
 	assert.match(systemContext, /start from the current_mile finding and the next_town road\/town access finding/);
 	assert.match(systemContext, /do not assume services at a crossing unless loaded current service data proves them/);
-	assert.match(systemContext, /For "next climb", "how hard is the terrain ahead", elevation, gain\/loss, or grade questions/);
-	assert.match(systemContext, /lacks verified climb, elevation profile, gain\/loss, or grade detail/);
-	assert.match(systemContext, /do not invent climb distance or difficulty/);
+	assert.match(systemContext, /For "how hard is today", "next climb", "how hard is the terrain ahead", elevation, gain\/loss, or grade questions/);
+	assert.match(systemContext, /If it has cached difficulty, gain\/loss, max grade, or steep sections/);
+	assert.match(systemContext, /If it lacks verified climb, elevation profile, gain\/loss, or grade detail/);
+	assert.match(systemContext, /do not invent it/);
 	assert.match(systemContext, /Give pace-impact guidance from daylight, water spacing, pack weight, feet\/knees/);
 	assert.match(systemContext, /End every answer with a complete sentence/);
 	assert.match(systemContext, /verify Bible text is available offline/);
@@ -396,11 +397,22 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.doesNotMatch(modelDownloadingAnswer, /knowledge base/);
 	assert.match(modelDownloadingAnswer, /on-device local AI model is still downloading and verifying/);
 	assert.match(modelDownloadingAnswer, /not ready for offline Scout yet/);
-	assert.match(modelDownloadingAnswer, /Wi-Fi and power/);
-	assert.match(modelDownloadingAnswer, /check Scout model status or progress until it says ready/);
-	assert.match(modelDownloadingAnswer, /retry, cancel, or restart/);
-	assert.match(modelDownloadingAnswer, /Do not trust offline\/local AI until the model reports ready/);
+	assert.match(modelDownloadingAnswer, /Wi-Fi and power|Wi-Fi, plug into power/);
+	assert.match(modelDownloadingAnswer, /confirm enough free storage/);
+	assert.match(modelDownloadingAnswer, /restart the app and try again on Wi-Fi before leaving service/);
+	assert.match(modelDownloadingAnswer, /field pack and saved maps\/docs may still be available offline/);
+	assert.match(modelDownloadingAnswer, /should not pretend local AI can answer offline until the model reports ready/);
 	assert.match(modelDownloadingAnswer, /airplane-mode Scout question succeeds/);
+
+	const modelDownloadFailedAnswer = polishOnDeviceAnswer(
+		'The local AI model download failed. Keep your phone on Wi-Fi and power and retry it.',
+		'The local AI model download failed. What should I do now?'
+	);
+	assert.match(modelDownloadFailedAnswer, /failed or stuck download means the on-device local AI model is not ready/);
+	assert.match(modelDownloadFailedAnswer, /confirm enough free storage/);
+	assert.match(modelDownloadFailedAnswer, /restart the app and try again on Wi-Fi before leaving service/);
+	assert.match(modelDownloadFailedAnswer, /field pack and saved maps\/docs may still be available offline/);
+	assert.match(modelDownloadFailedAnswer, /should not pretend local AI can answer offline until the model reports ready/);
 
 	const staleFieldPackAnswer = polishOnDeviceAnswer(
 		"You can check your pack for signs of staleness by looking at the condition of your gear and your own physical state. A stale pack often shows up as gear that is damaged, worn out, or not functioning as expected.\n\nYou should check your sleep system, rain gear, water filter, first aid kit, and battery bank. If any of these items are showing signs of wear, damage, or poor performance, that's a sign to re-evaluate them.",
@@ -526,6 +538,240 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 		),
 		'Before making a firm mail-versus-town call, confirm diet restrictions, expected pace, next town timing, store and post-office hours, hostel or shuttle access, and whether the item is hard to find locally. Default rule: buy common food in town; mail only constrained, medical, diet-specific, or hard-to-find items to verified stops.\n\nBuy common food in town. Mail special items to verified stops and confirm store hours.'
 	);
+
+	const townRecoveryAnswer = polishOnDeviceAnswer(
+		'When you reach town, confirm the details for services, hostels, shuttles, and stores right away.',
+		'What should I do first when I get to town so I recover well?'
+	);
+	assert.match(townRecoveryAnswer, /Town recovery order/);
+	assert.match(townRecoveryAnswer, /eat real calories first/);
+	assert.match(townRecoveryAnswer, /shower and laundry/);
+	assert.match(townRecoveryAnswer, /inspect and treat feet/);
+	assert.match(townRecoveryAnswer, /charge the phone and battery bank, refresh\/download Scout items/);
+	assert.match(townRecoveryAnswer, /handle that before chasing chores/);
+
+	const foodDaysAnswer = polishOnDeviceAnswer(
+		'You should carry food to the next creek crossing and add a buffer.',
+		'How many days of food should I buy for the next stretch?',
+		[
+			{
+				toolId: 'next_town',
+				args: { fromMile: 66.2 },
+				summary: 'Pilot Gap Road at mile 71.0 (4.8 mi ahead via road crossing; emergency exit candidate, confirm shuttle or pickup). No guaranteed services at the crossing.',
+				confidence: 'medium',
+				receipts: []
+			},
+			{
+				toolId: 'upcoming_terrain',
+				args: { fromMile: 66.2 },
+				summary: 'Upcoming terrain window: moderate climbs and road access spacing; verify grade with an offline map.',
+				confidence: 'medium',
+				receipts: []
+			}
+		]
+	);
+	assert.match(foodDaysAnswer, /Food-days estimate/);
+	assert.match(foodDaysAnswer, /distance to the next confirmed resupply/);
+	assert.match(foodDaysAnswer, /realistic pace for the terrain/);
+	assert.match(foodDaysAnswer, /Do not base food days on the next water source/);
+	assert.match(foodDaysAnswer, /road crossing has food or store access unless current service data proves it/);
+	assert.match(foodDaysAnswer, /Pilot Gap Road at mile 71\.0/);
+
+	const directWaterAnswer = polishOnDeviceAnswer(
+		'You should check your field pack for nearby sources.',
+		'How far to the next water?',
+		[
+			{
+				toolId: 'next_water',
+				args: { fromMile: 1530 },
+				summary: 'Next loaded water: Unnamed mapped stream at mile 1531.9 (1.9 mi ahead, thin). Mapped water candidate; confirm current flow. Next better-known source after that: Riga Shelter at mile 1534.4 (4.4 mi ahead, seasonal).',
+				confidence: 'low',
+				receipts: []
+			}
+		]
+	);
+	assert.match(directWaterAnswer, /Next water from the cached field pack/);
+	assert.match(directWaterAnswer, /Unnamed mapped stream at mile 1531\.9 \(1\.9 mi ahead, thin\)/);
+	assert.match(directWaterAnswer, /Riga Shelter at mile 1534\.4 \(4\.4 mi ahead, seasonal\)/);
+	assert.match(directWaterAnswer, /Visually confirm current flow/);
+	assert.match(directWaterAnswer, /filter or treat/);
+
+	const directTownAnswer = polishOnDeviceAnswer(
+		'The next town is close, but confirm services.',
+		'How far til the next town?',
+		[
+			{
+				toolId: 'current_mile',
+				args: {},
+				summary: 'Currently at mile 1530.0 of 2197.4 (69.6% complete, 667.4 mi remaining).',
+				confidence: 'high',
+				receipts: []
+			},
+			{
+				toolId: 'next_town',
+				args: { fromMile: 1530 },
+				summary: 'Salisbury at mile 1537.1 (7.1 mi ahead via open-data road access candidate). Resupply, laundry, and lodging require same-day confirmation.',
+				confidence: 'low',
+				receipts: []
+			}
+		]
+	);
+	assert.match(directTownAnswer, /Road\/town navigation note/);
+	assert.match(directTownAnswer, /Currently at mile 1530\.0/);
+	assert.match(directTownAnswer, /Salisbury at mile 1537\.1 \(7\.1 mi ahead/);
+	assert.match(directTownAnswer, /do not assume services/);
+
+	const todayDifficultyAnswer = polishOnDeviceAnswer(
+		'Today should be manageable if you pace yourself.',
+		'How hard is today going to be?',
+		[
+			{
+				toolId: 'upcoming_terrain',
+				args: { fromMile: 1530 },
+				summary: 'Next 20 mi from 1530.0: Terrain: next 15 mi from 1530.0-1545.0 has difficulty hard (7.2/10), +1,820 ft gain, -940 ft loss, 18.6% max grade | Key steep sections: climb mi 1531.2-1532.1 (1.2 mi ahead, 18.6%, 620 ft) | Water: Unnamed mapped stream (mi 1531.9) | Shelter: Riga Shelter (mi 1534.4)',
+				confidence: 'high',
+				receipts: []
+			},
+			{
+				toolId: 'weather_lookup',
+				args: { fromMile: 1530, targetPeriod: 'today' },
+				summary: 'Cached weather for the today request near mile 1530.0 from NWS point forecast near Salisbury, CT: NWS Today: Chance showers (high 68F / low 49F, wind 13 mph). pack generated 2026-06-20T10:00:00.000Z.',
+				confidence: 'medium',
+				receipts: []
+			},
+			{
+				toolId: 'next_water',
+				args: { fromMile: 1530 },
+				summary: 'Next loaded water: Unnamed mapped stream at mile 1531.9 (1.9 mi ahead, thin).',
+				confidence: 'low',
+				receipts: []
+			},
+			{
+				toolId: 'next_shelter',
+				args: { fromMile: 1530 },
+				summary: 'Riga Shelter at mile 1534.4 (4.4 mi ahead).',
+				confidence: 'medium',
+				receipts: []
+			}
+		]
+	);
+	assert.match(todayDifficultyAnswer, /Today from the cached field pack/);
+	assert.match(todayDifficultyAnswer, /difficulty hard \(7\.2\/10\)/);
+	assert.match(todayDifficultyAnswer, /\+1,820 ft gain/);
+	assert.match(todayDifficultyAnswer, /weather: Cached weather/);
+	assert.match(todayDifficultyAnswer, /water: Next loaded water/);
+	assert.match(todayDifficultyAnswer, /offline context/);
+
+	const tomorrowWeatherAnswer = polishOnDeviceAnswer(
+		'Weather can change fast in the mountains.',
+		"What's the weather tomorrow?",
+		[
+			{
+				toolId: 'weather_lookup',
+				args: { fromMile: 1530, targetPeriod: 'tomorrow' },
+				summary: 'Cached weather for the tomorrow request near mile 1530.0 from NWS point forecast near Salisbury, CT: NWS Tomorrow: Chance showers (high 68F / low 49F, wind 13 mph). pack generated 2026-06-20T10:00:00.000Z. This mobile pack carries a compact cached forecast snapshot, not a live hourly forecast; refresh online before relying on tomorrow weather for exposed terrain.',
+				confidence: 'medium',
+				receipts: []
+			}
+		]
+	);
+	assert.match(tomorrowWeatherAnswer, /Cached weather answer/);
+	assert.match(tomorrowWeatherAnswer, /NWS Tomorrow: Chance showers/);
+	assert.match(tomorrowWeatherAnswer, /compact cached forecast snapshot/);
+	assert.match(tomorrowWeatherAnswer, /offline context, not live proof/);
+
+	const zeroNeroAnswer = polishOnDeviceAnswer(
+		'Take the zero. Rest is an investment, not failure.',
+		'Should I take a zero or nero in this town?',
+		[
+			{
+				toolId: 'weather_lookup',
+				args: { fromMile: 101.1 },
+				summary: 'Cached weather near mile 101.1: partly cloudy with changing mountain conditions (high 67F / low 51F, wind 9 mph).',
+				confidence: 'medium',
+				receipts: []
+			}
+		]
+	);
+	assert.match(zeroNeroAnswer, /Zero\/nero decision/);
+	assert.match(zeroNeroAnswer, /do not default to miles or default to a full zero/);
+	assert.match(zeroNeroAnswer, /body condition, injury or foot issues, sleep debt, weather, required chores, budget, and the next section/);
+	assert.match(zeroNeroAnswer, /weather context: Cached weather near mile 101\.1/);
+
+	const townDayAnswer = polishOnDeviceAnswer(
+		'Eat, shower, do your foot care, and get some sleep.',
+		'How do I avoid wasting a town day and still feel human again?'
+	);
+	assert.match(townDayAnswer, /Town-day sequence/);
+	assert.match(townDayAnswer, /Time-box errands/);
+	assert.match(townDayAnswer, /do not skip food, rest, foot care, or sleep/);
+
+	const hostelChoreAnswer = polishOnDeviceAnswer(
+		'Before making a firm mail-versus-town call, confirm diet restrictions and store hours. At a town stop, prioritize recovery first.',
+		'How should I plan laundry, shower, resupply, and foot care at a hostel stop?'
+	);
+	assert.match(hostelChoreAnswer, /Hostel-stop order/);
+	assert.match(hostelChoreAnswer, /claim\/confirm the bed or pickup first/);
+	assert.match(hostelChoreAnswer, /inspect feet and shoes before shopping/);
+	assert.match(hostelChoreAnswer, /Treat laundry, showers, bunks, shuttles, and store access as unconfirmed/);
+	assert.doesNotMatch(hostelChoreAnswer, /mail-versus-town/);
+
+	const resupplyPointAnswer = polishOnDeviceAnswer(
+		'Buy common food in town at the next road crossing.',
+		'How do I choose the next resupply point without carrying too much food?',
+		[
+			{
+				toolId: 'next_town',
+				args: { fromMile: 344.1 },
+				summary: 'Pilot Gap Road at mile 348.9 (4.8 mi ahead via road crossing; emergency exit candidate, confirm shuttle or pickup). No guaranteed services at the crossing.',
+				confidence: 'medium',
+				receipts: []
+			}
+		]
+	);
+	assert.match(resupplyPointAnswer, /Resupply-point choice/);
+	assert.match(resupplyPointAnswer, /Do not cut food carry just because Scout names a road or town candidate/);
+	assert.match(resupplyPointAnswer, /confirm services first/);
+	assert.match(resupplyPointAnswer, /carry conservatively to the next verified option/);
+
+	const scoutTownUpdateAnswer = polishOnDeviceAnswer(
+		'Before leaving town, check the current weather, any closures, fire or smoke alerts, and the water situation.',
+		'What should I update in Scout before leaving town?'
+	);
+	assert.match(scoutTownUpdateAnswer, /Before leaving town, update Scout/);
+	assert.match(scoutTownUpdateAnswer, /profile\/current AT mile/);
+	assert.match(scoutTownUpdateAnswer, /field pack/);
+	assert.match(scoutTownUpdateAnswer, /weather and closure checks/);
+	assert.match(scoutTownUpdateAnswer, /food\/loadout changes/);
+	assert.match(scoutTownUpdateAnswer, /re-ask water, shelter, town, terrain, and bailout questions/);
+
+	const john316Answer = polishOnDeviceAnswer(
+		'John 3:16 says that God loved the world so much that he gave his one and only Son.',
+		'Read John 3:16 and explain it simply.'
+	);
+	assert.match(john316Answer, /John 3:16/);
+	assert.match(john316Answer, /For God so loved the world, that he gave his only begotten Son/);
+	assert.match(john316Answer, /whosoever believeth in him should not perish/);
+	assert.match(john316Answer, /Simply: God loved the world, gave his Son/);
+
+	const salvationAnswer = polishOnDeviceAnswer(
+		'There is no other name under heaven given among men for salvation. That is a question about faith, not about the trail.',
+		'What must I do to be saved?'
+	);
+	assert.match(salvationAnswer, /believe on the Lord Jesus Christ/);
+	assert.match(salvationAnswer, /repent and turn to God/);
+	assert.match(salvationAnswer, /by grace through faith/);
+	assert.match(salvationAnswer, /call on the name of the Lord/);
+	assert.match(salvationAnswer, /Do not add denominational checklists/);
+	assert.doesNotMatch(salvationAnswer, /not about the trail/);
+
+	const repeatLastAnswer = polishOnDeviceAnswer(
+		'You are at mile 246.8. For today, aim for 12 miles.',
+		'Answer my last question again but shorter.'
+	);
+	assert.match(repeatLastAnswer, /do not have a reliable previous question/);
+	assert.match(repeatLastAnswer, /should not invent one/);
+	assert.doesNotMatch(repeatLastAnswer, /aim for 12 miles/);
 
 	assert.equal(
 		polishOnDeviceAnswer(
@@ -712,9 +958,11 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 		]
 	);
 	assert.doesNotMatch(roadTownNavigationAnswer, /reliable water source is a seasonal seep/i);
-	assert.match(roadTownNavigationAnswer, /closest loaded water candidate is a seasonal seep/);
+	assert.doesNotMatch(roadTownNavigationAnswer, /closest loaded water candidate is a seasonal seep/i);
 	assert.match(roadTownNavigationAnswer, /Currently at mile 44\.7/);
 	assert.match(roadTownNavigationAnswer, /next loaded road\/town access is Pilot Gap Road at mile 49\.5/);
+	assert.match(roadTownNavigationAnswer, /4\.8 mi ahead/);
+	assert.doesNotMatch(roadTownNavigationAnswer, /5\.3 miles/);
 	assert.match(roadTownNavigationAnswer, /confirm shuttle or pickup/i);
 	assert.match(roadTownNavigationAnswer, /do not assume services at a road crossing/i);
 

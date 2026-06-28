@@ -171,7 +171,13 @@ test('personal mobile field packs use official NWS weather when it is available'
     assert.equal(pack.data.context_pack.weather?.lowF, 51);
     assert.equal(pack.data.context_pack.weather?.windMph, 14);
     assert.match(pack.data.context_pack.weather?.riskNote ?? '', /Active NWS alert/i);
+    assert.equal(pack.data.context_pack.terrain?.lookaheadMiles, 15);
+    assert.equal(pack.data.context_pack.terrain?.fromMile, 600.4);
+    assert.ok(typeof pack.data.context_pack.terrain?.gainFt === 'number');
+    assert.ok(typeof pack.data.context_pack.terrain?.lossFt === 'number');
+    assert.match(pack.data.context_pack.terrain?.sourceLabel ?? '', /USGS 3DEP/i);
     assert.ok(pack.meta.source_receipts.some((receipt) => receipt.id === 'official:nws-point-forecast'));
+    assert.ok(pack.meta.source_receipts.some((receipt) => receipt.id === 'derived:terrain-summary'));
     assert.match(pack.data.pilot_notice, /official NWS point forecast/i);
     assert.ok(requests.some((url) => url.includes('api.weather.gov/points/')));
   } finally {

@@ -127,6 +127,29 @@ export interface CachedWeather {
 	forecastUpdatedAt?: string | null;
 }
 
+export interface TerrainClimbReference {
+	startMile: number;
+	endMile: number;
+	direction: 'climb' | 'descent' | 'mixed';
+	gradePercent: number;
+	verticalFt: number;
+	state?: string;
+}
+
+export interface TerrainSummaryReference {
+	fromMile: number;
+	toMile: number;
+	lookaheadMiles: number;
+	gainFt: number | null;
+	lossFt: number | null;
+	maxGradePercent: number | null;
+	difficultyScore: number | null;
+	difficultyLabel: string | null;
+	climbs: TerrainClimbReference[];
+	sourceLabel: string;
+	generatedAt: string;
+}
+
 export interface LoadoutItem {
 	name: string;
 	category: 'shelter' | 'sleep' | 'pack' | 'clothing' | 'kitchen' | 'electronics' | 'safety' | 'consumable';
@@ -188,6 +211,7 @@ export interface ContextPack {
 	documents?: LocalDocumentReference[];
 	loadout: LoadoutItem[];
 	weather: CachedWeather | null;
+	terrain?: TerrainSummaryReference | null;
 	conditions?: TrailConditionsContext | null;
 	parkServices?: ParkServicesContext | null;
 	downloadedRegions: string[];

@@ -41,12 +41,24 @@ test('allows explicit Bible prompts and offline Bible readiness wording', () => 
 			caseId: 'DLA-AIRPLANE',
 			prompt: 'Can I use Scout with no cell service if I am in airplane mode?',
 			answer: 'In airplane mode, Scout can answer from the cached field pack, on-device local AI model, saved offline maps/docs, and Bible text if it was packaged or downloaded. It cannot fetch fresh weather, closures, cloud sync, messages, or live location until you are back online.'
+		}),
+		result({
+			caseId: 'DLA-098',
+			prompt: 'What can you still answer in airplane mode?',
+			answer: 'In airplane mode, Scout can answer from the cached field pack, on-device local AI model, saved offline maps/docs, and Bible text if it was packaged or downloaded. It cannot fetch fresh weather, official closures, cloud sync, messages, or live location until you are back online.'
+		}),
+		result({
+			caseId: 'DLA-094',
+			prompt: 'What must I do to be saved?',
+			answer: 'The Bible answers directly: believe on the Lord Jesus Christ, repent and turn to God, receive salvation by grace through faith, and call on the name of the Lord.'
 		})
 	]));
 
 	assert.deepEqual(checkIdsFor(report, 'DLA-BIBLE'), []);
 	assert.deepEqual(checkIdsFor(report, 'DLA-OFFLINE'), []);
 	assert.deepEqual(checkIdsFor(report, 'DLA-AIRPLANE'), []);
+	assert.deepEqual(checkIdsFor(report, 'DLA-098'), []);
+	assert.deepEqual(checkIdsFor(report, 'DLA-094'), []);
 });
 
 test('flags weather answers that omit fetched forecast details', () => {

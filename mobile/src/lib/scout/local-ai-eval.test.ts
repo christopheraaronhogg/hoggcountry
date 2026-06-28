@@ -136,6 +136,28 @@ test('runScoutLocalAiEval records on-device answers and tool expectations', asyn
 	assert.equal(run.results[0].rating, null);
 });
 
+test('buildScoutLocalAiEvalPack carries cached terrain for offline difficulty questions', () => {
+	const pack = buildScoutLocalAiEvalPack(
+		evalCase({
+			id: 'DLA-066',
+			prompt: 'How far to the next climb and how hard is the terrain ahead?',
+			mile: 247.3,
+			requiredTools: ['upcoming_terrain', 'source_search:terrain', 'open_source_doc:terrain']
+		}),
+		new Date('2026-06-26T12:00:00.000Z')
+	);
+
+	assert.equal(pack.terrain?.fromMile, 247.3);
+	assert.equal(pack.terrain?.toMile, 262.3);
+	assert.equal(pack.terrain?.lookaheadMiles, 15);
+	assert.equal(pack.terrain?.gainFt, 1420);
+	assert.equal(pack.terrain?.lossFt, 760);
+	assert.equal(pack.terrain?.maxGradePercent, 14.8);
+	assert.equal(pack.terrain?.difficultyLabel, 'moderate-hard');
+	assert.equal(pack.terrain?.climbs[0]?.startMile, 249.4);
+	assert.match(pack.terrain?.sourceLabel ?? '', /cached terrain/i);
+});
+
 test('runScoutLocalAiEval can target explicit case ids for diagnostic reruns', async () => {
 	const testSuite = suite([
 		evalCase({ id: 'DLA-001', prompt: 'first case' }),

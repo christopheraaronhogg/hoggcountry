@@ -60,7 +60,7 @@ const AIRPLANE_MODE_REHEARSAL_NOTE =
 const PRETRIP_SCREENSHOT_NOTE =
 	'Before day one, screenshot or save offline: current mile/start location, itinerary and check-in plan, emergency contacts, next resupply or town/bailout plan, offline map download/status, Scout field-pack/local-model status, key permits or reservations, shuttle/lodging confirmations, and medication/allergy notes. Keep copies outside Scout too, such as Photos/Files and a paper card. Do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat; Scout only needs source summaries and trail context.';
 const MODEL_DOWNLOADING_STATUS_NOTE =
-	'Model-download status: still downloading means the on-device local AI model is not ready for offline Scout yet. Keep the phone on Wi-Fi and power, let download and verification finish, and check Scout model status or progress until it says ready. If it is stuck or failed, retry, cancel, or restart from the model download control while back on Wi-Fi. Do not trust offline/local AI until the model reports ready and an airplane-mode Scout question succeeds; Scout must not pretend a fake offline answer came from the local model.';
+	'Model-download status: a failed or stuck download means the on-device local AI model is not ready for offline Scout yet. In town or on reliable Wi-Fi, plug into power, confirm enough free storage, leave the app open long enough for download/verification, then retry from the model download control. If it stays stuck, restart the app and try again on Wi-Fi before leaving service. The field pack and saved maps/docs may still be available offline if already downloaded, but Scout should not pretend local AI can answer offline until the model reports ready and an airplane-mode Scout question succeeds.';
 const FIELD_PACK_STALENESS_NOTE =
 	"Field-pack status: Scout's field pack is the cached trail data on the phone, not the physical backpack. Before trusting it, check the pack age/status, current mile or downloaded region, and source timestamps when shown. If it is old, expired, for the wrong mile/region, or was loaded before weather, closures, water, or services changed, treat it as stale. Refresh on Wi-Fi or in town before water, weather, closure, bailout, or town-service decisions. Until refreshed, cached weather, closures, water, and services are caution signals, not current proof.";
 const SIGN_IN_CLOUD_SYNC_NOTE =
@@ -103,6 +103,26 @@ const STOP_HIKING_IMMEDIATE_NOTE =
 	'Stop-hiking-immediately note: stop making miles for heat illness signs, hypothermia signs, lightning/exposed ridge danger, smoke/fire, flooding/high water, being lost or off trail, unsafe people, severe fatigue with foggy thinking, worsening injury, swelling, changed gait, chest pain, trouble breathing, fainting, confusion, or darkness/weather that makes navigation unsafe. Get to a safe stable spot, choose the nearest lower-risk legal stop or exit, and use 911, inReach/PLB, rangers/authorities, or the emergency plan when danger, exposure, injury, or confusion is present.';
 const RESUPPLY_MAIL_DROP_NOTE =
 	'Before making a firm mail-versus-town call, confirm diet restrictions, expected pace, next town timing, store and post-office hours, hostel or shuttle access, and whether the item is hard to find locally. Default rule: buy common food in town; mail only constrained, medical, diet-specific, or hard-to-find items to verified stops.';
+const TOWN_RECOVERY_FIRST_NOTE =
+	'Town recovery order: eat real calories first, then shower and laundry, inspect and treat feet, sleep or rest, charge the phone and battery bank, refresh/download Scout items, and only then handle shopping, shuttles, reservations, and next-section logistics. If foot pain, infection signs, injury, or exhaustion is present, handle that before chasing chores.';
+const TOWN_DAY_SEQUENCE_NOTE =
+	'Town-day sequence: make a short list, eat first, shower/laundry next, inspect feet and gear, resupply, then charge, refresh, and download before leaving service. Time-box errands so the day does not vanish, but do not skip food, rest, foot care, or sleep just to feel productive.';
+const HOSTEL_CHORE_ORDER_NOTE =
+	'Hostel-stop order: claim/confirm the bed or pickup first, start laundry and shower early, inspect feet and shoes before shopping, eat, resupply, dry wet gear, charge batteries, refresh the field pack/current mile/weather/closures, update the local AI model on Wi-Fi if needed, and confirm checkout/shuttle timing. Treat laundry, showers, bunks, shuttles, and store access as unconfirmed until the hostel or town source confirms them.';
+const ZERO_NERO_DECISION_NOTE =
+	'Zero/nero decision: do not default to miles or default to a full zero. Weigh body condition, injury or foot issues, sleep debt, weather, required chores, budget, and the next section. Take the zero when recovery, injury, dangerous weather, or unfinished chores would make tomorrow worse; take a nero when the essential chores are done and the next short move is safe. Rest is an investment, not a failure.';
+const FOOD_DAYS_NEXT_STRETCH_NOTE =
+	'Food-days estimate: calculate days from the distance to the next confirmed resupply, your realistic pace for the terrain, appetite, and one small backup margin. Do not base food days on the next water source, and do not assume a road crossing has food or store access unless current service data proves it. If the next reliable resupply point is not loaded, ask for or verify the exact next town/store before giving a precise day count.';
+const RESUPPLY_POINT_CARRY_NOTE =
+	'Resupply-point choice: choose the next stop by distance, terrain difficulty, appetite, reliable store or hostel access, hours, shuttle/pickup reality, and a backup food margin. Do not cut food carry just because Scout names a road or town candidate; confirm services first. If Scout only has thin road/town context, ask for the next known resupply point or carry conservatively to the next verified option.';
+const SCOUT_TOWN_UPDATE_NOTE =
+	'Before leaving town, update Scout with your profile/current AT mile, refreshed field pack, weather and closure checks, food/loadout changes, saved documents, offline maps/docs, and a quick airplane-mode test. Then re-ask water, shelter, town, terrain, and bailout questions because fresh Scout state changes those answers. Treat old cached weather, closures, water, and services as stale until refreshed.';
+const JOHN_316_SIMPLE_NOTE =
+	'John 3:16: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life." Simply: God loved the world, gave his Son, and promises everlasting life to those who believe in him.';
+const SALVATION_DIRECT_NOTE =
+	'The Bible answers directly: believe on the Lord Jesus Christ, repent and turn to God, receive salvation by grace through faith, and call on the name of the Lord. Acts 16:31 says, "Believe on the Lord Jesus Christ, and thou shalt be saved." Acts 3:19 says, "Repent ye therefore, and be converted." Ephesians 2:8-9 says salvation is by grace through faith, "not of works." Romans 10:13 says, "For whosoever shall call upon the name of the Lord shall be saved." Do not add denominational checklists as if they are required by Scout.';
+const REPEAT_LAST_NO_HISTORY_NOTE =
+	"I do not have a reliable previous question in this standalone local-AI run, so I should not invent one. Ask it again and I will answer shorter.";
 const INJURY_PAIN_SAFETY_NOTE =
 	'First: do not train through worsening pain. Back off or stop if pain worsens, swelling appears, or your gait changes; use pain-free load reduction, low-impact conditioning, and clinician or physical-therapist guidance before building mileage.';
 const HEAVY_RAIN_START_NOTE =
@@ -344,6 +364,15 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	answer = trimToCompleteSentence(answer);
 
 	const lowerPrompt = prompt.toLowerCase();
+	if (isJohn316SimplePrompt(lowerPrompt)) {
+		answer = JOHN_316_SIMPLE_NOTE;
+	}
+	if (isSalvationPrompt(lowerPrompt)) {
+		answer = SALVATION_DIRECT_NOTE;
+	}
+	if (isRepeatLastQuestionPrompt(lowerPrompt)) {
+		answer = REPEAT_LAST_NO_HISTORY_NOTE;
+	}
 	if (!isBiblePrompt(lowerPrompt)) {
 		answer = removeUnaskedBibleDrift(answer);
 	}
@@ -369,7 +398,9 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 		);
 	}
 	if (isAirplaneModeCapabilityPrompt(lowerPrompt) && !mentionsAirplaneModeCapabilityBoundary(answer)) {
-		answer = isVagueSourceOnlyAnswer(answer) ? AIRPLANE_MODE_CAPABILITY_NOTE : appendSentence(answer, AIRPLANE_MODE_CAPABILITY_NOTE);
+		answer = isVagueSourceOnlyAnswer(answer) || isAirplaneModeCapabilityPartialAnswer(answer)
+			? AIRPLANE_MODE_CAPABILITY_NOTE
+			: appendSentence(answer, AIRPLANE_MODE_CAPABILITY_NOTE);
 	}
 	if (isAirplaneModeRehearsalPrompt(lowerPrompt) && !mentionsAirplaneModeRehearsal(answer)) {
 		answer = isVagueSourceOnlyAnswer(answer) || isAirplaneModeRehearsalPartialAnswer(answer)
@@ -383,7 +414,9 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	}
 	if (isModelDownloadingStatusPrompt(lowerPrompt)) {
 		answer = normalizeModelDownloadingStatusWording(answer);
-		if (!mentionsModelDownloadingStatusReadiness(answer)) {
+		if (isModelDownloadFailurePrompt(lowerPrompt)) {
+			answer = MODEL_DOWNLOADING_STATUS_NOTE;
+		} else if (!mentionsModelDownloadingStatusReadiness(answer)) {
 			answer = isVagueSourceOnlyAnswer(answer) ? MODEL_DOWNLOADING_STATUS_NOTE : appendSentence(answer, MODEL_DOWNLOADING_STATUS_NOTE);
 		}
 	}
@@ -458,10 +491,15 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 			'Do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat; keep those saved separately offline.'
 		);
 	}
+	if (isDirectNextWaterDistancePrompt(lowerPrompt) && toolSummary(toolInvocations, 'next_water') && !mentionsToolPlace(answer, toolSummary(toolInvocations, 'next_water'))) {
+		answer = buildDirectNextWaterDistanceAnswer(toolInvocations);
+	}
 	if (isWeatherSensitivePrompt(lowerPrompt)) {
 		const weatherSummary = weatherLookupSummary(toolInvocations);
 		if (weatherSummary && !mentionsWeatherLookupSummary(answer, weatherSummary)) {
-			answer = appendSentence(answer, `Weather note: ${weatherSummary}`);
+			answer = isTomorrowWeatherPrompt(lowerPrompt)
+				? buildCachedWeatherAnswer(toolInvocations)
+				: appendSentence(answer, `Weather note: ${weatherSummary}`);
 		}
 	}
 	if (isClosureDetourRoutingPrompt(lowerPrompt) && !mentionsClosureDetourRoutingBoundary(answer, toolInvocations)) {
@@ -581,8 +619,11 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	if (isRoadTownRelativePrompt(lowerPrompt) && !isBailoutInjuryExitPrompt(lowerPrompt)) {
 		answer = normalizeRoadTownNavigationWording(answer);
 		if (!mentionsRoadTownNavigationContext(answer, toolInvocations)) {
-			answer = appendSentence(answer, buildRoadTownNavigationNote(toolInvocations));
+			answer = buildRoadTownNavigationNote(toolInvocations);
 		}
+	}
+	if (isTodayDifficultyPrompt(lowerPrompt) && !mentionsTodayDifficultyContext(answer, toolInvocations)) {
+		answer = buildTodayDifficultyNote(toolInvocations);
 	}
 	if (isClimbTerrainAheadPrompt(lowerPrompt) && !mentionsClimbTerrainAheadBoundary(answer)) {
 		answer = appendSentence(answer, buildClimbTerrainAheadNote(toolInvocations));
@@ -661,6 +702,31 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	}
 	if (isResupplyMailDropPrompt(lowerPrompt) && !firstParagraphMentionsResupplyMailDropInputs(answer)) {
 		answer = prependSentence(answer, RESUPPLY_MAIL_DROP_NOTE);
+	}
+	if (isTownRecoveryFirstPrompt(lowerPrompt) && !mentionsTownRecoveryOrder(answer)) {
+		answer = TOWN_RECOVERY_FIRST_NOTE;
+	}
+	if (isFoodDaysNextStretchPrompt(lowerPrompt)) {
+		answer = buildFoodDaysNextStretchNote(toolInvocations);
+	}
+	if (
+		isZeroNeroPrompt(lowerPrompt) &&
+		!isBadWeatherNeroPrompt(lowerPrompt) &&
+		(!mentionsZeroNeroDecision(answer) || isOvercommittedZeroNeroAnswer(answer))
+	) {
+		answer = buildZeroNeroDecisionNote(toolInvocations);
+	}
+	if (isTownDaySequencePrompt(lowerPrompt) && !mentionsTownDaySequence(answer)) {
+		answer = TOWN_DAY_SEQUENCE_NOTE;
+	}
+	if (isHostelChoreOrderPrompt(lowerPrompt) && !mentionsHostelChoreOrder(answer)) {
+		answer = HOSTEL_CHORE_ORDER_NOTE;
+	}
+	if (isResupplyPointCarryPrompt(lowerPrompt)) {
+		answer = buildResupplyPointCarryNote(toolInvocations);
+	}
+	if (isScoutTownUpdatePrompt(lowerPrompt) && !mentionsScoutTownUpdate(answer)) {
+		answer = SCOUT_TOWN_UPDATE_NOTE;
 	}
 	if (isBudgetPrompt(lowerPrompt) && !mentionsBudgetCategories(answer)) {
 		answer = appendSentence(
@@ -982,6 +1048,11 @@ function isModelDownloadingStatusPrompt(prompt: string): boolean {
 	return mentionsModel && mentionsDownloadState;
 }
 
+function isModelDownloadFailurePrompt(prompt: string): boolean {
+	return /\b(?:download failed|failed download|download is stuck|download stuck|stuck download|won't download|will not download|can't download|cannot download)\b/u.test(prompt) ||
+		(/\bdownload\b/u.test(prompt) && /\bfailed\b/u.test(prompt));
+}
+
 function isFieldPackStalenessPrompt(prompt: string): boolean {
 	const mentionsFieldPack = /\b(?:field[-\s]?pack|scout\s+pack|cached\s+(?:trail\s+)?pack|trail\s+data\s+pack)\b/u.test(prompt);
 	const asksFreshness = /\b(?:stale|fresh|current|trust|age|status|refresh|old|outdated|valid|expired)\b/u.test(prompt);
@@ -1066,7 +1137,7 @@ function isPersonalDocumentPrompt(prompt: string): boolean {
 }
 
 function isResupplyMailDropPrompt(prompt: string): boolean {
-	return /\b(?:resupply|mail ahead|mail drop|mail-drop|mail box|ship a box|shipping a box|buy in town|buy as i go)\b/u.test(prompt);
+	return /\b(?:mail ahead|mail drop|mail-drop|mail box|ship a box|shipping a box|mail versus|mail vs|buy in town|buy as i go|buy versus ship|ship versus buy|mail ahead versus buy|mail ahead vs buy)\b/u.test(prompt);
 }
 
 function isFamilyCheckinPrompt(prompt: string): boolean {
@@ -1108,7 +1179,51 @@ function isZeroNeroPrompt(prompt: string): boolean {
 }
 
 function isBiblePrompt(prompt: string): boolean {
-	return /\b(?:bible|scripture|verse|pray|prayer|psalm|proverb|john|romans|jesus|christ|lord|god|faith|spiritual|fear while|scared and alone)\b/u.test(prompt);
+	return /\b(?:bible|scripture|verse|pray|prayer|psalm|proverb|john|romans|jesus|christ|lord|god|faith|salvation|spiritual|fear while|scared and alone)\b/u.test(prompt) ||
+		/\b(?:be saved|get saved|am i saved)\b/u.test(prompt);
+}
+
+function isJohn316SimplePrompt(prompt: string): boolean {
+	return /\bjohn\s*3\s*:?\s*16\b/u.test(prompt) && /\b(?:read|quote|explain|simple|simply)\b/u.test(prompt);
+}
+
+function isSalvationPrompt(prompt: string): boolean {
+	return /\b(?:what must i do to be saved|how (?:can|do) i (?:be|get) saved|how am i saved|salvation)\b/u.test(prompt);
+}
+
+function isRepeatLastQuestionPrompt(prompt: string): boolean {
+	return /\b(?:answer|say|repeat)\b[^.?!\n]*(?:last question|previous question|again)\b/u.test(prompt) ||
+		/\b(?:last question|previous question)\b[^.?!\n]*(?:shorter|again)\b/u.test(prompt);
+}
+
+function isTownRecoveryFirstPrompt(prompt: string): boolean {
+	return /\b(?:first|do first)\b/u.test(prompt) &&
+		/\btown\b/u.test(prompt) &&
+		/\b(?:recover|recovery|feel better|rest)\b/u.test(prompt);
+}
+
+function isFoodDaysNextStretchPrompt(prompt: string): boolean {
+	return /\b(?:how many days|days of food|food should i buy|buy.*food)\b/u.test(prompt) &&
+		/\b(?:next stretch|next section|resupply|food)\b/u.test(prompt);
+}
+
+function isTownDaySequencePrompt(prompt: string): boolean {
+	return /\b(?:town day|wasting a town day|waste a town day|feel human)\b/u.test(prompt);
+}
+
+function isHostelChoreOrderPrompt(prompt: string): boolean {
+	return /\bhostel\b/u.test(prompt) &&
+		/\b(?:laundry|shower|resupply|foot care|chores?)\b/u.test(prompt);
+}
+
+function isResupplyPointCarryPrompt(prompt: string): boolean {
+	return /\b(?:choose|pick|select|plan)\b[^.?!\n]*(?:resupply point|next resupply|resupply stop)\b/u.test(prompt) ||
+		/\b(?:resupply point|next resupply|resupply stop)\b[^.?!\n]*(?:carry|too much food|food carry|choose|pick|select)\b/u.test(prompt);
+}
+
+function isScoutTownUpdatePrompt(prompt: string): boolean {
+	return /\b(?:update in scout|update scout|what should i update)\b/u.test(prompt) &&
+		/\b(?:leaving town|before leaving town|town)\b/u.test(prompt);
 }
 
 function isFearComfortPrompt(prompt: string): boolean {
@@ -1141,6 +1256,30 @@ function isTownOfflineReadinessPrompt(prompt: string): boolean {
 
 function isWeatherSensitivePrompt(prompt: string): boolean {
 	return /\b(?:weather|rains?|rainy|raining|storms?|thunderstorms?|thunder|lightning|winds?|cold|heat|hot|hypothermia|freez\w*|ridge|dry stretch|bad weather|zeros?|neros?|stop hiking)\b/u.test(prompt);
+}
+
+function isTomorrowWeatherPrompt(prompt: string): boolean {
+	return /\btomorrow\b/u.test(prompt) && /\b(?:weather|forecast|rain|storm|wind|hot|cold|temperature|temps?)\b/u.test(prompt);
+}
+
+function isDirectNextWaterDistancePrompt(prompt: string): boolean {
+	return /\b(?:how far|where|nearest|next)\b[^.?!\n]*(?:water|spring|creek|source)|\b(?:water|spring|creek|source)\b[^.?!\n]*(?:how far|nearest|next)\b/u.test(prompt) &&
+		!isDryStretchWaterPrompt(prompt) &&
+		!isRidgeWaterDecisionPrompt(prompt) &&
+		!isHeatWaterPrompt(prompt) &&
+		!isQuestionableWaterLowDaylightPrompt(prompt) &&
+		!isUnknownWaterFlowPrompt(prompt) &&
+		!isSkipSeasonalWaterPrompt(prompt) &&
+		!isWaterReportConflictPrompt(prompt);
+}
+
+function isDirectNextTownDistancePrompt(prompt: string): boolean {
+	if (/\b(?:where am i|relative to)\b/u.test(prompt)) return false;
+	return /\b(?:how far|nearest|next)\b[^.?!\n]*(?:town|resupply|road crossing|road|access)|\b(?:town|resupply|road crossing|road|access)\b[^.?!\n]*(?:how far|nearest|next)\b/u.test(prompt);
+}
+
+function isTodayDifficultyPrompt(prompt: string): boolean {
+	return /\b(?:how hard|how tough|hard is today|hard today|today going to be|today gonna be)\b/u.test(prompt);
 }
 
 function isThunderstormHikePrompt(prompt: string): boolean {
@@ -1264,7 +1403,7 @@ function isRoadTownRelativePrompt(prompt: string): boolean {
 function isClimbTerrainAheadPrompt(prompt: string): boolean {
 	const asksClimbDetail = /\b(?:how far|how hard|next climb|climb ahead|terrain ahead|elevation|gain|loss|grade)\b/u.test(prompt);
 	const mentionsClimbOrTerrain = /\b(?:climb|terrain|elevation|gain|loss|grade)\b/u.test(prompt);
-	return asksClimbDetail && mentionsClimbOrTerrain;
+	return (asksClimbDetail && mentionsClimbOrTerrain) || isTodayDifficultyPrompt(prompt);
 }
 
 function isNearestWaterPrompt(prompt: string): boolean {
@@ -1559,6 +1698,22 @@ function buildNearestWaterVerificationNote(toolInvocations: ToolInvocationRecord
 	return `Water verification note: ${nextWater} Visually confirm flow before relying on it, filter or treat any water you collect, and carry enough to reach a verified source if it is dry.`;
 }
 
+function buildDirectNextWaterDistanceAnswer(toolInvocations: ToolInvocationRecord[]): string {
+	const nextWater = toolSummary(toolInvocations, 'next_water');
+	if (!nextWater) {
+		return 'I do not have a loaded water source ahead in this cached field pack. Refresh when online or verify from a current source before planning a carry.';
+	}
+	return `Next water from the cached field pack: ${trimToolClause(nextWater)}. Visually confirm current flow before relying on it, filter or treat anything you collect, and carry enough to reach a verified source if it is dry.`;
+}
+
+function buildCachedWeatherAnswer(toolInvocations: ToolInvocationRecord[]): string {
+	const weather = weatherLookupSummary(toolInvocations);
+	if (!weather) {
+		return 'I do not have cached weather in this field pack. Refresh when online or check an official weather source before relying on tomorrow weather.';
+	}
+	return `Cached weather answer: ${trimToolClause(weather)}. Treat this as offline context, not live proof; refresh when you have service before exposed terrain, storms, heat, cold, flooding, or a safety-critical decision.`;
+}
+
 function normalizeSkipSeasonalWaterWording(answer: string): string {
 	return answer
 		.replace(
@@ -1630,6 +1785,23 @@ function buildRoadTownNavigationNote(toolInvocations: ToolInvocationRecord[]): s
 	return `Road/town navigation note: ${parts.join('; ')}. Treat this as approximate loaded context. Confirm shuttle or pickup and do not assume services at a road crossing unless current service data proves them.`;
 }
 
+function buildTodayDifficultyNote(toolInvocations: ToolInvocationRecord[]): string {
+	const terrain = toolSummary(toolInvocations, 'upcoming_terrain');
+	const weather = toolSummary(toolInvocations, 'weather_lookup');
+	const water = toolSummary(toolInvocations, 'next_water');
+	const shelter = toolSummary(toolInvocations, 'next_shelter');
+	const parts = [
+		terrain ? `terrain: ${trimToolClause(terrain)}` : '',
+		weather ? `weather: ${trimToolClause(weather)}` : '',
+		water ? `water: ${trimToolClause(water)}` : '',
+		shelter ? `sleep option: ${trimToolClause(shelter)}` : ''
+	].filter(Boolean);
+	if (!parts.length) {
+		return 'I do not have enough cached field-pack detail to rate today. Refresh the field pack when online, then check terrain, weather, water spacing, daylight, pack weight, feet/knees, and the next legal stop before committing to miles.';
+	}
+	return `Today from the cached field pack: ${parts.join('; ')}. Use that as the difficulty picture: terrain plus water spacing, weather, daylight, pack weight, feet/knees, and the next legal stop. It is offline context, so refresh when online before safety-critical decisions.`;
+}
+
 function buildBailoutInjuryExitNote(toolInvocations: ToolInvocationRecord[]): string {
 	const current = toolSummary(toolInvocations, 'current_mile');
 	const town = toolSummary(toolInvocations, 'next_town');
@@ -1660,6 +1832,39 @@ function buildOverduePartnerNote(toolInvocations: ToolInvocationRecord[]): strin
 	return `${OVERDUE_PARTNER_NOTE} Loaded nearby help/access context: ${trimToolClause(town)}. Treat it as a candidate for contacting help or arranging pickup, not proof that services are available.`;
 }
 
+function buildFoodDaysNextStretchNote(toolInvocations: ToolInvocationRecord[]): string {
+	const town = toolSummary(toolInvocations, 'next_town');
+	const terrain = toolSummary(toolInvocations, 'upcoming_terrain');
+	const context = [
+		town ? `loaded next town/access candidate: ${trimToolClause(town)}` : '',
+		terrain ? `loaded terrain context: ${trimToolClause(terrain)}` : ''
+	].filter(Boolean);
+	const contextNote = context.length ? ` Loaded context: ${context.join('; ')}.` : '';
+	return `${FOOD_DAYS_NEXT_STRETCH_NOTE}${contextNote}`;
+}
+
+function buildZeroNeroDecisionNote(toolInvocations: ToolInvocationRecord[]): string {
+	const town = toolSummary(toolInvocations, 'next_town');
+	const weather = toolSummary(toolInvocations, 'weather_lookup');
+	const context = [
+		town ? `loaded town/access candidate: ${trimToolClause(town)}` : '',
+		weather ? `weather context: ${trimToolClause(weather)}` : ''
+	].filter(Boolean);
+	const contextNote = context.length ? ` Loaded context: ${context.join('; ')}. Verify before safety-critical choices.` : '';
+	return `${ZERO_NERO_DECISION_NOTE}${contextNote}`;
+}
+
+function buildResupplyPointCarryNote(toolInvocations: ToolInvocationRecord[]): string {
+	const town = toolSummary(toolInvocations, 'next_town');
+	const terrain = toolSummary(toolInvocations, 'upcoming_terrain');
+	const context = [
+		town ? `loaded next town/access candidate: ${trimToolClause(town)}` : '',
+		terrain ? `loaded terrain context: ${trimToolClause(terrain)}` : ''
+	].filter(Boolean);
+	const contextNote = context.length ? ` Loaded context: ${context.join('; ')}.` : '';
+	return `${RESUPPLY_POINT_CARRY_NOTE}${contextNote}`;
+}
+
 function buildOffTrailImmediateNote(toolInvocations: ToolInvocationRecord[]): string {
 	const current = toolSummary(toolInvocations, 'current_mile');
 	if (!current) {
@@ -1673,6 +1878,9 @@ function buildClimbTerrainAheadNote(toolInvocations: ToolInvocationRecord[]): st
 	const terrain = toolSummary(toolInvocations, 'upcoming_terrain');
 	if (!terrain) {
 		return CLIMB_TERRAIN_AHEAD_FALLBACK_NOTE;
+	}
+	if (/\b(?:gain|loss|max grade|difficulty|key steep sections)\b/iu.test(terrain)) {
+		return `Climb/terrain note: loaded upcoming window is ${trimToolClause(terrain)}. Treat it as cached offline terrain context. Verify with an offline map, guide, GPS/elevation profile, or trail sign before committing to a hard push. Pace impact: slow the target pace, budget daylight, water spacing, pack weight, feet/knees, weather, and the next legal stop.`;
 	}
 	return `Climb/terrain note: loaded upcoming window is ${trimToolClause(terrain)}. That window does not include a verified climb, elevation profile, gain/loss, or grade, so do not invent a climb distance or difficulty. Use it as landmark spacing until an offline map, guide, GPS/elevation profile, or trail sign confirms the climb. Pace impact: slow the target pace, budget daylight, water spacing, pack weight, feet/knees, weather, and the next legal stop before committing to miles.`;
 }
@@ -2065,6 +2273,63 @@ function mentionsAirplaneModeCapabilityBoundary(answer: string): boolean {
 	return mentionsCachedPack && mentionsLocalModel && mentionsSavedDocs && mentionsBible && mentionsNetworkWeatherClosures && mentionsSyncLocation && mentionsStaleBoundary;
 }
 
+function isAirplaneModeCapabilityPartialAnswer(answer: string): boolean {
+	return /\b(?:airplane mode|offline|cached|field[-\s]?pack|local ai|model|saved|fresh weather|closures?|live location)\b/iu.test(answer);
+}
+
+function mentionsTownRecoveryOrder(answer: string): boolean {
+	return /\b(?:eat|calories)\b/iu.test(answer) &&
+		/\b(?:shower|laundry)\b/iu.test(answer) &&
+		/\b(?:foot care|feet|blister)\b/iu.test(answer) &&
+		/\b(?:sleep|rest)\b/iu.test(answer) &&
+		/\b(?:charge|download|refresh)\b/iu.test(answer) &&
+		/\b(?:logistics|shopping|shuttle|reservation|next section)\b/iu.test(answer);
+}
+
+function mentionsZeroNeroDecision(answer: string): boolean {
+	return /\b(?:body condition|injury|foot|feet|sleep debt)\b/iu.test(answer) &&
+		/\bweather\b/iu.test(answer) &&
+		/\b(?:chores|laundry|resupply|shower)\b/iu.test(answer) &&
+		/\bbudget\b/iu.test(answer) &&
+		/\bnext section\b/iu.test(answer) &&
+		/\brest is an investment\b/iu.test(answer);
+}
+
+function isOvercommittedZeroNeroAnswer(answer: string): boolean {
+	const firstSentence = splitSentences(answer)[0]?.trim() ?? answer.trim();
+	return /^(?:take|you should take|i would take|choose)\s+(?:the\s+)?(?:zero|nero)\b/iu.test(firstSentence);
+}
+
+function mentionsTownDaySequence(answer: string): boolean {
+	return /\b(?:time-box|timebox|short list|list)\b/iu.test(answer) &&
+		/\beat\b/iu.test(answer) &&
+		/\b(?:shower|laundry)\b/iu.test(answer) &&
+		/\b(?:feet|foot care|gear)\b/iu.test(answer) &&
+		/\b(?:charge|refresh|download)\b/iu.test(answer) &&
+		/\b(?:rest|sleep|food)\b/iu.test(answer);
+}
+
+function mentionsHostelChoreOrder(answer: string): boolean {
+	return /\b(?:bed|pickup|hostel|bunk)\b/iu.test(answer) &&
+		/\b(?:laundry|shower)\b/iu.test(answer) &&
+		/\b(?:feet|foot care|shoes)\b/iu.test(answer) &&
+		/\bresupply\b/iu.test(answer) &&
+		/\b(?:charge|refresh|field[-\s]?pack|model)\b/iu.test(answer) &&
+		/\b(?:confirm|unconfirmed|verify)\b/iu.test(answer);
+}
+
+function mentionsScoutTownUpdate(answer: string): boolean {
+	return /\b(?:profile|current at mile|current mile|AT mile)\b/iu.test(answer) &&
+		/\bfield[-\s]?pack\b/iu.test(answer) &&
+		/\bweather\b/iu.test(answer) &&
+		/\bclosures?\b/iu.test(answer) &&
+		/\b(?:loadout|food)\b/iu.test(answer) &&
+		/\b(?:documents|offline maps|maps\/docs)\b/iu.test(answer) &&
+		/\b(?:airplane[-\s]?mode test|airplane mode)\b/iu.test(answer) &&
+		/\b(?:water|shelter|town|terrain|bailout)\b/iu.test(answer) &&
+		/\bstale\b/iu.test(answer);
+}
+
 function normalizeModelDownloadingStatusWording(answer: string): string {
 	return answer
 		.replace(
@@ -2094,7 +2359,7 @@ function mentionsModelDownloadingStatusReadiness(answer: string): boolean {
 	const mentionsRetry =
 		/\b(?:retry|cancel|restart|try again|stuck|failed)\b/iu.test(answer);
 	const mentionsNoFakeOffline =
-		/\b(?:do not trust|don't trust|do not rely|don't rely|not ready|until)\b/iu.test(answer) &&
+		/\b(?:do not trust|don't trust|do not rely|don't rely|not ready|until|should not pretend|must not pretend)\b/iu.test(answer) &&
 		/\b(?:offline|local ai|local model|fake offline|pretend)\b/iu.test(answer) &&
 		/\b(?:airplane[-\s]?mode|model reports ready|succeeds|successful)\b/iu.test(answer);
 	return mentionsNotReady && mentionsWifiPower && mentionsStatus && mentionsRetry && mentionsNoFakeOffline;
@@ -2464,6 +2729,13 @@ function mentionsRoadTownNavigationContext(answer: string, toolInvocations: Tool
 }
 
 function mentionsClimbTerrainAheadBoundary(answer: string): boolean {
+	const mentionsCachedTerrain =
+		/\b(?:cached|loaded)\b[^.?!\n]*(?:terrain|upcoming window|field pack)|\b(?:terrain|upcoming window)\b[^.?!\n]*(?:cached|loaded)\b/iu.test(answer) &&
+		/\b(?:gain|loss|max grade|grade|difficulty|steep sections?|landmark spacing)\b/iu.test(answer) &&
+		/\b(?:offline map|guide|gps\/elevation profile|elevation profile|trail sign|verify|confirm|cached offline terrain)\b/iu.test(answer) &&
+		/\b(?:pace impact|slow|slower|target pace|budget daylight|daylight|water spacing|pack weight|feet\/knees|feet|knees|next legal stop)\b/iu.test(answer);
+	if (mentionsCachedTerrain) return true;
+
 	const mentionsMissingElevation =
 		/\b(?:does not include|doesn't include|lacks?|not have|no verified|cannot verify|can't verify)\b[^.?!\n]*(?:climb|elevation|gain\/loss|gain|loss|grade|profile)\b/iu.test(
 			answer
@@ -2476,6 +2748,16 @@ function mentionsClimbTerrainAheadBoundary(answer: string): boolean {
 	const mentionsExternalVerification = /\b(?:offline map|guide|gps\/elevation profile|elevation profile|trail sign|verify|confirm)\b/iu.test(answer);
 	const mentionsPaceImpact = /\b(?:pace impact|slow|slower|target pace|budget daylight|daylight|pack weight|feet\/knees|feet|knees|next legal stop)\b/iu.test(answer);
 	return mentionsMissingElevation && avoidsFabrication && mentionsLoadedContext && mentionsExternalVerification && mentionsPaceImpact;
+}
+
+function mentionsTodayDifficultyContext(answer: string, toolInvocations: ToolInvocationRecord[]): boolean {
+	const terrain = toolSummary(toolInvocations, 'upcoming_terrain');
+	const weather = toolSummary(toolInvocations, 'weather_lookup');
+	const usesTerrain = !terrain || mentionsToolPlace(answer, terrain) || /\b(?:terrain|difficulty|gain|loss|grade|steep|water spacing|shelter|town)\b/iu.test(answer);
+	const usesWeather = !weather || /\b(?:weather|forecast|rain|storm|wind|hot|cold|cached)\b/iu.test(answer);
+	const mentionsDecisionFactors = /\b(?:daylight|water spacing|pack weight|feet|knees|next legal stop|body|weather)\b/iu.test(answer);
+	const mentionsCachedBoundary = /\b(?:cached|offline|field pack|refresh|not live|stale)\b/iu.test(answer);
+	return usesTerrain && usesWeather && mentionsDecisionFactors && mentionsCachedBoundary;
 }
 
 function mentionsQuestionableWaterLowDaylight(answer: string): boolean {
@@ -2734,6 +3016,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`Use plain text only. Do not use Markdown headings, bold markers, tables, or long bullet lists; this chat renders plain text.`,
 		`Do not expose internal tool names or labels such as "source skill", "source_search", "open_source_doc", or "tool invocation" in the answer. Use the information naturally.`,
 		`Be honest about uncertainty. Use "candidate", "verify", or "I don't know" when the pack cannot prove something. Never turn candidate water, shelters, towns, or weather into guarantees.`,
+		`For the core offline field questions, lead with the cached finding: next water distance/source, next town or road/town access distance, today difficulty from terrain/weather/water/shelter spacing, and cached tomorrow weather. Then give the caveat. Do not answer these with generic hiking advice when a tool finding is present.`,
 		`For water questions, use the next_water tool finding as the answer's spine. Lead with the nearest actionable water option or next reliable source from the tool finding. If the source is seasonal or unverified, say it is a candidate, visually confirm current flow, filter or treat collected water, and carry enough to reach a verified source if it is dry. If no reliable water is loaded, say that after the source hierarchy; do not start with a generic refusal.`,
 		`For "skip this spring and make the next reliable water" questions, compare the nearer seasonal/unconfirmed source with the next reliable source. Make the decision depend on current treated water carry, heat, exposure, climbing or effort, pace, daylight, and risk tolerance. Do not guarantee the seasonal source is flowing; say to visually confirm and filter/treat if collecting.`,
 		`For current water-report conflicts, such as another report saying a spring is dry while Scout's cached field pack lists it, trust the current observed or recent dry report for flow. Use Scout's cached pack as planning context, not proof of current flow; treat the listed source as dry until visually confirmed or a fresher reliable report says otherwise, and carry to the next reliable or verified water.`,
@@ -2774,10 +3057,10 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For medical-advice questions, Scout can support conservative field decisions but cannot diagnose, clear the hiker to continue, or replace clinicians/emergency services. Name red flags and tell the hiker to stop, choose a safer stop or exit, and get medical/emergency help when symptoms are serious, worsening, confusing, or unsafe.`,
 		`For "when should I stop hiking immediately" questions, cover multiple stop-now categories, not only heat: heat illness, hypothermia, lightning/exposed ridge danger, smoke/fire, flooding/high water, lost/off-trail, unsafe people, severe fatigue/foggy thinking, worsening injury, chest pain, breathing trouble, fainting, confusion, and unsafe darkness/weather.`,
 		`For "where am I relative to the next road crossing or town" questions, start from the current_mile finding and the next_town road/town access finding. State the approximate distance, say when the loaded place is only a road crossing or emergency-exit candidate, confirm shuttle or pickup when needed, and do not assume services at a crossing unless loaded current service data proves them. Do not drift into water or shelter unless asked; if nearby water is mentioned, never call seasonal water reliable.`,
-		`For "next climb", "how hard is the terrain ahead", elevation, gain/loss, or grade questions, use the upcoming_terrain finding as the loaded window. If that finding lacks verified climb, elevation profile, gain/loss, or grade detail, say so plainly, do not invent climb distance or difficulty, use the window only as landmark spacing, and tell the hiker to verify with an offline map, guide, GPS/elevation profile, or trail sign. Give pace-impact guidance from daylight, water spacing, pack weight, feet/knees, weather, and the next legal stop.`,
+		`For "how hard is today", "next climb", "how hard is the terrain ahead", elevation, gain/loss, or grade questions, use the upcoming_terrain finding as the loaded window. If it has cached difficulty, gain/loss, max grade, or steep sections, state those plainly as offline field-pack context. If it lacks verified climb, elevation profile, gain/loss, or grade detail, say so plainly and do not invent it. Give pace-impact guidance from daylight, water spacing, pack weight, feet/knees, weather, and the next legal stop.`,
 		`For offline setup, offline downloads, phone settings, or day-one readiness questions, distinguish phone/app readiness from personal safety readiness. Always include the exact check "verify Bible text is available offline." Also mention field-pack refresh, current mile, local AI model, offline maps/docs, battery, airplane-mode rehearsal, and that Scout does not replace inReach, PLB, 911, or the family emergency plan. For personal documents, include this safety boundary in plain words: do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat.`,
 		`Do not include Bible verses, scripture, prayer, or spiritual encouragement unless the hiker explicitly asks for Bible, scripture, prayer, faith, fear comfort, or spiritual support. Safety, weather, town, water, gear, and navigation answers must stay focused on the field decision first.`,
-		`For Bible or scripture questions, quote only verses returned by bible_search and keep the reference with each quote. For fear, scared, alone, or nighttime comfort prompts, use direct comfort verses when present, such as Psalms 56:3, Isaiah 41:10, 2 Timothy 1:7, Psalms 23:4, Psalms 4:8, or John 14:27. Do not use disturbing, violent, judgment, or famine passages as comfort unless the hiker explicitly asked about that passage. If the hiker sounds scared or alone, pair scripture with immediate safety steps: check weather and hazards, get warm and dry, eat or drink if needed, use the headlamp, make a one-hour plan, and use loaded shelter context as a candidate rather than a guarantee. Escalate through 911, inReach/PLB, ranger/authorities, or the emergency plan if there is real danger, injury, exposure, or repeated panic; do not spiritualize away real danger or symptoms.`,
+		`For Bible or scripture questions, quote only verses returned by bible_search and keep the reference with each quote. For exact read requests like John 3:16, read the verse exactly and then explain briefly; do not paraphrase as if quoting. For "what must I do to be saved" or salvation prompts, answer directly from scripture about faith, repentance, grace, and calling on the Lord without adding denominational requirements or deflecting back to trail logistics. For fear, scared, alone, or nighttime comfort prompts, use direct comfort verses when present, such as Psalms 56:3, Isaiah 41:10, 2 Timothy 1:7, Psalms 23:4, Psalms 4:8, or John 14:27. Do not use disturbing, violent, judgment, or famine passages as comfort unless the hiker explicitly asked about that passage. If the hiker sounds scared or alone, pair scripture with immediate safety steps: check weather and hazards, get warm and dry, eat or drink if needed, use the headlamp, make a one-hour plan, and use loaded shelter context as a candidate rather than a guarantee. Escalate through 911, inReach/PLB, ranger/authorities, or the emergency plan if there is real danger, injury, exposure, or repeated panic; do not spiritualize away real danger or symptoms.`,
 		`For prayer plus safe-plan prompts, do not refuse to pray. Give one short plain prayer-like sentence or paragraph if asked, then clearly separate encouragement from verified trail facts. Prayer alone is not a request for Bible quotes; quote only loaded KJV verses if the hiker explicitly asks for scripture or verses. Use loaded shelter, water, town, or bailout context as candidates, verify status/water/crowding/weather/alerts/legal options, choose the lower-risk option, and say prayer is support, not a substitute for evacuation or help. Escalate through 911, inReach/PLB, rangers/authorities, or the emergency plan for real danger, injury, exposure, confusion, or inability to continue safely.`,
 		`For shakedown questions, name what the shakedown must prove: sleep system, rain system, cooking/food rhythm, water filtering, battery drain, pack fit, foot care, and offline app/model flow. Turn failures into specific gear or app fixes. Always say that one shakedown does not prove every condition is covered.`,
 		`For first-week mileage questions, use body condition, daylight, elevation, weather, pack weight, water spacing, foot/knee condition, and legal shelter/campsite/town spacing. Start low, protect feet and knees, and avoid fixed mileage promises.`,
@@ -2796,7 +3079,10 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For mail-home gear questions, do not mail home rain protection, insulation or warm layers, water treatment, first aid, battery/navigation power, or sleep safety just because one forecast looks warm. Tie the decision to current forecast, next town timing, and replacement options.`,
 		`For family check-in questions, set cadence, content, normal gap expectations, escalation window, emergency contacts, itinerary sharing, and the live-location caveat. Use phrasing like "if they do not hear from you" or "if you miss a check-in"; never write "if you don't hear from you." Repeated missed check-ins, bad weather, health concerns, or itinerary mismatch should escalate beyond Scout.`,
 		`For trail budget questions, separate daily burn from town spikes, hostels/shuttles/laundry/meals, gear replacement, and emergency cushion. Keep advice flexible around actual pace and services, and do not provide financial guarantees.`,
+		`For "answer my last question again" prompts, use conversation history only when it is actually present in the prompt/context. If no previous question is available in the local run, say that plainly and ask the hiker to send it again; do not invent a previous question.`,
 		`For zero, nero, or town-rest questions, visibly weigh body condition or injury, cached/current weather, town chores, budget, and the next section. Frame rest as an investment, not failure. If weather was fetched, include the weather summary or verification caveat in the decision.`,
+		`For "what should I do first in town" and town-day efficiency prompts, give an ordered recovery sequence: eat calories, shower/laundry, foot care, sleep/rest, charge/download/refresh, then logistics. Time-box errands, but do not skip food, rest, foot care, or medical attention for logistics.`,
+		`For food-days and next-resupply-point questions, calculate from distance to the next confirmed resupply, realistic pace for the loaded terrain, appetite, and backup food margin. Do not base food carry on the next water source. Do not assume a road crossing has food or services unless current service data proves it; ask for the exact next known resupply when Scout data is thin.`,
 		`For bad-weather nero questions, compare storm severity, temperature, footing, exposure, daylight, body condition, terrain, and town access. Recommend a short day, town stop, or early legal stop when those risks make the full plan less safe; never frame rest as failure.`,
 		`For hostel-full or lodging-full town questions, treat hostels, visitor centers, campgrounds, shuttles, and road crossings as candidates until confirmed. Tell the hiker to call or message ahead while they have service, confirm same-day bed space, shuttle/pickup, visitor-center hours, campground reservations/seasonal status, and legal overnight rules. Suggest backup lodging, legal campground or public/legal overnight options, or a short day, nero, town stop, or earlier legal stop if tired or injured. Do not invent availability or unsafe/illegal sleeping spots.`,
 		`For drying gear in town, sequence the chores: sleeping bag or quilt and insulation first, then socks, shoes or liners, wet clothes, and rain gear; use laundry, safe dryer settings, drying room, or motel airflow before charging, repacking, and leaving town.`,

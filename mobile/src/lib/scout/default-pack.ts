@@ -148,6 +148,7 @@ export const DEFAULT_CONTEXT_PACK: ContextPack = {
 	],
 	loadout: [],
 	weather: null,
+	terrain: null,
 	downloadedRegions: ['Starter pack - set your AT mile to fetch trail-ahead data'],
 	generatedAt: DEFAULT_GENERATED_AT,
 	validUntil: DEFAULT_VALID_UNTIL,

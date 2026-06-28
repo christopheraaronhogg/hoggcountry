@@ -1,6 +1,7 @@
 import { loadScoutAtOpenReferenceOfflineSummary } from '$lib/server/at-open-reference';
 import { loadDadPilotSummary, type DadPilotSummary } from '$lib/server/dad';
 import { loadReferencePack } from '$lib/server/map-pack';
+import { summarizeTerrainAhead } from '$lib/server/today-context';
 import {
   fetchNwsWeather,
   approximateAtStateForMile,
@@ -29,9 +30,11 @@ const PILOT_CURRENT_MILE = 582.4;
 const PILOT_GENERATED_AT = '2026-06-16T00:00:00.000Z';
 const TRAIL_AHEAD_MILES = 36;
 const TOWN_LOOKAHEAD_MILES = 80;
+const TERRAIN_LOOKAHEAD_MILES = 15;
 const MAX_WATER_POINTS = 12;
 const MAX_SHELTERS = 8;
 const MAX_TOWNS = 6;
+const MAX_TERRAIN_CLIMBS = 4;
 
 type SourceKind = 'trail-pack' | 'field-guide' | 'official' | 'hiker-input' | 'cached-weather' | 'derived';
 
@@ -136,6 +139,26 @@ interface MobileContextPack {
     readonly alertsUrl?: string;
     readonly forecastUpdatedAt?: string | null;
   } | null;
+  readonly terrain: {
+    readonly fromMile: number;
+    readonly toMile: number;
+    readonly lookaheadMiles: number;
+    readonly gainFt: number | null;
+    readonly lossFt: number | null;
+    readonly maxGradePercent: number | null;
+    readonly difficultyScore: number | null;
+    readonly difficultyLabel: string | null;
+    readonly climbs: readonly {
+      readonly startMile: number;
+      readonly endMile: number;
+      readonly direction: 'climb' | 'descent' | 'mixed';
+      readonly gradePercent: number;
+      readonly verticalFt: number;
+      readonly state?: string;
+    }[];
+    readonly sourceLabel: string;
+    readonly generatedAt: string;
+  } | null;
   // Live official closures / detours / fire & hazard alerts near the current mile,
   // ingested per pack build from license-clean sources (ATC + NPS). Null when no
   // source was reachable; an empty `items` with a note means "checked, none active."
@@ -174,6 +197,7 @@ interface TrailAheadSlice {
   readonly water: readonly MobileWaterReference[];
   readonly shelters: readonly MobileShelterReference[];
   readonly towns: readonly MobileTownReference[];
+  readonly terrain: MobileContextPack['terrain'];
   readonly downloadedRegions: readonly string[];
   readonly sourceReceipts: readonly MobileSourceReceipt[];
 }
@@ -396,10 +420,48 @@ function mapTown(point: TrailMapWaypoint): MobileTownReference {
   };
 }
 
+function buildTerrainSummary(
+  reference: Awaited<ReturnType<typeof loadReferencePack>>,
+  currentMile: number,
+  generatedAt: string
+): MobileContextPack['terrain'] {
+  const summary = summarizeTerrainAhead(reference.terrain, currentMile, TERRAIN_LOOKAHEAD_MILES);
+  if (!summary) return null;
+
+  const toMile = roundMile(Math.min(TOTAL_AT_MILES, currentMile + TERRAIN_LOOKAHEAD_MILES));
+  const climbs = reference.terrain.steep
+    .filter((section) => section.endMile > currentMile - 0.01 && section.startMile < toMile + 0.01)
+    .sort((a, b) => a.startMile - b.startMile)
+    .slice(0, MAX_TERRAIN_CLIMBS)
+    .map((section) => ({
+      startMile: roundMile(section.startMile),
+      endMile: roundMile(section.endMile),
+      direction: section.direction,
+      gradePercent: Math.round(section.gradePercent * 10) / 10,
+      verticalFt: Math.round(section.verticalFt),
+      state: section.state || undefined
+    }));
+
+  return {
+    fromMile: roundMile(currentMile),
+    toMile,
+    lookaheadMiles: TERRAIN_LOOKAHEAD_MILES,
+    gainFt: summary.gainFt,
+    lossFt: summary.lossFt,
+    maxGradePercent: summary.maxGradePercent,
+    difficultyScore: summary.difficultyScore,
+    difficultyLabel: summary.difficultyLabel,
+    climbs,
+    sourceLabel: 'Scout open-reference terrain: USGS 3DEP elevation + terrain-only difficulty screen',
+    generatedAt
+  };
+}
+
 async function buildTrailAheadSlice(currentMile: number, now: Date, personal = false): Promise<TrailAheadSlice | null> {
   const reference = await loadReferencePack();
   const endMile = Math.min(TOTAL_AT_MILES, roundMile(currentMile + TRAIL_AHEAD_MILES));
   const townEndMile = Math.min(TOTAL_AT_MILES, roundMile(currentMile + TOWN_LOOKAHEAD_MILES));
+  const generatedAt = now.toISOString();
 
   // Water layer: AWOL-listed real, named sources (facts from The A.T. Guide,
   // re-expressed + cited) are the primary list; OSM/USGS hydrography candidates
@@ -447,6 +509,7 @@ async function buildTrailAheadSlice(currentMile: number, now: Date, personal = f
     water: uniqueByName(waterReferences),
     shelters: uniqueByName(shelterPoints.map(mapShelter)),
     towns: uniqueByName(townPoints.map(mapTown)),
+    terrain: buildTerrainSummary(reference, currentMile, generatedAt),
     downloadedRegions: [
       personal
         ? `Trail ahead ${roundMile(currentMile).toFixed(1)}-${endMile.toFixed(1)}`
@@ -459,8 +522,16 @@ async function buildTrailAheadSlice(currentMile: number, now: Date, personal = f
         title: 'Scout AT open-reference trail-ahead slice',
         kind: 'trail-pack',
         citation: 'Scout full-trail open-reference pack, anchor-calibrated to AWOL 2026 frame',
-        generatedAt: now.toISOString(),
+        generatedAt,
         miles: { from: roundMile(currentMile), to: endMile }
+      },
+      {
+        id: 'derived:terrain-summary',
+        title: 'Scout cached terrain summary',
+        kind: 'derived',
+        citation: 'USGS 3DEP elevation sampled along Scout open route geometry; terrain-only difficulty screen, not a substitute for current guide/sign conditions',
+        generatedAt,
+        miles: { from: roundMile(currentMile), to: roundMile(Math.min(TOTAL_AT_MILES, currentMile + TERRAIN_LOOKAHEAD_MILES)) }
       },
       ...(awolWaterPoints.length
         ? [
@@ -651,6 +722,7 @@ function buildContextPack(
             sourceLabel: 'Cached pilot weather'
           }
     ),
+    terrain: trailAhead?.terrain ?? null,
     conditions: contextConditions(conditions),
     parkServices: contextParkServices(parkServices),
     downloadedRegions: trailAhead?.downloadedRegions.length

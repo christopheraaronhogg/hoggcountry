@@ -183,6 +183,13 @@ function hoursSince(timestamp: string, now: Date): number {
 	return (now.getTime() - ts) / (60 * 60 * 1000);
 }
 
+function formatTimestampLabel(timestamp: string | null | undefined): string | null {
+	if (!timestamp) return null;
+	const parsed = new Date(timestamp);
+	if (Number.isNaN(parsed.getTime())) return null;
+	return parsed.toISOString();
+}
+
 function toolArgs(args: object): Record<string, unknown> {
 	return { ...args };
 }
@@ -271,6 +278,7 @@ interface UpcomingTerrainArgs {
 
 interface WeatherArgs {
 	fromMile?: number;
+	targetPeriod?: 'today' | 'tomorrow';
 }
 
 interface TrailConditionsArgs {
@@ -459,16 +467,37 @@ const nextTownTool: ToolHandler<NextTownArgs> = {
 
 const upcomingTerrainTool: ToolHandler<UpcomingTerrainArgs> = {
 	id: 'upcoming_terrain',
-	description: 'Summarize landmarks (water, shelter, town) within a span ahead.',
+	description: 'Summarize cached terrain difficulty and landmarks (water, shelter, town) within a span ahead.',
 	run(args, ctx) {
 		const fromMile = args.fromMile ?? ctx.pack.hiker.currentMile;
 		const span = args.spanMiles ?? 20;
+		const terrain = ctx.pack.terrain ?? null;
 
 		const waters = withinMiles(ctx.pack.water, fromMile, span);
 		const shelters = withinMiles(ctx.pack.shelters, fromMile, span);
 		const towns = withinMiles(ctx.pack.towns, fromMile, span);
 
 		const parts: string[] = [];
+		if (terrain) {
+			const terrainFacts = [
+				terrain.difficultyLabel
+					? `difficulty ${terrain.difficultyLabel}${terrain.difficultyScore !== null ? ` (${terrain.difficultyScore.toFixed(1)}/10)` : ''}`
+					: '',
+				terrain.gainFt !== null ? `+${terrain.gainFt.toLocaleString()} ft gain` : '',
+				terrain.lossFt !== null ? `-${terrain.lossFt.toLocaleString()} ft loss` : '',
+				terrain.maxGradePercent !== null ? `${terrain.maxGradePercent.toFixed(1)}% max grade` : ''
+			].filter(Boolean);
+			const climbs = terrain.climbs.slice(0, 3).map((climb) => {
+				const distance = Math.max(0, climb.startMile - fromMile);
+				return `${climb.direction} mi ${climb.startMile.toFixed(1)}-${climb.endMile.toFixed(1)} (${distance.toFixed(1)} mi ahead, ${climb.gradePercent.toFixed(1)}%, ${Math.round(Math.abs(climb.verticalFt)).toLocaleString()} ft)`;
+			});
+			parts.push(
+				terrainFacts.length
+					? `Terrain: next ${terrain.lookaheadMiles.toFixed(0)} mi from ${terrain.fromMile.toFixed(1)}-${terrain.toMile.toFixed(1)} has ${terrainFacts.join(', ')}`
+					: `Terrain: cached next ${terrain.lookaheadMiles.toFixed(0)} mi window from ${terrain.fromMile.toFixed(1)}-${terrain.toMile.toFixed(1)}`
+			);
+			if (climbs.length) parts.push(`Key steep sections: ${climbs.join('; ')}`);
+		}
 		if (waters.length) {
 			parts.push(`Water: ${waters.map((w) => `${w.name} (mi ${w.mile.toFixed(1)})`).join(', ')}`);
 		}
@@ -487,8 +516,22 @@ const upcomingTerrainTool: ToolHandler<UpcomingTerrainArgs> = {
 			toolId: 'upcoming_terrain',
 			args: toolArgs(args),
 			summary,
-			confidence: parts.length ? 'medium' : 'low',
-			receipts: [trailPackReceipt(`Upcoming ${span} mi window`, { from: fromMile, to: fromMile + span })]
+			confidence: terrain ? 'high' : parts.length ? 'medium' : 'low',
+			receipts: [
+				trailPackReceipt(`Upcoming ${span} mi window`, { from: fromMile, to: fromMile + span }),
+				...(terrain
+					? [
+							{
+								id: 'derived:terrain-summary',
+								title: 'Cached terrain summary',
+								kind: 'derived' as const,
+								citation: terrain.sourceLabel,
+								generatedAt: terrain.generatedAt,
+								miles: { from: terrain.fromMile, to: terrain.toMile }
+							}
+						]
+					: [])
+			]
 		};
 	}
 };
@@ -526,7 +569,23 @@ const weatherLookupTool: ToolHandler<WeatherArgs> = {
 
 		const ageHours = hoursSince(weather.generatedAt, ctx.now);
 		const stale = ageHours > STALE_WEATHER_HOURS;
-		const summary = `Cached weather near mile ${weather.mile.toFixed(1)}: ${weather.summary} (high ${weather.highF}F / low ${weather.lowF}F, wind ${weather.windMph} mph).${weather.riskNote ? ' ' + weather.riskNote : ''}`;
+		const generatedAt = formatTimestampLabel(weather.generatedAt);
+		const updatedAt = formatTimestampLabel(weather.forecastUpdatedAt);
+		const source = weather.sourceLabel ?? (weather.source === 'nws' ? 'NWS point forecast' : 'cached field-pack weather');
+		const targetPrefix =
+			args.targetPeriod === 'tomorrow'
+				? 'Cached weather for the tomorrow request'
+				: args.targetPeriod === 'today'
+					? 'Cached weather for the today request'
+					: 'Cached weather';
+		const freshness = [
+			generatedAt ? `pack generated ${generatedAt}` : '',
+			updatedAt ? `forecast updated ${updatedAt}` : ''
+		].filter(Boolean).join(', ');
+		const compactForecastCaveat = args.targetPeriod === 'tomorrow'
+			? ' This mobile pack carries a compact cached forecast snapshot, not a live hourly forecast; refresh online before relying on tomorrow weather for exposed terrain.'
+			: '';
+		const summary = `${targetPrefix} near mile ${weather.mile.toFixed(1)} from ${source}: ${weather.summary} (high ${weather.highF}F / low ${weather.lowF}F, wind ${weather.windMph} mph).${freshness ? ` ${freshness}.` : ''}${weather.riskNote ? ' ' + weather.riskNote : ''}${compactForecastCaveat}`;
 
 		return {
 			toolId: 'weather_lookup',

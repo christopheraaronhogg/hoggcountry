@@ -193,7 +193,8 @@ function townOfflineReadinessMissing({ prompt, answer }) {
 }
 
 function isBiblePrompt(prompt) {
-	return /\b(?:bible|scripture|verse|pray|prayer|psalm|proverb|john|romans|jesus|christ|lord|god|faith|spiritual|fear while|scared and alone)\b/iu.test(prompt);
+	return /\b(?:bible|scripture|verse|pray|prayer|psalm|proverb|john|romans|jesus|christ|lord|god|faith|salvation|spiritual|fear while|scared and alone)\b/iu.test(prompt) ||
+		/\b(?:be saved|get saved|am i saved|do to be saved)\b/iu.test(prompt);
 }
 
 function isFearComfortPrompt(prompt) {
@@ -201,7 +202,7 @@ function isFearComfortPrompt(prompt) {
 }
 
 function isOfflineReadinessPrompt(prompt) {
-	return /\b(?:offline|download|phone settings|day-one readiness|day one readiness|charge|refresh|lose service|town|service|field pack|local ai|model)\b/iu.test(prompt);
+	return /\b(?:offline|airplane mode|airplane-mode|no cell|without service|what can you still answer|what can scout still answer|what still works|download|phone settings|day-one readiness|day one readiness|charge|refresh|lose service|town|service|field pack|local ai|model)\b/iu.test(prompt);
 }
 
 function isWeatherSensitivePrompt(prompt) {

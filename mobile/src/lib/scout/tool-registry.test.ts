@@ -39,6 +39,28 @@ function packWithTrailPlanningContext(): ContextPack {
 				servicesNote: 'Resupply, laundry, and lodging require same-day confirmation.'
 			}
 		],
+		terrain: {
+			fromMile: 1530,
+			toMile: 1545,
+			lookaheadMiles: 15,
+			gainFt: 1820,
+			lossFt: 940,
+			maxGradePercent: 18.6,
+			difficultyScore: 7.2,
+			difficultyLabel: 'hard',
+			climbs: [
+				{
+					startMile: 1531.2,
+					endMile: 1532.1,
+					direction: 'climb',
+					gradePercent: 18.6,
+					verticalFt: 620,
+					state: 'CT'
+				}
+			],
+			sourceLabel: 'Scout open-reference terrain: USGS 3DEP elevation + terrain-only difficulty screen',
+			generatedAt: '2026-06-20T11:00:00.000Z'
+		},
 		loadout: [
 			{ name: 'Rain jacket', category: 'clothing', weightOz: 6, carried: true },
 			{ name: 'First aid kit', category: 'safety', weightOz: 4, carried: true },
@@ -373,6 +395,52 @@ test('runToolsFor routes thunderstorm prompts to weather lookup and weather sour
 				record.toolId === 'open_source_doc'
 		)
 	);
+});
+
+test('runToolsFor routes Dad-style today difficulty prompts to cached terrain', async () => {
+	const records = await runToolsFor(
+		'How hard is today going to be?',
+		packWithTrailPlanningContext(),
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	const terrain = records.find((record) => record.toolId === 'upcoming_terrain');
+	assert.ok(terrain);
+	assert.match(terrain.summary, /Terrain: next 15 mi from 1530\.0-1545\.0 has difficulty hard \(7\.2\/10\), \+1,820 ft gain, -940 ft loss, 18\.6% max grade/);
+	assert.match(terrain.summary, /Key steep sections: climb mi 1531\.2-1532\.1/);
+	assert.ok(terrain.receipts.some((receipt) => receipt.id === 'derived:terrain-summary'));
+	assert.ok(records.some((record) => record.toolId === 'source_search' && record.args.sourceSkill === 'terrain'));
+});
+
+test('runToolsFor tags tomorrow weather prompts as cached tomorrow requests', async () => {
+	const pack = {
+		...packWithTrailPlanningContext(),
+		weather: {
+			mile: 1530,
+			summary: 'NWS Tomorrow: Chance showers',
+			highF: 68,
+			lowF: 49,
+			windMph: 13,
+			riskNote: 'Official NWS point forecast for the nearest trail coordinate; refresh before exposed terrain.',
+			generatedAt: '2026-06-20T10:00:00.000Z',
+			source: 'nws' as const,
+			sourceLabel: 'NWS point forecast near Salisbury, CT',
+			forecastUpdatedAt: '2026-06-20T09:30:00.000Z'
+		}
+	};
+	const records = await runToolsFor(
+		"What is tomorrow's weather?",
+		pack,
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	const weather = records.find((record) => record.toolId === 'weather_lookup');
+	assert.ok(weather);
+	assert.equal(weather.args.targetPeriod, 'tomorrow');
+	assert.match(weather.summary, /Cached weather for the tomorrow request near mile 1530\.0 from NWS point forecast near Salisbury, CT/);
+	assert.match(weather.summary, /compact cached forecast snapshot, not a live hourly forecast/);
 });
 
 test('runToolsFor opens offline document safety discipline for day-one document prompts', async () => {

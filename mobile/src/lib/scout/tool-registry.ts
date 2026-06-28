@@ -40,7 +40,7 @@ interface SourceSkillTrigger {
 const TOOL_TRIGGERS: ToolTrigger[] = [
 	{ keywords: ['water', 'spring', 'creek', 'source', 'seasonal', 'dry stretch', 'camel up', 'hydrate', 'filter', 'questionable', 'hot', 'heat', 'dizzy', 'big climb', 'too tired', 'keep going'], toolId: 'next_water' },
 	{ keywords: ['shelter', 'camp', 'camping', 'campsite', 'tent site', 'lean-to', 'where sleep', 'sleep', 'overnight', 'tonight', 'after dark', 'dark', 'full when i arrive', 'bear activity', 'big climb', 'stop before', 'too tired', 'keep going', 'safe plan'], toolId: 'next_shelter' },
-	{ keywords: ['town', 'resupply', 'hostel', 'shuttle', 'outfitter', 'laundry', 'groceries', 'mail drop', 'road crossing', 'bailout', 'exit', 'nero', 'zero', 'food', 'lodging', 'unsafe', 'overdue', 'ankle', 'budget'], toolId: 'next_town' },
+	{ keywords: ['town', 'next town', 'how far to town', 'how far til town', 'how far till town', 'resupply', 'hostel', 'shuttle', 'outfitter', 'laundry', 'groceries', 'mail drop', 'road crossing', 'bailout', 'exit', 'nero', 'zero', 'food', 'lodging', 'unsafe', 'overdue', 'ankle', 'budget'], toolId: 'next_town' },
 	{ keywords: ['weather', 'wind', 'cold', 'rain', 'storm', 'thunderstorm', 'thunderstorms', 'forecast', 'heat', 'hot', 'thunder', 'lightning', 'hypothermia', 'freez', 'dizzy', 'ridge', 'push past', 'stop there', 'dry gear', 'bad weather', 'tomorrow', 'dry stretch', 'smoke', 'fire', 'zero', 'nero', 'stop hiking'], toolId: 'weather_lookup' },
 	{
 		keywords: ['closure', 'closed', 'detour', 'reroute', 'fire', 'smoke', 'burn ban', 'washout', 'bridge out', 'blowdown', 'high water', 'alert', 'bear activity', 'bear reports', 'bear near', 'bear in camp', 'bear at camp'],
@@ -50,9 +50,9 @@ const TOOL_TRIGGERS: ToolTrigger[] = [
 		keywords: ['visitor center', 'ranger', 'ranger station', 'campground', 'national park', 'park office', 'wayside', 'permit office', 'hostel is full', 'hostel full', 'backup lodging', 'legal public'],
 		toolId: 'park_services'
 	},
-	{ keywords: ['miles', 'mileage', 'mileage goals', 'push', 'hold', 'pace', 'nero', 'zero', 'next 20', 'terrain', 'climb', 'descent', 'elevation', 'ridge', 'first week', 'overdoing', 'body responds', 'dry stretch', 'road crossing', 'bailout', 'next stretch', 'resupply point', 'tired early', "today's hike"], toolId: 'upcoming_terrain' },
+	{ keywords: ['miles', 'mileage', 'mileage goals', 'push', 'hold', 'pace', 'nero', 'zero', 'next 20', 'terrain', 'climb', 'descent', 'elevation', 'ridge', 'first week', 'overdoing', 'body responds', 'dry stretch', 'road crossing', 'bailout', 'next stretch', 'resupply point', 'tired early', "today's hike", 'how hard', 'hard is today', 'hard today', 'today going to be', 'today gonna be', 'how tough'], toolId: 'upcoming_terrain' },
 	{ keywords: ['gear', 'pack', 'loadout', 'carry', 'packed', 'base weight', 'rain gear', 'rain pants', 'first aid', 'first-aid', 'food carry', 'shakedown', 'sleep system', 'rain system', 'pack fit', 'battery drain', 'clothes', 'dry', 'filter', 'battery bank', 'camp shoes', 'kit'], toolId: 'loadout_check' },
-	{ keywords: ['where am i', 'current mile', 'trail mile', 'my mile', 'set my mile', 'mile manually', 'wrong trail mile', 'wrong mile', 'gps', 'bailout', 'update in scout', 'offline', 'stealth camp', 'map', 'basemap', 'cell signal', 'off trail', 'junction', 'ankle', 'sos', 'support circle', 'signal', 'overdue', 'too tired', 'keep going'], toolId: 'current_mile' },
+	{ keywords: ['where am i', 'current mile', 'trail mile', 'my mile', 'set my mile', 'mile manually', 'wrong trail mile', 'wrong mile', 'gps', 'bailout', 'update in scout', 'offline', 'stealth camp', 'map', 'basemap', 'cell signal', 'off trail', 'junction', 'ankle', 'sos', 'support circle', 'signal', 'overdue', 'too tired', 'keep going', 'how far to town', 'how far til town', 'how far till town', 'next town'], toolId: 'current_mile' },
 	{
 		keywords: [
 			'bible',
@@ -137,8 +137,8 @@ const SOURCE_SKILL_TRIGGERS: SourceSkillTrigger[] = [
 	},
 	{
 		id: 'terrain',
-		keywords: ['miles', 'mileage', 'mileage goals', 'push', 'hold', 'pace', 'nero', 'zero', 'next 20', 'terrain', 'climb', 'descent', 'elevation', 'ridge', 'first week', 'trail prep', 'springer', 'overdoing', 'body responds', 'road crossing', 'bailout', 'next stretch', 'resupply point', 'guidebook', 'trail sign'],
-		queryHints: ['terrain discipline', 'pace', 'mileage', 'terrain', 'decision point', 'daylight', 'body condition', 'pack weight', 'legal stop', 'first week']
+		keywords: ['miles', 'mileage', 'mileage goals', 'push', 'hold', 'pace', 'nero', 'zero', 'next 20', 'terrain', 'climb', 'descent', 'elevation', 'ridge', 'first week', 'trail prep', 'springer', 'overdoing', 'body responds', 'road crossing', 'bailout', 'next stretch', 'resupply point', 'guidebook', 'trail sign', 'how hard', 'hard is today', 'hard today', 'today going to be', 'today gonna be', 'how tough'],
+		queryHints: ['terrain discipline', 'pace', 'mileage', 'terrain', 'decision point', 'daylight', 'body condition', 'pack weight', 'legal stop', 'first week', 'cached terrain summary', 'gain loss grade difficulty']
 	},
 	{
 		id: 'loadout',
@@ -149,6 +149,11 @@ const SOURCE_SKILL_TRIGGERS: SourceSkillTrigger[] = [
 
 function argsForTrigger(trigger: ToolTrigger, prompt: string): Record<string, unknown> {
 	if (trigger.toolId === 'bible_search') return { query: prompt };
+	if (trigger.toolId === 'weather_lookup') {
+		if (/\btomorrow\b/iu.test(prompt)) return { targetPeriod: 'tomorrow' };
+		if (/\btoday\b|today'?s\b/iu.test(prompt)) return { targetPeriod: 'today' };
+		return {};
+	}
 	if (trigger.toolId === 'next_water') {
 		const wantsReliable = /\b(reliable|confirmed|dependable|depend on|count on|trust)\b/iu.test(prompt);
 		return wantsReliable ? { reliabilityPreference: 'reliable' } : {};

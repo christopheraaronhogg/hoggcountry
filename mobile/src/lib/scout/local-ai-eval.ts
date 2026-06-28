@@ -421,6 +421,7 @@ export function buildScoutLocalAiEvalPack(testCase: ScoutLocalAiEvalCase, now: D
 		{ name: 'Next Resupply Town', mile: mile + 37.5, access: 'shuttle-dependent road access', servicesNote: 'Good resupply candidate if hours and lodging are confirmed.' }
 	];
 	pack.weather = weatherFor(mile, prompt, now);
+	pack.terrain = terrainFor(mile, generatedAt);
 	pack.conditions = conditionsFor(prompt, now);
 	pack.parkServices = parkServicesFor(now);
 	pack.loadout = loadoutFor(prompt);
@@ -428,6 +429,37 @@ export function buildScoutLocalAiEvalPack(testCase: ScoutLocalAiEvalCase, now: D
 	pack.documents = evalDocuments(now);
 	pack.pilotNotice = 'Eval pack for Dad local-AI review. Use it to exercise Scout tools; verify volatile facts before relying on them.';
 	return pack;
+}
+
+function terrainFor(mile: number, generatedAt: string): ContextPack['terrain'] {
+	return {
+		fromMile: Number(mile.toFixed(1)),
+		toMile: Number((mile + 15).toFixed(1)),
+		lookaheadMiles: 15,
+		gainFt: 1420,
+		lossFt: 760,
+		maxGradePercent: 14.8,
+		difficultyScore: 6.8,
+		difficultyLabel: 'moderate-hard',
+		climbs: [
+			{
+				startMile: Number((mile + 2.1).toFixed(1)),
+				endMile: Number((mile + 3.3).toFixed(1)),
+				direction: 'climb',
+				gradePercent: 14.8,
+				verticalFt: 640
+			},
+			{
+				startMile: Number((mile + 8.4).toFixed(1)),
+				endMile: Number((mile + 9.2).toFixed(1)),
+				direction: 'descent',
+				gradePercent: 11.2,
+				verticalFt: -420
+			}
+		],
+		sourceLabel: 'Scout eval cached terrain: synthetic USGS-style elevation summary for local-AI regression testing',
+		generatedAt
+	};
 }
 
 export function scoutLocalAiSuiteHash(suite: ScoutLocalAiEvalSuite): string {
