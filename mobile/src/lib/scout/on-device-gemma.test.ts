@@ -211,6 +211,12 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /do not drink untreated questionable water/);
 	assert.match(systemContext, /For frozen or failing water-filter questions/);
 	assert.match(systemContext, /hollow-fiber filter may be compromised/);
+	assert.match(systemContext, /For shelter and camping decisions/);
+	assert.match(systemContext, /daylight, water, current shelter status\/crowding/);
+	assert.match(systemContext, /For full-shelter, stealth-camping, storm-campsite/);
+	assert.match(systemContext, /For after-dark shelter arrivals/);
+	assert.match(systemContext, /do not tell the hiker to choose a backup before dark/);
+	assert.match(systemContext, /roughly 200 feet from water and trail/);
 	assert.match(systemContext, /For rain-pants or rain-gear cut\/drop questions/);
 	assert.match(systemContext, /For camp-shoes questions/);
 	assert.match(systemContext, /When tool findings are labeled as guidance/);
@@ -417,6 +423,70 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			'How do I treat questionable water if I am tired and low on daylight?'
 		),
 		'If you are tired and low on daylight, treatment is non-negotiable. Filter or backflush if needed, use backup tablets or boil, do not drink untreated questionable water, and choose a safe legal stop before dark.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'You should aim for the nearest shelter and verify water and crowding before committing.',
+			'Where should I sleep tonight if I am tired early?'
+		),
+		'You should aim for the nearest shelter and verify water and crowding before committing.\n\nShelter-decision note: when fatigue drives the sleep choice, choose the safer legal stop and check daylight, water, current shelter status or crowding, local rules, and a backup option before committing.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'If the shelter is full, look for another legal campsite or town stop.',
+			'What if the shelter is full when I arrive?'
+		),
+		'If the shelter is full, look for another legal campsite or town stop.\n\nFull-shelter note: if the shelter is full, stay courteous, use legal established overflow tenting only if allowed, choose a backup before dark, and avoid unsafe or illegal camping.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'If you are exhausted, check the current rules for that area before deciding on camping.',
+			'Can I stealth camp here if I am exhausted?'
+		),
+		'If you are exhausted, check the current rules for that area before deciding on camping.\n\nStealth-camping note: do not stealth camp in regulated or prohibited areas. Check land-manager rules first; if exhausted, choose a safer legal shelter, campsite, town stop, or established legal site and stop earlier.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Prioritize safety over reaching a specific spot and verify the live weather.',
+			'How do I choose a campsite in a storm tonight?'
+		),
+		'Prioritize safety over reaching a specific spot and verify the live weather.\n\nStorm-campsite note: set up early in a legal protected spot, avoid exposed ridges, dead trees or widow makers, drainages, and flood-prone ground, keep dry sleep layers protected, and stop or bail out if lightning, flooding, hypothermia risk, or worsening conditions appear.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Look for established campsites and verify local rules before setting up.',
+			'How do I avoid camping too close to water or damaging the place?'
+		),
+		'Look for established campsites and verify local rules before setting up.\n\nLow-impact campsite note: use established or durable surfaces, stay roughly 200 feet from water and trail when local rules allow, keep hygiene water and toothpaste away from camp and water, and follow posted land-manager rules over general advice.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Check your foot and knee condition first and adjust your pace.',
+			'Should I stop before a big climb or after it?'
+		),
+		'Check your foot and knee condition first and adjust your pace.\n\nClimb-stop note: stop before the climb if daylight, legs, water, weather, or legal camp options are weak; climb only when you have enough daylight, water, energy, and a known legal stop after it.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'If you arrive late, prioritize safety and choose a backup before dark.',
+			'What if I am arriving at the shelter after dark?'
+		),
+		'If you arrive late, prioritize safety and keep a fallback if the shelter is full.\n\nAfter-dark shelter note: slow down, use the headlamp, avoid risky night navigation when tired, take the nearest safe legal option rather than adding extra night miles, and keep a fallback plan in case the shelter is full.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Check the current status of the shelter for water and crowding before committing.',
+			'How do I plan around a shelter with no reliable water?'
+		),
+		'Check the current status of the shelter for water and crowding before committing.\n\nWaterless-shelter note: do not assume shelter water is flowing; top off before the shelter, carry enough to the next verified source, or stop where both legal sleep and water are workable.'
 	);
 
 	assert.equal(

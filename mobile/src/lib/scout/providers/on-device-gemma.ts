@@ -69,6 +69,22 @@ const DRY_STRETCH_WATER_NOTE =
 	'Dry-stretch water note: for a 10-mile dry stretch, start from roughly 0.5-1 liter per 3-5 miles, increase for heat, exposed climbing, slow pace, or personal thirst, top off at the last confirmed source, and carry enough to reach the next reliable source when the next source is seasonal or unverified.';
 const QUESTIONABLE_WATER_LOW_DAYLIGHT_NOTE =
 	'Questionable-water note: treatment is non-negotiable even when tired or low on daylight; filter or backflush if needed, use backup tablets or boil if the filter is slow or suspect, do not drink untreated questionable water, and choose a safe legal stop before dark if treatment or verification will delay the push.';
+const SHELTER_DECISION_NOTE =
+	'Shelter-decision note: when fatigue drives the sleep choice, choose the safer legal stop and check daylight, water, current shelter status or crowding, local rules, and a backup option before committing.';
+const FULL_SHELTER_NOTE =
+	'Full-shelter note: if the shelter is full, stay courteous, use legal established overflow tenting only if allowed, choose a backup before dark, and avoid unsafe or illegal camping.';
+const STEALTH_CAMP_NOTE =
+	'Stealth-camping note: do not stealth camp in regulated or prohibited areas. Check land-manager rules first; if exhausted, choose a safer legal shelter, campsite, town stop, or established legal site and stop earlier.';
+const STORM_CAMPSITE_NOTE =
+	'Storm-campsite note: set up early in a legal protected spot, avoid exposed ridges, dead trees or widow makers, drainages, and flood-prone ground, keep dry sleep layers protected, and stop or bail out if lightning, flooding, hypothermia risk, or worsening conditions appear.';
+const LOW_IMPACT_CAMPSITE_NOTE =
+	'Low-impact campsite note: use established or durable surfaces, stay roughly 200 feet from water and trail when local rules allow, keep hygiene water and toothpaste away from camp and water, and follow posted land-manager rules over general advice.';
+const CLIMB_STOP_NOTE =
+	'Climb-stop note: stop before the climb if daylight, legs, water, weather, or legal camp options are weak; climb only when you have enough daylight, water, energy, and a known legal stop after it.';
+const AFTER_DARK_SHELTER_NOTE =
+	'After-dark shelter note: slow down, use the headlamp, avoid risky night navigation when tired, take the nearest safe legal option rather than adding extra night miles, and keep a fallback plan in case the shelter is full.';
+const WATERLESS_SHELTER_NOTE =
+	'Waterless-shelter note: do not assume shelter water is flowing; top off before the shelter, carry enough to the next verified source, or stop where both legal sleep and water are workable.';
 
 export class OnDeviceGemmaProvider implements ScoutProvider {
 	private bridge?: OnDeviceGemmaBridge;
@@ -264,6 +280,33 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	if (isQuestionableWaterLowDaylightPrompt(lowerPrompt) && !mentionsQuestionableWaterLowDaylight(answer)) {
 		answer = appendSentence(answer, QUESTIONABLE_WATER_LOW_DAYLIGHT_NOTE);
 	}
+	if (isAfterDarkShelterPrompt(lowerPrompt)) {
+		answer = removeAfterDarkBeforeDarkContradiction(answer);
+	}
+	if (isShelterFatigueDecisionPrompt(lowerPrompt) && !isSpecificShelterSafetyPrompt(lowerPrompt) && !mentionsShelterDecisionFactors(answer)) {
+		answer = appendSentence(answer, SHELTER_DECISION_NOTE);
+	}
+	if (isFullShelterPrompt(lowerPrompt) && !mentionsFullShelterFallback(answer)) {
+		answer = appendSentence(answer, FULL_SHELTER_NOTE);
+	}
+	if (isStealthCampPrompt(lowerPrompt) && !mentionsStealthCampBoundary(answer)) {
+		answer = appendSentence(answer, STEALTH_CAMP_NOTE);
+	}
+	if (isStormCampsitePrompt(lowerPrompt) && !mentionsStormCampsiteSafety(answer)) {
+		answer = appendSentence(answer, STORM_CAMPSITE_NOTE);
+	}
+	if (isLowImpactCampsitePrompt(lowerPrompt) && !mentionsLowImpactCampsite(answer)) {
+		answer = appendSentence(answer, LOW_IMPACT_CAMPSITE_NOTE);
+	}
+	if (isClimbStopPrompt(lowerPrompt) && !mentionsClimbStopDecision(answer)) {
+		answer = appendSentence(answer, CLIMB_STOP_NOTE);
+	}
+	if (isAfterDarkShelterPrompt(lowerPrompt) && !mentionsAfterDarkShelterSafety(answer)) {
+		answer = appendSentence(answer, AFTER_DARK_SHELTER_NOTE);
+	}
+	if (isWaterlessShelterPrompt(lowerPrompt) && !mentionsWaterlessShelterPlanning(answer)) {
+		answer = appendSentence(answer, WATERLESS_SHELTER_NOTE);
+	}
 	if (isRainPantsPrompt(lowerPrompt) && !mentionsRainPantsDecision(answer)) {
 		answer = appendSentence(answer, RAIN_PANTS_NOTE);
 	}
@@ -377,6 +420,13 @@ function normalizeSpelledDecimalDistances(answer: string): string {
 		const prefix = match.toLowerCase().startsWith('about ') ? 'about ' : '';
 		return `${prefix}1.${tenths[word.toLowerCase()] ?? word} miles`;
 	});
+}
+
+function removeAfterDarkBeforeDarkContradiction(answer: string): string {
+	return answer
+		.replace(/\bchoose a backup before dark\b/giu, 'keep a fallback if the shelter is full')
+		.replace(/\bchoose backups before dark\b/giu, 'keep fallbacks for full shelters or unsafe conditions')
+		.replace(/\bpick a safe legal earlier stop if one is available\b/giu, 'take the nearest safe legal option rather than adding extra night miles');
 }
 
 function removeRepeatedSentences(answer: string): string {
@@ -524,6 +574,54 @@ function isQuestionableWaterLowDaylightPrompt(prompt: string): boolean {
 		/\b(?:tired|fatigue|low on daylight|low daylight|dark|after dark|dusk|night|late)\b/u.test(prompt);
 }
 
+function isShelterFatigueDecisionPrompt(prompt: string): boolean {
+	return /\b(?:tired|fatigue|exhausted)\b/u.test(prompt) &&
+		/\b(?:where should i sleep|sleep tonight|sleep|shelter|camp|campsite)\b/u.test(prompt);
+}
+
+function isSpecificShelterSafetyPrompt(prompt: string): boolean {
+	return isFullShelterPrompt(prompt) ||
+		isStealthCampPrompt(prompt) ||
+		isStormCampsitePrompt(prompt) ||
+		isLowImpactCampsitePrompt(prompt) ||
+		isClimbStopPrompt(prompt) ||
+		isAfterDarkShelterPrompt(prompt) ||
+		isWaterlessShelterPrompt(prompt);
+}
+
+function isFullShelterPrompt(prompt: string): boolean {
+	return /\b(?:shelter is full|shelter.*full|full shelter|no room at the shelter)\b/u.test(prompt);
+}
+
+function isStealthCampPrompt(prompt: string): boolean {
+	return /\b(?:stealth camp|stealth camping|camp here|illegal camp|undesignated camp)\b/u.test(prompt) &&
+		/\b(?:stealth|exhausted|tired|legal|rules|regulated|prohibited|camp)\b/u.test(prompt);
+}
+
+function isStormCampsitePrompt(prompt: string): boolean {
+	return /\b(?:campsite|camp site|camp|camping|set up|sleep)\b/u.test(prompt) &&
+		/\b(?:storm|storms|thunderstorm|thunderstorms|lightning|heavy rain|flood|wind)\b/u.test(prompt);
+}
+
+function isLowImpactCampsitePrompt(prompt: string): boolean {
+	return /\b(?:too close to water|damaging the place|leave no trace|low impact|durable surface|durable surfaces|camping near water|200 feet)\b/u.test(prompt);
+}
+
+function isClimbStopPrompt(prompt: string): boolean {
+	return /\b(?:stop before|stop after|before a big climb|after a big climb|big climb|climb)\b/u.test(prompt) &&
+		/\b(?:stop|camp|shelter|sleep|push|before|after)\b/u.test(prompt);
+}
+
+function isAfterDarkShelterPrompt(prompt: string): boolean {
+	return /\b(?:after dark|dark|dusk|night|late)\b/u.test(prompt) &&
+		/\b(?:shelter|arriv|camp|sleep)\b/u.test(prompt);
+}
+
+function isWaterlessShelterPrompt(prompt: string): boolean {
+	return /\b(?:shelter|camp|sleep)\b/u.test(prompt) &&
+		/\b(?:no reliable water|without reliable water|waterless|no water|dry shelter|shelter water)\b/u.test(prompt);
+}
+
 function isRainPantsPrompt(prompt: string): boolean {
 	return /\b(?:rain pants|rain gear|rain system)\b/u.test(prompt) &&
 		/\b(?:need|carry|leave|home|drop|cut|mail|send|ditch|keep)\b/u.test(prompt);
@@ -644,6 +742,68 @@ function mentionsQuestionableWaterLowDaylight(answer: string): boolean {
 	return mentionsTreatmentRequired && mentionsMethod && mentionsDarkStop;
 }
 
+function mentionsShelterDecisionFactors(answer: string): boolean {
+	const mentionsDaylight = /\b(?:daylight|before dark|dark|dusk|late|time left)\b/iu.test(answer);
+	const mentionsWater = /\bwater\b/iu.test(answer);
+	const mentionsLegalRules = /\b(?:legal|rules?|allowed|land-manager|regulat\w*)\b/iu.test(answer);
+	const mentionsStatusCrowding = /\b(?:status|crowd\w*|capacity|full|availability|available)\b/iu.test(answer);
+	const mentionsBackup = /\b(?:backup|alternative|next option|safer stop|closer option)\b/iu.test(answer);
+	return mentionsDaylight && mentionsWater && mentionsLegalRules && mentionsStatusCrowding && mentionsBackup;
+}
+
+function mentionsFullShelterFallback(answer: string): boolean {
+	const mentionsLegalOverflow = /\b(?:legal|allowed|established|designated|overflow|tent(?:ing)?)\b/iu.test(answer);
+	const mentionsBeforeDark = /\b(?:before dark|daylight|dark|dusk)\b/iu.test(answer);
+	const mentionsCourtesy = /\b(?:courteous|courtesy|quiet|make room|crowd\w*|full shelter)\b/iu.test(answer);
+	const mentionsAvoidIllegal = /\b(?:avoid unsafe|avoid illegal|do not camp illegally|don't camp illegally|illegal camping)\b/iu.test(answer);
+	return mentionsLegalOverflow && mentionsBeforeDark && mentionsCourtesy && mentionsAvoidIllegal;
+}
+
+function mentionsStealthCampBoundary(answer: string): boolean {
+	const mentionsNoStealth = /\b(?:do not stealth camp|don't stealth camp|avoid stealth camping|not stealth camp)\b/iu.test(answer);
+	const mentionsRules = /\b(?:regulated|prohibited|land-manager|legal|rules?|allowed)\b/iu.test(answer);
+	const mentionsLegalAlternative = /\b(?:legal shelter|legal campsite|town stop|established legal|safer legal|legal stop)\b/iu.test(answer);
+	return mentionsNoStealth && mentionsRules && mentionsLegalAlternative;
+}
+
+function mentionsStormCampsiteSafety(answer: string): boolean {
+	const mentionsAvoidTerrain = /\b(?:exposed ridge|ridges|dead trees?|widow makers?|drainages?|flood-prone|creek bottoms?|flooding)\b/iu.test(answer);
+	const mentionsEarlySetup = /\b(?:set up early|setup early|pitch early|camp early)\b/iu.test(answer);
+	const mentionsDryLayers = /\b(?:dry sleep|sleep system|dry layers?|warm layer|insulation|quilt)\b/iu.test(answer);
+	const mentionsLightningBail = /\b(?:lightning|bail(?:out)?|stop|hypothermia|worsening conditions)\b/iu.test(answer);
+	return mentionsAvoidTerrain && mentionsEarlySetup && mentionsDryLayers && mentionsLightningBail;
+}
+
+function mentionsLowImpactCampsite(answer: string): boolean {
+	const mentionsDistance = /\b(?:200\s*feet|two hundred feet|roughly 200|about 200)\b/iu.test(answer);
+	const mentionsSurface = /\b(?:durable surfaces?|established campsites?|existing use|designated)\b/iu.test(answer);
+	const mentionsRules = /\b(?:local rules?|posted rules?|land-manager|regulat\w*|allowed)\b/iu.test(answer);
+	return mentionsDistance && mentionsSurface && mentionsRules;
+}
+
+function mentionsClimbStopDecision(answer: string): boolean {
+	const mentionsBefore = /\b(?:stop before|before the climb|before a climb)\b/iu.test(answer) &&
+		/\b(?:daylight|legs|energy|water|weather|legal camp|legal stop)\b/iu.test(answer);
+	const mentionsAfter = /\b(?:after the climb|known legal stop|legal stop after|enough daylight|enough water|enough energy)\b/iu.test(answer);
+	return mentionsBefore && mentionsAfter;
+}
+
+function mentionsAfterDarkShelterSafety(answer: string): boolean {
+	const mentionsHeadlamp = /\bheadlamp\b/iu.test(answer);
+	const mentionsSlow = /\b(?:slow down|slow your pace|move slowly|take it slow)\b/iu.test(answer);
+	const mentionsNightNav = /\b(?:night navigation|risky navigation|avoid risky|do not push into darkness|don't push into darkness|dark)\b/iu.test(answer);
+	const mentionsBackup = /\b(?:backup|fallback|nearest safe legal|safe legal option|shelter is full|full shelter)\b/iu.test(answer);
+	return mentionsHeadlamp && mentionsSlow && mentionsNightNav && mentionsBackup;
+}
+
+function mentionsWaterlessShelterPlanning(answer: string): boolean {
+	const mentionsNoAssumption = /\b(?:do not assume|don't assume|not assume|no reliable water|water may not be flowing|flow is unknown)\b/iu.test(answer);
+	const mentionsTopOffCarry = /\b(?:top off|carry enough|carry water|safer carry)\b/iu.test(answer);
+	const mentionsVerifiedSource = /\b(?:next verified source|next reliable source|verified water|reliable water|confirmed source)\b/iu.test(answer);
+	const mentionsSleepWater = /\b(?:legal sleep and water|sleep and water|shelter and water|camp and water)\b/iu.test(answer);
+	return mentionsNoAssumption && mentionsTopOffCarry && mentionsVerifiedSource && mentionsSleepWater;
+}
+
 function mentionsRainPantsDecision(answer: string): boolean {
 	return /(?:personal cold tolerance|how fast you chill|your cold tolerance|if you run cold)/iu.test(answer) &&
 		/(?:shakedown|proven|test(?:ed|ing)? the rain system)/iu.test(answer) &&
@@ -721,6 +881,9 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For dry-stretch water-carry questions, give a practical conservative range: roughly 0.5-1 liter per 3-5 miles as a starting point, more for heat, exposure, climbing, slow pace, or personal thirst. Tell the hiker to top off at the last confirmed source and carry enough to reach the next reliable source when the next source is seasonal or unverified.`,
 		`For questionable-water, tired, or low-daylight treatment questions, keep the answer focused on water safety unless heat symptoms are explicit. Say treatment is non-negotiable, use filter/backflush or backup tablets/boil, do not drink untreated questionable water, and choose a safe legal stop before dark if treatment or verification will delay the push.`,
 		`For frozen or failing water-filter questions, say a hollow-fiber filter may be compromised if it froze, use backup treatment or replace it if unsure, backflush or clean a slow filter when the model supports it, and prevent the next freeze by sleeping with the filter or keeping it warm overnight. Use next-water context before telling the hiker to push past water.`,
+		`For shelter and camping decisions, use the next_shelter and upcoming_terrain findings as planning candidates, not guarantees. Name daylight, water, current shelter status/crowding, legal rules, weather, fatigue, and a backup option before committing to a sleep plan.`,
+		`For full-shelter, stealth-camping, storm-campsite, low-impact campsite, climb-stop, or waterless-shelter questions, keep the legal/safety boundary explicit: no illegal camping, choose backups before dark when there is still daylight, use established or durable surfaces, keep roughly 200 feet from water and trail when rules allow, avoid exposed ridges/dead trees/drainages/flood-prone ground in storms, and top off/carry enough water when shelter water is uncertain.`,
+		`For after-dark shelter arrivals, do not tell the hiker to choose a backup before dark. Say to slow down, use the headlamp, avoid risky tired night navigation, take the nearest safe legal option rather than adding extra night miles, and keep a fallback plan if the shelter is full.`,
 		`When tool findings are labeled as guidance, treat them as topic-specific documents Scout intentionally read for this answer. Use them to shape caveats and next-step advice.`,
 		`When preparation or training questions have pretrip, terrain, loadout, safety, or offline setup findings, give a concrete short plan. For "what should I focus on first" prompts, include an immediate first-week checklist, not only general training advice. Include shakedown hikes, foot care/blister practice, conservative early mileage, gear/loadout checks, water treatment habits, and an offline app/model rehearsal when those appear in the findings.`,
 		`For offline setup, offline downloads, phone settings, or day-one readiness questions, distinguish phone/app readiness from personal safety readiness. Always include the exact check "verify Bible text is available offline." Also mention field-pack refresh, current mile, local AI model, offline maps/docs, battery, airplane-mode rehearsal, and that Scout does not replace inReach, PLB, 911, or the family emergency plan. For personal documents, include this safety boundary in plain words: do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat.`,

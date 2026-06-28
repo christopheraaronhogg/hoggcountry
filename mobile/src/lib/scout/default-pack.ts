@@ -50,8 +50,8 @@ export const DEFAULT_CONTEXT_PACK: ContextPack = {
 		{
 			id: 'shelter-camping-discipline',
 			title: 'Shelter and camping entries need rule checks',
-			body: 'Shelters, campsites, huts, and tent sites are planning candidates until current rules, availability, water, fees, and crowding are checked. In regulated areas, verify the land-manager rule before committing to an overnight plan.',
-			tags: ['shelter', 'camping', 'campsite', 'rules'],
+			body: 'Shelters, campsites, huts, and tent sites are planning candidates until current rules, availability, water, fees, crowding, daylight, weather, fatigue, and backup options are checked. In regulated areas, verify the land-manager rule before committing to an overnight plan. If fatigue is driving the decision, choose the safer legal stop rather than extra miles for pride. If the shelter is full while daylight remains, use only legal established overflow options and choose a backup before dark. If it is already dark, slow down, use the headlamp, take the nearest safe legal option, avoid extra risky night miles, and keep a fallback if the shelter is full. Do not stealth camp in regulated or prohibited areas.',
+			tags: ['shelter', 'camping', 'campsite', 'rules', 'daylight'],
 			citation: 'Hogg Country Field Guide, Section: Shelter Discipline'
 		},
 		{

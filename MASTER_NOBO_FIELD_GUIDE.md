@@ -1064,6 +1064,50 @@ For a February or March southern start, rain pants stay in the system until the 
 - Poor sleep and mouse exposure are accepted costs only when risk outweighs discomfort
 - Decisions are made using objective triggers, not mood or convenience
 
+## Scout Shelter Decision Rules
+
+Before committing to any shelter, campsite, hut, or tent site, check:
+
+- Daylight remaining
+- Water before and after the stop
+- Current shelter status, crowding, and water reliability
+- Legal camping rules and land-manager restrictions
+- Weather exposure, fatigue, and backup options
+
+If fatigue is driving the decision, choose the safer legal stop rather than extra miles for pride.
+
+If the shelter is full:
+
+- Stay courteous and do not make crowding worse
+- Use legal established overflow tenting only if allowed
+- Choose a backup before dark
+- Avoid unsafe or illegal camping
+
+If you are exhausted, do not use exhaustion as permission to stealth camp in regulated or prohibited areas. Choose a safer legal shelter, campsite, town stop, or established legal site and stop earlier.
+
+For storm camps:
+
+- Set up early in a protected legal spot
+- Avoid exposed ridges, dead trees or widow makers, drainages, creek bottoms, and flood-prone ground
+- Keep dry sleep layers protected
+- Stop or bail out if lightning, flooding, hypothermia risk, or worsening conditions appear
+
+For low-impact camping:
+
+- Use established or durable surfaces
+- Stay roughly 200 feet from water and trail when local rules allow
+- Keep hygiene water and toothpaste away from camp and water
+- Follow posted land-manager rules over general advice
+
+For climbs near camp time:
+
+- Stop before the climb if daylight, legs, water, weather, or legal camp options are weak
+- Climb only when you have enough daylight, water, energy, and a known legal stop after it
+
+For after-dark shelter arrivals, do not think in terms of choosing a backup before dark. It is already dark. Slow down, use the headlamp, avoid risky night navigation when tired, take the nearest safe legal option rather than adding extra night miles, and keep a fallback plan if the shelter is full.
+
+For shelters with no reliable water, top off before the shelter, carry enough to the next verified source, or stop where both legal sleep and water are workable.
+
 ---
 
 ## When Shelter Becomes the Right Decision
