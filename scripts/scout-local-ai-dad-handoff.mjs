@@ -358,6 +358,8 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		status.nativeSource?.latestNativeUploadSha
 			? `- Latest successful native upload repo SHA: \`${status.nativeSource.latestNativeUploadSha}\`${status.nativeSource.latestNativeUploadProof?.repoShaSource ? ` from \`${status.nativeSource.latestNativeUploadProof.repoShaSource}\`` : ''}.`
 			: '- Latest successful native upload repo SHA: unknown.',
+		`- Latest native upload suite: \`${status.nativeSource?.latestNativeUploadSuiteVersion ?? '<unknown>'}\` / \`${status.nativeSource?.latestNativeUploadSuiteHash ?? '<unknown>'}\`.`,
+		`- Latest native upload contains current suite: ${status.nativeSource?.latestNativeUploadHasCurrentSuite ? 'yes' : 'no'}.`,
 		`- Current source newer than latest native upload: ${status.nativeSource?.sourceNewerThanLatestNativeUpload ? 'yes' : 'no'}.`,
 		`- Current native app source newer than latest native upload: ${status.nativeSource?.nativeAppSourceNewerThanLatestNativeUpload ? 'yes' : 'no'}.`,
 		...(status.nativeSource?.nativeAppSourceNewerThanLatestNativeUpload
@@ -468,6 +470,9 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 
 function nativeSourceBoundary(status) {
 	const nativeSource = status.nativeSource;
+	if (nativeSource?.latestNativeUploadHasCurrentSuite === false) {
+		return `latest native upload contains suite ${nativeSource.latestNativeUploadSuiteVersion ?? '<unknown>'} (${nativeSource.latestNativeUploadSuiteHash ?? '<unknown>'}), not current suite ${status.suite?.version ?? '<unknown>'} (${status.suite?.hash ?? '<unknown>'}); upload and refresh the target build before asking Dad for Run 100`;
+	}
 	if (nativeSource?.latestNativeUploadHasCurrentSource) {
 		return 'latest native upload contains the current checkout';
 	}
@@ -528,14 +533,23 @@ function createDadMessageText({ status, releaseEvidence }) {
 		: status.testflight?.recordedDadPilotMeetsSuiteRequirement
 			? recordedDadBuild
 			: status.testflight?.targetBuild ?? recordedDadBuild;
-	const readyLine = status.testflight?.targetBuildReadyForDad
+	const readyLine = status.phoneBuildAction?.canRunNow
 		? `Hoggcountry TestFlight build ${buildLabel} is ready for the local AI test.`
-		: status.testflight?.recordedDadPilotMeetsSuiteRequirement
-			? `Hoggcountry TestFlight build ${buildLabel} can run this suite now; Chris may still refresh you to the latest build later.`
-			: `Hold off on the final Run 100 until Chris says TestFlight has a build matching ${suiteRequiredBuild}.`;
+		: `Hold off on the final Run 100 until Chris says TestFlight has a build matching ${suiteRequiredBuild} and the current eval suite.`;
 	const preflightLine = status.localPreflight?.ok
 		? 'The iPhone Simulator local-AI preflight is already clean; this phone run is the final TestFlight proof.'
 		: 'Chris is using the iPhone Simulator local-AI run as the main preflight; this phone run is the final TestFlight proof.';
+	if (!status.phoneBuildAction?.canRunNow) {
+		return [
+			'Do not send Dad a Run 100 request yet.',
+			'',
+			readyLine,
+			`Current blocker: ${status.phoneBuildAction?.text ?? 'TestFlight does not have the current eval suite yet.'}`,
+			`TestFlight link, after refresh: ${publicLink}`,
+			'',
+			'Next: upload and attach the current build to Dad Pilot, then rerun this command for the Dad-facing instructions.'
+		].join('\n') + '\n';
+	}
 	const lines = [
 		'Dad, can you help me run the Hoggcountry local AI test?',
 		'',
@@ -558,18 +572,25 @@ function createDadMessageText({ status, releaseEvidence }) {
 }
 
 function createPhoneBuildDecision({ status, recordedDadBuild, targetBuild, suiteRequiredBuild }) {
-	if (status.testflight?.targetBuildReadyForDad) {
+	if (status.phoneBuildAction?.canRunNow && status.testflight?.targetBuildReadyForDad) {
 		return {
 			useNow: `install/update the latest Dad Pilot TestFlight target \`${targetBuild}\``,
 			latestTarget: `\`${targetBuild}\` is recorded in Dad Pilot and meets \`${suiteRequiredBuild}\``,
 			finalProofBoundary: 'Run 100 is imported from a TestFlight/iPhone export, reviewed 100/100 at 5/5, and strict/stability proof passes'
 		};
 	}
-	if (status.testflight?.recordedDadPilotMeetsSuiteRequirement) {
+	if (status.phoneBuildAction?.canRunNow && status.testflight?.recordedDadPilotMeetsSuiteRequirement) {
 		return {
 			useNow: `Dad can run the suite on the currently approved Dad Pilot build \`${recordedDadBuild}\`; do not wait for target \`${targetBuild}\` unless latest-code proof is required`,
 			latestTarget: `\`${targetBuild}\` is the Xcode target/local candidate, but it still needs App Store Connect upload/refresh proof before it is the latest Dad Pilot build`,
 			finalProofBoundary: `the exported run shows TestFlight/iPhone context and app build satisfying \`${suiteRequiredBuild}\`; build \`${targetBuild}\` only counts as latest-code proof after Dad Pilot refresh shows targetReadyForDad`
+		};
+	}
+	if (status.phoneBuildAction?.kind === 'upload-current-suite-build') {
+		return {
+			useNow: 'Wait for current-suite TestFlight upload before asking Dad for Run 100',
+			latestTarget: `\`${targetBuild}\` still needs upload/refresh proof with the current eval suite`,
+			finalProofBoundary: `Dad Pilot/TestFlight proof and the exported run both show app build satisfying \`${suiteRequiredBuild}\` with the current eval suite`
 		};
 	}
 	return {

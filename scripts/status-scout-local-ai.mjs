@@ -106,7 +106,11 @@ async function buildStatus(paths) {
 	const downloads = await summarizeDownloads(paths.downloadsDir, suite);
 	const iosBuild = await readOptionalIosBuildSettings(paths.xcodeProjectPath);
 	const releaseEvidence = await readOptionalJson(paths.releaseEvidencePath);
-	const nativeSource = await summarizeNativeSource(paths.iosProofDir);
+	const nativeSource = await summarizeNativeSource({
+		iosProofDir: paths.iosProofDir,
+		mobileSuitePath: paths.mobileSuitePath,
+		suiteIdentity
+	});
 	const testflight = summarizeTestFlightTarget({ iosBuild, releaseEvidence, finalProof, paths });
 	const allRuns = [...runs, ...deviceRuns];
 	const reviewsByRunId = new Map(reviews.map((entry) => [entry.value.runId, entry]));
@@ -124,9 +128,14 @@ async function buildStatus(paths) {
 	testflight.currentTargetPartialDeviceRunCount = currentPartialDeviceRuns.filter((entry) => deviceRunMatchesTargetBuild(entry.value, testflight)).length;
 	testflight.currentSuiteCompatibleDeviceRunCount = currentFullDeviceRuns.filter((entry) => deviceRunSatisfiesFinalProof(entry.value, finalProof)).length;
 	testflight.currentSuiteCompatiblePartialDeviceRunCount = currentPartialDeviceRuns.filter((entry) => deviceRunSatisfiesFinalProof(entry.value, finalProof)).length;
+	testflight.latestNativeUploadHasCurrentSuite = nativeSource.latestNativeUploadHasCurrentSuite;
+	testflight.latestNativeUploadSuiteVersion = nativeSource.latestNativeUploadSuiteVersion;
+	testflight.latestNativeUploadSuiteHash = nativeSource.latestNativeUploadSuiteHash;
+	testflight.currentSuiteVersion = suiteIdentity.suiteVersion;
+	testflight.currentSuiteHash = suiteIdentity.suiteHash;
+	testflight.targetBuildContainsCurrentSuite = Boolean(testflight.targetBuildReadyForDad && nativeSource.latestNativeUploadHasCurrentSuite);
 	testflight.targetBuildAvailableForDad =
-		testflight.targetBuildReadyForDad ||
-		testflight.recordedDadPilotMeetsSuiteRequirement ||
+		testflight.targetBuildContainsCurrentSuite ||
 		testflight.currentTargetDeviceRunCount > 0 ||
 		testflight.currentSuiteCompatibleDeviceRunCount > 0;
 	const phoneBuildAction = createScoutLocalAiPhoneBuildAction({ testflight, nativeSource });
@@ -456,18 +465,6 @@ function nextActionFor(
 			text: 'Run npm run eval:scout-local-ai and fix any missing required-tool hits before Dad spends time on phone review.'
 		};
 	}
-	if (!gate('testflight-target')?.ok) {
-		if (!testflight?.targetBuildMeetsSuiteRequirement) {
-			return {
-				kind: 'align-suite-build',
-				text: `Align the Xcode target build with the suite final-proof requirement ${testflight?.suiteRequiredBuild ?? '<unknown>'}; current target is ${testflight?.targetBuild ?? '<unknown>'}.`
-			};
-		}
-		return {
-			kind: 'publish-target-build',
-			text: `Upload and attach target iOS build ${testflight.targetBuild ?? '<unknown>'} to Dad Pilot first; release evidence currently records Dad Pilot on ${testflight.recordedDadPilotBuild ?? '<unknown>'}, while the suite requires ${testflight.suiteRequiredBuild ?? '<unknown>'}. After App Store Connect shows the target build through the TestFlight link, update the iPhone, open Settings > Scout Eval Lab, run Run 100, Share the JSON, then prepare review with ${DEVICE_REVIEW_PREP_COMMAND}.`
-		};
-	}
 	if (!gate('device-run')?.ok) {
 		const handoffSources = [
 			{
@@ -519,8 +516,11 @@ function nextActionFor(
 				text: `The latest ${latestSource.label} export is blocked before review: ${candidate.path} (${candidate.runId}, ${candidate.caseCount} cases, ${candidate.inspectionStatus}).${reasons} Fix that export or rerun Run 100 on the phone, then prepare review with ${latestSource.prepareCommand}. Do not rate it until inspection says ready-for-final-intake.`
 			};
 		}
-		if (currentFullNonFinalProofDeviceRuns.length) {
-			const latestNonFinalRun = currentFullNonFinalProofDeviceRuns.at(-1);
+		const currentFullWrongDeviceProofRuns = currentFullNonFinalProofDeviceRuns.filter(
+			(entry) => !isLocalPreflightRun(entry.value, finalProof)
+		);
+		if (currentFullWrongDeviceProofRuns.length) {
+			const latestNonFinalRun = currentFullWrongDeviceProofRuns.at(-1);
 			return {
 				kind: 'rerun-device-proof-context',
 				text: `Imported full Eval Lab run ${latestNonFinalRun.value.runId ?? '<missing>'} is not valid final Dad proof (${deviceRunFinalProofMismatchEvidence(latestNonFinalRun, finalProof)}). Rerun Run 100 on a suite-compatible TestFlight iPhone build, Share the fresh JSON, then prepare review with ${DEVICE_REVIEW_PREP_COMMAND}.`
@@ -540,6 +540,18 @@ function nextActionFor(
 			return {
 				kind: 'run-local-preflight',
 				text: `${localPreflight.evidence}. Use the Mac mini simulator lane before spending Dad's TestFlight time: ${localPreflight.command}. This is preflight only; ${localPreflight.boundary}`
+			};
+		}
+		if (!gate('testflight-target')?.ok) {
+			if (!testflight?.targetBuildMeetsSuiteRequirement) {
+				return {
+					kind: 'align-suite-build',
+					text: `Align the Xcode target build with the suite final-proof requirement ${testflight?.suiteRequiredBuild ?? '<unknown>'}; current target is ${testflight?.targetBuild ?? '<unknown>'}.`
+				};
+			}
+			return {
+				kind: 'publish-target-build',
+				text: `Upload and attach target iOS build ${testflight.targetBuild ?? '<unknown>'} to Dad Pilot first; release evidence currently records Dad Pilot on ${testflight.recordedDadPilotBuild ?? '<unknown>'}, while the suite requires ${testflight.suiteRequiredBuild ?? '<unknown>'}. After App Store Connect shows the target build through the TestFlight link, update the iPhone, open Settings > Scout Eval Lab, run Run 100, Share the JSON, then prepare review with ${DEVICE_REVIEW_PREP_COMMAND}.`
 			};
 		}
 		const phoneBuild =
@@ -783,7 +795,7 @@ function summarizeIterationPlanList(entries) {
 	}));
 }
 
-async function summarizeNativeSource(iosProofDir) {
+async function summarizeNativeSource({ iosProofDir, mobileSuitePath, suiteIdentity }) {
 	const currentRepoSha = await currentGitSha();
 	const iosUploadProofs = await findIosUploadProofs(iosProofDir);
 	const uploadAttempts = iosUploadProofs.filter((proof) => proof.uploadRequested);
@@ -801,6 +813,12 @@ async function summarizeNativeSource(iosProofDir) {
 		? await gitChangedFiles(latestNativeUploadSha, currentRepoSha)
 		: [];
 	const nativeAppChangedFiles = changedFiles.filter(isNativeAppSourcePath);
+	const latestNativeUploadSuite = latestNativeUploadSha
+		? await readJsonAtGitSha(latestNativeUploadSha, mobileSuitePath)
+		: null;
+	const latestNativeUploadSuiteIdentity = latestNativeUploadSuite
+		? scoutLocalAiSuiteIdentity(latestNativeUploadSuite)
+		: null;
 	return {
 		currentRepoSha,
 		iosProofDir: relative(REPO_ROOT, iosProofDir),
@@ -810,6 +828,13 @@ async function summarizeNativeSource(iosProofDir) {
 		latestNativeUploadAttemptStatus: latestNativeUploadAttempt?.status ?? null,
 		latestNativeUploadAttemptWasSuccessful: latestNativeUploadAttempt?.status === 'passed',
 		latestNativeUploadHasCurrentSource: matchesCurrent,
+		latestNativeUploadSuiteVersion: latestNativeUploadSuiteIdentity?.suiteVersion ?? null,
+		latestNativeUploadSuiteHash: latestNativeUploadSuiteIdentity?.suiteHash ?? null,
+		latestNativeUploadHasCurrentSuite: Boolean(
+			latestNativeUploadSuiteIdentity &&
+			latestNativeUploadSuiteIdentity.suiteVersion === suiteIdentity.suiteVersion &&
+			latestNativeUploadSuiteIdentity.suiteHash === suiteIdentity.suiteHash
+		),
 		sourceNewerThanLatestNativeUpload: latestUploadIsAncestor,
 		nativeAppSourceNewerThanLatestNativeUpload: latestUploadIsAncestor && nativeAppChangedFiles.length > 0,
 		sourceDiffersFromLatestNativeUpload: comparable && !matchesCurrent,
@@ -817,6 +842,19 @@ async function summarizeNativeSource(iosProofDir) {
 		nativeAppChangedFileCount: nativeAppChangedFiles.length,
 		nativeAppChangedFiles: nativeAppChangedFiles.slice(0, 12)
 	};
+}
+
+async function readJsonAtGitSha(sha, path) {
+	try {
+		const gitPath = relative(REPO_ROOT, path);
+		const result = await execFileAsync('git', ['show', `${sha}:${gitPath}`], {
+			cwd: REPO_ROOT,
+			maxBuffer: 64 * 1024 * 1024
+		});
+		return JSON.parse(result.stdout);
+	} catch {
+		return null;
+	}
 }
 
 async function currentGitSha() {
@@ -1071,7 +1109,9 @@ function testflightTargetEvidence(testflight) {
 	const pieces = [
 		`target ${testflight.targetBuild ?? '<unknown>'}`,
 		`suite requires ${testflight.suiteRequiredBuild ?? '<unknown>'}`,
-		`Dad Pilot records ${testflight.recordedDadPilotBuild ?? '<unknown>'}`
+		`Dad Pilot records ${testflight.recordedDadPilotBuild ?? '<unknown>'}`,
+		`latest native upload suite ${testflight.latestNativeUploadSuiteVersion ?? '<unknown>'} (${testflight.latestNativeUploadSuiteHash ?? '<unknown>'})`,
+		`current suite ${testflight.currentSuiteVersion ?? '<unknown>'} (${testflight.currentSuiteHash ?? '<unknown>'})`
 	];
 	if (testflight.currentTargetDeviceRunCount > 0) {
 		pieces.push(`${testflight.currentTargetDeviceRunCount} imported full device run(s) already used the target TestFlight build`);
@@ -1082,14 +1122,17 @@ function testflightTargetEvidence(testflight) {
 	if (!testflight.targetBuildMeetsSuiteRequirement) {
 		return `Current Xcode target does not meet the suite final-proof requirement: ${pieces.join('; ')}`;
 	}
+	if (!testflight.targetBuildReadyForDad && testflight.currentSuiteCompatibleDeviceRunCount > 0) {
+		return `Imported TestFlight/iPhone proof shows a suite-compatible build is installed; newer Xcode target may still be pending App Store Connect: ${pieces.join('; ')}`;
+	}
+	if (!testflight.latestNativeUploadHasCurrentSuite) {
+		return `Latest TestFlight upload does not contain the current eval suite: ${pieces.join('; ')}`;
+	}
 	if (!testflight.targetBuildAvailableForDad) {
 		return `Target build is not yet recorded as available for Dad: ${pieces.join('; ')}`;
 	}
 	if (!testflight.targetBuildReadyForDad && testflight.recordedDadPilotMeetsSuiteRequirement) {
 		return `Dad Pilot has a suite-compatible TestFlight build; newer Xcode target is pending App Store Connect: ${pieces.join('; ')}`;
-	}
-	if (!testflight.targetBuildReadyForDad && testflight.currentSuiteCompatibleDeviceRunCount > 0) {
-		return `Imported TestFlight/iPhone proof shows a suite-compatible build is installed; newer Xcode target may still be pending App Store Connect: ${pieces.join('; ')}`;
 	}
 	return `Target build is available for Dad: ${pieces.join('; ')}`;
 }
@@ -1364,6 +1407,9 @@ function createStatusMarkdown(status) {
 		`- Target iOS build: \`${status.testflight.targetBuild ?? '<unknown>'}\``,
 		`- Suite-required app build: \`${status.testflight.suiteRequiredBuild ?? '<unknown>'}\``,
 		`- Target build meets suite requirement: ${status.testflight.targetBuildMeetsSuiteRequirement ? 'yes' : 'no'}`,
+		`- Latest native upload contains current suite: ${status.testflight.latestNativeUploadHasCurrentSuite ? 'yes' : 'no'}`,
+		`- Latest native upload suite: \`${status.testflight.latestNativeUploadSuiteVersion ?? '<unknown>'}\` / \`${status.testflight.latestNativeUploadSuiteHash ?? '<unknown>'}\``,
+		`- Target build contains current suite: ${status.testflight.targetBuildContainsCurrentSuite ? 'yes' : 'no'}`,
 		`- Recorded Dad Pilot build: \`${status.testflight.recordedDadPilotBuild ?? '<unknown>'}\``,
 		`- Recorded Dad Pilot build meets suite requirement: ${status.testflight.recordedDadPilotMeetsSuiteRequirement ? 'yes' : 'no'}`,
 		`- Target build ready for Dad: ${status.testflight.targetBuildReadyForDad ? 'yes' : 'no'}`,
@@ -1380,6 +1426,8 @@ function createStatusMarkdown(status) {
 		`- Latest successful native upload proof: ${status.nativeSource?.latestNativeUploadProof?.path ? `\`${status.nativeSource.latestNativeUploadProof.path}\`` : '<none>'}`,
 		`- Latest successful native upload SHA: \`${status.nativeSource?.latestNativeUploadSha ?? '<unknown>'}\``,
 		`- Latest native upload has current source: ${status.nativeSource?.latestNativeUploadHasCurrentSource ? 'yes' : 'no'}`,
+		`- Latest native upload has current suite: ${status.nativeSource?.latestNativeUploadHasCurrentSuite ? 'yes' : 'no'}`,
+		`- Latest native upload suite: \`${status.nativeSource?.latestNativeUploadSuiteVersion ?? '<unknown>'}\` / \`${status.nativeSource?.latestNativeUploadSuiteHash ?? '<unknown>'}\``,
 		`- Current source newer than latest native upload: ${status.nativeSource?.sourceNewerThanLatestNativeUpload ? 'yes' : 'no'}`,
 		`- Current native app source newer than latest native upload: ${status.nativeSource?.nativeAppSourceNewerThanLatestNativeUpload ? 'yes' : 'no'}`,
 		`- Native app files changed since latest native upload: ${status.nativeSource?.nativeAppChangedFileCount ?? 0}`,

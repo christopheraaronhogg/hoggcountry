@@ -10,16 +10,18 @@ use that phone to produce the final Scout local-AI `Run 100` export.
 - App Store Connect app id `6782505691` and bundle id
   `com.hoggcountry.trailassistant` are verified.
 - Build `1.0 (27)` is live in Dad Pilot, Apple beta review is approved, and App
-  Store Connect reports external state `IN_BETA_TESTING`.
+  Store Connect reports external state `IN_BETA_TESTING`, but that upload
+  contains eval suite `2026-06-27.2`.
 - Latest native upload proof for build `27`:
   `docs/launch/proof/ios-testflight-attempt-2026-06-28T03-43-37-454Z.md`.
 - Dad Pilot/App Store Connect proof for build `27`:
   `docs/launch/proof/ios-testflight-build-27-2026-06-28.md`.
 - Build `26` was removed from Dad Pilot only after build `27` was attached and
   externally available.
-- The local Xcode target is build `27`, matching the current Dad Pilot build.
-- Dad should now run `Run 100` on build `27`; the suite allows `1.0 (>= 13)`,
-  but build `27` is the latest-source TestFlight proof.
+- The local Xcode target is build `28`, which is the next upload target.
+- Dad should not run the current `Run 100` yet. The current suite is
+  `2026-06-28.2`, so build `28` needs to be uploaded, attached to Dad Pilot,
+  and verified through TestFlight first.
 - The remaining goal is not TestFlight availability. It is a real
   TestFlight/iPhone `Run 100` export, import, human review, and all 100 answers
   rated 5/5 with strict device proof.
@@ -63,15 +65,17 @@ npm run message:scout-local-ai-dad
 
 Current message summary:
 
-1. Open TestFlight and update Hoggcountry. If it only says Open, that is fine.
-2. Open Hoggcountry > Settings > Scout Eval Lab.
-3. Make sure the status says `TestFlight ready`.
-4. Keep the phone plugged in and awake, then tap `Run 100`.
-5. `Run 3` is only a quick smoke check; `Run 100` is the real proof.
-6. When it finishes, tap Share and send the JSON file to Chris by Messages or
+1. Wait until Chris confirms build `1.0 (28)` is available in TestFlight.
+2. Open TestFlight and update Hoggcountry. If it only says Open after Chris's
+   confirmation, that is fine.
+3. Open Hoggcountry > Settings > Scout Eval Lab.
+4. Make sure the status says `TestFlight ready`.
+5. Keep the phone plugged in and awake, then tap `Run 100`.
+6. `Run 3` is only a quick smoke check; `Run 100` is the real proof.
+7. When it finishes, tap Share and send the JSON file to Chris by Messages or
    AirDrop.
-7. If Share does not send a file, tap Copy and send the copied text to Chris.
-8. If it gets interrupted, reopen Hoggcountry > Settings > Scout Eval Lab and
+8. If Share does not send a file, tap Copy and send the copied text to Chris.
+9. If it gets interrupted, reopen Hoggcountry > Settings > Scout Eval Lab and
    tap Resume, then Share when it finishes.
 
 ## Chris Intake
@@ -182,14 +186,14 @@ changed after the last successful upload.
 ## Proof Boundaries
 
 - Account/TestFlight proof: build `1.0 (27)` is attached to Dad Pilot and
-  externally available.
+  externally available, but it is stale for the current suite.
 - Native upload proof: build `27` was archived, exported, and uploaded from the
   native app source in commit `c9a49b6974d2f8f32532848e4621ee0d761c4a3c`.
 - Previous Dad Pilot upload: build `25` was archived and uploaded from commit
   `b70dff76a8c7b7fd3e2653be86a37c77a0c2f85d`, then replaced by build `26`;
   build `26` was then replaced by build `27`.
-- Latest-source TestFlight proof: local Xcode target `1.0 (27)` matches Dad
-  Pilot build `1.0 (27)`.
+- Latest-source TestFlight proof: pending. Local Xcode target `1.0 (28)` must
+  be uploaded and attached to Dad Pilot before current-suite phone proof.
 - Current repo proof: later commits may add docs/tests/proof. Check
   `npm run status:scout-local-ai` for whether native app source changed after
   the latest upload.

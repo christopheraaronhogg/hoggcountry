@@ -11,6 +11,15 @@ export function createScoutLocalAiPhoneBuildAction({ testflight, nativeSource })
 			text: `Do not start Run 100 yet; the Xcode target ${targetBuild} does not meet the suite requirement ${suiteRequiredBuild}.`
 		};
 	}
+	if (nativeSource?.latestNativeUploadHasCurrentSuite === false) {
+		return {
+			kind: 'upload-current-suite-build',
+			canRunNow: false,
+			requiresNewUploadBeforeRun100: true,
+			requiresNewUploadForLatestAppSourceProof: true,
+			text: `Do not ask Dad for Run 100 yet; the latest TestFlight upload contains suite ${nativeSource.latestNativeUploadSuiteVersion ?? '<unknown>'} (${nativeSource.latestNativeUploadSuiteHash ?? '<unknown>'}), but the current suite is ${testflight.currentSuiteVersion ?? '<unknown>'} (${testflight.currentSuiteHash ?? '<unknown>'}). Upload and attach ${targetBuild} to Dad Pilot first.`
+		};
+	}
 	if (!testflight?.targetBuildAvailableForDad) {
 		return {
 			kind: 'publish-target-build',
