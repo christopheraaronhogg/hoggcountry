@@ -34,6 +34,9 @@ import {
 	isSupportedScoutEvalExportFileName,
 	readScoutEvalRunJson
 } from './lib/scout-local-ai-run-json.mjs';
+import {
+	scanScoutLocalAiAnswerQuality
+} from './scan-scout-local-ai-answer-quality.mjs';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
@@ -645,6 +648,7 @@ function iterationDebtEvidence(debt) {
 function summarizeRunList(entries) {
 	return entries.map((entry) => {
 		const sourceEvidence = summarizeRunSourceEvidence(entry.value.results ?? []);
+		const answerQuality = summarizeAnswerQualityScan(scanScoutLocalAiAnswerQuality(entry.value));
 		return {
 			runId: entry.value.runId ?? '<missing>',
 			path: relative(REPO_ROOT, entry.path),
@@ -655,9 +659,27 @@ function summarizeRunList(entries) {
 			toolExpectationComplete: entry.value.summary?.toolExpectationComplete ?? 0,
 			missingToolCases: entry.value.summary?.missingToolCases ?? 0,
 			sourceEvidenceComplete: entry.value.summary?.sourceEvidenceComplete ?? sourceEvidence.sourceEvidenceComplete,
-			missingSourceEvidenceCases: entry.value.summary?.missingSourceEvidenceCases ?? sourceEvidence.missingSourceEvidenceCases
+			missingSourceEvidenceCases: entry.value.summary?.missingSourceEvidenceCases ?? sourceEvidence.missingSourceEvidenceCases,
+			answerQuality
 		};
 	});
+}
+
+function summarizeAnswerQualityScan(scan) {
+	return {
+		status: scan.flaggedCount ? 'review-needed' : 'clean',
+		caseCount: scan.caseCount,
+		flaggedCount: scan.flaggedCount,
+		errorCount: scan.errorCount,
+		warningCount: scan.warningCount,
+		byCheck: scan.byCheck,
+		topFlagged: scan.flagged.slice(0, 8).map((item) => ({
+			caseId: item.caseId,
+			domain: item.domain,
+			checks: item.checks.map((check) => `${check.id}:${check.severity}`)
+		})),
+		boundary: scan.note
+	};
 }
 
 function summarizeBacklogList(entries) {
@@ -1303,6 +1325,7 @@ function createStatusMarkdown(status) {
 		`- Full routing/tool-complete runs: ${status.runs.currentFullToolCompleteRuns.length}`,
 		`- Full device runs: ${status.runs.currentFullDeviceRuns.length}`,
 		`- Partial device runs: ${status.runs.currentPartialDeviceRuns.length}`,
+		...answerQualityEvidenceLines(status),
 		...handoffEvidenceLines(status.inbox, {
 			label: 'Inbox',
 			emptyAction: `drop Dad's shared JSON into \`${status.inbox?.path ?? DEFAULT_INBOX_DIR}\``,
@@ -1367,6 +1390,22 @@ function handoffEvidenceLines(summary, options) {
 		return lines;
 	}
 	lines.push(`- Latest ${lowerLabel} export: none; ${options.emptyAction}`);
+	return lines;
+}
+
+function answerQualityEvidenceLines(status) {
+	const latestFullDevice = status.runs.currentFullDeviceRuns.at(-1);
+	if (!latestFullDevice) {
+		return ['- Latest full device answer-quality scan: none'];
+	}
+	const scan = latestFullDevice.answerQuality;
+	const lines = [
+		`- Latest full device answer-quality scan: \`${latestFullDevice.runId}\` ${scan.status}; ${scan.flaggedCount}/${scan.caseCount} flagged, ${scan.errorCount} errors, ${scan.warningCount} warnings`,
+		`- Answer-quality boundary: ${scan.boundary}`
+	];
+	if (scan.topFlagged?.length) {
+		lines.push(`- Top answer-quality cases: ${scan.topFlagged.map((item) => `${item.caseId} (${item.checks.join(', ')})`).join('; ')}`);
+	}
 	return lines;
 }
 

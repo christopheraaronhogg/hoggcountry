@@ -1009,6 +1009,15 @@ test('status command lets suite-compatible TestFlight device proof override stal
 	assert.equal(status.testflight.currentTargetDeviceRunCount, 0);
 	assert.equal(status.testflight.currentSuiteCompatibleDeviceRunCount, 1);
 	assert.equal(status.runs.currentFullDeviceRuns.length, 1);
+	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.status, 'review-needed');
+	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.caseCount, 100);
+	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.flaggedCount, 100);
+	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.errorCount, 100);
+	assert.ok(status.runs.currentFullDeviceRuns[0].answerQuality.warningCount >= 100);
+	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.byCheck['unfinished-tail'], 100);
+	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.byCheck['very-short-answer'], 100);
+	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.topFlagged[0].caseId, 'DLA-001');
+	assert.match(status.runs.currentFullDeviceRuns[0].answerQuality.boundary, /does not replace human 1-5 ratings/u);
 	assert.equal(gates['testflight-target'].ok, true);
 	assert.match(gates['testflight-target'].evidence, /Imported TestFlight\/iPhone proof shows a suite-compatible build is installed/u);
 	assert.match(gates['testflight-target'].evidence, /1 imported full device run\(s\) satisfy the suite-required TestFlight build/u);
@@ -1018,6 +1027,25 @@ test('status command lets suite-compatible TestFlight device proof override stal
 	assert.match(status.nextAction.text, /npm run finalize-review:scout-local-ai/u);
 	assert.match(status.nextAction.text, /device-status-suite-compatible-build13\.review\.json/u);
 	assert.match(status.nextAction.text, /If the packet is missing, recreate it/u);
+
+	const textResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai.mjs',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--release-evidence',
+			releaseEvidencePath
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	assert.match(textResult.stdout, /Latest full device answer-quality scan: `device-status-suite-compatible-build13` review-needed; 100\/100 flagged, 100 errors, \d+ warnings/u);
+	assert.match(textResult.stdout, /Answer-quality boundary: Heuristic scan only/u);
+	assert.match(textResult.stdout, /Top answer-quality cases: DLA-001 \(very-short-answer:warning, unfinished-tail:error\)/u);
 });
 
 test('status command does not accept full device runs from non-suite-compatible TestFlight builds', async () => {
