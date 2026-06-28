@@ -19,6 +19,8 @@ use that phone to produce the final Scout local-AI `Run 100` export.
 - Build `26` was removed from Dad Pilot only after build `27` was attached and
   externally available.
 - The local Xcode target is build `28`, which is the next upload target.
+- Local build `28` prep proof:
+  `docs/launch/proof/ios-testflight-build-28-prep-2026-06-28.md`.
 - Dad should not run the current `Run 100` yet. The current suite is
   `2026-06-28.2`, so build `28` needs to be uploaded, attached to Dad Pilot,
   and verified through TestFlight first.
