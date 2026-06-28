@@ -85,6 +85,22 @@ const AFTER_DARK_SHELTER_NOTE =
 	'After-dark shelter note: slow down, use the headlamp, avoid risky night navigation when tired, take the nearest safe legal option rather than adding extra night miles, and keep a fallback plan in case the shelter is full.';
 const WATERLESS_SHELTER_NOTE =
 	'Waterless-shelter note: do not assume shelter water is flowing; top off before the shelter, carry enough to the next verified source, or stop where both legal sleep and water are workable.';
+const THUNDERSTORM_HIKE_NOTE =
+	'Thunderstorm hike note: check live forecast or radar if available, avoid exposed ridges and high points during the storm window, shorten or shift mileage earlier, and stop or bail out if lightning, flooding, wet-cold exposure, or worsening weather appears.';
+const COLD_WIND_RIDGE_NOTE =
+	'Cold-wind ridge note: cap target miles, eat more often, drink steadily, protect hands, head, and feet, keep insulation and sleep layers dry, and treat wet wind on exposed ridges as hypothermia risk.';
+const HOT_DAY_PLAN_NOTE =
+	'Hot-day plan note: move harder miles into the cooler part of the day, carry more water when the next source is uncertain, schedule shade breaks, eat salty food or use electrolytes if available, and stop to cool down for dizziness, confusion, headache, nausea, cramps, stopped sweating, or worsening symptoms.';
+const WET_HYPOTHERMIA_NOTE =
+	'Wet-weather hypothermia note: watch for shivering, clumsiness, confusion, apathy, slurred speech, and poor coordination. Stop, get under shelter, change into dry insulation or sleep layers, eat or sip warm fluids if available, and get help for severe, worsening, or altered-mental-status symptoms.';
+const LIGHTNING_RIDGE_NOTE =
+	'Lightning ridge note: if it is safe to move, leave exposed high ground and ridgelines immediately. Avoid lone trees, open knobs, metal objects, and water; spread out from partners, wait well after the last thunder before resuming, and do not keep hiking exposed terrain.';
+const TOWN_GEAR_DRYING_NOTE =
+	'Town gear-drying note: sequence the chores: sleeping bag or quilt and insulation first, then socks, shoes or liners, wet clothes, and rain gear. Use a laundromat, dryer on safe settings, hostel drying room, or motel room airflow before charging, repacking, and leaving town.';
+const BAD_WEATHER_NERO_NOTE =
+	'Nero weather note: choose a short day, town stop, or early legal stop when storm severity, temperature, footing, exposure, daylight, body condition, or town access makes the full plan less safe. Rest is a safety and recovery decision, not failure.';
+const LIVE_WEATHER_FACTS_NOTE =
+	'Live-weather verification note: verify storms and lightning, heat or cold exposure, wind, flooding or high water, closures or fire/smoke alerts, and whether the cache is stale before relying on the answer for exposed terrain or a safety-critical decision.';
 
 export class OnDeviceGemmaProvider implements ScoutProvider {
 	private bridge?: OnDeviceGemmaBridge;
@@ -262,6 +278,27 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 			answer = appendSentence(answer, `Weather note: ${weatherSummary}`);
 		}
 	}
+	if ((isLightningRidgePrompt(lowerPrompt) || isWetHypothermiaPrompt(lowerPrompt)) && !isHeatWaterPrompt(lowerPrompt)) {
+		answer = removeMisappliedHeatIllnessDrift(answer);
+	}
+	if (isThunderstormHikePrompt(lowerPrompt) && !isLightningRidgePrompt(lowerPrompt) && !mentionsThunderstormHikeDecision(answer)) {
+		answer = appendSentence(answer, THUNDERSTORM_HIKE_NOTE);
+	}
+	if (isColdWindRidgePrompt(lowerPrompt) && !mentionsColdWindRidgeDecision(answer)) {
+		answer = appendSentence(answer, COLD_WIND_RIDGE_NOTE);
+	}
+	if (isHotDayPlanPrompt(lowerPrompt) && !isHeatWaterPrompt(lowerPrompt) && !mentionsHotDayPlan(answer)) {
+		answer = appendSentence(answer, HOT_DAY_PLAN_NOTE);
+	}
+	if (isWetHypothermiaPrompt(lowerPrompt) && !mentionsWetHypothermiaResponse(answer)) {
+		answer = appendSentence(answer, WET_HYPOTHERMIA_NOTE);
+	}
+	if (isLightningRidgePrompt(lowerPrompt) && !mentionsLightningRidgeSafety(answer)) {
+		answer = appendSentence(answer, LIGHTNING_RIDGE_NOTE);
+	}
+	if (isTownGearDryingPrompt(lowerPrompt) && !mentionsTownGearDryingSequence(answer)) {
+		answer = appendSentence(answer, TOWN_GEAR_DRYING_NOTE);
+	}
 	if (isFrozenFilterPrompt(lowerPrompt) && !mentionsFrozenFilterSafety(answer)) {
 		answer = appendSentence(answer, FROZEN_FILTER_NOTE);
 	}
@@ -320,10 +357,10 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 		answer = appendSentence(answer, COLD_RAIN_CAMP_NOTE);
 	}
 	if (isBadWeatherNeroPrompt(lowerPrompt) && !mentionsBadWeatherNeroDecision(answer)) {
-		answer = appendSentence(
-			answer,
-			'Nero note: choose a short day, town stop, or early stop when the forecast, footing, exposure, daylight, or body condition makes pushing the full plan less safe.'
-		);
+		answer = appendSentence(answer, BAD_WEATHER_NERO_NOTE);
+	}
+	if (isLiveWeatherFactsPrompt(lowerPrompt) && !mentionsLiveWeatherFacts(answer)) {
+		answer = appendSentence(answer, LIVE_WEATHER_FACTS_NOTE);
 	}
 	if (isBudgetPrompt(lowerPrompt) && !mentionsBudgetCategories(answer)) {
 		answer = appendSentence(
@@ -427,6 +464,21 @@ function removeAfterDarkBeforeDarkContradiction(answer: string): string {
 		.replace(/\bchoose a backup before dark\b/giu, 'keep a fallback if the shelter is full')
 		.replace(/\bchoose backups before dark\b/giu, 'keep fallbacks for full shelters or unsafe conditions')
 		.replace(/\bpick a safe legal earlier stop if one is available\b/giu, 'take the nearest safe legal option rather than adding extra night miles');
+}
+
+function removeMisappliedHeatIllnessDrift(answer: string): string {
+	const filtered = answer
+		.split(/\n{2,}/u)
+		.map((paragraph) => {
+			const sentences = splitSentences(paragraph)
+				.map((sentence) => sentence.trim())
+				.filter((sentence) => sentence && !containsHeatIllnessDrift(sentence));
+			return sentences.join(' ');
+		})
+		.filter(Boolean)
+		.join('\n\n')
+		.trim();
+	return filtered || answer;
 }
 
 function removeRepeatedSentences(answer: string): string {
@@ -539,9 +591,45 @@ function isWeatherSensitivePrompt(prompt: string): boolean {
 	return /\b(?:weather|rains?|rainy|raining|storms?|thunderstorms?|thunder|lightning|winds?|cold|heat|hot|hypothermia|freez\w*|ridge|dry stretch|bad weather|zeros?|neros?|stop hiking)\b/u.test(prompt);
 }
 
+function isThunderstormHikePrompt(prompt: string): boolean {
+	return /\b(?:thunderstorms?|storm|lightning)\b/u.test(prompt) &&
+		/\b(?:today|afternoon|hike|mileage|miles|ridge|ridges|exposed)\b/u.test(prompt) &&
+		!isStormCampsitePrompt(prompt);
+}
+
+function isColdWindRidgePrompt(prompt: string): boolean {
+	return /\b(?:cold|35 degrees|thirty five|wind|windy)\b/u.test(prompt) &&
+		/\b(?:ridge|ridgeline|exposed)\b/u.test(prompt);
+}
+
+function isHotDayPlanPrompt(prompt: string): boolean {
+	return /\b(?:hot|heat|humid|heat illness)\b/u.test(prompt) &&
+		/\b(?:today|plan|change|adjust|hike|miles?|water|shade)\b/u.test(prompt);
+}
+
+function isWetHypothermiaPrompt(prompt: string): boolean {
+	return /\bhypothermia\b/u.test(prompt) &&
+		/\b(?:wet|rain|cold|weather)\b/u.test(prompt);
+}
+
+function isLightningRidgePrompt(prompt: string): boolean {
+	return /\blightning\b/u.test(prompt) &&
+		/\b(?:ridge|ridgeline|high point|exposed)\b/u.test(prompt);
+}
+
+function isTownGearDryingPrompt(prompt: string): boolean {
+	return /\b(?:dry|drying|wet)\b/u.test(prompt) &&
+		/\b(?:gear|sleep system|quilt|bag|shoes|socks|clothes|rain gear)\b/u.test(prompt) &&
+		/\b(?:town|laundry|laundromat|hostel|motel|day)\b/u.test(prompt);
+}
+
 function isBadWeatherNeroPrompt(prompt: string): boolean {
 	return /\b(?:zero|nero)\b/u.test(prompt) &&
 		/\b(?:weather|rains?|rainy|raining|storms?|thunderstorms?|thunder|lightning|winds?|cold|heat|hot|hypothermia|freez\w*|bad weather)\b/u.test(prompt);
+}
+
+function isLiveWeatherFactsPrompt(prompt: string): boolean {
+	return /\b(?:weather facts|verify live|must scout verify|rely on an answer|before i rely)\b/u.test(prompt);
 }
 
 function isFrozenFilterPrompt(prompt: string): boolean {
@@ -669,6 +757,63 @@ function mentionsWeatherLookupSummary(answer: string, summary: string): boolean 
 		return /\b(?:partly cloudy|cloudy|showers?|rain|storms?|thunderstorms?|snow|wind\s+\d|high\s+\d|low\s+\d|hot|cold)\b/iu.test(lowerAnswer);
 	}
 	return /refresh|verify|current forecast|cached weather/iu.test(lowerAnswer);
+}
+
+function mentionsThunderstormHikeDecision(answer: string): boolean {
+	const mentionsLiveCheck = /\b(?:live|current|radar|forecast|verify|refresh)\b/iu.test(answer);
+	const mentionsRidgeAvoidance = /\b(?:avoid|stay off|get off|do not enter|don't enter|skip)\b[^.?!\n]*(?:exposed|ridge|high point)|(?:exposed|ridge|high point)[^.?!\n]*(?:avoid|stay off|get off|do not enter|don't enter|skip)/iu.test(answer);
+	const mentionsTimingMileage = /\b(?:shorten|shift|earlier|wait|delay|conservative mileage|lower mileage|stop|bail)\b/iu.test(answer);
+	const mentionsLightning = /\blightning\b/iu.test(answer);
+	return mentionsLiveCheck && mentionsRidgeAvoidance && mentionsTimingMileage && mentionsLightning;
+}
+
+function mentionsColdWindRidgeDecision(answer: string): boolean {
+	const mentionsMileageCap = /\b(?:cap|cut|shorten|lower|conservative|reduce)\b[^.?!\n]*(?:miles?|mileage|target)|(?:miles?|mileage|target)[^.?!\n]*(?:cap|cut|shorten|lower|conservative|reduce)/iu.test(answer);
+	const mentionsExtremities = /\b(?:hands?|feet|head|extremities|gloves?|hat|socks?)\b/iu.test(answer);
+	const mentionsFoodDrink = /\b(?:eat|snack|calor(?:y|ies)|food|drink|sip|hydrate|warm fluids?)\b/iu.test(answer);
+	const mentionsHypothermia = /\bhypothermia|wet[-\s]?cold/iu.test(answer);
+	return mentionsMileageCap && mentionsExtremities && mentionsFoodDrink && mentionsHypothermia;
+}
+
+function mentionsHotDayPlan(answer: string): boolean {
+	const mentionsTiming = /\b(?:early|earlier|morning|cooler part|cooler hours|midday heat|heat of the day)\b/iu.test(answer);
+	const mentionsWater = /\b(?:water|hydrate|hydration|electrolytes?|sip|drink)\b/iu.test(answer);
+	const mentionsShadeBreaks = /\b(?:shade|breaks?|rest)\b/iu.test(answer);
+	const mentionsSymptoms = /\b(?:dizz\w*|confus\w*|headache|nausea|cramps?|stopped sweating|heat illness)\b/iu.test(answer);
+	return mentionsTiming && mentionsWater && mentionsShadeBreaks && mentionsSymptoms;
+}
+
+function mentionsWetHypothermiaResponse(answer: string): boolean {
+	const mentionsSymptoms = /\bshiver\w*\b/iu.test(answer) &&
+		/\b(?:clumsy|clumsiness|coordination|confusion|confused|apathy|apathetic|slurred)\b/iu.test(answer);
+	const mentionsDryWarmShelter = /\b(?:shelter|dry|warm|insulation|sleep layer|sleep system|quilt|bag)\b/iu.test(answer);
+	const mentionsHelp = /\b(?:get help|call 911|inreach|plb|emergency|escalate|medical help|altered mental)\b/iu.test(answer);
+	return mentionsSymptoms && mentionsDryWarmShelter && mentionsHelp;
+}
+
+function mentionsLightningRidgeSafety(answer: string): boolean {
+	const mentionsLeaveHighGround = /\b(?:leave|get off|move off|descend from|avoid)\b[^.?!\n]*(?:ridge|ridgeline|high ground|high point|exposed)|(?:ridge|ridgeline|high ground|high point|exposed)[^.?!\n]*(?:leave|get off|move off|avoid)/iu.test(answer);
+	const mentionsAvoidTargets = /\b(?:lone tree|isolated tree|metal|open knob|water)\b/iu.test(answer);
+	const mentionsWait = /\b(?:wait|last thunder|resume|until the storm passes)\b/iu.test(answer);
+	const avoidsContinuing = /\b(?:do not keep hiking|don't keep hiking|stop hiking|do not continue|don't continue|avoid continuing)\b/iu.test(answer);
+	return mentionsLeaveHighGround && mentionsAvoidTargets && mentionsWait && avoidsContinuing;
+}
+
+function mentionsTownGearDryingSequence(answer: string): boolean {
+	const mentionsSleep = /\b(?:sleeping bag|sleep system|quilt|dry sleep|insulation)\b/iu.test(answer);
+	const mentionsShoesSocks = /\b(?:shoes?|socks?|liners?)\b/iu.test(answer);
+	const mentionsLaundryDryer = /\b(?:laundry|laundromat|dryer|drying room|motel room|hostel)\b/iu.test(answer);
+	const mentionsSequence = /\b(?:first|then|next|before leaving|sequence|priority|prioritize)\b/iu.test(answer);
+	return mentionsSleep && mentionsShoesSocks && mentionsLaundryDryer && mentionsSequence;
+}
+
+function mentionsLiveWeatherFacts(answer: string): boolean {
+	const mentionsStorms = /\b(?:storms?|thunderstorms?|lightning)\b/iu.test(answer);
+	const mentionsHeatCold = /\b(?:heat|hot|cold|hypothermia|exposure)\b/iu.test(answer);
+	const mentionsWindFlood = /\bwind\b/iu.test(answer) && /\b(?:flood|flooding|high water)\b/iu.test(answer);
+	const mentionsClosures = /\b(?:closure|closures|fire|smoke|alert)\b/iu.test(answer);
+	const mentionsStaleCache = /\b(?:stale|cache|cached|live|current)\b/iu.test(answer);
+	return mentionsStorms && mentionsHeatCold && mentionsWindFlood && mentionsClosures && mentionsStaleCache;
 }
 
 function mentionsBudgetCategories(answer: string): boolean {
@@ -841,8 +986,16 @@ function containsFearComfortDrift(paragraph: string): boolean {
 	return /\b(?:scared|afraid|alone|anxious|anxiety|panic|comfort verses?)\b/iu.test(paragraph);
 }
 
+function containsHeatIllnessDrift(sentence: string): boolean {
+	return /\b(?:find (?:immediate )?shade|cool down|heat illness|stopped sweating|nausea|cramps)\b/iu.test(sentence);
+}
+
 function mentionsBadWeatherNeroDecision(answer: string): boolean {
-	return /\b(?:nero|short day|town stop|early stop|stop early)\b/iu.test(answer);
+	const mentionsShortStop = /\b(?:short day|town stop|early stop|stop early|nero)\b/iu.test(answer);
+	const mentionsWeatherRisk = /\b(?:storm|rain|lightning|temperature|cold|heat|weather|footing|exposure|forecast)\b/iu.test(answer);
+	const mentionsBodyOrAccess = /\b(?:body condition|injury|fatigue|tired|town access|road crossing|daylight|legal stop|terrain)\b/iu.test(answer);
+	const framesRestWell = /\b(?:not failure|recovery|safety decision|pause and reassess|right move)\b/iu.test(answer);
+	return mentionsShortStop && mentionsWeatherRisk && mentionsBodyOrAccess && framesRestWell;
 }
 
 export class OnDeviceModelUnavailableError extends Error {
@@ -892,6 +1045,11 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For shakedown questions, name what the shakedown must prove: sleep system, rain system, cooking/food rhythm, water filtering, battery drain, pack fit, foot care, and offline app/model flow. Turn failures into specific gear or app fixes. Always say that one shakedown does not prove every condition is covered.`,
 		`For first-week mileage questions, use body condition, daylight, elevation, weather, pack weight, water spacing, foot/knee condition, and legal shelter/campsite/town spacing. Start low, protect feet and knees, and avoid fixed mileage promises.`,
 		`For heavy-rain start questions, include conservative mileage, dry sleep layers, footing caution on slick roots/rocks/descents, current forecast verification, and a bailout or stop plan for lightning, hypothermia risk, flooding, or worsening conditions.`,
+		`For thunderstorm or lightning hiking questions, require current forecast or radar when available, avoid exposed ridges and high points during the storm window, shift timing or mileage earlier/lower, and stop or bail out if lightning, flooding, wet-cold exposure, or worsening conditions appear.`,
+		`For lightning on a ridge, keep it concise: leave exposed high ground if it is safe to move, avoid lone trees, open knobs, metal objects, and water, spread out from partners, wait well after the last thunder, and do not keep hiking exposed terrain.`,
+		`For cold wind on a ridge, cap target miles, eat more often, drink steadily, protect hands/head/feet, keep insulation and sleep layers dry, and treat wet wind as hypothermia risk.`,
+		`For hot-day plan questions, move harder miles into the cooler part of the day, carry more water when the next source is uncertain, schedule shade breaks, and name heat danger signs that mean stop, cool down, and escalate.`,
+		`For wet-weather hypothermia questions, name shivering, clumsiness, confusion, apathy, slurred speech, and poor coordination; then tell the hiker to stop, get sheltered, change into dry insulation or sleep layers, eat or sip warm fluids if available, and get help for severe or worsening symptoms.`,
 		`For rain-pants or rain-gear cut/drop questions, visibly weigh cold rain, wind, personal cold tolerance, cached/current forecast uncertainty, and shakedown evidence before making a keep/drop call. For Georgia or March starts, default conservative until the hiker proves the rain system in comparable wet-cold conditions.`,
 		`For camp-shoes questions, balance foot recovery, shelter/camp comfort, stream crossings, hygiene, and weight. Do not frame recovery comfort as laziness. Suggest testing the shoes and reassessing after the first section or first town, not deciding from ounces alone.`,
 		`For food-packing or eating-while-hiking questions, tell the hiker to split out today's snacks and lunch before leaving camp, keep them reachable without unpacking, keep cook/camp meals and extra days of food separate, and connect accessible food to steady energy, warmth, and better water/shelter/mileage decisions. Do not give medical nutrition advice.`,
@@ -899,7 +1057,10 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For family check-in questions, set cadence, content, normal gap expectations, escalation window, emergency contacts, itinerary sharing, and the live-location caveat. Use phrasing like "if they do not hear from you" or "if you miss a check-in"; never write "if you don't hear from you." Repeated missed check-ins, bad weather, health concerns, or itinerary mismatch should escalate beyond Scout.`,
 		`For trail budget questions, separate daily burn from town spikes, hostels/shuttles/laundry/meals, gear replacement, and emergency cushion. Keep advice flexible around actual pace and services, and do not provide financial guarantees.`,
 		`For zero, nero, or town-rest questions, visibly weigh body condition or injury, cached/current weather, town chores, budget, and the next section. Frame rest as an investment, not failure. If weather was fetched, include the weather summary or verification caveat in the decision.`,
+		`For bad-weather nero questions, compare storm severity, temperature, footing, exposure, daylight, body condition, terrain, and town access. Recommend a short day, town stop, or early legal stop when those risks make the full plan less safe; never frame rest as failure.`,
+		`For drying gear in town, sequence the chores: sleeping bag or quilt and insulation first, then socks, shoes or liners, wet clothes, and rain gear; use laundry, safe dryer settings, drying room, or motel airflow before charging, repacking, and leaving town.`,
 		`For town questions about charging, refreshing, downloading, updating Scout, or leaving service, give a concrete pre-departure checklist: charge phone and battery bank, refresh field pack/current mile, finish cloud sync while online, update the local AI model on Wi-Fi and power, save offline maps/docs, verify Bible text is available offline, refresh weather and closure checks, then airplane-mode test with a water question. Say cached weather, closures, water, and services can go stale.`,
+		`For "what must Scout verify live" weather questions, name storms/lightning, heat/cold exposure, wind, flooding or high water, closures or fire/smoke alerts, and stale cache boundaries. Explain cached versus live data plainly.`,
 		`For resupply or mail-drop questions, avoid firm mail-ahead advice until the missing inputs are named: diet restrictions, expected pace, next town timing, store/post-office hours, hostel or shuttle access, and whether the item is hard to find locally. Give the default rule after that: buy common food in town; mail only constrained, medical, diet-specific, or hard-to-find items to verified stops. Never say hard-to-find items are better bought in town unless a current town source proves availability.`,
 		`For first-aid kit or blister questions, keep the kit compact and personal. Include prevention tape, blister treatment, wound basics, normal personal meds, and a warning to stop or get medical help for spreading redness, drainage, fever, worsening pain, swelling, or changed gait. Do not diagnose.`,
 		`For injury or pain questions, do not tell the hiker to train through pain. Keep the answer focused on the injury decision, not a general prep checklist. Lead with pain-free load reduction, low-impact conditioning, strength/mobility work, and clinician/physical-therapist guidance when pain persists, worsens, swells, or changes gait. Recommend low first-week mileage and stopping while normal recovery is still possible. Do not offer terrain lookups or custom workouts at the end.`,

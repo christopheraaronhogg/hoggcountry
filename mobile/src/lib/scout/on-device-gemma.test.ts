@@ -353,6 +353,30 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 
 	assert.equal(
 		polishOnDeviceAnswer(
+			'Plan conservative mileage and verify current weather before moving into exposed terrain.',
+			"Thunderstorms are possible this afternoon. What should I do with today's hike?"
+		),
+		'Plan conservative mileage and verify current weather before moving into exposed terrain.\n\nThunderstorm hike note: check live forecast or radar if available, avoid exposed ridges and high points during the storm window, shorten or shift mileage earlier, and stop or bail out if lightning, flooding, wet-cold exposure, or worsening weather appears.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Keep your warm layer and sleep system dry and verify the forecast before committing to a stop.',
+			'How should I adjust for 35 degrees and wind on a ridge?'
+		),
+		'Keep your warm layer and sleep system dry and verify the forecast before committing to a stop.\n\nCold-wind ridge note: cap target miles, eat more often, drink steadily, protect hands, head, and feet, keep insulation and sleep layers dry, and treat wet wind on exposed ridges as hypothermia risk.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Hydrate and take shade breaks today.',
+			'It is going to be hot today. How should the plan change?'
+		),
+		'Hydrate and take shade breaks today.\n\nHot-day plan note: move harder miles into the cooler part of the day, carry more water when the next source is uncertain, schedule shade breaks, eat salty food or use electrolytes if available, and stop to cool down for dizziness, confusion, headache, nausea, cramps, stopped sweating, or worsening symptoms.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
 			'If your water filter freezes, use your backup water tablets and confirm the next water source before relying on it.',
 			'What if my water filter freezes overnight?',
 			[
@@ -543,7 +567,39 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 				}
 			]
 		),
-		'When the weather is bad, stop and reassess. Check the current forecast and choose a safer stop.\n\nWeather note: Cached weather near mile 468.4: partly cloudy with changing mountain conditions (high 67F / low 51F, wind 9 mph). Mountain weather changes quickly; refresh before safety-critical choices.\n\nNero note: choose a short day, town stop, or early stop when the forecast, footing, exposure, daylight, or body condition makes pushing the full plan less safe.'
+		'When the weather is bad, stop and reassess. Check the current forecast and choose a safer stop.\n\nWeather note: Cached weather near mile 468.4: partly cloudy with changing mountain conditions (high 67F / low 51F, wind 9 mph). Mountain weather changes quickly; refresh before safety-critical choices.\n\nNero weather note: choose a short day, town stop, or early legal stop when storm severity, temperature, footing, exposure, daylight, body condition, or town access makes the full plan less safe. Rest is a safety and recovery decision, not failure.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Watch for shivering, confusion, slurred speech, poor coordination, and loss of consciousness. If you experience dizziness, confusion, headache, nausea, cramps, chills, stopped sweating, or worsening symptoms, escalate.',
+			'How do I watch for hypothermia in wet weather?'
+		),
+		'Watch for shivering, confusion, slurred speech, poor coordination, and loss of consciousness.\n\nWet-weather hypothermia note: watch for shivering, clumsiness, confusion, apathy, slurred speech, and poor coordination. Stop, get under shelter, change into dry insulation or sleep layers, eat or sip warm fluids if available, and get help for severe, worsening, or altered-mental-status symptoms.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'If lightning starts while you are on a ridge, stop immediately and seek shelter. Follow safety guidance: stop hiking, find immediate shade, and cool down.',
+			'What should I do if lightning starts while I am on a ridge?'
+		),
+		'If lightning starts while you are on a ridge, stop immediately and seek shelter.\n\nLightning ridge note: if it is safe to move, leave exposed high ground and ridgelines immediately. Avoid lone trees, open knobs, metal objects, and water; spread out from partners, wait well after the last thunder before resuming, and do not keep hiking exposed terrain.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Hang up the rain jacket and unpack the sleep system in a dry room.',
+			'How do I dry gear in town without wasting the whole day?'
+		),
+		'Hang up the rain jacket and unpack the sleep system in a dry room.\n\nTown gear-drying note: sequence the chores: sleeping bag or quilt and insulation first, then socks, shoes or liners, wet clothes, and rain gear. Use a laundromat, dryer on safe settings, hostel drying room, or motel room airflow before charging, repacking, and leaving town.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Verify lightning, heat, cold rain, wind, and flooding before relying on weather.',
+			'What weather facts must Scout verify live before I rely on an answer?'
+		),
+		'Verify lightning, heat, cold rain, wind, and flooding before relying on weather.\n\nLive-weather verification note: verify storms and lightning, heat or cold exposure, wind, flooding or high water, closures or fire/smoke alerts, and whether the cache is stale before relying on the answer for exposed terrain or a safety-critical decision.'
 	);
 
 	assert.equal(
