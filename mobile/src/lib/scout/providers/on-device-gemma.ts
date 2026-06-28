@@ -75,6 +75,8 @@ const GUIDEBOOK_MILE_MISMATCH_NOTE =
 	"Your mile can differ because Scout's trail miles come from a calibrated AT mile frame, while guidebook editions, reroutes or relocations, rounded or local trail signs, side-trail distances, GPS snap, or a manual Current AT mile entry can differ. Ask which guidebook, sign, edition, or source you are comparing, confirm your real position against a blaze, road or shelter sign, map, or GPS snap, then update Scout's Current AT mile and refresh the field pack online if Scout is wrong. Do not let Scout mileage override posted signs, closures, or current official guidance for safety decisions.";
 const NO_BASEMAP_NAVIGATION_NOTE =
 	"If basemap tiles are not cached, do not pretend they are available. Use Scout's cached trail line and field-pack mile context only as a rough trail-corridor check, and use an external offline map/GPS app or paper map and compass if available. For complex navigation, confusing junctions, off-trail uncertainty, bad weather, or safety decisions, stop and verify with blazes, signs, map, and GPS; do not keep hiking just because Scout shows a line.";
+const BAILOUT_INJURY_EXIT_FALLBACK_NOTE =
+	'Bailout planning note: next loaded bailout/access candidate is not available in the current pack. Treat this as incomplete context: for worsening knee pain, swelling, changed gait, or inability to continue safely, do not push through it. Back off or stop, confirm the nearest road, town, shuttle, pickup, and services when possible, and use 911, inReach/PLB, rangers/authorities, or the emergency plan for real danger or if you cannot continue safely.';
 const OFFLINE_EMERGENCY_BOUNDARY_NOTE =
 	'Emergency boundary: Scout and the phone do not replace inReach, PLB, 911, or the family emergency plan.';
 const RESUPPLY_MAIL_DROP_NOTE =
@@ -512,7 +514,10 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 			answer = appendSentence(answer, WATER_REPORT_CONFLICT_NOTE);
 		}
 	}
-	if (isRoadTownRelativePrompt(lowerPrompt)) {
+	if (isBailoutInjuryExitPrompt(lowerPrompt) && !mentionsBailoutInjuryExitContext(answer, toolInvocations)) {
+		answer = appendSentence(answer, buildBailoutInjuryExitNote(toolInvocations));
+	}
+	if (isRoadTownRelativePrompt(lowerPrompt) && !isBailoutInjuryExitPrompt(lowerPrompt)) {
 		answer = normalizeRoadTownNavigationWording(answer);
 		if (!mentionsRoadTownNavigationContext(answer, toolInvocations)) {
 			answer = appendSentence(answer, buildRoadTownNavigationNote(toolInvocations));
@@ -954,6 +959,13 @@ function isNoBasemapNavigationPrompt(prompt: string): boolean {
 	const mentionsMap = /\b(?:map|basemap|map tiles?|tiles?|gps|trail line|navigation|navigate)\b/u.test(prompt);
 	const mentionsOfflineGap = /\b(?:no basemap|missing basemap|no cell|cell signal|no signal|offline|airplane mode|not cached|not downloaded)\b/u.test(prompt);
 	return mentionsMap && mentionsOfflineGap;
+}
+
+function isBailoutInjuryExitPrompt(prompt: string): boolean {
+	const mentionsExitIntent = /\b(?:bailout|bail out|exit|access|road crossing|road|town|shuttle|pickup|get off trail|evacuat\w*)\b/u.test(prompt);
+	const mentionsInjuryRisk =
+		/\b(?:knee|joint|ankle|injur\w*|hurt|pain|worse|worsens|worsening|swelling|gait|cannot continue|can't continue)\b/u.test(prompt);
+	return mentionsExitIntent && mentionsInjuryRisk;
 }
 
 function isPersonalDocumentPrompt(prompt: string): boolean {
@@ -1467,6 +1479,19 @@ function buildRoadTownNavigationNote(toolInvocations: ToolInvocationRecord[]): s
 		town ? `next loaded road/town access is ${trimToolClause(town)}` : 'next loaded road/town access is not available in the current pack'
 	].filter(Boolean);
 	return `Road/town navigation note: ${parts.join('; ')}. Treat this as approximate loaded context. Confirm shuttle or pickup and do not assume services at a road crossing unless current service data proves them.`;
+}
+
+function buildBailoutInjuryExitNote(toolInvocations: ToolInvocationRecord[]): string {
+	const current = toolSummary(toolInvocations, 'current_mile');
+	const town = toolSummary(toolInvocations, 'next_town');
+	if (!current && !town) {
+		return BAILOUT_INJURY_EXIT_FALLBACK_NOTE;
+	}
+	const parts = [
+		current ? trimToolClause(current) : '',
+		town ? `nearest loaded bailout/access candidate is ${trimToolClause(town)}` : 'nearest loaded bailout/access candidate is not available in the current pack'
+	].filter(Boolean);
+	return `Bailout planning note: ${parts.join('; ')}. Treat this as approximate loaded context: for worsening knee pain, swelling, changed gait, or inability to continue safely, do not push through it. Back off or stop, confirm shuttle/pickup and services when possible, and use 911, inReach/PLB, rangers/authorities, or the emergency plan for real danger or if you cannot continue safely.`;
 }
 
 function buildUnknownWaterFlowNote(toolInvocations: ToolInvocationRecord[]): string {
@@ -1995,6 +2020,21 @@ function mentionsNoBasemapNavigationBoundary(answer: string): boolean {
 	return mentionsMissingTiles && mentionsScoutLine && mentionsExternalMap && mentionsComplexBoundary;
 }
 
+function mentionsBailoutInjuryExitContext(answer: string, toolInvocations: ToolInvocationRecord[]): boolean {
+	const town = toolSummary(toolInvocations, 'next_town');
+	const mentionsLoadedExit = !town || mentionsToolPlace(answer, town);
+	const mentionsDistance = !town || /\b\d+(?:\.\d+)?\s*(?:mi|miles?)\s+(?:ahead|away|from|to)\b/iu.test(answer);
+	const mentionsExit = /\b(?:bailout|bail out|exit|access|road crossing|road|town|shuttle|pickup|get off trail)\b/iu.test(answer);
+	const mentionsConfirmation =
+		/\b(?:confirm|verify|call|text|check)\b[^.?!\n]*(?:shuttle|pickup|services?|road|town)\b/iu.test(answer) ||
+		/\b(?:no guaranteed services|no services guaranteed|services are not guaranteed|do not assume services|don't assume services)\b/iu.test(answer);
+	const mentionsInjuryStop =
+		/\b(?:do not|don't|never)\b[^.?!\n]*(?:push through|keep hiking|continue through|train through)\b/iu.test(answer) ||
+		/\b(?:back off|stop|stop hiking)\b[^.?!\n]*(?:worsen|worsens|worsening|swelling|gait|cannot continue|can't continue|safely)\b/iu.test(answer);
+	const mentionsEmergencyEscalation = /\b(?:911|inReach|PLB|rangers?|authorities|emergency plan|get help|medical help)\b/iu.test(answer);
+	return mentionsLoadedExit && mentionsDistance && mentionsExit && mentionsConfirmation && mentionsInjuryStop && mentionsEmergencyEscalation;
+}
+
 function mentionsOwnMileSetupFlow(answer: string): boolean {
 	const mentionsConcreteFlow = /\b(?:hike setup|start my hike|settings|edit hike details|current at mile)\b/iu.test(answer);
 	const mentionsVerification =
@@ -2403,6 +2443,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For own-mile, manual-mile, wrong-mile, profile, GPS correction, shuttle, or "someone else's mile" questions, explain the app flow: first-run hike setup or Settings > Edit hike details, enter Current AT mile, save, then check Today and Scout show the new mile. If the hiker entered the wrong mile, tell them to correct it, refresh the field pack when online, and re-ask Scout for water, shelter, town, terrain, and bailout. Warn that a wrong mile shifts water, shelter, town, terrain, and bailout answers, and not to make water, shelter, town, or safety decisions from a wrong mile. Tell the hiker to confirm against a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap before relying on Scout.`,
 		`For guidebook, trail-sign, Scout, GPS, or map mile-mismatch questions, explain that Scout uses a calibrated AT mile frame and that guidebook editions, reroutes or relocations, rounded/local signs, side-trail distances, GPS snap, or manual Current AT mile entry can differ. Ask which guidebook, sign, edition, map, or source the hiker is comparing. Tell the hiker to confirm real position against a blaze, road or shelter sign, map, or GPS snap, update Scout only when the app position is wrong, and do not let Scout mileage override posted signs, closures, or current official safety guidance.`,
 		`For no-basemap, missing-map-tiles, no-cell, or offline map navigation questions, do not pretend basemap tiles are available unless cached. Say Scout's cached trail line and field-pack mile context are only rough trail-corridor checks. Use an external offline map/GPS app or paper map and compass when available. For complex navigation, confusing junctions, off-trail uncertainty, bad weather, or safety decisions, stop and verify with blazes, signs, map, and GPS instead of continuing just because Scout shows a line.`,
+		`For bailout, exit, or worsening-injury questions, start from the current_mile finding and the next_town road/town/access finding. Name the nearest loaded bailout or access candidate and approximate distance. Say if it is only a road crossing or emergency-exit candidate, confirm shuttle, pickup, and services when possible, choose conservative exit or rest planning, and do not tell the hiker to push through worsening knee or joint pain.`,
 		`For "where am I relative to the next road crossing or town" questions, start from the current_mile finding and the next_town road/town access finding. State the approximate distance, say when the loaded place is only a road crossing or emergency-exit candidate, confirm shuttle or pickup when needed, and do not assume services at a crossing unless loaded current service data proves them. Do not drift into water or shelter unless asked; if nearby water is mentioned, never call seasonal water reliable.`,
 		`For offline setup, offline downloads, phone settings, or day-one readiness questions, distinguish phone/app readiness from personal safety readiness. Always include the exact check "verify Bible text is available offline." Also mention field-pack refresh, current mile, local AI model, offline maps/docs, battery, airplane-mode rehearsal, and that Scout does not replace inReach, PLB, 911, or the family emergency plan. For personal documents, include this safety boundary in plain words: do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat.`,
 		`Do not include Bible verses, scripture, prayer, or spiritual encouragement unless the hiker explicitly asks for Bible, scripture, prayer, faith, fear comfort, or spiritual support. Safety, weather, town, water, gear, and navigation answers must stay focused on the field decision first.`,

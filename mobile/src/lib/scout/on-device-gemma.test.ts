@@ -289,6 +289,9 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /cached trail line and field-pack mile context are only rough trail-corridor checks/);
 	assert.match(systemContext, /external offline map\/GPS app or paper map and compass/);
 	assert.match(systemContext, /stop and verify with blazes, signs, map, and GPS/);
+	assert.match(systemContext, /For bailout, exit, or worsening-injury questions/);
+	assert.match(systemContext, /nearest loaded bailout or access candidate/);
+	assert.match(systemContext, /do not tell the hiker to push through worsening knee or joint pain/);
 	assert.match(systemContext, /For "where am I relative to the next road crossing or town" questions/);
 	assert.match(systemContext, /start from the current_mile finding and the next_town road\/town access finding/);
 	assert.match(systemContext, /do not assume services at a crossing unless loaded current service data proves them/);
@@ -569,6 +572,34 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.match(roadTownNavigationAnswer, /next loaded road\/town access is Pilot Gap Road at mile 49\.5/);
 	assert.match(roadTownNavigationAnswer, /confirm shuttle or pickup/i);
 	assert.match(roadTownNavigationAnswer, /do not assume services at a road crossing/i);
+
+	const bailoutInjuryAnswer = polishOnDeviceAnswer(
+		'If your knee starts to get worse, stop hiking immediately. Focus on reducing the load and finding a safe place to rest. You should use your first-aid kit to treat any immediate issues, but if the pain worsens, swells, or changes your gait, you need to stop and get help.\n\nFor pain or injury, do not push through it. Focus on low-impact conditioning and strength work, and if pain persists or worsens, you need to consult a clinician or physical therapist. You should back off your mileage and adjust your pace based on what your body is telling you.\n\nIf you are in a situation where you feel you cannot continue safely, choose the nearest safe legal stop or exit. If you are in immediate danger, use your emergency plan.',
+		'What is the next bailout point if my knee gets worse?',
+		[
+			{
+				toolId: 'current_mile',
+				args: {},
+				summary: 'Currently at mile 158.2 of 2197.4 (7.2% complete, 2039.2 mi remaining).',
+				confidence: 'high',
+				receipts: []
+			},
+			{
+				toolId: 'next_town',
+				args: { fromMile: 158.2 },
+				summary: 'Pilot Gap Road at mile 163.0 (4.8 mi ahead via road crossing; emergency exit candidate, confirm shuttle or pickup). No guaranteed services at the crossing.',
+				confidence: 'medium',
+				receipts: []
+			}
+		]
+	);
+	assert.match(bailoutInjuryAnswer, /Bailout planning note/);
+	assert.match(bailoutInjuryAnswer, /Currently at mile 158\.2/);
+	assert.match(bailoutInjuryAnswer, /nearest loaded bailout\/access candidate is Pilot Gap Road at mile 163\.0/);
+	assert.match(bailoutInjuryAnswer, /4\.8 mi ahead via road crossing/);
+	assert.match(bailoutInjuryAnswer, /No guaranteed services at the crossing/);
+	assert.match(bailoutInjuryAnswer, /do not push through it/);
+	assert.match(bailoutInjuryAnswer, /911, inReach\/PLB, rangers\/authorities, or the emergency plan/);
 
 	assert.equal(
 		polishOnDeviceAnswer('Protect your knee. I can look up terrain, but I can', 'How should I train with a bad knee before the first week of the AT?'),
