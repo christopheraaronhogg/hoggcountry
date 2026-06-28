@@ -65,6 +65,8 @@ const OWN_MILE_RISK_NOTE =
 	'A wrong mile shifts water, shelter, town, terrain, and bailout answers, so confirm against a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap before relying on Scout.';
 const OWN_MILE_SETUP_NOTE =
 	`Own-mile setup: on first run, use the hike setup sheet, choose Start my hike, and enter the Current AT mile; later use Settings > Edit hike details or a confirmed mile update. Then check Today and Scout both show the new mile, refresh the field pack when online, and re-ask water, shelter, town, terrain, or bailout questions. ${OWN_MILE_RISK_NOTE}`;
+const WRONG_MILE_RECOVERY_NOTE =
+	'Wrong-mile recovery: correct the Current AT mile in first-run hike setup, Settings > Edit hike details, or a confirmed manual mile update. Confirm the corrected mile against a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap. Then check Today and Scout both show the corrected mile, refresh the field pack when online, and re-ask Scout for water, shelter, town, terrain, and bailout. A wrong mile shifts water, shelter, town, terrain, and bailout answers; do not make water, shelter, town, or safety decisions from a wrong mile.';
 const OFFLINE_EMERGENCY_BOUNDARY_NOTE =
 	'Emergency boundary: Scout and the phone do not replace inReach, PLB, 911, or the family emergency plan.';
 const RESUPPLY_MAIL_DROP_NOTE =
@@ -349,6 +351,11 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 			? SIGN_IN_CLOUD_SYNC_NOTE
 			: appendSentence(answer, SIGN_IN_CLOUD_SYNC_NOTE);
 	}
+	if (isWrongMileRecoveryPrompt(lowerPrompt) && !mentionsWrongMileRecovery(answer)) {
+		answer = isVagueSourceOnlyAnswer(answer) || isWrongMilePartialAnswer(answer)
+			? WRONG_MILE_RECOVERY_NOTE
+			: appendSentence(answer, WRONG_MILE_RECOVERY_NOTE);
+	}
 	if (isOwnMileSetupPrompt(lowerPrompt) && !mentionsOwnMileSetupReadiness(answer)) {
 		answer = appendSentence(answer, mentionsOwnMileSetupFlow(answer) ? OWN_MILE_RISK_NOTE : OWN_MILE_SETUP_NOTE);
 	}
@@ -579,6 +586,7 @@ function removeInlineProvenanceSentences(answer: string): string {
 		.map((paragraph) =>
 			paragraph
 				.replace(/\b(?:The|These) findings state that\b[^.?!]*(?:[.?!]|$)/giu, '')
+				.replace(/\bSafety guidance states that\b[^.?!]*(?:[.?!]|$)/giu, '')
 				.replace(/\bThis (?:guidance|approach|answer|advice) (?:comes from|is based on)\b[^.?!]*(?:[.?!]|$)/giu, '')
 				.replace(/[ \t]{2,}/gu, ' ')
 				.trim()
@@ -868,6 +876,10 @@ function isOwnMileSetupPrompt(prompt: string): boolean {
 			prompt
 		);
 	return mentionsMileOrProfile && mentionsSetupOrCorrection;
+}
+
+function isWrongMileRecoveryPrompt(prompt: string): boolean {
+	return /\b(?:wrong trail mile|wrong mile|enter(?:ed)? .*wrong .*mile|mile .*mistake|mistake .*mile)\b/u.test(prompt);
 }
 
 function isPersonalDocumentPrompt(prompt: string): boolean {
@@ -1735,6 +1747,33 @@ function isSignInPartialAnswer(answer: string): boolean {
 	return /\b(?:sign in|log in|login|account|cloud sync|backup|restore|recover|offline maps?|documents?)\b/iu.test(answer);
 }
 
+function mentionsWrongMileRecovery(answer: string): boolean {
+	const mentionsShiftedAnswers =
+		/\bwrong mile\b/iu.test(answer) &&
+		/\bwater\b/iu.test(answer) &&
+		/\bshelter\b/iu.test(answer) &&
+		/\btown\b/iu.test(answer) &&
+		/\b(?:terrain|bailout)\b/iu.test(answer);
+	const mentionsCorrection =
+		/\b(?:correct|update|change|edit|enter|set)\b/iu.test(answer) &&
+		/\b(?:Current AT mile|current mile|trail mile|Settings > Edit hike details|manual mile update|hike setup)\b/iu.test(answer);
+	const mentionsConfirmation =
+		/\b(?:trail sign|blaze|shelter|road crossing|guide source|map|GPS snap|gps)\b/iu.test(answer);
+	const mentionsRefreshAndReask =
+		/\bfield[-\s]?pack\b/iu.test(answer) &&
+		/\brefresh\b/iu.test(answer) &&
+		/\bre-?ask Scout\b/iu.test(answer);
+	const mentionsDecisionBoundary =
+		/\bdo not\b/iu.test(answer) &&
+		/\b(?:water|shelter|town|safety)\b/iu.test(answer) &&
+		/\bdecisions?\b/iu.test(answer);
+	return mentionsShiftedAnswers && mentionsCorrection && mentionsConfirmation && mentionsRefreshAndReask && mentionsDecisionBoundary;
+}
+
+function isWrongMilePartialAnswer(answer: string): boolean {
+	return /\b(?:wrong mile|trail mile|map|gps|position|location|re-establish|verify)\b/iu.test(answer);
+}
+
 function mentionsOwnMileSetupFlow(answer: string): boolean {
 	const mentionsConcreteFlow = /\b(?:hike setup|start my hike|settings|edit hike details|current at mile)\b/iu.test(answer);
 	const mentionsVerification =
@@ -2092,7 +2131,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For model-downloading, model status, stuck download, failed download, or "still downloading" questions, say the on-device local AI model is not ready for offline Scout yet. Tell the hiker to stay on Wi-Fi and power, wait for download and verification, check Scout model status/progress until it says ready, retry/cancel/restart only if stuck or failed, and not trust offline/local AI until the model reports ready and an airplane-mode Scout question succeeds.`,
 		`For stale field-pack, field-pack status, or "can I trust Scout's field pack" questions, field pack means cached Scout trail data on the phone, not the physical backpack or loadout. Tell the hiker to check pack age/status, current mile or downloaded region, and source timestamps when shown. If the pack is old, expired, wrong-mile/wrong-region, or loaded before weather, closures, water, or services changed, treat it as stale. Refresh on Wi-Fi or in town before water, weather, closure, bailout, or town-service decisions, and use stale cached data only as caution, not current proof.`,
 		`For sign-in, login, account, cloud sync, backup, restore, or "can I wait to sign in" questions, say accounts are invite-only. Recommend signing in before trail on Wi-Fi if the hiker has an invite so backup/restore and cloud sync can finish. Keep offline Scout/local AI separate: once the field pack, on-device model, and saved maps/docs are downloaded, offline use does not require a live login. Do not imply sign-in or cloud sync is emergency safety; keep inReach, PLB, 911, and the family emergency plan separate.`,
-		`For own-mile, manual-mile, wrong-mile, profile, GPS correction, shuttle, or "someone else's mile" questions, explain the app flow: first-run hike setup or Settings > Edit hike details, enter Current AT mile, save, then check Today and Scout show the new mile. Warn that a wrong mile shifts water, shelter, town, terrain, and bailout answers. Tell the hiker to confirm against a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap before relying on Scout.`,
+		`For own-mile, manual-mile, wrong-mile, profile, GPS correction, shuttle, or "someone else's mile" questions, explain the app flow: first-run hike setup or Settings > Edit hike details, enter Current AT mile, save, then check Today and Scout show the new mile. If the hiker entered the wrong mile, tell them to correct it, refresh the field pack when online, and re-ask Scout for water, shelter, town, terrain, and bailout. Warn that a wrong mile shifts water, shelter, town, terrain, and bailout answers, and not to make water, shelter, town, or safety decisions from a wrong mile. Tell the hiker to confirm against a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap before relying on Scout.`,
 		`For offline setup, offline downloads, phone settings, or day-one readiness questions, distinguish phone/app readiness from personal safety readiness. Always include the exact check "verify Bible text is available offline." Also mention field-pack refresh, current mile, local AI model, offline maps/docs, battery, airplane-mode rehearsal, and that Scout does not replace inReach, PLB, 911, or the family emergency plan. For personal documents, include this safety boundary in plain words: do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat.`,
 		`Do not include Bible verses, scripture, prayer, or spiritual encouragement unless the hiker explicitly asks for Bible, scripture, prayer, faith, fear comfort, or spiritual support. Safety, weather, town, water, gear, and navigation answers must stay focused on the field decision first.`,
 		`For Bible or scripture questions, quote only verses returned by bible_search and keep the reference with each quote. For fear, scared, alone, or nighttime comfort prompts, use direct comfort verses when present, such as Psalms 56:3, Isaiah 41:10, 2 Timothy 1:7, Psalms 23:4, Psalms 4:8, or John 14:27. Do not use disturbing, violent, judgment, or famine passages as comfort unless the hiker explicitly asked about that passage. If the hiker sounds scared or alone, pair scripture with immediate safety steps: check weather and hazards, get warm and dry, eat or drink if needed, use the headlamp, make a one-hour plan, and use loaded shelter context as a candidate rather than a guarantee. Escalate through 911, inReach/PLB, ranger/authorities, or the emergency plan if there is real danger, injury, exposure, or repeated panic; do not spiritualize away real danger or symptoms.`,

@@ -679,6 +679,26 @@ test('runToolsFor reads current-mile profile guidance for own-mile setup prompts
 	assert.ok(sourceSearch.sourceDocumentIds?.includes('field-guide:current-mile-profile-discipline'));
 });
 
+test('runToolsFor opens wrong-mile recovery guidance for mistaken mile prompts', async () => {
+	const records = await runToolsFor(
+		'What if I enter the wrong trail mile by mistake?',
+		DEFAULT_CONTEXT_PACK,
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	assert.deepEqual(
+		records.map((record) => record.toolId),
+		['current_mile', 'source_search', 'open_source_doc']
+	);
+	const sourceSearch = records.find((record) => record.toolId === 'source_search');
+	assert.ok(sourceSearch);
+	assert.equal(sourceSearch.args.sourceSkill, 'safety');
+	assert.match(sourceSearch.summary, /Wrong mile recovery discipline/);
+	assert.ok(sourceSearch.sourceDocumentIds?.includes('field-guide:wrong-mile-recovery-discipline'));
+	assert.ok(records.some((record) => record.sourceDocumentIds?.includes('field-guide:wrong-mile-recovery-discipline')));
+});
+
 test('runToolsFor falls back to current mile plus source search for unmatched prompts', async () => {
 	const records = await runToolsFor(
 		'tell me something useful about trail mindset',

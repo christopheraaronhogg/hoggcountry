@@ -195,6 +195,9 @@ function sourceSkillQueryHints(skill: SourceSkillTrigger, prompt: string): strin
 		return ['model download status discipline', 'still downloading', 'on-device local AI not ready', 'Wi-Fi power', 'download verification', 'check Scout model status progress ready', 'retry cancel restart stuck failed', 'airplane mode Scout question'];
 	}
 	if (skill.id !== 'safety') return skill.queryHints;
+	if (/\b(?:wrong trail mile|wrong mile|enter(?:ed)? .*wrong .*mile|mile .*mistake|mistake .*mile)\b/u.test(lower)) {
+		return ['wrong mile recovery discipline', 'current mile profile discipline', 'wrong mile shifts water shelter town terrain bailout', 'correct Current AT mile', 'Settings Edit hike details', 'manual mile update', 'refresh field pack', 're-ask Scout', 'do not make water shelter town safety decisions'];
+	}
 	if (/\b(?:airplane mode|airplane-mode|no cell|cell service|without service|without signal|what can (?:you|scout) still answer|what still works|works? offline)\b/u.test(lower)) {
 		return ['airplane mode capability boundary', 'cached field pack', 'on-device local AI model', 'saved offline maps docs', 'Bible text', 'fresh weather', 'official closures', 'cloud sync', 'live tramily location', 'stale cached data'];
 	}

@@ -76,6 +76,13 @@ export const DEFAULT_CONTEXT_PACK: ContextPack = {
 			citation: 'Hogg Country Field Guide, Section: Current Mile Setup'
 		},
 		{
+			id: 'wrong-mile-recovery-discipline',
+			title: 'Wrong mile recovery discipline',
+			body: 'If the hiker enters the wrong trail mile, correct the Current AT mile in the first-run hike setup, Settings > Edit hike details, or a confirmed manual mile update. Confirm the corrected mile against a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap. Then check Today and Scout both show the corrected mile, refresh the field pack when online, and re-ask Scout for water, shelter, town, terrain, and bailout. A wrong mile shifts water, shelter, town, terrain, and bailout answers; do not make water, shelter, town, or safety decisions from a wrong mile.',
+			tags: ['safety', 'profile', 'current-mile', 'wrong-mile', 'navigation', 'water', 'shelter', 'town', 'bailout'],
+			citation: 'Hogg Country Field Guide, Section: Wrong Mile Recovery'
+		},
+		{
 			id: 'first-week-mileage-discipline',
 			title: 'First-week mileage follows body and constraints',
 			body: 'First-week mileage should start low and respond to body condition, daylight, elevation, water spacing, weather, pack weight, foot or knee condition, and the next legal shelter, campsite, or town stop. Protect feet and knees, stop while you can still recover normally, and adjust only after several normal mornings. Do not promise a fixed daily mileage.',

@@ -266,7 +266,9 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /offline use does not require a live login/);
 	assert.match(systemContext, /For own-mile, manual-mile, wrong-mile, profile, GPS correction/);
 	assert.match(systemContext, /Settings > Edit hike details/);
+	assert.match(systemContext, /refresh the field pack when online, and re-ask Scout for water, shelter, town, terrain, and bailout/);
 	assert.match(systemContext, /a wrong mile shifts water, shelter, town, terrain, and bailout answers/);
+	assert.match(systemContext, /not to make water, shelter, town, or safety decisions from a wrong mile/);
 	assert.match(systemContext, /End every answer with a complete sentence/);
 	assert.match(systemContext, /verify Bible text is available offline/);
 	assert.match(systemContext, /Do not include Bible verses, scripture, prayer, or spiritual encouragement unless the hiker explicitly asks/);
@@ -412,6 +414,21 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 		nearCompleteOwnMileAnswer,
 		/trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap/
 	);
+
+	const wrongMileAnswer = polishOnDeviceAnswer(
+		"If you enter the wrong trail mile, stop immediately and check your map or GPS. Safety guidance states that safety decisions prefer current checks and safer stops when online.",
+		'What if I enter the wrong trail mile by mistake?'
+	);
+	assert.doesNotMatch(wrongMileAnswer, /Safety guidance states/);
+	assert.match(wrongMileAnswer, /Wrong-mile recovery/);
+	assert.match(wrongMileAnswer, /Current AT mile/);
+	assert.match(wrongMileAnswer, /Settings > Edit hike details/);
+	assert.match(wrongMileAnswer, /manual mile update/);
+	assert.match(wrongMileAnswer, /trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap/);
+	assert.match(wrongMileAnswer, /refresh the field pack when online/);
+	assert.match(wrongMileAnswer, /re-ask Scout for water, shelter, town, terrain, and bailout/);
+	assert.match(wrongMileAnswer, /A wrong mile shifts water, shelter, town, terrain, and bailout answers/);
+	assert.match(wrongMileAnswer, /do not make water, shelter, town, or safety decisions from a wrong mile/);
 
 	assert.equal(
 		polishOnDeviceAnswer(
