@@ -1,9 +1,9 @@
 # Scout Local AI Simulator Preflight
 
-- Checked at: 2026-06-28T23:13:46Z
+- Checked at: 2026-06-28T23:32:18Z
 - Status: passed
 - Proof lane: iPhone Simulator debug build, not final TestFlight/iPhone proof
-- Run id: `device-local-ai-20260628T225705Z`
+- Run id: `device-local-ai-20260628T231546Z`
 - App: `1.0 (28)`
 - Install source: `debug`
 - Native/model: `ios` / `gemma-4-E2B-it-litert-lm`
@@ -19,7 +19,7 @@ Commands run:
 
 ```sh
 npm run eval:scout-local-ai:ios-sim-gemma -- --limit 100
-npm run intake:scout-local-ai-device-run -- --run .scout-artifacts/scout-local-ai-runs/ios-sim-gemma-device-local-ai-20260628T225705Z.json --allow-partial
+npm run intake:scout-local-ai-device-run -- --run .scout-artifacts/scout-local-ai-runs/ios-sim-gemma-device-local-ai-20260628T231546Z.json --allow-partial
 npm run status:scout-local-ai
 npm run audit:scout-local-ai-goal -- --json
 node --test scripts/scout-local-ai-eval-suite.test.mjs scripts/scout-local-ai-answer-quality-scan.test.mjs
@@ -30,12 +30,12 @@ git diff --check
 
 Saved local artifacts:
 
-- `.scout-artifacts/scout-local-ai-runs/ios-sim-gemma-device-local-ai-20260628T225705Z.json`
-- `.scout-artifacts/scout-local-ai-runs/ios-sim-gemma-device-local-ai-20260628T225705Z.scan.json`
-- `data/scout-local-ai/device-runs/device-local-ai-20260628T225705Z.json`
-- `data/scout-local-ai/answer-quality-scans/device-local-ai-20260628T225705Z.scan.json`
-- `data/scout-local-ai/reviews/device-local-ai-20260628T225705Z.review.json`
-- `data/scout-local-ai/review-packets/device-local-ai-20260628T225705Z.review.md`
+- `.scout-artifacts/scout-local-ai-runs/ios-sim-gemma-device-local-ai-20260628T231546Z.json`
+- `.scout-artifacts/scout-local-ai-runs/ios-sim-gemma-device-local-ai-20260628T231546Z.scan.json`
+- `data/scout-local-ai/device-runs/device-local-ai-20260628T231546Z.json`
+- `data/scout-local-ai/answer-quality-scans/device-local-ai-20260628T231546Z.scan.json`
+- `data/scout-local-ai/reviews/device-local-ai-20260628T231546Z.review.json`
+- `data/scout-local-ai/review-packets/device-local-ai-20260628T231546Z.review.md`
 
 Inspection boundary:
 
@@ -49,8 +49,8 @@ Result: do not import as a final Dad proof export yet.
 Post-intake status:
 
 ```text
-Simulator/debug local preflight: clean; full runs 2, partial runs 0
-Latest simulator/debug local preflight device-local-ai-20260628T225705Z is clean: 100/100 cases, complete tools/source evidence, app 1.0 (28), install=debug, model=gemma-4-E2B-it-litert-lm
+Simulator/debug local preflight: clean; full runs 3, partial runs 0
+Latest simulator/debug local preflight device-local-ai-20260628T231546Z is clean: 100/100 cases, complete tools/source evidence, app 1.0 (28), install=debug, model=gemma-4-E2B-it-litert-lm
 Next Action: Upload and attach target iOS build 1.0 (28) to Dad Pilot first.
 ```
 

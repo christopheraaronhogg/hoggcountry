@@ -22,7 +22,7 @@ use that phone to produce the final Scout local-AI `Run 100` export.
 - Current-suite local build `28` prep proof:
   `docs/launch/proof/ios-testflight-build-28-prep-current-suite-2026-06-28.md`.
 - Current simulator/Gemma preflight proof:
-  `docs/launch/proof/scout-local-ai-sim-preflight-2026-06-28T22-57-05Z.md`.
+  `docs/launch/proof/scout-local-ai-sim-preflight-2026-06-28T23-15-46Z.md`.
 - Read-only App Store Connect refresh confirms build `28` is not uploaded yet:
   `docs/launch/proof/ios-testflight-build-28-missing-2026-06-28.md`.
 - Dad should not run the current `Run 100` yet. The current suite is
