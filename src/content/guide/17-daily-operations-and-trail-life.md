@@ -137,6 +137,10 @@ A consistent morning routine prevents forgotten gear, reduces decision fatigue, 
 - Jerky
 - Pop-Tarts (half at a time)
 
+### Food On The Move
+
+Each morning, split the day's food before leaving camp. Put the next 3-4 hours of snacks and lunch where they can be reached without unpacking: hip belt pockets, shoulder pouch, top pocket, or the outside mesh. Keep cook/camp meals, extra days of food, and trash packed separately so hiking food does not get buried. The goal is steady calories while moving, not saving everything for camp. If food is hard to reach, you will under-eat, get cold or foggy, and make worse mileage, water, and shelter decisions.
+
 **Rule:** Calories = warmth = energy = miles. Never "save food for later."
 
 ### Daily Mileage Reality Check

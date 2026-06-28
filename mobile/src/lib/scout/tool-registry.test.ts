@@ -232,6 +232,24 @@ test('runToolsFor reads loadout source skill beside pack contents', async () => 
 	);
 });
 
+test('runToolsFor opens food-on-the-move loadout discipline for hiking food prompts', async () => {
+	const records = await runToolsFor(
+		'How do I pack food so it is easy to eat while hiking and not just at camp?',
+		packWithTrailPlanningContext(),
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	assert.ok(records.some((record) => record.toolId === 'loadout_check'));
+	const sourceSkill = records.find(
+		(record) => record.toolId === 'source_search' && record.args.sourceSkill === 'loadout'
+	);
+	assert.ok(sourceSkill);
+	assert.match(sourceSkill.summary, /Food on the move keeps decisions steady/);
+	assert.match(sourceSkill.summary, /split the day food before leaving camp/);
+	assert.ok(sourceSkill.sourceDocumentIds?.includes('field-guide:food-on-the-move-discipline'));
+});
+
 test('runToolsFor opens shakedown loadout discipline for shakedown prompts', async () => {
 	const records = await runToolsFor(
 		'What should my shakedown hike prove before I leave?',

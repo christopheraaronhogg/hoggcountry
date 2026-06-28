@@ -389,6 +389,22 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 
 	assert.equal(
 		polishOnDeviceAnswer(
+			'Keep easy snacks in your pack so you can eat while hiking and save bigger meals for camp.',
+			'How do I pack food so it is easy to eat while hiking and not just at camp?'
+		),
+		'Keep easy snacks in your pack so you can eat while hiking and save bigger meals for camp.\n\nFood-packing note: before leaving camp, split out the next 3-4 hours of snacks and lunch into reachable pockets or the top/outside of the pack; keep cook/camp meals, extra days of food, and trash separate so hiking food stays accessible for steady energy and better decisions.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Protect your sleep system and set up early if the weather is ugly. Verify the current forecast before committing.',
+			'How should I pack for cold rain tonight if I am camping?'
+		),
+		'Protect your sleep system and set up early if the weather is ugly. Verify the current forecast before committing.\n\nCold-rain camping note: treat wet-cold exposure as hypothermia risk, protect the dry sleep layer and warm layer first, set up early in a legal protected spot, keep the filter warm, and stop or bail out if the sleep system or camp setup cannot stay dry.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
 			'When the weather is bad, stop and reassess. If you are feeling scared, use the comfort verses. Psalms 56:3 says, "I trust in the Lord." Check the current forecast and choose a safer stop. If you are feeling scared or alone, make a one-hour plan.',
 			'When should I nero instead of pushing through a bad weather day?',
 			[

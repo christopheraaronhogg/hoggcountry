@@ -57,6 +57,10 @@ const RAIN_PANTS_NOTE =
 	'Rain-pants decision note: for a Georgia or March start, decide from the current forecast, wind, personal cold tolerance, and shakedown evidence; keep them until the rain system has been proven in comparable wet-cold conditions.';
 const CAMP_SHOES_NOTE =
 	'Camp-shoes decision note: weigh the 7 oz against foot recovery, shelter and camp comfort, stream crossings when appropriate, hygiene, and keeping dirty shoes out of sleep areas; test them through the first section and reassess at the first town.';
+const FOOD_ON_MOVE_NOTE =
+	'Food-packing note: before leaving camp, split out the next 3-4 hours of snacks and lunch into reachable pockets or the top/outside of the pack; keep cook/camp meals, extra days of food, and trash separate so hiking food stays accessible for steady energy and better decisions.';
+const COLD_RAIN_CAMP_NOTE =
+	'Cold-rain camping note: treat wet-cold exposure as hypothermia risk, protect the dry sleep layer and warm layer first, set up early in a legal protected spot, keep the filter warm, and stop or bail out if the sleep system or camp setup cannot stay dry.';
 
 export class OnDeviceGemmaProvider implements ScoutProvider {
 	private bridge?: OnDeviceGemmaBridge;
@@ -245,6 +249,12 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	}
 	if (isCampShoesPrompt(lowerPrompt) && !mentionsCampShoesDecision(answer)) {
 		answer = appendSentence(answer, CAMP_SHOES_NOTE);
+	}
+	if (isFoodOnMovePrompt(lowerPrompt) && !mentionsFoodOnMoveDecision(answer)) {
+		answer = appendSentence(answer, FOOD_ON_MOVE_NOTE);
+	}
+	if (isColdRainCampPrompt(lowerPrompt) && !mentionsColdRainCampSafety(answer)) {
+		answer = appendSentence(answer, COLD_RAIN_CAMP_NOTE);
 	}
 	if (isBadWeatherNeroPrompt(lowerPrompt) && !mentionsBadWeatherNeroDecision(answer)) {
 		answer = appendSentence(
@@ -484,6 +494,16 @@ function isCampShoesPrompt(prompt: string): boolean {
 	return /\b(?:camp shoes?|sandals?|z-trail|z trail)\b/u.test(prompt);
 }
 
+function isFoodOnMovePrompt(prompt: string): boolean {
+	return /\b(?:food|snacks?|lunch|eat|eating|ration)\b/u.test(prompt) &&
+		/\b(?:pack|packing|packed|accessible|hiking|while hiking|on the move|at camp|camp)\b/u.test(prompt);
+}
+
+function isColdRainCampPrompt(prompt: string): boolean {
+	return /\b(?:cold rain|wet cold|wet-cold|cold.*rain|rain.*cold)\b/u.test(prompt) &&
+		/\b(?:camp|camping|sleep|tonight|shelter|setup|set up)\b/u.test(prompt);
+}
+
 function weatherLookupSummary(toolInvocations: ToolInvocationRecord[]): string | null {
 	const summary = toolInvocations.find((tool) => tool.toolId === 'weather_lookup')?.summary?.trim();
 	return summary || null;
@@ -568,6 +588,21 @@ function mentionsCampShoesDecision(answer: string): boolean {
 		/(?:first section|first town|reassess)/iu.test(answer);
 }
 
+function mentionsFoodOnMoveDecision(answer: string): boolean {
+	const mentionsAccessible = /\b(?:hip belt|shoulder pouch|top pocket|outside mesh|reachable|accessible|without unpacking|easy to reach)\b/iu.test(answer);
+	const mentionsDayRation = /\b(?:day food|daily ration|today'?s (?:snacks|food|lunch)|next 3-4 hours|before leaving camp)\b/iu.test(answer);
+	const mentionsSeparatedMeals = /\b(?:cook|camp meals?|extra days?|trash|separate|not get buried|keep .* separate)\b/iu.test(answer);
+	const mentionsSteadyEnergy = /\b(?:steady energy|under-eat|bonk|foggy|warmth|mileage|water|shelter decisions?)\b/iu.test(answer);
+	return mentionsAccessible && mentionsDayRation && mentionsSeparatedMeals && mentionsSteadyEnergy;
+}
+
+function mentionsColdRainCampSafety(answer: string): boolean {
+	const mentionsHypothermia = /\bhypothermia|wet-cold|wet cold/iu.test(answer);
+	const mentionsDrySleep = /\b(?:dry sleep|sleep (?:system|layers?)|dry layer|warm layer|insulation|quilt|sleeping bag)\b/iu.test(answer);
+	const mentionsStopBail = /\b(?:bail|bailout|stop|do not push|get to shelter|protected spot|legal protected)\b/iu.test(answer);
+	return mentionsHypothermia && mentionsDrySleep && mentionsStopBail;
+}
+
 function containsBibleDrift(paragraph: string): boolean {
 	return /\b(?:bible|scripture|verse|verses|psalms?|isaiah|john|romans|proverbs?|timothy|lord|god|christ|jesus)\b/iu.test(paragraph) ||
 		/[“"]?[A-Z][^.!?]{10,}\b(?:I am with you|do not fear|trust in the lord|righteous right hand)\b/iu.test(paragraph);
@@ -623,6 +658,8 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For heavy-rain start questions, include conservative mileage, dry sleep layers, footing caution on slick roots/rocks/descents, current forecast verification, and a bailout or stop plan for lightning, hypothermia risk, flooding, or worsening conditions.`,
 		`For rain-pants or rain-gear cut/drop questions, visibly weigh cold rain, wind, personal cold tolerance, cached/current forecast uncertainty, and shakedown evidence before making a keep/drop call. For Georgia or March starts, default conservative until the hiker proves the rain system in comparable wet-cold conditions.`,
 		`For camp-shoes questions, balance foot recovery, shelter/camp comfort, stream crossings, hygiene, and weight. Do not frame recovery comfort as laziness. Suggest testing the shoes and reassessing after the first section or first town, not deciding from ounces alone.`,
+		`For food-packing or eating-while-hiking questions, tell the hiker to split out today's snacks and lunch before leaving camp, keep them reachable without unpacking, keep cook/camp meals and extra days of food separate, and connect accessible food to steady energy, warmth, and better water/shelter/mileage decisions. Do not give medical nutrition advice.`,
+		`For cold-rain camping questions, explicitly name hypothermia risk, protect the dry sleep layer and warm layer first, set up early in a legal protected spot, keep the filter warm, verify the current forecast, and stop or bail out if the sleep system or camp setup cannot stay dry.`,
 		`For family check-in questions, set cadence, content, normal gap expectations, escalation window, emergency contacts, itinerary sharing, and the live-location caveat. Use phrasing like "if they do not hear from you" or "if you miss a check-in"; never write "if you don't hear from you." Repeated missed check-ins, bad weather, health concerns, or itinerary mismatch should escalate beyond Scout.`,
 		`For trail budget questions, separate daily burn from town spikes, hostels/shuttles/laundry/meals, gear replacement, and emergency cushion. Keep advice flexible around actual pace and services, and do not provide financial guarantees.`,
 		`For zero, nero, or town-rest questions, visibly weigh body condition or injury, cached/current weather, town chores, budget, and the next section. Frame rest as an investment, not failure. If weather was fetched, include the weather summary or verification caveat in the decision.`,

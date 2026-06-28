@@ -92,9 +92,16 @@ export const DEFAULT_CONTEXT_PACK: ContextPack = {
 		{
 			id: 'heavy-rain-start-discipline',
 			title: 'Heavy rain starts need conservative mileage and dry sleep layers',
-			body: 'For a heavy-rain start, recommend conservative mileage, keeping sleep layers dry, footing caution on slick roots, rocks, bog boards, and descents, and a bailout or stop plan if lightning, hypothermia risk, flooding, or worsening conditions appear. Cached weather is a caution signal, not live proof; check a current forecast when possible.',
+			body: 'For a heavy-rain start, recommend conservative mileage, keeping sleep layers dry, footing caution on slick roots, rocks, bog boards, and descents, and a bailout or stop plan if lightning, hypothermia risk, flooding, or worsening conditions appear. For cold-rain camping, protect the dry sleep layer and warm layer first, set up early, keep the filter warm, and stop or bail out if the sleep system or camp setup cannot stay dry. Cached weather is a caution signal, not live proof; check a current forecast when possible.',
 			tags: ['weather', 'rain', 'footing', 'bailout', 'safety'],
 			citation: 'Hogg Country Field Guide, Section: Rain Start Safety'
+		},
+		{
+			id: 'food-on-the-move-discipline',
+			title: 'Food on the move keeps decisions steady',
+			body: 'Each morning, split the day food before leaving camp. Put the next 3-4 hours of snacks and lunch where they can be reached without unpacking: hip belt pockets, shoulder pouch, top pocket, or outside mesh. Keep cook/camp meals, extra days of food, and trash packed separately so hiking food does not get buried. If food is hard to reach, the hiker will under-eat, get cold or foggy, and make worse mileage, water, and shelter decisions.',
+			tags: ['loadout', 'food', 'snacks', 'ration', 'packing', 'energy'],
+			citation: 'Hogg Country Field Guide, Section: Eating While Hiking'
 		}
 	],
 	loadout: [],
