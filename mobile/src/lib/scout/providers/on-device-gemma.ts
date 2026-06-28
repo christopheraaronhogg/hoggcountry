@@ -630,7 +630,7 @@ function mentionsFoodOnMoveDecision(answer: string): boolean {
 }
 
 function mentionsColdRainCampSafety(answer: string): boolean {
-	const mentionsHypothermia = /\bhypothermia|wet-cold|wet cold/iu.test(answer);
+	const mentionsHypothermia = /\bhypothermia\b/iu.test(answer);
 	const mentionsDrySleep = /\b(?:dry sleep|sleep (?:system|layers?)|dry layer|warm layer|insulation|quilt|sleeping bag)\b/iu.test(answer);
 	const mentionsStopBail = /\b(?:bail|bailout|stop|do not push|get to shelter|protected spot|legal protected)\b/iu.test(answer);
 	return mentionsHypothermia && mentionsDrySleep && mentionsStopBail;

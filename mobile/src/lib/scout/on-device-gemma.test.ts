@@ -425,6 +425,14 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 
 	assert.equal(
 		polishOnDeviceAnswer(
+			'Cold rain brings wet-cold exposure. Protect the dry sleep layer and warm layer first, set up early in a legal protected spot, and stop or bail out if the sleep system cannot stay dry.',
+			'How should I pack for cold rain tonight if I am camping?'
+		),
+		'Cold rain brings wet-cold exposure. Protect the dry sleep layer and warm layer first, set up early in a legal protected spot, and stop or bail out if the sleep system cannot stay dry.\n\nCold-rain camping note: treat wet-cold exposure as hypothermia risk, protect the dry sleep layer and warm layer first, set up early in a legal protected spot, keep the filter warm, and stop or bail out if the sleep system or camp setup cannot stay dry.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
 			'When the weather is bad, stop and reassess. If you are feeling scared, use the comfort verses. Psalms 56:3 says, "I trust in the Lord." Check the current forecast and choose a safer stop. If you are feeling scared or alone, make a one-hour plan.',
 			'When should I nero instead of pushing through a bad weather day?',
 			[
