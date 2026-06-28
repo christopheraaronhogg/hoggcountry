@@ -1477,7 +1477,7 @@ test('goal audit maps original success criteria without hiding missing device pr
 	assert.match(requirements['device-proof-lane-separated'].evidence, /Current device proof status: No current full suite-compatible TestFlight\/iPhone run found/u);
 	assert.match(requirements['device-proof-lane-separated'].evidence, /No strict TestFlight\/iPhone proof run passes/u);
 	assert.equal(requirements['target-testflight-build'].ok, true);
-	assert.match(requirements['target-testflight-build'].evidence, /Dad Pilot records 1\.0 \(26\)/u);
+	assert.match(requirements['target-testflight-build'].evidence, /Dad Pilot records 1\.0 \(27\)/u);
 	assert.equal(requirements['final-100-rated-five'].ok, false);
 	assert.match(requirements['final-100-rated-five'].evidence, /No strict TestFlight\/iPhone proof run passes/u);
 	assert.equal(audit.currentStatus.currentFullRoutingRuns, 1);
@@ -1670,7 +1670,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 
 	assert.match(result.stdout, /# Dad Scout local AI Eval Lab handoff/u);
 	assert.match(result.stdout, /Suite final-proof app requirement: `1\.0 \(>= 13\)`/u);
-	assert.match(result.stdout, /Target iOS build for Dad Eval Lab: `1\.0 \(26\)`/u);
+	assert.match(result.stdout, /Target iOS build for Dad Eval Lab: `1\.0 \(27\)`/u);
 	assert.match(result.stdout, /Target build meets suite requirement: yes/u);
 	assert.match(result.stdout, /Recorded Dad Pilot build: `1\.0 \(13\)`/u);
 	assert.match(result.stdout, /Recorded Dad Pilot build meets suite requirement: yes/u);
@@ -1683,7 +1683,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Latest native upload attempt: .*ios-testflight-attempt-2026-06-27T11-22-27-901Z\.md` \(blocked, upload requested yes/u);
 	assert.match(result.stdout, /## Phone build path/u);
 	assert.match(result.stdout, /Use now: Dad can run the suite on the currently approved Dad Pilot build `1\.0 \(13\)`/u);
-	assert.match(result.stdout, /Latest-code target: `1\.0 \(26\)` is the Xcode target\/local candidate/u);
+	assert.match(result.stdout, /Latest-code target: `1\.0 \(27\)` is the Xcode target\/local candidate/u);
 	assert.match(result.stdout, /targetReadyForDad/u);
 	assert.match(result.stdout, /Dad can run the suite-compatible TestFlight build already in Dad Pilot/u);
 	assert.match(result.stdout, /Imported full device runs: 0/u);
@@ -1692,7 +1692,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Latest inbox export: .*device-handoff-inbox-latest, 100 cases/u);
 	assert.match(result.stdout, /https:\/\/testflight\.apple\.com\/join\/BagBCrzf/u);
 	assert.match(result.stdout, /## Upload readiness/u);
-	assert.match(result.stdout, /Xcode Release target: `1\.0 \(26\)`/u);
+	assert.match(result.stdout, /Xcode Release target: `1\.0 \(27\)`/u);
 	assert.match(result.stdout, /Signing team\/profile: `3CFU9J87A5` \/ `Hoggcountry App Store Connect`/u);
 	assert.match(result.stdout, /Latest successful native upload proof: .*ios-testflight-attempt-2026-06-27T02-39-27-165Z\.md` \(passed/u);
 	assert.match(result.stdout, /Latest native upload attempt: .*ios-testflight-attempt-2026-06-27T11-22-27-901Z\.md` \(blocked/u);
@@ -1703,7 +1703,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 		assert.match(result.stdout, /Latest-source proof: current native app source is newer than the latest native upload; upload and refresh the local target build/u);
 		assert.match(result.stdout, /Current source newer than latest native upload: yes/u);
 		assert.match(result.stdout, /Current native app source newer than latest native upload: yes/u);
-		assert.match(result.stdout, /Latest-source upload note: upload target build `1\.0 \(26\)`; bump again only if App Store Connect already has build `26`/u);
+		assert.match(result.stdout, /Latest-source upload note: upload target build `1\.0 \(27\)`; bump again only if App Store Connect already has build `27`/u);
 	} else if (uploadRepoShaIsAncestor) {
 		assert.match(result.stdout, /Current checkout newer than latest native upload: yes/u);
 		assert.match(result.stdout, /Current native app source newer than latest native upload: no/u);
