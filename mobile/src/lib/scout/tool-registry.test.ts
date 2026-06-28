@@ -586,6 +586,24 @@ test('runToolsFor recognizes salvation phrasing as scripture search', async () =
 	assert.equal(records[0]?.toolId, 'bible_search');
 });
 
+test('runToolsFor reads current-mile profile guidance for own-mile setup prompts', async () => {
+	const records = await runToolsFor(
+		"How do I make Scout follow my own trail mile instead of someone else's?",
+		DEFAULT_CONTEXT_PACK,
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	assert.deepEqual(
+		records.map((record) => record.toolId),
+		['current_mile', 'source_search']
+	);
+	const sourceSearch = records.find((record) => record.toolId === 'source_search');
+	assert.ok(sourceSearch);
+	assert.match(sourceSearch.summary, /Current mile and profile discipline/);
+	assert.ok(sourceSearch.sourceDocumentIds?.includes('field-guide:current-mile-profile-discipline'));
+});
+
 test('runToolsFor falls back to current mile plus source search for unmatched prompts', async () => {
 	const records = await runToolsFor(
 		'tell me something useful about trail mindset',

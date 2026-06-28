@@ -251,6 +251,9 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /For first-run or newly installed app onboarding questions/);
 	assert.match(systemContext, /set the hiker profile\/current mile/);
 	assert.match(systemContext, /Do not call Scout ready for offline trail use until/);
+	assert.match(systemContext, /For own-mile, manual-mile, wrong-mile, profile, GPS correction/);
+	assert.match(systemContext, /Settings > Edit hike details/);
+	assert.match(systemContext, /a wrong mile shifts water, shelter, town, terrain, and bailout answers/);
 	assert.match(systemContext, /End every answer with a complete sentence/);
 	assert.match(systemContext, /verify Bible text is available offline/);
 	assert.match(systemContext, /Do not include Bible verses, scripture, prayer, or spiritual encouragement unless the hiker explicitly asks/);
@@ -319,6 +322,31 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 		/Do not rely on Scout offline until the field-pack refresh, model download, and airplane-mode test succeed/
 	);
 	assert.doesNotMatch(nearCompleteFirstRunAnswer, /Bible/);
+
+	const ownMileAnswer = polishOnDeviceAnswer(
+		'You tell Scout your current mile is 0.0 of 2197.4. I will use that as the starting point for our planning.\n\nTo make Scout follow your own trail mile, you just need to tell me where you are. When you ask a question, state your current mile marker clearly. That way, I can base my advice on your actual progress on the trail.',
+		"How do I make Scout follow my own trail mile instead of someone else's?"
+	);
+	assert.match(ownMileAnswer, /Own-mile setup/);
+	assert.match(ownMileAnswer, /Settings > Edit hike details/);
+	assert.match(ownMileAnswer, /check Today and Scout both show the new mile/);
+	assert.match(ownMileAnswer, /A wrong mile shifts water, shelter, town, terrain, and bailout answers/);
+	assert.match(ownMileAnswer, /trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap/);
+	assert.doesNotMatch(ownMileAnswer, /Bible/);
+
+	const nearCompleteOwnMileAnswer = polishOnDeviceAnswer(
+		'To make Scout follow your trail mile, use the hike setup sheet, choose Start my hike, and enter your current AT mile. Later, use Settings > Edit hike details or a confirmed mile update, and then check Today and Scout show the new mile. Refresh your field pack when you are online and ask Scout questions after changing your mile.',
+		"How do I make Scout follow my own trail mile instead of someone else's?"
+	);
+	assert.doesNotMatch(nearCompleteOwnMileAnswer, /Own-mile setup/);
+	assert.match(
+		nearCompleteOwnMileAnswer,
+		/A wrong mile shifts water, shelter, town, terrain, and bailout answers/
+	);
+	assert.match(
+		nearCompleteOwnMileAnswer,
+		/trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap/
+	);
 
 	assert.equal(
 		polishOnDeviceAnswer(

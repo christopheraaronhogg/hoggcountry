@@ -41,6 +41,13 @@ export const DEFAULT_CONTEXT_PACK: ContextPack = {
 			citation: 'Hogg Country Field Guide, Section: Offline Readiness'
 		},
 		{
+			id: 'current-mile-profile-discipline',
+			title: 'Current mile and profile discipline',
+			body: 'Scout follows the hiker only after their hike profile/current mile is set. On first run, use the hike setup sheet, choose Start my hike, and enter the Current AT mile. Later, use Settings > Edit hike details or a confirmed mile update, then check Today and Scout both show the new mile. Refresh the field pack when online and re-ask water, shelter, town, terrain, or bailout questions after changing mile. A wrong mile shifts every nearby answer, especially water, shelter, town, terrain, and bailout advice. Confirm the mile against a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap before relying on Scout.',
+			tags: ['profile', 'current-mile', 'onboarding', 'navigation', 'water', 'shelter', 'town', 'bailout'],
+			citation: 'Hogg Country Field Guide, Section: Current Mile Setup'
+		},
+		{
 			id: 'first-week-mileage-discipline',
 			title: 'First-week mileage follows body and constraints',
 			body: 'First-week mileage should start low and respond to body condition, daylight, elevation, water spacing, weather, pack weight, foot or knee condition, and the next legal shelter, campsite, or town stop. Protect feet and knees, stop while you can still recover normally, and adjust only after several normal mornings. Do not promise a fixed daily mileage.',
