@@ -251,6 +251,10 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /For first-run or newly installed app onboarding questions/);
 	assert.match(systemContext, /set the hiker profile\/current mile/);
 	assert.match(systemContext, /Do not call Scout ready for offline trail use until/);
+	assert.match(systemContext, /For airplane-mode, no-cell, or "what works offline" Scout questions/);
+	assert.match(systemContext, /cached field pack, on-device local AI model/);
+	assert.match(systemContext, /fresh weather, official closures\/fire alerts/);
+	assert.match(systemContext, /live\/tramily location/);
 	assert.match(systemContext, /For own-mile, manual-mile, wrong-mile, profile, GPS correction/);
 	assert.match(systemContext, /Settings > Edit hike details/);
 	assert.match(systemContext, /a wrong mile shifts water, shelter, town, terrain, and bailout answers/);
@@ -322,6 +326,19 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 		/Do not rely on Scout offline until the field-pack refresh, model download, and airplane-mode test succeed/
 	);
 	assert.doesNotMatch(nearCompleteFirstRunAnswer, /Bible/);
+
+	const airplaneModeAnswer = polishOnDeviceAnswer(
+		'You can use Scout with no cell service if you are in airplane mode, but you need to make sure you have done your offline setup. Scout does not replace your inReach, PLB, 911, or your family emergency plan.',
+		'Can I use Scout with no cell service if I am in airplane mode?'
+	);
+	assert.match(airplaneModeAnswer, /Airplane-mode boundary/);
+	assert.match(airplaneModeAnswer, /cached field pack/);
+	assert.match(airplaneModeAnswer, /on-device local AI model/);
+	assert.match(airplaneModeAnswer, /saved offline maps\/docs/);
+	assert.match(airplaneModeAnswer, /Bible text if it was packaged or downloaded/);
+	assert.match(airplaneModeAnswer, /fresh weather, official closures or fire alerts/);
+	assert.match(airplaneModeAnswer, /cloud sync\/backup, messages, or live\/tramily location/);
+	assert.match(airplaneModeAnswer, /Treat cached weather, closures, water, and services as stale/);
 
 	const ownMileAnswer = polishOnDeviceAnswer(
 		'You tell Scout your current mile is 0.0 of 2197.4. I will use that as the starting point for our planning.\n\nTo make Scout follow your own trail mile, you just need to tell me where you are. When you ask a question, state your current mile marker clearly. That way, I can base my advice on your actual progress on the trail.',

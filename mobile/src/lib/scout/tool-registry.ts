@@ -186,6 +186,9 @@ function sourceSkillQuery(skill: SourceSkillTrigger, prompt: string, pack: Conte
 function sourceSkillQueryHints(skill: SourceSkillTrigger, prompt: string): string[] {
 	if (skill.id !== 'safety') return skill.queryHints;
 	const lower = prompt.toLowerCase();
+	if (/\b(?:airplane mode|airplane-mode|no cell|cell service|without service|without signal|what can (?:you|scout) still answer|what still works|works? offline)\b/u.test(lower)) {
+		return ['airplane mode capability boundary', 'cached field pack', 'on-device local AI model', 'saved offline maps docs', 'Bible text', 'fresh weather', 'official closures', 'cloud sync', 'live tramily location', 'stale cached data'];
+	}
 	if (
 		/documents|personal documents|offline documents|information|insurance|emergency contacts|itinerary|permits|reservations|day one/u.test(lower)
 	) {

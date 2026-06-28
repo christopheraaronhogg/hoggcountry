@@ -41,6 +41,13 @@ export const DEFAULT_CONTEXT_PACK: ContextPack = {
 			citation: 'Hogg Country Field Guide, Section: Offline Readiness'
 		},
 		{
+			id: 'airplane-mode-capability-boundary',
+			title: 'Airplane mode capability boundary',
+			body: 'In airplane mode, Scout can answer only from what is already on the phone: the cached field pack, the on-device local AI model, saved offline maps/docs, saved document summaries, and Bible text if it was packaged or downloaded. Scout cannot fetch fresh weather, official closures or fire alerts, new water reports, town or service changes, cloud sync/backup, messages, or live/tramily location until the phone is back online. Treat cached weather, closures, water, and services as stale until refreshed again, and keep inReach, PLB, 911, or the family emergency plan separate.',
+			tags: ['safety', 'offline', 'airplane-mode', 'local-ai', 'field-pack', 'weather', 'closures', 'sync', 'live-location', 'bible'],
+			citation: 'Hogg Country Field Guide, Section: Airplane Mode Boundaries'
+		},
+		{
 			id: 'current-mile-profile-discipline',
 			title: 'Current mile and profile discipline',
 			body: 'Scout follows the hiker only after their hike profile/current mile is set. On first run, use the hike setup sheet, choose Start my hike, and enter the Current AT mile. Later, use Settings > Edit hike details or a confirmed mile update, then check Today and Scout both show the new mile. Refresh the field pack when online and re-ask water, shelter, town, terrain, or bailout questions after changing mile. A wrong mile shifts every nearby answer, especially water, shelter, town, terrain, and bailout advice. Confirm the mile against a trail sign or blaze, shelter or road crossing, guide source, map, or GPS snap before relying on Scout.',

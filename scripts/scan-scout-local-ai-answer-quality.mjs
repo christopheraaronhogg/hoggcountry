@@ -146,7 +146,11 @@ function add(checks, id, severity, message) {
 function hasUnaskedBibleDrift({ prompt, answer }) {
 	if (isBiblePrompt(prompt)) return false;
 	if (!/\b(?:bible|scripture|verse|verses|psalms?|isaiah|john|romans|proverbs?|timothy|lord|god|christ|jesus)\b/iu.test(answer)) return false;
-	return !(isOfflineReadinessPrompt(prompt) && /verify Bible text is available offline/iu.test(answer));
+	return !(isOfflineReadinessPrompt(prompt) && mentionsOfflineBibleAvailability(answer));
+}
+
+function mentionsOfflineBibleAvailability(answer) {
+	return /verify Bible text is available offline|Bible text if it was packaged or downloaded|Bible text is available offline/iu.test(answer);
 }
 
 function hasUnaskedFearComfortDrift({ prompt, answer }) {

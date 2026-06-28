@@ -586,6 +586,27 @@ test('runToolsFor recognizes salvation phrasing as scripture search', async () =
 	assert.equal(records[0]?.toolId, 'bible_search');
 });
 
+test('runToolsFor reads airplane-mode capability guidance for offline Scout prompts', async () => {
+	const records = await runToolsFor(
+		'Can I use Scout with no cell service if I am in airplane mode?',
+		DEFAULT_CONTEXT_PACK,
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	assert.deepEqual(
+		records.map((record) => record.toolId),
+		['source_search', 'open_source_doc']
+	);
+	const sourceSearch = records.find((record) => record.toolId === 'source_search');
+	assert.ok(sourceSearch);
+	assert.match(sourceSearch.summary, /Airplane mode capability boundary/);
+	assert.ok(sourceSearch.sourceDocumentIds?.includes('field-guide:airplane-mode-capability-boundary'));
+	const openedDoc = records.find((record) => record.toolId === 'open_source_doc');
+	assert.ok(openedDoc);
+	assert.match(openedDoc.summary, /Airplane mode capability boundary/);
+});
+
 test('runToolsFor reads current-mile profile guidance for own-mile setup prompts', async () => {
 	const records = await runToolsFor(
 		"How do I make Scout follow my own trail mile instead of someone else's?",

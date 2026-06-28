@@ -36,11 +36,17 @@ test('allows explicit Bible prompts and offline Bible readiness wording', () => 
 			caseId: 'DLA-OFFLINE',
 			prompt: 'What phone settings and offline downloads should I set before going offline?',
 			answer: 'Before going offline, refresh maps and the field pack, confirm the local AI model works, verify Bible text is available offline, and keep the phone in low power mode.'
+		}),
+		result({
+			caseId: 'DLA-AIRPLANE',
+			prompt: 'Can I use Scout with no cell service if I am in airplane mode?',
+			answer: 'In airplane mode, Scout can answer from the cached field pack, on-device local AI model, saved offline maps/docs, and Bible text if it was packaged or downloaded. It cannot fetch fresh weather, closures, cloud sync, messages, or live location until you are back online.'
 		})
 	]));
 
 	assert.deepEqual(checkIdsFor(report, 'DLA-BIBLE'), []);
 	assert.deepEqual(checkIdsFor(report, 'DLA-OFFLINE'), []);
+	assert.deepEqual(checkIdsFor(report, 'DLA-AIRPLANE'), []);
 });
 
 test('flags weather answers that omit fetched forecast details', () => {
