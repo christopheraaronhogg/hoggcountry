@@ -405,15 +405,15 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(status.runs.currentFullRoutingRuns.length, 1);
 	assert.equal(status.strictDeviceProofs.length, 0);
 	assert.equal(status.suite.finalProof.requiredApp, '1.0 (>= 13)');
-	assert.equal(status.testflight.targetBuild, '1.0 (26)');
+	assert.equal(status.testflight.targetBuild, '1.0 (27)');
 	assert.equal(status.testflight.suiteRequiredBuild, '1.0 (>= 13)');
 	assert.equal(status.testflight.targetBuildMeetsSuiteRequirement, true);
-	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (26)');
+	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (27)');
 	assert.equal(status.testflight.recordedDadPilotMeetsSuiteRequirement, true);
 	assert.equal(status.testflight.targetBuildReadyForDad, true);
 	assert.equal(status.testflight.targetBuildAvailableForDad, true);
 	assert.match(gates['testflight-target'].evidence, /Target build is available for Dad/u);
-	assert.match(gates['testflight-target'].evidence, /Dad Pilot records 1\.0 \(26\)/u);
+	assert.match(gates['testflight-target'].evidence, /Dad Pilot records 1\.0 \(27\)/u);
 	assert.equal(status.inbox.exists, true);
 	assert.equal(status.inbox.jsonFileCount, 2);
 	assert.equal(status.inbox.candidateCount, 1);
@@ -923,7 +923,7 @@ test('status command surfaces target TestFlight build gaps before phone eval', a
 	);
 	const status = JSON.parse(result.stdout);
 
-	assert.equal(status.testflight.targetBuild, '1.0 (26)');
+	assert.equal(status.testflight.targetBuild, '1.0 (27)');
 	assert.equal(status.testflight.suiteRequiredBuild, '1.0 (>= 13)');
 	assert.equal(status.testflight.targetBuildMeetsSuiteRequirement, true);
 	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (12)');
@@ -932,7 +932,7 @@ test('status command surfaces target TestFlight build gaps before phone eval', a
 	assert.equal(status.testflight.targetBuildAvailableForDad, false);
 	assert.equal(status.testflight.currentSuiteCompatibleDeviceRunCount, 0);
 	assert.equal(status.nextAction.kind, 'publish-target-build');
-	assert.match(status.nextAction.text, /Upload and attach target iOS build 1\.0 \(26\)/u);
+	assert.match(status.nextAction.text, /Upload and attach target iOS build 1\.0 \(27\)/u);
 	assert.match(status.nextAction.text, /Dad Pilot on 1\.0 \(12\)/u);
 	assert.match(status.nextAction.text, /suite requires 1\.0 \(>= 13\)/u);
 	assert.match(status.nextAction.text, /prepare-review:scout-local-ai-device-run/u);
@@ -984,7 +984,7 @@ test('status command lets suite-compatible TestFlight device proof override stal
 	const status = JSON.parse(result.stdout);
 	const gates = Object.fromEntries(status.gates.map((gate) => [gate.id, gate]));
 
-	assert.equal(status.testflight.targetBuild, '1.0 (26)');
+	assert.equal(status.testflight.targetBuild, '1.0 (27)');
 	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (12)');
 	assert.equal(status.testflight.recordedDadPilotMeetsSuiteRequirement, false);
 	assert.equal(status.testflight.targetBuildReadyForDad, false);
@@ -1722,7 +1722,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /App Store Connect API key in latest successful upload proof: yes/u);
 	assert.match(result.stdout, /App Store Connect API key in latest upload attempt: no/u);
 	assert.match(result.stdout, /APP_STORE_CONNECT_API_ISSUER_ID/u);
-	assert.match(result.stdout, /npm run refresh:testflight-dad-pilot -- --build 26 --app-version 1\.0/u);
+	assert.match(result.stdout, /npm run refresh:testflight-dad-pilot -- --build 27 --app-version 1\.0/u);
 	assert.match(result.stdout, /--attach --submit-review --remove-previous --update-release-evidence/u);
 	assert.match(result.stdout, /A likely Scout Eval Lab export is already/u);
 	assert.match(result.stdout, /device-handoff-inbox-latest/u);

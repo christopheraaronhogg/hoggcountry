@@ -11,15 +11,18 @@ use that phone to produce the final Scout local-AI `Run 100` export.
   `com.hoggcountry.trailassistant` are verified.
 - Build `1.0 (26)` is live in Dad Pilot, Apple beta review is approved, and App
   Store Connect reports external state `IN_BETA_TESTING`.
+- Build `1.0 (27)` is the next latest-source upload target for the frozen-filter
+  Scout answer fix.
 - Latest native upload proof for build `26`:
   `docs/launch/proof/ios-testflight-attempt-2026-06-28T02-52-09-688Z.md`.
 - Dad Pilot/App Store Connect proof for build `26`:
   `docs/launch/proof/ios-testflight-build-26-2026-06-28.md`.
 - Build `25` was removed from Dad Pilot only after build `26` was attached and
   externally available.
-- The local Xcode target is build `26`, matching the current Dad Pilot build.
-- Dad should now run `Run 100` on build `26`; the suite allows `1.0 (>= 13)`,
-  but build `26` is the latest-source TestFlight proof.
+- The local Xcode target is build `27`; upload and Dad Pilot refresh are needed
+  before build `27` becomes latest-source TestFlight proof.
+- Dad can still run `Run 100` on build `26` for diagnosis; for latest-source
+  proof, wait for build `27` to be attached and externally available.
 - The remaining goal is not TestFlight availability. It is a real
   TestFlight/iPhone `Run 100` export, import, human review, and all 100 answers
   rated 5/5 with strict device proof.
@@ -175,10 +178,12 @@ changed after the last successful upload.
   externally available.
 - Native upload proof: build `26` was archived, exported, and uploaded from the
   native app source in commit `3404498d1e8442cc430748e84544b4b44119ea43`.
+- Latest-source upload target: local Xcode target `1.0 (27)` includes the
+  frozen-filter Scout answer fix and still needs TestFlight upload/refresh proof.
 - Previous Dad Pilot upload: build `25` was archived and uploaded from commit
   `b70dff76a8c7b7fd3e2653be86a37c77a0c2f85d`, then replaced by build `26`.
-- Latest-source TestFlight proof: local Xcode target `1.0 (26)` matches Dad
-  Pilot build `1.0 (26)`.
+- Latest-source TestFlight proof: pending until Dad Pilot is refreshed to build
+  `1.0 (27)`.
 - Current repo proof: later commits may add docs/tests/proof. Check
   `npm run status:scout-local-ai` for whether native app source changed after
   the latest upload.
