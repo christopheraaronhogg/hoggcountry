@@ -217,26 +217,35 @@ function summarizeDocumentGroundingGoal(input) {
 	const northStar = String(goal.northStar ?? '');
 	const sourceClasses = Array.isArray(goal.sourceClasses) ? goal.sourceClasses.map((item) => String(item).toLowerCase()) : [];
 	const transferAcceptance = String(goal.transferAcceptance ?? '');
+	const writeAcceptance = String(goal.writeAcceptance ?? '');
 	const coverageAreas = new Map((input.status.suite?.coverage?.areas ?? []).map((area) => [area.id, area]));
 	const vaultCoverage = coverageAreas.get('document-vault-user-docs');
+	const writeCoverage = coverageAreas.get('document-writing-user-docs');
 	const transferCoverage = coverageAreas.get('domain-transfer-readiness');
 
 	if (!/\blocal-first\b/i.test(northStar)) problems.push('documentGroundingGoal.northStar must state local-first behavior.');
 	if (!/\bmodel-agnostic\b/i.test(northStar)) problems.push('documentGroundingGoal.northStar must state model-agnostic behavior.');
 	if (!/\bdocument-grounded\b/i.test(northStar)) problems.push('documentGroundingGoal.northStar must state document-grounded behavior.');
 	if (!sourceClasses.some((item) => item.includes('user document vault'))) problems.push('documentGroundingGoal.sourceClasses must include user document vault files.');
+	if (!sourceClasses.some((item) => item.includes('user-owned document drafts and updates'))) problems.push('documentGroundingGoal.sourceClasses must include user-owned document drafts and updates.');
 	if (!sourceClasses.some((item) => item.includes('non-trail document corpora'))) problems.push('documentGroundingGoal.sourceClasses must include future non-trail document corpora.');
 	if (!/\b(internal company documents|sops|project notes|customer docs|private knowledge bases)\b/i.test(transferAcceptance)) {
 		problems.push('documentGroundingGoal.transferAcceptance must name non-trail document corpora.');
 	}
+	if (!/\b(draft|write|update)\b/i.test(writeAcceptance)) problems.push('documentGroundingGoal.writeAcceptance must cover document drafting or updates.');
+	if (!/\b(user-owned documents?|document vault)\b/i.test(writeAcceptance)) problems.push('documentGroundingGoal.writeAcceptance must cover user-owned documents.');
+	if (!/\b(explicitly asks|explicit confirmation|confirmation)\b/i.test(writeAcceptance)) problems.push('documentGroundingGoal.writeAcceptance must require explicit user intent or confirmation.');
+	if (!/\breviewable\b/i.test(writeAcceptance)) problems.push('documentGroundingGoal.writeAcceptance must require reviewable generated content.');
+	if (!/\bnever silently overwrite\b/i.test(writeAcceptance)) problems.push('documentGroundingGoal.writeAcceptance must prohibit silent overwrites.');
 	if (vaultCoverage?.ok !== true) problems.push(`document-vault coverage is not satisfied: ${vaultCoverage?.count ?? 0}/${vaultCoverage?.minCases ?? '?'}.`);
+	if (writeCoverage?.ok !== true) problems.push(`document-writing coverage is not satisfied: ${writeCoverage?.count ?? 0}/${writeCoverage?.minCases ?? '?'}.`);
 	if (transferCoverage?.ok !== true) problems.push(`domain-transfer readiness coverage is not satisfied: ${transferCoverage?.count ?? 0}/${transferCoverage?.minCases ?? '?'}.`);
 
 	return {
 		ok: problems.length === 0,
 		evidence: problems.length
 			? problems.join('; ')
-			: `${northStar} Source classes include ${goal.sourceClasses.join(', ')}. Transfer target: ${transferAcceptance} Coverage: document vault ${vaultCoverage.count}/${vaultCoverage.minCases}, transfer readiness ${transferCoverage.count}/${transferCoverage.minCases}.`
+			: `${northStar} Source classes include ${goal.sourceClasses.join(', ')}. Transfer target: ${transferAcceptance} Write target: ${writeAcceptance} Coverage: document vault ${vaultCoverage.count}/${vaultCoverage.minCases}, document writing ${writeCoverage.count}/${writeCoverage.minCases}, transfer readiness ${transferCoverage.count}/${transferCoverage.minCases}.`
 	};
 }
 

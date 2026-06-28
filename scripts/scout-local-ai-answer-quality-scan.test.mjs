@@ -107,6 +107,33 @@ test('flags frozen-filter answers missing compromise, backup treatment, or warm-
 	assert.deepEqual(checkIdsFor(report, 'DLA-FILTER-GOOD'), []);
 });
 
+test('flags document-writing prompts that omit the requested draft or save confirmation boundary', () => {
+	const report = scanScoutLocalAiAnswerQuality(runWith([
+		result({
+			caseId: 'DLA-020',
+			prompt: 'What should I screenshot or save before day one in case the app or signal acts up, and can you draft that checklist?',
+			answer: 'Before day one, screenshot or save offline: current mile, itinerary, emergency contacts, next resupply, offline map status, permits, reservations, and medication notes. Do not paste private numbers into Scout chat.',
+			improvementTags: ['document-writing']
+		}),
+		result({
+			caseId: 'DLA-090',
+			prompt: 'What should I update in Scout before leaving town, and can you draft my town-exit update note?',
+			answer: 'Before leaving town, update Scout with your current mile, field pack, weather, closures, loadout, documents, offline maps, and airplane-mode test.',
+			improvementTags: ['document-writing']
+		}),
+		result({
+			caseId: 'DLA-DOC-GOOD',
+			prompt: 'Can you draft my town-exit update note?',
+			answer: 'Draft town-exit update note: 1. Current AT mile and field pack: refresh before leaving. 2. Food and water carry: note what changed. 3. Local AI model, cloud sync, and offline maps/docs: finish while online. 4. Weather and closures: refreshed now, but treat cached details as stale until refreshed again. 5. Open questions before walking out: water, shelter, town, terrain, and bailout. Review this draft before saving; Scout should not save or overwrite a document unless you explicitly confirm it.',
+			improvementTags: ['document-writing']
+		})
+	]));
+
+	assert.ok(checkIdsFor(report, 'DLA-020').includes('document-writing-draft-missing'));
+	assert.ok(checkIdsFor(report, 'DLA-090').includes('document-writing-draft-missing'));
+	assert.deepEqual(checkIdsFor(report, 'DLA-DOC-GOOD'), []);
+});
+
 test('reports the heuristic boundary in machine output', () => {
 	const report = scanScoutLocalAiAnswerQuality(runWith([]));
 
@@ -124,14 +151,15 @@ function runWith(results) {
 	};
 }
 
-function result({ caseId, prompt, answer, toolInvocations = [], error = null }) {
+function result({ caseId, prompt, answer, toolInvocations = [], error = null, improvementTags = [] }) {
 	return {
 		caseId,
 		case: {
 			id: caseId,
 			domain: 'test',
 			phase: 'test',
-			prompt
+			prompt,
+			improvementTags
 		},
 		answer,
 		error,

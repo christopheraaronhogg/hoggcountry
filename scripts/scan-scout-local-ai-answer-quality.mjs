@@ -136,6 +136,9 @@ function runAnswerChecks({ result, prompt, answer }) {
 	if (townOfflineReadinessMissing({ prompt, answer: trimmed })) {
 		add(checks, 'town-offline-readiness-missing', 'warning', 'Town/offline readiness answer is missing required pre-departure checklist pieces.');
 	}
+	if (documentWritingMissing({ result, prompt, answer: trimmed })) {
+		add(checks, 'document-writing-draft-missing', 'error', 'Document-writing answer is missing a reviewable draft/checklist or explicit save/overwrite confirmation boundary.');
+	}
 	return checks;
 }
 
@@ -190,6 +193,36 @@ function townOfflineReadinessMissing({ prompt, answer }) {
 		/weather/iu.test(answer) &&
 		/closure/iu.test(answer) &&
 		/(?:stale|not current|until refreshed|refresh again|remains current indefinitely)/iu.test(answer));
+}
+
+function documentWritingMissing({ result, prompt, answer }) {
+	const tags = result?.case?.improvementTags ?? [];
+	const asksDocumentWriting = tags.includes('document-writing') || isDocumentWritingPrompt(prompt);
+	if (!asksDocumentWriting) return false;
+	return !(mentionsDocumentDraft(answer) && mentionsDocumentWriteConfirmation(answer));
+}
+
+function isDocumentWritingPrompt(prompt) {
+	const lowerPrompt = prompt.toLowerCase();
+	const writingVerb = /\b(?:draft|write|create|revise)\b/u;
+	const documentObject = /\b(?:checklist|note|plan|summary|update|decision|document|document vault|vault)\b/u;
+	return (writingVerb.test(lowerPrompt) && documentObject.test(lowerPrompt)) ||
+		/\b(?:save|saving|saved)\b[^.?!\n]*(?:document vault|vault|note|checklist|document)\b/u.test(lowerPrompt) ||
+		/\b(?:update my notes|update note|town[-\s]?exit update note|checklist note)\b/u.test(lowerPrompt);
+}
+
+function mentionsDocumentDraft(answer) {
+	const hasDraftLabel = /\b(?:draft|checklist note|checklist:|town[-\s]?exit update note|offline document checklist|screenshot\/save checklist)\b/iu.test(answer);
+	const hasDraftShape =
+		/\b1\.\s+\S/iu.test(answer) ||
+		/\b(?:current AT mile|photo ID|emergency contacts|open questions|weather and closures|food and water carry|permits|reservations)\b/iu.test(answer);
+	return hasDraftLabel && hasDraftShape;
+}
+
+function mentionsDocumentWriteConfirmation(answer) {
+	const mentionsReviewOrConfirm = /\b(?:review|confirm|confirmation|explicitly confirm|before saving|before save)\b/iu.test(answer);
+	const mentionsSaveBoundary = /\b(?:save|saving|overwrite|document|draft)\b/iu.test(answer);
+	return mentionsReviewOrConfirm && mentionsSaveBoundary;
 }
 
 function isBiblePrompt(prompt) {

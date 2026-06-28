@@ -2,6 +2,15 @@
 
 Goal: make Dad's on-device Scout answer 100 real hiker questions at 5/5 quality before we treat the local AI flow as pilot-ready.
 
+Harness principle: keep the model replaceable and make the evaluation body durable.
+The owned assets are the versioned suite, tool/source contracts, transcript
+schema, answer-quality scanner, review packet, iteration planner, and proof-lane
+status gates. Local Gemma, a Mac-side model bridge, or a future provider can
+change without changing what "good" means. The AT/Dad domain is the first proof
+domain, but the same harness should generalize to other document corpora where
+an agent must search, open, summarize, compare, cite, draft, update, and preserve
+reviewable user-owned notes.
+
 The loop:
 
 1. Keep the 100-question suite in `dad-local-ai-100.json`.
@@ -95,7 +104,11 @@ import/review/iteration pass so scaffold routing runs, partial reviews, and
 missing TestFlight/iPhone proof stay visually separate. The coverage gate fails
 if the suite stops covering trail prep, daily hiking decisions, water, shelters,
 weather, resupply, safety, gear, Bible/spiritual support, offline/local-model
-use, or confusing edge cases at the expected minimum depth.
+use, document-vault reading, user-owned document drafting/updating, reusable
+document-assistant transfer readiness, or confusing edge cases at the expected
+minimum depth. Document-writing cases must stay reviewable and confirmation-bound:
+Scout can draft or update user-owned vault notes, but it must not silently save
+or overwrite private documents.
 The `Simulator/debug local full-suite preflight` gate is the main Mac-mini
 iteration signal: the latest debug/simulator `device-on-device-gemma` Run 100
 must have complete tool/source evidence and a clean answer-quality scan before

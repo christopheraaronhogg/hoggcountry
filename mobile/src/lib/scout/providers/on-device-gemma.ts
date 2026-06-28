@@ -59,6 +59,8 @@ const AIRPLANE_MODE_REHEARSAL_NOTE =
 	'Airplane-mode rehearsal: before turning it on, charge the phone and battery bank, refresh the field pack, confirm current mile, finish cloud sync if signed in, download or update the local AI model on Wi-Fi and power, save offline maps/docs, verify Bible text is available offline, and refresh weather and closure checks. Then turn on airplane mode or disable network, fully relaunch Scout, and ask a water, weather, or offline Scout question. Passing means Scout can answer from cached field pack/local model/saved docs, not that live data is current. Go back online and refresh before relying on weather, closures, water reports, town services, or other safety-critical facts.';
 const PRETRIP_SCREENSHOT_NOTE =
 	'Before day one, screenshot or save offline: current mile/start location, itinerary and check-in plan, emergency contacts, next resupply or town/bailout plan, offline map download/status, Scout field-pack/local-model status, key permits or reservations, shuttle/lodging confirmations, and medication/allergy notes. Keep copies outside Scout too, such as Photos/Files and a paper card. Do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat; Scout only needs source summaries and trail context.';
+const PRETRIP_SCREENSHOT_DRAFT_NOTE =
+	'Draft screenshot/save checklist note: 1. Current mile or start location confirmed. 2. Itinerary and check-in plan saved offline. 3. Emergency contacts saved outside Scout. 4. Next resupply, town, or bailout plan saved. 5. Offline map and Scout field-pack/local-model status captured. 6. Key permits, reservations, shuttle, lodging, and medication/allergy summaries saved without private numbers. Review this draft before saving; Scout should not save or overwrite a document unless you explicitly confirm it.';
 const MODEL_DOWNLOADING_STATUS_NOTE =
 	'Model-download status: a failed or stuck download means the on-device local AI model is not ready for offline Scout yet. In town or on reliable Wi-Fi, plug into power, confirm enough free storage, leave the app open long enough for download/verification, then retry from the model download control. If it stays stuck, restart the app and try again on Wi-Fi before leaving service. The field pack and saved maps/docs may still be available offline if already downloaded, but Scout should not pretend local AI can answer offline until the model reports ready and an airplane-mode Scout question succeeds.';
 const FIELD_PACK_STALENESS_NOTE =
@@ -117,6 +119,10 @@ const RESUPPLY_POINT_CARRY_NOTE =
 	'Resupply-point choice: choose the next stop by distance, terrain difficulty, appetite, reliable store or hostel access, hours, shuttle/pickup reality, and a backup food margin. Do not cut food carry just because Scout names a road or town candidate; confirm services first. If Scout only has thin road/town context, ask for the next known resupply point or carry conservatively to the next verified option.';
 const SCOUT_TOWN_UPDATE_NOTE =
 	'Before leaving town, update Scout with your profile/current AT mile, refreshed field pack, weather and closure checks, food/loadout changes, saved documents, offline maps/docs, and a quick airplane-mode test. Then re-ask water, shelter, town, terrain, and bailout questions because fresh Scout state changes those answers. Treat old cached weather, closures, water, and services as stale until refreshed.';
+const SCOUT_TOWN_UPDATE_DRAFT_NOTE =
+	'Draft town-exit update note: 1. Current AT mile: confirm before saving. 2. Food and water carry: note what changed. 3. Weather and closures: refreshed or still needs live check. 4. Loadout or gear changes: record anything added, removed, wet, broken, or replaced. 5. Documents: note permits, reservations, shuttle, lodging, or itinerary updates without private numbers. 6. Offline readiness: field pack, maps/docs, Bible, and local AI model checked. 7. Open questions before walking out: water, shelter, town, terrain, and bailout. Review this draft before saving; Scout should not save or overwrite a document unless you explicitly confirm it.';
+const OFFLINE_DOCUMENT_CHECKLIST_DRAFT_NOTE =
+	'Draft offline document checklist note: 1. Photo ID saved offline outside Scout. 2. Insurance card saved offline outside Scout. 3. Emergency contacts saved and shared. 4. Medication/allergy summary saved without private numbers. 5. Itinerary and check-in plan saved. 6. Permits, reservations, shuttle, and lodging confirmations saved as summaries. 7. Scout field pack, maps/docs, Bible, and local AI model checked for offline use. Review this draft before saving; Scout should not save or overwrite a document unless you explicitly confirm it.';
 const JOHN_316_SIMPLE_NOTE =
 	'John 3:16: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life." Simply: God loved the world, gave his Son, and promises everlasting life to those who believe in him.';
 const SALVATION_DIRECT_NOTE =
@@ -412,6 +418,9 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 			? PRETRIP_SCREENSHOT_NOTE
 			: appendSentence(answer, PRETRIP_SCREENSHOT_NOTE);
 	}
+	if (isDocumentWritingPrompt(lowerPrompt) && isPretripScreenshotPrompt(lowerPrompt) && !mentionsDocumentDraft(answer)) {
+		answer = appendSentence(answer, PRETRIP_SCREENSHOT_DRAFT_NOTE);
+	}
 	if (isModelDownloadingStatusPrompt(lowerPrompt)) {
 		answer = normalizeModelDownloadingStatusWording(answer);
 		if (isModelDownloadFailurePrompt(lowerPrompt)) {
@@ -490,6 +499,9 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 			answer,
 			'Do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat; keep those saved separately offline.'
 		);
+	}
+	if (isDocumentWritingPrompt(lowerPrompt) && isPersonalDocumentPrompt(lowerPrompt) && !mentionsDocumentDraft(answer)) {
+		answer = appendSentence(answer, OFFLINE_DOCUMENT_CHECKLIST_DRAFT_NOTE);
 	}
 	const directNextWaterSummary = toolSummary(toolInvocations, 'next_water');
 	if (
@@ -732,6 +744,15 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	}
 	if (isScoutTownUpdatePrompt(lowerPrompt) && !mentionsScoutTownUpdate(answer)) {
 		answer = SCOUT_TOWN_UPDATE_NOTE;
+	}
+	if (isDocumentWritingPrompt(lowerPrompt) && isScoutTownUpdatePrompt(lowerPrompt) && !mentionsDocumentDraft(answer)) {
+		answer = appendSentence(answer, SCOUT_TOWN_UPDATE_DRAFT_NOTE);
+	}
+	if (isDocumentWritingPrompt(lowerPrompt) && !mentionsDocumentWriteConfirmation(answer)) {
+		answer = appendSentence(
+			answer,
+			'Review the draft before saving; Scout should not save or overwrite a document unless you explicitly confirm it.'
+		);
 	}
 	if (isBudgetPrompt(lowerPrompt) && !mentionsBudgetCategories(answer)) {
 		answer = appendSentence(
@@ -1042,6 +1063,14 @@ function isPretripScreenshotPrompt(prompt: string): boolean {
 	const asksScreenshot = /\b(?:screenshot|screen shot|screen-shot|save offline|save outside|copy)\b/u.test(prompt);
 	const mentionsTiming = /\b(?:before day one|day one|before leaving|before trail|app|signal|service|acts up)\b/u.test(prompt);
 	return asksScreenshot && mentionsTiming;
+}
+
+function isDocumentWritingPrompt(prompt: string): boolean {
+	const writingVerb = /\b(?:draft|write|create|revise)\b/u;
+	const documentObject = /\b(?:checklist|note|plan|summary|update|decision|document|document vault|vault)\b/u;
+	return (writingVerb.test(prompt) && documentObject.test(prompt)) ||
+		/\b(?:save|saving|saved)\b[^.?!\n]*(?:document vault|vault|note|checklist|document)\b/u.test(prompt) ||
+		/\b(?:update my notes|update note|town[-\s]?exit update note|checklist note)\b/u.test(prompt);
 }
 
 function isModelDownloadingStatusPrompt(prompt: string): boolean {
@@ -2238,6 +2267,20 @@ function mentionsPretripScreenshotChecklist(answer: string): boolean {
 		mentionsOutsideScout && mentionsPrivacyBoundary;
 }
 
+function mentionsDocumentDraft(answer: string): boolean {
+	const hasDraftLabel = /\b(?:draft|checklist note|checklist:|town[-\s]?exit update note|offline document checklist|screenshot\/save checklist)\b/iu.test(answer);
+	const hasDraftShape =
+		/\b1\.\s+\S/iu.test(answer) ||
+		/\b(?:current AT mile|photo ID|emergency contacts|open questions|weather and closures|food and water carry|permits|reservations)\b/iu.test(answer);
+	return hasDraftLabel && hasDraftShape;
+}
+
+function mentionsDocumentWriteConfirmation(answer: string): boolean {
+	const mentionsReviewOrConfirm = /\b(?:review|confirm|confirmation|explicitly confirm|before saving|before save)\b/iu.test(answer);
+	const mentionsSaveBoundary = /\b(?:save|saving|overwrite|document|draft)\b/iu.test(answer);
+	return mentionsReviewOrConfirm && mentionsSaveBoundary;
+}
+
 function isPretripScreenshotPartialAnswer(answer: string): boolean {
 	return /\b(?:screenshot|current location|itinerary|critical contact|emergency contacts?|offline maps?|documents?)\b/iu.test(answer);
 }
@@ -3050,6 +3093,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For airplane-mode, no-cell, or "what works offline" Scout questions, split the answer plainly: what still works offline is the cached field pack, on-device local AI model, saved offline maps/docs, saved document summaries, and Bible text if packaged or downloaded; what needs network is fresh weather, official closures/fire alerts, new water reports, town/service changes, cloud sync/backup, messages, and live/tramily location. Say cached weather, closures, water, and services can be stale until refreshed again.`,
 		`For "test airplane mode" or offline rehearsal questions, give the test sequence: charge phone and battery bank, refresh field pack, confirm current mile, finish cloud sync if signed in, download/update the local AI model on Wi-Fi and power, save offline maps/docs, verify Bible text is available offline, refresh weather/closures, turn on airplane mode or disable network, fully relaunch Scout, then ask a water, weather, or offline Scout question. Say passing proves cached field pack/local model/saved docs answer, not live freshness, and tell the hiker to go back online and refresh before relying on weather, closures, water reports, town services, or safety-critical facts.`,
 		`For "what should I screenshot before day one" or app/signal failure screenshot prompts, list current mile/start location, itinerary and check-in plan, emergency contacts, next resupply or town/bailout plan, offline map download/status, Scout field-pack/local-model status, key permits or reservations, shuttle/lodging confirmations, and medication/allergy notes. Tell the hiker to keep copies outside Scout too, and do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat.`,
+		`For document-writing prompts such as "draft a checklist", "draft my town-exit update note", "update my notes", or "save this to my Document Vault", answer the factual question first, then include a clearly labeled draft note/checklist. Separate source-backed facts from placeholders or open questions, use placeholders for private values, and say Scout should not save or overwrite a document unless the user explicitly confirms it.`,
 		`For model-downloading, model status, stuck download, failed download, or "still downloading" questions, say the on-device local AI model is not ready for offline Scout yet. Tell the hiker to stay on Wi-Fi and power, wait for download and verification, check Scout model status/progress until it says ready, retry/cancel/restart only if stuck or failed, and not trust offline/local AI until the model reports ready and an airplane-mode Scout question succeeds.`,
 		`For stale field-pack, field-pack status, or "can I trust Scout's field pack" questions, field pack means cached Scout trail data on the phone, not the physical backpack or loadout. Tell the hiker to check pack age/status, current mile or downloaded region, and source timestamps when shown. If the pack is old, expired, wrong-mile/wrong-region, or loaded before weather, closures, water, or services changed, treat it as stale. Refresh on Wi-Fi or in town before water, weather, closure, bailout, or town-service decisions, and use stale cached data only as caution, not current proof.`,
 		`For sign-in, login, account, cloud sync, backup, restore, or "can I wait to sign in" questions, say accounts are invite-only. Recommend signing in before trail on Wi-Fi if the hiker has an invite so backup/restore and cloud sync can finish. Keep offline Scout/local AI separate: once the field pack, on-device model, and saved maps/docs are downloaded, offline use does not require a live login. Do not imply sign-in or cloud sync is emergency safety; keep inReach, PLB, 911, and the family emergency plan separate.`,

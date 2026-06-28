@@ -508,6 +508,42 @@ test('runToolsFor opens saved hiker documents for document-vault prompts', async
 	assert.ok(openedVaultDoc.receipts.some((receipt) => receipt.id === 'hiker-doc:hostel-reservation-note' && receipt.kind === 'hiker-input'));
 });
 
+test('runToolsFor opens saved hiker documents for reviewable town-exit update notes', async () => {
+	const records = await runToolsFor(
+		'What should I update in Scout before leaving town, and can you draft my town-exit update note?',
+		{
+			...DEFAULT_CONTEXT_PACK,
+			documents: [
+				{
+					id: 'town-exit-update-template',
+					title: 'Town exit update note template',
+					source: 'manual',
+					createdAt: '2026-06-20T10:00:00.000Z',
+					updatedAt: '2026-06-20T10:00:00.000Z',
+					body: 'Town-exit update note: confirm current mile, food carry, weather, closures, water, documents changed, open questions, and explicit confirmation before saving or overwriting the note.'
+				}
+			]
+		},
+		defaultToolRegistry(),
+		FIXED_NOW
+	);
+
+	const vaultSearch = records.find(
+		(record) => record.toolId === 'source_search' && record.args.sourceSkill === 'document vault'
+	);
+	assert.ok(vaultSearch);
+	assert.equal(vaultSearch.sourceDocumentIds?.[0], 'hiker-doc:town-exit-update-template');
+
+	const openedVaultDoc = records.find(
+		(record) =>
+			record.toolId === 'open_source_doc' &&
+			record.args.sourceSkill === 'document vault' &&
+			record.args.documentId === 'hiker-doc:town-exit-update-template'
+	);
+	assert.ok(openedVaultDoc);
+	assert.match(openedVaultDoc.summary, /explicit confirmation before saving or overwriting/i);
+});
+
 test('runToolsFor opens non-trail saved documents through the same document-vault lane', async () => {
 	const records = await runToolsFor(
 		'What do my saved docs say about the warehouse lockup SOP?',

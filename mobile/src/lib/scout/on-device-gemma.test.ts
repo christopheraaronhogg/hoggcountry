@@ -267,6 +267,9 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /For "what should I screenshot before day one"/);
 	assert.match(systemContext, /next resupply or town\/bailout plan/);
 	assert.match(systemContext, /do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat/);
+	assert.match(systemContext, /For document-writing prompts/);
+	assert.match(systemContext, /include a clearly labeled draft note\/checklist/);
+	assert.match(systemContext, /should not save or overwrite a document unless the user explicitly confirms it/);
 	assert.match(systemContext, /For model-downloading, model status, stuck download, failed download/);
 	assert.match(systemContext, /not ready for offline Scout yet/);
 	assert.match(systemContext, /check Scout model status\/progress until it says ready/);
@@ -531,6 +534,22 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.match(screenshotPrepAnswer, /Keep copies outside Scout too/);
 	assert.match(screenshotPrepAnswer, /Do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat/);
 
+	const screenshotDraftAnswer = polishOnDeviceAnswer(
+		'Before day one, screenshot or save offline: current mile/start location, itinerary and check-in plan, emergency contacts, next resupply or town/bailout plan, offline map download/status, Scout field-pack/local-model status, key permits or reservations, shuttle/lodging confirmations, and medication/allergy notes. Keep copies outside Scout too, such as Photos/Files and a paper card. Do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat.',
+		'What should I screenshot or save before day one in case the app or signal acts up, and can you draft that checklist?'
+	);
+	assert.match(screenshotDraftAnswer, /Draft screenshot\/save checklist note/);
+	assert.match(screenshotDraftAnswer, /Current mile or start location confirmed/);
+	assert.match(screenshotDraftAnswer, /Review this draft before saving/);
+	assert.match(screenshotDraftAnswer, /should not save or overwrite a document unless you explicitly confirm it/);
+
+	const offlineDocumentDraftAnswer = polishOnDeviceAnswer(
+		'You should save your photo ID, insurance card, emergency contacts, medication or allergy notes, your itinerary and check-in plan, any permits or reservations you need, and confirmations for shuttles or lodging somewhere you can reach offline. Here is a draft checklist note for you to save offline: Checklist: 1. Photo ID 2. Insurance Card 3. Emergency Contacts.',
+		'What documents and information should I keep saved offline before day one, and can you draft my offline checklist note?'
+	);
+	assert.match(offlineDocumentDraftAnswer, /Review the draft before saving/);
+	assert.match(offlineDocumentDraftAnswer, /should not save or overwrite a document unless you explicitly confirm it/);
+
 	assert.equal(
 		polishOnDeviceAnswer(
 			'Buy common food in town. Mail special items to verified stops and confirm store hours.',
@@ -744,6 +763,15 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.match(scoutTownUpdateAnswer, /weather and closure checks/);
 	assert.match(scoutTownUpdateAnswer, /food\/loadout changes/);
 	assert.match(scoutTownUpdateAnswer, /re-ask water, shelter, town, terrain, and bailout questions/);
+
+	const scoutTownUpdateDraftAnswer = polishOnDeviceAnswer(
+		'Before leaving town, update Scout with your profile/current AT mile, refreshed field pack, weather and closure checks, food/loadout changes, saved documents, offline maps/docs, and a quick airplane-mode test.',
+		'What should I update in Scout before leaving town, and can you draft my town-exit update note?'
+	);
+	assert.match(scoutTownUpdateDraftAnswer, /Draft town-exit update note/);
+	assert.match(scoutTownUpdateDraftAnswer, /Current AT mile: confirm before saving/);
+	assert.match(scoutTownUpdateDraftAnswer, /Open questions before walking out/);
+	assert.match(scoutTownUpdateDraftAnswer, /should not save or overwrite a document unless you explicitly confirm it/);
 
 	const john316Answer = polishOnDeviceAnswer(
 		'John 3:16 says that God loved the world so much that he gave his one and only Son.',

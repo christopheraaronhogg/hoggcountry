@@ -142,7 +142,7 @@ test('phone build action blocks Dad when latest upload contains a stale eval sui
 			recordedDadPilotMeetsSuiteRequirement: true,
 			targetBuildReadyForDad: false,
 			targetBuildAvailableForDad: false,
-			currentSuiteVersion: '2026-06-28.2',
+			currentSuiteVersion: '2026-06-28.3',
 			currentSuiteHash: 'fnv1a32:new'
 		},
 		nativeSource: {
@@ -162,7 +162,7 @@ test('phone build action blocks Dad when latest upload contains a stale eval sui
 	assert.equal(action.requiresNewUploadBeforeRun100, true);
 	assert.equal(action.requiresNewUploadForLatestAppSourceProof, true);
 	assert.match(action.text, /latest TestFlight upload contains suite 2026-06-27\.2/u);
-	assert.match(action.text, /current suite is 2026-06-28\.2/u);
+	assert.match(action.text, /current suite is 2026-06-28\.3/u);
 	assert.match(action.text, /Upload and attach 1\.0 \(28\) to Dad Pilot first/u);
 });
 
@@ -240,6 +240,7 @@ test('Dad local AI eval suite covers requested hiker objective areas', async () 
 	assert.ok(byId['bible-spiritual-support'].count >= 5);
 	assert.ok(byId['offline-local-ai-use'].count >= 10);
 	assert.ok(byId['document-vault-user-docs'].count >= 2);
+	assert.ok(byId['document-writing-user-docs'].count >= 2);
 	assert.ok(byId['domain-transfer-readiness'].count >= 2);
 	assert.ok(byId['confusing-edge-cases'].count >= 10);
 });
@@ -474,7 +475,8 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(status.testflight.recordedDadPilotMeetsSuiteRequirement, true);
 	assert.equal(status.testflight.targetBuildReadyForDad, false);
 	assert.equal(status.testflight.targetBuildAvailableForDad, false);
-	assert.match(gates['testflight-target'].evidence, /Target build is not yet recorded as available for Dad/u);
+	assert.match(gates['testflight-target'].evidence, /Latest TestFlight upload does not contain the current eval suite/u);
+	assert.match(gates['testflight-target'].evidence, /current suite 2026-06-28\.3/u);
 	assert.match(gates['testflight-target'].evidence, /Dad Pilot records 1\.0 \(27\)/u);
 	assert.equal(status.inbox.exists, true);
 	assert.equal(status.inbox.jsonFileCount, 2);
@@ -1079,10 +1081,11 @@ test('status command lets suite-compatible TestFlight device proof override stal
 	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.status, 'review-needed');
 	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.caseCount, 100);
 	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.flaggedCount, 100);
-	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.errorCount, 100);
+	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.errorCount, 103);
 	assert.ok(status.runs.currentFullDeviceRuns[0].answerQuality.warningCount >= 100);
 	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.byCheck['unfinished-tail'], 100);
 	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.byCheck['very-short-answer'], 100);
+	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.byCheck['document-writing-draft-missing'], 3);
 	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.topFlagged[0].caseId, 'DLA-001');
 	assert.match(status.runs.currentFullDeviceRuns[0].answerQuality.boundary, /does not replace human 1-5 ratings/u);
 	assert.equal(gates['testflight-target'].ok, true);
@@ -1110,7 +1113,7 @@ test('status command lets suite-compatible TestFlight device proof override stal
 		],
 		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
 	);
-	assert.match(textResult.stdout, /Latest full device answer-quality scan: `device-status-suite-compatible-build13` review-needed; 100\/100 flagged, 100 errors, \d+ warnings/u);
+	assert.match(textResult.stdout, /Latest full device answer-quality scan: `device-status-suite-compatible-build13` review-needed; 100\/100 flagged, 103 errors, \d+ warnings/u);
 	assert.match(textResult.stdout, /Answer-quality boundary: Heuristic scan only/u);
 	assert.match(textResult.stdout, /Top answer-quality cases: DLA-001 \(very-short-answer:warning, unfinished-tail:error\)/u);
 });
@@ -1737,6 +1740,8 @@ test('goal audit maps original success criteria without hiding missing device pr
 	assert.equal(requirements['document-grounded-system-goal'].ok, true);
 	assert.match(requirements['document-grounded-system-goal'].evidence, /local-first, model-agnostic, document-grounded assistant/u);
 	assert.match(requirements['document-grounded-system-goal'].evidence, /internal company documents, SOPs, project notes, customer docs/u);
+	assert.match(requirements['document-grounded-system-goal'].evidence, /Write target: Scout can draft or update user-owned documents/u);
+	assert.match(requirements['document-grounded-system-goal'].evidence, /document writing [2-9][0-9]*\/2/u);
 	assert.equal(requirements['runner-saves-transcripts'].ok, true);
 	assert.match(requirements['runner-saves-transcripts'].evidence, /100 result transcript/u);
 	assert.equal(requirements['review-ratings-and-notes'].ok, true);
@@ -1983,7 +1988,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Current checkout newer than latest native upload: (yes|no)/u);
 	assert.match(result.stdout, /Current native app source newer than latest native upload: (yes|no)/u);
 	assert.match(result.stdout, new RegExp(`Latest-source proof: latest native upload contains suite ${escapeRegExp(uploadSuiteIdentity.version)}`, 'u'));
-	assert.match(result.stdout, /not current suite 2026-06-28\.2/u);
+	assert.match(result.stdout, /not current suite 2026-06-28\.3/u);
 	if (result.stdout.includes('Latest-source upload note:')) {
 		assert.match(result.stdout, /Latest-source upload note: upload target build `1\.0 \(28\)`; bump again only if App Store Connect already has build `28`/u);
 	}
@@ -1996,7 +2001,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /device-handoff-inbox-latest/u);
 	assert.match(result.stdout, /use `Run 100` for real proof/u);
 	assert.match(result.stdout, /## Valid export checklist/u);
-	assert.match(result.stdout, /Suite fields: `suiteId=dad-local-ai-100`, `suiteVersion=2026-06-28\.2`, `suiteHash=fnv1a32:[0-9a-f]+`/u);
+	assert.match(result.stdout, /Suite fields: `suiteId=dad-local-ai-100`, `suiteVersion=2026-06-28\.3`, `suiteHash=fnv1a32:[0-9a-f]+`/u);
 	assert.match(result.stdout, /Result count: `100\/100` completed results from `Run 100`, not `Run 3`/u);
 	assert.match(result.stdout, /Evidence lane: `device-on-device-gemma` with `answerOrigin=device-on-device-gemma` answers/u);
 	assert.match(result.stdout, /Native context: TestFlight iPhone install, app build satisfying `1\.0 \(>= 13\)`/u);
@@ -6987,7 +6992,7 @@ function simulatorDeviceRunContext(patch = {}) {
 }
 
 function cleanPreflightAnswer() {
-	return 'Use the current forecast and cached weather note, then make the conservative field call from the local field pack. Keep the field pack refreshed, confirm local AI and the Gemma model are ready, let cloud sync finish for backup, check closures, and treat stale data as not current until refreshed again. For money planning, track daily burn, town spikes, hostel, shuttle, laundry, meal, gear replacement, and an emergency cushion. If a filter froze, treat it as potentially compromised, carry backup water tablets, and sleep with the filter in your sleeping bag.';
+	return 'Use the current forecast and cached weather note, then make the conservative field call from the local field pack. Keep the field pack refreshed, confirm local AI and the Gemma model are ready, let cloud sync finish for backup, check closures, and treat stale data as not current until refreshed again. For money planning, track daily burn, town spikes, hostel, shuttle, laundry, meal, gear replacement, and an emergency cushion. If a filter froze, treat it as potentially compromised, carry backup water tablets, and sleep with the filter in your sleeping bag. Draft checklist note: 1. Current AT mile confirmed. 2. Food and water carry updated. 3. Weather and closures refreshed or marked stale. 4. Offline maps, docs, field pack, and local AI model checked. 5. Open questions listed before leaving service. Review this draft before saving; Scout should not save or overwrite a document unless you explicitly confirm it.';
 }
 
 function deviceRunForCases(suite, cases, options = {}) {

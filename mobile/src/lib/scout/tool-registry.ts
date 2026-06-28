@@ -132,8 +132,8 @@ const SOURCE_SKILL_TRIGGERS: SourceSkillTrigger[] = [
 	},
 	{
 		id: 'document vault',
-		keywords: ['document vault', 'vault', 'document', 'documents', 'offline documents', 'saved document', 'saved documents', 'saved docs', 'uploaded document', 'uploaded documents', 'my documents', 'my docs', 'my notes', 'saved note', 'saved notes', 'user document', 'user documents', 'document summaries', 'information', 'screenshot', 'screenshots', 'itinerary', 'permits', 'reservations', 'confirmation', 'check-in plan'],
-		queryHints: ['document vault', 'saved hiker documents', 'uploaded notes', 'saved document summaries', 'offline docs', 'itinerary', 'permits', 'reservations', 'confirmations', 'privacy boundary', 'do not expose private numbers']
+		keywords: ['document vault', 'vault', 'document', 'documents', 'offline documents', 'saved document', 'saved documents', 'saved docs', 'uploaded document', 'uploaded documents', 'my documents', 'my docs', 'my notes', 'saved note', 'saved notes', 'save note', 'save checklist', 'user document', 'user documents', 'document summaries', 'document updates', 'information', 'screenshot', 'screenshots', 'itinerary', 'permits', 'reservations', 'confirmation', 'check-in plan', 'draft my', 'draft that checklist', 'draft checklist', 'draft a checklist', 'checklist note', 'reviewable checklist', 'reviewable note', 'update note', 'town-exit update', 'town exit update'],
+		queryHints: ['document vault', 'saved hiker documents', 'uploaded notes', 'saved document summaries', 'offline docs', 'itinerary', 'permits', 'reservations', 'confirmations', 'reviewable draft', 'explicit confirmation before save', 'no silent overwrite', 'privacy boundary', 'do not expose private numbers']
 	},
 	{
 		id: 'park services',
@@ -196,7 +196,7 @@ function sourceSkillQuery(skill: SourceSkillTrigger, prompt: string, pack: Conte
 function sourceSkillQueryHints(skill: SourceSkillTrigger, prompt: string): string[] {
 	const lower = prompt.toLowerCase();
 	if (skill.id === 'document vault') {
-		return ['document vault', 'saved hiker documents', 'uploaded notes', 'offline docs', 'source summaries', 'itinerary', 'permits', 'reservations', 'confirmations', 'privacy boundary', 'do not paste private numbers'];
+		return ['document vault', 'saved hiker documents', 'uploaded notes', 'offline docs', 'source summaries', 'itinerary', 'permits', 'reservations', 'confirmations', 'reviewable draft', 'explicit confirmation before save', 'no silent overwrite', 'privacy boundary', 'do not paste private numbers'];
 	}
 	if (isScoutFieldPackDataPrompt(lower)) {
 		return ['field pack staleness discipline', 'cached Scout trail data', 'pack age status', 'current mile downloaded region', 'source timestamps', 'refresh on Wi-Fi in town', 'weather closures water services stale', 'caution signals not current proof'];

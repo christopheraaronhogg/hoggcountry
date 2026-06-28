@@ -66,6 +66,15 @@ export const SCOUT_LOCAL_AI_OBJECTIVE_COVERAGE_AREAS = [
 		matches: (testCase) => hasRequiredTool(testCase, 'source_search:document vault') && hasRequiredTool(testCase, 'open_source_doc:document vault')
 	},
 	{
+		id: 'document-writing-user-docs',
+		label: 'Document drafting and user-owned document updates',
+		minCases: 2,
+		matches: (testCase) => hasRequiredTool(testCase, 'source_search:document vault') &&
+			hasRequiredTool(testCase, 'open_source_doc:document vault') &&
+			(hasImprovementTag(testCase, 'document-writing') || /\b(draft|write|update|save|create|revise)\b/iu.test(caseBodyText(testCase))) &&
+			/\b(reviewable|confirmation|overwrite|document vault|user-owned|private values|open questions)\b/iu.test(caseBodyText(testCase))
+	},
+	{
 		id: 'domain-transfer-readiness',
 		label: 'Reusable document-assistant transfer readiness',
 		minCases: 2,
