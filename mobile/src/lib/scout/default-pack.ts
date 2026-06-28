@@ -57,8 +57,8 @@ export const DEFAULT_CONTEXT_PACK: ContextPack = {
 		{
 			id: 'loadout-contents-discipline',
 			title: 'Read the pack contents before gear advice',
-			body: 'Loadout advice starts with what is actually carried, then compares that gear against weather, terrain, water carry, shelter choice, body condition, and next town timing. A shakedown hike should prove the sleep system, rain system, cooking and food rhythm, water filtering, battery drain, pack fit, foot care, and offline app/model flow. Turn failures into specific gear or app fixes instead of treating one shakedown as proof every condition is solved.',
-			tags: ['loadout', 'gear', 'pack', 'safety', 'shakedown', 'battery'],
+			body: 'Loadout advice starts with what is actually carried, then compares that gear against weather, terrain, water carry, shelter choice, body condition, and next town timing. A shakedown hike should prove the sleep system, rain system, cooking and food rhythm, water filtering, battery drain, pack fit, foot care, and offline app/model flow. Turn failures into specific gear or app fixes instead of treating one shakedown as proof every condition is solved. Dry priorities are the sleep base layer, socks, insulation or warm layer, quilt or bag, and critical electronics; protect them in a pack liner or dry bag because wet-cold mistakes can become hypothermia risk. A battery-bank plan should use phone model, days between town charging, navigation/maps/photos/family check-in habits, local AI/model use, and an actual airplane-mode drain test with the phone and bank. Do not mail home rain protection, insulation or warm layers, water treatment, first aid, battery/navigation power, or sleep safety just because one forecast looks warm; tie mail-home choices to forecast, next town timing, and replacement options.',
+			tags: ['loadout', 'gear', 'pack', 'safety', 'shakedown', 'battery', 'dry-clothes', 'mail-home'],
 			citation: 'Hogg Country Field Guide, Section: Gear System'
 		},
 		{

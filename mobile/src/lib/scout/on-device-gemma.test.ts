@@ -220,6 +220,9 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /For rain-pants or rain-gear cut\/drop questions/);
 	assert.match(systemContext, /For camp-shoes questions/);
 	assert.match(systemContext, /When tool findings are labeled as guidance/);
+	assert.match(systemContext, /For dry-clothes priority questions/);
+	assert.match(systemContext, /For battery-bank planning questions/);
+	assert.match(systemContext, /For mail-home gear questions/);
 	assert.match(systemContext, /When preparation or training questions have pretrip/);
 	assert.match(systemContext, /include an immediate first-week checklist/);
 	assert.match(systemContext, /End every answer with a complete sentence/);
@@ -557,6 +560,30 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 
 	assert.equal(
 		polishOnDeviceAnswer(
+			'The rain jacket and dry sleep base layer should stay dry because they protect you from wet weather.',
+			'What clothes should stay dry at all costs in my pack?'
+		),
+		'The rain jacket and dry sleep base layer should stay dry because they protect you from wet weather.\n\nDry-clothes priority note: keep the sleep base layer, socks, insulation or warm layer, quilt or bag, and critical electronics protected in a pack liner or dry bag. Wet-cold mistakes can become hypothermia risk, so keep the sleep, warmth, and electronics core dry while rain gear stays accessible.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Use enough battery for navigation, photos, and family check-ins, then compare that to the capacity on your bank.',
+			'How much battery bank do I need for Scout, maps, photos, and family check-ins?'
+		),
+		'Use enough battery for navigation, photos, and family check-ins, then compare that to the capacity on your bank.\n\nNormal gaps can happen from dead zones, battery conservation, rain, or town chaos; live location may be delayed or unavailable, so do not treat it as guaranteed.\n\nBattery-bank planning note: size the bank from phone model, days between town charging, navigation, photos, family check-ins, local AI/model use, and cold or rain margin. Before trail, run an airplane-mode rehearsal with Scout, maps, photos, and check-ins to measure actual drain instead of guessing.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Include blister prevention tape, blister treatments, wound care supplies, personal medications, and pain relief.',
+			'What should be in my first-aid kit for blisters and normal trail problems?'
+		),
+		'Include blister prevention tape, blister treatments, wound care supplies, personal medications, and pain relief.\n\nFirst-aid kit note: keep it compact and personal: prevention tape, blister treatment, wound basics, and normal personal meds. Do not diagnose; stop or get medical help for spreading redness, drainage, fever, worsening pain, swelling, or changed gait.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
 			'Protect your sleep system and set up early if the weather is ugly. Verify the current forecast before committing.',
 			'How should I pack for cold rain tonight if I am camping?'
 		),
@@ -626,6 +653,23 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			'What weather facts must Scout verify live before I rely on an answer?'
 		),
 		'Verify lightning, heat, cold rain, wind, and flooding before relying on weather.\n\nLive-weather verification note: verify storms and lightning, heat or cold exposure, wind, flooding or high water, closures or fire/smoke alerts, and whether the cache is stale before relying on the answer for exposed terrain or a safety-critical decision.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Keep items that are essential for your current situation, like your water filter or first aid kit, but be cautious about mailing things that are not necessary.',
+			'What gear should I not mail home too early even if the weather looks warm?',
+			[
+				{
+					toolId: 'weather_lookup',
+					args: { fromMile: 109.8 },
+					summary: 'Cached weather near mile 109.8: partly cloudy with changing mountain conditions (high 67F / low 51F, wind 9 mph). Mountain weather changes quickly; refresh before safety-critical choices.',
+					confidence: 'medium',
+					receipts: []
+				}
+			]
+		),
+		'Mail-home gear note: do not mail home rain protection, insulation or warm layers, water treatment, first aid, battery or navigation power, or sleep safety just because one forecast looks warm. Recheck the forecast, next town timing, and replacement options before sending gear forward or home.\n\nWeather note: Cached weather near mile 109.8: partly cloudy with changing mountain conditions (high 67F / low 51F, wind 9 mph). Mountain weather changes quickly; refresh before safety-critical choices.'
 	);
 
 	assert.equal(

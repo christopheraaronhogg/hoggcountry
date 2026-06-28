@@ -71,6 +71,14 @@ const FOOD_ON_MOVE_NOTE =
 	'Food-packing note: before leaving camp, split out the next 3-4 hours of snacks and lunch into reachable pockets or the top/outside of the pack; keep cook/camp meals, extra days of food, and trash separate so hiking food stays accessible for steady energy and better decisions.';
 const COLD_RAIN_CAMP_NOTE =
 	'Cold-rain camping note: treat wet-cold exposure as hypothermia risk, protect the dry sleep layer and warm layer first, set up early in a legal protected spot, keep the filter warm, and stop or bail out if the sleep system or camp setup cannot stay dry.';
+const DRY_CLOTHES_PRIORITY_NOTE =
+	'Dry-clothes priority note: keep the sleep base layer, socks, insulation or warm layer, quilt or bag, and critical electronics protected in a pack liner or dry bag. Wet-cold mistakes can become hypothermia risk, so keep the sleep, warmth, and electronics core dry while rain gear stays accessible.';
+const BATTERY_BANK_PLANNING_NOTE =
+	'Battery-bank planning note: size the bank from phone model, days between town charging, navigation, photos, family check-ins, local AI/model use, and cold or rain margin. Before trail, run an airplane-mode rehearsal with Scout, maps, photos, and check-ins to measure actual drain instead of guessing.';
+const FIRST_AID_KIT_NOTE =
+	'First-aid kit note: keep it compact and personal: prevention tape, blister treatment, wound basics, and normal personal meds. Do not diagnose; stop or get medical help for spreading redness, drainage, fever, worsening pain, swelling, or changed gait.';
+const MAIL_HOME_GEAR_NOTE =
+	'Mail-home gear note: do not mail home rain protection, insulation or warm layers, water treatment, first aid, battery or navigation power, or sleep safety just because one forecast looks warm. Recheck the forecast, next town timing, and replacement options before sending gear forward or home.';
 const HEAT_WATER_NOTE =
 	'Heat-water safety note: if dizziness, confusion, headache, nausea, cramps, chills, stopped sweating, or worsening symptoms show up, stop hiking, get shade, cool down, sip treated water with electrolytes if available, and escalate through the emergency plan if symptoms do not improve.';
 const RIDGE_WATER_NOTE =
@@ -373,6 +381,21 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	if (isColdRainCampPrompt(lowerPrompt) && !mentionsColdRainCampSafety(answer)) {
 		answer = appendSentence(answer, COLD_RAIN_CAMP_NOTE);
 	}
+	if (isDryClothesPriorityPrompt(lowerPrompt) && !mentionsDryClothesPriority(answer)) {
+		answer = appendSentence(answer, DRY_CLOTHES_PRIORITY_NOTE);
+	}
+	if (isBatteryBankPlanningPrompt(lowerPrompt) && !mentionsBatteryBankPlanning(answer)) {
+		answer = appendSentence(answer, BATTERY_BANK_PLANNING_NOTE);
+	}
+	if (isFirstAidKitPrompt(lowerPrompt) && !mentionsFirstAidKitSafety(answer)) {
+		answer = appendSentence(answer, FIRST_AID_KIT_NOTE);
+	}
+	if (isMailHomeGearSafetyPrompt(lowerPrompt)) {
+		answer = removeMailHomeGearConfusion(answer);
+		if (!firstParagraphMentionsMailHomeGearSafety(answer)) {
+			answer = prependSentence(answer, MAIL_HOME_GEAR_NOTE);
+		}
+	}
 	if (isBadWeatherNeroPrompt(lowerPrompt) && !mentionsBadWeatherNeroDecision(answer)) {
 		answer = appendSentence(answer, BAD_WEATHER_NERO_NOTE);
 	}
@@ -501,6 +524,21 @@ function removeMisappliedHeatIllnessDrift(answer: string): string {
 			const sentences = splitSentences(paragraph)
 				.map((sentence) => sentence.trim())
 				.filter((sentence) => sentence && !containsHeatIllnessDrift(sentence));
+			return sentences.join(' ');
+		})
+		.filter(Boolean)
+		.join('\n\n')
+		.trim();
+	return filtered || answer;
+}
+
+function removeMailHomeGearConfusion(answer: string): string {
+	const filtered = answer
+		.split(/\n{2,}/u)
+		.map((paragraph) => {
+			const sentences = splitSentences(paragraph)
+				.map((sentence) => sentence.trim())
+				.filter((sentence) => sentence && !containsMailHomeGearConfusion(sentence));
 			return sentences.join(' ');
 		})
 		.filter(Boolean)
@@ -772,6 +810,26 @@ function isFoodOnMovePrompt(prompt: string): boolean {
 function isColdRainCampPrompt(prompt: string): boolean {
 	return /\b(?:cold rain|wet cold|wet-cold|cold.*rain|rain.*cold)\b/u.test(prompt) &&
 		/\b(?:camp|camping|sleep|tonight|shelter|setup|set up)\b/u.test(prompt);
+}
+
+function isDryClothesPriorityPrompt(prompt: string): boolean {
+	return /\b(?:stay dry|keep .*dry|dry at all costs|must stay dry)\b/u.test(prompt) &&
+		/\b(?:clothes|layers?|socks?|insulation|electronics?|pack|sleep)\b/u.test(prompt) &&
+		!/\b(?:town|laundry|laundromat|drying room)\b/u.test(prompt);
+}
+
+function isBatteryBankPlanningPrompt(prompt: string): boolean {
+	return /\b(?:battery bank|battery|power bank|charging)\b/u.test(prompt) &&
+		/\b(?:scout|maps?|photos?|family|check-ins?|checkins?|local ai|model|phone)\b/u.test(prompt);
+}
+
+function isFirstAidKitPrompt(prompt: string): boolean {
+	return /\b(?:first[-\s]?aid|blister kit|blisters?|wound basics?|normal trail problems?)\b/u.test(prompt);
+}
+
+function isMailHomeGearSafetyPrompt(prompt: string): boolean {
+	return /\b(?:mail|send|ship)\b[^.?!\n]*(?:home|ahead|forward)|\b(?:home|ahead|forward)\b[^.?!\n]*(?:mail|send|ship)\b/u.test(prompt) &&
+		/\b(?:gear|rain|warm|weather|looks warm|warm spell|insulation|water treatment|battery|sleep)\b/u.test(prompt);
 }
 
 function weatherLookupSummary(toolInvocations: ToolInvocationRecord[]): string | null {
@@ -1068,6 +1126,54 @@ function mentionsColdRainCampSafety(answer: string): boolean {
 	return mentionsHypothermia && mentionsDrySleep && mentionsStopBail;
 }
 
+function mentionsDryClothesPriority(answer: string): boolean {
+	const mentionsSleep = /\b(?:sleep base layer|sleep layer|sleep clothes|sleep system|quilt|bag)\b/iu.test(answer);
+	const mentionsSocks = /\bsocks?\b/iu.test(answer);
+	const mentionsWarmLayer = /\b(?:insulation|warm layer|puffy|fleece)\b/iu.test(answer);
+	const mentionsElectronics = /\b(?:electronics|phone|battery bank|battery|critical electronics)\b/iu.test(answer);
+	const mentionsDryMethod = /\b(?:pack liner|dry bag|liner|waterproof bag|trash compactor bag)\b/iu.test(answer);
+	const mentionsHypothermia = /\bhypothermia|wet[-\s]?cold/iu.test(answer);
+	return mentionsSleep && mentionsSocks && mentionsWarmLayer && mentionsElectronics && mentionsDryMethod && mentionsHypothermia;
+}
+
+function mentionsBatteryBankPlanning(answer: string): boolean {
+	const mentionsPhone = /\bphone model|model of your phone|your phone\b/iu.test(answer);
+	const mentionsTownDays = /\b(?:days? between towns?|days? between charging|town charging|time between charges|next charge)\b/iu.test(answer);
+	const mentionsUsePattern = /\b(?:navigation|maps?|photos?|family check-ins?|checkins?|check-ins?)\b/iu.test(answer);
+	const mentionsLocalAi = /\b(?:local ai|model|gemma|scout)\b/iu.test(answer);
+	const mentionsDrainTest = /\b(?:actual drain|drain test|airplane-mode rehearsal|test.*drain|measure.*drain|instead of guessing)\b/iu.test(answer);
+	return mentionsPhone && mentionsTownDays && mentionsUsePattern && mentionsLocalAi && mentionsDrainTest;
+}
+
+function mentionsFirstAidKitSafety(answer: string): boolean {
+	const mentionsKitBasics = /\b(?:prevention tape|tape)\b/iu.test(answer) &&
+		/\b(?:blister treatment|blisters?|moleskin|padding)\b/iu.test(answer) &&
+		/\b(?:wound basics|wound care|cuts?|scrapes?)\b/iu.test(answer) &&
+		/\b(?:personal meds|personal medications|normal meds|normal personal meds)\b/iu.test(answer);
+	const mentionsEscalation = /\b(?:spreading redness|drainage|fever|worsening pain|swelling|changed gait|changes gait)\b/iu.test(answer);
+	const avoidsDiagnosis = /\b(?:do not diagnose|don't diagnose|medical help|get help|clinician)\b/iu.test(answer);
+	return mentionsKitBasics && mentionsEscalation && avoidsDiagnosis;
+}
+
+function mentionsMailHomeGearSafety(answer: string): boolean {
+	const mentionsRain = /\b(?:rain protection|rain jacket|rain pants|rain gear|rain shell)\b/iu.test(answer);
+	const mentionsWarmth = /\b(?:insulation|warm layers?|warmth|puffy|fleece)\b/iu.test(answer);
+	const mentionsWater = /\b(?:water treatment|water filter|backup tablets?|filter)\b/iu.test(answer);
+	const mentionsSafetyPower = /\b(?:first aid|battery|navigation|phone power)\b/iu.test(answer);
+	const mentionsSleep = /\b(?:sleep safety|sleep system|quilt|sleep layer|sleep gear)\b/iu.test(answer);
+	const avoidsWarmSpell = /\b(?:warm spell|looks warm|forecast looks warm|one forecast|short warm|current forecast)\b/iu.test(answer);
+	const mentionsTownTiming = /\b(?:next town|town timing|replacement|replace|forecast)\b/iu.test(answer);
+	return mentionsRain && mentionsWarmth && mentionsWater && mentionsSafetyPower && mentionsSleep && avoidsWarmSpell && mentionsTownTiming;
+}
+
+function firstParagraphMentionsMailHomeGearSafety(answer: string): boolean {
+	return mentionsMailHomeGearSafety(firstParagraph(answer));
+}
+
+function containsMailHomeGearConfusion(sentence: string): boolean {
+	return /\b(?:not mail home anything that is not essential|is not essential for your immediate needs|not essential for your current situation|isn't critical for survival|not critical for survival|easily replaceable|personal items|afford to leave behind|things? that (?:are|is) not necessary|not necessary for your current situation|aren't necessary for your current situation)\b/iu.test(sentence);
+}
+
 function containsBibleDrift(paragraph: string): boolean {
 	return /\b(?:bible|scripture|verse|verses|psalms?|isaiah|john|romans|proverbs?|timothy|lord|god|christ|jesus)\b/iu.test(paragraph) ||
 		/[“"]?[A-Z][^.!?]{10,}\b(?:I am with you|do not fear|trust in the lord|righteous right hand)\b/iu.test(paragraph);
@@ -1145,6 +1251,9 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For camp-shoes questions, balance foot recovery, shelter/camp comfort, stream crossings, hygiene, and weight. Do not frame recovery comfort as laziness. Suggest testing the shoes and reassessing after the first section or first town, not deciding from ounces alone.`,
 		`For food-packing or eating-while-hiking questions, tell the hiker to split out today's snacks and lunch before leaving camp, keep them reachable without unpacking, keep cook/camp meals and extra days of food separate, and connect accessible food to steady energy, warmth, and better water/shelter/mileage decisions. Do not give medical nutrition advice.`,
 		`For cold-rain camping questions, explicitly name hypothermia risk, protect the dry sleep layer and warm layer first, set up early in a legal protected spot, keep the filter warm, verify the current forecast, and stop or bail out if the sleep system or camp setup cannot stay dry.`,
+		`For dry-clothes priority questions, name the sleep base layer, socks, insulation or warm layer, quilt or bag, and critical electronics as dry priorities. Give a simple packing method such as pack liner or dry bag, keep rain gear accessible, and connect wet-cold mistakes to hypothermia risk.`,
+		`For battery-bank planning questions, ask for phone model, days between town charging, navigation/maps/photos/family check-in habits, local AI/model use, and cold or rain margin. Recommend an airplane-mode rehearsal with the actual phone and bank to measure real drain instead of guessing. Do not promise live location or local AI battery impact.`,
+		`For mail-home gear questions, do not mail home rain protection, insulation or warm layers, water treatment, first aid, battery/navigation power, or sleep safety just because one forecast looks warm. Tie the decision to current forecast, next town timing, and replacement options.`,
 		`For family check-in questions, set cadence, content, normal gap expectations, escalation window, emergency contacts, itinerary sharing, and the live-location caveat. Use phrasing like "if they do not hear from you" or "if you miss a check-in"; never write "if you don't hear from you." Repeated missed check-ins, bad weather, health concerns, or itinerary mismatch should escalate beyond Scout.`,
 		`For trail budget questions, separate daily burn from town spikes, hostels/shuttles/laundry/meals, gear replacement, and emergency cushion. Keep advice flexible around actual pace and services, and do not provide financial guarantees.`,
 		`For zero, nero, or town-rest questions, visibly weigh body condition or injury, cached/current weather, town chores, budget, and the next section. Frame rest as an investment, not failure. If weather was fetched, include the weather summary or verification caveat in the decision.`,
