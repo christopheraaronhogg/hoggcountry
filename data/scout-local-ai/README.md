@@ -136,6 +136,20 @@ The status output also tracks below-5 review debt explicitly: a completed
 below-5 review is marked as needing backlog/plan generation or already planned,
 so improvement work cannot hide behind the broader "review is not 100/100" gate.
 
+To rebuild the local history database and standalone timeline view:
+
+```sh
+npm run history:scout-local-ai
+```
+
+That writes `data/scout-local-ai/history/scout-local-ai-history.json` and
+`data/scout-local-ai/history/scout-local-ai-history.html`. The JSON records each
+run, per-case answer evolution, ratings, score deltas, model/runtime/build proof
+lane, tool/source evidence, answer-quality scan results, and commit-level
+interventions. The HTML timeline includes filters for domain and `documentTask`
+so reading-only, writing, and reading-writing cases can be reviewed separately
+instead of blending document-agent progress into general hiker Q&A.
+
 To audit the whole original goal against current evidence, run:
 
 ```sh

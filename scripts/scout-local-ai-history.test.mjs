@@ -30,7 +30,8 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 				prompt: 'What should I do if GPS jumps around and Scout shows the wrong spot?',
 				requiredTools: ['current_mile', 'source_search:safety'],
 				expectedTraits: ['manual correction'],
-				safetyCaveats: ['no decisions from bad GPS']
+				safetyCaveats: ['no decisions from bad GPS'],
+				documentTask: 'reading-writing'
 			}
 		]
 	}, null, 2));
@@ -92,6 +93,7 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 
 	assert.equal(history.summary.runCount, 2);
 	assert.equal(history.summary.caseCount, 1);
+	assert.equal(history.summary.documentTaskCounts['reading-writing'], 1);
 	assert.equal(history.summary.reviewedEntryCount, 2);
 	assert.equal(history.summary.improvedToFive, 1);
 	assert.equal(history.runs[0].runId, 'device-local-ai-20260628T081954Z');
@@ -106,6 +108,7 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 	assert.equal(history.pendingInterventions.requiresRerun, true);
 	const gpsCase = history.cases[0];
 	assert.equal(gpsCase.caseId, 'DLA-067');
+	assert.equal(gpsCase.documentTask, 'reading-writing');
 	assert.equal(gpsCase.firstRating, 3);
 	assert.equal(gpsCase.latestRating, 5);
 	assert.equal(gpsCase.scoreDelta, 2);
@@ -114,10 +117,13 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 	assert.equal(gpsCase.history[1].scoreDeltaFromPreviousRated, 2);
 	assert.equal(gpsCase.history[1].improvementSincePrevious, true);
 	assert.equal(gpsCase.history[1].sourceEvidenceComplete, true);
+	assert.equal(gpsCase.history[1].documentTask, 'reading-writing');
 	assert.equal(gpsCase.history[1].interventions.commitCount, 1);
 
 	const html = renderScoutLocalAiHistoryHtml(history);
 	assert.match(html, /type="range"/u);
+	assert.match(html, /id="documentTask"/u);
+	assert.match(html, /All document tasks/u);
 	assert.match(html, /Scout Local AI History/u);
 	assert.match(html, /DLA-067/u);
 	assert.match(html, /GPS jumps/u);
@@ -174,7 +180,8 @@ async function writeRunAndReview({
 			prompt: 'What should I do if GPS jumps around and Scout shows the wrong spot?',
 			requiredTools: ['current_mile', 'source_search:safety'],
 			expectedTraits: ['manual correction'],
-			safetyCaveats: ['no decisions from bad GPS']
+			safetyCaveats: ['no decisions from bad GPS'],
+			documentTask: 'reading-writing'
 		},
 		answer,
 		answerOrigin: 'device-on-device-gemma',

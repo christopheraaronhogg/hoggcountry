@@ -52,6 +52,7 @@ export async function buildScoutLocalAiHistory({
 	gitCommits = null
 } = {}) {
 	const suite = await readJsonFile(suitePath);
+	const suiteCases = new Map((suite.cases ?? []).map((testCase) => [String(testCase.id ?? ''), testCase]));
 	const reviews = await loadJsonMap(reviewDir, (file, value) => reviewRunId(value) ?? runIdFromFile(file, '.review.json'));
 	const scans = await loadJsonMap(scanDir, (file, value) => value?.runId ?? runIdFromFile(file, '.scan.json'));
 	const commits = Array.isArray(gitCommits) ? normalizeGitCommits(gitCommits) : (includeGit ? await loadGitCommits(repoRoot) : []);
@@ -78,20 +79,22 @@ export async function buildScoutLocalAiHistory({
 		for (const result of run.results) {
 			const caseId = String(result.caseId ?? result.case?.id ?? '');
 			if (!caseId) continue;
+			const suiteCase = suiteCases.get(caseId) ?? null;
 			const reviewEntry = reviewCases.get(caseId) ?? null;
 			const scanEntry = scanCases.get(caseId) ?? null;
 			if (!caseMap.has(caseId)) {
 				caseMap.set(caseId, {
 					caseId,
-					domain: result.case?.domain ?? reviewEntry?.domain ?? null,
-					phase: result.case?.phase ?? reviewEntry?.phase ?? null,
-					prompt: result.case?.prompt ?? reviewEntry?.prompt ?? '',
-					expectedTraits: result.case?.expectedTraits ?? reviewEntry?.expectedTraits ?? [],
-					safetyCaveats: result.case?.safetyCaveats ?? reviewEntry?.safetyCaveats ?? [],
+					domain: result.case?.domain ?? reviewEntry?.domain ?? suiteCase?.domain ?? null,
+					phase: result.case?.phase ?? reviewEntry?.phase ?? suiteCase?.phase ?? null,
+					documentTask: result.case?.documentTask ?? reviewEntry?.documentTask ?? suiteCase?.documentTask ?? null,
+					prompt: result.case?.prompt ?? reviewEntry?.prompt ?? suiteCase?.prompt ?? '',
+					expectedTraits: result.case?.expectedTraits ?? reviewEntry?.expectedTraits ?? suiteCase?.expectedTraits ?? [],
+					safetyCaveats: result.case?.safetyCaveats ?? reviewEntry?.safetyCaveats ?? suiteCase?.safetyCaveats ?? [],
 					history: []
 				});
 			}
-			caseMap.get(caseId).history.push(buildCaseEntry({ result, reviewEntry, scanEntry, runRecord }));
+			caseMap.get(caseId).history.push(buildCaseEntry({ result, reviewEntry, scanEntry, runRecord, suiteCase }));
 		}
 	}
 
@@ -190,7 +193,7 @@ main {
 	align-items: start;
 }
 .panel { padding: 14px; }
-.controls { display: grid; grid-template-columns: 1fr 150px; gap: 10px; margin-bottom: 12px; }
+.controls { display: grid; grid-template-columns: 1fr 150px 170px; gap: 10px; margin-bottom: 12px; }
 input, select {
 	width: 100%;
 	border: 1px solid var(--line);
@@ -260,8 +263,9 @@ input, select {
 <main>
 <section class="panel">
 <div class="controls">
-<input id="search" type="search" placeholder="Search cases, prompts, answers">
-<select id="domain"></select>
+	<input id="search" type="search" placeholder="Search cases, prompts, answers">
+	<select id="domain"></select>
+	<select id="documentTask" aria-label="Document task"></select>
 </div>
 <div class="case-list" id="caseList"></div>
 </section>
@@ -277,21 +281,24 @@ input, select {
 <script id="history-data" type="application/json">${data}</script>
 <script>
 const historyData = JSON.parse(document.getElementById('history-data').textContent);
-const state = { runIndex: Math.max(0, historyData.runs.length - 1), caseId: historyData.cases[0]?.caseId ?? null, search: '', domain: 'all' };
+const state = { runIndex: Math.max(0, historyData.runs.length - 1), caseId: historyData.cases[0]?.caseId ?? null, search: '', domain: 'all', documentTask: 'all' };
 const runs = historyData.runs;
 const runSlider = document.getElementById('runSlider');
 const caseList = document.getElementById('caseList');
 const detail = document.getElementById('detail');
 const search = document.getElementById('search');
 const domain = document.getElementById('domain');
+const documentTask = document.getElementById('documentTask');
 document.getElementById('meta').textContent = [historyData.suite.suiteId, historyData.suite.version, historyData.suite.hash, 'generated ' + formatDate(historyData.generatedAt)].filter(Boolean).join(' | ');
 runSlider.max = String(Math.max(0, runs.length - 1));
 runSlider.value = String(state.runIndex);
 document.getElementById('timelineStart').textContent = runs[0] ? shortRun(runs[0]) : 'No runs';
 document.getElementById('timelineEnd').textContent = runs.length ? shortRun(runs[runs.length - 1]) : 'No runs';
 domain.innerHTML = ['all', ...new Set(historyData.cases.map((item) => item.domain).filter(Boolean).sort())].map((value) => '<option value="' + escapeHtml(value) + '">' + escapeHtml(value === 'all' ? 'All domains' : value) + '</option>').join('');
+documentTask.innerHTML = ['all', ...new Set(historyData.cases.map((item) => item.documentTask).filter(Boolean).sort())].map((value) => '<option value="' + escapeHtml(value) + '">' + escapeHtml(value === 'all' ? 'All document tasks' : value) + '</option>').join('');
 search.addEventListener('input', () => { state.search = search.value.toLowerCase(); render(); });
 domain.addEventListener('change', () => { state.domain = domain.value; render(); });
+documentTask.addEventListener('change', () => { state.documentTask = documentTask.value; render(); });
 runSlider.addEventListener('input', () => { state.runIndex = Number(runSlider.value); render(); });
 renderPendingChanges();
 render();
@@ -322,6 +329,8 @@ function renderMetrics(run) {
 	const metrics = [
 		['Runs', historyData.summary.runCount],
 		['Cases', historyData.summary.caseCount],
+		['Reading Cases', (historyData.summary.documentTaskCounts?.reading ?? 0) + (historyData.summary.documentTaskCounts?.['reading-writing'] ?? 0)],
+		['Writing Cases', (historyData.summary.documentTaskCounts?.writing ?? 0) + (historyData.summary.documentTaskCounts?.['reading-writing'] ?? 0)],
 		['Reviewed Entries', historyData.summary.reviewedEntryCount],
 		['Current Run Rated', run?.reviewSummary?.rated ?? 0],
 		['Current Run 5/5', run?.reviewSummary?.ratingCounts?.['5'] ?? 0],
@@ -337,9 +346,10 @@ function filteredCases(run) {
 	const needle = state.search;
 	return historyData.cases.filter((item) => {
 		if (state.domain !== 'all' && item.domain !== state.domain) return false;
+		if (state.documentTask !== 'all' && item.documentTask !== state.documentTask) return false;
 		if (!needle) return true;
 		const entry = entryAtRun(item, run);
-		return [item.caseId, item.domain, item.prompt, entry?.answer, entry?.notes, entry?.improvementTask, ...(entry?.interventions?.categories ?? []), ...(entry?.interventions?.commits ?? []).map((commit) => commit.subject)].some((value) => String(value ?? '').toLowerCase().includes(needle));
+		return [item.caseId, item.domain, item.documentTask, item.prompt, entry?.answer, entry?.notes, entry?.improvementTask, ...(entry?.interventions?.categories ?? []), ...(entry?.interventions?.commits ?? []).map((commit) => commit.subject)].some((value) => String(value ?? '').toLowerCase().includes(needle));
 	});
 }
 function caseButton(item, run) {
@@ -352,7 +362,7 @@ function renderDetail(item, run) {
 	if (!item) { detail.innerHTML = '<p>No case selected.</p>'; return; }
 	const entries = item.history.filter((entry) => !run || entry.runOrder <= run.order);
 	const current = entryAtRun(item, run);
-	detail.innerHTML = '<h2>' + escapeHtml(item.caseId + ' - ' + (item.domain ?? '')) + '</h2>' +
+	detail.innerHTML = '<h2>' + escapeHtml([item.caseId, item.domain, item.documentTask].filter(Boolean).join(' - ')) + '</h2>' +
 		'<p class="question">' + escapeHtml(item.prompt) + '</p>' +
 		'<div class="answer-grid">' + entries.map((entry) => answerCard(entry, current)).join('') + '</div>';
 }
@@ -436,7 +446,7 @@ function buildRunRecord({ repoRoot, run, runPath, review, reviewSummary, scan, s
 	};
 }
 
-function buildCaseEntry({ result, reviewEntry, scanEntry, runRecord }) {
+function buildCaseEntry({ result, reviewEntry, scanEntry, runRecord, suiteCase }) {
 	const required = result.toolExpectations?.required ?? result.case?.requiredTools ?? [];
 	const sourceGaps = sourceEvidenceProblems(required, result.toolInvocations ?? []);
 	return {
@@ -448,6 +458,7 @@ function buildCaseEntry({ result, reviewEntry, scanEntry, runRecord }) {
 		app: runRecord.app,
 		commit: runRecord.commit,
 		answerOrigin: result.answerOrigin ?? null,
+		documentTask: result.case?.documentTask ?? reviewEntry?.documentTask ?? suiteCase?.documentTask ?? null,
 		mode: result.mode ?? null,
 		provider: result.provider ?? null,
 		generatedAt: result.generatedAt ?? null,
@@ -504,6 +515,9 @@ function finalizeCaseHistory(record, runOrder, runById) {
 	const rated = record.history.filter((entry) => entry.rating !== null);
 	const firstRated = rated[0] ?? null;
 	const latestRated = rated.at(-1) ?? null;
+	if (!record.documentTask) {
+		record.documentTask = record.history.find((entry) => entry.documentTask)?.documentTask ?? null;
+	}
 	record.runCount = record.history.length;
 	record.answerChangeCount = answerChangeCount;
 	record.firstRating = firstRated?.rating ?? null;
@@ -527,6 +541,7 @@ function buildHistorySummary(runs, cases, pendingInterventions = summarizeCommit
 	return {
 		runCount: runs.length,
 		caseCount: cases.length,
+		documentTaskCounts: Object.fromEntries(countBy(cases, (item) => item.documentTask ?? 'unknown')),
 		reviewedEntryCount,
 		improvedToFive,
 		latestRatings,
