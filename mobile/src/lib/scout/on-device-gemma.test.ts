@@ -258,6 +258,9 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /For "test airplane mode" or offline rehearsal questions/);
 	assert.match(systemContext, /ask a water, weather, or offline Scout question/);
 	assert.match(systemContext, /go back online and refresh before relying on weather, closures, water reports, town services, or safety-critical facts/);
+	assert.match(systemContext, /For "what should I screenshot before day one"/);
+	assert.match(systemContext, /next resupply or town\/bailout plan/);
+	assert.match(systemContext, /do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat/);
 	assert.match(systemContext, /For model-downloading, model status, stuck download, failed download/);
 	assert.match(systemContext, /not ready for offline Scout yet/);
 	assert.match(systemContext, /check Scout model status\/progress until it says ready/);
@@ -444,6 +447,20 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.match(airplaneModeRehearsalAnswer, /cached field pack\/local model\/saved docs/);
 	assert.match(airplaneModeRehearsalAnswer, /not that live data is current/);
 	assert.match(airplaneModeRehearsalAnswer, /Go back online and refresh before relying on weather, closures, water reports, town services, or other safety-critical facts/);
+
+	const screenshotPrepAnswer = polishOnDeviceAnswer(
+		'You should take a screenshot of your current location, your itinerary, and any critical contact information. This is a basic safety measure for when technology fails.\n\nVerify that your phone is charged and that you have downloaded any necessary offline maps or documents before you leave service.\n\nMake sure you have saved your itinerary and emergency contacts somewhere you can access them offline, as Scout advises keeping personal documents separate from the trail data.',
+		'What should I screenshot before day one in case the app or signal acts up?'
+	);
+	assert.match(screenshotPrepAnswer, /Before day one, screenshot or save offline/);
+	assert.match(screenshotPrepAnswer, /itinerary and check-in plan/);
+	assert.match(screenshotPrepAnswer, /emergency contacts/);
+	assert.match(screenshotPrepAnswer, /next resupply or town\/bailout plan/);
+	assert.match(screenshotPrepAnswer, /offline map download\/status/);
+	assert.match(screenshotPrepAnswer, /Scout field-pack\/local-model status/);
+	assert.match(screenshotPrepAnswer, /key permits or reservations/);
+	assert.match(screenshotPrepAnswer, /Keep copies outside Scout too/);
+	assert.match(screenshotPrepAnswer, /Do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat/);
 
 	assert.equal(
 		polishOnDeviceAnswer(
