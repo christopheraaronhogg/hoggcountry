@@ -1532,7 +1532,7 @@ test('status command lets suite-compatible TestFlight device proof override stal
 	);
 	assert.match(textResult.stdout, /Latest full device answer-quality scan: `device-status-suite-compatible-build13` review-needed; 100\/100 flagged, 109 errors, \d+ warnings/u);
 	assert.match(textResult.stdout, /Answer-quality boundary: Heuristic scan only/u);
-	assert.match(textResult.stdout, /Top answer-quality cases: DLA-001 \(very-short-answer:warning, unfinished-tail:error\)/u);
+	assert.match(textResult.stdout, /Top answer-quality cases: DLA-001 \(very-short-answer:warning, unfinished-tail:error, source-grounding-visible-missing:warning\)/u);
 });
 
 test('status command does not accept full device runs from non-suite-compatible TestFlight builds', async () => {
@@ -3843,7 +3843,7 @@ test('device run intake validates exports and creates review packet', async () =
 	const scan = JSON.parse(await readFile(join(outputDir, 'answer-quality-scans', `${run.runId}.scan.json`), 'utf8'));
 
 	assert.match(importResult.stdout, /Answer-quality scan:/u);
-	assert.match(importResult.stdout, /Answer-quality flags: 2 flagged, 2 errors, 2 warnings/u);
+	assert.match(importResult.stdout, /Answer-quality flags: 2 flagged, 2 errors, 4 warnings/u);
 	assert.match(importResult.stdout, /Progress check: npm run review-status:scout-local-ai .* --scan /u);
 	assert.match(importResult.stdout, /Next focused card: npm run review-status:scout-local-ai .* --scan .* --next/u);
 	assert.equal(imported.evidenceLane, 'device-on-device-gemma');
@@ -3853,9 +3853,10 @@ test('device run intake validates exports and creates review packet', async () =
 	assert.equal(scan.caseCount, 2);
 	assert.equal(scan.flaggedCount, 2);
 	assert.equal(scan.errorCount, 2);
-	assert.equal(scan.warningCount, 2);
+	assert.equal(scan.warningCount, 4);
 	assert.equal(scan.byCheck['unfinished-tail'], 2);
 	assert.equal(scan.byCheck['very-short-answer'], 2);
+	assert.equal(scan.byCheck['source-grounding-visible-missing'], 2);
 	assert.equal(review.cases.length, 2);
 	assert.equal(review.suiteVersion, suite.version);
 	assert.equal(review.suiteHash, scoutLocalAiSuiteHash(suite));
@@ -3931,10 +3932,10 @@ test('device run intake validates exports and creates review packet', async () =
 	assert.match(packet, /## Review-first triage/u);
 	assert.match(packet, /Review-first cases: 2\/2/u);
 	assert.match(packet, /Signals: review-first: answer-quality scan=2/u);
-	assert.match(packet, /Answer-quality flags: unfinished-tail=2, very-short-answer=2/u);
+	assert.match(packet, /Answer-quality flags: source-grounding-visible-missing=2, unfinished-tail=2, very-short-answer=2/u);
 	assert.match(packet, /## Review queue summary/u);
 	assert.match(packet, /Likely owner/u);
-	assert.match(packet, /\| DLA-\d{3} \| [^|]+ \| [^|]+ \| review-first: answer-quality scan \| tool-routing \| bad-routing, weak-tool \| answer quality: very-short-answer, unfinished-tail \|/u);
+	assert.match(packet, /\| DLA-\d{3} \| [^|]+ \| [^|]+ \| review-first: answer-quality scan \| tool-routing \| bad-routing, weak-tool \| answer quality: very-short-answer, unfinished-tail, source-grounding-visible-missing \|/u);
 	assert.match(packet, /## Rating scale/u);
 	assert.match(packet, /## Reviewer field choices/u);
 	assert.match(packet, /## Independent review gates/u);

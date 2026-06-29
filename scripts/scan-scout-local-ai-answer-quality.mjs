@@ -115,6 +115,9 @@ function runAnswerChecks({ result, prompt, answer }) {
 	if (/\[(?:source_search|open_source_doc|next_water|next_shelter|next_town|weather_lookup|current_mile|bible_search|loadout_check|trail_conditions|park_services)\]/iu.test(trimmed)) {
 		add(checks, 'internal-tool-reference', 'error', 'Answer exposes internal tool labels.');
 	}
+	if (sourceGroundingVisibleMissing({ result, answer: trimmed })) {
+		add(checks, 'source-grounding-visible-missing', 'warning', 'Source-backed answer opened a document but does not visibly name its source/document basis.');
+	}
 	if (/^#{1,6}\s/mu.test(trimmed) || /\*\*/u.test(trimmed)) {
 		add(checks, 'markdown-formatting', 'warning', 'Answer contains Markdown formatting even though Scout chat expects plain text.');
 	}
@@ -199,6 +202,21 @@ function townOfflineReadinessMissing({ prompt, answer }) {
 		/weather/iu.test(answer) &&
 		/closure/iu.test(answer) &&
 		/(?:stale|not current|until refreshed|refresh again|remains current indefinitely)/iu.test(answer));
+}
+
+function sourceGroundingVisibleMissing({ result, answer }) {
+	const requiredTools = [
+		...(result?.case?.requiredTools ?? []),
+		...(result?.toolExpectations?.required ?? [])
+	];
+	const openedSourceDoc = requiredTools.some((tool) => String(tool).startsWith('open_source_doc')) ||
+		(result?.toolInvocations ?? []).some((tool) => tool?.toolId === 'open_source_doc');
+	if (!openedSourceDoc) return false;
+	return !mentionsVisibleSourceBasis(answer);
+}
+
+function mentionsVisibleSourceBasis(answer) {
+	return /\b(?:source|sources|source-backed|document|documents|guide|guidance|field[-\s]?pack|cached|according to|saved|vault|KJV|Bible|forecast|alert|loadout|discipline|weather note|water note|shelter note|town note|terrain note|medical-advice boundary|airplane-mode boundary)\b/iu.test(answer);
 }
 
 function documentWritingMissing({ result, prompt, answer }) {

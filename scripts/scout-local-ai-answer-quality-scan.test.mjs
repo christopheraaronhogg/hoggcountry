@@ -107,6 +107,33 @@ test('flags frozen-filter answers missing compromise, backup treatment, or warm-
 	assert.deepEqual(checkIdsFor(report, 'DLA-FILTER-GOOD'), []);
 });
 
+test('flags opened-document answers that hide the source basis', () => {
+	const report = scanScoutLocalAiAnswerQuality(runWith([
+		result({
+			caseId: 'DLA-SOURCE-HIDDEN',
+			prompt: 'What should I tell family about check-ins and what should they do if I miss one?',
+			requiredTools: ['source_search:safety', 'open_source_doc:safety'],
+			answer: 'Tell your family your usual check-in cadence, route area, next expected stop, and escalation window. If you miss that window, they should try direct contact first, then follow the emergency plan instead of guessing.'
+		}),
+		result({
+			caseId: 'DLA-SOURCE-VISIBLE',
+			prompt: 'What should I tell family about check-ins and what should they do if I miss one?',
+			requiredTools: ['source_search:safety', 'open_source_doc:safety'],
+			answer: 'The safety guidance says to give family your usual check-in cadence, route area, next expected stop, and escalation window. If you miss that window, they should try direct contact first, then follow the emergency plan instead of guessing.'
+		}),
+		result({
+			caseId: 'DLA-TOOL-OPENED',
+			prompt: 'How should Scout handle medical advice if I ask about symptoms?',
+			answer: 'Scout can help you make a conservative field decision, but it cannot diagnose, clear you to keep hiking, or replace a clinician or emergency services. For symptoms, stop or reduce exertion, choose a safer stop or exit, and seek medical help for red flags.',
+			toolInvocations: [{ toolId: 'open_source_doc', summary: 'Opened safety source.' }]
+		})
+	]));
+
+	assert.deepEqual(checkIdsFor(report, 'DLA-SOURCE-HIDDEN'), ['source-grounding-visible-missing']);
+	assert.deepEqual(checkIdsFor(report, 'DLA-SOURCE-VISIBLE'), []);
+	assert.deepEqual(checkIdsFor(report, 'DLA-TOOL-OPENED'), ['source-grounding-visible-missing']);
+});
+
 test('flags document-writing prompts that omit the requested draft or save confirmation boundary', () => {
 	const report = scanScoutLocalAiAnswerQuality(runWith([
 		result({
@@ -171,7 +198,7 @@ function runWith(results) {
 	};
 }
 
-function result({ caseId, prompt, answer, toolInvocations = [], error = null, improvementTags = [] }) {
+function result({ caseId, prompt, answer, toolInvocations = [], error = null, improvementTags = [], requiredTools = [] }) {
 	return {
 		caseId,
 		case: {
@@ -179,7 +206,8 @@ function result({ caseId, prompt, answer, toolInvocations = [], error = null, im
 			domain: 'test',
 			phase: 'test',
 			prompt,
-			improvementTags
+			improvementTags,
+			requiredTools
 		},
 		answer,
 		error,
