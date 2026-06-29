@@ -30,6 +30,18 @@ draft, but a 5/5 review has to verify the artifact separately: source-backed
 facts must stay separate from placeholders, assumptions, and open questions, and
 TestFlight/iPhone proof cannot be blended with simulator, browser, cloud, or
 scaffold evidence.
+The contract's `contextIsolationProtocol` is the fresh-context rule: each case
+runs from declared inputs only. Follow-up cases can use a declared conversation
+fixture, but they cannot borrow the previous answer generated earlier in the
+same run. New transcripts record `caseContext` so reviewers can tell standalone
+cases from intentional follow-up fixtures and targeted reruns stay comparable to
+full-suite runs.
+The contract's `fieldDecisionToolAuthority` is the local-model safety net for
+Dad's most important trail questions: next water, next town/resupply, today's
+difficulty, tomorrow/stale weather, and offline readiness. Those answers must
+start from deterministic cached tools and receipts. The model can explain the
+decision, but fluent prose cannot substitute for missing water/town/weather/
+terrain/source evidence.
 
 The loop:
 

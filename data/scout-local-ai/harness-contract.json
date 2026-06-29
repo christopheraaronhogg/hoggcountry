@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "contractId": "scout-local-ai-sovereign-harness",
-  "version": "2026-06-29.1",
+  "version": "2026-06-29.2",
   "northStar": "Keep Scout's useful behavior in owned, testable harness assets so the model can be swapped without changing what field-ready answers require.",
   "proofDomain": {
     "current": "Appalachian Trail hiker and document-agent questions for Dad's Hoggcountry app",
@@ -87,6 +87,27 @@
       "A model may draft prose, but deterministic tools and document contracts remain the authority for trail facts, source-backed claims, and user-owned document writes."
     ]
   },
+  "contextIsolationProtocol": {
+    "rule": "Each eval case must run as a fresh task with only declared case state, current location/profile context, cached field-pack data, user-vault summaries, relevant source documents, and tool schemas. Prior answers, review notes, and hidden chat history cannot leak into the next case.",
+    "caseInputs": [
+      "suite case prompt and rubric",
+      "declared current mile/profile state",
+      "cached field pack and bundled source documents",
+      "declared user-vault document summaries or draft fixtures",
+      "declared conversation fixture only when a case explicitly tests follow-up behavior"
+    ],
+    "mustRecord": [
+      "caseContext.mode",
+      "caseContext.source",
+      "caseContext.fixtureId",
+      "caseContext.conversationTurns"
+    ],
+    "conversationFixturePolicy": [
+      "Follow-up cases may use a declared conversation fixture, but not a previous answer generated earlier in the same run.",
+      "A targeted rerun of a follow-up case must receive the same declared fixture as the full-suite run.",
+      "The exported transcript must identify the fixture so reviewers can separate intentional context from hidden leakage."
+    ]
+  },
   "sourceClasses": [
     "bundled_app_documents",
     "structured_trail_data",
@@ -151,6 +172,93 @@
       "rule": "Weather answers must cite cached or fetched forecast timing and avoid pretending stale weather is live."
     }
   ],
+  "fieldDecisionToolAuthority": {
+    "rule": "For field-critical hiker decisions, deterministic cached tools and source receipts are the authority. The model may explain the decision, but it cannot replace missing tool evidence with fluent prose.",
+    "decisionGates": [
+      {
+        "id": "next-water",
+        "task": "How far to the next water and should I carry more?",
+        "requiredToolFamilies": [
+          "current_mile",
+          "next_water",
+          "source_search:water",
+          "open_source_doc:water"
+        ],
+        "answerMustSeparate": [
+          "distance",
+          "reliability",
+          "current-flow uncertainty",
+          "treatment/carry recommendation",
+          "offline freshness"
+        ]
+      },
+      {
+        "id": "next-town-resupply",
+        "task": "How far to the next town/resupply and what can I do there?",
+        "requiredToolFamilies": [
+          "current_mile",
+          "next_town",
+          "source_search:town",
+          "open_source_doc:town"
+        ],
+        "answerMustSeparate": [
+          "distance",
+          "services",
+          "same-day confirmation needs",
+          "fallback if services are missing",
+          "offline freshness"
+        ]
+      },
+      {
+        "id": "today-difficulty",
+        "task": "How hard is today going to be?",
+        "requiredToolFamilies": [
+          "current_mile",
+          "upcoming_terrain",
+          "weather_lookup",
+          "trail_conditions"
+        ],
+        "answerMustSeparate": [
+          "mileage/terrain basis",
+          "climb/footing/exposure",
+          "weather or condition modifiers",
+          "body-state caveats",
+          "lower-risk stop or bailout option when useful"
+        ]
+      },
+      {
+        "id": "weather-tomorrow",
+        "task": "What's the weather tomorrow or what happens if the weather cache is stale?",
+        "requiredToolFamilies": [
+          "weather_lookup",
+          "source_search:weather"
+        ],
+        "answerMustSeparate": [
+          "forecast time",
+          "cache age",
+          "live-vs-cached uncertainty",
+          "terrain/safety implication",
+          "refresh requirement before exposed decisions"
+        ]
+      },
+      {
+        "id": "offline-readiness",
+        "task": "What can Scout answer offline after I refreshed in town?",
+        "requiredToolFamilies": [
+          "source_search:safety",
+          "open_source_doc:safety",
+          "source_search:document vault"
+        ],
+        "answerMustSeparate": [
+          "cached field-pack facts",
+          "bundled/source documents",
+          "user-vault summaries",
+          "things that require network",
+          "stale or missing data recovery"
+        ]
+      }
+    ]
+  },
   "answerContract": {
     "requiredFields": [
       "direct_answer",

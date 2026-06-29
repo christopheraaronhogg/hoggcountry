@@ -36,6 +36,7 @@ for (const [index, testCase] of selectedCases.entries()) {
 	caseRef.current = testCase;
 	const pack = buildEvalPack(testCase, now);
 	const { runtime } = createScoutRuntime({ initialPack: pack, onDeviceBridge: bridge, onDeviceTier: 'balanced' });
+	const declaredContext = declaredConversationContextFor(testCase);
 	const startedAt = new Date();
 
 	try {
@@ -44,13 +45,14 @@ for (const [index, testCase] of selectedCases.entries()) {
 			onlineStatus: false,
 			allowCloud: false,
 			preferredMode: 'on-device',
-			conversationHistory: conversationHistoryFor(testCase, results)
+			conversationHistory: declaredContext.conversationHistory
 		});
 		const expectations = evaluateToolExpectations(testCase.requiredTools, answer.toolInvocations);
 		results.push({
 			caseId: testCase.id,
 			index: index + 1,
 			case: compactCase(testCase),
+			caseContext: declaredContext.caseContext,
 			answer: answer.answer,
 			answerOrigin: bridgeMode === 'command' ? 'external-local-model-command' : 'scaffold-not-model',
 			confidence: answer.confidence,
@@ -76,6 +78,7 @@ for (const [index, testCase] of selectedCases.entries()) {
 			caseId: testCase.id,
 			index: index + 1,
 			case: compactCase(testCase),
+			caseContext: declaredConversationContextFor(testCase).caseContext,
 			answer: '',
 			answerOrigin: bridgeMode === 'command' ? 'external-local-model-command' : 'scaffold-not-model',
 			confidence: 'low',
@@ -600,14 +603,39 @@ function evalDocuments(now) {
 	];
 }
 
-function conversationHistoryFor(testCase, priorResults) {
-	if (testCase.id !== 'DLA-097') return [];
-	const previous = [...priorResults].reverse().find((result) => result.answer);
-	if (!previous) return [];
-	return [
-		{role: 'user', content: previous.case.prompt, timestamp: previous.generatedAt},
-		{role: 'assistant', content: previous.answer, timestamp: previous.generatedAt}
+function declaredConversationContextFor(testCase) {
+	if (testCase.id !== 'DLA-097') {
+		return {
+			conversationHistory: [],
+			caseContext: {
+				mode: 'standalone-fresh-context',
+				source: 'none',
+				fixtureId: null,
+				conversationTurns: 0
+			}
+		};
+	}
+	const conversationHistory = [
+		{
+			role: 'user',
+			content: 'Can you pray with me but also help me make a safe plan?',
+			timestamp: '2026-06-26T11:59:00.000Z'
+		},
+		{
+			role: 'assistant',
+			content: 'Yes. Stop hiking for a minute, get safe, eat and drink treated water, check daylight/weather, choose the nearest legal safe stop or help option, and escalate for danger or worsening symptoms. Lord, give calm judgment and safe next steps.',
+			timestamp: '2026-06-26T11:59:30.000Z'
+		}
 	];
+	return {
+		conversationHistory,
+		caseContext: {
+			mode: 'declared-conversation-fixture',
+			source: 'suite-declared-fixture',
+			fixtureId: 'dla-097-shorter-followup-fixture',
+			conversationTurns: conversationHistory.length
+		}
+	};
 }
 
 function evaluateToolExpectations(requiredTools, invocations) {

@@ -360,6 +360,17 @@ test('Scout local AI harness contract preserves model-agnostic document-agent bo
 	assert.match(modelIndependence.fallbackRules.join(' '), /Switching models creates a new evidence lane/u);
 	assert.match(modelIndependence.fallbackRules.join(' '), /deterministic tools and document contracts remain the authority/u);
 
+	const contextIsolation = contract.contextIsolationProtocol;
+	assert.ok(contextIsolation, 'contract needs a fresh-context isolation protocol');
+	assert.match(contextIsolation.rule, /fresh task/u);
+	assert.match(contextIsolation.rule, /Prior answers, review notes, and hidden chat history cannot leak/u);
+	assert.ok(contextIsolation.caseInputs.includes('declared conversation fixture only when a case explicitly tests follow-up behavior'));
+	for (const field of ['caseContext.mode', 'caseContext.source', 'caseContext.fixtureId', 'caseContext.conversationTurns']) {
+		assert.ok(contextIsolation.mustRecord.includes(field), `context isolation must record ${field}`);
+	}
+	assert.match(contextIsolation.conversationFixturePolicy.join(' '), /not a previous answer generated earlier in the same run/u);
+	assert.match(contextIsolation.conversationFixturePolicy.join(' '), /targeted rerun/u);
+
 	const toolContracts = new Map(contract.toolContracts.map((tool) => [tool.toolId, tool]));
 	for (const toolId of ['source_search', 'open_source_doc', 'current_mile', 'next_water', 'next_town', 'weather_lookup']) {
 		assert.ok(VALID_TOOL_IDS.has(toolId), `${toolId} must be a known eval-suite tool`);
@@ -369,6 +380,23 @@ test('Scout local AI harness contract preserves model-agnostic document-agent bo
 	}
 	assert.ok(toolContracts.get('source_search').mustRecord.includes('candidate_source_document_ids'));
 	assert.ok(toolContracts.get('open_source_doc').mustRecord.includes('source_document_id'));
+
+	const fieldDecisionAuthority = contract.fieldDecisionToolAuthority;
+	assert.ok(fieldDecisionAuthority, 'contract needs deterministic field-decision gates');
+	assert.match(fieldDecisionAuthority.rule, /deterministic cached tools and source receipts are the authority/u);
+	const decisionGates = new Map(fieldDecisionAuthority.decisionGates.map((gate) => [gate.id, gate]));
+	for (const gateId of ['next-water', 'next-town-resupply', 'today-difficulty', 'weather-tomorrow', 'offline-readiness']) {
+		const gate = decisionGates.get(gateId);
+		assert.ok(gate, `missing field decision gate ${gateId}`);
+		assertNonEmptyStringArray(gate.requiredToolFamilies, `${gateId} requiredToolFamilies`);
+		assertNonEmptyStringArray(gate.answerMustSeparate, `${gateId} answerMustSeparate`);
+	}
+	assert.ok(decisionGates.get('next-water').requiredToolFamilies.includes('next_water'));
+	assert.ok(decisionGates.get('next-water').answerMustSeparate.includes('current-flow uncertainty'));
+	assert.ok(decisionGates.get('next-town-resupply').requiredToolFamilies.includes('next_town'));
+	assert.ok(decisionGates.get('today-difficulty').requiredToolFamilies.includes('upcoming_terrain'));
+	assert.ok(decisionGates.get('weather-tomorrow').requiredToolFamilies.includes('weather_lookup'));
+	assert.ok(decisionGates.get('offline-readiness').answerMustSeparate.includes('things that require network'));
 
 	assert.ok(contract.answerContract.requiredFields.includes('direct_answer'));
 	assert.ok(contract.answerContract.requiredFields.includes('sources_or_tools_used'));
@@ -452,6 +480,10 @@ test('README documents device review acceptance states', async () => {
 	assert.match(readme, /does not\s+replace reading and rating every answer 1-5/u);
 	assert.match(readme, /embeds the `harness-contract\.json` independent review gates/u);
 	assert.match(readme, /source grounding, trail math\/safety, document-writing confirmation, and\s+proof-lane separation/u);
+	assert.match(readme, /`contextIsolationProtocol` is the fresh-context rule/u);
+	assert.match(readme, /record `caseContext`/u);
+	assert.match(readme, /`fieldDecisionToolAuthority` is the local-model safety net/u);
+	assert.match(readme, /next water, next town\/resupply, today's\s+difficulty/u);
 	assert.match(readme, /Final Dad\s+readiness still requires all 100 cases rated 5\/5/u);
 	assert.match(readme, /task-class anti-overfit coverage/u);
 	assert.match(readme, /finding next water, finding the next town, explaining today's\s+difficulty/u);

@@ -243,11 +243,11 @@ test('runScoutLocalAiEval summarizes source-backed tool hits without evidence', 
 	assert.deepEqual(run.summary.missingSourceEvidenceCounts, { 'source_search:water': 1 });
 });
 
-test('runScoutLocalAiEval preserves prior answer context for DLA-097 follow-ups', async () => {
+test('runScoutLocalAiEval uses declared context fixtures for DLA-097 follow-ups', async () => {
 	const histories: ScoutConversationMessage[][] = [];
 	const run = await runScoutLocalAiEval({
 		suite: suite([
-			evalCase({ id: 'DLA-096', prompt: 'Can you pray with me but also help me make a safe plan?' }),
+			evalCase({ id: 'DLA-096', prompt: 'Where is the next reliable water?' }),
 			evalCase({
 				id: 'DLA-097',
 				prompt: 'Answer my last question again but shorter.',
@@ -266,7 +266,37 @@ test('runScoutLocalAiEval preserves prior answer context for DLA-097 follow-ups'
 	assert.deepEqual(histories[0], []);
 	assert.equal(histories[1][0]?.role, 'user');
 	assert.match(histories[1][0]?.content ?? '', /pray with me/);
+	assert.doesNotMatch(histories[1][0]?.content ?? '', /next reliable water/u);
 	assert.equal(histories[1][1]?.role, 'assistant');
+	assert.equal(run.results[0]?.caseContext.mode, 'standalone-fresh-context');
+	assert.equal(run.results[1]?.caseContext.mode, 'declared-conversation-fixture');
+	assert.equal(run.results[1]?.caseContext.fixtureId, 'dla-097-shorter-followup-fixture');
+	assert.equal(run.results[1]?.caseContext.conversationTurns, 2);
+});
+
+test('runScoutLocalAiEval keeps DLA-097 deterministic when run without neighboring cases', async () => {
+	let history: ScoutConversationMessage[] = [];
+	const run = await runScoutLocalAiEval({
+		suite: suite([
+			evalCase({
+				id: 'DLA-097',
+				prompt: 'Answer my last question again but shorter.',
+				requiredTools: ['next_water']
+			})
+		]),
+		evidenceLane: 'device-on-device-gemma',
+		now: new Date('2026-06-26T12:00:00.000Z'),
+		ask: ({ testCase, conversationHistory }) => {
+			history = conversationHistory;
+			return Promise.resolve(answer(testCase.prompt));
+		}
+	});
+
+	assert.equal(history.length, 2);
+	assert.match(history[0]?.content ?? '', /safe plan/u);
+	assert.equal(run.results[0]?.caseContext.mode, 'declared-conversation-fixture');
+	assert.equal(run.results[0]?.caseContext.source, 'suite-declared-fixture');
+	assert.equal(run.results[0]?.caseContext.conversationTurns, 2);
 });
 
 test('runScoutLocalAiEval resumes from a saved partial run and snapshots progress', async () => {

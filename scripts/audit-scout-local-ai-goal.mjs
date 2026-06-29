@@ -234,6 +234,8 @@ function summarizeDocumentGroundingGoal(input) {
 	const goal = input.suite.documentGroundingGoal ?? {};
 	const contract = input.harnessContract ?? {};
 	const protocol = contract.modelIndependenceProtocol ?? {};
+	const contextIsolation = contract.contextIsolationProtocol ?? {};
+	const fieldDecisionAuthority = contract.fieldDecisionToolAuthority ?? {};
 	const northStar = String(goal.northStar ?? '');
 	const sourceClasses = Array.isArray(goal.sourceClasses) ? goal.sourceClasses.map((item) => String(item).toLowerCase()) : [];
 	const transferAcceptance = String(goal.transferAcceptance ?? '');
@@ -241,6 +243,15 @@ function summarizeDocumentGroundingGoal(input) {
 	const newModelLaneRequirements = Array.isArray(protocol.newModelLaneRequirements) ? protocol.newModelLaneRequirements.join(' ') : '';
 	const localFirstChecks = Array.isArray(protocol.localFirstChecks) ? protocol.localFirstChecks.join(' ') : '';
 	const fallbackRules = Array.isArray(protocol.fallbackRules) ? protocol.fallbackRules.join(' ') : '';
+	const contextRule = String(contextIsolation.rule ?? '');
+	const contextFixturePolicy = Array.isArray(contextIsolation.conversationFixturePolicy) ? contextIsolation.conversationFixturePolicy.join(' ') : '';
+	const contextMustRecord = Array.isArray(contextIsolation.mustRecord) ? contextIsolation.mustRecord : [];
+	const fieldDecisionRule = String(fieldDecisionAuthority.rule ?? '');
+	const decisionGates = new Map(
+		Array.isArray(fieldDecisionAuthority.decisionGates)
+			? fieldDecisionAuthority.decisionGates.map((gate) => [gate.id, gate])
+			: []
+	);
 	const coverageAreas = new Map((input.status.suite?.coverage?.areas ?? []).map((area) => [area.id, area]));
 	const vaultCoverage = coverageAreas.get('document-vault-user-docs');
 	const writeCoverage = coverageAreas.get('document-writing-user-docs');
@@ -273,6 +284,25 @@ function summarizeDocumentGroundingGoal(input) {
 	}
 	if (!/\bSwitching models creates a new evidence lane\b/i.test(fallbackRules)) problems.push('modelIndependenceProtocol must make model swaps create a new evidence lane.');
 	if (!/\bdeterministic tools\b/i.test(fallbackRules)) problems.push('modelIndependenceProtocol must keep deterministic tools authoritative over model prose.');
+	if (!/\bfresh task\b/i.test(contextRule) || !/\bPrior answers\b/i.test(contextRule)) {
+		problems.push('contextIsolationProtocol must prevent prior answers or hidden chat history from leaking between cases.');
+	}
+	for (const field of ['caseContext.mode', 'caseContext.source', 'caseContext.fixtureId', 'caseContext.conversationTurns']) {
+		if (!contextMustRecord.includes(field)) problems.push(`contextIsolationProtocol must record ${field}.`);
+	}
+	if (!/\bnot a previous answer generated earlier in the same run\b/i.test(contextFixturePolicy)) {
+		problems.push('contextIsolationProtocol must require declared follow-up fixtures instead of previous generated answers.');
+	}
+	if (!/\bdeterministic cached tools and source receipts are the authority\b/i.test(fieldDecisionRule)) {
+		problems.push('fieldDecisionToolAuthority must keep deterministic tools authoritative for field-critical decisions.');
+	}
+	for (const gateId of ['next-water', 'next-town-resupply', 'today-difficulty', 'weather-tomorrow', 'offline-readiness']) {
+		if (!decisionGates.has(gateId)) problems.push(`fieldDecisionToolAuthority is missing ${gateId}.`);
+	}
+	if (!decisionGates.get('next-water')?.requiredToolFamilies?.includes('next_water')) problems.push('next-water gate must require next_water.');
+	if (!decisionGates.get('next-town-resupply')?.requiredToolFamilies?.includes('next_town')) problems.push('next-town-resupply gate must require next_town.');
+	if (!decisionGates.get('today-difficulty')?.requiredToolFamilies?.includes('upcoming_terrain')) problems.push('today-difficulty gate must require upcoming_terrain.');
+	if (!decisionGates.get('weather-tomorrow')?.requiredToolFamilies?.includes('weather_lookup')) problems.push('weather-tomorrow gate must require weather_lookup.');
 	if (vaultCoverage?.ok !== true) problems.push(`document-vault coverage is not satisfied: ${vaultCoverage?.count ?? 0}/${vaultCoverage?.minCases ?? '?'}.`);
 	if (writeCoverage?.ok !== true) problems.push(`document-writing coverage is not satisfied: ${writeCoverage?.count ?? 0}/${writeCoverage?.minCases ?? '?'}.`);
 	if (transferCoverage?.ok !== true) problems.push(`domain-transfer readiness coverage is not satisfied: ${transferCoverage?.count ?? 0}/${transferCoverage?.minCases ?? '?'}.`);
@@ -281,7 +311,7 @@ function summarizeDocumentGroundingGoal(input) {
 		ok: problems.length === 0,
 		evidence: problems.length
 			? problems.join('; ')
-			: `${northStar} Source classes include ${goal.sourceClasses.join(', ')}. Transfer target: ${transferAcceptance} Write target: ${writeAcceptance} Model independence: new model lanes reuse the canonical suite and proof gates, record model/runtime/proof metadata, and keep deterministic tools authoritative. Coverage: document vault ${vaultCoverage.count}/${vaultCoverage.minCases}, document writing ${writeCoverage.count}/${writeCoverage.minCases}, transfer readiness ${transferCoverage.count}/${transferCoverage.minCases}.`
+			: `${northStar} Source classes include ${goal.sourceClasses.join(', ')}. Transfer target: ${transferAcceptance} Write target: ${writeAcceptance} Model independence: new model lanes reuse the canonical suite and proof gates, record model/runtime/proof metadata, and keep deterministic tools authoritative. Context isolation records caseContext and uses declared follow-up fixtures. Field decision gates cover next water, next town, today difficulty, weather, and offline readiness. Coverage: document vault ${vaultCoverage.count}/${vaultCoverage.minCases}, document writing ${writeCoverage.count}/${writeCoverage.minCases}, transfer readiness ${transferCoverage.count}/${transferCoverage.minCases}.`
 	};
 }
 

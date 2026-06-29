@@ -62,10 +62,18 @@ export interface ScoutLocalAiToolExpectations {
 	missing: string[];
 }
 
+export interface ScoutLocalAiEvalCaseContext {
+	mode: 'standalone-fresh-context' | 'declared-conversation-fixture';
+	source: 'none' | 'suite-declared-fixture';
+	fixtureId: string | null;
+	conversationTurns: number;
+}
+
 export interface ScoutLocalAiEvalResult {
 	caseId: string;
 	index: number;
 	case: ScoutLocalAiEvalCase;
+	caseContext: ScoutLocalAiEvalCaseContext;
 	answer: string;
 	answerOrigin: ScoutLocalAiEvidenceLane;
 	confidence: ScoutAnswer['confidence'];
@@ -211,19 +219,21 @@ export async function runScoutLocalAiEval(input: {
 		}
 
 		const pack = buildScoutLocalAiEvalPack(testCase, now);
+		const declaredContext = declaredConversationContextFor(testCase);
 		const startedAt = Date.now();
 
 		try {
 			const answer = await input.ask({
 				testCase,
 				pack,
-				conversationHistory: conversationHistoryFor(testCase, results)
+				conversationHistory: declaredContext.conversationHistory
 			});
 			const expectations = evaluateToolExpectations(testCase.requiredTools, answer.toolInvocations);
 			results.push({
 				caseId: testCase.id,
 				index: index + 1,
 				case: compactCase(testCase),
+				caseContext: declaredContext.caseContext,
 				answer: answer.answer,
 				answerOrigin: input.evidenceLane,
 				confidence: answer.confidence,
@@ -736,6 +746,7 @@ function canReusePriorResult(
 	if (result.case?.prompt !== testCase.prompt) return false;
 	if (result.case?.documentTask !== testCase.documentTask) return false;
 	if (!sameStringArray(result.case?.requiredTools, testCase.requiredTools)) return false;
+	if (testCase.id === 'DLA-097' && !sameCaseContext(result.caseContext, declaredConversationContextFor(testCase).caseContext)) return false;
 	return true;
 }
 
@@ -751,22 +762,60 @@ function reusePriorResult(
 		index,
 		caseId: testCase.id,
 		case: compactCase(testCase),
+		caseContext: result.caseContext ?? declaredConversationContextFor(testCase).caseContext,
 		toolExpectations,
 		suggestedFailureCategories: result.suggestedFailureCategories ?? suggestedFailures(toolExpectations)
 	};
 }
 
-function conversationHistoryFor(
-	testCase: ScoutLocalAiEvalCase,
-	priorResults: ScoutLocalAiEvalResult[]
-): ScoutConversationMessage[] {
-	if (testCase.id !== 'DLA-097') return [];
-	const previous = [...priorResults].reverse().find((result) => result.answer);
-	if (!previous) return [];
-	return [
-		{ role: 'user', content: previous.case.prompt, timestamp: previous.generatedAt },
-		{ role: 'assistant', content: previous.answer, timestamp: previous.generatedAt }
+function declaredConversationContextFor(testCase: ScoutLocalAiEvalCase): {
+	conversationHistory: ScoutConversationMessage[];
+	caseContext: ScoutLocalAiEvalCaseContext;
+} {
+	if (testCase.id !== 'DLA-097') {
+		return {
+			conversationHistory: [],
+			caseContext: {
+				mode: 'standalone-fresh-context',
+				source: 'none',
+				fixtureId: null,
+				conversationTurns: 0
+			}
+		};
+	}
+	const fixtureId = 'dla-097-shorter-followup-fixture';
+	const conversationHistory: ScoutConversationMessage[] = [
+		{
+			role: 'user',
+			content: 'Can you pray with me but also help me make a safe plan?',
+			timestamp: '2026-06-26T11:59:00.000Z'
+		},
+		{
+			role: 'assistant',
+			content:
+				'Yes. Stop hiking for a minute, get safe, eat and drink treated water, check daylight/weather, choose the nearest legal safe stop or help option, and escalate for danger or worsening symptoms. Lord, give calm judgment and safe next steps.',
+			timestamp: '2026-06-26T11:59:30.000Z'
+		}
 	];
+	return {
+		conversationHistory,
+		caseContext: {
+			mode: 'declared-conversation-fixture',
+			source: 'suite-declared-fixture',
+			fixtureId,
+			conversationTurns: conversationHistory.length
+		}
+	};
+}
+
+function sameCaseContext(
+	actual: ScoutLocalAiEvalCaseContext | undefined,
+	expected: ScoutLocalAiEvalCaseContext
+): boolean {
+	return actual?.mode === expected.mode &&
+		actual.source === expected.source &&
+		actual.fixtureId === expected.fixtureId &&
+		actual.conversationTurns === expected.conversationTurns;
 }
 
 function failedResult(
@@ -781,6 +830,7 @@ function failedResult(
 		caseId: testCase.id,
 		index,
 		case: compactCase(testCase),
+		caseContext: declaredConversationContextFor(testCase).caseContext,
 		answer: '',
 		answerOrigin: evidenceLane,
 		confidence: 'low',
