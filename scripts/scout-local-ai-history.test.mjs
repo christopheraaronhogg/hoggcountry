@@ -164,7 +164,8 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 	assert.match(html, /No matching answers for this case under the selected proof-lane\/model filters/u);
 	assert.match(html, /Changes since previous run/u);
 	assert.match(html, /Fix Scout GPS recovery source routing/u);
-	assert.match(html, /Pending changes not yet measured by a run/u);
+	assert.match(html, /Pending proof\/reporting context after latest run/u);
+	assert.match(html, /no Scout answer rerun required/u);
 	assert.match(html, /Track Scout eval interventions in history/u);
 	assert.doesNotMatch(html, /<\/script><script/u);
 });
@@ -268,7 +269,90 @@ test('Scout local AI history does not demand rerun for proof-only pending commit
 	assert.equal(history.pendingInterventions.requiresRerun, false);
 	assert.equal(history.summary.pendingInterventionCommitCount, 2);
 	assert.equal(history.summary.pendingRerunCommitCount, 0);
+	const html = renderScoutLocalAiHistoryHtml(history);
+	const pendingSection = extractPendingSection(html);
+	assert.match(pendingSection, /Pending proof\/reporting context after latest run/u);
+	assert.match(pendingSection, /no Scout answer rerun required/u);
+	assert.doesNotMatch(pendingSection, /Pending Scout changes need a rerun/u);
+	assert.match(pendingSection, /data-rerun="false"/u);
 });
+
+test('Scout local AI history flags pending Scout-affecting commits in HTML', async () => {
+	const root = await mkdtemp(join(tmpdir(), 'scout-history-rerun-required-'));
+	const runDir = join(root, 'device-runs');
+	const reviewDir = join(root, 'reviews');
+	const scanDir = join(root, 'answer-quality-scans');
+	await mkdir(runDir, { recursive: true });
+	await mkdir(reviewDir, { recursive: true });
+	await mkdir(scanDir, { recursive: true });
+	const suitePath = join(root, 'dad-local-ai-100.json');
+	await writeFile(suitePath, JSON.stringify({
+		suiteId: 'dad-local-ai-100',
+		version: '2026-06-29.1',
+		hash: 'fnv1a32:rerun-required',
+		cases: [{
+			id: 'DLA-067',
+			domain: 'navigation',
+			phase: 'on-trail',
+			prompt: 'What should I do if GPS jumps around and Scout shows the wrong spot?',
+			requiredTools: ['current_mile', 'source_search:safety'],
+			expectedTraits: ['manual correction'],
+			safetyCaveats: ['no decisions from bad GPS'],
+			documentTask: 'reading-writing'
+		}]
+	}, null, 2));
+	await writeRunAndReview({
+		runDir,
+		reviewDir,
+		scanDir,
+		runId: 'device-local-ai-20260629T061751Z',
+		startedAt: '2026-06-29T06:17:51.000Z',
+		answer: 'Stop, verify location from blazes and map, then set the current AT mile from a confirmed point.',
+		confidence: 'medium',
+		failureMode: null,
+		rating: 5,
+		notes: 'Dad-ready GPS recovery answer.',
+		failureCategories: [],
+		ownerLayer: '',
+		improvementTask: ''
+	});
+
+	const history = await buildScoutLocalAiHistory({
+		repoRoot: root,
+		suitePath,
+		runDirs: [runDir],
+		reviewDir,
+		scanDir,
+		gitCommits: [
+			{
+				sha: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+				committedAt: '2026-06-29T06:00:00.000Z',
+				subject: 'Baseline Scout GPS recovery answer',
+				files: ['mobile/src/lib/scout/providers/on-device-gemma.ts']
+			},
+			{
+				sha: 'dddddddddddddddddddddddddddddddddddddddd',
+				committedAt: '2026-06-29T06:50:00.000Z',
+				subject: 'Tighten Scout GPS recovery answer contract',
+				files: ['mobile/src/lib/scout/providers/on-device-gemma.ts']
+			}
+		]
+	});
+
+	assert.equal(history.pendingInterventions.requiresRerun, true);
+	assert.equal(history.pendingInterventions.rerunCommitCount, 1);
+	assert.deepEqual(history.pendingInterventions.rerunCategories, ['prompt/answer-contract']);
+	const html = renderScoutLocalAiHistoryHtml(history);
+	const pendingSection = extractPendingSection(html);
+	assert.match(pendingSection, /Pending Scout changes need a rerun/u);
+	assert.match(pendingSection, /rerun required: 1 commit\(s\) \(prompt\/answer-contract\)/u);
+	assert.doesNotMatch(pendingSection, /no Scout answer rerun required/u);
+	assert.match(pendingSection, /data-rerun="true"/u);
+});
+
+function extractPendingSection(html) {
+	return html.match(/<section class="panel pending" id="pendingChanges"[\s\S]*?<\/section>/u)?.[0] ?? '';
+}
 
 async function writeRunAndReview({
 	runDir,

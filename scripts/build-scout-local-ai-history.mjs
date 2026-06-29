@@ -144,6 +144,7 @@ export async function buildScoutLocalAiHistory({
 
 export function renderScoutLocalAiHistoryHtml(history) {
 	const data = JSON.stringify(history).replace(/</gu, '\\u003c');
+	const pendingChangesMarkup = renderPendingChangesHtml(history.pendingInterventions);
 	return `<!doctype html>
 <html lang="en">
 <head>
@@ -271,7 +272,7 @@ input, select {
 <p class="meta" id="meta"></p>
 </header>
 <section class="metrics" id="metrics"></section>
-<section class="panel pending" id="pendingChanges"></section>
+${pendingChangesMarkup}
 <main>
 <section class="panel">
 <div class="controls">
@@ -331,9 +332,16 @@ function renderPendingChanges() {
 		element.innerHTML = '';
 		return;
 	}
+	const requiresRerun = Boolean(pending.requiresRerun);
+	element.dataset.rerun = String(requiresRerun);
+	const rerunCount = pending.rerunCommitCount ?? (requiresRerun ? count : 0);
+	const title = requiresRerun ? 'Pending Scout changes need a rerun' : 'Pending proof/reporting context after latest run';
+	const rerunSummary = requiresRerun
+		? 'rerun required: ' + rerunCount + ' commit(s)' + (pending.rerunCategories?.length ? ' (' + pending.rerunCategories.join(', ') + ')' : '')
+		: 'no Scout answer rerun required';
 	const commits = (pending.commits ?? []).slice(0, 4).map((commit) => commit.sha.slice(0, 8) + ' ' + commit.subject).join('; ');
-	element.innerHTML = '<h2>Pending changes not yet measured by a run</h2>' +
-		'<p>' + escapeHtml([count + ' commit(s)', pending.summary, 'since ' + (pending.pendingSinceRunId ?? 'start'), commits].filter(Boolean).join(' | ')) + '</p>';
+	element.innerHTML = '<h2>' + escapeHtml(title) + '</h2>' +
+		'<p>' + escapeHtml([count + ' commit(s)', rerunSummary, pending.summary, 'since ' + (pending.pendingSinceRunId ?? 'start'), commits].filter(Boolean).join(' | ')) + '</p>';
 }
 function render() {
 	const run = runs[state.runIndex] ?? null;
@@ -461,6 +469,38 @@ function escapeHtml(value) {
 </body>
 </html>
 `;
+}
+
+function renderPendingChangesHtml(pending) {
+	const count = pending?.commitCount ?? 0;
+	if (!count) {
+		return '<section class="panel pending" id="pendingChanges" data-empty="true"></section>';
+	}
+	const summary = pendingChangeBannerSummary(pending);
+	return '<section class="panel pending" id="pendingChanges" data-empty="false" data-rerun="' + String(summary.requiresRerun) + '">' +
+		'<h2>' + escapeHtmlForHistory(summary.title) + '</h2>' +
+		'<p>' + escapeHtmlForHistory(summary.line) + '</p>' +
+		'</section>';
+}
+
+function pendingChangeBannerSummary(pending) {
+	const count = pending?.commitCount ?? 0;
+	const requiresRerun = Boolean(pending?.requiresRerun);
+	const rerunCount = pending?.rerunCommitCount ?? (requiresRerun ? count : 0);
+	const title = requiresRerun ? 'Pending Scout changes need a rerun' : 'Pending proof/reporting context after latest run';
+	const rerunSummary = requiresRerun
+		? 'rerun required: ' + rerunCount + ' commit(s)' + (pending?.rerunCategories?.length ? ' (' + pending.rerunCategories.join(', ') + ')' : '')
+		: 'no Scout answer rerun required';
+	const commits = (pending?.commits ?? []).slice(0, 4).map((commit) => commit.sha.slice(0, 8) + ' ' + commit.subject).join('; ');
+	return {
+		title,
+		line: [count + ' commit(s)', rerunSummary, pending?.summary, 'since ' + (pending?.pendingSinceRunId ?? 'start'), commits].filter(Boolean).join(' | '),
+		requiresRerun
+	};
+}
+
+function escapeHtmlForHistory(value) {
+	return String(value ?? '').replace(/[&<>"']/gu, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 }
 
 function buildRunRecord({ repoRoot, run, runPath, review, reviewSummary, scan, sortTime, commit }) {
