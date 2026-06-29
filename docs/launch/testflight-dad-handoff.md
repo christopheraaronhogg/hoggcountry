@@ -150,6 +150,13 @@ npm run wait:scout-local-ai-device-run
 npm run wait:scout-local-ai-device-run -- --timeout-ms 300000 --poll-ms 10000
 ```
 
+If the export may arrive as copied text in the macOS clipboard, opt into clipboard watching:
+
+```sh
+npm run wait:scout-local-ai-device-run -- --source clipboard
+npm run wait:scout-local-ai-device-run -- --source all
+```
+
 Expanded manual path:
 
 ```sh

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { execFile, spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { mkdir, mkdtemp, readFile, utimes, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, readFile, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { delimiter, join } from 'node:path';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { promisify } from 'node:util';
@@ -510,6 +510,8 @@ test('README documents device review acceptance states', async () => {
 	assert.match(readme, /diagnostic-review-only/u);
 	assert.match(readme, /blocked-before-review/u);
 	assert.match(readme, /wait:scout-local-ai-device-run -- --timeout-ms 300000 --poll-ms 10000/u);
+	assert.match(readme, /wait:scout-local-ai-device-run -- --source clipboard/u);
+	assert.match(readme, /wait:scout-local-ai-device-run -- --source all/u);
 	assert.match(readme, /answer-quality scan/u);
 	assert.match(readme, /sibling\s+`\.scan\.json` answer-quality scan/u);
 	assert.match(readme, /does not\s+replace reading and rating every answer 1-5/u);
@@ -571,6 +573,8 @@ test('Dad TestFlight handoff documents the current Dad Pilot Run 100 path', asyn
 	assert.match(handoff, /npm run receive:scout-local-ai-device-run -- --clipboard/u);
 	assert.match(handoff, /npm run wait:scout-local-ai-device-run/u);
 	assert.match(handoff, /wait:scout-local-ai-device-run -- --timeout-ms 300000 --poll-ms 10000/u);
+	assert.match(handoff, /wait:scout-local-ai-device-run -- --source clipboard/u);
+	assert.match(handoff, /wait:scout-local-ai-device-run -- --source all/u);
 	assert.match(handoff, /Final readiness still requires a full current-suite TestFlight\/iPhone/u);
 	if (handoff.includes('Snapshot native app source newer than latest native upload: yes')) {
 		if (handoff.includes('Newer Xcode target pending App Store Connect: yes')) {
@@ -3415,6 +3419,83 @@ test('device run wait command prepares review from Downloads by default', async 
 	assert.equal(report.prepare.acceptance.status, 'final-review-ready');
 	assert.match(report.prepare.paths.importedRun, /device-wait-downloads-final\.json/u);
 	assert.match(await readFile(join(packetsDir, 'device-wait-downloads-final.review.md'), 'utf8'), /DLA-001/u);
+});
+
+test('device run wait command can receive copied clipboard JSON', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-device-wait-clipboard-'));
+	const binDir = join(outputDir, 'bin');
+	const inboxDir = join(outputDir, 'inbox');
+	const downloadsDir = join(outputDir, 'Downloads');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	const packetsDir = join(outputDir, 'review-packets');
+	const clipboardPath = join(outputDir, 'clipboard.txt');
+	await mkdir(binDir, { recursive: true });
+	await mkdir(inboxDir, { recursive: true });
+	await mkdir(downloadsDir, { recursive: true });
+	const finalRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-wait-clipboard-final',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	const copiedMessage = [
+		'Dad copied this from the Scout Eval Lab share sheet:',
+		'',
+		'```json',
+		JSON.stringify(finalRun, null, 2),
+		'```'
+	].join('\n');
+	await writeFile(clipboardPath, copiedMessage);
+	const fakePbpaste = join(binDir, 'pbpaste');
+	await writeFile(fakePbpaste, '#!/bin/sh\ncat "$SCOUT_FAKE_CLIPBOARD"\n');
+	await chmod(fakePbpaste, 0o755);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/wait-scout-local-ai-device-run.mjs',
+			'--source',
+			'clipboard',
+			'--poll-ms',
+			'50',
+			'--timeout-ms',
+			'2500',
+			'--downloads-dir',
+			downloadsDir,
+			'--inbox-dir',
+			inboxDir,
+			'--device-run-dir',
+			deviceRunsDir,
+			'--review-dir',
+			reviewsDir,
+			'--packet-dir',
+			packetsDir,
+			'--json'
+		],
+		{
+			cwd: REPO_ROOT,
+			env: {
+				...process.env,
+				PATH: `${binDir}${delimiter}${process.env.PATH ?? ''}`,
+				SCOUT_FAKE_CLIPBOARD: clipboardPath
+			},
+			maxBuffer: 1024 * 1024 * 12
+		}
+	);
+	const report = JSON.parse(result.stdout);
+
+	assert.equal(report.status, 'prepared-from-watch');
+	assert.equal(report.source, 'clipboard');
+	assert.equal(report.receive.status, 'prepared-for-final-review');
+	assert.equal(report.receive.input.mode, 'clipboard');
+	assert.equal(report.receive.input.extractedJson, true);
+	assert.match(report.receive.inbox.path, /device-wait-clipboard-final\.json/u);
+	assert.equal(report.prepare.status, 'prepared-for-final-review');
+	assert.equal(report.prepare.input.mode, 'explicit-run');
+	assert.equal(report.prepare.inspection.run.runId, 'device-wait-clipboard-final');
+	assert.match(report.prepare.paths.importedRun, /device-wait-clipboard-final\.json/u);
+	assert.match(await readFile(join(packetsDir, 'device-wait-clipboard-final.review.md'), 'utf8'), /DLA-001/u);
 });
 
 test('device run wait timeout reports every watched handoff source', async () => {

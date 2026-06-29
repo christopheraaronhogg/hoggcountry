@@ -304,6 +304,14 @@ If you are waiting on Dad to send the file, leave the guarded watcher running:
 npm run wait:scout-local-ai-device-run
 ```
 
+By default it watches the repo inbox and Downloads. If Dad's export may arrive
+as copied text in the macOS clipboard, opt into clipboard watching explicitly:
+
+```sh
+npm run wait:scout-local-ai-device-run -- --source clipboard
+npm run wait:scout-local-ai-device-run -- --source all
+```
+
 For a bounded check that is easier to run from Codex or a temporary terminal,
 add a timeout. It exits with a source-by-source status report if no final-ready
 export appears:
@@ -312,10 +320,11 @@ export appears:
 npm run wait:scout-local-ai-device-run -- --timeout-ms 300000 --poll-ms 10000
 ```
 
-It polls the repo inbox and Downloads, then runs the same prepare-review command
-as soon as a final-ready `Run 100` export appears. It keeps polling past stale,
-partial, or blocked candidates unless `--allow-partial` is explicit, so a smoke
-run still cannot become final review evidence by accident.
+It polls the selected sources, then runs the same guarded prepare/receive command
+as soon as a final-ready `Run 100` export appears. Clipboard watching saves a
+recognized Scout JSON export into the inbox before preparing review. The watcher
+keeps polling past stale, partial, or blocked candidates unless `--allow-partial`
+is explicit, so a smoke run still cannot become final review evidence by accident.
 
 If the export landed in Downloads instead, pass the explicit file:
 

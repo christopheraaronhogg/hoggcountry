@@ -30,7 +30,7 @@ let lastReport = null;
 const sourceReports = {};
 
 if (!sourceOrder.length) {
-	throw new Error('Use --source inbox, --source downloads, or --source both.');
+	throw new Error('Use --source inbox, --source downloads, --source clipboard, --source both, or --source all.');
 }
 
 while (true) {
@@ -45,6 +45,7 @@ while (true) {
 				attempts,
 				waitedMs: Date.now() - startedAt,
 				prepare: result.report,
+				receive: result.receive ?? null,
 				nextAction: result.report.nextAction
 			};
 			await writeOutput(report);
@@ -54,15 +55,15 @@ while (true) {
 			status: 'prepare-command-failed',
 			source,
 			error: result.error
-		};
-		sourceReports[source] = {
-			status: lastReport?.status ?? 'prepare-command-failed',
-			error: result.error ?? null,
-			inspectionStatus: lastReport?.inspection?.status ?? lastReport?.acceptance?.status ?? null,
-			inputMode: lastReport?.input?.mode ?? null,
-			runId: lastReport?.input?.runId ?? lastReport?.run?.runId ?? null
-		};
-	}
+			};
+			sourceReports[source] = {
+				status: lastReport?.status ?? 'prepare-command-failed',
+				error: result.error ?? null,
+				inspectionStatus: lastReport?.inspection?.status ?? lastReport?.acceptance?.status ?? null,
+				inputMode: lastReport?.input?.mode ?? null,
+				runId: lastReport?.input?.runId ?? lastReport?.run?.runId ?? lastReport?.inspection?.run?.runId ?? null
+			};
+		}
 
 	const waitedMs = Date.now() - startedAt;
 	if (timeoutMs > 0 && waitedMs >= timeoutMs) {
@@ -75,7 +76,7 @@ while (true) {
 			pollMs,
 			lastReport,
 			sourceReports,
-			nextAction: 'Keep waiting, or save the shared Scout Eval Lab JSON into data/scout-local-ai/inbox/ or Downloads. Then run npm run prepare-review:scout-local-ai-device-run -- --run inbox for the repo inbox, or npm run prepare-review:scout-local-ai-device-run -- --run latest for Downloads.'
+			nextAction: 'Keep waiting, save the shared Scout Eval Lab JSON into data/scout-local-ai/inbox/ or Downloads, or copy the JSON and rerun this watcher with --source clipboard. Then run npm run prepare-review:scout-local-ai-device-run -- --run inbox for the repo inbox, npm run prepare-review:scout-local-ai-device-run -- --run latest for Downloads, or npm run receive:scout-local-ai-device-run -- --clipboard for copied JSON.'
 		};
 		await writeOutput(report);
 		process.exit(1);
@@ -88,6 +89,52 @@ while (true) {
 }
 
 async function tryPrepare(source) {
+	if (source === 'clipboard') {
+		const args = [
+			'scripts/receive-scout-local-ai-device-run.mjs',
+			'--clipboard',
+			'--suite',
+			resolveInputPath(cli.suite ?? DEFAULT_SUITE),
+			'--inbox-dir',
+			resolveInputPath(cli.inboxDir ?? DEFAULT_INBOX_DIR),
+			'--device-run-dir',
+			resolveInputPath(cli.deviceRunDir ?? DEFAULT_DEVICE_RUN_DIR),
+			'--review-dir',
+			resolveInputPath(cli.reviewDir ?? DEFAULT_REVIEW_DIR),
+			'--packet-dir',
+			resolveInputPath(cli.packetDir ?? DEFAULT_PACKET_DIR),
+			'--json'
+		];
+		if (cli.allowPartial) args.push('--allow-partial');
+		if (cli.force) args.push('--force');
+		try {
+			const result = await execFileAsync(process.execPath, args, {
+				cwd: REPO_ROOT,
+				maxBuffer: 1024 * 1024 * 24
+			});
+			const receiveReport = JSON.parse(result.stdout);
+			if (receiveReport.prepare) {
+				return {
+					ok: true,
+					report: receiveReport.prepare,
+					receive: receiveReport
+				};
+			}
+			return {
+				ok: false,
+				report: receiveReport,
+				error: receiveReport.nextAction ?? 'clipboard export is not ready for final review'
+			};
+		} catch (err) {
+			const stdout = typeof err?.stdout === 'string' ? err.stdout.trim() : '';
+			const stderr = typeof err?.stderr === 'string' ? err.stderr.trim() : '';
+			return {
+				ok: false,
+				report: parseJson(stdout),
+				error: summarizeCommandError(stderr, err)
+			};
+		}
+	}
 	const args = [
 		'scripts/prepare-scout-local-ai-device-review.mjs',
 		'--run',
@@ -144,12 +191,14 @@ function summarizeCommandError(stderr, err) {
 function sourceOrderFor(value) {
 	const parts = String(value).split(',').map((part) => part.trim().toLowerCase()).filter(Boolean);
 	const expanded = parts.flatMap((part) => {
-		if (part === 'both' || part === 'all') return ['inbox', 'downloads'];
+		if (part === 'both') return ['inbox', 'downloads'];
+		if (part === 'all') return ['inbox', 'downloads', 'clipboard'];
 		if (part === 'latest' || part === 'download' || part === 'downloads') return ['downloads'];
 		if (part === 'inbox' || part === 'latest-inbox') return ['inbox'];
+		if (part === 'clipboard' || part === 'clip' || part === 'paste') return ['clipboard'];
 		return [part];
 	});
-	return [...new Set(expanded)].filter((part) => part === 'inbox' || part === 'downloads');
+	return [...new Set(expanded)].filter((part) => part === 'inbox' || part === 'downloads' || part === 'clipboard');
 }
 
 function positiveNumber(value, fallback) {
@@ -200,6 +249,7 @@ function formatReport(report) {
 			`- Imported run: \`${paths.importedRun ?? '<missing>'}\``,
 			`- Review JSON: \`${paths.review ?? '<missing>'}\``,
 			`- Review packet: \`${paths.packet ?? '<missing>'}\``,
+			...(report.receive?.inbox?.path ? [`- Inbox file: \`${report.receive.inbox.path}\``] : []),
 			'',
 			'## Next action',
 			'',
