@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { parseCliArgs, summarizeReview } from './lib/scout-local-ai-review.mjs';
 import { sourceEvidenceProblems } from './lib/scout-local-ai-source-evidence.mjs';
+import { scoutLocalAiSuiteIdentity } from './lib/scout-local-ai-suite.mjs';
 
 const execFileAsync = promisify(execFile);
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -64,6 +65,7 @@ export async function buildScoutLocalAiHistory({
 	gitCommits = null
 } = {}) {
 	const suite = await readJsonFile(suitePath);
+	const suiteIdentity = scoutLocalAiSuiteIdentity(suite);
 	const suiteCases = new Map((suite.cases ?? []).map((testCase) => [String(testCase.id ?? ''), testCase]));
 	const reviews = await loadJsonMap(reviewDir, (file, value) => reviewRunId(value) ?? runIdFromFile(file, '.review.json'));
 	const scans = await loadJsonMap(scanDir, (file, value) => value?.runId ?? runIdFromFile(file, '.scan.json'));
@@ -124,8 +126,8 @@ export async function buildScoutLocalAiHistory({
 		generatedAt: new Date().toISOString(),
 		suite: {
 			suiteId: suite.suiteId ?? null,
-			version: suite.version ?? null,
-			hash: suite.hash ?? suite.suiteHash ?? null,
+			version: suiteIdentity.suiteVersion,
+			hash: suiteIdentity.suiteHash,
 			caseCount: Array.isArray(suite.cases) ? suite.cases.length : null,
 			path: relative(repoRoot, suitePath)
 		},

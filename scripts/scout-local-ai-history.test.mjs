@@ -8,6 +8,7 @@ import {
 	renderScoutLocalAiHistoryHtml,
 	summarizeCommitInterventions
 } from './build-scout-local-ai-history.mjs';
+import { scoutLocalAiSuiteHash } from './lib/scout-local-ai-suite.mjs';
 
 test('Scout local AI history tracks answer evolution and score deltas', async () => {
 	const root = await mkdtemp(join(tmpdir(), 'scout-history-'));
@@ -18,10 +19,9 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 	await mkdir(reviewDir, { recursive: true });
 	await mkdir(scanDir, { recursive: true });
 	const suitePath = join(root, 'dad-local-ai-100.json');
-	await writeFile(suitePath, JSON.stringify({
+	const suite = {
 		suiteId: 'dad-local-ai-100',
 		version: '2026-06-27.2',
-		hash: 'fnv1a32:test',
 		cases: [
 			{
 				id: 'DLA-067',
@@ -34,7 +34,8 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 				documentTask: 'reading-writing'
 			}
 		]
-	}, null, 2));
+	};
+	await writeFile(suitePath, JSON.stringify(suite, null, 2));
 
 	await writeRunAndReview({
 		runDir,
@@ -96,6 +97,7 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 	});
 
 	assert.equal(history.summary.runCount, 2);
+	assert.equal(history.suite.hash, scoutLocalAiSuiteHash(suite));
 	assert.equal(history.summary.caseCount, 1);
 	assert.equal(history.summary.documentTaskCounts['reading-writing'], 1);
 	assert.deepEqual(history.summary.evidenceLaneCounts, { 'device-on-device-gemma': 2 });
