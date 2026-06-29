@@ -4058,6 +4058,11 @@ test('review finalizer applies a 100-case packet and writes strict device proof'
 		completeTools: true,
 		runContext: finalDeviceRunContext()
 	});
+	for (const result of run.results) {
+		if (isDocumentWritingFixtureCase(result.case)) {
+			result.answer = cleanPreflightAnswer();
+		}
+	}
 	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
 	await execFileAsync(
 		process.execPath,
@@ -4841,6 +4846,47 @@ test('review workflow rejects 5-star ratings when source-backed tools lack evide
 			assert.match(error.stderr, /5-star rating conflicts with run evidence/u);
 			assert.match(error.stderr, /source-backed required tool/u);
 			assert.match(error.stderr, /must record at least one receipt or sourceDocumentId/u);
+			return true;
+		}
+	);
+});
+
+test('review workflow rejects 5-star ratings when document-writing answers miss source boundaries', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const documentCase = suite.cases.find((testCase) => testCase.documentTask === 'reading-writing');
+	assert.ok(documentCase, 'suite should contain document-writing cases');
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-review-document-writing-invalid-'));
+	const run = deviceRunForCases(suite, [documentCase], {
+		runId: 'device-review-document-writing-invalid',
+		completeTools: true
+	});
+	const review = reviewForRun(run, { rating: 5 });
+	run.results[0].answer = 'Draft checklist: 1. Pack food. 2. Charge the phone. 3. Check the weather. Review this draft before saving; Scout should not save or overwrite a document unless you explicitly confirm it.';
+
+	const runPath = join(outputDir, 'device-review-document-writing-invalid.json');
+	const reviewPath = join(outputDir, 'device-review-document-writing-invalid.review.json');
+	const backlogDir = join(outputDir, 'backlog');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/review-scout-local-ai-eval.mjs',
+				'--run',
+				runPath,
+				'--review',
+				reviewPath,
+				'--backlog-dir',
+				backlogDir
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /Review has invalid entries/u);
+			assert.match(error.stderr, /5-star rating conflicts with run evidence/u);
+			assert.match(error.stderr, /document-writing answer lacks source-backed facts vs assumptions\/placeholders\/open questions separation/u);
 			return true;
 		}
 	);
@@ -7338,6 +7384,13 @@ function toolInvocationsFor(testCase) {
 }
 
 function reviewForRun(run, options = {}) {
+	if (options.rating === 5 && options.cleanDocumentWritingAnswers !== false) {
+		for (const result of run.results ?? []) {
+			if (isDocumentWritingFixtureCase(result.case)) {
+				result.answer = cleanPreflightAnswer();
+			}
+		}
+	}
 	return {
 		schemaVersion: 1,
 		runId: run.runId,
@@ -7371,6 +7424,12 @@ function reviewForRun(run, options = {}) {
 			ownerLayer: ''
 		}))
 	};
+}
+
+function isDocumentWritingFixtureCase(testCase) {
+	const documentTask = testCase?.documentTask ?? '';
+	const tags = Array.isArray(testCase?.improvementTags) ? testCase.improvementTags : [];
+	return documentTask === 'writing' || documentTask === 'reading-writing' || tags.includes('document-writing');
 }
 
 function rubricChecksFor(items) {

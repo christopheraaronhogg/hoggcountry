@@ -256,6 +256,7 @@ export function suggestedFailureCategoriesForResult(result) {
 		result?.toolInvocations ?? []
 	);
 	if (sourceProblems.length) add('weak-tool');
+	if (documentWritingEvidenceProblems(result).length) add('poor-document-writing-flow');
 	if (String(result?.error ?? '').trim() || String(result?.failureMode ?? '').includes('provider')) {
 		add('local-model-limitation');
 	}
@@ -649,6 +650,61 @@ function signalCheckProblems(checks, expected, fieldName, textFor) {
 	return problems;
 }
 
+function documentWritingEvidenceProblems(result) {
+	const testCase = result?.case ?? {};
+	const prompt = testCase.prompt ?? '';
+	const tags = Array.isArray(testCase.improvementTags) ? testCase.improvementTags : [];
+	const documentTask = String(testCase.documentTask ?? '');
+	const asksDocumentWriting =
+		documentTask === 'writing' ||
+		documentTask === 'reading-writing' ||
+		tags.includes('document-writing') ||
+		isDocumentWritingPrompt(prompt);
+	if (!asksDocumentWriting) return [];
+
+	const answer = String(result?.answer ?? '').trim();
+	const problems = [];
+	if (!mentionsDocumentDraft(answer)) {
+		problems.push('document-writing answer lacks a reviewable draft/checklist/update artifact');
+	}
+	if (!mentionsDocumentWriteConfirmation(answer)) {
+		problems.push('document-writing answer lacks explicit review/confirmation before saving or overwriting');
+	}
+	if (!mentionsDocumentSourceBoundary(answer)) {
+		problems.push('document-writing answer lacks source-backed facts vs assumptions/placeholders/open questions separation');
+	}
+	return problems;
+}
+
+function isDocumentWritingPrompt(prompt) {
+	const lowerPrompt = String(prompt ?? '').toLowerCase();
+	const writingVerb = /\b(?:draft|write|create|revise)\b/u;
+	const documentObject = /\b(?:checklist|note|plan|summary|update|decision|document|document vault|vault)\b/u;
+	return (writingVerb.test(lowerPrompt) && documentObject.test(lowerPrompt)) ||
+		/\b(?:save|saving|saved)\b[^.?!\n]*(?:document vault|vault|note|checklist|document)\b/u.test(lowerPrompt) ||
+		/\b(?:update my notes|update note|town[-\s]?exit update note|checklist note)\b/u.test(lowerPrompt);
+}
+
+function mentionsDocumentDraft(answer) {
+	const hasDraftLabel = /\b(?:draft|checklist note|checklist:|town[-\s]?exit update note|offline document checklist|screenshot\/save checklist)\b/iu.test(answer);
+	const hasDraftShape =
+		/\b1\.\s+\S/iu.test(answer) ||
+		/\b(?:current AT mile|photo ID|emergency contacts|open questions|weather and closures|food and water carry|permits|reservations)\b/iu.test(answer);
+	return hasDraftLabel && hasDraftShape;
+}
+
+function mentionsDocumentWriteConfirmation(answer) {
+	const mentionsReviewOrConfirm = /\b(?:review|confirm|confirmation|explicitly confirm|before saving|before save)\b/iu.test(answer);
+	const mentionsSaveBoundary = /\b(?:save|saving|overwrite|document|draft)\b/iu.test(answer);
+	return mentionsReviewOrConfirm && mentionsSaveBoundary;
+}
+
+function mentionsDocumentSourceBoundary(answer) {
+	const mentionsSourceFacts = /\b(?:source-backed|source summaries?|saved document facts?|document vault facts?)\b/iu.test(answer);
+	const mentionsAssumptionBoundary = /\b(?:assumptions?|open questions?|placeholders?|verify|confirm before saving|private values?)\b/iu.test(answer);
+	return mentionsSourceFacts && mentionsAssumptionBoundary;
+}
+
 function failedRubricChecks(checks) {
 	if (!Array.isArray(checks)) return [];
 	return checks
@@ -674,6 +730,9 @@ function fiveStarRunEvidenceProblems(result) {
 	const problems = [];
 	if (!String(result.answer ?? '').trim()) problems.push('answer is empty');
 	if (result.error) problems.push(`run recorded provider error: ${result.error}`);
+	for (const problem of documentWritingEvidenceProblems(result)) {
+		problems.push(problem);
+	}
 	const missingTools = result.toolExpectations?.missing;
 	if (!Array.isArray(missingTools)) {
 		problems.push('toolExpectations.missing is not recorded');
