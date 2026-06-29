@@ -76,6 +76,7 @@ const finalGateIds = [
 	'suite',
 	'coverage',
 	'task-class-coverage',
+	'generalization-coverage',
 	'routing',
 	'testflight-target',
 	'device-run',
@@ -110,6 +111,7 @@ const audit = {
 		currentDeviceReviews: status.reviews.currentDeviceReviews.length,
 		strictDeviceProofPasses: status.strictDeviceProofs.filter((proof) => proof.ok).length,
 		taskClassCoverage: status.suite.taskClassCoverage,
+		generalizationCoverage: status.suite.generalizationCoverage,
 		nextAction: status.nextAction
 	}
 };
@@ -124,6 +126,7 @@ function createRequirementAudit(input) {
 	const suiteGate = input.gates.suite;
 	const coverageGate = input.gates.coverage;
 	const taskClassGate = input.gates['task-class-coverage'];
+	const generalizationGate = input.gates['generalization-coverage'];
 	const routingGate = input.gates.routing;
 	const testflightGate = input.gates['testflight-target'];
 	const deviceRunGate = input.gates['device-run'];
@@ -149,9 +152,10 @@ function createRequirementAudit(input) {
 			id: 'representative-task-class-benchmark',
 			label: 'The 100 questions represent reusable hiker and document-agent task classes rather than exact prompt memorization',
 			ok: taskClassGate?.ok === true &&
+				generalizationGate?.ok === true &&
 				(input.harnessContract?.antiOverfitRules ?? []).join(' ').includes('neighboring hiker/document-agent questions'),
 			evidence: taskClassGate?.ok === true
-				? `${taskClassGate.evidence}; anti-overfit contract requires improvements that help neighboring hiker/document-agent questions.`
+				? `${taskClassGate.evidence}; ${generalizationGate?.evidence ?? '<missing generalization coverage gate>'}; anti-overfit contract requires improvements that help neighboring hiker/document-agent questions.`
 				: taskClassGate?.evidence ?? '<missing task-class coverage gate>'
 		}),
 		requirement({

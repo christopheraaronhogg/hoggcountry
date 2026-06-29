@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "contractId": "scout-local-ai-sovereign-harness",
-  "version": "2026-06-29.2",
+  "version": "2026-06-29.3",
   "northStar": "Keep Scout's useful behavior in owned, testable harness assets so the model can be swapped without changing what field-ready answers require.",
   "proofDomain": {
     "current": "Appalachian Trail hiker and document-agent questions for Dad's Hoggcountry app",
@@ -401,6 +401,19 @@
       "rule": "Final stability requires two distinct strict TestFlight iPhone runs."
     }
   ],
+  "generalizationAudit": {
+    "path": "scripts/lib/scout-local-ai-generalization.mjs",
+    "rule": "The suite must preserve neighboring prompt frames for the same underlying hiker/document-agent capabilities so iteration improves reusable behavior instead of memorizing exact prompts.",
+    "profiles": [
+      "next-water-decision",
+      "town-resupply-decision",
+      "today-difficulty-decision",
+      "offline-document-agent",
+      "safety-escalation",
+      "missing-data-honesty"
+    ],
+    "statusGate": "generalization-coverage"
+  },
   "antiOverfitRules": [
     "Do not weaken expected traits or safety caveats to close a review item.",
     "Do not fix a miss by memorizing one prompt when the failure belongs to a tool, source, data table, prompt policy, UI recovery state, or local model lane.",

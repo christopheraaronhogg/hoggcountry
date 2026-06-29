@@ -21,6 +21,9 @@ import {
 	summarizeRunSourceEvidence
 } from './lib/scout-local-ai-source-evidence.mjs';
 import {
+	summarizeScoutLocalAiGeneralizationCoverage
+} from './lib/scout-local-ai-generalization.mjs';
+import {
 	scoutLocalAiStabilityRunFingerprint
 } from './lib/scout-local-ai-stability.mjs';
 import {
@@ -129,6 +132,7 @@ export async function buildStatus(paths) {
 	const suiteErrors = validateSuite(suite, mobileSuite, suiteIdentity);
 	const suiteCoverage = summarizeScoutLocalAiSuiteCoverage(suite);
 	const taskClassCoverage = summarizeScoutLocalAiTaskClassCoverage(suite);
+	const generalizationCoverage = summarizeScoutLocalAiGeneralizationCoverage(suite);
 	const runs = await loadJsonFiles(paths.runsDir);
 	const deviceRuns = await loadJsonFiles(paths.deviceRunsDir);
 	const reviews = await loadJsonFiles(paths.reviewsDir);
@@ -262,6 +266,7 @@ export async function buildStatus(paths) {
 		suiteErrors,
 		suiteCoverage,
 		taskClassCoverage,
+		generalizationCoverage,
 		suite,
 		suiteIdentity,
 		testflight,
@@ -291,6 +296,7 @@ export async function buildStatus(paths) {
 			mobileCopyMatches: mobileSuite ? stableJson(mobileSuite) === stableJson(suite) : false,
 			coverage: suiteCoverage,
 			taskClassCoverage,
+			generalizationCoverage,
 			errors: suiteErrors
 		},
 		paths: {
@@ -399,6 +405,7 @@ function createGates(input) {
 	const suiteOk = input.suiteErrors.length === 0;
 	const coverageOk = input.suiteCoverage.ok;
 	const taskClassCoverageOk = input.taskClassCoverage.ok;
+	const generalizationCoverageOk = input.generalizationCoverage.ok;
 	const routingOk = input.currentFullRoutingRuns.length > 0 || input.currentFullToolCompleteRuns.length > 0;
 	const localPreflightOk = input.localPreflight?.ok === true;
 	const testflightOk = input.testflight.targetBuildAvailableForDad && input.testflight.targetBuildMeetsSuiteRequirement;
@@ -433,6 +440,17 @@ function createGates(input) {
 			evidence: taskClassCoverageOk
 				? input.taskClassCoverage.areas.map((area) => `${area.id}=${area.count}`).join(', ')
 				: input.taskClassCoverage.errors.join('; ')
+		},
+		{
+			id: 'generalization-coverage',
+			label: 'Neighbor prompt-frame generalization coverage',
+			ok: generalizationCoverageOk,
+			evidence: generalizationCoverageOk
+				? input.generalizationCoverage.profiles.map((profile) => {
+					const frames = profile.promptFrames.map((frame) => `${frame.id}=${frame.count}`).join('/');
+					return `${profile.id}=${profile.count}(${frames})`;
+				}).join(', ')
+				: input.generalizationCoverage.errors.join('; ')
 		},
 		{
 			id: 'routing',
@@ -536,6 +554,12 @@ function nextActionFor(
 		return {
 			kind: 'fix-suite-task-class-coverage',
 			text: 'Restore representative task-class coverage in data/scout-local-ai/dad-local-ai-100.json so the benchmark covers reusable hiker/document-agent jobs instead of only exact prompts; sync the mobile copy, then rerun the Scout local-AI suite test.'
+		};
+	}
+	if (!gate('generalization-coverage')?.ok) {
+		return {
+			kind: 'fix-suite-generalization-coverage',
+			text: 'Restore neighbor prompt-frame coverage in data/scout-local-ai/dad-local-ai-100.json so each core capability has varied prompts instead of one memorized wording; sync the mobile copy, then rerun the Scout local-AI suite test.'
 		};
 	}
 	if (!gate('routing')?.ok) {
@@ -1742,6 +1766,7 @@ function createStatusMarkdown(status) {
 		`- Mobile copy matches: ${status.suite.mobileCopyMatches ? 'yes' : 'no'}`,
 		`- Objective coverage: ${status.suite.coverage.ok ? 'yes' : 'no'}`,
 		`- Task-class anti-overfit coverage: ${status.suite.taskClassCoverage.ok ? 'yes' : 'no'}`,
+		`- Neighbor prompt-frame generalization coverage: ${status.suite.generalizationCoverage.ok ? 'yes' : 'no'}`,
 		'',
 		'Coverage areas:',
 		'',
@@ -1750,6 +1775,13 @@ function createStatusMarkdown(status) {
 		'Task-class areas:',
 		'',
 		...status.suite.taskClassCoverage.areas.map((area) => `- ${area.ok ? '[x]' : '[ ]'} ${area.label}: ${area.count}/${area.minCases}`),
+		'',
+		'Generalization profiles:',
+		'',
+		...status.suite.generalizationCoverage.profiles.map((profile) => {
+			const frames = profile.promptFrames.map((frame) => `${frame.id} ${frame.count}/${frame.minCases}`).join('; ');
+			return `- ${profile.ok ? '[x]' : '[ ]'} ${profile.label}: ${profile.count}/${profile.minCases} (${frames})`;
+		}),
 		'',
 		'## TestFlight Target',
 		'',

@@ -167,6 +167,15 @@ offline cached data, searching/opening source documents, summarizing saved user
 docs, drafting/updating vault notes, comparing options, and saying when data is
 missing. If this gate fails, repair the suite by restoring a task class instead
 of teaching Scout one exact prompt.
+Status also reports neighbor prompt-frame generalization coverage from
+`scripts/lib/scout-local-ai-generalization.mjs`. This is a stricter anti-overfit
+gate over the same 100 stable cases: it checks that core capabilities have
+nearby but different prompt frames. For example, water must cover distance
+ahead, carry/skip decisions, reliability conflicts, and treatment or filter
+problems; document-agent behavior must cover offline readiness, vault reading,
+vault writing, and confirmation/privacy boundaries. If this gate fails, fix the
+underlying task representation or tool/data/prompt layer. Do not close the gap
+by training Scout to parrot one exact benchmark question.
 The status output also tracks below-5 review debt explicitly: a completed
 below-5 review is marked as needing backlog/plan generation or already planned,
 so improvement work cannot hide behind the broader "review is not 100/100" gate.

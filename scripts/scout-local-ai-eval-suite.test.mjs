@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { createScoutLocalAiPhoneBuildAction } from './lib/scout-local-ai-phone-build-action.mjs';
 import { inferOwnerLayer, ownerLayerProblems } from './lib/scout-local-ai-review.mjs';
 import { summarizeRunSourceEvidence } from './lib/scout-local-ai-source-evidence.mjs';
+import { summarizeScoutLocalAiGeneralizationCoverage } from './lib/scout-local-ai-generalization.mjs';
 import { summarizeScoutLocalAiSuiteCoverage } from './lib/scout-local-ai-suite-coverage.mjs';
 import { summarizeScoutLocalAiTaskClassCoverage } from './lib/scout-local-ai-task-classes.mjs';
 import { scoutLocalAiSuiteHash } from './lib/scout-local-ai-suite.mjs';
@@ -311,6 +312,35 @@ test('Dad local AI eval suite covers reusable hiker and document-agent task clas
 	assert.ok(byId['missing-data-honesty'].count >= 8);
 });
 
+test('Dad local AI eval suite covers neighboring prompt frames for generalization', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const coverage = summarizeScoutLocalAiGeneralizationCoverage(suite);
+	const byId = Object.fromEntries(coverage.profiles.map((profile) => [profile.id, profile]));
+
+	assert.equal(coverage.ok, true, coverage.errors.join('\n'));
+	assert.equal(coverage.errors.length, 0);
+	for (const profileId of [
+		'next-water-decision',
+		'town-resupply-decision',
+		'today-difficulty-decision',
+		'offline-document-agent',
+		'safety-escalation',
+		'missing-data-honesty'
+	]) {
+		const profile = byId[profileId];
+		assert.ok(profile, `missing generalization profile ${profileId}`);
+		assert.equal(profile.ok, true, profile.errors.join('\n'));
+		assert.ok(profile.count >= profile.minCases, `${profileId} should have neighboring cases`);
+		for (const frame of profile.promptFrames) {
+			assert.equal(frame.ok, true, `${profileId}/${frame.id}: ${frame.label}`);
+			assert.ok(frame.count >= frame.minCases, `${profileId}/${frame.id} should have enough prompt-frame cases`);
+		}
+	}
+	assert.ok(byId['next-water-decision'].promptFrames.find((frame) => frame.id === 'carry-or-skip')?.count >= 2);
+	assert.ok(byId['offline-document-agent'].promptFrames.find((frame) => frame.id === 'vault-writing')?.count >= 3);
+	assert.ok(byId['missing-data-honesty'].promptFrames.find((frame) => frame.id === 'conflicting-source')?.count >= 2);
+});
+
 test('Scout local AI harness contract preserves model-agnostic document-agent boundaries', async () => {
 	const contract = JSON.parse(await readFile(HARNESS_CONTRACT_PATH, 'utf8'));
 	assert.equal(contract.schemaVersion, 1);
@@ -443,6 +473,11 @@ test('Scout local AI harness contract preserves model-agnostic document-agent bo
 	}
 	assert.match(contract.antiOverfitRules.join(' '), /Do not weaken expected traits/u);
 	assert.match(contract.antiOverfitRules.join(' '), /neighboring hiker\/document-agent questions/u);
+	assert.equal(contract.generalizationAudit.path, 'scripts/lib/scout-local-ai-generalization.mjs');
+	assert.equal(contract.generalizationAudit.statusGate, 'generalization-coverage');
+	assert.match(contract.generalizationAudit.rule, /neighboring prompt frames/u);
+	assert.ok(contract.generalizationAudit.profiles.includes('next-water-decision'));
+	assert.ok(contract.generalizationAudit.profiles.includes('offline-document-agent'));
 });
 
 test('review taxonomy keeps document-writing flow misses distinct from generic UX', () => {
@@ -487,6 +522,9 @@ test('README documents device review acceptance states', async () => {
 	assert.match(readme, /Final Dad\s+readiness still requires all 100 cases rated 5\/5/u);
 	assert.match(readme, /task-class anti-overfit coverage/u);
 	assert.match(readme, /finding next water, finding the next town, explaining today's\s+difficulty/u);
+	assert.match(readme, /neighbor prompt-frame generalization coverage/u);
+	assert.match(readme, /water must cover distance\s+ahead, carry\/skip decisions, reliability conflicts, and treatment or filter\s+problems/u);
+	assert.match(readme, /document-agent behavior must cover offline readiness, vault reading,\s+vault writing, and confirmation\/privacy boundaries/u);
 });
 
 test('iOS simulator Gemma runner writes answer-quality scan artifacts', async () => {
@@ -587,6 +625,18 @@ test('task-class coverage summary fails when a reusable hiker task class disappe
 
 	assert.equal(coverage.ok, false);
 	assert.match(coverage.errors.join('\n'), /Find the next water task-class coverage/u);
+});
+
+test('generalization summary fails when neighboring prompt frames collapse to one wording', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const weakened = {
+		...suite,
+		cases: suite.cases.filter((testCase) => !['DLA-032', 'DLA-033', 'DLA-036', 'DLA-037', 'DLA-039', 'DLA-050'].includes(testCase.id))
+	};
+	const coverage = summarizeScoutLocalAiGeneralizationCoverage(weakened);
+
+	assert.equal(coverage.ok, false);
+	assert.match(coverage.errors.join('\n'), /Next-water decisions generalize beyond one wording frame "turns water data into carry, skip, or camel-up decisions"/u);
 });
 
 test('mobile embedded Dad local AI eval suite matches canonical suite', async () => {
