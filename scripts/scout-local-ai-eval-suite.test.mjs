@@ -297,6 +297,18 @@ test('Scout local AI harness contract preserves model-agnostic document-agent bo
 	assert.equal(intelligenceLanes.get('device-on-device-gemma')?.mayCountAsFinalProof, false);
 	assert.equal(intelligenceLanes.get('real-testflight-iphone')?.mayCountAsFinalProof, true);
 
+	const modelIndependence = contract.modelIndependenceProtocol;
+	assert.ok(modelIndependence, 'contract needs an explicit model independence protocol');
+	assert.match(modelIndependence.newModelLaneRequirements.join(' '), /reuse the canonical suite/u);
+	assert.match(modelIndependence.newModelLaneRequirements.join(' '), /answer contract, review rubric, and proof gates unchanged/u);
+	assert.match(modelIndependence.newModelLaneRequirements.join(' '), /modelId, provider or runtime, mode, app build, install source, suite version\/hash, and proof lane/u);
+	assert.match(modelIndependence.newModelLaneRequirements.join(' '), /must not change expectedTraits, safetyCaveats, requiredTools, or human ratings/u);
+	assert.match(modelIndependence.localFirstChecks.join(' '), /Cloud, browser, and scaffold runs are iteration diagnostics only/u);
+	assert.match(modelIndependence.localFirstChecks.join(' '), /Debug simulator\/on-device Gemma Run 100/u);
+	assert.match(modelIndependence.localFirstChecks.join(' '), /Final proof requires a real TestFlight\/iPhone install source/u);
+	assert.match(modelIndependence.fallbackRules.join(' '), /Switching models creates a new evidence lane/u);
+	assert.match(modelIndependence.fallbackRules.join(' '), /deterministic tools and document contracts remain the authority/u);
+
 	const toolContracts = new Map(contract.toolContracts.map((tool) => [tool.toolId, tool]));
 	for (const toolId of ['source_search', 'open_source_doc', 'current_mile', 'next_water', 'next_town', 'weather_lookup']) {
 		assert.ok(VALID_TOOL_IDS.has(toolId), `${toolId} must be a known eval-suite tool`);
@@ -1869,6 +1881,8 @@ test('goal audit maps original success criteria without hiding missing device pr
 	assert.match(requirements['document-grounded-system-goal'].evidence, /local-first, model-agnostic, document-grounded assistant/u);
 	assert.match(requirements['document-grounded-system-goal'].evidence, /internal company documents, SOPs, project notes, customer docs/u);
 	assert.match(requirements['document-grounded-system-goal'].evidence, /Write target: Scout can draft or update user-owned documents/u);
+	assert.match(requirements['document-grounded-system-goal'].evidence, /Model independence: new model lanes reuse the canonical suite and proof gates/u);
+	assert.match(requirements['document-grounded-system-goal'].evidence, /keep deterministic tools authoritative/u);
 	assert.match(requirements['document-grounded-system-goal'].evidence, /document writing [2-9][0-9]*\/2/u);
 	assert.equal(requirements['runner-saves-transcripts'].ok, true);
 	assert.match(requirements['runner-saves-transcripts'].evidence, /100 result transcript/u);

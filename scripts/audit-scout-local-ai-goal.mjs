@@ -13,6 +13,7 @@ const execFileAsync = promisify(execFile);
 
 const DEFAULT_SUITE = 'data/scout-local-ai/dad-local-ai-100.json';
 const DEFAULT_MOBILE_SUITE = 'mobile/static/scout/dad-local-ai-100.json';
+const DEFAULT_HARNESS_CONTRACT = 'data/scout-local-ai/harness-contract.json';
 const DEFAULT_RUNS_DIR = 'data/scout-local-ai/runs';
 const DEFAULT_DEVICE_RUNS_DIR = 'data/scout-local-ai/device-runs';
 const DEFAULT_INBOX_DIR = 'data/scout-local-ai/inbox';
@@ -27,6 +28,7 @@ const cli = parseCliArgs(process.argv.slice(2));
 const paths = {
 	suite: resolveInputPath(cli.suite ?? DEFAULT_SUITE),
 	mobileSuite: resolveInputPath(cli.mobileSuite ?? DEFAULT_MOBILE_SUITE),
+	harnessContract: resolveInputPath(cli.harnessContract ?? DEFAULT_HARNESS_CONTRACT),
 	runsDir: resolveInputPath(cli.runsDir ?? DEFAULT_RUNS_DIR),
 	deviceRunsDir: resolveInputPath(cli.deviceRunsDir ?? DEFAULT_DEVICE_RUNS_DIR),
 	inboxDir: resolveInputPath(cli.inboxDir ?? DEFAULT_INBOX_DIR),
@@ -41,6 +43,7 @@ const paths = {
 const [
 	status,
 	suite,
+	harnessContract,
 	packageJson,
 	reviewSource,
 	planSource,
@@ -48,6 +51,7 @@ const [
 ] = await Promise.all([
 	loadStatus(paths),
 	readJson(paths.suite),
+	readJson(paths.harnessContract),
 	readJson(resolve(REPO_ROOT, 'package.json')),
 	readText(resolve(REPO_ROOT, 'scripts/lib/scout-local-ai-review.mjs')),
 	readText(resolve(REPO_ROOT, 'scripts/plan-scout-local-ai-iteration.mjs')),
@@ -60,6 +64,7 @@ const gates = Object.fromEntries(status.gates.map((gate) => [gate.id, gate]));
 const requirements = createRequirementAudit({
 	status,
 	suite,
+	harnessContract,
 	scriptMap,
 	reviewSource,
 	planSource,
@@ -215,10 +220,15 @@ function createRequirementAudit(input) {
 function summarizeDocumentGroundingGoal(input) {
 	const problems = [];
 	const goal = input.suite.documentGroundingGoal ?? {};
+	const contract = input.harnessContract ?? {};
+	const protocol = contract.modelIndependenceProtocol ?? {};
 	const northStar = String(goal.northStar ?? '');
 	const sourceClasses = Array.isArray(goal.sourceClasses) ? goal.sourceClasses.map((item) => String(item).toLowerCase()) : [];
 	const transferAcceptance = String(goal.transferAcceptance ?? '');
 	const writeAcceptance = String(goal.writeAcceptance ?? '');
+	const newModelLaneRequirements = Array.isArray(protocol.newModelLaneRequirements) ? protocol.newModelLaneRequirements.join(' ') : '';
+	const localFirstChecks = Array.isArray(protocol.localFirstChecks) ? protocol.localFirstChecks.join(' ') : '';
+	const fallbackRules = Array.isArray(protocol.fallbackRules) ? protocol.fallbackRules.join(' ') : '';
 	const coverageAreas = new Map((input.status.suite?.coverage?.areas ?? []).map((area) => [area.id, area]));
 	const vaultCoverage = coverageAreas.get('document-vault-user-docs');
 	const writeCoverage = coverageAreas.get('document-writing-user-docs');
@@ -238,6 +248,19 @@ function summarizeDocumentGroundingGoal(input) {
 	if (!/\b(explicitly asks|explicit confirmation|confirmation)\b/i.test(writeAcceptance)) problems.push('documentGroundingGoal.writeAcceptance must require explicit user intent or confirmation.');
 	if (!/\breviewable\b/i.test(writeAcceptance)) problems.push('documentGroundingGoal.writeAcceptance must require reviewable generated content.');
 	if (!/\bnever silently overwrite\b/i.test(writeAcceptance)) problems.push('documentGroundingGoal.writeAcceptance must prohibit silent overwrites.');
+	if (contract.contractId !== 'scout-local-ai-sovereign-harness') problems.push('harness contract must identify the Scout local AI sovereign harness.');
+	if (!/\breuse the canonical suite\b/i.test(newModelLaneRequirements)) problems.push('modelIndependenceProtocol must require new model lanes to reuse the canonical suite.');
+	if (!/\bmodelId\b/i.test(newModelLaneRequirements) || !/\bproof lane\b/i.test(newModelLaneRequirements)) {
+		problems.push('modelIndependenceProtocol must require model/runtime and proof-lane metadata.');
+	}
+	if (!/\bexpectedTraits\b/i.test(newModelLaneRequirements) || !/\bsafetyCaveats\b/i.test(newModelLaneRequirements)) {
+		problems.push('modelIndependenceProtocol must prevent weakening case rubrics for model swaps.');
+	}
+	if (!/\bCloud\b/i.test(localFirstChecks) || !/\bFinal proof requires a real TestFlight\/iPhone\b/i.test(localFirstChecks)) {
+		problems.push('modelIndependenceProtocol must keep cloud/browser/scaffold diagnostics separate from TestFlight/iPhone proof.');
+	}
+	if (!/\bSwitching models creates a new evidence lane\b/i.test(fallbackRules)) problems.push('modelIndependenceProtocol must make model swaps create a new evidence lane.');
+	if (!/\bdeterministic tools\b/i.test(fallbackRules)) problems.push('modelIndependenceProtocol must keep deterministic tools authoritative over model prose.');
 	if (vaultCoverage?.ok !== true) problems.push(`document-vault coverage is not satisfied: ${vaultCoverage?.count ?? 0}/${vaultCoverage?.minCases ?? '?'}.`);
 	if (writeCoverage?.ok !== true) problems.push(`document-writing coverage is not satisfied: ${writeCoverage?.count ?? 0}/${writeCoverage?.minCases ?? '?'}.`);
 	if (transferCoverage?.ok !== true) problems.push(`domain-transfer readiness coverage is not satisfied: ${transferCoverage?.count ?? 0}/${transferCoverage?.minCases ?? '?'}.`);
@@ -246,7 +269,7 @@ function summarizeDocumentGroundingGoal(input) {
 		ok: problems.length === 0,
 		evidence: problems.length
 			? problems.join('; ')
-			: `${northStar} Source classes include ${goal.sourceClasses.join(', ')}. Transfer target: ${transferAcceptance} Write target: ${writeAcceptance} Coverage: document vault ${vaultCoverage.count}/${vaultCoverage.minCases}, document writing ${writeCoverage.count}/${writeCoverage.minCases}, transfer readiness ${transferCoverage.count}/${transferCoverage.minCases}.`
+			: `${northStar} Source classes include ${goal.sourceClasses.join(', ')}. Transfer target: ${transferAcceptance} Write target: ${writeAcceptance} Model independence: new model lanes reuse the canonical suite and proof gates, record model/runtime/proof metadata, and keep deterministic tools authoritative. Coverage: document vault ${vaultCoverage.count}/${vaultCoverage.minCases}, document writing ${writeCoverage.count}/${writeCoverage.minCases}, transfer readiness ${transferCoverage.count}/${transferCoverage.minCases}.`
 	};
 }
 

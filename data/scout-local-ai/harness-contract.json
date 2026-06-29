@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "contractId": "scout-local-ai-sovereign-harness",
-  "version": "2026-06-28.1",
+  "version": "2026-06-29.1",
   "northStar": "Keep Scout's useful behavior in owned, testable harness assets so the model can be swapped without changing what field-ready answers require.",
   "proofDomain": {
     "current": "Appalachian Trail hiker and document-agent questions for Dad's Hoggcountry app",
@@ -69,6 +69,24 @@
       "mayCountAsFinalProof": true
     }
   ],
+  "modelIndependenceProtocol": {
+    "newModelLaneRequirements": [
+      "A new model lane must reuse the canonical suite, answer contract, review rubric, and proof gates unchanged.",
+      "It must record modelId, provider or runtime, mode, app build, install source, suite version/hash, and proof lane.",
+      "It must preserve required tool calls, source receipts, opened-document ids, and document-writing confirmation metadata.",
+      "It must not change expectedTraits, safetyCaveats, requiredTools, or human ratings to make a model pass."
+    ],
+    "localFirstChecks": [
+      "Cloud, browser, and scaffold runs are iteration diagnostics only and cannot become final Dad proof.",
+      "Debug simulator/on-device Gemma Run 100 must pass with complete tools, source evidence, and answer-quality scan before Dad spends TestFlight time.",
+      "Final proof requires a real TestFlight/iPhone install source, the current 100-case suite, human 5/5 review, and repeated strict stability proof."
+    ],
+    "fallbackRules": [
+      "If a model cannot use tools, receipts, source-document opening, or confirmation metadata reliably, classify the miss as local-model-limitation, weak-tool, bad-routing, or poor-document-writing-flow instead of weakening the suite.",
+      "Switching models creates a new evidence lane until it passes the same run, review, source, and proof gates.",
+      "A model may draft prose, but deterministic tools and document contracts remain the authority for trail facts, source-backed claims, and user-owned document writes."
+    ]
+  },
   "sourceClasses": [
     "bundled_app_documents",
     "structured_trail_data",

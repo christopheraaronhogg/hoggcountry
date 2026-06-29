@@ -20,6 +20,10 @@ contract, change the harness deliberately and keep the tests updated. The review
 engine accepts `poor-document-writing-flow` as its own failure category so draft,
 confirmation, save-preview, or versioning misses do not get hidden under generic
 UX.
+The contract's `modelIndependenceProtocol` is the model-swap rulebook: any new
+local model lane must reuse the same suite, answer contract, review rubric,
+source/tool receipt requirements, and proof gates. A model can change; the
+evidence standard cannot.
 The contract also names independent reviewer roles for source grounding, trail
 math/safety, document-writing, and proof-lane evidence. The answer path can
 draft, but a 5/5 review has to verify the artifact separately: source-backed
