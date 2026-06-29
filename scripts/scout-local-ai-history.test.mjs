@@ -98,9 +98,13 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 	assert.equal(history.summary.runCount, 2);
 	assert.equal(history.summary.caseCount, 1);
 	assert.equal(history.summary.documentTaskCounts['reading-writing'], 1);
+	assert.deepEqual(history.summary.evidenceLaneCounts, { 'device-on-device-gemma': 2 });
+	assert.deepEqual(history.summary.modelRuntimeCounts, { 'gemma-4-E2B-it-litert-lm / on-device / on-device-gemma / debug': 2 });
 	assert.equal(history.summary.confidenceCounts.low, 1);
 	assert.equal(history.summary.confidenceCounts.medium, 1);
 	assert.equal(history.summary.latestConfidenceCounts.medium, 1);
+	assert.deepEqual(history.summary.latestEvidenceLaneCounts, { 'device-on-device-gemma': 1 });
+	assert.deepEqual(history.summary.latestModelRuntimeCounts, { 'gemma-4-E2B-it-litert-lm / on-device / on-device-gemma / debug': 1 });
 	assert.equal(history.summary.failureModeCounts.none, 1);
 	assert.equal(history.summary.failureModeCounts['weak-retrieval'], 1);
 	assert.equal(history.summary.latestFailureModeCounts.none, 1);

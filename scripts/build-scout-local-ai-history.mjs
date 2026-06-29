@@ -586,8 +586,12 @@ function buildHistorySummary(runs, cases, pendingInterventions = summarizeCommit
 		runCount: runs.length,
 		caseCount: cases.length,
 		documentTaskCounts: Object.fromEntries(countBy(cases, (item) => item.documentTask ?? 'unknown')),
+		evidenceLaneCounts: Object.fromEntries(countBy(runs, (run) => normalizeFacet(run.evidenceLane, 'unknown'))),
+		modelRuntimeCounts: Object.fromEntries(countBy(runs, (run) => modelRuntimeFacet(run))),
 		confidenceCounts: Object.fromEntries(countBy(entries, (entry) => normalizeFacet(entry.confidence, 'missing'))),
 		latestConfidenceCounts: Object.fromEntries(countBy(latestEntries, (entry) => normalizeFacet(entry.confidence, 'missing'))),
+		latestEvidenceLaneCounts: Object.fromEntries(countBy(latestEntries, (entry) => normalizeFacet(entry.evidenceLane, 'unknown'))),
+		latestModelRuntimeCounts: Object.fromEntries(countBy(latestEntries, (entry) => modelRuntimeFacet(entry))),
 		failureModeCounts: Object.fromEntries(countBy(entries, (entry) => normalizeFacet(entry.failureMode, 'none'))),
 		latestFailureModeCounts: Object.fromEntries(countBy(latestEntries, (entry) => normalizeFacet(entry.failureMode, 'none'))),
 		reviewedEntryCount,
@@ -830,6 +834,15 @@ function normalizeAnswer(value) {
 function normalizeFacet(value, fallback) {
 	const text = String(value ?? '').trim();
 	return text || fallback;
+}
+
+function modelRuntimeFacet(record) {
+	return [
+		record?.modelId,
+		record?.mode,
+		record?.provider,
+		record?.app?.installType
+	].map((item) => String(item ?? '').trim()).filter(Boolean).join(' / ') || 'unknown';
 }
 
 function compact(value, max) {
