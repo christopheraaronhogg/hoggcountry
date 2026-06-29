@@ -12,6 +12,7 @@ import { createScoutLocalAiPhoneBuildAction } from './lib/scout-local-ai-phone-b
 import { inferOwnerLayer, ownerLayerProblems } from './lib/scout-local-ai-review.mjs';
 import { summarizeRunSourceEvidence } from './lib/scout-local-ai-source-evidence.mjs';
 import { summarizeScoutLocalAiSuiteCoverage } from './lib/scout-local-ai-suite-coverage.mjs';
+import { summarizeScoutLocalAiTaskClassCoverage } from './lib/scout-local-ai-task-classes.mjs';
 import { scoutLocalAiSuiteHash } from './lib/scout-local-ai-suite.mjs';
 
 const SUITE_PATH = new URL('../data/scout-local-ai/dad-local-ai-100.json', import.meta.url);
@@ -289,6 +290,27 @@ test('Dad local AI eval suite covers requested hiker objective areas', async () 
 	assert.ok(byId['confusing-edge-cases'].count >= 10);
 });
 
+test('Dad local AI eval suite covers reusable hiker and document-agent task classes', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const coverage = summarizeScoutLocalAiTaskClassCoverage(suite);
+	const byId = Object.fromEntries(coverage.areas.map((area) => [area.id, area]));
+
+	assert.equal(coverage.ok, true, coverage.errors.join('\n'));
+	assert.equal(coverage.errors.length, 0);
+	assert.ok(byId['find-next-water'].count >= 8);
+	assert.ok(byId['find-next-town-resupply'].count >= 8);
+	assert.ok(byId['explain-today-difficulty'].count >= 8);
+	assert.ok(byId['weather-tomorrow-or-stale'].count >= 8);
+	assert.ok(byId['camp-or-push-decision'].count >= 8);
+	assert.ok(byId['safety-escalation'].count >= 10);
+	assert.ok(byId['offline-cache-honesty'].count >= 8);
+	assert.ok(byId['source-backed-doc-answer'].count >= 10);
+	assert.ok(byId['summarize-saved-user-docs'].count >= 2);
+	assert.ok(byId['draft-update-vault-doc'].count >= 2);
+	assert.ok(byId['compare-options'].count >= 6);
+	assert.ok(byId['missing-data-honesty'].count >= 8);
+});
+
 test('Scout local AI harness contract preserves model-agnostic document-agent boundaries', async () => {
 	const contract = JSON.parse(await readFile(HARNESS_CONTRACT_PATH, 'utf8'));
 	assert.equal(contract.schemaVersion, 1);
@@ -431,6 +453,8 @@ test('README documents device review acceptance states', async () => {
 	assert.match(readme, /embeds the `harness-contract\.json` independent review gates/u);
 	assert.match(readme, /source grounding, trail math\/safety, document-writing confirmation, and\s+proof-lane separation/u);
 	assert.match(readme, /Final Dad\s+readiness still requires all 100 cases rated 5\/5/u);
+	assert.match(readme, /task-class anti-overfit coverage/u);
+	assert.match(readme, /finding next water, finding the next town, explaining today's\s+difficulty/u);
 });
 
 test('iOS simulator Gemma runner writes answer-quality scan artifacts', async () => {
@@ -517,6 +541,20 @@ test('objective coverage summary fails when a requested objective area disappear
 
 	assert.equal(coverage.ok, false);
 	assert.match(coverage.errors.join('\n'), /Bible and spiritual support coverage/u);
+});
+
+test('task-class coverage summary fails when a reusable hiker task class disappears', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const baseline = summarizeScoutLocalAiTaskClassCoverage(suite);
+	const waterCaseIds = new Set(baseline.areas.find((area) => area.id === 'find-next-water')?.caseIds ?? []);
+	const weakened = {
+		...suite,
+		cases: suite.cases.filter((testCase) => !waterCaseIds.has(testCase.id))
+	};
+	const coverage = summarizeScoutLocalAiTaskClassCoverage(weakened);
+
+	assert.equal(coverage.ok, false);
+	assert.match(coverage.errors.join('\n'), /Find the next water task-class coverage/u);
 });
 
 test('mobile embedded Dad local AI eval suite matches canonical suite', async () => {
@@ -660,8 +698,10 @@ test('status command keeps routing proof separate from missing device proof', as
 
 	assert.equal(status.suite.caseCount, 100);
 	assert.equal(status.suite.coverage.ok, true);
+	assert.equal(status.suite.taskClassCoverage.ok, true);
 	assert.equal(gates.suite.ok, true);
 	assert.equal(gates.coverage.ok, true);
+	assert.equal(gates['task-class-coverage'].ok, true);
 	assert.equal(gates.routing.ok, true);
 	assert.equal(gates['testflight-target'].ok, true);
 	assert.equal(gates['device-run'].ok, false);
@@ -733,6 +773,9 @@ test('status command keeps routing proof separate from missing device proof', as
 	);
 	assert.match(textResult.stdout, /Proof lanes \(current suite\): scaffold-not-model=1/u);
 	assert.match(textResult.stdout, /Model\/runtime lanes \(current suite\): scaffold-not-model \/ scaffold \/ scaffold-not-model \/ <missing install>=1/u);
+	assert.match(textResult.stdout, /Task-class anti-overfit coverage: yes/u);
+	assert.match(textResult.stdout, /Find the next water: [0-9]+\/8/u);
+	assert.match(textResult.stdout, /Representative task-class anti-overfit coverage:/u);
 	assert.match(textResult.stdout, /Latest inbox handoff: Final Run 100 JSON ready for inbox review \(final-review-ready\)/u);
 	assert.match(textResult.stdout, /Latest inbox boundary: This starts human review only/u);
 });
@@ -2035,6 +2078,9 @@ test('goal audit maps original success criteria without hiding missing device pr
 
 	assert.equal(audit.goalComplete, false);
 	assert.equal(requirements['versioned-100-question-suite'].ok, true);
+	assert.equal(requirements['representative-task-class-benchmark'].ok, true);
+	assert.match(requirements['representative-task-class-benchmark'].evidence, /find-next-water=/u);
+	assert.match(requirements['representative-task-class-benchmark'].evidence, /anti-overfit contract requires improvements/u);
 	assert.equal(requirements['per-case-rubrics-and-tools'].ok, true);
 	assert.equal(requirements['document-grounded-system-goal'].ok, true);
 	assert.match(requirements['document-grounded-system-goal'].evidence, /local-first, model-agnostic, document-grounded assistant/u);
@@ -2071,6 +2117,8 @@ test('goal audit maps original success criteria without hiding missing device pr
 	assert.equal(audit.currentStatus.latestInboxExport.evidenceLane, 'device-on-device-gemma');
 	assert.equal(audit.currentStatus.latestInboxExport.appBuild, '13');
 	assert.equal(audit.currentStatus.latestInboxExport.installSource, 'testflight');
+	assert.equal(audit.currentStatus.taskClassCoverage.ok, true);
+	assert.ok(audit.currentStatus.taskClassCoverage.areas.some((area) => area.id === 'draft-update-vault-doc' && area.ok));
 	assert.equal(audit.currentStatus.nextAction.kind, 'prepare-inbox-export');
 	assert.match(audit.currentStatus.nextAction.text, /device-goal-audit-inbox/u);
 	assert.match(audit.currentStatus.nextAction.text, /--run inbox/u);

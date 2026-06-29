@@ -146,6 +146,15 @@ newest likely Scout Eval Lab export ready for `--run inbox` inspection.
 When a likely inbox export exists and no final device run has been imported yet,
 the next action switches to preparing that export instead of asking Dad to run
 the phone again.
+Status also reports task-class anti-overfit coverage. This is a derived gate
+over the same stable 100 cases, so it does not invalidate the TestFlight build
+when the classifier changes. It proves that the suite still represents reusable
+jobs such as finding next water, finding the next town, explaining today's
+difficulty, checking weather freshness, choosing camp or push, answering from
+offline cached data, searching/opening source documents, summarizing saved user
+docs, drafting/updating vault notes, comparing options, and saying when data is
+missing. If this gate fails, repair the suite by restoring a task class instead
+of teaching Scout one exact prompt.
 The status output also tracks below-5 review debt explicitly: a completed
 below-5 review is marked as needing backlog/plan generation or already planned,
 so improvement work cannot hide behind the broader "review is not 100/100" gate.

@@ -27,6 +27,9 @@ import {
 	summarizeScoutLocalAiSuiteCoverage
 } from './lib/scout-local-ai-suite-coverage.mjs';
 import {
+	summarizeScoutLocalAiTaskClassCoverage
+} from './lib/scout-local-ai-task-classes.mjs';
+import {
 	scoutLocalAiSuiteIdentity
 } from './lib/scout-local-ai-suite.mjs';
 import {
@@ -100,6 +103,7 @@ async function buildStatus(paths) {
 	const finalProof = summarizeFinalProofRequirement(suite);
 	const suiteErrors = validateSuite(suite, mobileSuite, suiteIdentity);
 	const suiteCoverage = summarizeScoutLocalAiSuiteCoverage(suite);
+	const taskClassCoverage = summarizeScoutLocalAiTaskClassCoverage(suite);
 	const runs = await loadJsonFiles(paths.runsDir);
 	const deviceRuns = await loadJsonFiles(paths.deviceRunsDir);
 	const reviews = await loadJsonFiles(paths.reviewsDir);
@@ -213,6 +217,7 @@ async function buildStatus(paths) {
 	const gates = createGates({
 		suiteErrors,
 		suiteCoverage,
+		taskClassCoverage,
 		suite,
 		suiteIdentity,
 		testflight,
@@ -241,6 +246,7 @@ async function buildStatus(paths) {
 			finalProof,
 			mobileCopyMatches: mobileSuite ? stableJson(mobileSuite) === stableJson(suite) : false,
 			coverage: suiteCoverage,
+			taskClassCoverage,
 			errors: suiteErrors
 		},
 		paths: {
@@ -344,6 +350,7 @@ function validateSuite(suite, mobileSuite, suiteIdentity) {
 function createGates(input) {
 	const suiteOk = input.suiteErrors.length === 0;
 	const coverageOk = input.suiteCoverage.ok;
+	const taskClassCoverageOk = input.taskClassCoverage.ok;
 	const routingOk = input.currentFullRoutingRuns.length > 0 || input.currentFullToolCompleteRuns.length > 0;
 	const localPreflightOk = input.localPreflight?.ok === true;
 	const testflightOk = input.testflight.targetBuildAvailableForDad && input.testflight.targetBuildMeetsSuiteRequirement;
@@ -370,6 +377,14 @@ function createGates(input) {
 			evidence: coverageOk
 				? input.suiteCoverage.areas.map((area) => `${area.id}=${area.count}`).join(', ')
 				: input.suiteCoverage.errors.join('; ')
+		},
+		{
+			id: 'task-class-coverage',
+			label: 'Representative task-class anti-overfit coverage',
+			ok: taskClassCoverageOk,
+			evidence: taskClassCoverageOk
+				? input.taskClassCoverage.areas.map((area) => `${area.id}=${area.count}`).join(', ')
+				: input.taskClassCoverage.errors.join('; ')
 		},
 		{
 			id: 'routing',
@@ -467,6 +482,12 @@ function nextActionFor(
 		return {
 			kind: 'fix-suite-coverage',
 			text: 'Add or restore objective coverage in data/scout-local-ai/dad-local-ai-100.json, sync the mobile copy, then rerun the Scout local-AI suite test.'
+		};
+	}
+	if (!gate('task-class-coverage')?.ok) {
+		return {
+			kind: 'fix-suite-task-class-coverage',
+			text: 'Restore representative task-class coverage in data/scout-local-ai/dad-local-ai-100.json so the benchmark covers reusable hiker/document-agent jobs instead of only exact prompts; sync the mobile copy, then rerun the Scout local-AI suite test.'
 		};
 	}
 	if (!gate('routing')?.ok) {
@@ -1553,10 +1574,15 @@ function createStatusMarkdown(status) {
 		`- Final proof app requirement: \`${status.suite.finalProof.requiredApp}\``,
 		`- Mobile copy matches: ${status.suite.mobileCopyMatches ? 'yes' : 'no'}`,
 		`- Objective coverage: ${status.suite.coverage.ok ? 'yes' : 'no'}`,
+		`- Task-class anti-overfit coverage: ${status.suite.taskClassCoverage.ok ? 'yes' : 'no'}`,
 		'',
 		'Coverage areas:',
 		'',
 		...status.suite.coverage.areas.map((area) => `- ${area.ok ? '[x]' : '[ ]'} ${area.label}: ${area.count}/${area.minCases}`),
+		'',
+		'Task-class areas:',
+		'',
+		...status.suite.taskClassCoverage.areas.map((area) => `- ${area.ok ? '[x]' : '[ ]'} ${area.label}: ${area.count}/${area.minCases}`),
 		'',
 		'## TestFlight Target',
 		'',
