@@ -21,9 +21,11 @@ Checked at: 2026-06-29T00:44:40Z
 - `LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 npm --prefix mobile run cap:sync:ios`
   passed, including `npm run build`, iOS preflight, `npx cap sync ios`, and
   ScoutGemma plugin registration.
-- Current simulator/debug Gemma Run 100 remains the latest local preflight:
+- At this check, simulator/debug Gemma Run 100 was the latest local preflight:
   `device-local-ai-20260629T001151Z`, 100/100 cases, all required tools hit,
   all source evidence complete, 0 answer-quality flags.
+- Later simulator preflight was refreshed by
+  `docs/launch/proof/scout-local-ai-sim-preflight-2026-06-29T00-56-30Z.md`.
 - App Store Connect read-only refresh was not rerun in this shell because
   `APP_STORE_CONNECT_API_KEY_PATH`, `APP_STORE_CONNECT_API_KEY_ID`, and
   `APP_STORE_CONNECT_API_ISSUER_ID` were not set. The latest recorded read-only
