@@ -1180,6 +1180,43 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 		'I would top off here and keep the carry conservative until water is confirmed.\n\nWeather note: Cached weather near mile 137.2: hot and humid (high 88F / low 69F). Heat makes dry climbs riskier.\n\nRidge-water decision note: camel up at the last confirmed source and carry extra over the ridge when the next source is seasonal, unverified, exposed, hot, or after a hard climb; only carry the lighter plan when the next reliable water is confirmed and conditions are mild.\n\nRidge-water context: next water is Next loaded water: Seasonal seep ahead at mile 138.3 (1.1 mi ahead, seasonal). Seasonal open-reference candidate; confirm current flow; the next reliable loaded option is Reliable creek crossing (mi 142.7); weather context is Cached weather near mile 137.2: hot and humid (high 88F / low 69F). Heat makes dry climbs riskier. Decision: camel up at the last confirmed source and carry extra until reliable water is confirmed.\n\nWater verification note: Next loaded water: Seasonal seep ahead at mile 138.3 (1.1 mi ahead, seasonal). Seasonal open-reference candidate; confirm current flow. Visually confirm flow before relying on it, filter or treat any water you collect, and carry enough to reach a verified source if it is dry.'
 	);
 
+	const ridgeWaterFalseLocationAnswer = polishOnDeviceAnswer(
+		"I need to know where you are right now and where the next water source or town is located to give you a clear answer.\n\nIf you are on a ridge and the next water is seasonal, unverified, exposed, hot, or after a hard climb, you should camel up at the last confirmed source and carry extra water.\n\nI don't know your current location, so I can't tell you exactly where to camel up.",
+		'Should I camel up here or carry extra water over the ridge?',
+		[
+			{
+				toolId: 'next_water',
+				args: { fromMile: 136.5 },
+				summary: 'Next loaded water: Seasonal seep ahead at mile 138.3 (1.8 mi ahead, seasonal). Seasonal open-reference candidate; confirm current flow.',
+				confidence: 'medium',
+				receipts: []
+			},
+			{
+				toolId: 'upcoming_terrain',
+				args: { fromMile: 136.5 },
+				summary: 'Next 20 mi from 136.5: Terrain: next 15 mi from 136.5-151.5 has difficulty moderate-hard (6.8/10), +1,420 ft gain, -760 ft loss, 14.8% max grade | Key steep sections: climb mi 138.6-139.8 (2.1 mi ahead, 14.8%, 640 ft); Water: Seasonal seep ahead (mi 138.3), Reliable creek crossing (mi 142.7)',
+				confidence: 'medium',
+				receipts: []
+			},
+			{
+				toolId: 'weather_lookup',
+				args: { fromMile: 136.5 },
+				summary: 'Cached weather near mile 136.5: partly cloudy with changing mountain conditions (high 67F / low 51F, wind 9 mph). Mountain weather changes quickly; refresh before safety-critical choices.',
+				confidence: 'medium',
+				receipts: []
+			}
+		]
+	);
+	assert.doesNotMatch(
+		ridgeWaterFalseLocationAnswer,
+		/need to know where you are|don't know your current location|can't tell you exactly where to camel up/i
+	);
+	assert.match(ridgeWaterFalseLocationAnswer, /^Ridge-water context:/);
+	assert.match(ridgeWaterFalseLocationAnswer, /Seasonal seep ahead at mile 138\.3/);
+	assert.match(ridgeWaterFalseLocationAnswer, /Reliable creek crossing \(mi 142\.7\)/);
+	assert.match(ridgeWaterFalseLocationAnswer, /Decision: camel up/);
+	assert.match(ridgeWaterFalseLocationAnswer, /Water verification note:/);
+
 	assert.equal(
 		polishOnDeviceAnswer(
 			'Stop at Ridge Shelter [source_search]. Verify water and crowding [next_shelter].',

@@ -389,6 +389,11 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	if (!isFearComfortPrompt(lowerPrompt)) {
 		answer = removeUnaskedFearComfortDrift(answer);
 	}
+	const removedFalseMissingLocationContext =
+		hasLoadedLocationDecisionContext(toolInvocations) && hasFalseMissingLocationContextDrift(answer);
+	if (removedFalseMissingLocationContext) {
+		answer = removeFalseMissingLocationContextDrift(answer);
+	}
 	if (isInjuryPrompt(lowerPrompt)) {
 		answer = removeInjuryPrepDrift(answer);
 	}
@@ -606,6 +611,14 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	}
 	if (isHeatWaterPrompt(lowerPrompt) && !isAcuteHeatIllnessPrompt(lowerPrompt) && !mentionsHeatWaterPlanning(answer)) {
 		answer = appendSentence(answer, HEAT_WATER_PLANNING_NOTE);
+	}
+	if (
+		isRidgeWaterDecisionPrompt(lowerPrompt) &&
+		removedFalseMissingLocationContext &&
+		toolSummary(toolInvocations, 'next_water') &&
+		!mentionsConcreteRidgeWaterContext(answer, toolInvocations)
+	) {
+		answer = prependSentence(answer, buildRidgeWaterContextNote(toolInvocations));
 	}
 	if (isRidgeWaterDecisionPrompt(lowerPrompt) && !mentionsRidgeWaterDecision(answer)) {
 		answer = appendSentence(answer, RIDGE_WATER_NOTE);
@@ -893,6 +906,21 @@ function removeMisappliedHeatIllnessDrift(answer: string): string {
 			const sentences = splitSentences(paragraph)
 				.map((sentence) => sentence.trim())
 				.filter((sentence) => sentence && !containsHeatIllnessDrift(sentence));
+			return sentences.join(' ');
+		})
+		.filter(Boolean)
+		.join('\n\n')
+		.trim();
+	return filtered || answer;
+}
+
+function removeFalseMissingLocationContextDrift(answer: string): string {
+	const filtered = answer
+		.split(/\n{2,}/u)
+		.map((paragraph) => {
+			const sentences = splitSentences(paragraph)
+				.map((sentence) => sentence.trim())
+				.filter((sentence) => sentence && !containsFalseMissingLocationContextDrift(sentence));
 			return sentences.join(' ');
 		})
 		.filter(Boolean)
@@ -1604,8 +1632,28 @@ function toolSummary(toolInvocations: ToolInvocationRecord[], toolId: string): s
 	return summary || null;
 }
 
+function hasLoadedLocationDecisionContext(toolInvocations: ToolInvocationRecord[]): boolean {
+	return Boolean(
+		toolSummary(toolInvocations, 'current_mile') ||
+		toolSummary(toolInvocations, 'next_water') ||
+		toolSummary(toolInvocations, 'next_town') ||
+		toolSummary(toolInvocations, 'upcoming_terrain') ||
+		toolSummary(toolInvocations, 'weather_lookup')
+	);
+}
+
 function hasActionableWaterSummary(summary: string | null): summary is string {
 	return Boolean(summary && !/\bNo water source or mapped water candidate found\b/iu.test(summary));
+}
+
+function hasFalseMissingLocationContextDrift(answer: string): boolean {
+	return answer
+		.split(/\n{2,}/u)
+		.some((paragraph) => splitSentences(paragraph).some((sentence) => containsFalseMissingLocationContextDrift(sentence)));
+}
+
+function containsFalseMissingLocationContextDrift(sentence: string): boolean {
+	return /\b(?:i need to know|i(?: do not| don't) know|i can(?:not|'t) tell|i would need)\b[^.?!\n]*(?:where you are|current location|your location|current mile|next water source|next water|next town|where to camel up)/iu.test(sentence);
 }
 
 function containsUnsafePersonShelterDrift(sentence: string): boolean {
