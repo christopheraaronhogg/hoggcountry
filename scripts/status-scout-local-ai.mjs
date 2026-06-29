@@ -653,12 +653,15 @@ function nextActionFor(
 					kind: 'align-suite-build',
 					text: `Align the Xcode target build with the suite final-proof requirement ${testflight?.suiteRequiredBuild ?? '<unknown>'}; current target is ${testflight?.targetBuild ?? '<unknown>'}.`
 				};
+				}
+				const publishText = phoneBuildAction?.kind === 'upload-current-suite-build' && testflight?.targetBuildReadyForDad
+					? phoneBuildAction.text
+					: `Upload and attach target iOS build ${testflight.targetBuild ?? '<unknown>'} to Dad Pilot first; release evidence currently records Dad Pilot on ${testflight.recordedDadPilotBuild ?? '<unknown>'}, while the suite requires ${testflight.suiteRequiredBuild ?? '<unknown>'}.`;
+				return {
+					kind: 'publish-target-build',
+					text: `${publishText} After App Store Connect shows the current-suite build through the TestFlight link, update the iPhone, open Settings > Scout Eval Lab, run Run 100, Share the JSON, then prepare review with ${DEVICE_REVIEW_PREP_COMMAND}.`
+				};
 			}
-			return {
-				kind: 'publish-target-build',
-				text: `Upload and attach target iOS build ${testflight.targetBuild ?? '<unknown>'} to Dad Pilot first; release evidence currently records Dad Pilot on ${testflight.recordedDadPilotBuild ?? '<unknown>'}, while the suite requires ${testflight.suiteRequiredBuild ?? '<unknown>'}. After App Store Connect shows the target build through the TestFlight link, update the iPhone, open Settings > Scout Eval Lab, run Run 100, Share the JSON, then prepare review with ${DEVICE_REVIEW_PREP_COMMAND}.`
-			};
-		}
 		const phoneBuild =
 			testflight?.targetBuildReadyForDad || !testflight?.recordedDadPilotMeetsSuiteRequirement
 				? `the latest TestFlight build (${testflight?.targetBuild ?? '<unknown>'})`

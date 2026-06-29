@@ -12,12 +12,16 @@ export function createScoutLocalAiPhoneBuildAction({ testflight, nativeSource })
 		};
 	}
 	if (nativeSource?.latestNativeUploadHasCurrentSuite === false) {
+		const targetBuildNumber = buildNumberFromLabel(targetBuild);
+		const uploadInstruction = testflight?.targetBuildReadyForDad && targetBuildNumber
+			? `Bump CURRENT_PROJECT_VERSION above ${targetBuildNumber} before uploading this checkout; App Store Connect will not accept reusing build ${targetBuildNumber}. After upload and processing, attach the new current-suite build to Dad Pilot.`
+			: `Upload and attach ${targetBuild} to Dad Pilot first.`;
 		return {
 			kind: 'upload-current-suite-build',
 			canRunNow: false,
 			requiresNewUploadBeforeRun100: true,
 			requiresNewUploadForLatestAppSourceProof: true,
-			text: `Do not ask Dad for Run 100 yet; the latest TestFlight upload contains suite ${nativeSource.latestNativeUploadSuiteVersion ?? '<unknown>'} (${nativeSource.latestNativeUploadSuiteHash ?? '<unknown>'}), but the current suite is ${testflight.currentSuiteVersion ?? '<unknown>'} (${testflight.currentSuiteHash ?? '<unknown>'}). Upload and attach ${targetBuild} to Dad Pilot first.`
+			text: `Do not ask Dad for Run 100 yet; the latest TestFlight upload contains suite ${nativeSource.latestNativeUploadSuiteVersion ?? '<unknown>'} (${nativeSource.latestNativeUploadSuiteHash ?? '<unknown>'}), but the current suite is ${testflight.currentSuiteVersion ?? '<unknown>'} (${testflight.currentSuiteHash ?? '<unknown>'}). ${uploadInstruction}`
 		};
 	}
 	if (!testflight?.targetBuildAvailableForDad) {
@@ -78,4 +82,9 @@ function nativeSourceAction(nativeSource) {
 		requiresNewUploadForLatestAppSourceProof: false,
 		text: 'Latest native upload source is unknown; final proof still depends on the imported TestFlight/iPhone export showing a suite-compatible app build.'
 	};
+}
+
+function buildNumberFromLabel(label) {
+	const match = String(label ?? '').match(/^\d+(?:\.\d+)*\s+\((\d+)\)$/u);
+	return match?.[1] ?? null;
 }

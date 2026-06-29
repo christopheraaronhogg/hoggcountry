@@ -205,6 +205,39 @@ test('phone build action blocks Dad when latest upload contains a stale eval sui
 	assert.match(action.text, /Upload and attach 1\.0 \(28\) to Dad Pilot first/u);
 });
 
+test('phone build action warns before reusing an existing TestFlight build number', () => {
+	const action = createScoutLocalAiPhoneBuildAction({
+		testflight: {
+			targetBuild: '1.0 (34)',
+			recordedDadPilotBuild: '1.0 (34)',
+			suiteRequiredBuild: '1.0 (>= 13)',
+			targetBuildMeetsSuiteRequirement: true,
+			recordedDadPilotMeetsSuiteRequirement: true,
+			targetBuildReadyForDad: true,
+			targetBuildAvailableForDad: false,
+			currentSuiteVersion: '2026-06-29.1',
+			currentSuiteHash: 'fnv1a32:new'
+		},
+		nativeSource: {
+			latestNativeUploadHasCurrentSuite: false,
+			latestNativeUploadSuiteVersion: '2026-06-28.5',
+			latestNativeUploadSuiteHash: 'fnv1a32:old',
+			latestNativeUploadHasCurrentSource: false,
+			sourceNewerThanLatestNativeUpload: true,
+			nativeAppSourceNewerThanLatestNativeUpload: true,
+			sourceDiffersFromLatestNativeUpload: true,
+			nativeAppChangedFileCount: 4
+		}
+	});
+
+	assert.equal(action.kind, 'upload-current-suite-build');
+	assert.equal(action.canRunNow, false);
+	assert.equal(action.requiresNewUploadBeforeRun100, true);
+	assert.match(action.text, /Bump CURRENT_PROJECT_VERSION above 34/u);
+	assert.match(action.text, /App Store Connect will not accept reusing build 34/u);
+	assert.match(action.text, /attach the new current-suite build to Dad Pilot/u);
+});
+
 test('Dad local AI eval suite has 100 complete, reviewable cases', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	assert.equal(suite.schemaVersion, 1);
@@ -1048,12 +1081,12 @@ test('status command asks for simulator preflight when no device export exists y
 	await mkdir(runsDir, { recursive: true });
 	await mkdir(inboxDir, { recursive: true });
 	await mkdir(iosProofDir, { recursive: true });
-		await writeIosUploadProofFixture(iosProofDir, {
-			repoSha: staleUploadRepoSha,
-			suiteVersion: staleUploadSuite?.version ?? '2026-01-01.1',
-			suiteHash: staleUploadSuite?.hash ?? 'fnv1a32:00000000',
-			fileStamp: '2026-06-27T02-39-27-165Z'
-		});
+	await writeIosUploadProofFixture(iosProofDir, {
+		repoSha: staleUploadRepoSha,
+		suiteVersion: staleUploadSuite?.version ?? '2026-01-01.1',
+		suiteHash: staleUploadSuite?.hash ?? 'fnv1a32:00000000',
+		fileStamp: '2026-06-27T02-39-27-165Z'
+	});
 	const routingRun = deviceRunForCases(suite, suite.cases, {
 		runId: 'routing-status-wait-proof',
 		completeTools: true
@@ -2541,12 +2574,12 @@ test('Dad handoff command can print a concise Run 100 message for Dad', async ()
 		'- [x] targetReadyForDad',
 		''
 	].join('\n'));
-		await writeIosUploadProofFixture(iosProofDir, {
-			repoSha: staleUploadRepoSha,
-			suiteVersion: staleUploadSuite?.version ?? '2026-01-01.1',
-			suiteHash: staleUploadSuite?.hash ?? 'fnv1a32:00000000',
-			fileStamp: '2026-06-27T02-39-27-165Z'
-		});
+	await writeIosUploadProofFixture(iosProofDir, {
+		repoSha: staleUploadRepoSha,
+		suiteVersion: staleUploadSuite?.version ?? '2026-01-01.1',
+		suiteHash: staleUploadSuite?.hash ?? 'fnv1a32:00000000',
+		fileStamp: '2026-06-27T02-39-27-165Z'
+	});
 
 	const result = await execFileAsync(
 		process.execPath,
