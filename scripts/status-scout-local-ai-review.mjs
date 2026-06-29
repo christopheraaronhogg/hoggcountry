@@ -32,6 +32,7 @@ if (!cli.run || !cli.review) {
 	throw new Error([
 		'Usage: npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json',
 		'Optional: --packet data/scout-local-ai/review-packets/<run-id>.review.md to preview draft packet progress without writing review JSON.',
+		'Optional: --scan data/scout-local-ai/answer-quality-scans/<run-id>.scan.json to prioritize heuristic answer-quality flags.',
 		'Optional: --case DLA-001 to print a focused read-only review card for one case.',
 		'Optional: --next to select the next unrated case, then the next below-5 focus case.',
 		'Optional: --batch-size 5 to control human-reviewed batch helper size.',
@@ -46,17 +47,20 @@ const packetPath = cli.packet ? resolveInputPath(cli.packet) : null;
 const suite = JSON.parse(await readFile(suitePath, 'utf8'));
 const run = JSON.parse(await readFile(runPath, 'utf8'));
 const review = JSON.parse(await readFile(reviewPath, 'utf8'));
+const scanPath = cli.scan ? resolveInputPath(cli.scan) : null;
+const answerQualityScan = scanPath ? JSON.parse(await readFile(scanPath, 'utf8')) : null;
 const packetDraft = packetPath ? await buildPacketDraft({ packetPath, review }) : null;
 const progressReview = packetDraft?.applied ? packetDraft.review : review;
 const progress = buildReviewProgress({
 	suite,
 	run,
 	review: progressReview,
+	answerQualityScan,
 	packetDraft,
 	selectedCaseId: cli.case ?? cli.caseId,
 	selectNextCase: Boolean(cli.next),
 	reviewBatchSize: parseReviewBatchSize(cli.batchSize),
-	paths: { suitePath, runPath, reviewPath, packetPath }
+	paths: { suitePath, runPath, reviewPath, packetPath, scanPath }
 });
 
 if (cli.json) {
@@ -91,7 +95,7 @@ async function buildPacketDraft({ packetPath, review }) {
 	}
 }
 
-function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, selectNextCase, reviewBatchSize, paths }) {
+function buildReviewProgress({ suite, run, review, answerQualityScan, packetDraft, selectedCaseId, selectNextCase, reviewBatchSize, paths }) {
 	const summary = Array.isArray(review?.cases)
 		? summarizeReview(review)
 		: emptyReviewSummary();
@@ -103,13 +107,15 @@ function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, 
 		...evidenceProblems
 	];
 	const reviewByCaseId = new Map((review.cases ?? []).map((entry) => [entry.caseId, entry]));
+	const answerQualityByCaseId = buildAnswerQualityByCaseId(answerQualityScan);
 	const queue = (run.results ?? []).map((result, index) => {
 		const entry = reviewByCaseId.get(result.caseId) ?? {};
 		const sourceGaps = sourceEvidenceProblems(
 			result.case?.requiredTools ?? result.toolExpectations?.required ?? [],
 			result.toolInvocations ?? []
 		);
-		const signal = reviewSignal(result, sourceGaps);
+		const answerQualityFlags = answerQualityByCaseId.get(result.caseId)?.checks ?? [];
+		const signal = reviewSignal(result, sourceGaps, answerQualityFlags);
 		const rating = entry.rating ?? null;
 		const suggestedFailureCategories = suggestedFailureCategoriesForResult(result);
 		const suggestedOwnerLayer = inferOwnerLayer(suggestedFailureCategories, result);
@@ -129,13 +135,15 @@ function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, 
 			missingTools: result.toolExpectations?.missing ?? [],
 			sourceEvidenceGaps: sourceGaps.map((problem) => problem.message),
 			sourceEvidenceGapExpectations: sourceGaps.map((problem) => problem.expectation),
+			answerQualityFlags: answerQualityFlags.map(formatAnswerQualityFlag),
+			answerQualityCheckIds: answerQualityFlags.map((check) => check.id),
 			suggestedFailureCategories,
 			suggestedOwnerLayer,
 			reviewFailureCategories,
 			reviewOwnerLayer,
 			triageFailureCategories: belowFive && reviewFailureCategories.length ? reviewFailureCategories : suggestedFailureCategories,
 			triageOwnerLayer: belowFive && reviewOwnerLayer ? reviewOwnerLayer : suggestedOwnerLayer,
-			evidenceGapSummary: formatQueueEvidenceGaps(result, sourceGaps),
+			evidenceGapSummary: formatQueueEvidenceGaps(result, sourceGaps, answerQualityFlags),
 			promptPreview: truncate(result.case?.prompt ?? entry.prompt ?? '', 120),
 			answerPreview: truncate(entry.answerPreview ?? result.answer ?? result.error ?? '', 220),
 			index
@@ -153,7 +161,8 @@ function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, 
 		suite: relative(REPO_ROOT, paths.suitePath),
 		run: relative(REPO_ROOT, paths.runPath),
 		review: relative(REPO_ROOT, paths.reviewPath),
-		packet: paths.packetPath ? relative(REPO_ROOT, paths.packetPath) : null
+		packet: paths.packetPath ? relative(REPO_ROOT, paths.packetPath) : null,
+		scan: paths.scanPath ? relative(REPO_ROOT, paths.scanPath) : null
 	};
 	const selectedCase = selectedCaseRequest
 		? buildSelectedCase({
@@ -161,6 +170,7 @@ function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, 
 			run,
 			reviewByCaseId,
 			queue,
+			answerQualityByCaseId,
 			paths: relativePaths
 		})
 		: null;
@@ -222,6 +232,16 @@ function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, 
 		},
 		fullDeviceRun,
 		finalProofContext,
+		answerQualityScan: answerQualityScan
+			? {
+				path: relativePaths.scan,
+				status: answerQualityScan.flaggedCount ? 'review-needed' : 'clean',
+				flaggedCount: answerQualityScan.flaggedCount ?? 0,
+				errorCount: answerQualityScan.errorCount ?? 0,
+				warningCount: answerQualityScan.warningCount ?? 0,
+				byCheck: answerQualityScan.byCheck ?? {}
+			}
+			: null,
 		readyForBacklog,
 		readyForStrictDeviceProof,
 		strictDeviceProofErrors,
@@ -259,7 +279,19 @@ function parseReviewBatchSize(value) {
 	return parsed;
 }
 
-function buildSelectedCase({ caseId, run, reviewByCaseId, queue, paths }) {
+function buildAnswerQualityByCaseId(answerQualityScan) {
+	const byCaseId = new Map();
+	for (const item of answerQualityScan?.flagged ?? []) {
+		const caseId = String(item?.caseId ?? '').trim();
+		if (!caseId) continue;
+		byCaseId.set(caseId, {
+			checks: Array.isArray(item.checks) ? item.checks : []
+		});
+	}
+	return byCaseId;
+}
+
+function buildSelectedCase({ caseId, run, reviewByCaseId, queue, answerQualityByCaseId, paths }) {
 	const requested = String(caseId ?? '').trim();
 	if (!requested) return null;
 	const result = (run.results ?? []).find((entry) => sameCaseId(entry.caseId, requested));
@@ -272,6 +304,7 @@ function buildSelectedCase({ caseId, run, reviewByCaseId, queue, paths }) {
 		result.case?.requiredTools ?? result.toolExpectations?.required ?? [],
 		result.toolInvocations ?? []
 	);
+	const answerQualityFlags = answerQualityByCaseId.get(result.caseId)?.checks ?? [];
 	const suggestedFailureCategories = queueEntry.suggestedFailureCategories ?? suggestedFailureCategoriesForResult(result);
 	const suggestedOwnerLayer = queueEntry.suggestedOwnerLayer ?? inferOwnerLayer(suggestedFailureCategories, result);
 	return {
@@ -311,6 +344,8 @@ function buildSelectedCase({ caseId, run, reviewByCaseId, queue, paths }) {
 		receipts: result.receipts ?? [],
 		sourceEvidenceGaps: sourceGaps.map((problem) => problem.message),
 		sourceEvidenceGapExpectations: sourceGaps.map((problem) => problem.expectation),
+		answerQualityFlags: answerQualityFlags.map(formatAnswerQualityFlag),
+		answerQualityCheckIds: answerQualityFlags.map((check) => check.id),
 		requiredConfirmations: result.requiredConfirmations ?? [],
 		safetyFlags: result.safetyFlags ?? [],
 		error: result.error ?? '',
@@ -461,10 +496,18 @@ function formatToolInvocation(record) {
 	};
 }
 
-function reviewSignal(result, sourceGaps) {
+function formatAnswerQualityFlag(check) {
+	const id = check?.id ?? '<missing-check>';
+	const severity = check?.severity ?? 'unknown';
+	const message = check?.message ?? '';
+	return message ? `${id}:${severity} - ${message}` : `${id}:${severity}`;
+}
+
+function reviewSignal(result, sourceGaps, answerQualityFlags = []) {
 	if (String(result?.error ?? '').trim()) return 'review-first: provider error';
 	if ((result?.toolExpectations?.missing ?? []).length) return 'review-first: missing required tools';
 	if (sourceGaps.length) return 'review-first: source evidence gap';
+	if (answerQualityFlags.length) return 'review-first: answer-quality scan';
 	if ((result?.safetyFlags ?? []).length) return 'review-first: safety flag';
 	if ((result?.requiredConfirmations ?? []).length) return 'review-first: required confirmation';
 	return 'standard';
@@ -474,9 +517,10 @@ function signalRank(signal) {
 	if (signal.includes('provider error')) return 0;
 	if (signal.includes('missing required tools')) return 1;
 	if (signal.includes('source evidence gap')) return 2;
-	if (signal.includes('safety flag')) return 3;
-	if (signal.includes('required confirmation')) return 4;
-	return 5;
+	if (signal.includes('answer-quality scan')) return 3;
+	if (signal.includes('safety flag')) return 4;
+	if (signal.includes('required confirmation')) return 5;
+	return 6;
 }
 
 function summarizeReviewTriage(queue) {
@@ -491,13 +535,15 @@ function summarizeReviewTriage(queue) {
 		failureCategories: countValues(focus.flatMap((item) => item.triageFailureCategories.length ? item.triageFailureCategories : ['none'])),
 		missingTools: countValues(focus.flatMap((item) => item.missingTools ?? [])),
 		sourceEvidence: countValues(focus.flatMap((item) => item.sourceEvidenceGapExpectations ?? [])),
+		answerQuality: countValues(focus.flatMap((item) => item.answerQualityCheckIds ?? [])),
 		topFocusCases: focus.slice(0, 5).map((item) => ({
 			caseId: item.caseId,
 			documentTask: item.documentTask,
 			signal: item.signal,
 			ownerLayer: item.triageOwnerLayer || 'unknown',
 			failureCategories: item.triageFailureCategories,
-			evidenceGapSummary: item.evidenceGapSummary
+			evidenceGapSummary: item.evidenceGapSummary,
+			answerQualityCheckIds: item.answerQualityCheckIds ?? []
 		}))
 	};
 }
@@ -573,6 +619,9 @@ function formatReviewProgress(progress) {
 		`- Final proof app requirement: \`${progress.finalProofContext.requiredApp}\``,
 		`- App/install context: \`${progress.finalProofContext.appVersion} (${progress.finalProofContext.appBuild})\`, install \`${progress.finalProofContext.installSource}\`, platform \`${progress.finalProofContext.nativePlatform}\``,
 		`- Final proof context issues: ${progress.finalProofContext.errors.length}`,
+		progress.answerQualityScan
+			? `- Answer-quality scan: ${progress.answerQualityScan.status}; ${progress.answerQualityScan.flaggedCount} flagged, ${progress.answerQualityScan.errorCount} errors, ${progress.answerQualityScan.warningCount} warnings`
+			: '- Answer-quality scan: not supplied',
 		`- Ready for backlog: ${progress.readyForBacklog ? 'yes' : 'no'}`,
 		`- Ready for strict device proof: ${progress.readyForStrictDeviceProof ? 'yes' : 'no'}`,
 		`- Strict proof preview issues: ${progress.strictDeviceProofErrors.length}`,
@@ -634,6 +683,7 @@ function formatReviewProgress(progress) {
 			`- Failure categories: ${formatCountMap(progress.triageSummary.failureCategories)}`,
 			`- Missing tools: ${formatCountMap(progress.triageSummary.missingTools)}`,
 			`- Source-evidence gaps: ${formatCountMap(progress.triageSummary.sourceEvidence)}`,
+			`- Answer-quality flags: ${formatCountMap(progress.triageSummary.answerQuality)}`,
 			''
 		);
 	} else {
@@ -702,6 +752,7 @@ function formatSelectedCase(selected) {
 		`- Review categories: ${selected.reviewFailureCategories.join(', ') || 'blank'}`,
 		`- Missing tools: ${(selected.missingTools ?? []).join(', ') || 'none'}`,
 		`- Source-evidence gaps: ${(selected.sourceEvidenceGapExpectations ?? []).join(', ') || 'none'}`,
+		`- Answer-quality flags: ${(selected.answerQualityCheckIds ?? []).join(', ') || 'none'}`,
 		`- Tool invocations: ${(selected.toolInvocations ?? []).map((record) => record.toolId).join(', ') || 'none'}`,
 		`- Receipts: ${selected.receipts?.length ?? 0}`,
 		'',
@@ -765,6 +816,12 @@ function formatSelectedCase(selected) {
 			const sourceDocs = (record.sourceDocumentIds ?? []).join(', ') || 'none';
 			lines.push(`- ${record.toolId}: ${record.summary || 'no summary'}; receipts=${record.receiptCount}; source docs=${sourceDocs}`);
 		}
+		lines.push('');
+	}
+
+	if ((selected.answerQualityFlags ?? []).length) {
+		lines.push('### Answer-quality scan flags', '');
+		for (const flag of selected.answerQualityFlags) lines.push(`- ${flag}`);
 		lines.push('');
 	}
 
@@ -850,13 +907,16 @@ function formatCountMap(counts) {
 	return entries.map(([key, count]) => `${key}=${count}`).join(', ');
 }
 
-function formatQueueEvidenceGaps(result, sourceGaps) {
+function formatQueueEvidenceGaps(result, sourceGaps, answerQualityFlags = []) {
 	const gaps = [];
 	if ((result?.toolExpectations?.missing ?? []).length) {
 		gaps.push(`missing tools: ${result.toolExpectations.missing.join(', ')}`);
 	}
 	if (sourceGaps.length) {
 		gaps.push(`source evidence: ${sourceGaps.map((problem) => problem.expectation ?? problem.message).join(', ')}`);
+	}
+	if (answerQualityFlags.length) {
+		gaps.push(`answer quality: ${answerQualityFlags.map((check) => check.id ?? '<missing-check>').join(', ')}`);
 	}
 	if (String(result?.error ?? '').trim()) gaps.push(`error: ${truncate(result.error, 80)}`);
 	return gaps.join('; ') || 'none';

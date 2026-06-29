@@ -123,9 +123,11 @@ const reviewStatus = await runJsonScript('scripts/status-scout-local-ai-review.m
 	reviewPath,
 	'--packet',
 	packetPath,
+	'--scan',
+	scanPath,
 	'--json'
 ]);
-const reviewStatusCommand = `npm run review-status:scout-local-ai -- --run ${relativeImportedRunPath} --review ${relativeReviewPath} --packet ${relativePacketPath}`;
+const reviewStatusCommand = `npm run review-status:scout-local-ai -- --run ${relativeImportedRunPath} --review ${relativeReviewPath} --packet ${relativePacketPath} --scan ${relativeScanPath}`;
 const finalizeCommand = `npm run finalize-review:scout-local-ai -- --packet ${relativePacketPath} --run ${relativeImportedRunPath} --review ${relativeReviewPath}`;
 
 writeOutput({

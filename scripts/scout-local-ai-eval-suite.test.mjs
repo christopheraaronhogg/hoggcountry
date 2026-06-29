@@ -2774,6 +2774,7 @@ test('device review preparation command inspects, imports, and reports review st
 		completeTools: true,
 		runContext: finalDeviceRunContext()
 	});
+	for (const result of run.results) result.answer = cleanPreflightAnswer();
 	run.exportHandoff = exportHandoffForRun(run, suite);
 	await writeFile(inputPath, `${JSON.stringify(run, null, 2)}\n`);
 
@@ -6338,6 +6339,7 @@ test('review status command suggests explicit human-reviewed packet batches', as
 	const runPath = join(outputDir, 'device-runs', 'device-review-status-batches.json');
 	const reviewPath = join(outputDir, 'reviews', 'device-review-status-batches.review.json');
 	const packetPath = join(outputDir, 'review-packets', 'device-review-status-batches.review.md');
+	const scanPath = join(outputDir, 'answer-quality-scans', 'device-review-status-batches.scan.json');
 	const expectedCases = run.results.slice(0, 3).map((entry) => entry.caseId);
 	const jsonResult = await execFileAsync(
 		process.execPath,
@@ -6393,6 +6395,52 @@ test('review status command suggests explicit human-reviewed packet batches', as
 	assert.match(textResult.stdout, new RegExp(`--cases ${expectedCases.join(',')}`, 'u'));
 	assert.match(textResult.stdout, /--rating 5/u);
 	assert.match(textResult.stdout, /--mark-all-pass/u);
+
+	const scanAwareResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			runPath,
+			'--review',
+			reviewPath,
+			'--packet',
+			packetPath,
+			'--scan',
+			scanPath,
+			'--batch-size',
+			'3',
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const scanAwareProgress = JSON.parse(scanAwareResult.stdout);
+	assert.equal(scanAwareProgress.answerQualityScan.status, 'review-needed');
+	assert.equal(scanAwareProgress.answerQualityScan.flaggedCount, run.results.length);
+	assert.equal(scanAwareProgress.reviewBatches.length, 0);
+	assert.equal(scanAwareProgress.nextUnrated.signal, 'review-first: answer-quality scan');
+	assert.equal(scanAwareProgress.triageSummary.answerQuality['very-short-answer'], run.results.length);
+
+	const scanAwareTextResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			runPath,
+			'--review',
+			reviewPath,
+			'--packet',
+			packetPath,
+			'--scan',
+			scanPath,
+			'--batch-size',
+			'3'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	assert.match(scanAwareTextResult.stdout, /Answer-quality scan: review-needed/u);
+	assert.match(scanAwareTextResult.stdout, /Answer-quality flags: .*very-short-answer=4/u);
+	assert.doesNotMatch(scanAwareTextResult.stdout, /## Human-reviewed batch helpers/u);
 });
 
 test('review status command reports packet parse errors without touching review JSON', async () => {

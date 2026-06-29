@@ -410,6 +410,13 @@ During the rating pass, use the read-only progress check as often as needed:
 npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json --packet data/scout-local-ai/review-packets/<run-id>.review.md
 ```
 
+When the generated answer-quality scan is available, include it so scan-flagged
+cases stay review-first and out of batch helpers:
+
+```sh
+npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<run-id>.json --review data/scout-local-ai/reviews/<run-id>.review.json --packet data/scout-local-ai/review-packets/<run-id>.review.md --scan data/scout-local-ai/answer-quality-scans/<run-id>.scan.json
+```
+
 To review one answer at a time without hunting through the whole packet, add
 `--next`. This prints a focused read-only card for the next unrated case, then
 falls back to the next below-5 case after every answer is rated. Use
@@ -425,7 +432,9 @@ npm run review-status:scout-local-ai -- --run data/scout-local-ai/device-runs/<r
 When a packet has multiple standard unrated cases, `review-status` also prints
 small human-reviewed batch helpers. They group explicit case ids and produce a
 ready `--cases` command, but they are only for answers you have already read.
-Use `--batch-size <n>` when you want shorter or longer suggested reading groups.
+Batch helpers exclude provider errors, missing required tools, source-evidence
+gaps, required confirmations, safety flags, and answer-quality scan flags. Use
+`--batch-size <n>` when you want shorter or longer suggested reading groups.
 
 After reading the focused card, you can update just that case in the Markdown
 packet without touching review JSON yet. For a 5/5, pass `--mark-all-pass` only
