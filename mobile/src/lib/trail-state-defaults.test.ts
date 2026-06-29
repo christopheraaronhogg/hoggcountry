@@ -46,7 +46,9 @@ test('createDefaultTrailState returns fresh mutable containers each time', () =>
 		body: 'Body',
 		source: 'manual',
 		createdAt: '2026-06-20T12:00:00.000Z',
-		updatedAt: '2026-06-20T12:00:00.000Z'
+		updatedAt: '2026-06-20T12:00:00.000Z',
+		revision: 1,
+		revisions: []
 	});
 
 	assert.equal(second.documents.length, 0);
@@ -78,7 +80,9 @@ test('resetToUncalibratedStarterState only resets starter-owned position fields'
 			body: 'Keep this.',
 			source: 'manual',
 			createdAt: '2026-06-20T12:00:00.000Z',
-			updatedAt: '2026-06-20T12:00:00.000Z'
+			updatedAt: '2026-06-20T12:00:00.000Z',
+			revision: 1,
+			revisions: []
 		}
 	];
 	state.supportCircle = [{ name: 'Home', role: 'Contact', method: 'Text', phone: '555-0100' }];

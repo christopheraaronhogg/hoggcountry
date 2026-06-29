@@ -59,6 +59,17 @@ export interface TrailDocument {
 	source: 'manual' | 'scout-draft';
 	createdAt: string;
 	updatedAt: string;
+	revision: number;
+	revisions: TrailDocumentRevision[];
+	deletedAt?: string;
+}
+
+export interface TrailDocumentRevision {
+	revision: number;
+	title: string;
+	body: string;
+	source: TrailDocument['source'];
+	updatedAt: string;
 }
 
 export interface CheckInRecord {

@@ -49,7 +49,9 @@ test('restorePersistedTrailState resets legacy uncalibrated position without del
 					body: 'Carry more after town.',
 					source: 'manual',
 					createdAt: '2026-06-21T12:00:00.000Z',
-					updatedAt: '2026-06-21T12:00:00.000Z'
+					updatedAt: '2026-06-21T12:00:00.000Z',
+					revision: 1,
+					revisions: []
 				}
 			],
 			supportCircle: [{ name: 'Home', role: 'Dad', method: 'Text', phone: '555-0100' }]
@@ -88,7 +90,9 @@ test('snapshotTrailState clones persisted containers', () => {
 			body: 'Keep moving.',
 			source: 'manual',
 			createdAt: '2026-06-21T12:00:00.000Z',
-			updatedAt: '2026-06-21T12:00:00.000Z'
+			updatedAt: '2026-06-21T12:00:00.000Z',
+			revision: 1,
+			revisions: []
 		}
 	];
 

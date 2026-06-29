@@ -18,6 +18,7 @@
 
 	const guide = $derived(trailAssistant.fieldPack.guideExcerpts);
 	const documents = $derived(trailAssistant.documents);
+	const deletedDocuments = $derived(trailAssistant.deletedDocuments);
 	const checkIns = $derived(trailAssistant.checkInHistory);
 	// The hiker's own gear list is the editable source of truth (synced into the
 	// pack for Scout). Editing by index against THIS array keeps rows stable.
@@ -245,7 +246,17 @@
 	function removeDocument(id: string) {
 		trailAssistant.deleteDocument(id);
 		if (editingId === id) cancelEdit();
-		docsNotice = 'Deleted from this phone.';
+		docsNotice = 'Moved to deleted docs. Restore it below if needed.';
+	}
+
+	function restoreDocument(id: string) {
+		trailAssistant.restoreDocument(id);
+		docsNotice = 'Restored offline doc.';
+	}
+
+	function purgeDocument(id: string) {
+		trailAssistant.purgeDocument(id);
+		docsNotice = 'Permanently deleted from this phone.';
 	}
 
 	function saveScoutAnswer() {
@@ -551,6 +562,29 @@
 				{/each}
 			{:else}
 				<p class="empty">No personal docs yet. The bundled source library below is still searchable offline by Scout.</p>
+			{/if}
+
+			{#if deletedDocuments.length}
+				<section class="card deleted-docs" aria-label="Deleted offline documents">
+					<div class="doc-editor-head">
+						<div>
+							<p class="section-kicker">Recoverable</p>
+							<h2>Deleted docs</h2>
+						</div>
+					</div>
+					{#each deletedDocuments as document (document.id)}
+						<article class="deleted-doc">
+							<div>
+								<strong>{document.title}</strong>
+								<p>Deleted {fmtTime(document.deletedAt ?? document.updatedAt)} · revision {document.revision}</p>
+							</div>
+							<div class="doc-row-actions">
+								<button type="button" onclick={() => restoreDocument(document.id)}>Restore</button>
+								<button type="button" onclick={() => purgeDocument(document.id)}>Delete permanently</button>
+							</div>
+						</article>
+					{/each}
+				</section>
 			{/if}
 
 			<section class="card source-library" aria-label="Bundled offline source library">
@@ -1167,6 +1201,34 @@
 	}
 	.doc-card[data-source='scout-draft'] {
 		border-left-color: var(--sky);
+	}
+
+	.deleted-docs {
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	.deleted-doc {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 0.75rem;
+		align-items: center;
+		min-width: 0;
+		padding: 0.85rem;
+		border: 1px solid rgba(54, 48, 38, 0.12);
+		background: rgba(255, 255, 255, 0.48);
+	}
+
+	.deleted-doc p {
+		margin: 0.2rem 0 0;
+		color: var(--muted);
+		font-size: 0.78rem;
+	}
+
+	@media (max-width: 420px) {
+		.deleted-doc {
+			grid-template-columns: 1fr;
+		}
 	}
 
 	.source-library {

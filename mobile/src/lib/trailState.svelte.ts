@@ -31,8 +31,13 @@ import {
 import { deriveModelPhase } from './scout/model-download-phase.ts';
 import { cloudAuth } from './cloud/auth.svelte';
 import {
+	activeTrailDocuments,
 	createTrailDocument,
+	deleteTrailDocument,
+	deletedTrailDocuments,
 	limitTrailDocuments,
+	normalizeTrailDocuments,
+	restoreTrailDocument,
 	toContextDocuments,
 	updateTrailDocument
 } from './local-documents';
@@ -348,7 +353,7 @@ class TrailAssistantStore {
 			}
 			case 'documents': {
 				if (!Array.isArray(content)) return false;
-				this.#state.documents = content as TrailDocument[];
+				this.#state.documents = normalizeTrailDocuments(content as TrailDocument[]);
 				return true;
 			}
 			case 'checkins': {
@@ -606,7 +611,11 @@ class TrailAssistantStore {
 	}
 
 	get documents() {
-		return this.#state.documents;
+		return activeTrailDocuments(this.#state.documents);
+	}
+
+	get deletedDocuments() {
+		return deletedTrailDocuments(this.#state.documents);
 	}
 
 	get trailPulseReports() {
@@ -1181,6 +1190,20 @@ class TrailAssistantStore {
 	}
 
 	deleteDocument(id: string): void {
+		this.#state.documents = this.#state.documents.map((document) =>
+			document.id === id ? deleteTrailDocument(document) : document
+		);
+		void this.#syncDocumentsToFieldPack();
+	}
+
+	restoreDocument(id: string): void {
+		this.#state.documents = this.#state.documents.map((document) =>
+			document.id === id ? restoreTrailDocument(document) : document
+		);
+		void this.#syncDocumentsToFieldPack();
+	}
+
+	purgeDocument(id: string): void {
 		this.#state.documents = this.#state.documents.filter((document) => document.id !== id);
 		void this.#syncDocumentsToFieldPack();
 	}

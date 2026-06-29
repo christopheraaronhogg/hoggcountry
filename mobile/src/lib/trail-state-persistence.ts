@@ -4,6 +4,7 @@ import {
 	createDefaultTrailState,
 	resetToUncalibratedStarterState
 } from './trail-state-defaults.ts';
+import { normalizeTrailDocuments } from './local-documents.ts';
 
 export type PersistedTrailState = TrailState;
 
@@ -29,6 +30,8 @@ export function restorePersistedTrailState(
 	}
 	if (!Array.isArray(state.documents)) {
 		state.documents = [];
+	} else {
+		state.documents = normalizeTrailDocuments(state.documents);
 	}
 	if (!Array.isArray(state.personalLoadout)) {
 		state.personalLoadout = [];
@@ -48,7 +51,10 @@ export function snapshotTrailState(state: TrailState): PersistedTrailState {
 		coachMessages: state.coachMessages.map((message) => ({ ...message })),
 		lastCheckIn: { ...state.lastCheckIn },
 		checkInHistory: state.checkInHistory.map((record) => ({ ...record })),
-		documents: state.documents.map((document) => ({ ...document })),
+		documents: state.documents.map((document) => ({
+			...document,
+			revisions: document.revisions.map((revision) => ({ ...revision }))
+		})),
 		personalLoadout: state.personalLoadout.map((item) => ({ ...item })),
 		trailPulseReports: state.trailPulseReports.map((report) => ({ ...report })),
 		seenTrailPulseReportIds: [...state.seenTrailPulseReportIds],
