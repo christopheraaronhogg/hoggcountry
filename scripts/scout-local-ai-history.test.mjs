@@ -117,9 +117,12 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 	assert.equal(history.summary.interventionCounts['prompt/answer-contract'], 1);
 	assert.equal(history.summary.interventionCounts['tool-routing/source-retrieval'], 1);
 	assert.equal(history.summary.pendingInterventionCommitCount, 1);
-	assert.deepEqual(history.summary.pendingInterventionCategories, ['eval-review-process']);
+	assert.equal(history.summary.pendingRerunCommitCount, 0);
+	assert.deepEqual(history.summary.pendingInterventionCategories, ['history/reporting']);
 	assert.equal(history.pendingInterventions.pendingSinceRunId, 'device-local-ai-20260628T143612Z');
-	assert.equal(history.pendingInterventions.requiresRerun, true);
+	assert.equal(history.pendingInterventions.rerunCommitCount, 0);
+	assert.deepEqual(history.pendingInterventions.rerunCategories, []);
+	assert.equal(history.pendingInterventions.requiresRerun, false);
 	const gpsCase = history.cases[0];
 	assert.equal(gpsCase.caseId, 'DLA-067');
 	assert.equal(gpsCase.documentTask, 'reading-writing');
@@ -188,6 +191,83 @@ test('Scout local AI history classifies document-grounding and release intervent
 	assert.ok(summary.categories.includes('testflight/release-proof'));
 	assert.equal(summary.categoryCounts['suite-question-set'], 1);
 	assert.equal(summary.categoryCounts['testflight/release-proof'], 1);
+});
+
+test('Scout local AI history does not demand rerun for proof-only pending commits', async () => {
+	const root = await mkdtemp(join(tmpdir(), 'scout-history-proof-only-'));
+	const runDir = join(root, 'device-runs');
+	const reviewDir = join(root, 'reviews');
+	const scanDir = join(root, 'answer-quality-scans');
+	await mkdir(runDir, { recursive: true });
+	await mkdir(reviewDir, { recursive: true });
+	await mkdir(scanDir, { recursive: true });
+	const suitePath = join(root, 'dad-local-ai-100.json');
+	await writeFile(suitePath, JSON.stringify({
+		suiteId: 'dad-local-ai-100',
+		version: '2026-06-29.1',
+		hash: 'fnv1a32:proof-only',
+		cases: [{
+			id: 'DLA-067',
+			domain: 'navigation',
+			phase: 'on-trail',
+			prompt: 'What should I do if GPS jumps around and Scout shows the wrong spot?',
+			requiredTools: ['current_mile', 'source_search:safety'],
+			expectedTraits: ['manual correction'],
+			safetyCaveats: ['no decisions from bad GPS'],
+			documentTask: 'reading-writing'
+		}]
+	}, null, 2));
+	await writeRunAndReview({
+		runDir,
+		reviewDir,
+		scanDir,
+		runId: 'device-local-ai-20260629T061751Z',
+		startedAt: '2026-06-29T06:17:51.000Z',
+		answer: 'Stop, verify location from blazes and map, then set the current AT mile from a confirmed point.',
+		confidence: 'medium',
+		failureMode: null,
+		rating: 5,
+		notes: 'Dad-ready GPS recovery answer.',
+		failureCategories: [],
+		ownerLayer: '',
+		improvementTask: ''
+	});
+
+	const history = await buildScoutLocalAiHistory({
+		repoRoot: root,
+		suitePath,
+		runDirs: [runDir],
+		reviewDir,
+		scanDir,
+		gitCommits: [
+			{
+				sha: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+				committedAt: '2026-06-29T06:00:00.000Z',
+				subject: 'Improve Scout GPS recovery answer',
+				files: ['mobile/src/lib/scout/providers/on-device-gemma.ts']
+			},
+			{
+				sha: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+				committedAt: '2026-06-29T06:40:00.000Z',
+				subject: 'Record TestFlight upload for build 32',
+				files: ['docs/launch/proof/ios-testflight-attempt-2026-06-29T06-36-29-834Z.md']
+			},
+			{
+				sha: 'cccccccccccccccccccccccccccccccccccccccc',
+				committedAt: '2026-06-29T06:43:00.000Z',
+				subject: 'Refresh Dad Pilot for build 32',
+				files: ['docs/launch/release-evidence.json', 'docs/launch/testflight-dad-handoff.md']
+			}
+		]
+	});
+
+	assert.equal(history.pendingInterventions.commitCount, 2);
+	assert.deepEqual(history.pendingInterventions.categories, ['docs/runbook', 'testflight/release-proof']);
+	assert.equal(history.pendingInterventions.rerunCommitCount, 0);
+	assert.deepEqual(history.pendingInterventions.rerunCategories, []);
+	assert.equal(history.pendingInterventions.requiresRerun, false);
+	assert.equal(history.summary.pendingInterventionCommitCount, 2);
+	assert.equal(history.summary.pendingRerunCommitCount, 0);
 });
 
 async function writeRunAndReview({

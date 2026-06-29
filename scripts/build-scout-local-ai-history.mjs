@@ -16,6 +16,18 @@ const DEFAULT_RUN_DIRS = ['data/scout-local-ai/device-runs', 'data/scout-local-a
 const DEFAULT_REVIEW_DIR = 'data/scout-local-ai/reviews';
 const DEFAULT_SCAN_DIR = 'data/scout-local-ai/answer-quality-scans';
 const DEFAULT_OUTPUT_DIR = 'data/scout-local-ai/history';
+const RERUN_RELEVANT_INTERVENTION_CATEGORIES = new Set([
+	'document-grounding',
+	'eval-review-process',
+	'field-domain-polish',
+	'local-model/native-runtime',
+	'offline-data',
+	'other-code-change',
+	'prompt/answer-contract',
+	'safety-contract',
+	'suite-question-set',
+	'tool-routing/source-retrieval'
+]);
 
 const cli = parseCliArgs(process.argv.slice(2));
 
@@ -602,6 +614,7 @@ function buildHistorySummary(runs, cases, pendingInterventions = summarizeCommit
 		interventionCounts: Object.fromEntries(countBy(runs.flatMap((run) => run.interventions?.categories ?? []), (item) => item)),
 		interventionCommitCount: runs.reduce((count, run) => count + (run.interventions?.commitCount ?? 0), 0),
 		pendingInterventionCommitCount: pendingInterventions.commitCount ?? 0,
+		pendingRerunCommitCount: pendingInterventions.rerunCommitCount ?? (pendingInterventions.requiresRerun ? (pendingInterventions.commitCount ?? 0) : 0),
 		pendingInterventionCategories: pendingInterventions.categories ?? []
 	};
 }
@@ -625,7 +638,7 @@ function formatHistorySummary(history, { jsonPath, htmlPath }) {
 		`- Cases: ${history.summary.caseCount}`,
 		`- Reviewed entries: ${history.summary.reviewedEntryCount}`,
 		`- Improved to 5/5: ${history.summary.improvedToFive}`,
-		`- Pending changes needing rerun: ${history.summary.pendingInterventionCommitCount}`,
+		`- Pending changes needing rerun: ${history.summary.pendingRerunCommitCount ?? history.summary.pendingInterventionCommitCount}`,
 		`- JSON: ${relative(REPO_ROOT, jsonPath)}`,
 		`- Timeline: ${relative(REPO_ROOT, htmlPath)}`,
 		''
@@ -709,11 +722,16 @@ function pendingInterventionsAfterLastRun(runs, commits) {
 		pendingCommits = commits.filter((commit) => new Date(commit.committedAt).getTime() > latestRunTime);
 	}
 	const summary = summarizeCommitInterventions(pendingCommits);
+	const rerunCommits = pendingCommits.filter(commitRequiresScoutRerun);
+	const rerunSummary = summarizeCommitInterventions(rerunCommits);
 	return {
 		...summary,
+		rerunCommitCount: rerunSummary.commitCount,
+		rerunCategories: rerunSummary.categories,
+		rerunChangedFiles: rerunSummary.changedFiles,
 		pendingSinceRunId: latestRun?.runId ?? null,
 		pendingSinceCommit: latestRun?.commit?.sha ?? null,
-		requiresRerun: summary.commitCount > 0
+		requiresRerun: rerunSummary.commitCount > 0
 	};
 }
 
@@ -762,7 +780,10 @@ function classifyCommitIntervention(commit) {
 		if (path.includes('capacitor-gemma') || path.includes('model-router') || path.includes('scout_gemma_bridge') || path.includes('/android/') || path.includes('/ios/')) {
 			categories.add('local-model/native-runtime');
 		}
-		if (path.includes('scoutevallab') || path.includes('local-ai-eval') || path.includes('local-ai-history') || (path.startsWith('scripts/') && path.includes('scout-local-ai')) || path.startsWith('data/scout-local-ai/readme')) {
+		if (path.includes('local-ai-history')) {
+			categories.add('history/reporting');
+		}
+		if (path.includes('scoutevallab') || path.includes('local-ai-eval') || (path.startsWith('scripts/') && path.includes('scout-local-ai') && !path.includes('local-ai-history')) || path.startsWith('data/scout-local-ai/readme')) {
 			categories.add('eval-review-process');
 		}
 		if (path.startsWith('docs/launch/') || path.includes('release-evidence') || path.includes('testflight')) {
@@ -786,6 +807,11 @@ function classifyCommitIntervention(commit) {
 	}
 	if (!categories.size && files.length) categories.add('other-code-change');
 	return [...categories].sort();
+}
+
+function commitRequiresScoutRerun(commit) {
+	const categories = classifyCommitIntervention(commit);
+	return categories.some((category) => RERUN_RELEVANT_INTERVENTION_CATEGORIES.has(category));
 }
 
 function commitAtOrBefore(commits, sortTime) {
