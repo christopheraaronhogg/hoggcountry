@@ -540,6 +540,8 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	);
 	assert.match(screenshotDraftAnswer, /Draft screenshot\/save checklist note/);
 	assert.match(screenshotDraftAnswer, /Current mile or start location confirmed/);
+	assert.match(screenshotDraftAnswer, /Document draft boundary/);
+	assert.match(screenshotDraftAnswer, /source-backed facts separate from placeholders and open questions/);
 	assert.match(screenshotDraftAnswer, /Review this draft before saving/);
 	assert.match(screenshotDraftAnswer, /should not save or overwrite a document unless you explicitly confirm it/);
 
@@ -547,6 +549,9 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 		'You should save your photo ID, insurance card, emergency contacts, medication or allergy notes, your itinerary and check-in plan, any permits or reservations you need, and confirmations for shuttles or lodging somewhere you can reach offline. Here is a draft checklist note for you to save offline: Checklist: 1. Photo ID 2. Insurance Card 3. Emergency Contacts.',
 		'What documents and information should I keep saved offline before day one, and can you draft my offline checklist note?'
 	);
+	assert.match(offlineDocumentDraftAnswer, /Document draft boundary/);
+	assert.match(offlineDocumentDraftAnswer, /source-backed facts separate from placeholders and open questions/);
+	assert.match(offlineDocumentDraftAnswer, /verify current mile, permits, reservations, shuttles, lodging, weather, closures, water, and town services/);
 	assert.match(offlineDocumentDraftAnswer, /Review the draft before saving/);
 	assert.match(offlineDocumentDraftAnswer, /should not save or overwrite a document unless you explicitly confirm it/);
 
@@ -771,6 +776,8 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.match(scoutTownUpdateDraftAnswer, /Draft town-exit update note/);
 	assert.match(scoutTownUpdateDraftAnswer, /Current AT mile: confirm before saving/);
 	assert.match(scoutTownUpdateDraftAnswer, /Open questions before walking out/);
+	assert.match(scoutTownUpdateDraftAnswer, /Document draft boundary/);
+	assert.match(scoutTownUpdateDraftAnswer, /source-backed facts separate from placeholders and open questions/);
 	assert.match(scoutTownUpdateDraftAnswer, /should not save or overwrite a document unless you explicitly confirm it/);
 
 	const john316Answer = polishOnDeviceAnswer(

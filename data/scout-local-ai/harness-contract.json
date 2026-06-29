@@ -198,7 +198,62 @@
       "defaultOwnerLayer": "local-model"
     }
   ],
+  "independentReviewers": [
+    {
+      "id": "source_grounding_reviewer",
+      "input": "final answer, required tools, toolInvocations, receipts, and sourceDocumentIds",
+      "checks": [
+        "required source-backed tools were actually invoked",
+        "specific water, shelter, town, weather, safety, and document-vault claims have receipts or opened source documents",
+        "answer names missing or stale source data instead of filling gaps from model memory"
+      ],
+      "mustBeSeparateFrom": [
+        "answer_generation"
+      ]
+    },
+    {
+      "id": "trail_math_reviewer",
+      "input": "current mile, structured trail data, answer text, and distance/tool summaries",
+      "checks": [
+        "distance, direction, next-water, next-town, shelter, and terrain statements match structured data",
+        "cached or candidate trail facts are labeled with freshness and reliability caveats",
+        "unsafe mileage or navigation certainty is rejected before 5-star review"
+      ],
+      "mustBeSeparateFrom": [
+        "answer_generation"
+      ]
+    },
+    {
+      "id": "document_writing_reviewer",
+      "input": "answer text, documentTask, expected traits, required confirmations, and vault-write metadata",
+      "checks": [
+        "drafts are reviewable before save",
+        "source-backed facts are separated from placeholders, assumptions, and open questions",
+        "no user-owned document is saved or overwritten without explicit confirmation and recoverable/versioned changes"
+      ],
+      "mustBeSeparateFrom": [
+        "answer_generation",
+        "vault_write_execution"
+      ]
+    },
+    {
+      "id": "proof_lane_reviewer",
+      "input": "runContext, app build, install source, model/runtime, suite version/hash, and review status",
+      "checks": [
+        "simulator, browser, cloud, scaffold, and TestFlight iPhone evidence stay separate",
+        "final proof uses the current suite and real TestFlight/iPhone install source",
+        "stability requires two distinct strict full runs"
+      ],
+      "mustBeSeparateFrom": [
+        "answer_generation"
+      ]
+    }
+  ],
   "reviewGates": [
+    {
+      "id": "independent_artifact_review",
+      "rule": "Review must include source grounding, trail math/safety, document-writing, and proof-lane checks that are separate from the answer generation path."
+    },
     {
       "id": "tool_source_evidence",
       "rule": "Required tool hits must be backed by actual toolInvocations, receipts, or sourceDocumentIds."

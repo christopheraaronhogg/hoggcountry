@@ -61,6 +61,8 @@ const PRETRIP_SCREENSHOT_NOTE =
 	'Before day one, screenshot or save offline: current mile/start location, itinerary and check-in plan, emergency contacts, next resupply or town/bailout plan, offline map download/status, Scout field-pack/local-model status, key permits or reservations, shuttle/lodging confirmations, and medication/allergy notes. Keep copies outside Scout too, such as Photos/Files and a paper card. Do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat; Scout only needs source summaries and trail context.';
 const PRETRIP_SCREENSHOT_DRAFT_NOTE =
 	'Draft screenshot/save checklist note: 1. Current mile or start location confirmed. 2. Itinerary and check-in plan saved offline. 3. Emergency contacts saved outside Scout. 4. Next resupply, town, or bailout plan saved. 5. Offline map and Scout field-pack/local-model status captured. 6. Key permits, reservations, shuttle, lodging, and medication/allergy summaries saved without private numbers. Review this draft before saving; Scout should not save or overwrite a document unless you explicitly confirm it.';
+const DOCUMENT_WRITING_SOURCE_BOUNDARY_NOTE =
+	'Document draft boundary: keep source-backed facts separate from placeholders and open questions. Use placeholders for private values like ID numbers, insurance details, medication details, reservation numbers, and exact current-mile specifics; verify current mile, permits, reservations, shuttles, lodging, weather, closures, water, and town services before treating them as final.';
 const MODEL_DOWNLOADING_STATUS_NOTE =
 	'Model-download status: a failed or stuck download means the on-device local AI model is not ready for offline Scout yet. In town or on reliable Wi-Fi, plug into power, confirm enough free storage, leave the app open long enough for download/verification, then retry from the model download control. If it stays stuck, restart the app and try again on Wi-Fi before leaving service. The field pack and saved maps/docs may still be available offline if already downloaded, but Scout should not pretend local AI can answer offline until the model reports ready and an airplane-mode Scout question succeeds.';
 const FIELD_PACK_STALENESS_NOTE =
@@ -747,6 +749,9 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	}
 	if (isDocumentWritingPrompt(lowerPrompt) && isScoutTownUpdatePrompt(lowerPrompt) && !mentionsDocumentDraft(answer)) {
 		answer = appendSentence(answer, SCOUT_TOWN_UPDATE_DRAFT_NOTE);
+	}
+	if (isDocumentWritingPrompt(lowerPrompt) && !mentionsDocumentSourceBoundary(answer)) {
+		answer = appendSentence(answer, DOCUMENT_WRITING_SOURCE_BOUNDARY_NOTE);
 	}
 	if (isDocumentWritingPrompt(lowerPrompt) && !mentionsDocumentWriteConfirmation(answer)) {
 		answer = appendSentence(
@@ -2273,6 +2278,12 @@ function mentionsDocumentDraft(answer: string): boolean {
 		/\b1\.\s+\S/iu.test(answer) ||
 		/\b(?:current AT mile|photo ID|emergency contacts|open questions|weather and closures|food and water carry|permits|reservations)\b/iu.test(answer);
 	return hasDraftLabel && hasDraftShape;
+}
+
+function mentionsDocumentSourceBoundary(answer: string): boolean {
+	const mentionsSourceFacts = /\b(?:source-backed|source summaries?|saved document facts?|document vault facts?)\b/iu.test(answer);
+	const mentionsAssumptionBoundary = /\b(?:assumptions?|open questions?|placeholders?|verify|confirm before saving|private values?)\b/iu.test(answer);
+	return mentionsSourceFacts && mentionsAssumptionBoundary;
 }
 
 function mentionsDocumentWriteConfirmation(answer: string): boolean {

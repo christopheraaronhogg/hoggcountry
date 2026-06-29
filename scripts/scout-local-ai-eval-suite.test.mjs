@@ -318,8 +318,26 @@ test('Scout local AI harness contract preserves model-agnostic document-agent bo
 	assert.equal(failureTaxonomy.get('poor-document-writing-flow')?.defaultOwnerLayer, 'ui');
 	assert.equal(failureTaxonomy.get('local-model-limitation')?.defaultOwnerLayer, 'local-model');
 
+	const independentReviewers = new Map(contract.independentReviewers.map((reviewer) => [reviewer.id, reviewer]));
+	for (const reviewerId of [
+		'source_grounding_reviewer',
+		'trail_math_reviewer',
+		'document_writing_reviewer',
+		'proof_lane_reviewer'
+	]) {
+		const reviewer = independentReviewers.get(reviewerId);
+		assert.ok(reviewer, `missing independent reviewer ${reviewerId}`);
+		assert.match(reviewer.input, /\S/u);
+		assertNonEmptyStringArray(reviewer.checks, `${reviewerId} checks`);
+		assert.ok(reviewer.mustBeSeparateFrom.includes('answer_generation'), `${reviewerId} must stay separate from answer generation`);
+	}
+	assert.match(independentReviewers.get('document_writing_reviewer').checks.join(' '), /source-backed facts are separated from placeholders, assumptions, and open questions/u);
+	assert.ok(independentReviewers.get('document_writing_reviewer').mustBeSeparateFrom.includes('vault_write_execution'));
+	assert.match(independentReviewers.get('proof_lane_reviewer').checks.join(' '), /TestFlight iPhone/u);
+
 	const reviewGates = new Set(contract.reviewGates.map((gate) => gate.id));
 	for (const gate of [
+		'independent_artifact_review',
 		'tool_source_evidence',
 		'human_1_to_5_rating',
 		'below_five_task',
@@ -1181,11 +1199,12 @@ test('status command lets suite-compatible TestFlight device proof override stal
 	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.status, 'review-needed');
 	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.caseCount, 100);
 	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.flaggedCount, 100);
-	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.errorCount, 103);
+	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.errorCount, 106);
 	assert.ok(status.runs.currentFullDeviceRuns[0].answerQuality.warningCount >= 100);
 	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.byCheck['unfinished-tail'], 100);
 	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.byCheck['very-short-answer'], 100);
 	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.byCheck['document-writing-draft-missing'], 3);
+	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.byCheck['document-writing-source-boundary-missing'], 3);
 	assert.equal(status.runs.currentFullDeviceRuns[0].answerQuality.topFlagged[0].caseId, 'DLA-001');
 	assert.match(status.runs.currentFullDeviceRuns[0].answerQuality.boundary, /does not replace human 1-5 ratings/u);
 	assert.equal(gates['testflight-target'].ok, true);
@@ -1213,7 +1232,7 @@ test('status command lets suite-compatible TestFlight device proof override stal
 		],
 		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
 	);
-	assert.match(textResult.stdout, /Latest full device answer-quality scan: `device-status-suite-compatible-build13` review-needed; 100\/100 flagged, 103 errors, \d+ warnings/u);
+	assert.match(textResult.stdout, /Latest full device answer-quality scan: `device-status-suite-compatible-build13` review-needed; 100\/100 flagged, 106 errors, \d+ warnings/u);
 	assert.match(textResult.stdout, /Answer-quality boundary: Heuristic scan only/u);
 	assert.match(textResult.stdout, /Top answer-quality cases: DLA-001 \(very-short-answer:warning, unfinished-tail:error\)/u);
 });
@@ -7092,7 +7111,7 @@ function simulatorDeviceRunContext(patch = {}) {
 }
 
 function cleanPreflightAnswer() {
-	return 'Use the current forecast and cached weather note, then make the conservative field call from the local field pack. Keep the field pack refreshed, confirm local AI and the Gemma model are ready, let cloud sync finish for backup, check closures, and treat stale data as not current until refreshed again. For money planning, track daily burn, town spikes, hostel, shuttle, laundry, meal, gear replacement, and an emergency cushion. If a filter froze, treat it as potentially compromised, carry backup water tablets, and sleep with the filter in your sleeping bag. Draft checklist note: 1. Current AT mile confirmed. 2. Food and water carry updated. 3. Weather and closures refreshed or marked stale. 4. Offline maps, docs, field pack, and local AI model checked. 5. Open questions listed before leaving service. Review this draft before saving; Scout should not save or overwrite a document unless you explicitly confirm it.';
+	return 'Use the current forecast and cached weather note, then make the conservative field call from the local field pack. Keep the field pack refreshed, confirm local AI and the Gemma model are ready, let cloud sync finish for backup, check closures, and treat stale data as not current until refreshed again. For money planning, track daily burn, town spikes, hostel, shuttle, laundry, meal, gear replacement, and an emergency cushion. If a filter froze, treat it as potentially compromised, carry backup water tablets, and sleep with the filter in your sleeping bag. Draft checklist note: 1. Source-backed facts from saved document summaries: current AT mile, food and water carry, weather, closures, offline maps/docs, field pack, and local AI model. 2. Placeholders: private IDs, insurance details, medication details, reservation numbers, and exact current-mile specifics. 3. Open questions listed before leaving service. Review this draft before saving; Scout should not save or overwrite a document unless you explicitly confirm it.';
 }
 
 function deviceRunForCases(suite, cases, options = {}) {

@@ -139,6 +139,9 @@ function runAnswerChecks({ result, prompt, answer }) {
 	if (documentWritingMissing({ result, prompt, answer: trimmed })) {
 		add(checks, 'document-writing-draft-missing', 'error', 'Document-writing answer is missing a reviewable draft/checklist or explicit save/overwrite confirmation boundary.');
 	}
+	if (documentWritingSourceBoundaryMissing({ result, prompt, answer: trimmed })) {
+		add(checks, 'document-writing-source-boundary-missing', 'error', 'Document-writing answer does not clearly separate source-backed facts from placeholders, assumptions, or open questions.');
+	}
 	return checks;
 }
 
@@ -202,6 +205,13 @@ function documentWritingMissing({ result, prompt, answer }) {
 	return !(mentionsDocumentDraft(answer) && mentionsDocumentWriteConfirmation(answer));
 }
 
+function documentWritingSourceBoundaryMissing({ result, prompt, answer }) {
+	const tags = result?.case?.improvementTags ?? [];
+	const asksDocumentWriting = tags.includes('document-writing') || isDocumentWritingPrompt(prompt);
+	if (!asksDocumentWriting) return false;
+	return !mentionsDocumentSourceBoundary(answer);
+}
+
 function isDocumentWritingPrompt(prompt) {
 	const lowerPrompt = prompt.toLowerCase();
 	const writingVerb = /\b(?:draft|write|create|revise)\b/u;
@@ -223,6 +233,12 @@ function mentionsDocumentWriteConfirmation(answer) {
 	const mentionsReviewOrConfirm = /\b(?:review|confirm|confirmation|explicitly confirm|before saving|before save)\b/iu.test(answer);
 	const mentionsSaveBoundary = /\b(?:save|saving|overwrite|document|draft)\b/iu.test(answer);
 	return mentionsReviewOrConfirm && mentionsSaveBoundary;
+}
+
+function mentionsDocumentSourceBoundary(answer) {
+	const mentionsSourceFacts = /\b(?:source-backed|source summaries?|saved document facts?|document vault facts?)\b/iu.test(answer);
+	const mentionsAssumptionBoundary = /\b(?:assumptions?|open questions?|placeholders?|verify|confirm before saving|private values?)\b/iu.test(answer);
+	return mentionsSourceFacts && mentionsAssumptionBoundary;
 }
 
 function isBiblePrompt(prompt) {

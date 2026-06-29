@@ -124,7 +124,7 @@ test('flags document-writing prompts that omit the requested draft or save confi
 		result({
 			caseId: 'DLA-DOC-GOOD',
 			prompt: 'Can you draft my town-exit update note?',
-			answer: 'Draft town-exit update note: 1. Current AT mile and field pack: refresh before leaving. 2. Food and water carry: note what changed. 3. Local AI model, cloud sync, and offline maps/docs: finish while online. 4. Weather and closures: refreshed now, but treat cached details as stale until refreshed again. 5. Open questions before walking out: water, shelter, town, terrain, and bailout. Review this draft before saving; Scout should not save or overwrite a document unless you explicitly confirm it.',
+			answer: 'Draft town-exit update note: 1. Source-backed facts from saved document summaries: current AT mile and field pack status, food and water carry, local AI model, cloud sync, offline maps/docs, weather, and closures. 2. Placeholders: private reservation numbers, shuttle details, lodging details, and medication details. 3. Open questions before walking out: water, shelter, town, terrain, bailout, and whether cached details are stale. Review this draft before saving; Scout should not save or overwrite a document unless you explicitly confirm it.',
 			improvementTags: ['document-writing']
 		})
 	]));
@@ -132,6 +132,26 @@ test('flags document-writing prompts that omit the requested draft or save confi
 	assert.ok(checkIdsFor(report, 'DLA-020').includes('document-writing-draft-missing'));
 	assert.ok(checkIdsFor(report, 'DLA-090').includes('document-writing-draft-missing'));
 	assert.deepEqual(checkIdsFor(report, 'DLA-DOC-GOOD'), []);
+});
+
+test('flags document-writing drafts that blur source-backed facts and assumptions', () => {
+	const report = scanScoutLocalAiAnswerQuality(runWith([
+		result({
+			caseId: 'DLA-DOC-BOUNDARY-BAD',
+			prompt: 'What documents and information should I keep saved offline before day one, and can you draft my offline checklist note?',
+			answer: 'Draft offline document checklist note: 1. Photo ID saved offline. 2. Insurance card saved offline. 3. Emergency contacts saved and shared. 4. Medication summary saved. 5. Permits and reservations saved. Review this draft before saving; Scout should not save or overwrite a document unless you explicitly confirm it.',
+			improvementTags: ['document-writing']
+		}),
+		result({
+			caseId: 'DLA-DOC-BOUNDARY-GOOD',
+			prompt: 'What documents and information should I keep saved offline before day one, and can you draft my offline checklist note?',
+			answer: 'Draft offline document checklist note: 1. Source-backed facts from saved offline docs: photo ID category, insurance card category, emergency contact category, itinerary, and permit or reservation summaries. 2. Placeholders: private ID numbers, insurance details, medication details, reservation numbers, and exact current-mile specifics. 3. Open questions to verify later: current mile, permits, reservations, shuttles, lodging, weather, closures, water, and town services. Review this draft before saving; Scout should not save or overwrite a document unless you explicitly confirm it.',
+			improvementTags: ['document-writing']
+		})
+	]));
+
+	assert.deepEqual(checkIdsFor(report, 'DLA-DOC-BOUNDARY-BAD'), ['document-writing-source-boundary-missing']);
+	assert.deepEqual(checkIdsFor(report, 'DLA-DOC-BOUNDARY-GOOD'), []);
 });
 
 test('reports the heuristic boundary in machine output', () => {
