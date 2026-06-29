@@ -1436,6 +1436,8 @@ test('status command allows suite-compatible Dad Pilot runs while newer target w
 	assert.match(status.nextAction.text, /suite-compatible Dad Pilot TestFlight build 1\.0 \(13\)/u);
 	assert.match(status.nextAction.text, /newer target/u);
 	assert.match(status.nextAction.text, /Run 100/u);
+	assert.match(status.nextAction.text, /wait:scout-local-ai-device-run -- --source all/u);
+	assert.match(status.nextAction.text, /wait:scout-local-ai-device-run -- --source clipboard/u);
 });
 
 test('status command lets suite-compatible TestFlight device proof override stale Dad Pilot release evidence', async () => {
@@ -1685,6 +1687,8 @@ test('status command treats clean simulator local AI runs as preflight, not fina
 	assert.equal(status.nextAction.kind, 'get-device-run');
 	assert.match(status.nextAction.text, /Run 100/u);
 	assert.match(status.nextAction.text, /suite-compatible Dad Pilot TestFlight build/u);
+	assert.match(status.nextAction.text, /wait:scout-local-ai-device-run -- --source all/u);
+	assert.match(status.nextAction.text, /wait:scout-local-ai-device-run -- --source clipboard/u);
 
 	const textResult = await execFileAsync(
 		process.execPath,
@@ -1705,6 +1709,7 @@ test('status command treats clean simulator local AI runs as preflight, not fina
 	assert.match(textResult.stdout, /Simulator\/debug local preflight: clean; full runs 1, partial runs 0/u);
 	assert.match(textResult.stdout, /Simulator\/debug local preflight boundary: simulator\/debug local preflight drives iteration but does not replace final TestFlight\/iPhone proof/u);
 	assert.match(textResult.stdout, /Simulator\/debug local final-proof mismatch: simulator-clean-local-preflight \(install=debug, expected testflight\)/u);
+	assert.match(textResult.stdout, /wait:scout-local-ai-device-run -- --source all/u);
 });
 
 test('status command marks simulator local AI preflight stale after relevant source changes', async () => {
