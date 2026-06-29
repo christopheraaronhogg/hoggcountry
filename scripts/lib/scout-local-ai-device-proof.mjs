@@ -10,6 +10,20 @@ import { validateScoutLocalAiSuiteIdentity } from './scout-local-ai-suite.mjs';
 export const DEVICE_EVIDENCE_LANE = 'device-on-device-gemma';
 export const DEVICE_SURFACE = 'mobile-settings-scout-eval-lab';
 export const DEVICE_BUNDLE_ID = 'com.hoggcountry.trailassistant';
+const REQUIRED_INDEPENDENT_REVIEWERS = [
+	'source_grounding_reviewer',
+	'trail_math_reviewer',
+	'document_writing_reviewer',
+	'proof_lane_reviewer'
+];
+const REQUIRED_REVIEW_GATES = [
+	'independent_artifact_review',
+	'tool_source_evidence',
+	'human_1_to_5_rating',
+	'below_five_task',
+	'strict_testflight_iphone',
+	'stability_repeat'
+];
 
 export function validateScoutLocalAiDeviceRunContext({ suite, run }) {
 	const errors = [];
@@ -104,6 +118,7 @@ export function verifyScoutLocalAiDeviceProof({ suite, run, review }) {
 	if ((summary.ratingCounts['5'] ?? 0) !== suite.cases.length) {
 		errors.push(`review must have ${suite.cases.length} ratings of 5, got ${summary.ratingCounts['5'] ?? 0}.`);
 	}
+	validateIndependentReviewGates(review, errors);
 
 	const runById = mapByCaseId(run.results ?? [], 'run', errors);
 	const reviewById = mapByCaseId(review.cases ?? [], 'review', errors);
@@ -171,7 +186,7 @@ export function verifyScoutLocalAiDeviceProof({ suite, run, review }) {
 	return { errors, summary };
 }
 
-export function createDeviceProofMarkdown({ suite, run, summary, suitePath, runPath, reviewPath, repoRoot }) {
+export function createDeviceProofMarkdown({ suite, run, review, summary, suitePath, runPath, reviewPath, repoRoot }) {
 	const checkedAt = new Date().toISOString();
 	const sourceEvidenceSummary = summarizeRunSourceEvidence(run.results ?? []);
 	const domainLines = Object.entries(summary.byDomain)
@@ -208,6 +223,8 @@ export function createDeviceProofMarkdown({ suite, run, summary, suitePath, runP
 		`- Unrated: ${summary.unrated}`,
 		`- Required-tool complete: ${run.summary?.toolExpectationComplete ?? 0}/${run.caseCount}`,
 		`- Source-evidence complete: ${sourceEvidenceSummary.sourceEvidenceComplete}/${run.caseCount}`,
+		`- Independent reviewers passed: ${countPassedIndependentReviewers(review)}/${REQUIRED_INDEPENDENT_REVIEWERS.length}`,
+		`- Review gates passed: ${countPassedReviewGates(review)}/${REQUIRED_REVIEW_GATES.length}`,
 		'',
 		'## Domain summary',
 		'',
@@ -218,6 +235,50 @@ export function createDeviceProofMarkdown({ suite, run, summary, suitePath, runP
 		'This proof only covers the reviewed local Scout eval run from the installed iOS Eval Lab. Keep TestFlight/App Store Connect build proof, simulator/browser proof, and any future production release proof separate.'
 	];
 	return `${lines.join('\n')}\n`;
+}
+
+function validateIndependentReviewGates(review, errors) {
+	if (!Array.isArray(review.independentReviewers)) {
+		errors.push('review.independentReviewers must be recorded for final proof.');
+	} else {
+		const reviewersById = new Map(review.independentReviewers.map((entry) => [entry.id, entry]));
+		for (const reviewerId of REQUIRED_INDEPENDENT_REVIEWERS) {
+			const reviewer = reviewersById.get(reviewerId);
+			if (!reviewer) {
+				errors.push(`review.independentReviewers must include ${reviewerId} for final proof.`);
+				continue;
+			}
+			if (reviewer.status !== 'pass') {
+				errors.push(`review.independentReviewers.${reviewerId}.status must be pass for final proof, got ${reviewer.status ?? '<missing>'}.`);
+			}
+		}
+	}
+
+	if (!Array.isArray(review.reviewGates)) {
+		errors.push('review.reviewGates must be recorded for final proof.');
+		return;
+	}
+	const gatesById = new Map(review.reviewGates.map((entry) => [entry.id, entry]));
+	for (const gateId of REQUIRED_REVIEW_GATES) {
+		const gate = gatesById.get(gateId);
+		if (!gate) {
+			errors.push(`review.reviewGates must include ${gateId} for final proof.`);
+			continue;
+		}
+		if (gate.passed !== true) {
+			errors.push(`review.reviewGates.${gateId}.passed must be true for final proof.`);
+		}
+	}
+}
+
+function countPassedIndependentReviewers(review) {
+	const reviewersById = new Map((review.independentReviewers ?? []).map((entry) => [entry.id, entry]));
+	return REQUIRED_INDEPENDENT_REVIEWERS.filter((reviewerId) => reviewersById.get(reviewerId)?.status === 'pass').length;
+}
+
+function countPassedReviewGates(review) {
+	const gatesById = new Map((review.reviewGates ?? []).map((entry) => [entry.id, entry]));
+	return REQUIRED_REVIEW_GATES.filter((gateId) => gatesById.get(gateId)?.passed === true).length;
 }
 
 function getFinalProofRequirements(suite, errors) {

@@ -55,6 +55,8 @@ async function main() {
 	console.log(`Packet: ${relative(REPO_ROOT, packetPath)}`);
 	console.log(`Review: ${relative(REPO_ROOT, outPath)}`);
 	console.log(`Updated cases: ${result.updatedCases}`);
+	console.log(`Updated independent reviewers: ${result.updatedIndependentReviewers}`);
+	console.log(`Updated review gates: ${result.updatedReviewGates}`);
 	if (result.missingCases?.length) {
 		console.log(`Partial packet apply: ${result.missingCases.length} review case(s) not present in packet.`);
 	}
@@ -76,6 +78,8 @@ export function parseReviewPacket(markdown) {
 	const blocks = extractCaseBlocks(markdown);
 	const cases = [];
 	const errors = [];
+	const independentReviewers = parseIndependentReviewerFields(markdown, errors);
+	const reviewGates = parseReviewGateFields(markdown, errors);
 
 	if (!blocks.length) {
 		errors.push('packet did not contain any DLA case blocks.');
@@ -133,7 +137,7 @@ export function parseReviewPacket(markdown) {
 		error.errors = errors;
 		throw error;
 	}
-	return { cases };
+	return { independentReviewers, reviewGates, cases };
 }
 
 export function applyPacketToReview(review, packetReview, options = {}) {
@@ -142,6 +146,8 @@ export function applyPacketToReview(review, packetReview, options = {}) {
 	const packetCaseIds = new Set();
 	const updates = [];
 	const errors = [];
+	const independentReviewerUpdates = validateIndependentReviewerUpdates(review, packetReview.independentReviewers ?? [], options, errors);
+	const reviewGateUpdates = validateReviewGateUpdates(review, packetReview.reviewGates ?? [], options, errors);
 
 	for (const packetCase of packetReview.cases) {
 		if (packetCaseIds.has(packetCase.caseId)) {
@@ -199,8 +205,21 @@ export function applyPacketToReview(review, packetReview, options = {}) {
 		copySignalChecklistValues(reviewCase.requiredConfirmationChecks, packetCase.requiredConfirmationChecks);
 		copySignalChecklistValues(reviewCase.safetyFlagChecks, packetCase.safetyFlagChecks);
 	}
+	for (const { reviewEntry, packetEntry } of independentReviewerUpdates) {
+		reviewEntry.status = packetEntry.status;
+		reviewEntry.notes = packetEntry.notes;
+	}
+	for (const { reviewEntry, packetEntry } of reviewGateUpdates) {
+		reviewEntry.passed = packetEntry.passed;
+		reviewEntry.notes = packetEntry.notes;
+	}
 	const updatedCases = updates.length;
-	return { updatedCases, missingCases };
+	return {
+		updatedCases,
+		updatedIndependentReviewers: independentReviewerUpdates.length,
+		updatedReviewGates: reviewGateUpdates.length,
+		missingCases
+	};
 }
 
 function extractCaseBlocks(markdown) {
@@ -269,12 +288,49 @@ function parseSignalChecklistLine(line, label, errors) {
 	};
 }
 
+function parseIndependentReviewerFields(markdown, errors) {
+	const entries = [];
+	const pattern = /^- Reviewer[ \t]+([A-Za-z0-9_-]+)[ \t]+status:[ \t]*([^|]*?)[ \t]*\|[ \t]*notes:[ \t]*(.*)$/gmu;
+	for (const match of markdown.matchAll(pattern)) {
+		const id = match[1].trim();
+		entries.push({
+			id,
+			status: parseStatusChoice(match[2], `Reviewer ${id}`, errors),
+			notes: match[3].trim()
+		});
+	}
+	return entries;
+}
+
+function parseReviewGateFields(markdown, errors) {
+	const entries = [];
+	const pattern = /^- Gate[ \t]+([A-Za-z0-9_-]+)[ \t]+passed:[ \t]*([^|]*?)[ \t]*\|[ \t]*notes:[ \t]*(.*)$/gmu;
+	for (const match of markdown.matchAll(pattern)) {
+		const id = match[1].trim();
+		entries.push({
+			id,
+			passed: parseBooleanChoice(match[2], `Gate ${id}`, 'passed', errors),
+			notes: match[3].trim()
+		});
+	}
+	return entries;
+}
+
 function parseBooleanChoice(value, label, fieldName, errors) {
 	const normalized = String(value ?? '').trim().toLowerCase();
 	if (!normalized || normalized === 'null' || normalized === 'n/a' || normalized === 'na') return null;
 	if (['true', 'yes', 'y', 'pass', 'passed'].includes(normalized)) return true;
 	if (['false', 'no', 'n', 'fail', 'failed'].includes(normalized)) return false;
 	errors.push(`${label}: ${fieldName} must be true, false, or null; got "${value}".`);
+	return null;
+}
+
+function parseStatusChoice(value, label, errors) {
+	const normalized = String(value ?? '').trim().toLowerCase();
+	if (!normalized || normalized === 'null' || normalized === 'n/a' || normalized === 'na') return null;
+	if (['pass', 'passed', 'true', 'yes', 'y'].includes(normalized)) return 'pass';
+	if (['fail', 'failed', 'false', 'no', 'n'].includes(normalized)) return 'fail';
+	errors.push(`${label}: status must be pass, fail, or null; got "${value}".`);
 	return null;
 }
 
@@ -300,6 +356,72 @@ function splitList(value) {
 		.split(/[;,]/u)
 		.map((item) => item.trim())
 		.filter(Boolean);
+}
+
+function validateIndependentReviewerUpdates(review, packetReviewers, options, errors) {
+	if (!packetReviewers.length) return [];
+	if (!Array.isArray(review.independentReviewers)) {
+		errors.push('packet contains independent reviewer fields, but review JSON is missing independentReviewers.');
+		return [];
+	}
+	const reviewById = new Map(review.independentReviewers.map((entry) => [entry.id, entry]));
+	const packetIds = new Set();
+	const updates = [];
+	for (const packetEntry of packetReviewers) {
+		if (packetIds.has(packetEntry.id)) {
+			errors.push(`Reviewer ${packetEntry.id}: duplicated in packet.`);
+			continue;
+		}
+		packetIds.add(packetEntry.id);
+		const reviewEntry = reviewById.get(packetEntry.id);
+		if (!reviewEntry) {
+			errors.push(`Reviewer ${packetEntry.id}: found in packet but not in review JSON.`);
+			continue;
+		}
+		updates.push({ reviewEntry, packetEntry });
+	}
+	if (!options.allowPartial) {
+		const missing = review.independentReviewers
+			.map((entry) => entry.id)
+			.filter((id) => !packetIds.has(id));
+		if (missing.length) {
+			errors.push(`packet is missing ${missing.length} independent reviewer field(s): ${missing.join(', ')}.`);
+		}
+	}
+	return updates;
+}
+
+function validateReviewGateUpdates(review, packetGates, options, errors) {
+	if (!packetGates.length) return [];
+	if (!Array.isArray(review.reviewGates)) {
+		errors.push('packet contains review gate fields, but review JSON is missing reviewGates.');
+		return [];
+	}
+	const reviewById = new Map(review.reviewGates.map((entry) => [entry.id, entry]));
+	const packetIds = new Set();
+	const updates = [];
+	for (const packetEntry of packetGates) {
+		if (packetIds.has(packetEntry.id)) {
+			errors.push(`Gate ${packetEntry.id}: duplicated in packet.`);
+			continue;
+		}
+		packetIds.add(packetEntry.id);
+		const reviewEntry = reviewById.get(packetEntry.id);
+		if (!reviewEntry) {
+			errors.push(`Gate ${packetEntry.id}: found in packet but not in review JSON.`);
+			continue;
+		}
+		updates.push({ reviewEntry, packetEntry });
+	}
+	if (!options.allowPartial) {
+		const missing = review.reviewGates
+			.map((entry) => entry.id)
+			.filter((id) => !packetIds.has(id));
+		if (missing.length) {
+			errors.push(`packet is missing ${missing.length} review gate field(s): ${missing.join(', ')}.`);
+		}
+	}
+	return updates;
 }
 
 function validateChecklist(reviewChecks, packetChecks, label, errors) {

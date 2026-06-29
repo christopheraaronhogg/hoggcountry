@@ -51,6 +51,7 @@ await writeFile(
 	createDeviceProofMarkdown({
 		suite,
 		run,
+		review,
 		summary: result.summary,
 		suitePath,
 		runPath,

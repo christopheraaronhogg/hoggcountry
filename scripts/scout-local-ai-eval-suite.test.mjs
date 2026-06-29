@@ -3942,8 +3942,12 @@ test('device run intake validates exports and creates review packet', async () =
 	assert.match(packet, /trail_math_reviewer/u);
 	assert.match(packet, /document_writing_reviewer/u);
 	assert.match(packet, /proof_lane_reviewer/u);
+	assert.match(packet, /Independent reviewer fields to fill in review JSON:/u);
+	assert.match(packet, /- Reviewer source_grounding_reviewer status: null \| notes:/u);
 	assert.match(packet, /Contract review gates:/u);
 	assert.match(packet, /strict_testflight_iphone: Final proof requires a full current-suite TestFlight iPhone run with all 100 cases rated 5\/5/u);
+	assert.match(packet, /Review gate fields to fill in review JSON:/u);
+	assert.match(packet, /- Gate strict_testflight_iphone passed: null \| notes:/u);
 	assert.match(packet, /Do not use the improvement task to weaken the eval rubric/u);
 	assert.match(packet, /Valid failure categories: .*missing-data.*local-model-limitation/u);
 	assert.match(packet, /Valid owner layers: data, tool-routing, prompt, safety-prompt, ui, local-model/u);
@@ -4203,6 +4207,8 @@ test('review packet ratings can be applied back into review JSON', async () => {
 
 	assert.match(applyResult.stdout, /Scout local AI review JSON updated from packet/u);
 	assert.match(applyResult.stdout, /Updated cases: 2/u);
+	assert.match(applyResult.stdout, /Updated independent reviewers: 4/u);
+	assert.match(applyResult.stdout, /Updated review gates: 6/u);
 	assert.equal(review.cases[0].rating, 5);
 	assert.equal(review.cases[0].traitChecks.every((check) => check.passed === true), true);
 	assert.equal(review.cases[0].safetyCaveatChecks.every((check) => check.passed === true), true);
@@ -4543,6 +4549,7 @@ test('review finalizer applies a 100-case packet and writes strict device proof'
 			improvementTask: ''
 		});
 	}
+	packet = markIndependentReviewGatesPassed(packet);
 	await writeFile(packetPath, packet);
 
 	const result = await execFileAsync(
@@ -7006,10 +7013,48 @@ test('strict device proof accepts a full 5-star device review', async () => {
 	assert.ok(proof.includes(`Suite version: \`${suite.version}\``));
 	assert.match(proof, /Suite hash: `fnv1a32:[0-9a-f]{8}`/u);
 	assert.match(proof, /Required-tool complete: 100\/100/u);
+	assert.match(proof, /Independent reviewers passed: 4\/4/u);
+	assert.match(proof, /Review gates passed: 6\/6/u);
 	assert.match(proof, /App version\/build: `1\.0 \(13\)`/u);
 	assert.match(proof, /Required app version\/build: `1\.0 \(>= 13\)`/u);
 	assert.match(proof, /Install source: `testflight`/u);
 	assert.match(proof, /Execution id: `fixture-scout-eval-device-final-proof-pass`/u);
+});
+
+test('strict device proof rejects final reviews without independent review gate passes', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-proof-gate-fail-'));
+	const run = deviceRunForCases(suite, suite.cases, {
+		runId: 'device-final-proof-gate-fail',
+		completeTools: true,
+		runContext: finalDeviceRunContext()
+	});
+	const review = reviewForRun(run, { rating: 5 });
+	review.independentReviewers.find((reviewer) => reviewer.id === 'source_grounding_reviewer').status = null;
+	review.reviewGates.find((gate) => gate.id === 'strict_testflight_iphone').passed = false;
+	const runPath = join(outputDir, 'device-final-proof-gate-fail.json');
+	const reviewPath = join(outputDir, 'device-final-proof-gate-fail.review.json');
+	await writeFile(runPath, `${JSON.stringify(run, null, 2)}\n`);
+	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/verify-scout-local-ai-device-proof.mjs',
+				'--run',
+				runPath,
+				'--review',
+				reviewPath
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		),
+		(error) => {
+			assert.match(error.stderr, /source_grounding_reviewer\.status must be pass/u);
+			assert.match(error.stderr, /strict_testflight_iphone\.passed must be true/u);
+			return true;
+		}
+	);
 });
 
 test('strict device proof rejects 5-star reviews with missing required tool hits', async () => {
@@ -7927,6 +7972,8 @@ function reviewForRun(run, options = {}) {
 		evidenceLane: run.evidenceLane,
 		ratingScale: run.ratingScale,
 		failureCategories: run.failureCategories,
+		independentReviewers: independentReviewersForReview(options.independentReviewerStatus ?? 'pass'),
+		reviewGates: reviewGatesForReview(options.reviewGatePassed ?? true),
 		cases: run.results.map((result) => ({
 			caseId: result.caseId,
 			domain: result.case.domain,
@@ -7950,6 +7997,38 @@ function reviewForRun(run, options = {}) {
 			ownerLayer: ''
 		}))
 	};
+}
+
+function independentReviewersForReview(status = 'pass') {
+	return [
+		'source_grounding_reviewer',
+		'trail_math_reviewer',
+		'document_writing_reviewer',
+		'proof_lane_reviewer'
+	].map((id) => ({
+		id,
+		input: `Fixture input for ${id}`,
+		checks: [`Fixture check for ${id}`],
+		mustBeSeparateFrom: ['answer_generation'],
+		status,
+		notes: status === 'pass' ? 'Fixture reviewer pass.' : ''
+	}));
+}
+
+function reviewGatesForReview(passed = true) {
+	return [
+		'independent_artifact_review',
+		'tool_source_evidence',
+		'human_1_to_5_rating',
+		'below_five_task',
+		'strict_testflight_iphone',
+		'stability_repeat'
+	].map((id) => ({
+		id,
+		rule: `Fixture rule for ${id}`,
+		passed,
+		notes: passed ? 'Fixture gate pass.' : ''
+	}));
 }
 
 function isDocumentWritingFixtureCase(testCase) {
@@ -8003,6 +8082,12 @@ function replaceReviewerFields(packet, caseId, fields) {
 		.replace(/^- Owner layer:.*$/mu, `- Owner layer: ${fields.ownerLayer}`)
 		.replace(/^- Improvement task:.*$/mu, `- Improvement task: ${fields.improvementTask}`);
 	return `${packet.slice(0, start)}${block}${packet.slice(end)}`;
+}
+
+function markIndependentReviewGatesPassed(packet) {
+	return packet
+		.replace(/^- Reviewer ([A-Za-z0-9_-]+) status:.*$/gmu, '- Reviewer $1 status: pass | notes: Independent reviewer pass.')
+		.replace(/^- Gate ([A-Za-z0-9_-]+) passed:.*$/gmu, '- Gate $1 passed: true | notes: Review gate pass.');
 }
 
 function removeReviewCaseBlock(packet, caseId) {

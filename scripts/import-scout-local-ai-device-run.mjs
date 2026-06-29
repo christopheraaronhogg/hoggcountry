@@ -294,6 +294,14 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 		'',
 		...formatIndependentReviewGates(harnessContract),
 		'',
+		'Independent reviewer fields to fill in review JSON:',
+		'',
+		...formatIndependentReviewerFieldLines(harnessContract),
+		'',
+		'Review gate fields to fill in review JSON:',
+		'',
+		...formatReviewGateFieldLines(harnessContract),
+		'',
 		'After filling this packet, run:',
 		'',
 		'```sh',
@@ -588,6 +596,18 @@ function formatIndependentReviewGates(contract) {
 	}
 
 	return lines;
+}
+
+function formatIndependentReviewerFieldLines(contract) {
+	const reviewers = Array.isArray(contract?.independentReviewers) ? contract.independentReviewers : [];
+	if (!reviewers.length) return ['- Reviewer <missing> status: null | notes: Harness contract did not provide reviewers.'];
+	return reviewers.map((reviewer) => `- Reviewer ${reviewer.id ?? '<missing>'} status: null | notes: `);
+}
+
+function formatReviewGateFieldLines(contract) {
+	const gates = Array.isArray(contract?.reviewGates) ? contract.reviewGates : [];
+	if (!gates.length) return ['- Gate <missing> passed: null | notes: Harness contract did not provide review gates.'];
+	return gates.map((gate) => `- Gate ${gate.id ?? '<missing>'} passed: null | notes: `);
 }
 
 function reviewQueueSignal(result, sourceEvidenceGaps, answerQualityFlags = []) {

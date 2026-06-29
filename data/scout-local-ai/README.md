@@ -401,6 +401,13 @@ already shows tool or routing gaps. You can fill the checklist `passed:` values
 and Reviewer fields in the Markdown packet, then apply them back to the
 machine-readable review JSON:
 
+The packet also has top-level Independent reviewer and Review gate fields. For
+final TestFlight/iPhone proof, mark each independent reviewer `status: pass`
+and each review gate `passed: true` only after the separate source-grounding,
+trail-math/safety, document-writing, proof-lane, 1-5 rating, and stability-gate
+checks have actually passed. Strict final proof rejects missing, blank, or failed
+gate fields even when all 100 case ratings are `5/5`.
+
 ```sh
 npm run apply-review:scout-local-ai -- --packet data/scout-local-ai/review-packets/<run-id>.review.md --review data/scout-local-ai/reviews/<run-id>.review.json
 ```
