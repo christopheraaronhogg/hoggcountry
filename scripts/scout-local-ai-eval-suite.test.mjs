@@ -5910,6 +5910,20 @@ test('review status command can print a focused case review card', async () => {
 		runId: 'device-review-status-case',
 		completeTools: true
 	});
+	run.results[1].requiredConfirmations = [
+		{
+			id: 'live-weather-check',
+			prompt: 'Confirm current weather before exposed terrain.',
+			reason: 'cached weather may be stale'
+		}
+	];
+	run.results[1].safetyFlags = [
+		{
+			id: 'lightning-risk',
+			severity: 'warning',
+			message: 'Avoid exposed ridges during thunder.'
+		}
+	];
 	const review = reviewForRun(run);
 	review.cases[1].rating = 4;
 	review.cases[1].notes = 'Needs a clearer source-backed bailout recommendation.';
@@ -5954,6 +5968,8 @@ test('review status command can print a focused case review card', async () => {
 	assert.equal(progress.selectedCase.traitChecks[0].notes, 'Too vague on the first required trait.');
 	assert.equal(progress.selectedCase.toolInvocations.length, run.results[1].toolInvocations.length);
 	assert.equal(progress.selectedCase.receipts.length, run.results[1].receipts.length);
+	assert.deepEqual(progress.selectedCase.requiredConfirmations, run.results[1].requiredConfirmations);
+	assert.deepEqual(progress.selectedCase.safetyFlags, run.results[1].safetyFlags);
 	assert.deepEqual(progress.selectedCase.sourceEvidenceGaps, []);
 
 	const textResult = await execFileAsync(
@@ -5979,6 +5995,11 @@ test('review status command can print a focused case review card', async () => {
 	assert.match(textResult.stdout, /Review owner: tool-routing/u);
 	assert.match(textResult.stdout, /Review categories: bad-routing/u);
 	assert.match(textResult.stdout, /fail .*Too vague on the first required trait/u);
+	assert.match(textResult.stdout, /### Required confirmations/u);
+	assert.match(textResult.stdout, /live-weather-check: Confirm current weather before exposed terrain\. \(cached weather may be stale\)/u);
+	assert.match(textResult.stdout, /### Safety flags/u);
+	assert.match(textResult.stdout, /warning: Avoid exposed ridges during thunder\. \(lightning-risk\)/u);
+	assert.doesNotMatch(textResult.stdout, /\[object Object\]/u);
 	assert.match(textResult.stdout, /Tool evidence/u);
 	assert.match(textResult.stdout, /Reviewer fields/u);
 });

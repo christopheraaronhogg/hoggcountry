@@ -737,7 +737,7 @@ function formatSelectedCase(selected) {
 		lines.push('### Required confirmations', '');
 		for (const [index, confirmation] of selected.requiredConfirmations.entries()) {
 			const check = selected.requiredConfirmationChecks?.[index];
-			lines.push(`- ${formatCheckState(check?.acknowledged)} ${confirmation}${check?.notes ? ` (${check.notes})` : ''}`);
+			lines.push(`- ${formatCheckState(check?.acknowledged)} ${formatRequiredConfirmation(confirmation)}${check?.notes ? ` (${check.notes})` : ''}`);
 		}
 		lines.push('');
 	}
@@ -746,7 +746,7 @@ function formatSelectedCase(selected) {
 		lines.push('### Safety flags', '');
 		for (const [index, flag] of selected.safetyFlags.entries()) {
 			const check = selected.safetyFlagChecks?.[index];
-			lines.push(`- ${formatCheckState(check?.acknowledged)} ${flag}${check?.notes ? ` (${check.notes})` : ''}`);
+			lines.push(`- ${formatCheckState(check?.acknowledged)} ${formatSafetyFlag(flag)}${check?.notes ? ` (${check.notes})` : ''}`);
 		}
 		lines.push('');
 	}
@@ -790,6 +790,22 @@ function formatCheckState(value) {
 	if (value === true) return 'pass';
 	if (value === false) return 'fail';
 	return 'blank';
+}
+
+function formatRequiredConfirmation(confirmation) {
+	if (typeof confirmation === 'string') return confirmation;
+	const id = confirmation?.id ?? '<missing-id>';
+	const prompt = confirmation?.prompt ?? '(no prompt)';
+	const reason = confirmation?.reason ?? 'reason unknown';
+	return `${id}: ${prompt} (${reason})`;
+}
+
+function formatSafetyFlag(flag) {
+	if (typeof flag === 'string') return flag;
+	const severity = flag?.severity ?? 'unknown';
+	const message = flag?.message ?? '(no message)';
+	const id = flag?.id ?? '<missing-id>';
+	return `${severity}: ${message} (${id})`;
 }
 
 function indentBlock(value) {
