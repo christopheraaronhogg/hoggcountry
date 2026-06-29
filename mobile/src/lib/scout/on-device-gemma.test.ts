@@ -1666,7 +1666,15 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			'Camp shoes can help your feet recover and make camp more comfortable. Reassess the weight later.',
 			'Should I carry camp shoes, or is that dead weight?'
 		),
-		'Camp shoes can help your feet recover and make camp more comfortable. Reassess the weight later.\n\nCamp-shoes decision note: weigh the 7 oz against foot recovery, shelter and camp comfort, stream crossings when appropriate, hygiene, and keeping dirty shoes out of sleep areas; test them through the first section and reassess at the first town.'
+		'Camp shoes can help your feet recover and make camp more comfortable. Reassess the weight later.\n\nCamp-shoes decision note: camp shoes are optional comfort and recovery gear, not automatic safety gear. Weigh their pack weight against foot recovery, shelter and camp comfort, stream crossings when appropriate, hygiene, and keeping dirty shoes out of sleep areas; test them through the first section and reassess at the first town.'
+	);
+
+	assert.equal(
+		polishOnDeviceAnswer(
+			'Camp shoes are part of your loadout, and they are important for trail protection. You should carry them as they are necessary for your safety on the trail. Carry the camp shoes as they are part of your loadout.',
+			'Should I carry camp shoes, or is that dead weight?'
+		),
+		'Camp shoes are optional comfort and recovery gear, not automatic safety gear. Carry them only if foot recovery, shelter comfort, hygiene, or safe stream-crossing use is worth the weight after testing. Test the camp shoes through the first section and reassess at the first town.\n\nCamp-shoes decision note: camp shoes are optional comfort and recovery gear, not automatic safety gear. Weigh their pack weight against foot recovery, shelter and camp comfort, stream crossings when appropriate, hygiene, and keeping dirty shoes out of sleep areas; test them through the first section and reassess at the first town.'
 	);
 
 	assert.equal(

@@ -146,7 +146,7 @@ const SLOW_FILTER_NOTE =
 const RAIN_PANTS_NOTE =
 	'Rain-pants decision note: for a Georgia or March start, decide from the current forecast, wind, personal cold tolerance, and shakedown evidence; keep them until the rain system has been proven in comparable wet-cold conditions.';
 const CAMP_SHOES_NOTE =
-	'Camp-shoes decision note: weigh the 7 oz against foot recovery, shelter and camp comfort, stream crossings when appropriate, hygiene, and keeping dirty shoes out of sleep areas; test them through the first section and reassess at the first town.';
+	'Camp-shoes decision note: camp shoes are optional comfort and recovery gear, not automatic safety gear. Weigh their pack weight against foot recovery, shelter and camp comfort, stream crossings when appropriate, hygiene, and keeping dirty shoes out of sleep areas; test them through the first section and reassess at the first town.';
 const FOOD_ON_MOVE_NOTE =
 	'Food-packing note: before leaving camp, split out the next 3-4 hours of snacks and lunch into reachable pockets or the top/outside of the pack; keep cook/camp meals, extra days of food, and trash separate so hiking food stays accessible for steady energy and better decisions.';
 const COLD_RAIN_CAMP_NOTE =
@@ -698,8 +698,11 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	if (isRainPantsPrompt(lowerPrompt) && !mentionsRainPantsDecision(answer)) {
 		answer = appendSentence(answer, RAIN_PANTS_NOTE);
 	}
-	if (isCampShoesPrompt(lowerPrompt) && !mentionsCampShoesDecision(answer)) {
-		answer = appendSentence(answer, CAMP_SHOES_NOTE);
+	if (isCampShoesPrompt(lowerPrompt)) {
+		answer = normalizeCampShoesWording(answer);
+		if (!mentionsCampShoesDecision(answer)) {
+			answer = appendSentence(answer, CAMP_SHOES_NOTE);
+		}
 	}
 	if (isFoodOnMovePrompt(lowerPrompt) && !mentionsFoodOnMoveDecision(answer)) {
 		answer = appendSentence(answer, FOOD_ON_MOVE_NOTE);
@@ -972,6 +975,30 @@ function removeMailHomeGearConfusion(answer: string): string {
 		.join('\n\n')
 		.trim();
 	return filtered || answer;
+}
+
+function normalizeCampShoesWording(answer: string): string {
+	return answer
+		.replace(
+			/\bCamp shoes are part of your loadout, and they are important for trail protection\./giu,
+			'Camp shoes are optional comfort and recovery gear, not automatic safety gear.'
+		)
+		.replace(
+			/\bYou should carry them as they are necessary for your safety on the trail\./giu,
+			'Carry them only if foot recovery, shelter comfort, hygiene, or safe stream-crossing use is worth the weight after testing.'
+		)
+		.replace(
+			/\bThey are necessary for your safety on the trail\./giu,
+			'They are optional comfort and recovery gear, not automatic safety gear.'
+		)
+		.replace(
+			/\bCarry the camp shoes as they are part of your loadout\./giu,
+			'Test the camp shoes through the first section and reassess at the first town.'
+		)
+		.replace(
+			/\bCamp shoes are not dead weight in the context of trail safety and foot protection\./giu,
+			'They are not dead weight if they help your feet recover, keep camp cleaner, or handle appropriate stream crossings, but they still have to earn their ounces.'
+		);
 }
 
 function removeRepeatedSentences(answer: string): string {
@@ -3193,7 +3220,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`For hot-day plan questions, move harder miles into the cooler part of the day, carry more water when the next source is uncertain, schedule shade breaks, and name heat danger signs that mean stop, cool down, and escalate.`,
 		`For wet-weather hypothermia questions, name shivering, clumsiness, confusion, apathy, slurred speech, and poor coordination; then tell the hiker to stop, get sheltered, change into dry insulation or sleep layers, eat or sip warm fluids if available, and get help for severe or worsening symptoms.`,
 		`For rain-pants or rain-gear cut/drop questions, visibly weigh cold rain, wind, personal cold tolerance, cached/current forecast uncertainty, and shakedown evidence before making a keep/drop call. For Georgia or March starts, default conservative until the hiker proves the rain system in comparable wet-cold conditions.`,
-		`For camp-shoes questions, balance foot recovery, shelter/camp comfort, stream crossings, hygiene, and weight. Do not frame recovery comfort as laziness. Suggest testing the shoes and reassessing after the first section or first town, not deciding from ounces alone.`,
+		`For camp-shoes questions, balance foot recovery, shelter/camp comfort, stream crossings, hygiene, and weight. Do not call camp shoes necessary safety gear just because they are carried. Do not frame recovery comfort as laziness. Suggest testing the shoes and reassessing after the first section or first town, not deciding from ounces alone.`,
 		`For food-packing or eating-while-hiking questions, tell the hiker to split out today's snacks and lunch before leaving camp, keep them reachable without unpacking, keep cook/camp meals and extra days of food separate, and connect accessible food to steady energy, warmth, and better water/shelter/mileage decisions. Do not give medical nutrition advice.`,
 		`For cold-rain camping questions, explicitly name hypothermia risk, protect the dry sleep layer and warm layer first, set up early in a legal protected spot, keep the filter warm, verify the current forecast, and stop or bail out if the sleep system or camp setup cannot stay dry.`,
 		`For dry-clothes priority questions, name the sleep base layer, socks, insulation or warm layer, quilt or bag, and critical electronics as dry priorities. Give a simple packing method such as pack liner or dry bag, keep rain gear accessible, and connect wet-cold mistakes to hypothermia risk.`,
