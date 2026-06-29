@@ -351,7 +351,25 @@ function unknownFlags(argv, allowed) {
 }
 
 function formatCommand(command, commandArgs) {
-  return [command, ...commandArgs].map(shellQuote).join(' ');
+  return [command, ...redactCommandArgs(commandArgs)].map(shellQuote).join(' ');
+}
+
+function redactCommandArgs(commandArgs) {
+  const sensitiveFlags = new Set([
+    '-authenticationKeyPath',
+    '-authenticationKeyID',
+    '-authenticationKeyIssuerID'
+  ]);
+  const redacted = [];
+  for (let index = 0; index < commandArgs.length; index += 1) {
+    const value = commandArgs[index];
+    redacted.push(value);
+    if (sensitiveFlags.has(value) && index + 1 < commandArgs.length) {
+      redacted.push('<redacted>');
+      index += 1;
+    }
+  }
+  return redacted;
 }
 
 function shellQuote(value) {

@@ -205,6 +205,9 @@ test('TestFlight helper is a repeatable archive/export/upload lane', () => {
 	assert.match(helper, /DEVELOPMENT_TEAM=\$\{teamId\}/u);
 	assert.match(helper, /Mode: diagnose only/u);
 	assert.match(helper, /ios-signing-readiness/u);
+	assert.match(helper, /function redactCommandArgs/u);
+	assert.match(helper, /-authenticationKeyIssuerID/u);
+	assert.match(helper, /'<redacted>'/u);
 	assert.match(helper, /ios-testflight-attempt-\$\{timestamp\}\.md/u);
 	assert.match(proofScript, /npm run ios:testflight -- --upload --team-id <TEAMID>/u);
 	assert.match(proofScript, /dad-testflight-invite/u);
