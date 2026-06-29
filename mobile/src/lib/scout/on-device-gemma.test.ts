@@ -199,6 +199,8 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /Answer the hiker's immediate question first/);
 	assert.match(systemContext, /Use plain text only/);
 	assert.match(systemContext, /Do not use Markdown headings, bold markers, tables, or long bullet lists/);
+	assert.match(systemContext, /Use user-facing source wording/);
+	assert.match(systemContext, /cached safety guidance/);
 	assert.match(systemContext, /Never turn candidate water, shelters, towns, or weather into guarantees/);
 	assert.match(systemContext, /For water questions, use the next_water tool finding as the answer's spine/);
 	assert.match(systemContext, /visually confirm current flow/);
@@ -335,6 +337,40 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /pain persists, worsens, swells, or changes gait/);
 	assert.match(systemContext, /Do not offer terrain lookups or custom workouts at the end/);
 	assert.match(systemContext, /Use the strongest 2-4 tool findings visibly/);
+});
+
+test('polishOnDeviceAnswer names opened source documents without exposing tool labels', () => {
+	const hiddenSourceAnswer = polishOnDeviceAnswer(
+		'Tell your family your usual cadence, route area, next expected stop, and escalation window.',
+		'What should I tell family about check-ins and what they should do if I miss one?',
+		[
+			{
+				toolId: 'open_source_doc',
+				args: { sourceSkill: 'safety' },
+				summary: 'Safety guidance opened Family check-in and missed-contact discipline.',
+				confidence: 'medium',
+				receipts: []
+			}
+		]
+	);
+
+	assert.match(hiddenSourceAnswer, /^Source basis: cached safety guidance\./u);
+	assert.doesNotMatch(hiddenSourceAnswer, /\b(?:source_search|open_source_doc|tool invocation|source skill)\b/iu);
+
+	const alreadyVisibleAnswer = polishOnDeviceAnswer(
+		'The safety guidance says to set a check-in cadence and escalation window before the trail.',
+		'What should I tell family about check-ins and what they should do if I miss one?',
+		[
+			{
+				toolId: 'open_source_doc',
+				args: { sourceSkill: 'safety' },
+				summary: 'Safety guidance opened Family check-in and missed-contact discipline.',
+				confidence: 'medium',
+				receipts: []
+			}
+		]
+	);
+	assert.doesNotMatch(alreadyVisibleAnswer, /^Source basis:/u);
 });
 
 test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions', () => {

@@ -790,6 +790,7 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 		answer = isVagueSourceOnlyAnswer(answer) ? TOWN_OFFLINE_READINESS_NOTE : appendSentence(answer, TOWN_OFFLINE_READINESS_NOTE);
 	}
 	answer = removeRedundantWaterCarryAdvice(answer);
+	answer = ensureVisibleSourceBasis(answer, toolInvocations);
 
 	return trimToCompleteSentence(answer);
 }
@@ -1094,6 +1095,42 @@ function appendSentence(answer: string, sentence: string): string {
 
 function prependSentence(answer: string, sentence: string): string {
 	return `${sentence}\n\n${answer.trim()}`;
+}
+
+function ensureVisibleSourceBasis(answer: string, toolInvocations: ToolInvocationRecord[]): string {
+	const trimmed = answer.trim();
+	if (!trimmed || mentionsVisibleSourceBasis(trimmed)) return trimmed;
+
+	const openedSourceDocs = toolInvocations.filter((tool) => tool.toolId === 'open_source_doc');
+	if (!openedSourceDocs.length) return trimmed;
+
+	return prependSentence(trimmed, `Source basis: ${describeOpenedSourceBasis(openedSourceDocs)}.`);
+}
+
+function describeOpenedSourceBasis(openedSourceDocs: ToolInvocationRecord[]): string {
+	const labels = Array.from(new Set(openedSourceDocs.map(sourceBasisLabelForTool).filter(Boolean)));
+	if (!labels.length) return 'cached source document guidance';
+	return `cached ${formatHumanList(labels)} guidance`;
+}
+
+function sourceBasisLabelForTool(tool: ToolInvocationRecord): string {
+	const sourceSkill = typeof tool.args?.sourceSkill === 'string' ? tool.args.sourceSkill.trim().toLowerCase() : '';
+	if (sourceSkill) return sourceSkill.replace(/[^a-z0-9\s-]/gu, '').replace(/\s+/gu, ' ').trim();
+
+	const openedMatch = tool.summary.match(/\b([a-z][a-z0-9 -]{1,40})\s+guidance\s+opened\b/iu);
+	if (openedMatch?.[1]) return openedMatch[1].trim().toLowerCase();
+
+	return '';
+}
+
+function formatHumanList(items: string[]): string {
+	if (items.length <= 1) return items[0] ?? '';
+	if (items.length === 2) return `${items[0]} and ${items[1]}`;
+	return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
+}
+
+function mentionsVisibleSourceBasis(answer: string): boolean {
+	return /\b(?:source|sources|source-backed|document|documents|guide|guidance|field[-\s]?pack|cached|according to|saved|vault|KJV|Bible|forecast|alert|loadout|weather note|water note|shelter note|town note|terrain note|medical-advice boundary|airplane-mode boundary)\b/iu.test(answer);
 }
 
 function trimToCompleteSentence(answer: string): string {
@@ -3162,7 +3199,7 @@ export function renderSystemContext(request: ProviderRequest): string {
 		`Answer the hiker's immediate question first. Keep most replies short: 2-5 tight paragraphs or a few short lines. If the hiker sounds uncertain, steady them and give the next practical decision.`,
 		`End every answer with a complete sentence. Do not end with an unfinished offer, and do not add "I can look..." follow-up offers inside the answer. Use the loaded context to answer the current prompt.`,
 		`Use plain text only. Do not use Markdown headings, bold markers, tables, or long bullet lists; this chat renders plain text.`,
-		`Do not expose internal tool names or labels such as "source skill", "source_search", "open_source_doc", or "tool invocation" in the answer. Use the information naturally.`,
+		`Do not expose internal tool names or labels such as "source skill", "source_search", "open_source_doc", or "tool invocation" in the answer. Use user-facing source wording such as "cached safety guidance", "town guidance", "saved document", or "field-pack context" when source documents shaped the answer.`,
 		`Be honest about uncertainty. Use "candidate", "verify", or "I don't know" when the pack cannot prove something. Never turn candidate water, shelters, towns, or weather into guarantees.`,
 		`For the core offline field questions, lead with the cached finding: next water distance/source, next town or road/town access distance, today difficulty from terrain/weather/water/shelter spacing, and cached tomorrow weather. Then give the caveat. Do not answer these with generic hiking advice when a tool finding is present.`,
 		`For water questions, use the next_water tool finding as the answer's spine. Lead with the nearest actionable water option or next reliable source from the tool finding. If the source is seasonal or unverified, say it is a candidate, visually confirm current flow, filter or treat collected water, and carry enough to reach a verified source if it is dry. If no reliable water is loaded, say that after the source hierarchy; do not start with a generic refusal.`,
