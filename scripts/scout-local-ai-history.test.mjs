@@ -110,6 +110,10 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 	assert.equal(history.summary.latestFailureModeCounts.none, 1);
 	assert.equal(history.summary.reviewedEntryCount, 2);
 	assert.equal(history.summary.improvedToFive, 1);
+	assert.deepEqual(history.summary.latestKnownRatings, { '5': 1 });
+	assert.deepEqual(history.summary.currentRunRatingCounts, { '5': 1 });
+	assert.equal(history.summary.currentRunRated, 1);
+	assert.equal(history.summary.currentRunUnrated, 0);
 	assert.equal(history.runs[0].runId, 'device-local-ai-20260628T081954Z');
 	assert.equal(history.runs[1].reviewSummary.ratingCounts['5'], 1);
 	assert.equal(history.runs[1].interventions.commitCount, 1);
@@ -155,6 +159,8 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 	assert.match(html, /device-on-device-gemma/u);
 	assert.match(html, /gemma-4-E2B-it-litert-lm/u);
 	assert.match(html, /modelRuntimeKey\(item\)/u);
+	assert.match(html, /Current Run Unrated/u);
+	assert.match(html, /Latest Known 5\/5/u);
 	assert.match(html, /Confidence: /u);
 	assert.match(html, /Failure mode: /u);
 	assert.match(html, /"confidence":"medium"/u);
@@ -192,6 +198,82 @@ test('Scout local AI history classifies document-grounding and release intervent
 	assert.ok(summary.categories.includes('testflight/release-proof'));
 	assert.equal(summary.categoryCounts['suite-question-set'], 1);
 	assert.equal(summary.categoryCounts['testflight/release-proof'], 1);
+});
+
+test('Scout local AI history keeps current-run ratings separate from latest-known case ratings', async () => {
+	const root = await mkdtemp(join(tmpdir(), 'scout-history-current-vs-known-'));
+	const runDir = join(root, 'device-runs');
+	const reviewDir = join(root, 'reviews');
+	const scanDir = join(root, 'answer-quality-scans');
+	await mkdir(runDir, { recursive: true });
+	await mkdir(reviewDir, { recursive: true });
+	await mkdir(scanDir, { recursive: true });
+	const suitePath = join(root, 'dad-local-ai-100.json');
+	await writeFile(suitePath, JSON.stringify({
+		suiteId: 'dad-local-ai-100',
+		version: '2026-06-29.2',
+		hash: 'fnv1a32:current-vs-known',
+		cases: [{
+			id: 'DLA-067',
+			domain: 'navigation',
+			phase: 'on-trail',
+			prompt: 'What should I do if GPS jumps around and Scout shows the wrong spot?',
+			requiredTools: ['current_mile', 'source_search:safety'],
+			expectedTraits: ['manual correction'],
+			safetyCaveats: ['no decisions from bad GPS'],
+			documentTask: 'reading-writing'
+		}]
+	}, null, 2));
+	await writeRunAndReview({
+		runDir,
+		reviewDir,
+		scanDir,
+		runId: 'device-local-ai-20260629T050000Z',
+		startedAt: '2026-06-29T05:00:00.000Z',
+		answer: 'Stop, verify location from blazes and map, then set the current AT mile from a confirmed point.',
+		confidence: 'medium',
+		failureMode: null,
+		rating: 5,
+		notes: 'Dad-ready GPS recovery answer.',
+		failureCategories: [],
+		ownerLayer: '',
+		improvementTask: ''
+	});
+	await writeRunAndReview({
+		runDir,
+		reviewDir,
+		scanDir,
+		runId: 'device-local-ai-20260629T061751Z',
+		startedAt: '2026-06-29T06:17:51.000Z',
+		answer: 'Stop, verify location from blazes and map, then set the current AT mile from a confirmed point. Then re-ask water and shelter questions.',
+		confidence: 'medium',
+		failureMode: null,
+		rating: null,
+		notes: '',
+		failureCategories: [],
+		ownerLayer: '',
+		improvementTask: ''
+	});
+
+	const history = await buildScoutLocalAiHistory({
+		repoRoot: root,
+		suitePath,
+		runDirs: [runDir],
+		reviewDir,
+		scanDir,
+		gitCommits: []
+	});
+
+	assert.deepEqual(history.summary.latestRatings, { '5': 1 });
+	assert.deepEqual(history.summary.latestKnownRatings, { '5': 1 });
+	assert.equal(history.summary.currentRunId, 'device-local-ai-20260629T061751Z');
+	assert.deepEqual(history.summary.currentRunRatingCounts, {});
+	assert.equal(history.summary.currentRunRated, 0);
+	assert.equal(history.summary.currentRunUnrated, 1);
+	assert.equal(history.summary.currentRunBelowFive, 0);
+	const html = renderScoutLocalAiHistoryHtml(history);
+	assert.match(html, /Current Run Unrated/u);
+	assert.match(html, /Latest Known 5\/5/u);
 });
 
 test('Scout local AI history does not demand rerun for proof-only pending commits', async () => {

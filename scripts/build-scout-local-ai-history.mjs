@@ -361,7 +361,9 @@ function renderMetrics(run) {
 		['Writing Cases', (historyData.summary.documentTaskCounts?.writing ?? 0) + (historyData.summary.documentTaskCounts?.['reading-writing'] ?? 0)],
 		['Reviewed Entries', historyData.summary.reviewedEntryCount],
 		['Current Run Rated', run?.reviewSummary?.rated ?? 0],
+		['Current Run Unrated', run?.reviewSummary?.unrated ?? run?.caseCount ?? 0],
 		['Current Run 5/5', run?.reviewSummary?.ratingCounts?.['5'] ?? 0],
+		['Latest Known 5/5', historyData.summary.latestKnownRatings?.['5'] ?? historyData.summary.latestRatings?.['5'] ?? 0],
 		['Run Changes', run?.interventions?.commitCount ?? 0]
 	];
 	document.getElementById('metrics').innerHTML = metrics.map(([label, value]) => '<div class="metric"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(String(value ?? 0)) + '</strong></div>').join('');
@@ -634,6 +636,8 @@ function buildHistorySummary(runs, cases, pendingInterventions = summarizeCommit
 	runs.forEach((run, index) => {
 		run.order = index;
 	});
+	const currentRun = runs.at(-1) ?? null;
+	const currentRunReview = currentRun?.reviewSummary ?? null;
 	return {
 		runCount: runs.length,
 		caseCount: cases.length,
@@ -648,7 +652,13 @@ function buildHistorySummary(runs, cases, pendingInterventions = summarizeCommit
 		latestFailureModeCounts: Object.fromEntries(countBy(latestEntries, (entry) => normalizeFacet(entry.failureMode, 'none'))),
 		reviewedEntryCount,
 		improvedToFive,
+		latestKnownRatings: latestRatings,
 		latestRatings,
+		currentRunId: currentRun?.runId ?? null,
+		currentRunRatingCounts: currentRunReview?.ratingCounts ?? {},
+		currentRunRated: currentRunReview?.rated ?? 0,
+		currentRunUnrated: currentRunReview?.unrated ?? currentRun?.caseCount ?? 0,
+		currentRunBelowFive: currentRunReview?.belowFive ?? 0,
 		fullRunCount: runs.filter((run) => run.fullRun).length,
 		partialRunCount: runs.filter((run) => !run.fullRun).length,
 		interventionCounts: Object.fromEntries(countBy(runs.flatMap((run) => run.interventions?.categories ?? []), (item) => item)),
