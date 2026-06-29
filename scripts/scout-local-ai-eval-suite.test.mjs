@@ -65,7 +65,7 @@ const VALID_FAILURES = new Set([
 	'poor-document-writing-flow',
 	'local-model-limitation'
 ]);
-const VALID_DOCUMENT_TASKS = new Set(['none', 'reading', 'writing', 'reading-writing']);
+const VALID_DOCUMENT_TASKS = new Set(['reading', 'writing', 'reading-writing']);
 const EXPECTED_DOMAINS = [
 	'pretrip',
 	'onboarding',
@@ -225,8 +225,8 @@ test('Dad local AI eval suite has 100 complete, reviewable cases', async () => {
 		assert.equal(domains.get(domain), 10, `${domain} should have exactly 10 cases`);
 	}
 	assert.equal(documentTasks.get('reading-writing'), 3, 'document-writing cases should be explicitly marked reading-writing');
-	assert.equal(documentTasks.get('none'), 1, 'structured-data-only case should be explicitly marked none');
-	assert.ok((documentTasks.get('reading') ?? 0) >= 90, 'source-grounded cases should be explicitly marked reading');
+	assert.equal(documentTasks.has('none'), false, 'documentTask must stay aligned to reading, writing, or both');
+	assert.equal((documentTasks.get('reading') ?? 0), 97, 'source-grounded cases should be explicitly marked reading');
 
 	for (const category of suite.failureCategories) {
 		assert.ok(VALID_FAILURES.has(category), `unknown failure category ${category}`);
@@ -573,7 +573,7 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(status.testflight.targetBuildReadyForDad, false);
 	assert.equal(status.testflight.targetBuildAvailableForDad, false);
 	assert.match(gates['testflight-target'].evidence, /Target build is not yet recorded as available for Dad|Latest TestFlight upload does not contain the current eval suite/u);
-	assert.match(gates['testflight-target'].evidence, /current suite 2026-06-28\.4/u);
+	assert.match(gates['testflight-target'].evidence, new RegExp(`current suite ${escapeRegExp(suite.version)}`, 'u'));
 	assert.match(gates['testflight-target'].evidence, /Dad Pilot records 1\.0 \(27\)/u);
 	assert.equal(status.inbox.exists, true);
 	assert.equal(status.inbox.jsonFileCount, 2);
@@ -2085,7 +2085,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Current checkout newer than latest native upload: (yes|no)/u);
 	assert.match(result.stdout, /Current native app source newer than latest native upload: (yes|no)/u);
 	assert.match(result.stdout, new RegExp(`Latest-source proof: latest native upload contains suite ${escapeRegExp(uploadSuiteIdentity.version)}`, 'u'));
-	assert.match(result.stdout, /not current suite 2026-06-28\.4/u);
+	assert.match(result.stdout, new RegExp(`not current suite ${escapeRegExp(suite.version)}`, 'u'));
 	if (result.stdout.includes('Latest-source upload note:')) {
 		assert.match(result.stdout, /Latest-source upload note: upload target build `1\.0 \(28\)`; bump again only if App Store Connect already has build `28`/u);
 	}
@@ -2098,7 +2098,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /device-handoff-inbox-latest/u);
 	assert.match(result.stdout, /use `Run 100` for real proof/u);
 	assert.match(result.stdout, /## Valid export checklist/u);
-	assert.match(result.stdout, /Suite fields: `suiteId=dad-local-ai-100`, `suiteVersion=2026-06-28\.4`, `suiteHash=fnv1a32:[0-9a-f]+`/u);
+	assert.match(result.stdout, new RegExp(`Suite fields: \`suiteId=dad-local-ai-100\`, \`suiteVersion=${escapeRegExp(suite.version)}\`, \`suiteHash=fnv1a32:[0-9a-f]+\``, 'u'));
 	assert.match(result.stdout, /Result count: `100\/100` completed results from `Run 100`, not `Run 3`/u);
 	assert.match(result.stdout, /Evidence lane: `device-on-device-gemma` with `answerOrigin=device-on-device-gemma` answers/u);
 	assert.match(result.stdout, /Native context: TestFlight iPhone install, app build satisfying `1\.0 \(>= 13\)`/u);
