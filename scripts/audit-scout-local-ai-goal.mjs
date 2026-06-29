@@ -23,6 +23,7 @@ const DEFAULT_BACKLOG_DIR = 'data/scout-local-ai/backlog';
 const DEFAULT_ITERATIONS_DIR = 'data/scout-local-ai/iterations';
 const DEFAULT_XCODE_PROJECT = 'mobile/ios/App/App.xcodeproj/project.pbxproj';
 const DEFAULT_RELEASE_EVIDENCE = 'docs/launch/release-evidence.json';
+const DEFAULT_IOS_PROOF_DIR = 'docs/launch/proof';
 
 const cli = parseCliArgs(process.argv.slice(2));
 const paths = {
@@ -37,7 +38,8 @@ const paths = {
 	backlogDir: resolveInputPath(cli.backlogDir ?? DEFAULT_BACKLOG_DIR),
 	iterationsDir: resolveInputPath(cli.iterationsDir ?? DEFAULT_ITERATIONS_DIR),
 	xcodeProject: resolveInputPath(cli.xcodeProject ?? DEFAULT_XCODE_PROJECT),
-	releaseEvidence: resolveInputPath(cli.releaseEvidence ?? DEFAULT_RELEASE_EVIDENCE)
+	releaseEvidence: resolveInputPath(cli.releaseEvidence ?? DEFAULT_RELEASE_EVIDENCE),
+	iosProofDir: resolveInputPath(cli.iosProofDir ?? DEFAULT_IOS_PROOF_DIR)
 };
 
 const [
@@ -463,7 +465,9 @@ async function loadStatus(paths) {
 		'--xcode-project',
 		relative(REPO_ROOT, paths.xcodeProject),
 		'--release-evidence',
-		relative(REPO_ROOT, paths.releaseEvidence)
+		relative(REPO_ROOT, paths.releaseEvidence),
+		'--ios-proof-dir',
+		relative(REPO_ROOT, paths.iosProofDir)
 	];
 	const result = await execFileAsync(process.execPath, args, {
 		cwd: REPO_ROOT,

@@ -266,6 +266,7 @@ test('Dad local AI eval suite has 100 complete, reviewable cases', async () => {
 	for (const category of suite.failureCategories) {
 		assert.ok(VALID_FAILURES.has(category), `unknown failure category ${category}`);
 	}
+	assert.deepEqual([...suite.failureCategories].sort(), [...VALID_FAILURES].sort(), 'suite failureCategories must expose every review taxonomy category');
 });
 
 test('Dad local AI eval suite covers requested hiker objective areas', async () => {
@@ -1042,13 +1043,17 @@ test('status command asks for simulator preflight when no device export exists y
 	const reviewsDir = join(outputDir, 'reviews');
 	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
 	const iosProofDir = join(outputDir, 'proof');
+	const staleUploadRepoSha = await staleSuiteRepoSha(suite);
+	const staleUploadSuite = await suiteIdentityAtRepoSha(staleUploadRepoSha);
 	await mkdir(runsDir, { recursive: true });
 	await mkdir(inboxDir, { recursive: true });
 	await mkdir(iosProofDir, { recursive: true });
-	await writeIosUploadProofFixture(iosProofDir, {
-		repoSha: await staleSuiteRepoSha(suite),
-		fileStamp: '2026-06-27T02-39-27-165Z'
-	});
+		await writeIosUploadProofFixture(iosProofDir, {
+			repoSha: staleUploadRepoSha,
+			suiteVersion: staleUploadSuite?.version ?? '2026-01-01.1',
+			suiteHash: staleUploadSuite?.hash ?? 'fnv1a32:00000000',
+			fileStamp: '2026-06-27T02-39-27-165Z'
+		});
 	const routingRun = deviceRunForCases(suite, suite.cases, {
 		runId: 'routing-status-wait-proof',
 		completeTools: true
@@ -1519,17 +1524,17 @@ test('status command lets suite-compatible TestFlight device proof override stal
 		process.execPath,
 		[
 			'scripts/status-scout-local-ai.mjs',
-			'--runs-dir',
-			runsDir,
-			'--device-runs-dir',
-			deviceRunsDir,
-			'--reviews-dir',
-			reviewsDir,
-			'--release-evidence',
-			releaseEvidencePath
-		],
-		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
-	);
+				'--runs-dir',
+				runsDir,
+				'--device-runs-dir',
+				deviceRunsDir,
+				'--reviews-dir',
+				reviewsDir,
+				'--release-evidence',
+				releaseEvidencePath
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		);
 	assert.match(textResult.stdout, /Latest full device answer-quality scan: `device-status-suite-compatible-build13` review-needed; 100\/100 flagged, 109 errors, \d+ warnings/u);
 	assert.match(textResult.stdout, /Answer-quality boundary: Heuristic scan only/u);
 	assert.match(textResult.stdout, /Top answer-quality cases: DLA-001 \(very-short-answer:warning, unfinished-tail:error, source-grounding-visible-missing:warning\)/u);
@@ -1542,9 +1547,12 @@ test('status command does not accept full device runs from non-suite-compatible 
 	const deviceRunsDir = join(outputDir, 'device-runs');
 	const reviewsDir = join(outputDir, 'reviews');
 	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
+	const iosProofDir = join(outputDir, 'proof');
 	await mkdir(runsDir, { recursive: true });
 	await mkdir(deviceRunsDir, { recursive: true });
 	await mkdir(reviewsDir, { recursive: true });
+	await mkdir(iosProofDir, { recursive: true });
+	await writeIosUploadProofFixture(iosProofDir, { repoSha: await currentRepoSha() });
 	await writeFile(releaseEvidencePath, `${JSON.stringify({
 		schemaVersion: 1,
 		items: {
@@ -1591,6 +1599,8 @@ test('status command does not accept full device runs from non-suite-compatible 
 			reviewsDir,
 			'--release-evidence',
 			releaseEvidencePath,
+			'--ios-proof-dir',
+			iosProofDir,
 			'--json'
 		],
 		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
@@ -1628,9 +1638,12 @@ test('status command treats clean simulator local AI runs as preflight, not fina
 	const deviceRunsDir = join(outputDir, 'device-runs');
 	const reviewsDir = join(outputDir, 'reviews');
 	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
+	const iosProofDir = join(outputDir, 'proof');
 	await mkdir(runsDir, { recursive: true });
 	await mkdir(deviceRunsDir, { recursive: true });
 	await mkdir(reviewsDir, { recursive: true });
+	await mkdir(iosProofDir, { recursive: true });
+	await writeIosUploadProofFixture(iosProofDir, { repoSha: await currentRepoSha() });
 	await writeFile(releaseEvidencePath, `${JSON.stringify({
 		schemaVersion: 1,
 		items: {
@@ -1662,6 +1675,8 @@ test('status command treats clean simulator local AI runs as preflight, not fina
 			reviewsDir,
 			'--release-evidence',
 			releaseEvidencePath,
+			'--ios-proof-dir',
+			iosProofDir,
 			'--json'
 		],
 		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
@@ -1690,21 +1705,23 @@ test('status command treats clean simulator local AI runs as preflight, not fina
 	assert.match(status.nextAction.text, /wait:scout-local-ai-device-run -- --source all/u);
 	assert.match(status.nextAction.text, /wait:scout-local-ai-device-run -- --source clipboard/u);
 
-	const textResult = await execFileAsync(
-		process.execPath,
+		const textResult = await execFileAsync(
+			process.execPath,
 			[
 				'scripts/status-scout-local-ai.mjs',
 				'--runs-dir',
 				runsDir,
 				'--device-runs-dir',
 				deviceRunsDir,
-			'--reviews-dir',
-			reviewsDir,
-			'--release-evidence',
-			releaseEvidencePath
-		],
-		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
-	);
+				'--reviews-dir',
+				reviewsDir,
+				'--release-evidence',
+				releaseEvidencePath,
+				'--ios-proof-dir',
+				iosProofDir
+			],
+			{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+		);
 	assert.match(textResult.stdout, /Model\/runtime lanes \(current suite\): gemma-3n-E4B-it-int4 \/ on-device \/ on-device-gemma \/ debug=1/u);
 	assert.match(textResult.stdout, /Simulator\/debug local preflight: clean; full runs 1, partial runs 0/u);
 	assert.match(textResult.stdout, /Simulator\/debug local preflight boundary: simulator\/debug local preflight drives iteration but does not replace final TestFlight\/iPhone proof/u);
@@ -2480,6 +2497,7 @@ test('Dad handoff command can print a concise Run 100 message for Dad', async ()
 	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
 	const iosProofDir = join(outputDir, 'proof');
 	const staleUploadRepoSha = await staleSuiteRepoSha(suite);
+	const staleUploadSuite = await suiteIdentityAtRepoSha(staleUploadRepoSha);
 	await mkdir(runsDir, { recursive: true });
 	await mkdir(deviceRunsDir, { recursive: true });
 	await mkdir(inboxDir, { recursive: true });
@@ -2523,10 +2541,12 @@ test('Dad handoff command can print a concise Run 100 message for Dad', async ()
 		'- [x] targetReadyForDad',
 		''
 	].join('\n'));
-	await writeIosUploadProofFixture(iosProofDir, {
-		repoSha: staleUploadRepoSha,
-		fileStamp: '2026-06-27T02-39-27-165Z'
-	});
+		await writeIosUploadProofFixture(iosProofDir, {
+			repoSha: staleUploadRepoSha,
+			suiteVersion: staleUploadSuite?.version ?? '2026-01-01.1',
+			suiteHash: staleUploadSuite?.hash ?? 'fnv1a32:00000000',
+			fileStamp: '2026-06-27T02-39-27-165Z'
+		});
 
 	const result = await execFileAsync(
 		process.execPath,
@@ -7622,6 +7642,9 @@ async function suiteIdentityAtRepoSha(sha) {
 async function writeIosUploadProofFixture(iosProofDir, options) {
 	const fileStamp = options.fileStamp ?? '2026-06-27T02-39-27-165Z';
 	const logName = options.logName ?? '01-repo-sha.log';
+	const suite = options.suite ?? JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const suiteVersion = options.suiteVersion ?? suite.version;
+	const suiteHash = options.suiteHash ?? scoutLocalAiSuiteHash(suite);
 	await writeFile(join(iosProofDir, `ios-testflight-attempt-${fileStamp}.md`), [
 		'# iOS TestFlight lane attempt',
 		'',
@@ -7633,6 +7656,7 @@ async function writeIosUploadProofFixture(iosProofDir, options) {
 		'',
 		`- Upload: ${options.upload === false ? 'no' : 'yes'}`,
 		`- App Store Connect API key provided: ${options.ascApiKeyProvided ?? 'yes'}`,
+		`- Eval suite: \`dad-local-ai-100\` version \`${suiteVersion}\`, hash \`${suiteHash}\``,
 		'',
 		'## Steps',
 		'',

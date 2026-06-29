@@ -1188,9 +1188,16 @@ async function summarizeNativeSource({ iosProofDir, mobileSuitePath, suiteIdenti
 	const latestNativeUploadSuite = latestNativeUploadSha
 		? await readJsonAtGitSha(latestNativeUploadSha, mobileSuitePath)
 		: null;
-	const latestNativeUploadSuiteIdentity = latestNativeUploadSuite
+	const latestNativeUploadSuiteIdentityFromGit = latestNativeUploadSuite
 		? scoutLocalAiSuiteIdentity(latestNativeUploadSuite)
 		: null;
+	const latestNativeUploadSuiteIdentityFromProof = latestNativeUploadProof?.suiteVersion && latestNativeUploadProof?.suiteHash
+		? {
+			suiteVersion: latestNativeUploadProof.suiteVersion,
+			suiteHash: latestNativeUploadProof.suiteHash
+		}
+		: null;
+	const latestNativeUploadSuiteIdentity = latestNativeUploadSuiteIdentityFromProof ?? latestNativeUploadSuiteIdentityFromGit;
 	return {
 		currentRepoSha,
 		iosProofDir: relative(REPO_ROOT, iosProofDir),
@@ -1202,6 +1209,11 @@ async function summarizeNativeSource({ iosProofDir, mobileSuitePath, suiteIdenti
 		latestNativeUploadHasCurrentSource: matchesCurrent,
 		latestNativeUploadSuiteVersion: latestNativeUploadSuiteIdentity?.suiteVersion ?? null,
 		latestNativeUploadSuiteHash: latestNativeUploadSuiteIdentity?.suiteHash ?? null,
+		latestNativeUploadSuiteSource: latestNativeUploadSuiteIdentityFromProof
+			? latestNativeUploadProof.suiteIdentitySource
+			: latestNativeUploadSuiteIdentityFromGit
+				? 'git-sha'
+				: null,
 		latestNativeUploadHasCurrentSuite: Boolean(
 			latestNativeUploadSuiteIdentity &&
 			latestNativeUploadSuiteIdentity.suiteVersion === suiteIdentity.suiteVersion &&
@@ -1260,6 +1272,7 @@ async function findIosUploadProofs(iosProofDir) {
 async function readIosUploadProof(proofPath) {
 	const text = await readFile(proofPath, 'utf8');
 	const repoSha = await repoShaFromIosUploadProof(text, proofPath);
+	const suiteIdentity = suiteIdentityFromIosUploadProof(text);
 	return {
 		path: relative(REPO_ROOT, proofPath),
 		checkedAt: cleanMarkdownValue(firstMarkdownValue(text, 'Checked at')) ?? '<unknown>',
@@ -1267,8 +1280,38 @@ async function readIosUploadProof(proofPath) {
 		uploadRequested: markdownYes(firstMarkdownValue(text, 'Upload')),
 		ascApiKeyProvided: cleanMarkdownValue(firstMarkdownValue(text, 'App Store Connect API key provided')) ?? '<unknown>',
 		repoSha: repoSha?.sha ?? null,
-		repoShaSource: repoSha?.source ?? null
+		repoShaSource: repoSha?.source ?? null,
+		suiteVersion: suiteIdentity?.suiteVersion ?? null,
+		suiteHash: suiteIdentity?.suiteHash ?? null,
+		suiteIdentitySource: suiteIdentity?.source ?? null
 	};
+}
+
+function suiteIdentityFromIosUploadProof(text) {
+	const patterns = [
+		{
+			source: 'eval-suite-mode-line',
+			re: /Eval suite:\s+`?[^`\n,]+`?\s+version\s+`?([^`,\s]+)`?,\s+hash\s+`?(fnv1a32:[0-9a-f]+)`?/iu
+		},
+		{
+			source: 'current-eval-suite-line',
+			re: /Current eval suite:\s+`?([^`\s]+)`?\s*\/\s*`?(fnv1a32:[0-9a-f]+)`?/iu
+		},
+		{
+			source: 'suite-fields-line',
+			re: /Suite fields:.*?suiteVersion=([^`,\s]+).*?suiteHash=(fnv1a32:[0-9a-f]+)/iu
+		}
+	];
+	for (const pattern of patterns) {
+		const match = text.match(pattern.re);
+		if (!match) continue;
+		return {
+			suiteVersion: cleanMarkdownValue(match[1]),
+			suiteHash: cleanMarkdownValue(match[2]),
+			source: pattern.source
+		};
+	}
+	return null;
 }
 
 async function repoShaFromIosUploadProof(text, proofPath) {

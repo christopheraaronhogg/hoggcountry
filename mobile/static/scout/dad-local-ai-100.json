@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "suiteId": "dad-local-ai-100",
   "title": "Dad Local AI 100-question Scout evaluation",
-  "version": "2026-06-28.5",
+  "version": "2026-06-29.1",
   "createdAt": "2026-06-26",
   "successTarget": "All 100 cases rated 5/5 from a real TestFlight iPhone path with Scout using on-device local AI.",
   "documentGroundingGoal": {
@@ -37,6 +37,7 @@
     "bad-prompt",
     "unsafe-wording",
     "poor-ux",
+    "poor-document-writing-flow",
     "local-model-limitation"
   ],
   "finalProof": {

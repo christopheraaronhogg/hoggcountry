@@ -8,6 +8,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { scoutLocalAiSuiteIdentity } from '../../scripts/lib/scout-local-ai-suite.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const mobileDir = resolve(__dirname, '..');
@@ -69,6 +70,7 @@ const archivePath = join(outDir, 'HoggCountry.xcarchive');
 const exportPath = join(outDir, 'export');
 const exportOptionsPath = join(outDir, 'ExportOptions.plist');
 const proofPath = join(repoRoot, 'docs', 'launch', 'proof', `ios-testflight-attempt-${timestamp}.md`);
+const mobileSuitePath = join(mobileDir, 'static', 'scout', 'dad-local-ai-100.json');
 const teamId = readFlag('--team-id') || process.env.HC_IOS_DEVELOPMENT_TEAM || process.env.IOS_DEVELOPMENT_TEAM || process.env.DEVELOPMENT_TEAM || '';
 const provisioningProfile = readFlag('--provisioning-profile') || process.env.HC_IOS_PROVISIONING_PROFILE || 'Hoggcountry App Store Connect';
 const archiveOnly = hasFlag('--archive-only');
@@ -77,6 +79,7 @@ const internalOnly = hasFlag('--internal-only');
 const diagnoseOnly = hasFlag('--diagnose-only');
 const skipGates = hasFlag('--skip-gates');
 const ascAuth = appStoreConnectAuthArgs();
+const mobileSuiteIdentity = readMobileSuiteIdentity();
 
 mkdirSync(outDir, { recursive: true });
 mkdirSync(dirname(proofPath), { recursive: true });
@@ -294,6 +297,7 @@ function writeProof() {
     `- Team override provided: ${teamId ? 'yes' : 'no'}`,
     `- Provisioning profile: ${provisioningProfile || 'automatic'}`,
     `- App Store Connect API key provided: ${ascAuth.length ? 'yes' : 'no'}`,
+    `- Eval suite: ${mobileSuiteIdentity ? `\`${mobileSuiteIdentity.suiteId}\` version \`${mobileSuiteIdentity.suiteVersion}\`, hash \`${mobileSuiteIdentity.suiteHash}\`` : 'unavailable'}`,
     '',
     '## Steps',
     ''
@@ -396,5 +400,17 @@ function safeReadFile(path) {
     return readFileSync(path, 'utf8');
   } catch {
     return '';
+  }
+}
+
+function readMobileSuiteIdentity() {
+  try {
+    const suite = JSON.parse(readFileSync(mobileSuitePath, 'utf8'));
+    return {
+      suiteId: suite.suiteId ?? 'dad-local-ai-100',
+      ...scoutLocalAiSuiteIdentity(suite)
+    };
+  } catch {
+    return null;
   }
 }

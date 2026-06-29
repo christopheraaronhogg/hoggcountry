@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createScoutRuntime, cloneDefaultContextPack } from '../mobile/src/lib/scout/index.ts';
+import { VALID_FAILURE_CATEGORIES } from './lib/scout-local-ai-review.mjs';
 import { scoutLocalAiSuiteIdentity } from './lib/scout-local-ai-suite.mjs';
 import { summarizeRunSourceEvidence } from './lib/scout-local-ai-source-evidence.mjs';
 
@@ -11,7 +12,6 @@ const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
 const DEFAULT_SUITE = 'data/scout-local-ai/dad-local-ai-100.json';
 const DEFAULT_OUTPUT_DIR = 'data/scout-local-ai/runs';
-const FAILURE_CATEGORIES = ['missing-data', 'weak-tool', 'bad-routing', 'bad-prompt', 'unsafe-wording', 'poor-ux', 'local-model-limitation'];
 
 const cli = parseArgs(process.argv.slice(2));
 const suitePath = resolve(REPO_ROOT, String(cli.suite ?? DEFAULT_SUITE));
@@ -123,7 +123,7 @@ const run = {
 	totalSuiteCases: suite.cases.length,
 	filters: filterSummary(cli),
 	ratingScale: suite.ratingScale,
-	failureCategories: suite.failureCategories ?? FAILURE_CATEGORIES,
+	failureCategories: suite.failureCategories ?? VALID_FAILURE_CATEGORIES,
 	summary: summarizeResults(results),
 	results
 };
