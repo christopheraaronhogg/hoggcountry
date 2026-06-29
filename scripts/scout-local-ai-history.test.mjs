@@ -43,6 +43,8 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 		runId: 'device-local-ai-20260628T081954Z',
 		startedAt: '2026-06-28T08:19:54.000Z',
 		answer: 'Stop and use map and compass, but no Scout-specific recovery flow.',
+		confidence: 'low',
+		failureMode: 'weak-retrieval',
 		rating: 3,
 		notes: 'Missing manual mile correction and downstream tool warning.',
 		failureCategories: ['bad-prompt'],
@@ -56,6 +58,8 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 		runId: 'device-local-ai-20260628T143612Z',
 		startedAt: '2026-06-28T14:36:12.000Z',
 		answer: 'Stop, wait for GPS to settle, compare Scout to blazes, signs, map, compass, and last known point, set Current AT mile only from a confirmed location, refresh the field pack, and re-ask water, shelter, town, terrain, and bailout questions.',
+		confidence: 'medium',
+		failureMode: null,
 		rating: 5,
 		notes: 'Dad-ready GPS recovery answer.',
 		failureCategories: [],
@@ -94,6 +98,12 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 	assert.equal(history.summary.runCount, 2);
 	assert.equal(history.summary.caseCount, 1);
 	assert.equal(history.summary.documentTaskCounts['reading-writing'], 1);
+	assert.equal(history.summary.confidenceCounts.low, 1);
+	assert.equal(history.summary.confidenceCounts.medium, 1);
+	assert.equal(history.summary.latestConfidenceCounts.medium, 1);
+	assert.equal(history.summary.failureModeCounts.none, 1);
+	assert.equal(history.summary.failureModeCounts['weak-retrieval'], 1);
+	assert.equal(history.summary.latestFailureModeCounts.none, 1);
 	assert.equal(history.summary.reviewedEntryCount, 2);
 	assert.equal(history.summary.improvedToFive, 1);
 	assert.equal(history.runs[0].runId, 'device-local-ai-20260628T081954Z');
@@ -113,6 +123,10 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 	assert.equal(gpsCase.latestRating, 5);
 	assert.equal(gpsCase.scoreDelta, 2);
 	assert.equal(gpsCase.answerChangeCount, 1);
+	assert.equal(gpsCase.history[0].confidence, 'low');
+	assert.equal(gpsCase.history[0].failureMode, 'weak-retrieval');
+	assert.equal(gpsCase.history[1].confidence, 'medium');
+	assert.equal(gpsCase.history[1].failureMode, null);
 	assert.equal(gpsCase.history[1].previousRating, 3);
 	assert.equal(gpsCase.history[1].scoreDeltaFromPreviousRated, 2);
 	assert.equal(gpsCase.history[1].improvementSincePrevious, true);
@@ -127,6 +141,11 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 	assert.match(html, /Scout Local AI History/u);
 	assert.match(html, /DLA-067/u);
 	assert.match(html, /GPS jumps/u);
+	assert.match(html, /Confidence: /u);
+	assert.match(html, /Failure mode: /u);
+	assert.match(html, /"confidence":"medium"/u);
+	assert.match(html, /"failureMode":null/u);
+	assert.match(html, /weak-retrieval/u);
 	assert.match(html, /Changes since previous run/u);
 	assert.match(html, /Fix Scout GPS recovery source routing/u);
 	assert.match(html, /Pending changes not yet measured by a run/u);
@@ -165,6 +184,8 @@ async function writeRunAndReview({
 	runId,
 	startedAt,
 	answer,
+	confidence = 'medium',
+	failureMode = null,
 	rating,
 	notes,
 	failureCategories,
@@ -187,6 +208,8 @@ async function writeRunAndReview({
 		answerOrigin: 'device-on-device-gemma',
 		mode: 'on-device',
 		provider: 'on-device-gemma',
+		confidence,
+		failureMode,
 		generatedAt: startedAt,
 		durationMs: 1000,
 		receipts: [{ id: 'field-guide:safety-risk-discipline' }],
@@ -239,6 +262,8 @@ async function writeRunAndReview({
 			prompt: result.case.prompt,
 			answer,
 			answerPreview: answer,
+			confidence,
+			failureMode,
 			rating,
 			notes,
 			failureCategories,

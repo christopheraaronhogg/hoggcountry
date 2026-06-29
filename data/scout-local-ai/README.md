@@ -144,10 +144,11 @@ npm run history:scout-local-ai
 
 That writes `data/scout-local-ai/history/scout-local-ai-history.json` and
 `data/scout-local-ai/history/scout-local-ai-history.html`. The JSON records each
-run, per-case answer evolution, ratings, score deltas, model/runtime/build proof
-lane, tool/source evidence, answer-quality scan results, and commit-level
-interventions. The HTML timeline includes filters for domain and `documentTask`
-so reading-only, writing, and reading-writing cases can be reviewed separately
+run, per-case answer evolution, ratings, score deltas, confidence, failure mode,
+model/runtime/build proof lane, tool/source evidence, answer-quality scan
+results, and commit-level interventions. The HTML timeline includes filters for
+domain and `documentTask`, plus searchable confidence/failure diagnostics, so
+reading-only, writing, and reading-writing cases can be reviewed separately
 instead of blending document-agent progress into general hiker Q&A.
 
 To audit the whole original goal against current evidence, run:

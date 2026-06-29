@@ -263,7 +263,7 @@ input, select {
 <main>
 <section class="panel">
 <div class="controls">
-	<input id="search" type="search" placeholder="Search cases, prompts, answers">
+	<input id="search" type="search" placeholder="Search cases, prompts, answers, failures">
 	<select id="domain"></select>
 	<select id="documentTask" aria-label="Document task"></select>
 </div>
@@ -349,7 +349,20 @@ function filteredCases(run) {
 		if (state.documentTask !== 'all' && item.documentTask !== state.documentTask) return false;
 		if (!needle) return true;
 		const entry = entryAtRun(item, run);
-		return [item.caseId, item.domain, item.documentTask, item.prompt, entry?.answer, entry?.notes, entry?.improvementTask, ...(entry?.interventions?.categories ?? []), ...(entry?.interventions?.commits ?? []).map((commit) => commit.subject)].some((value) => String(value ?? '').toLowerCase().includes(needle));
+		return [
+			item.caseId,
+			item.domain,
+			item.documentTask,
+			item.prompt,
+			entry?.answer,
+			entry?.notes,
+			entry?.improvementTask,
+			entry?.confidence,
+			entry?.failureMode,
+			...(entry?.failureCategories ?? []),
+			...(entry?.interventions?.categories ?? []),
+			...(entry?.interventions?.commits ?? []).map((commit) => commit.subject)
+		].some((value) => String(value ?? '').toLowerCase().includes(needle));
 	});
 }
 function caseButton(item, run) {
@@ -370,9 +383,16 @@ function answerCard(entry, current) {
 	const currentFlag = current && entry.runId === current.runId;
 	const rating = entry.rating ?? 'unrated';
 	const change = entry.improvementSincePrevious ? 'Improved from ' + entry.previousRating + ' to ' + entry.rating : (entry.scoreDeltaFromPreviousRated ? 'Score delta ' + signed(entry.scoreDeltaFromPreviousRated) : 'No rated score change');
+	const diagnostics = [
+		'Confidence: ' + (entry.confidence ?? 'missing'),
+		'Failure mode: ' + (entry.failureMode ?? 'none'),
+		entry.answerOrigin ? 'Origin: ' + entry.answerOrigin : '',
+		entry.durationMs ? 'Duration: ' + entry.durationMs + ' ms' : ''
+	].filter(Boolean).join(' | ');
 	return '<article class="answer-card" data-current="' + String(currentFlag) + '">' +
 		'<div class="answer-head"><strong>' + escapeHtml(shortRun(entry)) + '</strong><span class="rating" data-rating="' + escapeHtml(String(rating)) + '" data-low="' + String(Number(rating) < 5) + '">' + escapeHtml(String(rating)) + '</span></div>' +
 		'<div class="change" data-good="' + String(entry.improvementSincePrevious) + '">' + escapeHtml(change) + '</div>' +
+		'<p class="tools">' + escapeHtml(diagnostics) + '</p>' +
 		'<p class="answer-text">' + escapeHtml(entry.answer || entry.error || '') + '</p>' +
 		'<p class="notes">' + escapeHtml(entry.notes || entry.improvementTask || '') + '</p>' +
 		'<p class="tools">' + escapeHtml('Tools: ' + (entry.toolHit ?? []).join(', ') + ' | missing: ' + (entry.missingTools ?? []).join(', ') + ' | source evidence: ' + (entry.sourceEvidenceComplete ? 'complete' : 'gaps')) + '</p>' +
@@ -461,6 +481,8 @@ function buildCaseEntry({ result, reviewEntry, scanEntry, runRecord, suiteCase }
 		documentTask: result.case?.documentTask ?? reviewEntry?.documentTask ?? suiteCase?.documentTask ?? null,
 		mode: result.mode ?? null,
 		provider: result.provider ?? null,
+		confidence: reviewEntry?.confidence ?? result.confidence ?? null,
+		failureMode: reviewEntry?.failureMode ?? result.failureMode ?? null,
 		generatedAt: result.generatedAt ?? null,
 		durationMs: result.durationMs ?? null,
 		answer: result.answer ?? '',
@@ -531,6 +553,8 @@ function finalizeCaseHistory(record, runOrder, runById) {
 function buildHistorySummary(runs, cases, pendingInterventions = summarizeCommitInterventions([])) {
 	const reviewedEntryCount = cases.reduce((count, item) => count + item.history.filter((entry) => entry.rating !== null).length, 0);
 	const improvedToFive = cases.filter((item) => item.history.some((entry) => entry.improvementSincePrevious)).length;
+	const entries = cases.flatMap((item) => item.history);
+	const latestEntries = cases.map((item) => item.history.at(-1)).filter(Boolean);
 	const latestRatings = {};
 	for (const item of cases) {
 		if (item.latestRating !== null) latestRatings[String(item.latestRating)] = (latestRatings[String(item.latestRating)] ?? 0) + 1;
@@ -542,6 +566,10 @@ function buildHistorySummary(runs, cases, pendingInterventions = summarizeCommit
 		runCount: runs.length,
 		caseCount: cases.length,
 		documentTaskCounts: Object.fromEntries(countBy(cases, (item) => item.documentTask ?? 'unknown')),
+		confidenceCounts: Object.fromEntries(countBy(entries, (entry) => normalizeFacet(entry.confidence, 'missing'))),
+		latestConfidenceCounts: Object.fromEntries(countBy(latestEntries, (entry) => normalizeFacet(entry.confidence, 'missing'))),
+		failureModeCounts: Object.fromEntries(countBy(entries, (entry) => normalizeFacet(entry.failureMode, 'none'))),
+		latestFailureModeCounts: Object.fromEntries(countBy(latestEntries, (entry) => normalizeFacet(entry.failureMode, 'none'))),
 		reviewedEntryCount,
 		improvedToFive,
 		latestRatings,
@@ -777,6 +805,11 @@ function normalizeRating(value) {
 
 function normalizeAnswer(value) {
 	return String(value ?? '').replace(/\s+/gu, ' ').trim();
+}
+
+function normalizeFacet(value, fallback) {
+	const text = String(value ?? '').trim();
+	return text || fallback;
 }
 
 function compact(value, max) {
