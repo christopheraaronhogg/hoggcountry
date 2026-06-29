@@ -3859,6 +3859,40 @@ test('device run intake validates exports and creates review packet', async () =
 	assert.equal(review.cases.length, 2);
 	assert.equal(review.suiteVersion, suite.version);
 	assert.equal(review.suiteHash, scoutLocalAiSuiteHash(suite));
+	assert.match(review.reviewInstructions.join(' '), /independent reviewer gates/u);
+	assert.deepEqual(
+		review.independentReviewers.map((reviewer) => reviewer.id),
+		[
+			'source_grounding_reviewer',
+			'trail_math_reviewer',
+			'document_writing_reviewer',
+			'proof_lane_reviewer'
+		]
+	);
+	assert.match(
+		review.independentReviewers.find((reviewer) => reviewer.id === 'source_grounding_reviewer').checks.join(' '),
+		/required source-backed tools were actually invoked/u
+	);
+	assert.equal(
+		review.independentReviewers.find((reviewer) => reviewer.id === 'source_grounding_reviewer').status,
+		null
+	);
+	assert.deepEqual(
+		review.reviewGates.map((gate) => gate.id),
+		[
+			'independent_artifact_review',
+			'tool_source_evidence',
+			'human_1_to_5_rating',
+			'below_five_task',
+			'strict_testflight_iphone',
+			'stability_repeat'
+		]
+	);
+	assert.match(
+		review.reviewGates.find((gate) => gate.id === 'strict_testflight_iphone').rule,
+		/full current-suite TestFlight iPhone run/u
+	);
+	assert.equal(review.reviewGates.find((gate) => gate.id === 'strict_testflight_iphone').passed, null);
 	assert.equal(review.cases[0].caseId, suite.cases[0].id);
 	assert.equal(review.cases[0].confidence, 'medium');
 	assert.equal(review.cases[0].toolInvocationCount, suite.cases[0].requiredTools.length);

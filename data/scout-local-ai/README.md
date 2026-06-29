@@ -385,7 +385,10 @@ self-contained for scoring: every case keeps the full answer plus confidence,
 mode/provider, required tool hits, actual tool invocations, receipts, required
 confirmations, safety flags, context used, failure mode, bridge diagnostics, and
 the expected-trait / safety-caveat checklists that must be marked before a 5/5
-rating is valid. The Markdown packet also shows per-case answer-quality scan
+rating is valid. It also carries the independent reviewer roles and review gates
+from `harness-contract.json`, so source-grounding, trail-math/safety,
+document-writing, and proof-lane checks are preserved with the machine-readable
+review artifact rather than only the Markdown packet. The Markdown packet also shows per-case answer-quality scan
 flags inline, so heuristic warnings or errors are visible at the point of
 rating instead of only in the top scan summary. A 5/5 rating must also match the recorded run evidence: no
 empty answer, no provider error, no missing required tools, and actual tool

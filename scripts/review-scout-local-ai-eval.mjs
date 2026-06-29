@@ -14,6 +14,7 @@ import {
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
 const BACKLOG_DIR = resolve(REPO_ROOT, 'data/scout-local-ai/backlog');
+const DEFAULT_HARNESS_CONTRACT = 'data/scout-local-ai/harness-contract.json';
 
 const cli = parseCliArgs(process.argv.slice(2));
 if (!cli.run) {
@@ -22,6 +23,8 @@ if (!cli.run) {
 
 const runPath = resolve(REPO_ROOT, String(cli.run));
 const run = JSON.parse(await readFile(runPath, 'utf8'));
+const harnessContractPath = resolveInputPath(cli.harnessContract ?? DEFAULT_HARNESS_CONTRACT);
+const harnessContract = JSON.parse(await readFile(harnessContractPath, 'utf8'));
 const reviewPath = resolve(REPO_ROOT, String(cli.review ?? `data/scout-local-ai/reviews/${run.runId}.review.json`));
 const backlogDir = resolveInputPath(cli.backlogDir ?? BACKLOG_DIR);
 const allowUnrated = Boolean(cli.allowUnrated);
@@ -30,7 +33,7 @@ let review;
 try {
 	review = JSON.parse(await readFile(reviewPath, 'utf8'));
 } catch {
-	review = createReviewTemplate(run, runPath, REPO_ROOT);
+	review = createReviewTemplate(run, runPath, REPO_ROOT, { harnessContract });
 	await mkdir(dirname(reviewPath), { recursive: true });
 	await writeFile(reviewPath, `${JSON.stringify(review, null, 2)}\n`);
 	console.log(`Review template created: ${relative(REPO_ROOT, reviewPath)}`);

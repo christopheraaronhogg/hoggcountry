@@ -77,7 +77,7 @@ const answerQualityScan = scanScoutLocalAiAnswerQuality(run);
 await writeJson(importedRunPath, run, { force });
 await writeJson(scanPath, answerQualityScan, { force });
 
-const review = createReviewTemplate(run, importedRunPath, REPO_ROOT);
+const review = createReviewTemplate(run, importedRunPath, REPO_ROOT, { harnessContract });
 const reviewWritten = await writeJson(reviewPath, review, { force, skipExisting: true });
 const packetWritten = await writeText(packetPath, createReviewPacket(run, validation, importedRunPath, reviewPath, packetPath, scanPath, answerQualityScan, harnessContract), {
 	force,

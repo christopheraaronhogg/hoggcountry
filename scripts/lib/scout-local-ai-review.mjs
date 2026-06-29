@@ -79,7 +79,7 @@ export function parseCliArgs(argv) {
 	return parsed;
 }
 
-export function createReviewTemplate(run, runPath, repoRoot) {
+export function createReviewTemplate(run, runPath, repoRoot, options = {}) {
 	return {
 		schemaVersion: 1,
 		runId: run.runId,
@@ -94,10 +94,13 @@ export function createReviewTemplate(run, runPath, repoRoot) {
 			'For every 5, mark every traitChecks and safetyCaveatChecks item passed=true.',
 			'For every 5, mark every requiredConfirmationChecks and safetyFlagChecks item acknowledged=true.',
 			'For every rating below 5, fill failureCategories, ownerLayer, and improvementTask.',
+			'Use the independent reviewer gates before giving any answer 5/5: source grounding, trail math/safety, document-writing flow, and proof-lane boundaries.',
 			'Do not count scaffold-not-model runs as final local-AI proof.'
 		],
 		ratingScale: run.ratingScale,
 		failureCategories: run.failureCategories,
+		independentReviewers: createIndependentReviewerTemplates(options.harnessContract),
+		reviewGates: createReviewGateTemplates(options.harnessContract),
 		cases: run.results.map((result) => ({
 			caseId: result.caseId,
 			domain: result.case.domain,
@@ -136,6 +139,32 @@ export function createReviewTemplate(run, runPath, repoRoot) {
 			ownerLayer: ''
 		}))
 	};
+}
+
+function createIndependentReviewerTemplates(harnessContract) {
+	const reviewers = Array.isArray(harnessContract?.independentReviewers)
+		? harnessContract.independentReviewers
+		: [];
+	return reviewers.map((reviewer) => ({
+		id: reviewer.id ?? '',
+		input: reviewer.input ?? '',
+		checks: Array.isArray(reviewer.checks) ? [...reviewer.checks] : [],
+		mustBeSeparateFrom: Array.isArray(reviewer.mustBeSeparateFrom) ? [...reviewer.mustBeSeparateFrom] : [],
+		status: null,
+		notes: ''
+	}));
+}
+
+function createReviewGateTemplates(harnessContract) {
+	const gates = Array.isArray(harnessContract?.reviewGates)
+		? harnessContract.reviewGates
+		: [];
+	return gates.map((gate) => ({
+		id: gate.id ?? '',
+		rule: gate.rule ?? '',
+		passed: null,
+		notes: ''
+	}));
 }
 
 export function summarizeReview(review) {
