@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFile, spawn } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -22,9 +23,12 @@ const MOBILE_SUITE_PATH = new URL('../mobile/static/scout/dad-local-ai-100.json'
 const MOBILE_EVAL_LAB_PATH = new URL('../mobile/src/lib/components/ScoutEvalLab.svelte', import.meta.url);
 const IOS_SIM_GEMMA_RUNNER_PATH = new URL('../scripts/run-scout-ios-sim-gemma-eval.mjs', import.meta.url);
 const PACKAGE_PATH = new URL('../package.json', import.meta.url);
+const XCODE_PROJECT_PATH = new URL('../mobile/ios/App/App.xcodeproj/project.pbxproj', import.meta.url);
 const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
 const execFileAsync = promisify(execFile);
 const FRESH_FIXTURE_RUN_TIME = '2099-01-01T00:00:00.000Z';
+const CURRENT_IOS_BUILD_SETTINGS = readCurrentIosBuildSettings();
+const CURRENT_IOS_TARGET_BUILD = `${CURRENT_IOS_BUILD_SETTINGS.marketingVersion} (${CURRENT_IOS_BUILD_SETTINGS.buildNumber})`;
 
 process.env.SCOUT_LOCAL_AI_DOWNLOADS_DIR ??= join(tmpdir(), 'scout-local-ai-default-downloads-empty');
 
@@ -530,9 +534,11 @@ test('status command keeps routing proof separate from missing device proof', as
 	const inboxDir = join(outputDir, 'inbox');
 	const reviewsDir = join(outputDir, 'reviews');
 	const iosProofDir = join(outputDir, 'proof');
+	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
 	await mkdir(runsDir, { recursive: true });
 	await mkdir(inboxDir, { recursive: true });
 	await mkdir(iosProofDir, { recursive: true });
+	await writeReleaseEvidenceFixture(releaseEvidencePath, CURRENT_IOS_TARGET_BUILD);
 	await writeIosUploadProofFixture(iosProofDir, { repoSha: await currentRepoSha() });
 	const routingRun = deviceRunForCases(suite, suite.cases, {
 		runId: 'routing-status-proof',
@@ -565,6 +571,8 @@ test('status command keeps routing proof separate from missing device proof', as
 			inboxDir,
 			'--reviews-dir',
 			reviewsDir,
+			'--release-evidence',
+			releaseEvidencePath,
 			'--ios-proof-dir',
 			iosProofDir,
 			'--json'
@@ -586,16 +594,16 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.equal(status.runs.currentFullRoutingRuns.length, 1);
 	assert.equal(status.strictDeviceProofs.length, 0);
 	assert.equal(status.suite.finalProof.requiredApp, '1.0 (>= 13)');
-	assert.equal(status.testflight.targetBuild, '1.0 (28)');
+	assert.equal(status.testflight.targetBuild, CURRENT_IOS_TARGET_BUILD);
 	assert.equal(status.testflight.suiteRequiredBuild, '1.0 (>= 13)');
 	assert.equal(status.testflight.targetBuildMeetsSuiteRequirement, true);
-	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (28)');
+	assert.equal(status.testflight.recordedDadPilotBuild, CURRENT_IOS_TARGET_BUILD);
 	assert.equal(status.testflight.recordedDadPilotMeetsSuiteRequirement, true);
 	assert.equal(status.testflight.targetBuildReadyForDad, true);
 	assert.equal(status.testflight.targetBuildAvailableForDad, true);
 	assert.match(gates['testflight-target'].evidence, /Target build is available for Dad/u);
 	assert.match(gates['testflight-target'].evidence, new RegExp(`current suite ${escapeRegExp(suite.version)}`, 'u'));
-	assert.match(gates['testflight-target'].evidence, /Dad Pilot records 1\.0 \(28\)/u);
+	assert.match(gates['testflight-target'].evidence, new RegExp(`Dad Pilot records ${escapeRegExp(CURRENT_IOS_TARGET_BUILD)}`, 'u'));
 	assert.equal(status.inbox.exists, true);
 	assert.equal(status.inbox.jsonFileCount, 2);
 	assert.equal(status.inbox.candidateCount, 1);
@@ -877,7 +885,7 @@ test('status command asks for simulator preflight when no device export exists y
 	assert.equal(status.phoneBuildAction.requiresNewUploadBeforeRun100, true);
 	assert.match(status.phoneBuildAction.text, /latest TestFlight upload contains suite/u);
 	assert.match(status.phoneBuildAction.text, /current suite is/u);
-	assert.match(status.phoneBuildAction.text, /Upload and attach 1\.0 \(28\) to Dad Pilot first/u);
+	assert.match(status.phoneBuildAction.text, new RegExp(`Upload and attach ${escapeRegExp(CURRENT_IOS_TARGET_BUILD)} to Dad Pilot first`, 'u'));
 	assert.match(status.nextAction.text, /Mac mini simulator lane/u);
 	assert.match(status.nextAction.text, /eval:scout-local-ai:ios-sim-gemma -- --limit 100/u);
 	assert.match(status.nextAction.text, /preflight only/u);
@@ -1127,7 +1135,7 @@ test('status command surfaces target TestFlight build gaps before phone eval', a
 	);
 	const status = JSON.parse(result.stdout);
 
-	assert.equal(status.testflight.targetBuild, '1.0 (28)');
+	assert.equal(status.testflight.targetBuild, CURRENT_IOS_TARGET_BUILD);
 	assert.equal(status.testflight.suiteRequiredBuild, '1.0 (>= 13)');
 	assert.equal(status.testflight.targetBuildMeetsSuiteRequirement, true);
 	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (12)');
@@ -1136,7 +1144,7 @@ test('status command surfaces target TestFlight build gaps before phone eval', a
 	assert.equal(status.testflight.targetBuildAvailableForDad, false);
 	assert.equal(status.testflight.currentSuiteCompatibleDeviceRunCount, 0);
 	assert.equal(status.nextAction.kind, 'publish-target-build');
-	assert.match(status.nextAction.text, /Upload and attach target iOS build 1\.0 \(28\)/u);
+	assert.match(status.nextAction.text, new RegExp(`Upload and attach target iOS build ${escapeRegExp(CURRENT_IOS_TARGET_BUILD)}`, 'u'));
 	assert.match(status.nextAction.text, /Dad Pilot on 1\.0 \(12\)/u);
 	assert.match(status.nextAction.text, /suite requires 1\.0 \(>= 13\)/u);
 	assert.match(status.nextAction.text, /prepare-review:scout-local-ai-device-run/u);
@@ -1188,7 +1196,7 @@ test('status command lets suite-compatible TestFlight device proof override stal
 	const status = JSON.parse(result.stdout);
 	const gates = Object.fromEntries(status.gates.map((gate) => [gate.id, gate]));
 
-	assert.equal(status.testflight.targetBuild, '1.0 (28)');
+	assert.equal(status.testflight.targetBuild, CURRENT_IOS_TARGET_BUILD);
 	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (12)');
 	assert.equal(status.testflight.recordedDadPilotMeetsSuiteRequirement, false);
 	assert.equal(status.testflight.targetBuildReadyForDad, false);
@@ -1382,7 +1390,7 @@ test('status command treats clean simulator local AI runs as preflight, not fina
 	assert.equal(status.runs.currentFullFinalProofDeviceRuns.length, 0);
 	assert.equal(status.runs.currentFullNonFinalProofDeviceRuns.length, 1);
 	assert.equal(status.nextAction.kind, 'publish-target-build');
-	assert.match(status.nextAction.text, /Upload and attach target iOS build 1\.0 \(28\)/u);
+	assert.match(status.nextAction.text, new RegExp(`Upload and attach target iOS build ${escapeRegExp(CURRENT_IOS_TARGET_BUILD)}`, 'u'));
 
 	const textResult = await execFileAsync(
 		process.execPath,
@@ -1806,13 +1814,12 @@ test('goal audit maps original success criteria without hiding missing device pr
 	const backlogDir = join(outputDir, 'backlog');
 	const iterationsDir = join(outputDir, 'iterations');
 	const iosProofDir = join(outputDir, 'proof');
+	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
 	await mkdir(runsDir, { recursive: true });
 	await mkdir(inboxDir, { recursive: true });
 	await mkdir(iosProofDir, { recursive: true });
-	await writeIosUploadProofFixture(iosProofDir, {
-		repoSha: await staleSuiteRepoSha(suite),
-		fileStamp: '2026-06-27T02-39-27-165Z'
-	});
+	await writeReleaseEvidenceFixture(releaseEvidencePath, CURRENT_IOS_TARGET_BUILD);
+	await writeIosUploadProofFixture(iosProofDir, { repoSha: await currentRepoSha() });
 	const routingRun = deviceRunForCases(suite, suite.cases, {
 		runId: 'routing-goal-audit-proof',
 		completeTools: true
@@ -1844,6 +1851,8 @@ test('goal audit maps original success criteria without hiding missing device pr
 			backlogDir,
 			'--iterations-dir',
 			iterationsDir,
+			'--release-evidence',
+			releaseEvidencePath,
 			'--ios-proof-dir',
 			iosProofDir,
 			'--json'
@@ -1875,7 +1884,7 @@ test('goal audit maps original success criteria without hiding missing device pr
 	assert.match(requirements['device-proof-lane-separated'].evidence, /No strict TestFlight\/iPhone proof run passes/u);
 	assert.equal(requirements['target-testflight-build'].ok, true);
 	assert.match(requirements['target-testflight-build'].evidence, /Target build is available for Dad/u);
-	assert.match(requirements['target-testflight-build'].evidence, /Dad Pilot records 1\.0 \(28\)/u);
+	assert.match(requirements['target-testflight-build'].evidence, new RegExp(`Dad Pilot records ${escapeRegExp(CURRENT_IOS_TARGET_BUILD)}`, 'u'));
 	assert.equal(requirements['final-100-rated-five'].ok, false);
 	assert.match(requirements['final-100-rated-five'].evidence, /No strict TestFlight\/iPhone proof run passes/u);
 	assert.equal(audit.currentStatus.currentFullRoutingRuns, 1);
@@ -2067,7 +2076,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 
 	assert.match(result.stdout, /# Dad Scout local AI Eval Lab handoff/u);
 	assert.match(result.stdout, /Suite final-proof app requirement: `1\.0 \(>= 13\)`/u);
-	assert.match(result.stdout, /Target iOS build for Dad Eval Lab: `1\.0 \(28\)`/u);
+	assert.match(result.stdout, new RegExp(`Target iOS build for Dad Eval Lab: \`${escapeRegExp(CURRENT_IOS_TARGET_BUILD)}\``, 'u'));
 	assert.match(result.stdout, /Target build meets suite requirement: yes/u);
 	assert.match(result.stdout, /Recorded Dad Pilot build: `1\.0 \(13\)`/u);
 	assert.match(result.stdout, /Recorded Dad Pilot build meets suite requirement: yes/u);
@@ -2080,7 +2089,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Latest native upload attempt: .*ios-testflight-attempt-2026-06-27T11-22-27-901Z\.md` \(blocked, upload requested yes/u);
 	assert.match(result.stdout, /## Phone build path/u);
 	assert.match(result.stdout, /Use now: Wait for current-suite TestFlight upload before asking Dad for Run 100/u);
-	assert.match(result.stdout, /Latest-code target: `1\.0 \(28\)` still needs upload\/refresh proof/u);
+	assert.match(result.stdout, new RegExp(`Latest-code target: \`${escapeRegExp(CURRENT_IOS_TARGET_BUILD)}\` still needs upload/refresh proof`, 'u'));
 	assert.match(result.stdout, /targetReadyForDad/u);
 	assert.match(result.stdout, /## Main local test method/u);
 	assert.match(result.stdout, /Main local iteration lane: iPhone Simulator Gemma on the Mac mini/u);
@@ -2097,7 +2106,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Latest inbox export: .*device-handoff-inbox-latest, 100 cases/u);
 	assert.match(result.stdout, /https:\/\/testflight\.apple\.com\/join\/BagBCrzf/u);
 	assert.match(result.stdout, /## Upload readiness/u);
-	assert.match(result.stdout, /Xcode Release target: `1\.0 \(28\)`/u);
+	assert.match(result.stdout, new RegExp(`Xcode Release target: \`${escapeRegExp(CURRENT_IOS_TARGET_BUILD)}\``, 'u'));
 	assert.match(result.stdout, /Signing team\/profile: `3CFU9J87A5` \/ `Hoggcountry App Store Connect`/u);
 	assert.match(result.stdout, /Latest successful native upload proof: .*ios-testflight-attempt-2026-06-27T02-39-27-165Z\.md` \(passed/u);
 	assert.match(result.stdout, /Latest native upload attempt: .*ios-testflight-attempt-2026-06-27T11-22-27-901Z\.md` \(blocked/u);
@@ -2109,12 +2118,15 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, new RegExp(`Latest-source proof: latest native upload contains suite ${escapeRegExp(uploadSuiteIdentity.version)}`, 'u'));
 	assert.match(result.stdout, new RegExp(`not current suite ${escapeRegExp(suite.version)}`, 'u'));
 	if (result.stdout.includes('Latest-source upload note:')) {
-		assert.match(result.stdout, /Latest-source upload note: upload target build `1\.0 \(28\)`; bump again only if App Store Connect already has build `28`/u);
+		assert.match(
+			result.stdout,
+			new RegExp(`Latest-source upload note: upload target build \`${escapeRegExp(CURRENT_IOS_TARGET_BUILD)}\`; bump again only if App Store Connect already has build \`${escapeRegExp(CURRENT_IOS_BUILD_SETTINGS.buildNumber)}\``, 'u')
+		);
 	}
 	assert.match(result.stdout, /App Store Connect API key in latest successful upload proof: yes/u);
 	assert.match(result.stdout, /App Store Connect API key in latest upload attempt: no/u);
 	assert.match(result.stdout, /APP_STORE_CONNECT_API_ISSUER_ID/u);
-	assert.match(result.stdout, /npm run refresh:testflight-dad-pilot -- --build 28 --app-version 1\.0/u);
+	assert.match(result.stdout, new RegExp(`npm run refresh:testflight-dad-pilot -- --build ${escapeRegExp(CURRENT_IOS_BUILD_SETTINGS.buildNumber)} --app-version ${escapeRegExp(CURRENT_IOS_BUILD_SETTINGS.marketingVersion)}`, 'u'));
 	assert.match(result.stdout, /--attach --submit-review --remove-previous --update-release-evidence/u);
 	assert.match(result.stdout, /A likely Scout Eval Lab export is already/u);
 	assert.match(result.stdout, /device-handoff-inbox-latest/u);
@@ -2223,7 +2235,7 @@ test('Dad handoff command can print a concise Run 100 message for Dad', async ()
 	assert.match(result.stdout, /Do not send Dad a Run 100 request yet/u);
 	assert.match(result.stdout, /Hold off on the final Run 100/u);
 	assert.match(result.stdout, /current eval suite/u);
-	assert.match(result.stdout, /Upload and attach 1\.0 \(28\) to Dad Pilot first/u);
+	assert.match(result.stdout, new RegExp(`Upload and attach ${escapeRegExp(CURRENT_IOS_TARGET_BUILD)} to Dad Pilot first`, 'u'));
 	assert.match(result.stdout, /https:\/\/testflight\.apple\.com\/join\/BagBCrzf/u);
 	assert.match(result.stdout, /Next: upload and attach the current build to Dad Pilot/u);
 	assert.doesNotMatch(result.stdout, /Dad, can you help me run the Hoggcountry local AI test/u);
@@ -6936,6 +6948,36 @@ async function writeIosUploadProofFixture(iosProofDir, options) {
 		`--- stdout ---\n${options.repoSha}`,
 		''
 	].join('\n'));
+}
+
+async function writeReleaseEvidenceFixture(path, targetBuild) {
+	await writeFile(path, `${JSON.stringify({
+		schemaVersion: 1,
+		items: {
+			'dad-testflight-invite': {
+				status: 'verified',
+				summary: `Dad Pilot is attached to Hoggcountry iOS build ${targetBuild}, the public TestFlight link is enabled with limit 5, and App Store Connect reports external state IN_BETA_TESTING.`,
+				publicLink: 'https://testflight.apple.com/join/BagBCrzf'
+			}
+		}
+	}, null, 2)}\n`);
+}
+
+function readCurrentIosBuildSettings() {
+	const text = readFileSync(XCODE_PROJECT_PATH, 'utf8');
+	return {
+		marketingVersion: uniqueBuildSetting(text, 'MARKETING_VERSION'),
+		buildNumber: uniqueBuildSetting(text, 'CURRENT_PROJECT_VERSION')
+	};
+}
+
+function uniqueBuildSetting(text, key) {
+	const values = [...text.matchAll(new RegExp(`${key} = ([^;]+);`, 'gu'))]
+		.map((match) => match[1]?.trim())
+		.filter(Boolean);
+	const unique = [...new Set(values)];
+	assert.equal(unique.length, 1, `${key} must have one unique value in ${fileURLToPath(XCODE_PROJECT_PATH)}`);
+	return unique[0];
 }
 
 function escapeRegExp(value) {
