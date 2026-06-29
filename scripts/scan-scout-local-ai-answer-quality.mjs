@@ -142,6 +142,9 @@ function runAnswerChecks({ result, prompt, answer }) {
 	if (documentWritingSourceBoundaryMissing({ result, prompt, answer: trimmed })) {
 		add(checks, 'document-writing-source-boundary-missing', 'error', 'Document-writing answer does not clearly separate source-backed facts from placeholders, assumptions, or open questions.');
 	}
+	if (documentWritingSaveRecoveryMissing({ result, prompt, answer: trimmed })) {
+		add(checks, 'document-writing-save-recovery-missing', 'error', 'Document-writing answer does not make saved changes recoverable or versioned.');
+	}
 	return checks;
 }
 
@@ -199,17 +202,27 @@ function townOfflineReadinessMissing({ prompt, answer }) {
 }
 
 function documentWritingMissing({ result, prompt, answer }) {
-	const tags = result?.case?.improvementTags ?? [];
-	const asksDocumentWriting = tags.includes('document-writing') || isDocumentWritingPrompt(prompt);
-	if (!asksDocumentWriting) return false;
+	if (!asksDocumentWriting(result, prompt)) return false;
 	return !(mentionsDocumentDraft(answer) && mentionsDocumentWriteConfirmation(answer));
 }
 
 function documentWritingSourceBoundaryMissing({ result, prompt, answer }) {
-	const tags = result?.case?.improvementTags ?? [];
-	const asksDocumentWriting = tags.includes('document-writing') || isDocumentWritingPrompt(prompt);
-	if (!asksDocumentWriting) return false;
+	if (!asksDocumentWriting(result, prompt)) return false;
 	return !mentionsDocumentSourceBoundary(answer);
+}
+
+function documentWritingSaveRecoveryMissing({ result, prompt, answer }) {
+	if (!asksDocumentWriting(result, prompt)) return false;
+	return !mentionsDocumentSaveRecovery(answer);
+}
+
+function asksDocumentWriting(result, prompt) {
+	const tags = result?.case?.improvementTags ?? [];
+	const documentTask = String(result?.case?.documentTask ?? '');
+	return documentTask === 'writing' ||
+		documentTask === 'reading-writing' ||
+		tags.includes('document-writing') ||
+		isDocumentWritingPrompt(prompt);
 }
 
 function isDocumentWritingPrompt(prompt) {
@@ -239,6 +252,11 @@ function mentionsDocumentSourceBoundary(answer) {
 	const mentionsSourceFacts = /\b(?:source-backed|source summaries?|saved document facts?|document vault facts?)\b/iu.test(answer);
 	const mentionsAssumptionBoundary = /\b(?:assumptions?|open questions?|placeholders?|verify|confirm before saving|private values?)\b/iu.test(answer);
 	return mentionsSourceFacts && mentionsAssumptionBoundary;
+}
+
+function mentionsDocumentSaveRecovery(answer) {
+	return /\b(?:versioned?|recoverable|previous version|restore|restored|undo|history)\b/iu.test(answer) &&
+		/\b(?:save|saved|saving|document|vault|change|update|overwrite)\b/iu.test(answer);
 }
 
 function isBiblePrompt(prompt) {

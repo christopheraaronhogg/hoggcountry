@@ -673,6 +673,9 @@ function documentWritingEvidenceProblems(result) {
 	if (!mentionsDocumentSourceBoundary(answer)) {
 		problems.push('document-writing answer lacks source-backed facts vs assumptions/placeholders/open questions separation');
 	}
+	if (!mentionsDocumentSaveRecovery(answer)) {
+		problems.push('document-writing answer lacks recoverable or versioned save/change handling');
+	}
 	return problems;
 }
 
@@ -703,6 +706,11 @@ function mentionsDocumentSourceBoundary(answer) {
 	const mentionsSourceFacts = /\b(?:source-backed|source summaries?|saved document facts?|document vault facts?)\b/iu.test(answer);
 	const mentionsAssumptionBoundary = /\b(?:assumptions?|open questions?|placeholders?|verify|confirm before saving|private values?)\b/iu.test(answer);
 	return mentionsSourceFacts && mentionsAssumptionBoundary;
+}
+
+function mentionsDocumentSaveRecovery(answer) {
+	return /\b(?:versioned?|recoverable|previous version|restore|restored|undo|history)\b/iu.test(answer) &&
+		/\b(?:save|saved|saving|document|vault|change|update|overwrite)\b/iu.test(answer);
 }
 
 function failedRubricChecks(checks) {

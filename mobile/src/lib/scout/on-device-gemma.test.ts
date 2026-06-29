@@ -270,6 +270,7 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /For document-writing prompts/);
 	assert.match(systemContext, /include a clearly labeled draft note\/checklist/);
 	assert.match(systemContext, /should not save or overwrite a document unless the user explicitly confirms it/);
+	assert.match(systemContext, /versioned or recoverable/u);
 	assert.match(systemContext, /For model-downloading, model status, stuck download, failed download/);
 	assert.match(systemContext, /not ready for offline Scout yet/);
 	assert.match(systemContext, /check Scout model status\/progress until it says ready/);
@@ -544,6 +545,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.match(screenshotDraftAnswer, /source-backed facts separate from placeholders and open questions/);
 	assert.match(screenshotDraftAnswer, /Review this draft before saving/);
 	assert.match(screenshotDraftAnswer, /should not save or overwrite a document unless you explicitly confirm it/);
+	assert.match(screenshotDraftAnswer, /versioned or recoverable/u);
 
 	const offlineDocumentDraftAnswer = polishOnDeviceAnswer(
 		'You should save your photo ID, insurance card, emergency contacts, medication or allergy notes, your itinerary and check-in plan, any permits or reservations you need, and confirmations for shuttles or lodging somewhere you can reach offline. Here is a draft checklist note for you to save offline: Checklist: 1. Photo ID 2. Insurance Card 3. Emergency Contacts.',
@@ -554,6 +556,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.match(offlineDocumentDraftAnswer, /verify current mile, permits, reservations, shuttles, lodging, weather, closures, water, and town services/);
 	assert.match(offlineDocumentDraftAnswer, /Review the draft before saving/);
 	assert.match(offlineDocumentDraftAnswer, /should not save or overwrite a document unless you explicitly confirm it/);
+	assert.match(offlineDocumentDraftAnswer, /versioned or recoverable/u);
 
 	assert.equal(
 		polishOnDeviceAnswer(
@@ -779,6 +782,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.match(scoutTownUpdateDraftAnswer, /Document draft boundary/);
 	assert.match(scoutTownUpdateDraftAnswer, /source-backed facts separate from placeholders and open questions/);
 	assert.match(scoutTownUpdateDraftAnswer, /should not save or overwrite a document unless you explicitly confirm it/);
+	assert.match(scoutTownUpdateDraftAnswer, /versioned or recoverable/u);
 
 	const john316Answer = polishOnDeviceAnswer(
 		'John 3:16 says that God loved the world so much that he gave his one and only Son.',
