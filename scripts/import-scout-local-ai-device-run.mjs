@@ -98,8 +98,8 @@ if (validation.warnings.length) {
 	console.log(`Warnings: ${validation.warnings.length}`);
 	for (const warning of validation.warnings.slice(0, 8)) console.log(`- ${warning}`);
 }
-console.log(`Progress check: npm run review-status:scout-local-ai -- --run ${relative(REPO_ROOT, importedRunPath)} --review ${relative(REPO_ROOT, reviewPath)} --packet ${relative(REPO_ROOT, packetPath)}`);
-console.log(`Next focused card: npm run review-status:scout-local-ai -- --run ${relative(REPO_ROOT, importedRunPath)} --review ${relative(REPO_ROOT, reviewPath)} --packet ${relative(REPO_ROOT, packetPath)} --next`);
+console.log(`Progress check: npm run review-status:scout-local-ai -- --run ${relative(REPO_ROOT, importedRunPath)} --review ${relative(REPO_ROOT, reviewPath)} --packet ${relative(REPO_ROOT, packetPath)} --scan ${relative(REPO_ROOT, scanPath)}`);
+console.log(`Next focused card: npm run review-status:scout-local-ai -- --run ${relative(REPO_ROOT, importedRunPath)} --review ${relative(REPO_ROOT, reviewPath)} --packet ${relative(REPO_ROOT, packetPath)} --scan ${relative(REPO_ROOT, scanPath)} --next`);
 console.log('Batch helpers: the progress check prints Human-reviewed batch helpers when standard unrated cases can be grouped; use them only after reading every listed focused card.');
 console.log(`Next: npm run review:scout-local-ai -- --run ${relative(REPO_ROOT, importedRunPath)} --review ${relative(REPO_ROOT, reviewPath)}`);
 
@@ -261,6 +261,7 @@ function matchesToolExpectation(expectation, record) {
 
 function createReviewPacket(run, validation, importedRunPath, reviewPath, packetPath, scanPath, answerQualityScan, harnessContract) {
 	const sourceEvidenceSummary = summarizeRunSourceEvidence(run.results);
+	const answerQualityByCaseId = buildAnswerQualityByCaseId(answerQualityScan);
 	const lines = [
 		`# Scout local AI device review: ${run.runId}`,
 		'',
@@ -336,15 +337,15 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 		'',
 		'## Review-first triage',
 		'',
-		'Use this as the first pass before reading all 100 answers. It only counts rows with hard evidence issues: provider errors, missing required tools, or missing source evidence.',
+		'Use this as the first pass before reading all 100 answers. It counts rows with provider errors, missing required tools, missing source evidence, or answer-quality scan flags.',
 		'',
-		...formatReviewFirstTriage(run.results),
+		...formatReviewFirstTriage(run.results, answerQualityByCaseId),
 		'',
 		'## Review queue summary',
 		'',
-		'Start with `review-first` rows. Those rows have provider errors, missing required tools, or missing source evidence. The full case blocks below remain the source of truth for ratings.',
+		'Start with `review-first` rows. Those rows have provider errors, missing required tools, missing source evidence, or answer-quality scan flags. The full case blocks below remain the source of truth for ratings.',
 		'',
-		...formatReviewQueueSummary(run.results),
+		...formatReviewQueueSummary(run.results, answerQualityByCaseId),
 		''
 	);
 
@@ -352,6 +353,7 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 		const suggestedFailureCategories = suggestedFailureCategoriesForResult(result);
 		const suggestedOwnerLayer = inferOwnerLayer(suggestedFailureCategories, result);
 		const sourceEvidenceGaps = sourceEvidenceProblems(result.case?.requiredTools ?? [], result.toolInvocations ?? []);
+		const answerQualityFlags = answerQualityFlagsFor(result, answerQualityByCaseId);
 		lines.push(
 			`## ${result.caseId} - ${result.case.domain}`,
 			'',
@@ -391,6 +393,9 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 			'',
 			'Source evidence gaps:',
 			...(sourceEvidenceGaps.length ? sourceEvidenceGaps.map((problem) => `- ${problem.message}`) : ['- none']),
+			'',
+			'Answer-quality flags:',
+			...formatAnswerQualityCaseFlags(answerQualityFlags),
 			'',
 			'Source receipts:',
 			...formatReceipts(result.receipts),
@@ -453,18 +458,48 @@ function formatAnswerQualityScanSummary(scan) {
 	return lines;
 }
 
-function formatReviewFirstTriage(results) {
+function buildAnswerQualityByCaseId(scan) {
+	const byCaseId = new Map();
+	for (const item of scan?.flagged ?? []) {
+		const caseId = String(item?.caseId ?? '').trim();
+		if (!caseId) continue;
+		byCaseId.set(caseId, Array.isArray(item.checks) ? item.checks : []);
+	}
+	return byCaseId;
+}
+
+function answerQualityFlagsFor(result, answerQualityByCaseId) {
+	return answerQualityByCaseId.get(result?.caseId) ?? [];
+}
+
+function formatAnswerQualityCaseFlags(flags) {
+	if (!flags.length) return ['- none'];
+	return flags.map((flag) => {
+		const id = flag?.id ?? '<missing-check>';
+		const severity = flag?.severity ?? 'unknown';
+		const message = flag?.message ? ` - ${flag.message}` : '';
+		return `- ${id} (${severity})${message}`;
+	});
+}
+
+function answerQualityCheckIds(flags) {
+	return flags.map((flag) => flag?.id ?? '<missing-check>');
+}
+
+function formatReviewFirstTriage(results, answerQualityByCaseId = new Map()) {
 	if (!Array.isArray(results) || !results.length) return ['No results were imported.'];
 	const reviewFirst = [];
 	for (const result of results) {
 		const sourceEvidenceGaps = sourceEvidenceProblems(result.case?.requiredTools ?? [], result.toolInvocations ?? []);
-		const signal = reviewQueueSignal(result, sourceEvidenceGaps);
+		const answerQualityFlags = answerQualityFlagsFor(result, answerQualityByCaseId);
+		const signal = reviewQueueSignal(result, sourceEvidenceGaps, answerQualityFlags);
 		if (!signal.startsWith('review-first')) continue;
 		const suggestedFailureCategories = suggestedFailureCategoriesForResult(result);
 		const suggestedOwnerLayer = inferOwnerLayer(suggestedFailureCategories, result);
 		reviewFirst.push({
 			result,
 			sourceEvidenceGaps,
+			answerQualityFlags,
 			signal,
 			suggestedFailureCategories,
 			suggestedOwnerLayer
@@ -479,8 +514,9 @@ function formatReviewFirstTriage(results) {
 			'- Suggested failure categories: none',
 			'- Missing tools: none',
 			'- Source-evidence gaps: none',
+			'- Answer-quality flags: none',
 			'',
-			'No hard evidence issues were recorded before human rating. Continue through the full review queue for answer quality, clarity, safety, and prompt fit.'
+			'No hard evidence or answer-quality scan issues were recorded before human rating. Continue through the full review queue for answer quality, clarity, safety, and prompt fit.'
 		];
 	}
 
@@ -491,16 +527,17 @@ function formatReviewFirstTriage(results) {
 		`- Suggested failure categories: ${formatCountMap(countBy(reviewFirst.flatMap((item) => item.suggestedFailureCategories.length ? item.suggestedFailureCategories : ['none']), (item) => item))}`,
 		`- Missing tools: ${formatCountMap(countBy(reviewFirst.flatMap((item) => item.result.toolExpectations?.missing ?? []), (item) => item))}`,
 		`- Source-evidence gaps: ${formatCountMap(countBy(reviewFirst.flatMap((item) => item.sourceEvidenceGaps.map((problem) => problem.expectation ?? problem.message)), (item) => item))}`,
+		`- Answer-quality flags: ${formatCountMap(countBy(reviewFirst.flatMap((item) => answerQualityCheckIds(item.answerQualityFlags)), (item) => item))}`,
 		'',
 		'Top review-first cases:',
 		...reviewFirst.slice(0, 8).map((item) => {
 			const result = item.result;
-			return `- ${result.caseId ?? '<missing>'}: ${item.signal}; likely owner ${item.suggestedOwnerLayer}; gaps ${formatReviewQueueEvidenceGaps(result, item.sourceEvidenceGaps)}`;
+			return `- ${result.caseId ?? '<missing>'}: ${item.signal}; likely owner ${item.suggestedOwnerLayer}; gaps ${formatReviewQueueEvidenceGaps(result, item.sourceEvidenceGaps, item.answerQualityFlags)}`;
 		})
 	];
 }
 
-function formatReviewQueueSummary(results) {
+function formatReviewQueueSummary(results, answerQualityByCaseId = new Map()) {
 	if (!Array.isArray(results) || !results.length) return ['No results were imported.'];
 	const rows = [
 		'| Case | Phase | Domain | Signal | Likely owner | Suggested categories | Evidence gaps | Prompt preview |',
@@ -510,14 +547,15 @@ function formatReviewQueueSummary(results) {
 		const suggestedFailureCategories = suggestedFailureCategoriesForResult(result);
 		const suggestedOwnerLayer = inferOwnerLayer(suggestedFailureCategories, result);
 		const sourceEvidenceGaps = sourceEvidenceProblems(result.case?.requiredTools ?? [], result.toolInvocations ?? []);
+		const answerQualityFlags = answerQualityFlagsFor(result, answerQualityByCaseId);
 		rows.push([
 			result.caseId ?? '<missing>',
 			result.case?.phase ?? '<missing>',
 			result.case?.domain ?? '<missing>',
-			reviewQueueSignal(result, sourceEvidenceGaps),
+			reviewQueueSignal(result, sourceEvidenceGaps, answerQualityFlags),
 			suggestedOwnerLayer,
 			suggestedFailureCategories.join(', ') || 'none',
-			formatReviewQueueEvidenceGaps(result, sourceEvidenceGaps),
+			formatReviewQueueEvidenceGaps(result, sourceEvidenceGaps, answerQualityFlags),
 			truncateForTable(result.case?.prompt ?? '', 110)
 		].map(tableCell).join(' | ').replace(/^/u, '| ').replace(/$/u, ' |'));
 	}
@@ -552,20 +590,24 @@ function formatIndependentReviewGates(contract) {
 	return lines;
 }
 
-function reviewQueueSignal(result, sourceEvidenceGaps) {
+function reviewQueueSignal(result, sourceEvidenceGaps, answerQualityFlags = []) {
 	if (String(result?.error ?? '').trim()) return 'review-first: provider error';
 	if ((result?.toolExpectations?.missing ?? []).length) return 'review-first: missing required tools';
 	if (sourceEvidenceGaps.length) return 'review-first: source evidence gap';
+	if (answerQualityFlags.length) return 'review-first: answer-quality scan';
 	return 'standard';
 }
 
-function formatReviewQueueEvidenceGaps(result, sourceEvidenceGaps) {
+function formatReviewQueueEvidenceGaps(result, sourceEvidenceGaps, answerQualityFlags = []) {
 	const gaps = [];
 	if ((result?.toolExpectations?.missing ?? []).length) {
 		gaps.push(`missing tools: ${result.toolExpectations.missing.join(', ')}`);
 	}
 	if (sourceEvidenceGaps.length) {
 		gaps.push(`source evidence: ${sourceEvidenceGaps.map((problem) => problem.expectation ?? problem.message).join(', ')}`);
+	}
+	if (answerQualityFlags.length) {
+		gaps.push(`answer quality: ${answerQualityCheckIds(answerQualityFlags).join(', ')}`);
 	}
 	if (String(result?.error ?? '').trim()) gaps.push(`error: ${truncateForTable(result.error, 80)}`);
 	return gaps.join('; ') || 'none';

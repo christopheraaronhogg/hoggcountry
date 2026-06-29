@@ -3758,6 +3758,8 @@ test('device run intake validates exports and creates review packet', async () =
 
 	assert.match(importResult.stdout, /Answer-quality scan:/u);
 	assert.match(importResult.stdout, /Answer-quality flags: 2 flagged, 2 errors, 2 warnings/u);
+	assert.match(importResult.stdout, /Progress check: npm run review-status:scout-local-ai .* --scan /u);
+	assert.match(importResult.stdout, /Next focused card: npm run review-status:scout-local-ai .* --scan .* --next/u);
 	assert.equal(imported.evidenceLane, 'device-on-device-gemma');
 	assert.equal(imported.suiteVersion, suite.version);
 	assert.equal(imported.suiteHash, scoutLocalAiSuiteHash(suite));
@@ -3804,13 +3806,15 @@ test('device run intake validates exports and creates review packet', async () =
 	assert.match(packet, /## Answer-quality scan/u);
 	assert.match(packet, /Flagged cases: 2/u);
 	assert.match(packet, /very-short-answer:warning/u);
+	assert.match(packet, /Answer-quality flags:\n- very-short-answer \(warning\)/u);
+	assert.match(packet, /unfinished-tail \(error\)/u);
 	assert.match(packet, /## Review-first triage/u);
-	assert.match(packet, /Review-first cases: 0\/2/u);
-	assert.match(packet, /Signals: none/u);
-	assert.match(packet, /No hard evidence issues were recorded before human rating/u);
+	assert.match(packet, /Review-first cases: 2\/2/u);
+	assert.match(packet, /Signals: review-first: answer-quality scan=2/u);
+	assert.match(packet, /Answer-quality flags: unfinished-tail=2, very-short-answer=2/u);
 	assert.match(packet, /## Review queue summary/u);
 	assert.match(packet, /Likely owner/u);
-	assert.match(packet, /\| DLA-\d{3} \| [^|]+ \| [^|]+ \| standard \| tool-routing \| bad-routing, weak-tool \| none \|/u);
+	assert.match(packet, /\| DLA-\d{3} \| [^|]+ \| [^|]+ \| review-first: answer-quality scan \| tool-routing \| bad-routing, weak-tool \| answer quality: very-short-answer, unfinished-tail \|/u);
 	assert.match(packet, /## Rating scale/u);
 	assert.match(packet, /## Reviewer field choices/u);
 	assert.match(packet, /## Independent review gates/u);
@@ -3876,6 +3880,7 @@ test('device run intake imports truthful missing-tool runs for review', async ()
 		completeTools: true,
 		runContext: finalDeviceRunContext()
 	});
+	for (const result of run.results) result.answer = cleanPreflightAnswer();
 	run.results[0].toolInvocations = [];
 	run.results[0].receipts = [];
 	run.results[0].toolExpectations = {
@@ -3941,6 +3946,7 @@ test('device run intake imports truthful missing source receipts for review', as
 		completeTools: true,
 		runContext: finalDeviceRunContext()
 	});
+	for (const entry of run.results) entry.answer = cleanPreflightAnswer();
 	const result = run.results.find((entry) => entry.caseId === sourceCase.id);
 	assert.ok(result, 'fixture run should include the source-backed case');
 	for (const invocation of result.toolInvocations) {

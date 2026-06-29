@@ -376,7 +376,9 @@ self-contained for scoring: every case keeps the full answer plus confidence,
 mode/provider, required tool hits, actual tool invocations, receipts, required
 confirmations, safety flags, context used, failure mode, bridge diagnostics, and
 the expected-trait / safety-caveat checklists that must be marked before a 5/5
-rating is valid. A 5/5 rating must also match the recorded run evidence: no
+rating is valid. The Markdown packet also shows per-case answer-quality scan
+flags inline, so heuristic warnings or errors are visible at the point of
+rating instead of only in the top scan summary. A 5/5 rating must also match the recorded run evidence: no
 empty answer, no provider error, no missing required tools, and actual tool
 invocations must support the required tool hits. Use the Markdown review packet
 as the easier reading surface
