@@ -6388,6 +6388,10 @@ test('review status command can preview draft packet progress without writing re
 	assert.equal(progress.summary.unrated, 1);
 	assert.equal(progress.summary.belowFive, 2);
 	assert.equal(progress.summary.invalidCount, 0);
+	assert.equal(progress.independentReviewGates.reviewers.passed, 0);
+	assert.equal(progress.independentReviewGates.reviewers.blank, 4);
+	assert.equal(progress.independentReviewGates.reviewGates.passed, 0);
+	assert.equal(progress.independentReviewGates.reviewGates.blank, 6);
 	assert.equal(progress.nextUnrated.caseId, run.results[2].caseId);
 	assert.match(progress.nextAction, new RegExp(`Review next unrated case ${run.results[2].caseId} .* in the packet`, 'u'));
 	assert.deepEqual(persistedReview.cases.map((entry) => entry.rating), [null, null, null]);
@@ -6435,6 +6439,8 @@ test('review status command can preview draft packet progress without writing re
 		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
 	);
 	assert.match(selectedTextResult.stdout, /### Rating commands/u);
+	assert.match(selectedTextResult.stdout, /Independent reviewers: 0\/4 pass \(4 blank\)/u);
+	assert.match(selectedTextResult.stdout, /Review gates: 0\/6 pass \(6 blank\)/u);
 	assert.match(selectedTextResult.stdout, /npm run rate-case:scout-local-ai/u);
 	assert.match(selectedTextResult.stdout, /--rating 5/u);
 	assert.match(selectedTextResult.stdout, /--mark-all-pass/u);
@@ -6693,6 +6699,15 @@ test('review status command only marks strict proof ready for a full device 5-st
 		runContext: finalDeviceRunContext()
 	});
 	const fullReview = reviewForRun(fullRun, { rating: 5 });
+	const ungatedFullReview = reviewForRun(fullRun, { rating: 5 });
+	for (const reviewer of ungatedFullReview.independentReviewers) {
+		reviewer.status = null;
+		reviewer.notes = '';
+	}
+	for (const gate of ungatedFullReview.reviewGates) {
+		gate.passed = null;
+		gate.notes = '';
+	}
 	const staleBuildRun = deviceRunForCases(suite, suite.cases, {
 		runId: 'device-review-status-proof-stale-build',
 		completeTools: true,
@@ -6717,6 +6732,7 @@ test('review status command only marks strict proof ready for a full device 5-st
 	const partialReviewPath = join(outputDir, 'device-review-status-proof-partial.review.json');
 	const fullRunPath = join(outputDir, 'device-review-status-proof-full.json');
 	const fullReviewPath = join(outputDir, 'device-review-status-proof-full.review.json');
+	const ungatedFullReviewPath = join(outputDir, 'device-review-status-proof-full.ungated.review.json');
 	const staleBuildRunPath = join(outputDir, 'device-review-status-proof-stale-build.json');
 	const staleBuildReviewPath = join(outputDir, 'device-review-status-proof-stale-build.review.json');
 	const simulatorRunPath = join(outputDir, 'device-review-status-proof-simulator.json');
@@ -6725,6 +6741,7 @@ test('review status command only marks strict proof ready for a full device 5-st
 	await writeFile(partialReviewPath, `${JSON.stringify(partialReview, null, 2)}\n`);
 	await writeFile(fullRunPath, `${JSON.stringify(fullRun, null, 2)}\n`);
 	await writeFile(fullReviewPath, `${JSON.stringify(fullReview, null, 2)}\n`);
+	await writeFile(ungatedFullReviewPath, `${JSON.stringify(ungatedFullReview, null, 2)}\n`);
 	await writeFile(staleBuildRunPath, `${JSON.stringify(staleBuildRun, null, 2)}\n`);
 	await writeFile(staleBuildReviewPath, `${JSON.stringify(staleBuildReview, null, 2)}\n`);
 	await writeFile(simulatorRunPath, `${JSON.stringify(simulatorRun, null, 2)}\n`);
@@ -6767,6 +6784,31 @@ test('review status command only marks strict proof ready for a full device 5-st
 	assert.equal(fullProgress.strictDeviceProofErrors.length, 0);
 	assert.equal(fullProgress.summary.fiveStar, suite.cases.length);
 	assert.match(fullProgress.nextAction, /verify:scout-local-ai-device-proof/u);
+
+	const ungatedFullResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai-review.mjs',
+			'--run',
+			fullRunPath,
+			'--review',
+			ungatedFullReviewPath,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 6 }
+	);
+	const ungatedFullProgress = JSON.parse(ungatedFullResult.stdout);
+	assert.equal(ungatedFullProgress.readyForBacklog, true);
+	assert.equal(ungatedFullProgress.fullDeviceRun, true);
+	assert.equal(ungatedFullProgress.finalProofContext.ok, true);
+	assert.equal(ungatedFullProgress.readyForStrictDeviceProof, false);
+	assert.equal(ungatedFullProgress.independentReviewGates.reviewers.passed, 0);
+	assert.equal(ungatedFullProgress.independentReviewGates.reviewers.blank, 4);
+	assert.equal(ungatedFullProgress.independentReviewGates.reviewGates.passed, 0);
+	assert.equal(ungatedFullProgress.independentReviewGates.reviewGates.blank, 6);
+	assert.match(ungatedFullProgress.strictDeviceProofErrors.join('\n'), /source_grounding_reviewer\.status must be pass/u);
+	assert.match(ungatedFullProgress.strictDeviceProofErrors.join('\n'), /strict_testflight_iphone\.passed must be true/u);
+	assert.match(ungatedFullProgress.nextAction, /independent reviewer\/review gate fields are incomplete/u);
 
 	const staleBuildResult = await execFileAsync(
 		process.execPath,

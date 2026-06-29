@@ -6,6 +6,8 @@ import {
 	parseReviewPacket
 } from './apply-scout-local-ai-review-packet.mjs';
 import {
+	REQUIRED_INDEPENDENT_REVIEWERS,
+	REQUIRED_REVIEW_GATES,
 	requiredAppLabel,
 	validateScoutLocalAiDeviceRunContext,
 	verifyScoutLocalAiDeviceProof
@@ -194,6 +196,7 @@ function buildReviewProgress({ suite, run, review, answerQualityScan, packetDraf
 		surface: String(run.runContext?.surface ?? '').trim() || '<missing>',
 		errors: finalProofContextErrors
 	};
+	const independentReviewGates = summarizeIndependentReviewGates(review);
 	const readyForBacklog = invalidEntries.length === 0 && summary.unrated === 0;
 	const strictDeviceProofErrors = readyForBacklog && summary.belowFive === 0 && fiveStar === summary.total && fullDeviceRun
 		? verifyScoutLocalAiDeviceProof({ suite, run, review }).errors
@@ -232,6 +235,7 @@ function buildReviewProgress({ suite, run, review, answerQualityScan, packetDraf
 		},
 		fullDeviceRun,
 		finalProofContext,
+		independentReviewGates,
 		answerQualityScan: answerQualityScan
 			? {
 				path: relativePaths.scan,
@@ -260,6 +264,7 @@ function buildReviewProgress({ suite, run, review, answerQualityScan, packetDraf
 			readyForStrictDeviceProof,
 			fullDeviceRun,
 			finalProofContext,
+			independentReviewGates,
 			strictDeviceProofErrors,
 			summary,
 			runPath: relative(REPO_ROOT, paths.runPath),
@@ -548,6 +553,60 @@ function summarizeReviewTriage(queue) {
 	};
 }
 
+function summarizeIndependentReviewGates(review) {
+	const reviewers = summarizeRequiredGateRecords({
+		records: Array.isArray(review?.independentReviewers) ? review.independentReviewers : [],
+		requiredIds: REQUIRED_INDEPENDENT_REVIEWERS,
+		type: 'reviewer',
+		valueFor: (entry) => entry?.status,
+		passedFor: (entry) => entry?.status === 'pass',
+		blankFor: (entry) => entry?.status === null || entry?.status === undefined || entry?.status === ''
+	});
+	const reviewGates = summarizeRequiredGateRecords({
+		records: Array.isArray(review?.reviewGates) ? review.reviewGates : [],
+		requiredIds: REQUIRED_REVIEW_GATES,
+		type: 'gate',
+		valueFor: (entry) => entry?.passed,
+		passedFor: (entry) => entry?.passed === true,
+		blankFor: (entry) => entry?.passed === null || entry?.passed === undefined || entry?.passed === ''
+	});
+	return {
+		reviewers,
+		reviewGates,
+		pendingIds: [
+			...reviewers.pendingIds.map((id) => `reviewer:${id}`),
+			...reviewGates.pendingIds.map((id) => `gate:${id}`)
+		],
+		readyForStrictProof: reviewers.passed === reviewers.total && reviewGates.passed === reviewGates.total
+	};
+}
+
+function summarizeRequiredGateRecords({ records, requiredIds, type, valueFor, passedFor, blankFor }) {
+	const byId = new Map(records.map((entry) => [entry.id, entry]));
+	const items = requiredIds.map((id) => {
+		const entry = byId.get(id);
+		if (!entry) {
+			return { id, type, state: 'missing', value: '<missing>', notes: '', passed: false };
+		}
+		if (passedFor(entry)) {
+			return { id, type, state: 'pass', value: valueFor(entry), notes: entry.notes ?? '', passed: true };
+		}
+		if (blankFor(entry)) {
+			return { id, type, state: 'blank', value: valueFor(entry) ?? null, notes: entry.notes ?? '', passed: false };
+		}
+		return { id, type, state: 'fail', value: valueFor(entry), notes: entry.notes ?? '', passed: false };
+	});
+	return {
+		total: requiredIds.length,
+		passed: items.filter((item) => item.passed).length,
+		missing: items.filter((item) => item.state === 'missing').length,
+		blank: items.filter((item) => item.state === 'blank').length,
+		failed: items.filter((item) => item.state === 'fail').length,
+		pendingIds: items.filter((item) => !item.passed).map((item) => item.id),
+		items
+	};
+}
+
 function nextAction(input) {
 	if (input.packetDraft && !input.packetDraft.applied) {
 		return `Fix draft packet parse/apply issue before checking rating progress: ${input.packetDraft.errors[0] ?? 'unknown packet error'}`;
@@ -559,6 +618,14 @@ function nextAction(input) {
 	if (input.nextUnrated) {
 		const target = input.packetDraft ? ' in the packet' : '';
 		return `Review next unrated case ${input.nextUnrated.caseId} (${input.nextUnrated.domain})${target} and rerun review-status:scout-local-ai.`;
+	}
+	if (input.readyForBacklog && input.summary.belowFive === 0 && input.fullDeviceRun && input.finalProofContext?.ok && input.independentReviewGates?.readyForStrictProof === false) {
+		const target = input.packetDraft ? ' in the packet before applying it' : ' before running strict proof';
+		return [
+			'Review is complete at 100% 5/5, but independent reviewer/review gate fields are incomplete.',
+			`Fill the top-level Independent reviewer and Review gate fields${target}.`,
+			`Next pending gate: ${input.independentReviewGates.pendingIds[0] ?? '<unknown>'}.`
+		].join(' ');
 	}
 	if (input.packetDraft) {
 		return [
@@ -619,6 +686,8 @@ function formatReviewProgress(progress) {
 		`- Final proof app requirement: \`${progress.finalProofContext.requiredApp}\``,
 		`- App/install context: \`${progress.finalProofContext.appVersion} (${progress.finalProofContext.appBuild})\`, install \`${progress.finalProofContext.installSource}\`, platform \`${progress.finalProofContext.nativePlatform}\``,
 		`- Final proof context issues: ${progress.finalProofContext.errors.length}`,
+		`- Independent reviewers passed: ${progress.independentReviewGates.reviewers.passed}/${progress.independentReviewGates.reviewers.total}`,
+		`- Review gates passed: ${progress.independentReviewGates.reviewGates.passed}/${progress.independentReviewGates.reviewGates.total}`,
 		progress.answerQualityScan
 			? `- Answer-quality scan: ${progress.answerQualityScan.status}; ${progress.answerQualityScan.flaggedCount} flagged, ${progress.answerQualityScan.errorCount} errors, ${progress.answerQualityScan.warningCount} warnings`
 			: '- Answer-quality scan: not supplied',
@@ -631,6 +700,14 @@ function formatReviewProgress(progress) {
 		progress.nextAction,
 		''
 	].filter((line) => line !== null);
+
+	lines.push('## Independent Review Gates', '');
+	lines.push(`- Independent reviewers: ${formatGateProgress(progress.independentReviewGates.reviewers)}`);
+	lines.push(`- Review gates: ${formatGateProgress(progress.independentReviewGates.reviewGates)}`);
+	if (progress.independentReviewGates.pendingIds.length) {
+		lines.push(`- Pending: ${progress.independentReviewGates.pendingIds.join(', ')}`);
+	}
+	lines.push('');
 
 	if (progress.packetDraft) {
 		lines.push('## Packet Draft', '');
@@ -905,6 +982,15 @@ function formatCountMap(counts) {
 	const entries = Object.entries(counts ?? {});
 	if (!entries.length) return 'none';
 	return entries.map(([key, count]) => `${key}=${count}`).join(', ');
+}
+
+function formatGateProgress(summary) {
+	const details = [];
+	if (summary.missing) details.push(`${summary.missing} missing`);
+	if (summary.blank) details.push(`${summary.blank} blank`);
+	if (summary.failed) details.push(`${summary.failed} failed`);
+	const suffix = details.length ? ` (${details.join(', ')})` : '';
+	return `${summary.passed}/${summary.total} pass${suffix}`;
 }
 
 function formatQueueEvidenceGaps(result, sourceGaps, answerQualityFlags = []) {

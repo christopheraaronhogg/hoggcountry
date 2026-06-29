@@ -10,13 +10,13 @@ import { validateScoutLocalAiSuiteIdentity } from './scout-local-ai-suite.mjs';
 export const DEVICE_EVIDENCE_LANE = 'device-on-device-gemma';
 export const DEVICE_SURFACE = 'mobile-settings-scout-eval-lab';
 export const DEVICE_BUNDLE_ID = 'com.hoggcountry.trailassistant';
-const REQUIRED_INDEPENDENT_REVIEWERS = [
+export const REQUIRED_INDEPENDENT_REVIEWERS = [
 	'source_grounding_reviewer',
 	'trail_math_reviewer',
 	'document_writing_reviewer',
 	'proof_lane_reviewer'
 ];
-const REQUIRED_REVIEW_GATES = [
+export const REQUIRED_REVIEW_GATES = [
 	'independent_artifact_review',
 	'tool_source_evidence',
 	'human_1_to_5_rating',
