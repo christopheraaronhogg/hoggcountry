@@ -28,6 +28,7 @@ import {
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
 const DEFAULT_SUITE = 'data/scout-local-ai/dad-local-ai-100.json';
+const DEFAULT_HARNESS_CONTRACT = 'data/scout-local-ai/harness-contract.json';
 const DEFAULT_DEVICE_RUN_DIR = 'data/scout-local-ai/device-runs';
 const DEFAULT_REVIEW_DIR = 'data/scout-local-ai/reviews';
 const DEFAULT_PACKET_DIR = 'data/scout-local-ai/review-packets';
@@ -46,6 +47,7 @@ if (!input) {
 
 const inputPath = resolveInputPath(input);
 const suitePath = resolveInputPath(cli.suite ?? DEFAULT_SUITE);
+const harnessContractPath = resolveInputPath(cli.harnessContract ?? DEFAULT_HARNESS_CONTRACT);
 const deviceRunDir = resolveInputPath(cli.deviceRunDir ?? DEFAULT_DEVICE_RUN_DIR);
 const reviewDir = resolveInputPath(cli.reviewDir ?? DEFAULT_REVIEW_DIR);
 const packetDir = resolveInputPath(cli.packetDir ?? DEFAULT_PACKET_DIR);
@@ -56,6 +58,7 @@ const force = Boolean(cli.force);
 
 const { run } = await readScoutEvalRunJson(inputPath);
 const suite = JSON.parse(await readFile(suitePath, 'utf8'));
+const harnessContract = JSON.parse(await readFile(harnessContractPath, 'utf8'));
 const validation = validateDeviceRun(run, suite, { allowPartial, allowNonDevice });
 
 if (validation.errors.length) {
@@ -76,7 +79,7 @@ await writeJson(scanPath, answerQualityScan, { force });
 
 const review = createReviewTemplate(run, importedRunPath, REPO_ROOT);
 const reviewWritten = await writeJson(reviewPath, review, { force, skipExisting: true });
-const packetWritten = await writeText(packetPath, createReviewPacket(run, validation, importedRunPath, reviewPath, packetPath, scanPath, answerQualityScan), {
+const packetWritten = await writeText(packetPath, createReviewPacket(run, validation, importedRunPath, reviewPath, packetPath, scanPath, answerQualityScan, harnessContract), {
 	force,
 	skipExisting: true
 });
@@ -256,7 +259,7 @@ function matchesToolExpectation(expectation, record) {
 	return String(record.args?.sourceSkill ?? '').toLowerCase() === sourceSkill.toLowerCase();
 }
 
-function createReviewPacket(run, validation, importedRunPath, reviewPath, packetPath, scanPath, answerQualityScan) {
+function createReviewPacket(run, validation, importedRunPath, reviewPath, packetPath, scanPath, answerQualityScan, harnessContract) {
 	const sourceEvidenceSummary = summarizeRunSourceEvidence(run.results);
 	const lines = [
 		`# Scout local AI device review: ${run.runId}`,
@@ -283,6 +286,12 @@ function createReviewPacket(run, validation, importedRunPath, reviewPath, packet
 		'',
 		`Valid failure categories: ${(run.failureCategories ?? []).join(', ')}`,
 		`Valid owner layers: ${VALID_OWNER_LAYERS.join(', ')}`,
+		'',
+		'## Independent review gates',
+		'',
+		'Use these as separate passes before giving any answer 5/5. A fluent answer still fails if it misses source grounding, trail math/safety, document-writing confirmation, or proof-lane boundaries.',
+		'',
+		...formatIndependentReviewGates(harnessContract),
 		'',
 		'After filling this packet, run:',
 		'',
@@ -513,6 +522,34 @@ function formatReviewQueueSummary(results) {
 		].map(tableCell).join(' | ').replace(/^/u, '| ').replace(/$/u, ' |'));
 	}
 	return rows;
+}
+
+function formatIndependentReviewGates(contract) {
+	const lines = [];
+	const reviewers = Array.isArray(contract?.independentReviewers) ? contract.independentReviewers : [];
+	if (!reviewers.length) {
+		return [
+			'- Harness contract did not provide independent reviewer definitions. Do not treat this packet as final-proof ready until the contract is restored.'
+		];
+	}
+
+	for (const reviewer of reviewers) {
+		lines.push(`- ${reviewer.id}:`);
+		lines.push(`  - Input: ${reviewer.input ?? '<missing>'}`);
+		lines.push(`  - Checks: ${(reviewer.checks ?? []).join(' | ') || '<missing>'}`);
+		lines.push(`  - Separate from: ${(reviewer.mustBeSeparateFrom ?? []).join(', ') || '<missing>'}`);
+	}
+
+	const gates = Array.isArray(contract?.reviewGates) ? contract.reviewGates : [];
+	if (gates.length) {
+		lines.push('');
+		lines.push('Contract review gates:');
+		for (const gate of gates) {
+			lines.push(`- ${gate.id}: ${gate.rule ?? '<missing>'}`);
+		}
+	}
+
+	return lines;
 }
 
 function reviewQueueSignal(result, sourceEvidenceGaps) {

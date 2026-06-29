@@ -399,6 +399,8 @@ test('README documents device review acceptance states', async () => {
 	assert.match(readme, /answer-quality scan/u);
 	assert.match(readme, /sibling\s+`\.scan\.json` answer-quality scan/u);
 	assert.match(readme, /does not\s+replace reading and rating every answer 1-5/u);
+	assert.match(readme, /embeds the `harness-contract\.json` independent review gates/u);
+	assert.match(readme, /source grounding, trail math\/safety, document-writing confirmation, and\s+proof-lane separation/u);
 	assert.match(readme, /Final Dad\s+readiness still requires all 100 cases rated 5\/5/u);
 });
 
@@ -3488,6 +3490,13 @@ test('device run intake validates exports and creates review packet', async () =
 	assert.match(packet, /\| DLA-\d{3} \| [^|]+ \| [^|]+ \| standard \| tool-routing \| bad-routing, weak-tool \| none \|/u);
 	assert.match(packet, /## Rating scale/u);
 	assert.match(packet, /## Reviewer field choices/u);
+	assert.match(packet, /## Independent review gates/u);
+	assert.match(packet, /source_grounding_reviewer/u);
+	assert.match(packet, /trail_math_reviewer/u);
+	assert.match(packet, /document_writing_reviewer/u);
+	assert.match(packet, /proof_lane_reviewer/u);
+	assert.match(packet, /Contract review gates:/u);
+	assert.match(packet, /strict_testflight_iphone: Final proof requires a full current-suite TestFlight iPhone run with all 100 cases rated 5\/5/u);
 	assert.match(packet, /Do not use the improvement task to weaken the eval rubric/u);
 	assert.match(packet, /Valid failure categories: .*missing-data.*local-model-limitation/u);
 	assert.match(packet, /Valid owner layers: data, tool-routing, prompt, safety-prompt, ui, local-model/u);

@@ -73,6 +73,10 @@ The loop:
    `data/scout-local-ai/answer-quality-scans/<run-id>.scan.json` and embeds that
    scan in the review packet. The scan is the first triage pass in both places;
    it does not replace reading and rating every answer 1-5.
+   The packet also embeds the `harness-contract.json` independent review gates,
+   so source grounding, trail math/safety, document-writing confirmation, and
+   proof-lane separation are checked as separate review passes before any answer
+   can honestly earn 5/5.
 
 4. For quick routing smoke tests without a model, use the default scaffold lane.
    It exercises Scout tools and source routing, but it is not model proof.
