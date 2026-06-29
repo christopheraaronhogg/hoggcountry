@@ -265,7 +265,10 @@ async function buildStatus(paths) {
 			currentPartialLocalPreflightRuns: summarizeRunList(currentPartialLocalPreflightRuns),
 			currentPartialDeviceRuns: summarizeRunList(currentPartialDeviceRuns),
 			currentFullToolCompleteRuns: summarizeRunList(currentFullToolCompleteRuns),
-			byLane: countBy(allRuns, (entry) => entry.value.evidenceLane ?? '<missing>')
+			byLane: countBy(allRuns, (entry) => entry.value.evidenceLane ?? '<missing>'),
+			currentByLane: countBy(currentRuns, (entry) => entry.value.evidenceLane ?? '<missing>'),
+			byModelRuntime: countBy(allRuns, (entry) => modelRuntimeKey(entry.value)),
+			currentByModelRuntime: countBy(currentRuns, (entry) => modelRuntimeKey(entry.value))
 		},
 		reviews: {
 			totalLoaded: reviews.length,
@@ -1597,6 +1600,10 @@ function createStatusMarkdown(status) {
 		'## Current Evidence',
 		'',
 		`- Runs loaded: ${status.runs.totalLoaded} (${status.runs.currentSuiteRuns} current suite)`,
+		`- Proof lanes (all runs): ${formatCounts(status.runs.byLane)}`,
+		`- Proof lanes (current suite): ${formatCounts(status.runs.currentByLane)}`,
+		`- Model/runtime lanes (all runs): ${formatCounts(status.runs.byModelRuntime)}`,
+		`- Model/runtime lanes (current suite): ${formatCounts(status.runs.currentByModelRuntime)}`,
 		`- Full routing/tool-complete runs: ${status.runs.currentFullToolCompleteRuns.length}`,
 		`- Full device runs: ${status.runs.currentFullDeviceRuns.length}`,
 		`- Partial device runs: ${status.runs.currentPartialDeviceRuns.length}`,
@@ -1700,6 +1707,32 @@ function answerQualityEvidenceLines(status) {
 		lines.push(`- Top answer-quality cases: ${scan.topFlagged.map((item) => `${item.caseId} (${item.checks.join(', ')})`).join('; ')}`);
 	}
 	return lines;
+}
+
+function modelRuntimeKey(run) {
+	const firstResult = run?.results?.[0] ?? {};
+	const isScaffold = run?.evidenceLane === SCAFFOLD_EVIDENCE_LANE || firstResult.answerOrigin === SCAFFOLD_EVIDENCE_LANE;
+	const modelId = isScaffold ? SCAFFOLD_EVIDENCE_LANE : (run?.runContext?.modelId ?? run?.modelId);
+	const mode = isScaffold ? 'scaffold' : (firstResult.mode ?? run?.mode);
+	const provider = isScaffold ? SCAFFOLD_EVIDENCE_LANE : (firstResult.provider ?? run?.provider ?? firstResult.answerOrigin);
+	const installType = run?.runContext?.installSource?.type ?? run?.app?.installType;
+	return [
+		normalizeStatusFacet(modelId, '<missing model>'),
+		normalizeStatusFacet(mode, '<missing mode>'),
+		normalizeStatusFacet(provider, '<missing provider>'),
+		normalizeStatusFacet(installType, '<missing install>')
+	].join(' / ');
+}
+
+function normalizeStatusFacet(value, fallback) {
+	const text = String(value ?? '').trim();
+	return text || fallback;
+}
+
+function formatCounts(counts) {
+	const entries = Object.entries(counts ?? {});
+	if (!entries.length) return '<none>';
+	return entries.map(([key, value]) => `${key}=${value}`).join(', ');
 }
 
 function resolveInputPath(value) {

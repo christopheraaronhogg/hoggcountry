@@ -618,6 +618,9 @@ test('status command keeps routing proof separate from missing device proof', as
 	assert.match(gates['testflight-target'].evidence, /Target build is available for Dad/u);
 	assert.match(gates['testflight-target'].evidence, new RegExp(`current suite ${escapeRegExp(suite.version)}`, 'u'));
 	assert.match(gates['testflight-target'].evidence, new RegExp(`Dad Pilot records ${escapeRegExp(CURRENT_IOS_TARGET_BUILD)}`, 'u'));
+	assert.equal(status.runs.byLane['scaffold-not-model'], 1);
+	assert.equal(status.runs.currentByLane['scaffold-not-model'], 1);
+	assert.equal(status.runs.currentByModelRuntime['scaffold-not-model / scaffold / scaffold-not-model / <missing install>'], 1);
 	assert.equal(status.inbox.exists, true);
 	assert.equal(status.inbox.jsonFileCount, 2);
 	assert.equal(status.inbox.candidateCount, 1);
@@ -666,6 +669,8 @@ test('status command keeps routing proof separate from missing device proof', as
 		],
 		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
 	);
+	assert.match(textResult.stdout, /Proof lanes \(current suite\): scaffold-not-model=1/u);
+	assert.match(textResult.stdout, /Model\/runtime lanes \(current suite\): scaffold-not-model \/ scaffold \/ scaffold-not-model \/ <missing install>=1/u);
 	assert.match(textResult.stdout, /Latest inbox handoff: Final Run 100 JSON ready for inbox review \(final-review-ready\)/u);
 	assert.match(textResult.stdout, /Latest inbox boundary: This starts human review only/u);
 });
@@ -1400,6 +1405,7 @@ test('status command treats clean simulator local AI runs as preflight, not fina
 	assert.equal(status.localPreflight.latestFullRun.runId, 'simulator-clean-local-preflight');
 	assert.equal(status.localPreflight.latestFullRun.answerQuality.status, 'clean');
 	assert.match(status.localPreflight.latestProofMismatch, /install=debug, expected testflight/u);
+	assert.equal(status.runs.currentByModelRuntime['gemma-3n-E4B-it-int4 / on-device / on-device-gemma / debug'], 1);
 	assert.equal(status.runs.currentFullLocalPreflightRuns.length, 1);
 	assert.equal(status.runs.currentFullFinalProofDeviceRuns.length, 0);
 	assert.equal(status.runs.currentFullNonFinalProofDeviceRuns.length, 1);
@@ -1421,6 +1427,7 @@ test('status command treats clean simulator local AI runs as preflight, not fina
 		],
 		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
 	);
+	assert.match(textResult.stdout, /Model\/runtime lanes \(current suite\): gemma-3n-E4B-it-int4 \/ on-device \/ on-device-gemma \/ debug=1/u);
 	assert.match(textResult.stdout, /Simulator\/debug local preflight: clean; full runs 1, partial runs 0/u);
 	assert.match(textResult.stdout, /Simulator\/debug local preflight boundary: simulator\/debug local preflight drives iteration but does not replace final TestFlight\/iPhone proof/u);
 	assert.match(textResult.stdout, /Simulator\/debug local final-proof mismatch: simulator-clean-local-preflight \(install=debug, expected testflight\)/u);
