@@ -252,9 +252,13 @@ npm run inspect:scout-local-ai-device-run -- --run ~/Downloads/<device-run>.json
 
 The inspector is read-only. It classifies the export as final-intake ready,
 partial/smoke diagnostic, stale-suite, wrong proof context, or invalid, then
-prints the exact next command. Use it first when a shared JSON arrives so a
-debug build, stale suite, interrupted `Run 100`, or wrong-lane export does not
-turn into wasted review work.
+prints the exact next command. Its `Review gate` / `Primary blocker` diagnosis
+is the first triage line to read: `final-review-ready` can move into human
+rating, `diagnostic-only` needs explicit `--allow-partial`, and
+`blocked-before-review` should be rerun or fixed before any review files are
+created. Use it first when a shared JSON arrives so a debug build, stale suite,
+interrupted `Run 100`, or wrong-lane export does not turn into wasted review
+work.
 
 For the normal Dad JSON handoff, save or drag the shared iPhone JSON into
 `data/scout-local-ai/inbox/` and run:
@@ -289,7 +293,10 @@ npm run receive:scout-local-ai-device-run -- --input ~/Downloads/<device-run>.js
 
 Use `--no-prepare` when you only want to save and inspect the export. Partial or
 wrong-context exports are saved for diagnosis, but they do not create review
-files unless `--allow-partial` is explicit.
+files unless `--allow-partial` is explicit. The receiver's report carries the
+same gate diagnosis as the read-only inspector so a saved-but-blocked export
+still says whether the blocker is stale suite, wrong proof context, malformed
+data, or a partial run.
 
 If you are waiting on Dad to send the file, leave the guarded watcher running:
 

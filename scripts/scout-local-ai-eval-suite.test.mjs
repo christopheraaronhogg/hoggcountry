@@ -2587,6 +2587,9 @@ test('device run inspector classifies full and partial TestFlight exports before
 	assert.equal(fullReport.status, 'ready-for-final-intake');
 	assert.equal(fullReport.readyForFinalIntake, true);
 	assert.equal(fullReport.readyForPartialIntake, false);
+	assert.equal(fullReport.gateDiagnosis.reviewGate, 'final-review-ready');
+	assert.equal(fullReport.gateDiagnosis.primaryBlocker, null);
+	assert.match(fullReport.gateDiagnosis.nextHumanAction, /Start human review/u);
 	assert.match(fullReport.nextCommand, /npm run intake:scout-local-ai-device-run/u);
 	assert.doesNotMatch(fullReport.nextCommand, /--allow-partial/u);
 	assert.equal(fullReport.run.appBuild, '13');
@@ -2610,6 +2613,8 @@ test('device run inspector classifies full and partial TestFlight exports before
 	);
 	assert.match(fullTextResult.stdout, /Handoff: Final Run 100 JSON ready for inbox review \(final-review-ready\)/u);
 	assert.match(fullTextResult.stdout, /Handoff command: npm run prepare-review:scout-local-ai-device-run -- --run inbox/u);
+	assert.match(fullTextResult.stdout, /Review gate: final-review-ready/u);
+	assert.match(fullTextResult.stdout, /Primary blocker: none/u);
 
 	const partialResult = await execFileAsync(
 		process.execPath,
@@ -2625,6 +2630,9 @@ test('device run inspector classifies full and partial TestFlight exports before
 	assert.equal(partialReport.status, 'partial-diagnostic');
 	assert.equal(partialReport.readyForFinalIntake, false);
 	assert.equal(partialReport.readyForPartialIntake, true);
+	assert.equal(partialReport.gateDiagnosis.reviewGate, 'diagnostic-only');
+	assert.equal(partialReport.gateDiagnosis.primaryBlocker, 'partial-run');
+	assert.match(partialReport.gateDiagnosis.nextHumanAction, /allow-partial/u);
 	assert.match(partialReport.nextCommand, /--allow-partial/u);
 	assert.equal(partialReport.run.caseCount, 12);
 	assert.equal(partialReport.run.executionId, 'fixture-scout-eval-device-inspect-partial');
@@ -2691,6 +2699,10 @@ test('device run inspector rejects stale or wrong-context exports before review 
 	const staleReport = JSON.parse(staleResult.stdout);
 	assert.equal(staleReport.status, 'stale-suite');
 	assert.equal(staleReport.nextCommand, null);
+	assert.equal(staleReport.gateDiagnosis.reviewGate, 'blocked-before-review');
+	assert.equal(staleReport.gateDiagnosis.primaryBlocker, 'stale-suite');
+	assert.equal(staleReport.gateDiagnosis.reasonCounts.staleSuite, 2);
+	assert.match(staleReport.gateDiagnosis.nextHumanAction, /current suite-compatible TestFlight build/u);
 	assert.match(staleReport.staleReasons.join('\n'), /run\.suiteVersion/u);
 	assert.match(staleReport.staleReasons.join('\n'), /run\.suiteHash/u);
 
@@ -2708,6 +2720,10 @@ test('device run inspector rejects stale or wrong-context exports before review 
 	assert.equal(wrongBuildReport.status, 'wrong-proof-context');
 	assert.equal(wrongBuildReport.readyForFinalIntake, false);
 	assert.equal(wrongBuildReport.nextCommand, null);
+	assert.equal(wrongBuildReport.gateDiagnosis.reviewGate, 'blocked-before-review');
+	assert.equal(wrongBuildReport.gateDiagnosis.primaryBlocker, 'wrong-proof-context');
+	assert.equal(wrongBuildReport.gateDiagnosis.reasonCounts.proofContext, 1);
+	assert.match(wrongBuildReport.gateDiagnosis.nextHumanAction, /real TestFlight iPhone/u);
 	assert.match(wrongBuildReport.contextProblems.join('\n'), /app\.build must be >= 13/u);
 
 	const mixedOriginResult = await execFileAsync(
@@ -2724,6 +2740,7 @@ test('device run inspector rejects stale or wrong-context exports before review 
 	assert.equal(mixedOriginReport.status, 'wrong-proof-context');
 	assert.equal(mixedOriginReport.readyForFinalIntake, false);
 	assert.equal(mixedOriginReport.nextCommand, null);
+	assert.equal(mixedOriginReport.gateDiagnosis.primaryBlocker, 'wrong-proof-context');
 	assert.match(mixedOriginReport.contextProblems.join('\n'), /answerOrigin must match run\.evidenceLane device-on-device-gemma/u);
 
 	const cloudModeResult = await execFileAsync(
@@ -2740,6 +2757,7 @@ test('device run inspector rejects stale or wrong-context exports before review 
 	assert.equal(cloudModeReport.status, 'wrong-proof-context');
 	assert.equal(cloudModeReport.readyForFinalIntake, false);
 	assert.equal(cloudModeReport.nextCommand, null);
+	assert.equal(cloudModeReport.gateDiagnosis.primaryBlocker, 'wrong-proof-context');
 	assert.match(cloudModeReport.contextProblems.join('\n'), /mode must be on-device for device-on-device-gemma/u);
 	assert.match(cloudModeReport.contextProblems.join('\n'), /provider must be on-device-gemma for device-on-device-gemma/u);
 });
@@ -2783,6 +2801,8 @@ test('device review preparation command inspects, imports, and reports review st
 	assert.equal(report.imported, true);
 	assert.equal(report.partial, false);
 	assert.equal(report.inspection.status, 'ready-for-final-intake');
+	assert.equal(report.inspection.gateDiagnosis.reviewGate, 'final-review-ready');
+	assert.equal(report.inspection.gateDiagnosis.primaryBlocker, null);
 	assert.equal(report.acceptance.status, 'final-review-ready');
 	assert.equal(report.acceptance.finalReviewCanStart, true);
 	assert.equal(report.acceptance.diagnosticOnly, false);
@@ -2839,6 +2859,8 @@ test('device review preparation command inspects, imports, and reports review st
 		],
 		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 12 }
 	);
+	assert.match(textResult.stdout, /Review gate: final-review-ready/u);
+	assert.match(textResult.stdout, /Primary blocker: none/u);
 	assert.match(textResult.stdout, /## Review Acceptance/u);
 	assert.match(textResult.stdout, /Status: final-review-ready/u);
 	assert.match(textResult.stdout, /Final human review can start: yes/u);
@@ -2894,6 +2916,8 @@ test('device run receive command saves pasted JSON and prepares final review', a
 	assert.match(report.inbox.path, /inbox\/device-receive-final\.json$/u);
 	assert.equal(report.inbox.alreadyExisted, false);
 	assert.equal(report.inspection.status, 'ready-for-final-intake');
+	assert.equal(report.inspection.gateDiagnosis.reviewGate, 'final-review-ready');
+	assert.equal(report.inspection.gateDiagnosis.primaryBlocker, null);
 	assert.equal(report.prepare.status, 'prepared-for-final-review');
 	assert.match(report.nextAction, /review-status:scout-local-ai/u);
 	assert.match(report.nextAction, /--next/u);
@@ -2993,6 +3017,9 @@ test('device run receive command saves blocked exports without preparing review 
 	assert.equal(report.status, 'saved-blocked-before-review');
 	assert.equal(report.input.mode, 'file');
 	assert.equal(report.inspection.status, 'wrong-proof-context');
+	assert.equal(report.inspection.gateDiagnosis.reviewGate, 'blocked-before-review');
+	assert.equal(report.inspection.gateDiagnosis.primaryBlocker, 'wrong-proof-context');
+	assert.match(report.inspection.gateDiagnosis.nextHumanAction, /real TestFlight iPhone/u);
 	assert.equal(report.prepare, null);
 	assert.match(report.nextAction, /blocked export/u);
 	assert.equal(inboxRun.runId, run.runId);
@@ -3479,6 +3506,8 @@ test('device review preparation command refuses stale and implicit partial expor
 			assert.equal(report.acceptance.status, 'blocked-before-review');
 			assert.equal(report.acceptance.finalReviewCanStart, false);
 			assert.equal(report.acceptance.diagnosticOnly, false);
+			assert.equal(report.inspection.gateDiagnosis.reviewGate, 'blocked-before-review');
+			assert.equal(report.inspection.gateDiagnosis.primaryBlocker, 'stale-suite');
 			assert.match(report.inspection.staleReasons.join('\n'), /run\.suiteVersion/u);
 			return true;
 		}
@@ -3508,6 +3537,8 @@ test('device review preparation command refuses stale and implicit partial expor
 			assert.equal(report.imported, false);
 			assert.equal(report.acceptance.status, 'blocked-before-review');
 			assert.equal(report.acceptance.finalReviewCanStart, false);
+			assert.equal(report.inspection.gateDiagnosis.reviewGate, 'diagnostic-only');
+			assert.equal(report.inspection.gateDiagnosis.primaryBlocker, 'partial-run');
 			assert.match(report.nextAction, /--allow-partial/u);
 			return true;
 		}

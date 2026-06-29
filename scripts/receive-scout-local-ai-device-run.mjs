@@ -192,6 +192,8 @@ function formatReport(report) {
 		`- Inspection: ${report.inspection.status}`,
 		`- Run: ${report.inspection.run.runId}`,
 		`- Cases: ${report.inspection.run.caseCount}/${report.inspection.suite.caseCount}`,
+		`- Review gate: ${report.inspection.gateDiagnosis?.reviewGate ?? '<missing>'}`,
+		`- Primary blocker: ${report.inspection.gateDiagnosis?.primaryBlocker ?? 'none'}`,
 		`- Prepare status: ${report.prepare?.status ?? 'not run'}`,
 		'',
 		'## Next action',

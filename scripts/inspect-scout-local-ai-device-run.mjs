@@ -54,6 +54,15 @@ function formatReport(report) {
 		''
 	];
 
+	if (report.gateDiagnosis) {
+		lines.push(
+			`- Review gate: ${report.gateDiagnosis.reviewGate}`,
+			`- Primary blocker: ${report.gateDiagnosis.primaryBlocker ?? 'none'}`,
+			`- Gate action: ${report.gateDiagnosis.nextHumanAction}`,
+			''
+		);
+	}
+
 	if (report.handoff) {
 		lines.push(
 			`- Handoff: ${report.handoff.label} (${report.handoff.expectedAcceptanceStatus})`,

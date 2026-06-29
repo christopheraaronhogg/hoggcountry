@@ -356,6 +356,9 @@ function formatReport(report) {
 		`Inspection status: ${report.inspection.status}`,
 		`Ready for final intake: ${report.inspection.readyForFinalIntake ? 'yes' : 'no'}`,
 		`Ready for partial intake: ${report.inspection.readyForPartialIntake ? 'yes' : 'no'}`,
+		`Review gate: ${report.inspection.gateDiagnosis?.reviewGate ?? '<missing>'}`,
+		`Primary blocker: ${report.inspection.gateDiagnosis?.primaryBlocker ?? 'none'}`,
+		`Gate action: ${report.inspection.gateDiagnosis?.nextHumanAction ?? '<missing>'}`,
 		''
 	];
 	if (report.paths) {

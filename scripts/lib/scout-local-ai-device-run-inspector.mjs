@@ -198,6 +198,18 @@ function buildReport({
 		: readyForPartialIntake
 			? `npm run intake:scout-local-ai-device-run -- --run ${runArg} --allow-partial`
 			: null;
+	const gateDiagnosis = buildGateDiagnosis({
+		status,
+		readyForFinalIntake,
+		readyForPartialIntake,
+		structuralErrors,
+		staleReasons,
+		contextProblems,
+		warnings,
+		sourceEvidenceSummary,
+		caseCount,
+		totalSuiteCases
+	});
 	return {
 		schemaVersion: 1,
 		generatedAt: new Date().toISOString(),
@@ -205,6 +217,7 @@ function buildReport({
 		readyForFinalIntake,
 		readyForPartialIntake,
 		nextCommand,
+		gateDiagnosis,
 		inputPath: formatPathForDisplay(inputPath),
 		run: {
 			runId: run?.runId ?? '<missing>',
@@ -241,6 +254,83 @@ function buildReport({
 		warnings: warnings.slice(0, 40),
 		warningCount: warnings.length
 	};
+}
+
+function buildGateDiagnosis({
+	status,
+	readyForFinalIntake,
+	readyForPartialIntake,
+	structuralErrors,
+	staleReasons,
+	contextProblems,
+	warnings,
+	sourceEvidenceSummary,
+	caseCount,
+	totalSuiteCases
+}) {
+	const warningText = warnings.join('\n');
+	const missingToolWarningCount = (warningText.match(/actual toolInvocations missed required tools/gu) ?? []).length;
+	const reasonCounts = {
+		structuralErrors: structuralErrors.length,
+		staleSuite: staleReasons.length,
+		proofContext: contextProblems.length,
+		warnings: warnings.length,
+		missingRequiredToolCases: missingToolWarningCount,
+		missingSourceEvidenceCases: sourceEvidenceSummary.missingSourceEvidenceCases ?? 0
+	};
+	if (readyForFinalIntake) {
+		return {
+			reviewGate: 'final-review-ready',
+			primaryBlocker: null,
+			status,
+			fullRun: true,
+			reasonCounts,
+			nextHumanAction: 'Start human review, then require all 100 ratings at 5/5 before strict device proof.'
+		};
+	}
+	if (readyForPartialIntake) {
+		return {
+			reviewGate: 'diagnostic-only',
+			primaryBlocker: 'partial-run',
+			status,
+			fullRun: false,
+			reasonCounts,
+			nextHumanAction: 'Use --allow-partial only for diagnostics, or finish Run 100 on the TestFlight iPhone for final review.'
+		};
+	}
+	const primaryBlocker = staleReasons.length
+		? 'stale-suite'
+		: contextProblems.length
+			? 'wrong-proof-context'
+			: structuralErrors.length
+				? 'invalid-export'
+				: caseCount < totalSuiteCases
+					? 'partial-run'
+					: 'blocked-export';
+	return {
+		reviewGate: 'blocked-before-review',
+		primaryBlocker,
+		status,
+		fullRun: totalSuiteCases > 0 && caseCount >= totalSuiteCases,
+		reasonCounts,
+		nextHumanAction: nextHumanActionForBlocker(primaryBlocker)
+	};
+}
+
+function nextHumanActionForBlocker(primaryBlocker) {
+	if (primaryBlocker === 'stale-suite') {
+		return 'Rerun Run 100 from the current suite-compatible TestFlight build before review starts.';
+	}
+	if (primaryBlocker === 'wrong-proof-context') {
+		return 'Rerun from the real TestFlight iPhone Eval Lab path; simulator, debug, web, cloud, or old-build exports cannot become final proof.';
+	}
+	if (primaryBlocker === 'partial-run') {
+		return 'Finish the full 100-case run on the TestFlight iPhone, or use --allow-partial only for diagnostics.';
+	}
+	if (primaryBlocker === 'invalid-export') {
+		return 'Share the complete Scout Eval Lab JSON export again; do not create review files from malformed or mismatched data.';
+	}
+	return 'Fix the export or rerun Scout Eval Lab before importing review files.';
 }
 
 function evaluateToolExpectations(requiredTools, invocations) {
