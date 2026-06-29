@@ -1641,6 +1641,14 @@ test('status command marks simulator local AI preflight stale after relevant sou
 	assert.match(status.nextAction.text, /eval:scout-local-ai:ios-sim-gemma -- --limit 100/u);
 });
 
+test('status command does not stale simulator preflight for TestFlight upload helper changes', async () => {
+	const statusScript = await readFile(new URL('status-scout-local-ai.mjs', import.meta.url), 'utf8');
+
+	assert.match(statusScript, /LOCAL_PREFLIGHT_IGNORED_SOURCE_PATHS/u);
+	assert.match(statusScript, /mobile\/scripts\/ios-testflight\.mjs/u);
+	assert.match(statusScript, /LOCAL_PREFLIGHT_IGNORED_SOURCE_PATHS\.has\(normalized\)/u);
+});
+
 test('status command recognizes repeated strict TestFlight iPhone proof candidates', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-device-'));

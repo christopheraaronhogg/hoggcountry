@@ -65,6 +65,9 @@ const DEVICE_RECEIVE_STDIN_COMMAND = 'npm run receive:scout-local-ai-device-run 
 const REVIEW_STATUS_COMMAND = 'npm run review-status:scout-local-ai';
 const FINALIZE_REVIEW_COMMAND = 'npm run finalize-review:scout-local-ai';
 const REVIEW_PACKET_DIR = 'data/scout-local-ai/review-packets';
+const LOCAL_PREFLIGHT_IGNORED_SOURCE_PATHS = new Set([
+	'mobile/scripts/ios-testflight.mjs'
+]);
 
 const cli = parseCliArgs(process.argv.slice(2));
 
@@ -900,6 +903,7 @@ function parseGitNameOnlyLog(text) {
 function isLocalPreflightSourcePath(path) {
 	const normalized = String(path ?? '').trim();
 	if (!normalized) return false;
+	if (LOCAL_PREFLIGHT_IGNORED_SOURCE_PATHS.has(normalized)) return false;
 	if (isNativeAppSourcePath(normalized)) return true;
 	if (normalized === DEFAULT_SUITE || normalized === DEFAULT_MOBILE_SUITE) return true;
 	if (/^scripts\/run-scout-(?:local-ai|ios-sim-gemma)-eval\.mjs$/u.test(normalized)) return true;
