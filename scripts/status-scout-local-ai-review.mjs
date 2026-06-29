@@ -120,6 +120,7 @@ function buildReviewProgress({ suite, run, review, packetDraft, selectedCaseId, 
 			caseId: result.caseId,
 			domain: result.case?.domain ?? entry.domain ?? '<missing>',
 			phase: result.case?.phase ?? entry.phase ?? '<missing>',
+			documentTask: result.case?.documentTask ?? entry.documentTask ?? '<missing>',
 			signal,
 			signalRank: signalRank(signal),
 			rating,
@@ -278,6 +279,7 @@ function buildSelectedCase({ caseId, run, reviewByCaseId, queue, paths }) {
 		index: result.index ?? queueEntry.index ?? null,
 		domain: result.case?.domain ?? reviewEntry.domain ?? '<missing>',
 		phase: result.case?.phase ?? reviewEntry.phase ?? '<missing>',
+		documentTask: result.case?.documentTask ?? reviewEntry.documentTask ?? queueEntry.documentTask ?? '<missing>',
 		prompt: result.case?.prompt ?? reviewEntry.prompt ?? '',
 		answer: result.answer ?? result.error ?? '',
 		answerOrigin: result.answerOrigin ?? reviewEntry.answerOrigin ?? '',
@@ -484,12 +486,14 @@ function summarizeReviewTriage(queue) {
 		unrated: focus.filter((item) => item.unrated).length,
 		belowFive: focus.filter((item) => item.belowFive).length,
 		signals: countValues(focus.map((item) => item.signal)),
+		documentTasks: countValues(focus.map((item) => item.documentTask || 'unknown')),
 		ownerLayers: countValues(focus.map((item) => item.triageOwnerLayer || 'unknown')),
 		failureCategories: countValues(focus.flatMap((item) => item.triageFailureCategories.length ? item.triageFailureCategories : ['none'])),
 		missingTools: countValues(focus.flatMap((item) => item.missingTools ?? [])),
 		sourceEvidence: countValues(focus.flatMap((item) => item.sourceEvidenceGapExpectations ?? [])),
 		topFocusCases: focus.slice(0, 5).map((item) => ({
 			caseId: item.caseId,
+			documentTask: item.documentTask,
 			signal: item.signal,
 			ownerLayer: item.triageOwnerLayer || 'unknown',
 			failureCategories: item.triageFailureCategories,
@@ -625,6 +629,7 @@ function formatReviewProgress(progress) {
 		lines.push(
 			`- Focus cases: ${progress.triageSummary.focusCount} (${progress.triageSummary.unrated} unrated, ${progress.triageSummary.belowFive} below 5)`,
 			`- Signals: ${formatCountMap(progress.triageSummary.signals)}`,
+			`- Document tasks: ${formatCountMap(progress.triageSummary.documentTasks)}`,
 			`- Likely owner layers: ${formatCountMap(progress.triageSummary.ownerLayers)}`,
 			`- Failure categories: ${formatCountMap(progress.triageSummary.failureCategories)}`,
 			`- Missing tools: ${formatCountMap(progress.triageSummary.missingTools)}`,
@@ -658,13 +663,14 @@ function formatReviewProgress(progress) {
 	}
 
 	lines.push('## Review queue', '');
-	lines.push('| Case | Rating | Signal | Likely owner | Suggested categories | Evidence gaps | Domain | Prompt preview | Answer preview |');
-	lines.push('| --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+	lines.push('| Case | Rating | Signal | Document task | Likely owner | Suggested categories | Evidence gaps | Domain | Prompt preview | Answer preview |');
+	lines.push('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
 	for (const item of progress.reviewQueue.slice(0, 25)) {
 		lines.push([
 			item.caseId,
 			displayRating(item.rating),
 			item.signal,
+			item.documentTask,
 			item.suggestedOwnerLayer,
 			item.suggestedFailureCategories.join(', ') || 'none',
 			item.evidenceGapSummary,
@@ -674,7 +680,7 @@ function formatReviewProgress(progress) {
 		].map(tableCell).join(' | ').replace(/^/u, '| ').replace(/$/u, ' |'));
 	}
 	if (progress.reviewQueue.length > 25) {
-		lines.push(`| ... | ... | ... | ... | ... | ... | ... | ... | ${progress.reviewQueue.length - 25} more cases |`);
+		lines.push(`| ... | ... | ... | ... | ... | ... | ... | ... | ... | ${progress.reviewQueue.length - 25} more cases |`);
 	}
 	lines.push('');
 
@@ -687,6 +693,7 @@ function formatSelectedCase(selected) {
 		'',
 		`- Domain: ${selected.domain}`,
 		`- Phase: ${selected.phase}`,
+		`- Document task: ${selected.documentTask}`,
 		`- Rating: ${displayRating(selected.rating)}`,
 		`- Signal: ${selected.signal}`,
 		`- Suggested owner: ${selected.suggestedOwnerLayer || 'unknown'}`,

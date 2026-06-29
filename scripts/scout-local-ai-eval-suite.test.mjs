@@ -5621,6 +5621,7 @@ test('review status queue surfaces owner layer and evidence gaps for iteration t
 	const firstQueueItem = progress.reviewQueue[0];
 
 	assert.equal(firstQueueItem.caseId, run.results[0].caseId);
+	assert.equal(firstQueueItem.documentTask, run.results[0].case.documentTask);
 	assert.equal(firstQueueItem.signal, 'review-first: missing required tools');
 	assert.equal(firstQueueItem.suggestedOwnerLayer, 'tool-routing');
 	assert.deepEqual(firstQueueItem.suggestedFailureCategories, ['bad-routing', 'weak-tool']);
@@ -5629,6 +5630,7 @@ test('review status queue surfaces owner layer and evidence gaps for iteration t
 	assert.match(firstQueueItem.answerPreview, new RegExp(`device answer for ${run.results[0].caseId}`, 'u'));
 	assert.equal(progress.triageSummary.focusCount, 2);
 	assert.equal(progress.triageSummary.signals['review-first: missing required tools'], 2);
+	assert.equal(progress.triageSummary.documentTasks[run.results[0].case.documentTask], 2);
 	assert.equal(progress.triageSummary.ownerLayers['tool-routing'], 2);
 	assert.equal(progress.triageSummary.failureCategories['bad-routing'], 2);
 	assert.equal(progress.triageSummary.failureCategories['weak-tool'], 2);
@@ -5649,6 +5651,7 @@ test('review status queue surfaces owner layer and evidence gaps for iteration t
 	assert.match(textResult.stdout, /## Triage summary/u);
 	assert.match(textResult.stdout, /Focus cases: 2 \(2 unrated, 0 below 5\)/u);
 	assert.match(textResult.stdout, /Signals: review-first: missing required tools=2/u);
+	assert.match(textResult.stdout, /Document tasks: reading=2/u);
 	assert.match(textResult.stdout, /Likely owner layers: tool-routing=2/u);
 	assert.match(textResult.stdout, /Likely owner/u);
 	assert.match(textResult.stdout, /Suggested categories/u);
@@ -5743,6 +5746,7 @@ test('review status command can print a focused case review card', async () => {
 	assert.equal(progress.selectedCase.caseId, selectedCaseId);
 	assert.equal(progress.selectedCase.prompt, run.results[1].case.prompt);
 	assert.equal(progress.selectedCase.answer, run.results[1].answer);
+	assert.equal(progress.selectedCase.documentTask, run.results[1].case.documentTask);
 	assert.equal(progress.selectedCase.rating, 4);
 	assert.equal(progress.selectedCase.reviewOwnerLayer, 'tool-routing');
 	assert.deepEqual(progress.selectedCase.reviewFailureCategories, ['bad-routing']);
@@ -5769,6 +5773,7 @@ test('review status command can print a focused case review card', async () => {
 	);
 
 	assert.match(textResult.stdout, new RegExp(`## Selected case: ${selectedCaseId}`, 'u'));
+	assert.match(textResult.stdout, new RegExp(`Document task: ${run.results[1].case.documentTask}`, 'u'));
 	assert.match(textResult.stdout, /### Prompt/u);
 	assert.match(textResult.stdout, new RegExp(run.results[1].case.prompt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'u'));
 	assert.match(textResult.stdout, /### Answer/u);
