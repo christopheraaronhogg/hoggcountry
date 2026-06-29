@@ -239,6 +239,7 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 	const completedGates = status.gates.filter((gate) => gate.ok).length;
 	const totalGates = status.gates.length;
 	const suiteRequiredBuild = status.suite?.finalProof?.requiredApp ?? '<unknown>';
+	const latestSourceUpload = latestSourceUploadTarget({ status, iosBuild });
 	const dadProofMatchesTarget = latestDadBuildProof?.targetBuild === targetBuild;
 	const dadProofLabel = dadProofMatchesTarget ? 'Dad target-build proof' : 'Latest Dad Pilot proof';
 	const dadGateLabel = dadProofMatchesTarget ? 'Dad target-build gates' : 'Latest Dad Pilot gates';
@@ -382,11 +383,13 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		'  --asc-issuer-id <issuer-id>',
 		'```',
 		'',
-		'After upload/processing, refresh Dad Pilot proof from App Store Connect:',
+		latestSourceUpload.requiresBump
+			? `After bumping \`CURRENT_PROJECT_VERSION\` to \`${latestSourceUpload.buildNumber}\`, uploading, and processing, refresh Dad Pilot proof from App Store Connect:`
+			: 'After upload/processing, refresh Dad Pilot proof from App Store Connect:',
 		'',
 		'```sh',
-		`npm run refresh:testflight-dad-pilot -- --build ${iosBuild.buildNumber} --app-version ${iosBuild.marketingVersion}`,
-		`npm run refresh:testflight-dad-pilot -- --build ${iosBuild.buildNumber} --app-version ${iosBuild.marketingVersion} --attach --submit-review --remove-previous --update-release-evidence`,
+		`npm run refresh:testflight-dad-pilot -- --build ${latestSourceUpload.buildNumber} --app-version ${latestSourceUpload.marketingVersion}`,
+		`npm run refresh:testflight-dad-pilot -- --build ${latestSourceUpload.buildNumber} --app-version ${latestSourceUpload.marketingVersion} --attach --submit-review --remove-previous --update-release-evidence`,
 		'```',
 		'',
 		'## Phone run steps',
@@ -496,6 +499,24 @@ function nativeSourceBoundary(status) {
 		return 'current checkout differs from the latest native upload; treat latest-source phone proof as unverified until the next upload/refresh';
 	}
 	return 'latest native upload source is unknown';
+}
+
+function latestSourceUploadTarget({ status, iosBuild }) {
+	const buildNumber = String(iosBuild.buildNumber ?? '<missing>');
+	const marketingVersion = String(iosBuild.marketingVersion ?? '<missing>');
+	if (status.nativeSource?.nativeAppSourceNewerThanLatestNativeUpload && status.testflight?.targetBuildReadyForDad) {
+		const numericBuild = Number.parseInt(buildNumber, 10);
+		return {
+			requiresBump: true,
+			buildNumber: Number.isFinite(numericBuild) ? String(numericBuild + 1) : '<bumped-build-number>',
+			marketingVersion
+		};
+	}
+	return {
+		requiresBump: false,
+		buildNumber,
+		marketingVersion
+	};
 }
 
 function localPreflightHandoffLines(status) {

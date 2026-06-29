@@ -1,6 +1,6 @@
 # Dad Scout local AI Eval Lab handoff
 
-Generated at: 2026-06-29T02:54:58.559Z
+Generated at: 2026-06-29T04:10:53.752Z
 
 ## Current truth
 
@@ -16,12 +16,12 @@ Generated at: 2026-06-29T02:54:58.559Z
 - Dad target-build gates: 5/5 checked; targetReadyForDad yes.
 - Latest local target prep: `docs/launch/proof/ios-testflight-build-28-prep-current-suite-2026-06-29.md` (1.0 (28), checked 2026-06-29T00:44:40Z; not App Store Connect proof).
 - Newer Xcode target pending App Store Connect: no.
-- Current checkout SHA: `dbcfe3621c9775c8435668b820b7777b58f7a8ee`.
+- Current checkout SHA: `3e204af58cdc9527985fb7e05955ba29cf1ae582`.
 - Latest native upload source: `docs/launch/proof/ios-testflight-attempt-2026-06-29T02-32-57-955Z.md` (repo SHA `dbcfe3621c9775c8435668b820b7777b58f7a8ee` from `.scout-artifacts/ios-testflight/2026-06-29T02-32-57-955Z/01-repo-sha.log`).
 - Latest native upload attempt: `docs/launch/proof/ios-testflight-attempt-2026-06-29T02-32-57-955Z.md` (passed, upload requested yes, checked 2026-06-29T02:34:14.045Z).
-- Current checkout newer than latest native upload: no.
-- Current native app source newer than latest native upload: no.
-- Imported full device runs: 6.
+- Current checkout newer than latest native upload: yes.
+- Current native app source newer than latest native upload: yes.
+- Imported full device runs: 8.
 - Imported partial device runs: 0.
 - Imported suite-compatible full device runs: 0.
 - Imported suite-compatible partial device runs: 0.
@@ -35,27 +35,27 @@ Generated at: 2026-06-29T02:54:58.559Z
 
 - Use now: install/update the latest Dad Pilot TestFlight target `1.0 (29)`.
 - Latest-code target: `1.0 (29)` is recorded in Dad Pilot and meets `1.0 (>= 13)`.
-- Latest-source proof: latest native upload contains the current checkout.
+- Latest-source proof: current checkout is newer than the latest native upload; Dad can still run a suite-compatible build now, but latest-source phone proof needs a fresh bumped-build upload and Dad Pilot refresh.
 - Do not count as final proof until: Run 100 is imported from a TestFlight/iPhone export, reviewed 100/100 at 5/5, and strict/stability proof passes.
 
 ## Main local test method
 
 - Main local iteration lane: iPhone Simulator Gemma on the Mac mini (`npm run eval:scout-local-ai:ios-sim-gemma -- --limit 100`).
 - Current simulator preflight: clean.
-- Simulator preflight evidence: Latest simulator/debug local preflight device-local-ai-20260629T023753Z is clean: 100/100 cases, complete tools/source evidence, app 1.0 (29), install=debug, model=gemma-4-E2B-it-litert-lm.
-- Simulator full runs: 6; partial runs: 0.
+- Simulator preflight evidence: Latest simulator/debug local preflight device-local-ai-20260629T035051Z is clean: 100/100 cases, complete tools/source evidence, app 1.0 (29), install=debug, model=gemma-4-E2B-it-litert-lm.
+- Simulator full runs: 8; partial runs: 0.
 - Boundary: simulator/debug local preflight drives iteration but does not replace final TestFlight/iPhone proof.
-- Latest simulator Run 100: `device-local-ai-20260629T023753Z` (100/100 cases, tools complete 100/100, sources complete 100/100, answer scan clean with 0 flagged).
-- Final-proof mismatch by design: device-local-ai-20260629T023753Z (install=debug, expected testflight).
+- Latest simulator Run 100: `device-local-ai-20260629T035051Z` (100/100 cases, tools complete 100/100, sources complete 100/100, answer scan clean with 0 flagged).
+- Final-proof mismatch by design: device-local-ai-20260629T035051Z (install=debug, expected testflight).
 
 ## Gate checklist
 
 - [x] Versioned 100-question suite: 100 cases, version 2026-06-28.5, hash fnv1a32:741b2381
 - [x] Objective coverage across hiker situations: trail-prep=29, daily-hiking-decisions=57, water=18, shelter=16, weather=24, resupply=36, safety=40, gear=33, bible-spiritual-support=10, offline-local-ai-use=22, document-vault-user-docs=3, document-writing-user-docs=3, domain-transfer-readiness=3, confusing-edge-cases=36
-- [x] Full-suite tool routing proof: 6 current full run(s) with all required tools hit and source evidence recorded
-- [x] Simulator/debug local full-suite preflight: Latest simulator/debug local preflight device-local-ai-20260629T023753Z is clean: 100/100 cases, complete tools/source evidence, app 1.0 (29), install=debug, model=gemma-4-E2B-it-litert-lm
+- [x] Full-suite tool routing proof: 8 current full run(s) with all required tools hit and source evidence recorded
+- [x] Simulator/debug local full-suite preflight: Latest simulator/debug local preflight device-local-ai-20260629T035051Z is clean: 100/100 cases, complete tools/source evidence, app 1.0 (29), install=debug, model=gemma-4-E2B-it-litert-lm
 - [x] Dad Pilot has current suite-required TestFlight build: Target build is available for Dad: target 1.0 (29); suite requires 1.0 (>= 13); Dad Pilot records 1.0 (29); latest native upload suite 2026-06-28.5 (fnv1a32:741b2381); current suite 2026-06-28.5 (fnv1a32:741b2381)
-- [ ] Full TestFlight/iPhone Eval Lab run imported: No current full suite-compatible TestFlight/iPhone run found; 6 full device-on-device-gemma run(s) failed final-proof context: device-local-ai-20260628T235310Z (install=debug, expected testflight); device-local-ai-20260629T001151Z (install=debug, expected testflight); device-local-ai-20260629T005630Z (install=debug, expected testflight)
+- [ ] Full TestFlight/iPhone Eval Lab run imported: No current full suite-compatible TestFlight/iPhone run found; 8 full device-on-device-gemma run(s) failed final-proof context: device-local-ai-20260628T235310Z (install=debug, expected testflight); device-local-ai-20260629T001151Z (install=debug, expected testflight); device-local-ai-20260629T005630Z (install=debug, expected testflight)
 - [ ] Human review complete at 100/100 5-star: No current full device review is rated 100/100 at 5/5
 - [x] Below-5 answers create iteration work: No completed below-5 device reviews yet
 - [ ] Strict final device proof passed: No strict TestFlight/iPhone proof run passes
@@ -70,8 +70,9 @@ Generated at: 2026-06-29T02:54:58.559Z
 - Latest successful native upload repo SHA: `dbcfe3621c9775c8435668b820b7777b58f7a8ee` from `.scout-artifacts/ios-testflight/2026-06-29T02-32-57-955Z/01-repo-sha.log`.
 - Latest native upload suite: `2026-06-28.5` / `fnv1a32:741b2381`.
 - Latest native upload contains current suite: yes.
-- Current source newer than latest native upload: no.
-- Current native app source newer than latest native upload: no.
+- Current source newer than latest native upload: yes.
+- Current native app source newer than latest native upload: yes.
+- Latest-source upload note: bump the iOS build number above `29` before uploading this checkout; App Store Connect will not accept reusing build `29`.
 - App Store Connect API key in latest successful upload proof: yes.
 - App Store Connect API key in latest upload attempt: yes.
 - Future uploads require Chris/account-bound App Store Connect auth: `APP_STORE_CONNECT_API_KEY_PATH`, `APP_STORE_CONNECT_API_KEY_ID`, and `APP_STORE_CONNECT_API_ISSUER_ID`, or matching `--asc-*` flags.
@@ -83,11 +84,11 @@ npm run ios:testflight -- --upload --team-id 3CFU9J87A5 \
   --asc-issuer-id <issuer-id>
 ```
 
-After upload/processing, refresh Dad Pilot proof from App Store Connect:
+After bumping `CURRENT_PROJECT_VERSION` to `30`, uploading, and processing, refresh Dad Pilot proof from App Store Connect:
 
 ```sh
-npm run refresh:testflight-dad-pilot -- --build 29 --app-version 1.0
-npm run refresh:testflight-dad-pilot -- --build 29 --app-version 1.0 --attach --submit-review --remove-previous --update-release-evidence
+npm run refresh:testflight-dad-pilot -- --build 30 --app-version 1.0
+npm run refresh:testflight-dad-pilot -- --build 30 --app-version 1.0 --attach --submit-review --remove-previous --update-release-evidence
 ```
 
 ## Phone run steps
@@ -166,7 +167,7 @@ npm run verify:scout-local-ai-stability-proof -- --pairs data/scout-local-ai/dev
 
 ## Next action
 
-Run 100 now on the latest Dad Pilot TestFlight build 1.0 (29). The latest successful native upload contains the current checkout. Open Settings > Scout Eval Lab, run Run 100, and Share the JSON. While waiting for the file, leave npm run wait:scout-local-ai-device-run running; status also checks /Users/chrishogg/Downloads and will use npm run prepare-review:scout-local-ai-device-run -- --run latest if the export lands there. If Dad sends copied JSON text instead of a file, use npm run receive:scout-local-ai-device-run -- --clipboard or paste into npm run receive:scout-local-ai-device-run -- --stdin; the receiver saves it to the inbox, inspects it, and prepares the same review path as npm run prepare-review:scout-local-ai-device-run -- --run inbox when it is final-ready.
+Run 100 now on the latest Dad Pilot TestFlight build 1.0 (29). Native app source changed after the latest successful upload; Dad can still run a suite-compatible build for diagnosis, but latest-app-source proof needs a fresh TestFlight upload and Dad Pilot refresh. Open Settings > Scout Eval Lab, run Run 100, and Share the JSON. While waiting for the file, leave npm run wait:scout-local-ai-device-run running; status also checks /Users/chrishogg/Downloads and will use npm run prepare-review:scout-local-ai-device-run -- --run latest if the export lands there. If Dad sends copied JSON text instead of a file, use npm run receive:scout-local-ai-device-run -- --clipboard or paste into npm run receive:scout-local-ai-device-run -- --stdin; the receiver saves it to the inbox, inspects it, and prepares the same review path as npm run prepare-review:scout-local-ai-device-run -- --run inbox when it is final-ready.
 
 ## Boundary
 

@@ -423,6 +423,9 @@ test('Dad TestFlight handoff documents the current Dad Pilot Run 100 path', asyn
 	const buildMatch = summary.match(/iOS build (\d+\.\d+) \((\d+)\)/u);
 	assert.ok(buildMatch, 'release evidence should identify the current Dad Pilot build');
 	const currentBuild = `${buildMatch[1]} (${buildMatch[2]})`;
+	const targetBuildMatch = handoff.match(/Target iOS build for Dad Eval Lab: `(\d+\.\d+) \((\d+)\)`/u);
+	assert.ok(targetBuildMatch, 'handoff should identify the current iOS target build');
+	const targetBuildNumber = targetBuildMatch[2];
 
 	assert.match(handoff, /# Dad Scout local AI Eval Lab handoff/u);
 	assert.match(handoff, /Eval suite: `dad-local-ai-100` version/u);
@@ -441,6 +444,23 @@ test('Dad TestFlight handoff documents the current Dad Pilot Run 100 path', asyn
 	assert.match(handoff, /npm run wait:scout-local-ai-device-run/u);
 	assert.match(handoff, /wait:scout-local-ai-device-run -- --timeout-ms 300000 --poll-ms 10000/u);
 	assert.match(handoff, /Final readiness still requires a full current-suite TestFlight\/iPhone/u);
+	if (handoff.includes('Current native app source newer than latest native upload: yes')) {
+		const nextBuildNumber = String(Number(targetBuildNumber) + 1);
+		assert.match(
+			handoff,
+			new RegExp(`After bumping \`CURRENT_PROJECT_VERSION\` to \`${escapeRegExp(nextBuildNumber)}\`, uploading, and processing`, 'u')
+		);
+		assert.match(
+			handoff,
+			new RegExp(`npm run refresh:testflight-dad-pilot -- --build ${escapeRegExp(nextBuildNumber)} --app-version ${escapeRegExp(targetBuildMatch[1])}`, 'u')
+		);
+		assert.doesNotMatch(
+			handoff,
+			new RegExp(`npm run refresh:testflight-dad-pilot -- --build ${escapeRegExp(targetBuildNumber)} --app-version ${escapeRegExp(targetBuildMatch[1])}`, 'u')
+		);
+	} else {
+		assert.doesNotMatch(handoff, /After bumping `CURRENT_PROJECT_VERSION`/u);
+	}
 	assert.doesNotMatch(handoff, /Next native candidate `1\.0 \(14\)`/u);
 	assert.doesNotMatch(handoff, /Dad Pilot is still on `1\.0 \(13\)`/u);
 });
