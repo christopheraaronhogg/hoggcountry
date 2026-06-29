@@ -22,6 +22,7 @@ function evalCase(patch: Partial<ScoutLocalAiEvalCase> = {}): ScoutLocalAiEvalCa
 		requiredTools: ['next_water', 'source_search:water'],
 		expectedTraits: ['answers with nearest water first'],
 		safetyCaveats: ['does not invent current flow'],
+		documentTask: 'reading',
 		improvementTags: ['water'],
 		...patch
 	};
