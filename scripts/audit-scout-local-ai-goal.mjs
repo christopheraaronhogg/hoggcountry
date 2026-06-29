@@ -91,6 +91,7 @@ const audit = {
 		caseCount: status.suite.caseCount,
 		targetBuild: status.testflight.targetBuild,
 		recordedDadPilotBuild: status.testflight.recordedDadPilotBuild,
+		currentFullToolCompleteRuns: status.runs.currentFullToolCompleteRuns.length,
 		currentFullRoutingRuns: status.runs.currentFullRoutingRuns.length,
 		currentFullDeviceRuns: status.runs.currentFullDeviceRuns.length,
 		currentPartialDeviceRuns: status.runs.currentPartialDeviceRuns.length,
@@ -424,7 +425,8 @@ function createAuditMarkdown(audit) {
 		`- Cases: ${audit.currentStatus.caseCount}`,
 		`- Target build: \`${audit.currentStatus.targetBuild ?? '<unknown>'}\``,
 		`- Recorded Dad Pilot build: \`${audit.currentStatus.recordedDadPilotBuild ?? '<unknown>'}\``,
-		`- Full routing runs: ${audit.currentStatus.currentFullRoutingRuns}`,
+		`- Full tool/source-complete runs: ${audit.currentStatus.currentFullToolCompleteRuns}`,
+		`- Scaffold-only routing runs: ${audit.currentStatus.currentFullRoutingRuns}`,
 		`- Full device runs: ${audit.currentStatus.currentFullDeviceRuns}`,
 		`- Inbox candidate exports: ${audit.currentStatus.inboxCandidateExports}`,
 		audit.currentStatus.latestInboxExport

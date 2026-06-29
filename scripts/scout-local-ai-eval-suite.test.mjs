@@ -1887,6 +1887,7 @@ test('goal audit maps original success criteria without hiding missing device pr
 	assert.match(requirements['target-testflight-build'].evidence, new RegExp(`Dad Pilot records ${escapeRegExp(CURRENT_IOS_TARGET_BUILD)}`, 'u'));
 	assert.equal(requirements['final-100-rated-five'].ok, false);
 	assert.match(requirements['final-100-rated-five'].evidence, /No strict TestFlight\/iPhone proof run passes/u);
+	assert.equal(audit.currentStatus.currentFullToolCompleteRuns, 1);
 	assert.equal(audit.currentStatus.currentFullRoutingRuns, 1);
 	assert.equal(audit.currentStatus.currentFullDeviceRuns, 0);
 	assert.equal(audit.currentStatus.currentPartialDeviceRuns, 0);
