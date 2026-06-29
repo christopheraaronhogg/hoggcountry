@@ -161,9 +161,10 @@ That writes `data/scout-local-ai/history/scout-local-ai-history.json` and
 run, per-case answer evolution, ratings, score deltas, confidence, failure mode,
 model/runtime/build proof lane, tool/source evidence, answer-quality scan
 results, and commit-level interventions. The HTML timeline includes filters for
-domain and `documentTask`, plus searchable confidence/failure diagnostics, so
-reading-only, writing, and reading-writing cases can be reviewed separately
-instead of blending document-agent progress into general hiker Q&A.
+domain, `documentTask`, proof lane, and model/runtime, plus searchable
+confidence/failure diagnostics, so reading-only, writing, simulator,
+TestFlight/iPhone, and model-swap runs can be reviewed separately instead of
+blending document-agent progress into general hiker Q&A or final proof.
 
 To audit the whole original goal against current evidence, run:
 

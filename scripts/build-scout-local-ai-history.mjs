@@ -193,7 +193,7 @@ main {
 	align-items: start;
 }
 .panel { padding: 14px; }
-.controls { display: grid; grid-template-columns: 1fr 150px 170px; gap: 10px; margin-bottom: 12px; }
+.controls { display: grid; grid-template-columns: 1fr 150px 170px 170px 190px; gap: 10px; margin-bottom: 12px; }
 input, select {
 	width: 100%;
 	border: 1px solid var(--line);
@@ -266,6 +266,8 @@ input, select {
 	<input id="search" type="search" placeholder="Search cases, prompts, answers, failures">
 	<select id="domain"></select>
 	<select id="documentTask" aria-label="Document task"></select>
+	<select id="evidenceLane" aria-label="Proof lane"></select>
+	<select id="modelRuntime" aria-label="Model runtime"></select>
 </div>
 <div class="case-list" id="caseList"></div>
 </section>
@@ -281,7 +283,7 @@ input, select {
 <script id="history-data" type="application/json">${data}</script>
 <script>
 const historyData = JSON.parse(document.getElementById('history-data').textContent);
-const state = { runIndex: Math.max(0, historyData.runs.length - 1), caseId: historyData.cases[0]?.caseId ?? null, search: '', domain: 'all', documentTask: 'all' };
+const state = { runIndex: Math.max(0, historyData.runs.length - 1), caseId: historyData.cases[0]?.caseId ?? null, search: '', domain: 'all', documentTask: 'all', evidenceLane: 'all', modelRuntime: 'all' };
 const runs = historyData.runs;
 const runSlider = document.getElementById('runSlider');
 const caseList = document.getElementById('caseList');
@@ -289,6 +291,8 @@ const detail = document.getElementById('detail');
 const search = document.getElementById('search');
 const domain = document.getElementById('domain');
 const documentTask = document.getElementById('documentTask');
+const evidenceLane = document.getElementById('evidenceLane');
+const modelRuntime = document.getElementById('modelRuntime');
 document.getElementById('meta').textContent = [historyData.suite.suiteId, historyData.suite.version, historyData.suite.hash, 'generated ' + formatDate(historyData.generatedAt)].filter(Boolean).join(' | ');
 runSlider.max = String(Math.max(0, runs.length - 1));
 runSlider.value = String(state.runIndex);
@@ -296,9 +300,13 @@ document.getElementById('timelineStart').textContent = runs[0] ? shortRun(runs[0
 document.getElementById('timelineEnd').textContent = runs.length ? shortRun(runs[runs.length - 1]) : 'No runs';
 domain.innerHTML = ['all', ...new Set(historyData.cases.map((item) => item.domain).filter(Boolean).sort())].map((value) => '<option value="' + escapeHtml(value) + '">' + escapeHtml(value === 'all' ? 'All domains' : value) + '</option>').join('');
 documentTask.innerHTML = ['all', ...new Set(historyData.cases.map((item) => item.documentTask).filter(Boolean).sort())].map((value) => '<option value="' + escapeHtml(value) + '">' + escapeHtml(value === 'all' ? 'All document tasks' : value) + '</option>').join('');
+evidenceLane.innerHTML = ['all', ...new Set(historyData.runs.map((item) => item.evidenceLane).filter(Boolean).sort())].map((value) => '<option value="' + escapeHtml(value) + '">' + escapeHtml(value === 'all' ? 'All proof lanes' : value) + '</option>').join('');
+modelRuntime.innerHTML = ['all', ...new Set(historyData.runs.map((item) => modelRuntimeKey(item)).filter(Boolean).sort())].map((value) => '<option value="' + escapeHtml(value) + '">' + escapeHtml(value === 'all' ? 'All model/runtime' : value) + '</option>').join('');
 search.addEventListener('input', () => { state.search = search.value.toLowerCase(); render(); });
 domain.addEventListener('change', () => { state.domain = domain.value; render(); });
 documentTask.addEventListener('change', () => { state.documentTask = documentTask.value; render(); });
+evidenceLane.addEventListener('change', () => { state.evidenceLane = evidenceLane.value; render(); });
+modelRuntime.addEventListener('change', () => { state.modelRuntime = modelRuntime.value; render(); });
 runSlider.addEventListener('input', () => { state.runIndex = Number(runSlider.value); render(); });
 renderPendingChanges();
 render();
@@ -321,7 +329,7 @@ function render() {
 	renderTimeline(run);
 	const visible = filteredCases(run);
 	if (!visible.some((item) => item.caseId === state.caseId)) state.caseId = visible[0]?.caseId ?? historyData.cases[0]?.caseId ?? null;
-	caseList.innerHTML = visible.map((item) => caseButton(item, run)).join('');
+	caseList.innerHTML = visible.length ? visible.map((item) => caseButton(item, run)).join('') : '<p class="notes">No cases match the selected proof-lane/model filters at this timeline point.</p>';
 	for (const button of caseList.querySelectorAll('button')) button.addEventListener('click', () => { state.caseId = button.dataset.caseId; render(); });
 	renderDetail(historyData.cases.find((item) => item.caseId === state.caseId), run);
 }
@@ -347,13 +355,19 @@ function filteredCases(run) {
 	return historyData.cases.filter((item) => {
 		if (state.domain !== 'all' && item.domain !== state.domain) return false;
 		if (state.documentTask !== 'all' && item.documentTask !== state.documentTask) return false;
-		if (!needle) return true;
 		const entry = entryAtRun(item, run);
+		if (!entry) return false;
+		if (!needle) return true;
 		return [
 			item.caseId,
 			item.domain,
 			item.documentTask,
 			item.prompt,
+			entry.evidenceLane,
+			entry.modelId,
+			entry.mode,
+			entry.provider,
+			entry.app?.installType,
 			entry?.answer,
 			entry?.notes,
 			entry?.improvementTask,
@@ -373,11 +387,11 @@ function caseButton(item, run) {
 }
 function renderDetail(item, run) {
 	if (!item) { detail.innerHTML = '<p>No case selected.</p>'; return; }
-	const entries = item.history.filter((entry) => !run || entry.runOrder <= run.order);
+	const entries = item.history.filter((entry) => (!run || entry.runOrder <= run.order) && entryMatchesFilters(entry));
 	const current = entryAtRun(item, run);
 	detail.innerHTML = '<h2>' + escapeHtml([item.caseId, item.domain, item.documentTask].filter(Boolean).join(' - ')) + '</h2>' +
 		'<p class="question">' + escapeHtml(item.prompt) + '</p>' +
-		'<div class="answer-grid">' + entries.map((entry) => answerCard(entry, current)).join('') + '</div>';
+		'<div class="answer-grid">' + (entries.length ? entries.map((entry) => answerCard(entry, current)).join('') : '<p class="notes">No matching answers for this case under the selected proof-lane/model filters.</p>') + '</div>';
 }
 function answerCard(entry, current) {
 	const currentFlag = current && entry.runId === current.runId;
@@ -404,11 +418,17 @@ function entryAtRun(item, run) {
 	if (!run) return item.history.length ? item.history[item.history.length - 1] : null;
 	let selected = null;
 	for (const entry of item.history) {
-		if (entry.runOrder <= run.order) selected = entry;
+		if (entry.runOrder <= run.order && entryMatchesFilters(entry)) selected = entry;
 	}
 	return selected;
 }
+function entryMatchesFilters(entry) {
+	if (state.evidenceLane !== 'all' && entry.evidenceLane !== state.evidenceLane) return false;
+	if (state.modelRuntime !== 'all' && modelRuntimeKey(entry) !== state.modelRuntime) return false;
+	return true;
+}
 function shortRun(run) { return [run.runId, formatDate(run.sortTime)].filter(Boolean).join(' | '); }
+function modelRuntimeKey(run) { return [run.modelId, run.mode, run.provider, run.app?.installType].filter(Boolean).join(' / '); }
 function formatDate(value) { return value ? new Date(value).toLocaleString() : ''; }
 function signed(value) { return value > 0 ? '+' + value : String(value); }
 function formatRunInterventions(run) {
