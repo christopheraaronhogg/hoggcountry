@@ -900,9 +900,7 @@ function isLocalPreflightSourcePath(path) {
 	if (normalized === DEFAULT_SUITE || normalized === DEFAULT_MOBILE_SUITE) return true;
 	if (/^scripts\/run-scout-(?:local-ai|ios-sim-gemma)-eval\.mjs$/u.test(normalized)) return true;
 	if (/^scripts\/eval-scout-/u.test(normalized)) return true;
-	if (/^scripts\/status-scout-local-ai\.mjs$/u.test(normalized)) return true;
-	if (/^scripts\/scan-scout-local-ai-answer-quality\.mjs$/u.test(normalized)) return true;
-	if (/^scripts\/lib\/scout-local-ai-(?:device-run-inspector|run-json|source-evidence|suite|suite-coverage)\.mjs$/u.test(normalized)) return true;
+	if (/^scripts\/lib\/scout-local-ai-suite\.mjs$/u.test(normalized)) return true;
 	if (/^data\/at-/u.test(normalized)) return true;
 	if (/^public\/at-/u.test(normalized)) return true;
 	if (/^public\/scout\//u.test(normalized)) return true;
