@@ -186,6 +186,9 @@ domain, `documentTask`, proof lane, and model/runtime, plus searchable
 confidence/failure diagnostics, so reading-only, writing, simulator,
 TestFlight/iPhone, and model-swap runs can be reviewed separately instead of
 blending document-agent progress into general hiker Q&A or final proof.
+`npm run status:scout-local-ai` also reports whether these generated history
+artifacts are current or stale after new runs, reviews, scans, suite edits, or
+history-builder changes.
 
 To audit the whole original goal against current evidence, run:
 

@@ -342,16 +342,27 @@ test('Scout local AI history does not demand rerun for proof-only pending commit
 				committedAt: '2026-06-29T06:43:00.000Z',
 				subject: 'Refresh Dad Pilot for build 32',
 				files: ['docs/launch/release-evidence.json', 'docs/launch/testflight-dad-handoff.md']
+			},
+			{
+				sha: 'dddddddddddddddddddddddddddddddddddddddd',
+				committedAt: '2026-06-29T06:45:00.000Z',
+				subject: 'Track Scout status freshness',
+				files: [
+					'package.json',
+					'data/scout-local-ai/README.md',
+					'scripts/status-scout-local-ai.mjs',
+					'scripts/scout-local-ai-status.test.mjs'
+				]
 			}
 		]
 	});
 
-	assert.equal(history.pendingInterventions.commitCount, 2);
-	assert.deepEqual(history.pendingInterventions.categories, ['docs/runbook', 'testflight/release-proof']);
+	assert.equal(history.pendingInterventions.commitCount, 3);
+	assert.deepEqual(history.pendingInterventions.categories, ['docs/runbook', 'eval-review-process', 'history/reporting', 'testflight/release-proof']);
 	assert.equal(history.pendingInterventions.rerunCommitCount, 0);
 	assert.deepEqual(history.pendingInterventions.rerunCategories, []);
 	assert.equal(history.pendingInterventions.requiresRerun, false);
-	assert.equal(history.summary.pendingInterventionCommitCount, 2);
+	assert.equal(history.summary.pendingInterventionCommitCount, 3);
 	assert.equal(history.summary.pendingRerunCommitCount, 0);
 	const html = renderScoutLocalAiHistoryHtml(history);
 	const pendingSection = extractPendingSection(html);

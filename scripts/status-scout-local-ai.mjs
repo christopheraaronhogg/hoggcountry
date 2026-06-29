@@ -52,8 +52,11 @@ const DEFAULT_DEVICE_RUNS_DIR = 'data/scout-local-ai/device-runs';
 const DEFAULT_INBOX_DIR = 'data/scout-local-ai/inbox';
 const DEFAULT_DOWNLOADS_DIR = process.env.SCOUT_LOCAL_AI_DOWNLOADS_DIR ?? '~/Downloads';
 const DEFAULT_REVIEWS_DIR = 'data/scout-local-ai/reviews';
+const DEFAULT_SCAN_DIR = 'data/scout-local-ai/answer-quality-scans';
 const DEFAULT_BACKLOG_DIR = 'data/scout-local-ai/backlog';
 const DEFAULT_ITERATIONS_DIR = 'data/scout-local-ai/iterations';
+const DEFAULT_HISTORY_JSON = 'data/scout-local-ai/history/scout-local-ai-history.json';
+const DEFAULT_HISTORY_HTML = 'data/scout-local-ai/history/scout-local-ai-history.html';
 const DEFAULT_XCODE_PROJECT = 'mobile/ios/App/App.xcodeproj/project.pbxproj';
 const DEFAULT_RELEASE_EVIDENCE = 'docs/launch/release-evidence.json';
 const DEFAULT_IOS_PROOF_DIR = 'docs/launch/proof';
@@ -72,30 +75,52 @@ const LOCAL_PREFLIGHT_IGNORED_SOURCE_PATHS = new Set([
 	'mobile/scripts/ios-testflight.mjs'
 ]);
 
-const cli = parseCliArgs(process.argv.slice(2));
+if (!isImported()) {
+	const cli = parseCliArgs(process.argv.slice(2));
+	const status = await buildStatus({
+		suitePath: resolveInputPath(cli.suite ?? DEFAULT_SUITE),
+		mobileSuitePath: resolveInputPath(cli.mobileSuite ?? DEFAULT_MOBILE_SUITE),
+		runsDir: resolveInputPath(cli.runsDir ?? DEFAULT_RUNS_DIR),
+		deviceRunsDir: resolveInputPath(cli.deviceRunsDir ?? DEFAULT_DEVICE_RUNS_DIR),
+		inboxDir: resolveInputPath(cli.inboxDir ?? DEFAULT_INBOX_DIR),
+		downloadsDir: resolveInputPath(cli.downloadsDir ?? DEFAULT_DOWNLOADS_DIR),
+		reviewsDir: resolveInputPath(cli.reviewsDir ?? DEFAULT_REVIEWS_DIR),
+		scanDir: resolveInputPath(cli.scanDir ?? DEFAULT_SCAN_DIR),
+		backlogDir: resolveInputPath(cli.backlogDir ?? DEFAULT_BACKLOG_DIR),
+		iterationsDir: resolveInputPath(cli.iterationsDir ?? DEFAULT_ITERATIONS_DIR),
+		historyJsonPath: resolveInputPath(cli.historyJson ?? DEFAULT_HISTORY_JSON),
+		historyHtmlPath: resolveInputPath(cli.historyHtml ?? DEFAULT_HISTORY_HTML),
+		xcodeProjectPath: resolveInputPath(cli.xcodeProject ?? DEFAULT_XCODE_PROJECT),
+		releaseEvidencePath: resolveInputPath(cli.releaseEvidence ?? DEFAULT_RELEASE_EVIDENCE),
+		iosProofDir: resolveInputPath(cli.iosProofDir ?? DEFAULT_IOS_PROOF_DIR)
+	});
 
-const status = await buildStatus({
-	suitePath: resolveInputPath(cli.suite ?? DEFAULT_SUITE),
-	mobileSuitePath: resolveInputPath(cli.mobileSuite ?? DEFAULT_MOBILE_SUITE),
-	runsDir: resolveInputPath(cli.runsDir ?? DEFAULT_RUNS_DIR),
-	deviceRunsDir: resolveInputPath(cli.deviceRunsDir ?? DEFAULT_DEVICE_RUNS_DIR),
-	inboxDir: resolveInputPath(cli.inboxDir ?? DEFAULT_INBOX_DIR),
-	downloadsDir: resolveInputPath(cli.downloadsDir ?? DEFAULT_DOWNLOADS_DIR),
-	reviewsDir: resolveInputPath(cli.reviewsDir ?? DEFAULT_REVIEWS_DIR),
-	backlogDir: resolveInputPath(cli.backlogDir ?? DEFAULT_BACKLOG_DIR),
-	iterationsDir: resolveInputPath(cli.iterationsDir ?? DEFAULT_ITERATIONS_DIR),
-	xcodeProjectPath: resolveInputPath(cli.xcodeProject ?? DEFAULT_XCODE_PROJECT),
-	releaseEvidencePath: resolveInputPath(cli.releaseEvidence ?? DEFAULT_RELEASE_EVIDENCE),
-	iosProofDir: resolveInputPath(cli.iosProofDir ?? DEFAULT_IOS_PROOF_DIR)
-});
-
-if (cli.json) {
-	console.log(JSON.stringify(status, null, 2));
-} else {
-	console.log(createStatusMarkdown(status));
+	if (cli.json) {
+		console.log(JSON.stringify(status, null, 2));
+	} else {
+		console.log(createStatusMarkdown(status));
+	}
 }
 
-async function buildStatus(paths) {
+export async function buildStatus(paths) {
+	paths = {
+		suitePath: resolve(REPO_ROOT, DEFAULT_SUITE),
+		mobileSuitePath: resolve(REPO_ROOT, DEFAULT_MOBILE_SUITE),
+		runsDir: resolve(REPO_ROOT, DEFAULT_RUNS_DIR),
+		deviceRunsDir: resolve(REPO_ROOT, DEFAULT_DEVICE_RUNS_DIR),
+		inboxDir: resolve(REPO_ROOT, DEFAULT_INBOX_DIR),
+		downloadsDir: resolveInputPath(DEFAULT_DOWNLOADS_DIR),
+		reviewsDir: resolve(REPO_ROOT, DEFAULT_REVIEWS_DIR),
+		scanDir: resolve(REPO_ROOT, DEFAULT_SCAN_DIR),
+		backlogDir: resolve(REPO_ROOT, DEFAULT_BACKLOG_DIR),
+		iterationsDir: resolve(REPO_ROOT, DEFAULT_ITERATIONS_DIR),
+		historyJsonPath: resolve(REPO_ROOT, DEFAULT_HISTORY_JSON),
+		historyHtmlPath: resolve(REPO_ROOT, DEFAULT_HISTORY_HTML),
+		xcodeProjectPath: resolve(REPO_ROOT, DEFAULT_XCODE_PROJECT),
+		releaseEvidencePath: resolve(REPO_ROOT, DEFAULT_RELEASE_EVIDENCE),
+		iosProofDir: resolve(REPO_ROOT, DEFAULT_IOS_PROOF_DIR),
+		...paths
+	};
 	const generatedAt = new Date().toISOString();
 	const suite = await readJson(paths.suitePath);
 	const mobileSuite = await readOptionalJson(paths.mobileSuitePath);
@@ -186,6 +211,25 @@ async function buildStatus(paths) {
 		currentBacklogs,
 		currentIterationPlans
 	);
+	const latestGitEvent = await latestGitEventForHistory();
+	const history = await summarizeHistoryFreshness({
+		historyJsonPath: paths.historyJsonPath,
+		historyHtmlPath: paths.historyHtmlPath,
+		sourceFiles: [
+			paths.suitePath,
+			paths.mobileSuitePath,
+			resolve(REPO_ROOT, 'scripts/build-scout-local-ai-history.mjs'),
+			resolve(REPO_ROOT, 'scripts/scan-scout-local-ai-answer-quality.mjs')
+		],
+		sourceDirs: [
+			paths.runsDir,
+			paths.deviceRunsDir,
+			paths.reviewsDir,
+			paths.scanDir
+		],
+		sourceEvents: latestGitEvent ? [latestGitEvent] : [],
+		repoRoot: REPO_ROOT
+	});
 	const strictDeviceProofs = currentFullFinalProofDeviceRuns.map((runEntry) => {
 		const reviewEntry = reviewsByRunId.get(runEntry.value.runId);
 		if (!reviewEntry) {
@@ -255,8 +299,11 @@ async function buildStatus(paths) {
 			inboxDir: relative(REPO_ROOT, paths.inboxDir),
 			downloadsDir: displayPath(paths.downloadsDir),
 			reviewsDir: relative(REPO_ROOT, paths.reviewsDir),
+			scanDir: relative(REPO_ROOT, paths.scanDir),
 			backlogDir: relative(REPO_ROOT, paths.backlogDir),
 			iterationsDir: relative(REPO_ROOT, paths.iterationsDir),
+			historyJson: relative(REPO_ROOT, paths.historyJsonPath),
+			historyHtml: relative(REPO_ROOT, paths.historyHtmlPath),
 			xcodeProject: relative(REPO_ROOT, paths.xcodeProjectPath),
 			releaseEvidence: relative(REPO_ROOT, paths.releaseEvidencePath),
 			iosProofDir: relative(REPO_ROOT, paths.iosProofDir)
@@ -307,6 +354,7 @@ async function buildStatus(paths) {
 			currentIterationPlans: summarizeIterationPlanList(currentIterationPlans),
 			reviewDebt: iterationDebt
 		},
+		history,
 		strictDeviceProofs,
 		gates,
 		nextAction: nextActionFor(
@@ -698,6 +746,105 @@ function summarizeIterationDebt(currentDeviceReviewSummaries, currentBacklogs, c
 	};
 }
 
+export async function summarizeHistoryFreshness({
+	historyJsonPath,
+	historyHtmlPath,
+	sourceFiles = [],
+	sourceDirs = [],
+	sourceEvents = [],
+	repoRoot = REPO_ROOT,
+	rebuildCommand = 'npm run history:scout-local-ai'
+} = {}) {
+	const json = await summarizeFileForHistory(historyJsonPath, repoRoot);
+	const html = await summarizeFileForHistory(historyHtmlPath, repoRoot);
+	const sources = [];
+	for (const file of sourceFiles.filter(Boolean)) {
+		const summary = await summarizeFileForHistory(file, repoRoot);
+		if (summary.exists) sources.push(summary);
+	}
+	for (const dir of sourceDirs.filter(Boolean)) {
+		sources.push(...await summarizeJsonDirectoryForHistory(dir, repoRoot));
+	}
+	for (const event of sourceEvents) {
+		const normalized = normalizeHistorySourceEvent(event);
+		if (normalized) sources.push(normalized);
+	}
+	sources.sort((left, right) => right.mtimeMs - left.mtimeMs || left.path.localeCompare(right.path));
+	const latestSource = sources[0] ?? null;
+	const outputsExist = Boolean(json.exists && html.exists);
+	const outputMtimeMs = outputsExist ? Math.min(json.mtimeMs, html.mtimeMs) : null;
+	const latestOutputMtimeMs = outputsExist ? Math.max(json.mtimeMs, html.mtimeMs) : null;
+	const stale = Boolean(outputsExist && latestSource && latestSource.mtimeMs > outputMtimeMs + 1000);
+	const missing = [];
+	if (!json.exists) missing.push(json.path);
+	if (!html.exists) missing.push(html.path);
+	const ok = outputsExist && !stale;
+	const reason = !outputsExist
+		? `missing generated history artifact(s): ${missing.join(', ')}`
+		: stale
+			? `latest source ${latestSource.path} changed after the older history output`
+			: latestSource
+				? `history outputs are newer than ${latestSource.path}`
+				: 'history outputs exist; no source files were found for freshness comparison';
+	return {
+		ok,
+		stale,
+		outputsExist,
+		reason,
+		json,
+		html,
+		sourceCount: sources.length,
+		latestSource: latestSource ? withoutMtime(latestSource) : null,
+		latestOutputModifiedAt: latestOutputMtimeMs ? new Date(latestOutputMtimeMs).toISOString() : null,
+		rebuildCommand
+	};
+}
+
+function normalizeHistorySourceEvent(event) {
+	const mtimeMs = Number(event?.mtimeMs ?? Date.parse(String(event?.modifiedAt ?? '')));
+	if (!Number.isFinite(mtimeMs)) return null;
+	const path = String(event?.path ?? event?.label ?? 'source-event').trim();
+	return {
+		path: path || 'source-event',
+		exists: true,
+		size: Number(event?.size ?? 0),
+		mtimeMs,
+		modifiedAt: new Date(mtimeMs).toISOString()
+	};
+}
+
+async function summarizeJsonDirectoryForHistory(dir, repoRoot) {
+	if (!(await exists(dir))) return [];
+	const summaries = [];
+	for (const entry of await readdir(dir, { withFileTypes: true })) {
+		if (!entry.isFile() || !entry.name.endsWith('.json')) continue;
+		const summary = await summarizeFileForHistory(resolve(dir, entry.name), repoRoot);
+		if (summary.exists) summaries.push(summary);
+	}
+	return summaries;
+}
+
+async function summarizeFileForHistory(path, repoRoot) {
+	const display = path ? relative(repoRoot, path) : '<missing>';
+	if (!path || !(await exists(path))) {
+		return {
+			path: display,
+			exists: false,
+			size: 0,
+			mtimeMs: 0,
+			modifiedAt: null
+		};
+	}
+	const stats = await stat(path);
+	return {
+		path: display,
+		exists: true,
+		size: stats.size,
+		mtimeMs: stats.mtimeMs,
+		modifiedAt: new Date(stats.mtimeMs).toISOString()
+	};
+}
+
 function iterationDebtEvidence(debt) {
 	if (!debt.totalReviews) {
 		return 'No completed below-5 device reviews yet';
@@ -895,6 +1042,28 @@ async function gitCommitsAfter(timestamp) {
 			});
 	} catch {
 		return [];
+	}
+}
+
+async function latestGitEventForHistory() {
+	try {
+		const result = await execFileAsync('git', ['log', '-1', '--format=%H%x09%cI%x09%s'], {
+			cwd: REPO_ROOT,
+			maxBuffer: 1024 * 1024
+		});
+		const [sha, committedAt, ...subjectParts] = result.stdout.trim().split('\t');
+		const time = Date.parse(committedAt);
+		if (!sha || !Number.isFinite(time)) return null;
+		const shortSha = sha.slice(0, 8);
+		const subject = subjectParts.join('\t').trim();
+		return {
+			path: `git:${shortSha}${subject ? ` ${subject}` : ''}`,
+			mtimeMs: time,
+			modifiedAt: new Date(time).toISOString(),
+			size: 0
+		};
+	} catch {
+		return null;
 	}
 }
 
@@ -1131,10 +1300,8 @@ async function gitChangedFiles(baseSha, headSha) {
 	}
 }
 
-function isNativeAppSourcePath(path) {
-	return /^mobile\//u.test(path) ||
-		path === 'package.json' ||
-		path === 'package-lock.json';
+export function isNativeAppSourcePath(path) {
+	return /^mobile\//u.test(path);
 }
 
 async function readOptionalIosBuildSettings(path) {
@@ -1622,6 +1789,17 @@ function createStatusMarkdown(status) {
 		`- Fresh upload required before Run 100: ${status.phoneBuildAction?.requiresNewUploadBeforeRun100 ? 'yes' : 'no'}`,
 		`- Fresh upload required for latest app-source proof: ${status.phoneBuildAction?.requiresNewUploadForLatestAppSourceProof ? 'yes' : 'no'}`,
 		'',
+		'## History Timeline',
+		'',
+		`- Current: ${status.history?.ok ? 'yes' : 'no'}`,
+		`- Reason: ${status.history?.reason ?? '<unknown>'}`,
+		`- JSON: \`${status.history?.json?.path ?? status.paths.historyJson ?? DEFAULT_HISTORY_JSON}\` (${status.history?.json?.exists ? 'exists' : 'missing'})`,
+		`- Timeline: \`${status.history?.html?.path ?? status.paths.historyHtml ?? DEFAULT_HISTORY_HTML}\` (${status.history?.html?.exists ? 'exists' : 'missing'})`,
+		`- Latest output modified: ${status.history?.latestOutputModifiedAt ?? '<missing>'}`,
+		`- Latest source checked: ${status.history?.latestSource ? `${status.history.latestSource.path} at ${status.history.latestSource.modifiedAt}` : '<none>'}`,
+		`- Source files checked: ${status.history?.sourceCount ?? 0}`,
+		`- Rebuild command: \`${status.history?.rebuildCommand ?? 'npm run history:scout-local-ai'}\``,
+		'',
 		'## Gates',
 		''
 	];
@@ -1773,6 +1951,10 @@ function resolveInputPath(value) {
 	if (text === '~') return process.env.HOME ?? text;
 	if (text.startsWith('~/')) return resolve(process.env.HOME ?? REPO_ROOT, text.slice(2));
 	return resolve(REPO_ROOT, text);
+}
+
+function isImported() {
+	return process.argv[1] && resolve(process.argv[1]) !== fileURLToPath(import.meta.url);
 }
 
 function displayPath(path) {

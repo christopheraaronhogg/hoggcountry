@@ -19,7 +19,6 @@ const DEFAULT_SCAN_DIR = 'data/scout-local-ai/answer-quality-scans';
 const DEFAULT_OUTPUT_DIR = 'data/scout-local-ai/history';
 const RERUN_RELEVANT_INTERVENTION_CATEGORIES = new Set([
 	'document-grounding',
-	'eval-review-process',
 	'field-domain-polish',
 	'local-model/native-runtime',
 	'offline-data',
@@ -832,10 +831,20 @@ function classifyCommitIntervention(commit) {
 		if (path.includes('capacitor-gemma') || path.includes('model-router') || path.includes('scout_gemma_bridge') || path.includes('/android/') || path.includes('/ios/')) {
 			categories.add('local-model/native-runtime');
 		}
-		if (path.includes('local-ai-history')) {
+		if (path.includes('local-ai-history') || path.includes('status-scout-local-ai') || path.includes('scout-local-ai-status.test')) {
 			categories.add('history/reporting');
 		}
-		if (path.includes('scoutevallab') || path.includes('local-ai-eval') || (path.startsWith('scripts/') && path.includes('scout-local-ai') && !path.includes('local-ai-history')) || path.startsWith('data/scout-local-ai/readme')) {
+		if (path.includes('scoutevallab') ||
+			path.includes('local-ai-eval') ||
+			(path.startsWith('scripts/') &&
+				path.includes('scout-local-ai') &&
+				!path.includes('local-ai-history') &&
+				!path.includes('status-scout-local-ai') &&
+				!path.includes('scout-local-ai-status.test')) ||
+			path.startsWith('data/scout-local-ai/readme')) {
+			categories.add('eval-review-process');
+		}
+		if (path === 'package.json' || path === 'package-lock.json') {
 			categories.add('eval-review-process');
 		}
 		if (path.startsWith('docs/launch/') || path.includes('release-evidence') || path.includes('testflight')) {
