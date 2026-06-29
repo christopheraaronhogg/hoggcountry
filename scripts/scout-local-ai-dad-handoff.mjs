@@ -256,6 +256,8 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		'',
 		`Generated at: ${generatedAt}`,
 		'',
+		'This file is a generated snapshot. Run `npm run status:scout-local-ai` for live post-commit proof state.',
+		'',
 		'## Current truth',
 		'',
 		`- Eval suite: \`${status.suite.suiteId}\` version \`${status.suite.version}\`, ${status.suite.caseCount} cases, hash \`${status.suite.hash}\`.`,
@@ -276,15 +278,15 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 			? `- Latest local target prep: \`${latestLocalTargetPrepProof.path}\` (${latestLocalTargetPrepProof.localTarget}, checked ${latestLocalTargetPrepProof.checkedAt}; not App Store Connect proof).`
 			: '- Latest local target prep: none found.',
 		`- Newer Xcode target pending App Store Connect: ${status.testflight?.targetBuildReadyForDad ? 'no' : 'yes'}.`,
-		`- Current checkout SHA: \`${status.nativeSource?.currentRepoSha ?? '<unknown>'}\`.`,
+		`- Snapshot checkout SHA: \`${status.nativeSource?.currentRepoSha ?? '<unknown>'}\`.`,
 		status.nativeSource?.latestNativeUploadProof
 			? `- Latest native upload source: \`${status.nativeSource.latestNativeUploadProof.path}\` (repo SHA \`${status.nativeSource.latestNativeUploadSha ?? '<unknown>'}\`${status.nativeSource.latestNativeUploadProof.repoShaSource ? ` from \`${status.nativeSource.latestNativeUploadProof.repoShaSource}\`` : ''}).`
 			: '- Latest native upload source: none found.',
 		latestNativeUploadAttempt
 			? `- Latest native upload attempt: \`${latestNativeUploadAttempt.path}\` (${latestNativeUploadAttempt.status}, upload requested ${latestNativeUploadAttempt.uploadRequested ? 'yes' : 'no'}, checked ${latestNativeUploadAttempt.checkedAt}).`
 			: '- Latest native upload attempt: none found.',
-		`- Current checkout newer than latest native upload: ${status.nativeSource?.sourceNewerThanLatestNativeUpload ? 'yes' : 'no'}.`,
-		`- Current native app source newer than latest native upload: ${status.nativeSource?.nativeAppSourceNewerThanLatestNativeUpload ? 'yes' : 'no'}.`,
+		`- Snapshot checkout newer than latest native upload: ${status.nativeSource?.sourceNewerThanLatestNativeUpload ? 'yes' : 'no'}.`,
+		`- Snapshot native app source newer than latest native upload: ${status.nativeSource?.nativeAppSourceNewerThanLatestNativeUpload ? 'yes' : 'no'}.`,
 		`- Imported full device runs: ${status.runs?.currentFullDeviceRuns?.length ?? 0}.`,
 		`- Imported partial device runs: ${status.runs?.currentPartialDeviceRuns?.length ?? 0}.`,
 		`- Imported suite-compatible full device runs: ${status.testflight?.currentSuiteCompatibleDeviceRunCount ?? 0}.`,
@@ -361,8 +363,8 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 			: '- Latest successful native upload repo SHA: unknown.',
 		`- Latest native upload suite: \`${status.nativeSource?.latestNativeUploadSuiteVersion ?? '<unknown>'}\` / \`${status.nativeSource?.latestNativeUploadSuiteHash ?? '<unknown>'}\`.`,
 		`- Latest native upload contains current suite: ${status.nativeSource?.latestNativeUploadHasCurrentSuite ? 'yes' : 'no'}.`,
-		`- Current source newer than latest native upload: ${status.nativeSource?.sourceNewerThanLatestNativeUpload ? 'yes' : 'no'}.`,
-		`- Current native app source newer than latest native upload: ${status.nativeSource?.nativeAppSourceNewerThanLatestNativeUpload ? 'yes' : 'no'}.`,
+		`- Snapshot source newer than latest native upload: ${status.nativeSource?.sourceNewerThanLatestNativeUpload ? 'yes' : 'no'}.`,
+		`- Snapshot native app source newer than latest native upload: ${status.nativeSource?.nativeAppSourceNewerThanLatestNativeUpload ? 'yes' : 'no'}.`,
 		...(status.nativeSource?.nativeAppSourceNewerThanLatestNativeUpload
 			? [status.testflight?.targetBuildReadyForDad
 				? `- Latest-source upload note: bump the iOS build number above \`${iosBuild.buildNumber}\` before uploading this checkout; App Store Connect will not accept reusing build \`${iosBuild.buildNumber}\`.`
@@ -484,19 +486,19 @@ function nativeSourceBoundary(status) {
 		return `latest native upload contains suite ${nativeSource.latestNativeUploadSuiteVersion ?? '<unknown>'} (${nativeSource.latestNativeUploadSuiteHash ?? '<unknown>'}), not current suite ${status.suite?.version ?? '<unknown>'} (${status.suite?.hash ?? '<unknown>'}); upload and refresh the target build before asking Dad for Run 100`;
 	}
 	if (nativeSource?.latestNativeUploadHasCurrentSource) {
-		return 'latest native upload contains the current checkout';
+		return 'latest native upload contains the snapshot checkout';
 	}
 	if (nativeSource?.nativeAppSourceNewerThanLatestNativeUpload) {
 		if (!status.testflight?.targetBuildReadyForDad) {
-			return 'current native app source is newer than the latest native upload; upload and refresh the local target build before counting latest-source phone proof';
+			return 'snapshot native app source is newer than the latest native upload; upload and refresh the local target build before counting latest-source phone proof';
 		}
-		return 'current checkout is newer than the latest native upload; Dad can still run a suite-compatible build now, but latest-source phone proof needs a fresh bumped-build upload and Dad Pilot refresh';
+		return 'snapshot checkout is newer than the latest native upload; Dad can still run a suite-compatible build now, but latest-source phone proof needs a fresh bumped-build upload and Dad Pilot refresh';
 	}
 	if (nativeSource?.sourceNewerThanLatestNativeUpload) {
 		return 'repo changed after the latest native upload, but no native app source changes are detected; latest phone build still appears to contain the current app bundle source';
 	}
 	if (nativeSource?.sourceDiffersFromLatestNativeUpload) {
-		return 'current checkout differs from the latest native upload; treat latest-source phone proof as unverified until the next upload/refresh';
+		return 'snapshot checkout differs from the latest native upload; treat latest-source phone proof as unverified until the next upload/refresh';
 	}
 	return 'latest native upload source is unknown';
 }

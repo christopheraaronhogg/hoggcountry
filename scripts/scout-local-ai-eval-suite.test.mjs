@@ -140,6 +140,35 @@ test('phone build action flags native app changes as latest-source upload work',
 	assert.match(action.text, /latest-app-source proof needs a fresh TestFlight upload/u);
 });
 
+test('phone build action lets Dad run a suite-compatible build while newer target waits', () => {
+	const action = createScoutLocalAiPhoneBuildAction({
+		testflight: {
+			targetBuild: '1.0 (30)',
+			recordedDadPilotBuild: '1.0 (29)',
+			suiteRequiredBuild: '1.0 (>= 13)',
+			targetBuildMeetsSuiteRequirement: true,
+			recordedDadPilotMeetsSuiteRequirement: true,
+			targetBuildReadyForDad: false,
+			targetBuildAvailableForDad: true
+		},
+		nativeSource: {
+			latestNativeUploadHasCurrentSuite: true,
+			latestNativeUploadHasCurrentSource: false,
+			sourceNewerThanLatestNativeUpload: true,
+			nativeAppSourceNewerThanLatestNativeUpload: true,
+			sourceDiffersFromLatestNativeUpload: true,
+			nativeAppChangedFileCount: 2
+		}
+	});
+
+	assert.equal(action.kind, 'upload-native-app-source-for-latest-proof');
+	assert.equal(action.canRunNow, true);
+	assert.equal(action.requiresNewUploadBeforeRun100, false);
+	assert.equal(action.requiresNewUploadForLatestAppSourceProof, true);
+	assert.match(action.text, /suite-compatible Dad Pilot TestFlight build 1\.0 \(29\)/u);
+	assert.match(action.text, /latest-app-source proof needs a fresh TestFlight upload/u);
+});
+
 test('phone build action blocks Dad when latest upload contains a stale eval suite', () => {
 	const action = createScoutLocalAiPhoneBuildAction({
 		testflight: {
@@ -428,6 +457,8 @@ test('Dad TestFlight handoff documents the current Dad Pilot Run 100 path', asyn
 	const targetBuildNumber = targetBuildMatch[2];
 
 	assert.match(handoff, /# Dad Scout local AI Eval Lab handoff/u);
+	assert.match(handoff, /This file is a generated snapshot/u);
+	assert.match(handoff, /npm run status:scout-local-ai/u);
 	assert.match(handoff, /Eval suite: `dad-local-ai-100` version/u);
 	assert.ok(handoff.includes(`Recorded Dad Pilot build: \`${currentBuild}\``));
 	assert.match(handoff, /Recorded Dad Pilot build meets suite requirement: (yes|no)/u);
@@ -444,20 +475,31 @@ test('Dad TestFlight handoff documents the current Dad Pilot Run 100 path', asyn
 	assert.match(handoff, /npm run wait:scout-local-ai-device-run/u);
 	assert.match(handoff, /wait:scout-local-ai-device-run -- --timeout-ms 300000 --poll-ms 10000/u);
 	assert.match(handoff, /Final readiness still requires a full current-suite TestFlight\/iPhone/u);
-	if (handoff.includes('Current native app source newer than latest native upload: yes')) {
-		const nextBuildNumber = String(Number(targetBuildNumber) + 1);
-		assert.match(
-			handoff,
-			new RegExp(`After bumping \`CURRENT_PROJECT_VERSION\` to \`${escapeRegExp(nextBuildNumber)}\`, uploading, and processing`, 'u')
-		);
-		assert.match(
-			handoff,
-			new RegExp(`npm run refresh:testflight-dad-pilot -- --build ${escapeRegExp(nextBuildNumber)} --app-version ${escapeRegExp(targetBuildMatch[1])}`, 'u')
-		);
-		assert.doesNotMatch(
-			handoff,
-			new RegExp(`npm run refresh:testflight-dad-pilot -- --build ${escapeRegExp(targetBuildNumber)} --app-version ${escapeRegExp(targetBuildMatch[1])}`, 'u')
-		);
+	if (handoff.includes('Snapshot native app source newer than latest native upload: yes')) {
+		if (handoff.includes('Newer Xcode target pending App Store Connect: yes')) {
+			assert.match(
+				handoff,
+				new RegExp(`Latest-source upload note: upload target build \`${escapeRegExp(targetBuildMatch[1])} \\(${escapeRegExp(targetBuildNumber)}\\)\``, 'u')
+			);
+			assert.match(
+				handoff,
+				new RegExp(`npm run refresh:testflight-dad-pilot -- --build ${escapeRegExp(targetBuildNumber)} --app-version ${escapeRegExp(targetBuildMatch[1])}`, 'u')
+			);
+		} else {
+			const nextBuildNumber = String(Number(targetBuildNumber) + 1);
+			assert.match(
+				handoff,
+				new RegExp(`After bumping \`CURRENT_PROJECT_VERSION\` to \`${escapeRegExp(nextBuildNumber)}\`, uploading, and processing`, 'u')
+			);
+			assert.match(
+				handoff,
+				new RegExp(`npm run refresh:testflight-dad-pilot -- --build ${escapeRegExp(nextBuildNumber)} --app-version ${escapeRegExp(targetBuildMatch[1])}`, 'u')
+			);
+			assert.doesNotMatch(
+				handoff,
+				new RegExp(`npm run refresh:testflight-dad-pilot -- --build ${escapeRegExp(targetBuildNumber)} --app-version ${escapeRegExp(targetBuildMatch[1])}`, 'u')
+			);
+		}
 	} else {
 		assert.doesNotMatch(handoff, /After bumping `CURRENT_PROJECT_VERSION`/u);
 	}
@@ -1190,6 +1232,80 @@ test('status command surfaces target TestFlight build gaps before phone eval', a
 	assert.match(status.nextAction.text, /--run inbox/u);
 });
 
+test('status command allows suite-compatible Dad Pilot runs while newer target waits', async () => {
+	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-suite-build-'));
+	const runsDir = join(outputDir, 'runs');
+	const deviceRunsDir = join(outputDir, 'device-runs');
+	const reviewsDir = join(outputDir, 'reviews');
+	const releaseEvidencePath = join(outputDir, 'release-evidence.json');
+	const iosProofDir = join(outputDir, 'proof');
+	await mkdir(runsDir, { recursive: true });
+	await mkdir(deviceRunsDir, { recursive: true });
+	await mkdir(reviewsDir, { recursive: true });
+	await mkdir(iosProofDir, { recursive: true });
+	const currentRepoSha = (await execFileAsync('git', ['rev-parse', 'HEAD'], {
+		cwd: REPO_ROOT
+	})).stdout.trim();
+	await writeReleaseEvidenceFixture(releaseEvidencePath, '1.0 (13)');
+	await writeIosUploadProofFixture(iosProofDir, {
+		repoSha: currentRepoSha,
+		fileStamp: '2026-06-27T02-39-27-165Z'
+	});
+	const routingRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'routing-status-suite-build-proof',
+		completeTools: true
+	});
+	routingRun.evidenceLane = 'scaffold-not-model';
+	routingRun.runContext = null;
+	for (const result of routingRun.results) result.answerOrigin = 'scaffold-not-model';
+	await writeFile(join(runsDir, 'routing-status-suite-build-proof.json'), `${JSON.stringify(routingRun, null, 2)}\n`);
+	const simulatorRun = deviceRunForCases(suite, suite.cases, {
+		runId: 'simulator-status-suite-build-preflight',
+		completeTools: true,
+		generatedAt: FRESH_FIXTURE_RUN_TIME,
+		runContext: simulatorDeviceRunContext()
+	});
+	for (const result of simulatorRun.results) result.answer = cleanPreflightAnswer();
+	await writeFile(join(deviceRunsDir, 'simulator-status-suite-build-preflight.json'), `${JSON.stringify(simulatorRun, null, 2)}\n`);
+
+	const result = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/status-scout-local-ai.mjs',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--release-evidence',
+			releaseEvidencePath,
+			'--ios-proof-dir',
+			iosProofDir,
+			'--json'
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
+	const status = JSON.parse(result.stdout);
+	const gates = Object.fromEntries(status.gates.map((gate) => [gate.id, gate]));
+
+	assert.equal(status.testflight.targetBuild, CURRENT_IOS_TARGET_BUILD);
+	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (13)');
+	assert.equal(status.testflight.recordedDadPilotMeetsSuiteRequirement, true);
+	assert.equal(status.testflight.targetBuildReadyForDad, false);
+	assert.equal(status.testflight.suiteCompatibleDadPilotBuildAvailable, true);
+	assert.equal(status.testflight.targetBuildAvailableForDad, true);
+	assert.equal(status.testflight.latestNativeUploadHasCurrentSuite, true);
+	assert.equal(gates['testflight-target'].ok, true);
+	assert.match(gates['testflight-target'].evidence, /Dad Pilot has a suite-compatible TestFlight build/u);
+	assert.match(gates['testflight-target'].evidence, /newer Xcode target is pending App Store Connect/u);
+	assert.equal(status.nextAction.kind, 'get-device-run');
+	assert.match(status.nextAction.text, /suite-compatible Dad Pilot TestFlight build 1\.0 \(13\)/u);
+	assert.match(status.nextAction.text, /newer target/u);
+	assert.match(status.nextAction.text, /Run 100/u);
+});
+
 test('status command lets suite-compatible TestFlight device proof override stale Dad Pilot release evidence', async () => {
 	const suite = JSON.parse(await readFile(SUITE_PATH, 'utf8'));
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-status-device-proves-build-'));
@@ -1349,14 +1465,16 @@ test('status command does not accept full device runs from non-suite-compatible 
 	const gates = Object.fromEntries(status.gates.map((gate) => [gate.id, gate]));
 
 	assert.equal(status.testflight.recordedDadPilotBuild, '1.0 (13)');
-	assert.equal(status.testflight.targetBuildAvailableForDad, false);
+	assert.equal(status.testflight.recordedDadPilotMeetsSuiteRequirement, true);
+	assert.equal(status.testflight.suiteCompatibleDadPilotBuildAvailable, true);
+	assert.equal(status.testflight.targetBuildAvailableForDad, true);
 	assert.equal(status.testflight.currentSuiteCompatibleDeviceRunCount, 0);
 	assert.equal(status.runs.currentFullDeviceRuns.length, 1);
 	assert.equal(status.runs.currentFullFinalProofDeviceRuns.length, 0);
 	assert.equal(status.runs.currentFullNonFinalProofDeviceRuns.length, 1);
 	assert.equal(status.reviews.currentDeviceReviews.length, 0);
-	assert.equal(gates['testflight-target'].ok, false);
-	assert.match(gates['testflight-target'].evidence, /Target build is not yet recorded as available for Dad/u);
+	assert.equal(gates['testflight-target'].ok, true);
+	assert.match(gates['testflight-target'].evidence, /Dad Pilot has a suite-compatible TestFlight build/u);
 	assert.equal(gates['device-run'].ok, false);
 	assert.match(gates['device-run'].evidence, /No current full suite-compatible TestFlight\/iPhone run found/u);
 	assert.match(gates['device-run'].evidence, /device-status-wrong-build12/u);
@@ -1430,8 +1548,11 @@ test('status command treats clean simulator local AI runs as preflight, not fina
 	assert.equal(status.runs.currentFullLocalPreflightRuns.length, 1);
 	assert.equal(status.runs.currentFullFinalProofDeviceRuns.length, 0);
 	assert.equal(status.runs.currentFullNonFinalProofDeviceRuns.length, 1);
-	assert.equal(status.nextAction.kind, 'publish-target-build');
-	assert.match(status.nextAction.text, new RegExp(`Upload and attach target iOS build ${escapeRegExp(CURRENT_IOS_TARGET_BUILD)}`, 'u'));
+	assert.equal(status.testflight.suiteCompatibleDadPilotBuildAvailable, true);
+	assert.equal(gates['testflight-target'].ok, true);
+	assert.equal(status.nextAction.kind, 'get-device-run');
+	assert.match(status.nextAction.text, /Run 100/u);
+	assert.match(status.nextAction.text, /suite-compatible Dad Pilot TestFlight build/u);
 
 	const textResult = await execFileAsync(
 		process.execPath,
@@ -2129,7 +2250,8 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Latest Dad Pilot gates: 5\/5 checked; targetReadyForDad yes/u);
 	assert.match(result.stdout, /Latest local target prep: .*ios-testflight-build-21-prep-2026-06-27\.md` \(1\.0 \(21\), checked 2026-06-27T08:49:20Z; not App Store Connect proof\)/u);
 	assert.match(result.stdout, /Newer Xcode target pending App Store Connect: yes/u);
-	assert.match(result.stdout, /Current checkout SHA: `[0-9a-f]{40}`/u);
+	assert.match(result.stdout, /This file is a generated snapshot/u);
+	assert.match(result.stdout, /Snapshot checkout SHA: `[0-9a-f]{40}`/u);
 	assert.match(result.stdout, /Latest native upload source: .*ios-testflight-attempt-2026-06-27T02-39-27-165Z\.md` \(repo SHA `[0-9a-f]{40}` from `.*01-repo-sha\.log`\)/u);
 	assert.match(result.stdout, /Latest native upload attempt: .*ios-testflight-attempt-2026-06-27T11-22-27-901Z\.md` \(blocked, upload requested yes/u);
 	assert.match(result.stdout, /## Phone build path/u);
@@ -2158,8 +2280,8 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Latest successful native upload repo SHA: `[0-9a-f]{40}` from `.*01-repo-sha\.log`/u);
 	assert.match(result.stdout, new RegExp(`Latest native upload suite: \`${escapeRegExp(uploadSuiteIdentity.version)}\` / \`${escapeRegExp(uploadSuiteIdentity.hash)}\``, 'u'));
 	assert.match(result.stdout, /Latest native upload contains current suite: no/u);
-	assert.match(result.stdout, /Current checkout newer than latest native upload: (yes|no)/u);
-	assert.match(result.stdout, /Current native app source newer than latest native upload: (yes|no)/u);
+	assert.match(result.stdout, /Snapshot checkout newer than latest native upload: (yes|no)/u);
+	assert.match(result.stdout, /Snapshot native app source newer than latest native upload: (yes|no)/u);
 	assert.match(result.stdout, new RegExp(`Latest-source proof: latest native upload contains suite ${escapeRegExp(uploadSuiteIdentity.version)}`, 'u'));
 	assert.match(result.stdout, new RegExp(`not current suite ${escapeRegExp(suite.version)}`, 'u'));
 	if (result.stdout.includes('Latest-source upload note:')) {

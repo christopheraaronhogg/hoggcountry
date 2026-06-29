@@ -134,8 +134,12 @@ async function buildStatus(paths) {
 	testflight.currentSuiteVersion = suiteIdentity.suiteVersion;
 	testflight.currentSuiteHash = suiteIdentity.suiteHash;
 	testflight.targetBuildContainsCurrentSuite = Boolean(testflight.targetBuildReadyForDad && nativeSource.latestNativeUploadHasCurrentSuite);
+	testflight.suiteCompatibleDadPilotBuildAvailable = Boolean(
+		testflight.recordedDadPilotMeetsSuiteRequirement && nativeSource.latestNativeUploadHasCurrentSuite
+	);
 	testflight.targetBuildAvailableForDad =
 		testflight.targetBuildContainsCurrentSuite ||
+		testflight.suiteCompatibleDadPilotBuildAvailable ||
 		testflight.currentTargetDeviceRunCount > 0 ||
 		testflight.currentSuiteCompatibleDeviceRunCount > 0;
 	const phoneBuildAction = createScoutLocalAiPhoneBuildAction({ testflight, nativeSource });
@@ -1560,6 +1564,7 @@ function createStatusMarkdown(status) {
 		`- Target build contains current suite: ${status.testflight.targetBuildContainsCurrentSuite ? 'yes' : 'no'}`,
 		`- Recorded Dad Pilot build: \`${status.testflight.recordedDadPilotBuild ?? '<unknown>'}\``,
 		`- Recorded Dad Pilot build meets suite requirement: ${status.testflight.recordedDadPilotMeetsSuiteRequirement ? 'yes' : 'no'}`,
+		`- Suite-compatible Dad Pilot build available: ${status.testflight.suiteCompatibleDadPilotBuildAvailable ? 'yes' : 'no'}`,
 		`- Target build ready for Dad: ${status.testflight.targetBuildReadyForDad ? 'yes' : 'no'}`,
 		`- Imported target-build device runs: ${status.testflight.currentTargetDeviceRunCount}`,
 		`- Imported suite-compatible device runs: ${status.testflight.currentSuiteCompatibleDeviceRunCount}`,

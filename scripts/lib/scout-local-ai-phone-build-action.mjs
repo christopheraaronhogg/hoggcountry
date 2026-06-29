@@ -32,7 +32,7 @@ export function createScoutLocalAiPhoneBuildAction({ testflight, nativeSource })
 	const buildLabel = testflight.targetBuildReadyForDad
 		? `the latest Dad Pilot TestFlight build ${targetBuild}`
 		: testflight.recordedDadPilotMeetsSuiteRequirement
-			? `the suite-compatible Dad Pilot TestFlight build ${recordedDadPilotBuild}`
+			? `the suite-compatible Dad Pilot TestFlight build ${recordedDadPilotBuild}; newer target ${targetBuild} is pending upload`
 			: `a suite-compatible TestFlight iPhone build satisfying ${suiteRequiredBuild}`;
 	const source = nativeSourceAction(nativeSource);
 	return {
