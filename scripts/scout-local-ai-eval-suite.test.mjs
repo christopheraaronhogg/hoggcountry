@@ -525,6 +525,9 @@ test('README documents device review acceptance states', async () => {
 	assert.match(readme, /neighbor prompt-frame generalization coverage/u);
 	assert.match(readme, /water must cover distance\s+ahead, carry\/skip decisions, reliability conflicts, and treatment or filter\s+problems/u);
 	assert.match(readme, /document-agent behavior must cover offline readiness, vault reading,\s+vault writing, and confirmation\/privacy boundaries/u);
+	assert.match(readme, /planner-generated regression cases/u);
+	assert.match(readme, /exact failed cases plus neighboring prompt-frame cases/u);
+	assert.match(readme, /`exactRegressionCaseIds` from\s+`neighborRegressionCaseIds`/u);
 });
 
 test('iOS simulator Gemma runner writes answer-quality scan artifacts', async () => {
@@ -4325,8 +4328,12 @@ test('review finalizer applies packet and writes below-5 iteration backlog plus 
 	assert.equal(backlog.items[0].ownerLayer, 'tool-routing');
 	assert.equal(iterationPlan.summary.itemCount, 1);
 	assert.equal(iterationPlan.summary.byOwnerLayer['tool-routing'], 1);
-	assert.deepEqual(iterationPlan.regressionCaseIds, [run.results[1].caseId]);
-	assert.match(iterationPlan.rerunCommand, new RegExp(`--id ${run.results[1].caseId}`, 'u'));
+	assert.deepEqual(iterationPlan.exactRegressionCaseIds, [run.results[1].caseId]);
+	assert.ok(iterationPlan.neighborRegressionCaseIds.length > 0);
+	assert.ok(iterationPlan.regressionCaseIds.includes(run.results[1].caseId));
+	assert.ok(iterationPlan.regressionCaseIds.includes('DLA-082'));
+	assert.match(iterationPlan.rerunCommand, new RegExp(`--id ${iterationPlan.regressionCaseIds.join(',')}`, 'u'));
+	assert.equal(iterationPlan.workstreams[0].items[0].generalizationRegression.neighborCaseIds.length > 0, true);
 	assert.match(report.nextAction, /Execute the iteration plan/u);
 });
 
@@ -5320,7 +5327,9 @@ test('iteration planner groups completed review backlog by responsible layer', a
 
 	assert.match(result.stdout, /Scout local AI iteration plan written/u);
 	assert.equal(plan.summary.itemCount, 3);
-	assert.equal(plan.summary.regressionCaseCount, 3);
+	assert.equal(plan.summary.exactRegressionCaseCount, 3);
+	assert.ok(plan.summary.neighborRegressionCaseCount > 0);
+	assert.equal(plan.summary.regressionCaseCount, plan.regressionCaseIds.length);
 	assert.equal(plan.summary.byOwnerLayer.data, 1);
 	assert.equal(plan.summary.byOwnerLayer['tool-routing'], 1);
 	assert.equal(plan.summary.byOwnerLayer['safety-prompt'], 1);
@@ -5328,13 +5337,19 @@ test('iteration planner groups completed review backlog by responsible layer', a
 	const routingWorkstream = plan.workstreams.find((workstream) => workstream.ownerLayer === 'tool-routing');
 	assert.ok(dataWorkstream.fixTargets.some((target) => target.label === 'Local reference data'));
 	assert.ok(routingWorkstream.fixTargets.some((target) => target.label === 'Scout tool registry and runtime routing'));
-	assert.deepEqual(plan.regressionCaseIds, [
+	assert.deepEqual(plan.exactRegressionCaseIds, [
 		review.cases[2].caseId,
 		review.cases[3].caseId,
 		review.cases[0].caseId
 	]);
-	assert.match(plan.rerunCommand, new RegExp(`--id ${review.cases[2].caseId},${review.cases[3].caseId},${review.cases[0].caseId}`, 'u'));
+	assert.ok(plan.neighborRegressionCaseIds.length > 0);
+	assert.ok(plan.regressionCaseIds.includes(review.cases[2].caseId));
+	assert.ok(plan.regressionCaseIds.includes(review.cases[3].caseId));
+	assert.ok(plan.regressionCaseIds.includes(review.cases[0].caseId));
+	assert.match(plan.rerunCommand, new RegExp(`--id ${plan.regressionCaseIds.join(',')}`, 'u'));
 	assert.match(markdown, /Do not close this iteration by changing expected wording only/u);
+	assert.match(markdown, /Rerun the exact failed cases plus their neighboring prompt-frame cases/u);
+	assert.match(markdown, /Neighbor regression cases:/u);
 	assert.match(markdown, /Likely fix targets:/u);
 	assert.match(markdown, /Scout tool registry and runtime routing/u);
 	assert.match(markdown, /### tool-routing/u);
@@ -5564,7 +5579,9 @@ test('iteration verifier passes when rerun resolves planned regression cases', a
 		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
 	);
 
-	const rerunCases = [suite.cases[2], suite.cases[0]];
+	const plan = JSON.parse(await readFile(join(iterationDir, 'device-iteration-resolution-pass.iteration.json'), 'utf8'));
+	const suiteCasesById = new Map(suite.cases.map((testCase) => [testCase.id, testCase]));
+	const rerunCases = plan.regressionCaseIds.map((caseId) => suiteCasesById.get(caseId)).filter(Boolean);
 	const rerun = deviceRunForCases(suite, rerunCases, {
 		runId: 'device-iteration-rerun-pass',
 		completeTools: true
@@ -5597,10 +5614,11 @@ test('iteration verifier passes when rerun resolves planned regression cases', a
 
 	assert.match(result.stdout, /Scout local AI iteration verification passed/u);
 	assert.equal(resolution.status, 'passed');
-	assert.equal(resolution.summary.resolvedPlannedCases, 2);
+	assert.equal(resolution.summary.plannedCases, plan.regressionCaseIds.length);
+	assert.equal(resolution.summary.resolvedPlannedCases, plan.regressionCaseIds.length);
 	assert.equal(resolution.summary.unresolvedPlannedCases, 0);
 	assert.equal(resolution.summary.belowFive, 0);
-	assert.match(markdown, /Resolved planned cases: 2\/2/u);
+	assert.match(markdown, new RegExp(`Resolved planned cases: ${plan.regressionCaseIds.length}/${plan.regressionCaseIds.length}`, 'u'));
 	assert.match(markdown, /Run strict device proof only after a full device review is 100\/100 at 5\/5/u);
 });
 

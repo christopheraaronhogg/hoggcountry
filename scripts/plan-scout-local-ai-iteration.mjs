@@ -8,9 +8,16 @@ import {
 	VALID_FAILURE_CATEGORIES,
 	VALID_OWNER_LAYERS as REVIEW_OWNER_LAYERS
 } from './lib/scout-local-ai-review.mjs';
+import {
+	summarizeScoutLocalAiGeneralizationForCase
+} from './lib/scout-local-ai-generalization.mjs';
+import {
+	scoutLocalAiSuiteIdentity
+} from './lib/scout-local-ai-suite.mjs';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
+const DEFAULT_SUITE = 'data/scout-local-ai/dad-local-ai-100.json';
 const DEFAULT_OUTPUT_DIR = 'data/scout-local-ai/iterations';
 const DEVICE_EVIDENCE_LANE = 'device-on-device-gemma';
 const VALID_FAILURES = new Set(VALID_FAILURE_CATEGORIES);
@@ -110,10 +117,13 @@ const SOURCE_SKILL_FIX_TARGETS = {
 
 const cli = parseCliArgs(process.argv.slice(2));
 const backlogPaths = await resolveBacklogPaths(cli);
+const suitePath = resolveInputPath(cli.suite ?? DEFAULT_SUITE);
+const suite = await readOptionalJson(suitePath);
 const outputDir = resolveInputPath(cli.outputDir ?? DEFAULT_OUTPUT_DIR);
 const planId = safeFileName(String(cli.planId ?? `scout-local-ai-iteration-${compactTimestamp(new Date())}`));
 const allowUnrated = Boolean(cli.allowUnrated);
 const allowNonDevice = Boolean(cli.allowNonDevice);
+const neighborCaseLimit = parsePositiveInteger(cli.neighborCaseLimit ?? cli.neighborLimit, 6);
 
 if (!backlogPaths.length) {
 	throw new Error([
@@ -139,7 +149,7 @@ if (errors.length) {
 	process.exit(1);
 }
 
-const plan = createIterationPlan({ planId, loaded });
+const plan = createIterationPlan({ planId, loaded, suite, suitePath, neighborCaseLimit });
 await mkdir(outputDir, { recursive: true });
 const jsonPath = resolve(outputDir, `${planId}.iteration.json`);
 const markdownPath = resolve(outputDir, `${planId}.iteration.md`);
@@ -222,15 +232,25 @@ function validateBacklog(backlog, path, options) {
 	}
 }
 
-function createIterationPlan({ planId, loaded }) {
+function createIterationPlan({ planId, loaded, suite, suitePath, neighborCaseLimit }) {
 	const generatedAt = new Date().toISOString();
 	const items = loaded.flatMap(({ path, backlog }) => backlog.items.map((item) => ({
 		...item,
 		sourceBacklog: relative(REPO_ROOT, path),
 		runId: backlog.runId
 	})));
-	const sortedItems = [...items].sort(compareItems);
-	const regressionCaseIds = [...new Set(sortedItems.map((item) => item.caseId))];
+	const sortedItems = [...items].sort(compareItems).map((item) => ({
+		...item,
+		generalizationRegression: createGeneralizationRegressionForItem(item, suite, neighborCaseLimit)
+	}));
+	const exactRegressionCaseIds = [...new Set(sortedItems.map((item) => item.caseId))];
+	const neighborRegressionCaseIds = [...new Set(
+		sortedItems
+			.flatMap((item) => item.generalizationRegression.neighborCaseIds)
+			.filter((caseId) => !exactRegressionCaseIds.includes(caseId))
+	)];
+	const regressionCaseIds = [...new Set([...exactRegressionCaseIds, ...neighborRegressionCaseIds])];
+	const suiteIdentity = suite ? scoutLocalAiSuiteIdentity(suite) : null;
 	const workstreams = [...groupBy(sortedItems, (item) => item.ownerLayer).entries()]
 		.sort(([left], [right]) => left.localeCompare(right))
 		.map(([ownerLayer, ownerItems]) => createWorkstream(ownerLayer, ownerItems));
@@ -255,6 +275,8 @@ function createIterationPlan({ planId, loaded }) {
 		summary: {
 			backlogCount: loaded.length,
 			itemCount: sortedItems.length,
+			exactRegressionCaseCount: exactRegressionCaseIds.length,
+			neighborRegressionCaseCount: neighborRegressionCaseIds.length,
 			regressionCaseCount: regressionCaseIds.length,
 			byOwnerLayer: Object.fromEntries(countBy(sortedItems, (item) => item.ownerLayer)),
 			byFailureCategory: Object.fromEntries(countBy(sortedItems.flatMap((item) => item.failureCategories), (item) => item)),
@@ -262,6 +284,8 @@ function createIterationPlan({ planId, loaded }) {
 			bySourceEvidenceGap: Object.fromEntries(countBy(sortedItems.flatMap(sourceEvidenceGapExpectations), (item) => item)),
 			byEvidenceLane: Object.fromEntries(countBy(loaded.map(({ backlog }) => backlog.evidenceLane ?? 'unknown'), (item) => item))
 		},
+		exactRegressionCaseIds,
+		neighborRegressionCaseIds,
 		regressionCaseIds,
 		rerunCommand: createRerunCommand(regressionCaseIds),
 		fullSuiteCommand: 'npm run eval:scout-local-ai',
@@ -269,21 +293,44 @@ function createIterationPlan({ planId, loaded }) {
 		guardrails: [
 			'Do not close this iteration by changing expected wording only.',
 			'Fix the responsible layer named by ownerLayer: data, tool-routing, prompt, safety-prompt, ui, or local-model.',
+			'Rerun the exact failed cases plus their neighboring prompt-frame cases so the fix proves the broader task behavior.',
 			'Re-run the listed regression cases, then re-run the full 100-case suite before final device proof.',
 			'Keep device/TestFlight proof separate from scaffold, browser, and cloud proof.'
 		],
+		generalizationRegression: {
+			suitePath: suitePath ? relative(REPO_ROOT, suitePath) : null,
+			suiteVersion: suite?.version ?? null,
+			suiteHash: suiteIdentity?.suiteHash ?? null,
+			neighborCaseLimit,
+			enabled: Boolean(suite),
+			warnings: createGeneralizationRegressionWarnings({ loaded, suite, suiteIdentity, suitePath }),
+			items: sortedItems.map((item) => ({
+				caseId: item.caseId,
+				neighborCaseIds: item.generalizationRegression.neighborCaseIds,
+				allNeighborCaseIds: item.generalizationRegression.allNeighborCaseIds,
+				profiles: item.generalizationRegression.profiles
+			}))
+		},
 		workstreams
 	};
 }
 
 function createWorkstream(ownerLayer, items) {
 	const sorted = [...items].sort(compareItems);
+	const exactCaseIds = [...new Set(sorted.map((item) => item.caseId))];
+	const neighborCaseIds = [...new Set(
+		sorted
+			.flatMap((item) => item.generalizationRegression.neighborCaseIds)
+			.filter((caseId) => !exactCaseIds.includes(caseId))
+	)];
 	return {
 		ownerLayer,
 		itemCount: sorted.length,
 		recommendedFixScope: OWNER_GUIDANCE[ownerLayer],
 		fixTargets: createFixTargets(ownerLayer, sorted),
-		regressionCaseIds: [...new Set(sorted.map((item) => item.caseId))],
+		exactRegressionCaseIds: exactCaseIds,
+		neighborRegressionCaseIds: neighborCaseIds,
+		regressionCaseIds: [...new Set([...exactCaseIds, ...neighborCaseIds])],
 		failureCategories: [...new Set(sorted.flatMap((item) => item.failureCategories))].sort(),
 		missingTools: [...new Set(sorted.flatMap((item) => item.missingTools ?? []))].sort(),
 		sourceEvidenceGaps: [...new Set(sorted.flatMap(sourceEvidenceGapExpectations))].sort(),
@@ -304,6 +351,7 @@ function createWorkstream(ownerLayer, items) {
 			expectedTraits: item.expectedTraits ?? [],
 			safetyCaveats: item.safetyCaveats ?? [],
 			answerPreview: item.answerPreview,
+			generalizationRegression: item.generalizationRegression,
 			sourceBacklog: item.sourceBacklog
 		}))
 	};
@@ -328,6 +376,8 @@ function createIterationPlanMarkdown(plan) {
 		'## Summary',
 		'',
 		`- Below-5 tasks: ${plan.summary.itemCount}`,
+		`- Exact failed cases: ${plan.summary.exactRegressionCaseCount}`,
+		`- Neighbor regression cases: ${plan.summary.neighborRegressionCaseCount}`,
 		`- Regression cases: ${plan.summary.regressionCaseCount}`,
 		`- Backlogs: ${plan.summary.backlogCount}`,
 		'',
@@ -340,6 +390,10 @@ function createIterationPlanMarkdown(plan) {
 	if (Object.keys(plan.summary.bySourceEvidenceGap).length) {
 		lines.push('', 'Source evidence gaps:', '');
 		for (const [expectation, count] of Object.entries(plan.summary.bySourceEvidenceGap)) lines.push(`- ${expectation}: ${count}`);
+	}
+	if (plan.generalizationRegression.warnings.length) {
+		lines.push('', 'Generalization warnings:', '');
+		for (const warning of plan.generalizationRegression.warnings) lines.push(`- ${warning}`);
 	}
 	lines.push(
 		'',
@@ -367,6 +421,8 @@ function createIterationPlanMarkdown(plan) {
 			workstream.recommendedFixScope,
 			'',
 			`- Items: ${workstream.itemCount}`,
+			`- Exact failed cases: ${workstream.exactRegressionCaseIds.join(', ')}`,
+			`- Neighbor regression cases: ${workstream.neighborRegressionCaseIds.join(', ') || 'none'}`,
 			`- Regression cases: ${workstream.regressionCaseIds.join(', ')}`,
 			`- Missing tools: ${workstream.missingTools.join(', ') || 'none'}`,
 			`- Source evidence gaps: ${workstream.sourceEvidenceGaps.join(', ') || 'none'}`,
@@ -386,6 +442,7 @@ function createIterationPlanMarkdown(plan) {
 				`- Required tools: ${item.requiredTools.join(', ') || 'none'}`,
 				`- Missing tools: ${item.missingTools.join(', ') || 'none'}`,
 				`- Source evidence gaps: ${sourceEvidenceGapExpectations(item).join(', ') || 'none'}`,
+				`- Neighbor regression cases: ${item.generalizationRegression.neighborCaseIds.join(', ') || 'none'}`,
 				'',
 				'Improvement task:',
 				'',
@@ -400,6 +457,35 @@ function createIterationPlanMarkdown(plan) {
 	}
 
 	return `${lines.join('\n')}\n`;
+}
+
+function createGeneralizationRegressionForItem(item, suite, neighborCaseLimit) {
+	if (!suite) {
+		return {
+			caseId: item.caseId,
+			found: false,
+			neighborLimit: neighborCaseLimit,
+			neighborCaseIds: [],
+			allNeighborCaseIds: [],
+			profiles: []
+		};
+	}
+	return summarizeScoutLocalAiGeneralizationForCase(suite, item.caseId, {
+		neighborLimit: neighborCaseLimit
+	});
+}
+
+function createGeneralizationRegressionWarnings({ loaded, suite, suiteIdentity, suitePath }) {
+	const warnings = [];
+	if (!suite) {
+		warnings.push(`Canonical suite was not loaded from ${relative(REPO_ROOT, suitePath)}; iteration plan includes exact failed cases only.`);
+		return warnings;
+	}
+	const sourceSuiteHashes = new Set((loaded ?? []).map(({ backlog }) => backlog.suiteHash).filter(Boolean));
+	if (suiteIdentity?.suiteHash && sourceSuiteHashes.size && !sourceSuiteHashes.has(suiteIdentity.suiteHash)) {
+		warnings.push(`Canonical suite hash ${suiteIdentity.suiteHash} does not match source backlog hash(es): ${[...sourceSuiteHashes].join(', ')}.`);
+	}
+	return warnings;
 }
 
 function createRerunCommand(caseIds) {
@@ -500,6 +586,23 @@ function resolveInputPath(value) {
 	if (text === '~') return process.env.HOME ?? text;
 	if (text.startsWith('~/')) return resolve(process.env.HOME ?? REPO_ROOT, text.slice(2));
 	return resolve(REPO_ROOT, text);
+}
+
+async function readOptionalJson(path) {
+	try {
+		return JSON.parse(await readFile(path, 'utf8'));
+	} catch {
+		return null;
+	}
+}
+
+function parsePositiveInteger(value, fallback) {
+	if (value === undefined || value === null || value === '') return fallback;
+	const number = Number(value);
+	if (!Number.isInteger(number) || number < 0) {
+		throw new Error(`Expected a non-negative integer, got ${value}.`);
+	}
+	return number;
 }
 
 function compactTimestamp(date) {

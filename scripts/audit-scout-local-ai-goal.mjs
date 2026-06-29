@@ -205,8 +205,10 @@ function createRequirementAudit(input) {
 				input.reviewSource.includes('OVERFITTING_IMPROVEMENT_PATTERNS') &&
 				input.reviewSource.includes('rather than weakening the eval rubric') &&
 				input.planSource.includes('Fix the responsible layer named by ownerLayer') &&
+				input.planSource.includes('neighborRegressionCaseIds') &&
+				input.planSource.includes('neighboring prompt-frame cases') &&
 				input.verifyIterationSource.includes('stale improvementTask remains on a planned 5/5 case'),
-			evidence: 'Review rejects rubric-weakening tasks; planner groups misses by ownerLayer; verifier rejects unresolved/stale iteration closures.'
+			evidence: 'Review rejects rubric-weakening tasks; planner groups misses by ownerLayer and adds neighboring prompt-frame regression cases; verifier rejects unresolved/stale iteration closures.'
 		}),
 		requirement({
 			id: 'device-proof-lane-separated',

@@ -62,10 +62,12 @@ The loop:
    npm run eval:scout-local-ai:ios-sim-gemma -- --limit 3
    ```
 
-   After a below-5 review, rerun the exact regression cases first:
+   After a below-5 review, rerun the planner-generated regression cases first.
+   The plan includes exact failed cases plus neighboring prompt-frame cases that
+   exercise the same underlying capability:
 
    ```sh
-   npm run eval:scout-local-ai:ios-sim-gemma -- --cases DLA-022,DLA-026,DLA-028
+   npm run eval:scout-local-ai:ios-sim-gemma -- --cases DLA-022,DLA-026,DLA-028,DLA-033,DLA-036
    ```
 
    Use `--limit 10` after a targeted tool/prompt/data change. Use `--limit 100`
@@ -537,13 +539,16 @@ That writes an ignored JSON/Markdown iteration plan under
 `data/scout-local-ai/iterations/`, groups misses by responsible layer, gives the
 regression case command to rerun, summarizes missing tools and source-evidence
 gaps, and fails if a below-5 item is uncategorized or lacks a concrete improvement
-task. It also requires `device-on-device-gemma` backlogs by default so scaffold
-routing smoke data cannot masquerade as Dad local-AI iteration proof. Add
-`--allow-non-device` only for deliberate routing/local-lab experiments outside
-final Dad proof. Each workstream includes likely fix targets for the affected
-tools/source skills, such as local source docs, the Scout tool registry, water
-or town data, safety prompts, Eval Lab recovery, or the on-device bridge. Use
-the plan to fix the data, tool routing, prompt, safety wording, UI recovery
+task. The regression list separates `exactRegressionCaseIds` from
+`neighborRegressionCaseIds`; the neighbor cases come from the generalization
+profile frames so a fix is checked against nearby prompts instead of only the
+failed wording. It also requires `device-on-device-gemma` backlogs by default so
+scaffold routing smoke data cannot masquerade as Dad local-AI iteration proof.
+Add `--allow-non-device` only for deliberate routing/local-lab experiments
+outside final Dad proof. Each workstream includes likely fix targets for the
+affected tools/source skills, such as local source docs, the Scout tool registry,
+water or town data, safety prompts, Eval Lab recovery, or the on-device bridge.
+Use the plan to fix the data, tool routing, prompt, safety wording, UI recovery
 state, or local-model lane named by the backlog; do not close an iteration by
 changing expected answer wording only.
 

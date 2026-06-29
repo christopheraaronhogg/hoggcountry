@@ -244,6 +244,65 @@ export function summarizeScoutLocalAiGeneralizationCoverage(suite) {
 	};
 }
 
+export function summarizeScoutLocalAiGeneralizationForCase(suite, caseId, { neighborLimit = 6 } = {}) {
+	const cases = Array.isArray(suite?.cases) ? suite.cases : [];
+	const target = cases.find((testCase) => testCase.id === caseId);
+	if (!target) {
+		return {
+			caseId,
+			found: false,
+			neighborLimit,
+			neighborCaseIds: [],
+			allNeighborCaseIds: [],
+			profiles: []
+		};
+	}
+
+	const profileMatches = [];
+	const allNeighborCaseIds = [];
+	const seenNeighborIds = new Set();
+	for (const profile of SCOUT_LOCAL_AI_GENERALIZATION_PROFILES) {
+		if (!profile.matches(target)) continue;
+		const profileCases = cases.filter((testCase) => profile.matches(testCase));
+		const frameMatches = [];
+		for (const frame of profile.promptFrames) {
+			if (!frame.matches(target)) continue;
+			const frameCaseIds = profileCases
+				.filter((testCase) => frame.matches(testCase))
+				.map((testCase) => testCase.id)
+				.filter(Boolean);
+			const frameNeighborCaseIds = frameCaseIds.filter((id) => id !== caseId);
+			for (const id of frameNeighborCaseIds) {
+				if (seenNeighborIds.has(id)) continue;
+				seenNeighborIds.add(id);
+				allNeighborCaseIds.push(id);
+			}
+			frameMatches.push({
+				id: frame.id,
+				label: frame.label,
+				caseIds: frameCaseIds,
+				neighborCaseIds: frameNeighborCaseIds
+			});
+		}
+		if (frameMatches.length) {
+			profileMatches.push({
+				id: profile.id,
+				label: profile.label,
+				frames: frameMatches
+			});
+		}
+	}
+
+	return {
+		caseId,
+		found: true,
+		neighborLimit,
+		neighborCaseIds: allNeighborCaseIds.slice(0, neighborLimit),
+		allNeighborCaseIds,
+		profiles: profileMatches
+	};
+}
+
 function hasDomain(testCase, domain) {
 	return testCase?.domain === domain;
 }
