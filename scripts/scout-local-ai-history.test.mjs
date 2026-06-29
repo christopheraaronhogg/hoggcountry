@@ -116,8 +116,16 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 	assert.deepEqual(history.summary.currentRunRatingCounts, { '5': 1 });
 	assert.equal(history.summary.currentRunRated, 1);
 	assert.equal(history.summary.currentRunUnrated, 0);
+	assert.equal(history.summary.currentRunIndependentReviewersPassed, 4);
+	assert.equal(history.summary.currentRunIndependentReviewersTotal, 4);
+	assert.equal(history.summary.currentRunReviewGatesPassed, 6);
+	assert.equal(history.summary.currentRunReviewGatesTotal, 6);
+	assert.equal(history.summary.reviewGateReadyRunCount, 2);
 	assert.equal(history.runs[0].runId, 'device-local-ai-20260628T081954Z');
 	assert.equal(history.runs[1].reviewSummary.ratingCounts['5'], 1);
+	assert.equal(history.runs[1].independentReviewGates.reviewers.passed, 4);
+	assert.equal(history.runs[1].independentReviewGates.reviewGates.passed, 6);
+	assert.equal(history.runs[1].independentReviewGates.readyForStrictProof, true);
 	assert.equal(history.runs[1].interventions.commitCount, 1);
 	assert.deepEqual(history.runs[1].interventions.categories, ['document-grounding', 'tool-routing/source-retrieval']);
 	assert.equal(history.summary.interventionCounts['prompt/answer-contract'], 1);
@@ -162,6 +170,12 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 	assert.match(html, /gemma-4-E2B-it-litert-lm/u);
 	assert.match(html, /modelRuntimeKey\(item\)/u);
 	assert.match(html, /Current Run Unrated/u);
+	assert.match(html, /Reviewers Passed/u);
+	assert.match(html, /Review Gates Passed/u);
+	assert.match(html, /formatIndependentGateStats\(run\)/u);
+	assert.match(html, /"currentRunIndependentReviewersPassed":4/u);
+	assert.match(html, /"currentRunReviewGatesPassed":6/u);
+	assert.match(html, /"readyForStrictProof":true/u);
 	assert.match(html, /Latest Known 5\/5/u);
 	assert.match(html, /Confidence: /u);
 	assert.match(html, /Failure mode: /u);
@@ -176,6 +190,79 @@ test('Scout local AI history tracks answer evolution and score deltas', async ()
 	assert.match(html, /no Scout answer rerun required/u);
 	assert.match(html, /Track Scout eval interventions in history/u);
 	assert.doesNotMatch(html, /<\/script><script/u);
+});
+
+test('Scout local AI history tracks independent review gate progress separately from answer ratings', async () => {
+	const root = await mkdtemp(join(tmpdir(), 'scout-history-gates-'));
+	const runDir = join(root, 'device-runs');
+	const reviewDir = join(root, 'reviews');
+	const scanDir = join(root, 'answer-quality-scans');
+	await mkdir(runDir, { recursive: true });
+	await mkdir(reviewDir, { recursive: true });
+	await mkdir(scanDir, { recursive: true });
+	const suitePath = join(root, 'dad-local-ai-100.json');
+	await writeFile(suitePath, JSON.stringify({
+		suiteId: 'dad-local-ai-100',
+		version: '2026-06-29.4',
+		cases: [{
+			id: 'DLA-067',
+			domain: 'navigation',
+			phase: 'on-trail',
+			prompt: 'What should I do if GPS jumps around and Scout shows the wrong spot?',
+			requiredTools: ['current_mile', 'source_search:safety'],
+			expectedTraits: ['manual correction'],
+			safetyCaveats: ['no decisions from bad GPS'],
+			documentTask: 'reading-writing'
+		}]
+	}, null, 2));
+	await writeRunAndReview({
+		runDir,
+		reviewDir,
+		scanDir,
+		runId: 'device-local-ai-20260629T070000Z',
+		startedAt: '2026-06-29T07:00:00.000Z',
+		answer: 'Stop, verify location from blazes and map, then set the current AT mile from a confirmed point.',
+		confidence: 'medium',
+		failureMode: null,
+		rating: 5,
+		notes: 'Answer is rated, but independent proof gates are still blank.',
+		failureCategories: [],
+		ownerLayer: '',
+		improvementTask: '',
+		independentReviewerStatus: null,
+		reviewGatePassed: null
+	});
+
+	const history = await buildScoutLocalAiHistory({
+		repoRoot: root,
+		suitePath,
+		runDirs: [runDir],
+		reviewDir,
+		scanDir,
+		gitCommits: []
+	});
+
+	const run = history.runs[0];
+	assert.equal(history.summary.currentRunRatingCounts['5'], 1);
+	assert.equal(history.summary.currentRunIndependentReviewersPassed, 0);
+	assert.equal(history.summary.currentRunReviewGatesPassed, 0);
+	assert.equal(history.summary.reviewGateReadyRunCount, 0);
+	assert.equal(run.independentReviewGates.reviewers.blank, 4);
+	assert.equal(run.independentReviewGates.reviewGates.blank, 6);
+	assert.equal(run.independentReviewGates.readyForStrictProof, false);
+	assert.deepEqual(run.independentReviewGates.pendingIds.slice(0, 2), [
+		'reviewer:source_grounding_reviewer',
+		'reviewer:trail_math_reviewer'
+	]);
+	const html = renderScoutLocalAiHistoryHtml(history);
+	assert.match(html, /Reviewers Passed/u);
+	assert.match(html, /Review Gates Passed/u);
+	assert.match(html, /formatIndependentGateStats\(run\)/u);
+	assert.match(html, /"currentRunIndependentReviewersPassed":0/u);
+	assert.match(html, /"currentRunReviewGatesPassed":0/u);
+	assert.match(html, /"blank":4/u);
+	assert.match(html, /"blank":6/u);
+	assert.match(html, /"readyForStrictProof":false/u);
 });
 
 test('Scout local AI history classifies document-grounding and release interventions', () => {
@@ -462,7 +549,9 @@ async function writeRunAndReview({
 	notes,
 	failureCategories,
 	ownerLayer,
-	improvementTask
+	improvementTask,
+	independentReviewerStatus = 'pass',
+	reviewGatePassed = true
 }) {
 	const result = {
 		caseId: 'DLA-067',
@@ -528,6 +617,8 @@ async function writeRunAndReview({
 		suiteHash: 'fnv1a32:test',
 		runPath: `device-runs/${runId}.json`,
 		evidenceLane: 'device-on-device-gemma',
+		independentReviewers: independentReviewersForHistory(independentReviewerStatus),
+		reviewGates: reviewGatesForHistory(reviewGatePassed),
 		cases: [{
 			...result.case,
 			caseId: 'DLA-067',
@@ -557,4 +648,36 @@ async function writeRunAndReview({
 		flagged: []
 	}, null, 2));
 	assert.ok((await readFile(join(runDir, `${runId}.json`), 'utf8')).includes(runId));
+}
+
+function independentReviewersForHistory(status) {
+	return [
+		'source_grounding_reviewer',
+		'trail_math_reviewer',
+		'document_writing_reviewer',
+		'proof_lane_reviewer'
+	].map((id) => ({
+		id,
+		input: `Fixture input for ${id}`,
+		checks: [`Fixture check for ${id}`],
+		mustBeSeparateFrom: ['answer_generation'],
+		status,
+		notes: status === 'pass' ? 'Fixture reviewer pass.' : ''
+	}));
+}
+
+function reviewGatesForHistory(passed) {
+	return [
+		'independent_artifact_review',
+		'tool_source_evidence',
+		'human_1_to_5_rating',
+		'below_five_task',
+		'strict_testflight_iphone',
+		'stability_repeat'
+	].map((id) => ({
+		id,
+		rule: `Fixture rule for ${id}`,
+		passed,
+		notes: passed === true ? 'Fixture gate pass.' : ''
+	}));
 }

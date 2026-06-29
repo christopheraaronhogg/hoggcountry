@@ -6,6 +6,10 @@ import { basename, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { parseCliArgs, summarizeReview } from './lib/scout-local-ai-review.mjs';
+import {
+	REQUIRED_INDEPENDENT_REVIEWERS,
+	REQUIRED_REVIEW_GATES
+} from './lib/scout-local-ai-device-proof.mjs';
 import { sourceEvidenceProblems } from './lib/scout-local-ai-source-evidence.mjs';
 import { scoutLocalAiSuiteIdentity } from './lib/scout-local-ai-suite.mjs';
 
@@ -364,6 +368,8 @@ function renderMetrics(run) {
 		['Current Run Rated', run?.reviewSummary?.rated ?? 0],
 		['Current Run Unrated', run?.reviewSummary?.unrated ?? run?.caseCount ?? 0],
 		['Current Run 5/5', run?.reviewSummary?.ratingCounts?.['5'] ?? 0],
+		['Reviewers Passed', run?.independentReviewGates?.reviewers?.passed ?? 0],
+		['Review Gates Passed', run?.independentReviewGates?.reviewGates?.passed ?? 0],
 		['Latest Known 5/5', historyData.summary.latestKnownRatings?.['5'] ?? historyData.summary.latestRatings?.['5'] ?? 0],
 		['Run Changes', run?.interventions?.commitCount ?? 0]
 	];
@@ -371,7 +377,7 @@ function renderMetrics(run) {
 }
 function renderTimeline(run) {
 	document.getElementById('timelineRun').textContent = run ? shortRun(run) : 'No run selected';
-	document.getElementById('timelineStats').textContent = run ? [run.evidenceLane, run.caseCount + '/' + run.totalSuiteCases + ' cases', run.reviewSummary ? run.reviewSummary.rated + ' rated' : 'unreviewed', formatRunInterventions(run)].filter(Boolean).join(' | ') : '';
+	document.getElementById('timelineStats').textContent = run ? [run.evidenceLane, run.caseCount + '/' + run.totalSuiteCases + ' cases', run.reviewSummary ? run.reviewSummary.rated + ' rated' : 'unreviewed', formatIndependentGateStats(run), formatRunInterventions(run)].filter(Boolean).join(' | ') : '';
 }
 function filteredCases(run) {
 	const needle = state.search;
@@ -459,6 +465,13 @@ function formatRunInterventions(run) {
 	if (!interventions?.commitCount) return 'no recorded code/data changes';
 	return interventions.categories?.length ? 'changes: ' + interventions.categories.join(', ') : interventions.commitCount + ' change commits';
 }
+function formatIndependentGateStats(run) {
+	const gates = run?.independentReviewGates;
+	if (!gates) return '';
+	const reviewers = gates.reviewers;
+	const reviewGates = gates.reviewGates;
+	return 'reviewers ' + reviewers.passed + '/' + reviewers.total + ', gates ' + reviewGates.passed + '/' + reviewGates.total;
+}
 function formatEntryInterventions(interventions) {
 	if (!interventions?.commitCount) return 'none recorded';
 	const subjects = (interventions.commits ?? []).slice(0, 3).map((commit) => commit.subject).filter(Boolean);
@@ -532,6 +545,7 @@ function buildRunRecord({ repoRoot, run, runPath, review, reviewSummary, scan, s
 		},
 		reviewPath: review ? review.runPath ?? `data/scout-local-ai/reviews/${run.runId}.review.json` : null,
 		reviewSummary: reviewSummary ? compactReviewSummary(reviewSummary) : null,
+		independentReviewGates: review ? summarizeHistoryIndependentReviewGates(review) : null,
 		answerQuality: scan ? {
 			flaggedCount: scan.flaggedCount ?? 0,
 			errorCount: scan.errorCount ?? 0,
@@ -639,6 +653,7 @@ function buildHistorySummary(runs, cases, pendingInterventions = summarizeCommit
 	});
 	const currentRun = runs.at(-1) ?? null;
 	const currentRunReview = currentRun?.reviewSummary ?? null;
+	const currentRunGates = currentRun?.independentReviewGates ?? null;
 	return {
 		runCount: runs.length,
 		caseCount: cases.length,
@@ -660,6 +675,11 @@ function buildHistorySummary(runs, cases, pendingInterventions = summarizeCommit
 		currentRunRated: currentRunReview?.rated ?? 0,
 		currentRunUnrated: currentRunReview?.unrated ?? currentRun?.caseCount ?? 0,
 		currentRunBelowFive: currentRunReview?.belowFive ?? 0,
+		currentRunIndependentReviewersPassed: currentRunGates?.reviewers?.passed ?? 0,
+		currentRunIndependentReviewersTotal: currentRunGates?.reviewers?.total ?? REQUIRED_INDEPENDENT_REVIEWERS.length,
+		currentRunReviewGatesPassed: currentRunGates?.reviewGates?.passed ?? 0,
+		currentRunReviewGatesTotal: currentRunGates?.reviewGates?.total ?? REQUIRED_REVIEW_GATES.length,
+		reviewGateReadyRunCount: runs.filter((run) => run.independentReviewGates?.readyForStrictProof).length,
 		fullRunCount: runs.filter((run) => run.fullRun).length,
 		partialRunCount: runs.filter((run) => !run.fullRun).length,
 		interventionCounts: Object.fromEntries(countBy(runs.flatMap((run) => run.interventions?.categories ?? []), (item) => item)),
@@ -667,6 +687,52 @@ function buildHistorySummary(runs, cases, pendingInterventions = summarizeCommit
 		pendingInterventionCommitCount: pendingInterventions.commitCount ?? 0,
 		pendingRerunCommitCount: pendingInterventions.rerunCommitCount ?? (pendingInterventions.requiresRerun ? (pendingInterventions.commitCount ?? 0) : 0),
 		pendingInterventionCategories: pendingInterventions.categories ?? []
+	};
+}
+
+function summarizeHistoryIndependentReviewGates(review) {
+	const reviewers = summarizeGateRecords({
+		records: Array.isArray(review?.independentReviewers) ? review.independentReviewers : [],
+		requiredIds: REQUIRED_INDEPENDENT_REVIEWERS,
+		valueFor: (entry) => entry?.status,
+		passedFor: (entry) => entry?.status === 'pass',
+		blankFor: (entry) => entry?.status === null || entry?.status === undefined || entry?.status === ''
+	});
+	const reviewGates = summarizeGateRecords({
+		records: Array.isArray(review?.reviewGates) ? review.reviewGates : [],
+		requiredIds: REQUIRED_REVIEW_GATES,
+		valueFor: (entry) => entry?.passed,
+		passedFor: (entry) => entry?.passed === true,
+		blankFor: (entry) => entry?.passed === null || entry?.passed === undefined || entry?.passed === ''
+	});
+	return {
+		reviewers,
+		reviewGates,
+		pendingIds: [
+			...reviewers.pendingIds.map((id) => `reviewer:${id}`),
+			...reviewGates.pendingIds.map((id) => `gate:${id}`)
+		],
+		readyForStrictProof: reviewers.passed === reviewers.total && reviewGates.passed === reviewGates.total
+	};
+}
+
+function summarizeGateRecords({ records, requiredIds, valueFor, passedFor, blankFor }) {
+	const byId = new Map(records.map((entry) => [entry.id, entry]));
+	const items = requiredIds.map((id) => {
+		const entry = byId.get(id);
+		if (!entry) return { id, state: 'missing', passed: false, value: '<missing>' };
+		if (passedFor(entry)) return { id, state: 'pass', passed: true, value: valueFor(entry), notes: entry.notes ?? '' };
+		if (blankFor(entry)) return { id, state: 'blank', passed: false, value: valueFor(entry) ?? null, notes: entry.notes ?? '' };
+		return { id, state: 'fail', passed: false, value: valueFor(entry), notes: entry.notes ?? '' };
+	});
+	return {
+		total: requiredIds.length,
+		passed: items.filter((item) => item.passed).length,
+		missing: items.filter((item) => item.state === 'missing').length,
+		blank: items.filter((item) => item.state === 'blank').length,
+		failed: items.filter((item) => item.state === 'fail').length,
+		pendingIds: items.filter((item) => !item.passed).map((item) => item.id),
+		items
 	};
 }
 
