@@ -38,7 +38,8 @@ const handoffInput = {
 	latestLocalTargetPrepProof,
 	generatedAt: new Date().toISOString()
 };
-const handoff = cli.dadMessage
+const dadMessageMode = Boolean(cli.dadMessage || cli.message);
+const handoff = dadMessageMode
 	? createDadMessageText(handoffInput)
 	: createDadHandoffMarkdown(handoffInput);
 

@@ -2601,7 +2601,28 @@ test('Dad handoff command can print a concise Run 100 message for Dad', async ()
 		],
 		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
 	);
+	const aliasResult = await execFileAsync(
+		process.execPath,
+		[
+			'scripts/scout-local-ai-dad-handoff.mjs',
+			'--message',
+			'--runs-dir',
+			runsDir,
+			'--device-runs-dir',
+			deviceRunsDir,
+			'--inbox-dir',
+			inboxDir,
+			'--reviews-dir',
+			reviewsDir,
+			'--release-evidence',
+			releaseEvidencePath,
+			'--ios-proof-dir',
+			iosProofDir
+		],
+		{ cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 2 }
+	);
 
+	assert.equal(aliasResult.stdout, result.stdout);
 	assert.match(result.stdout, /Do not send Dad a Run 100 request yet/u);
 	assert.match(result.stdout, /Hold off on the final Run 100/u);
 	assert.match(result.stdout, /current eval suite/u);
