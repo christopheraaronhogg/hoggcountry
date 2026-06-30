@@ -798,7 +798,7 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 		answer = isVagueSourceOnlyAnswer(answer) ? TOWN_OFFLINE_READINESS_NOTE : appendSentence(answer, TOWN_OFFLINE_READINESS_NOTE);
 	}
 	answer = removeRedundantWaterCarryAdvice(answer);
-	answer = ensureVisibleSourceBasis(answer, toolInvocations);
+	answer = removeSourceBasisLead(answer);
 
 	return trimToCompleteSentence(answer);
 }
@@ -1105,40 +1105,11 @@ function prependSentence(answer: string, sentence: string): string {
 	return `${sentence}\n\n${answer.trim()}`;
 }
 
-function ensureVisibleSourceBasis(answer: string, toolInvocations: ToolInvocationRecord[]): string {
-	const trimmed = answer.trim();
-	if (!trimmed || mentionsVisibleSourceBasis(trimmed)) return trimmed;
-
-	const openedSourceDocs = toolInvocations.filter((tool) => tool.toolId === 'open_source_doc');
-	if (!openedSourceDocs.length) return trimmed;
-
-	return prependSentence(trimmed, `Source basis: ${describeOpenedSourceBasis(openedSourceDocs)}.`);
-}
-
-function describeOpenedSourceBasis(openedSourceDocs: ToolInvocationRecord[]): string {
-	const labels = Array.from(new Set(openedSourceDocs.map(sourceBasisLabelForTool).filter(Boolean)));
-	if (!labels.length) return 'cached source document guidance';
-	return `cached ${formatHumanList(labels)} guidance`;
-}
-
-function sourceBasisLabelForTool(tool: ToolInvocationRecord): string {
-	const sourceSkill = typeof tool.args?.sourceSkill === 'string' ? tool.args.sourceSkill.trim().toLowerCase() : '';
-	if (sourceSkill) return sourceSkill.replace(/[^a-z0-9\s-]/gu, '').replace(/\s+/gu, ' ').trim();
-
-	const openedMatch = tool.summary.match(/\b([a-z][a-z0-9 -]{1,40})\s+guidance\s+opened\b/iu);
-	if (openedMatch?.[1]) return openedMatch[1].trim().toLowerCase();
-
-	return '';
-}
-
-function formatHumanList(items: string[]): string {
-	if (items.length <= 1) return items[0] ?? '';
-	if (items.length === 2) return `${items[0]} and ${items[1]}`;
-	return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
-}
-
-function mentionsVisibleSourceBasis(answer: string): boolean {
-	return /\b(?:source|sources|source-backed|document|documents|guide|guidance|field[-\s]?pack|cached|according to|saved|vault|KJV|Bible|forecast|alert|loadout|weather note|water note|shelter note|town note|terrain note|medical-advice boundary|airplane-mode boundary)\b/iu.test(answer);
+function removeSourceBasisLead(answer: string): string {
+	return answer
+		.replace(/^Source basis:\s*cached\s+[^.?!]+(?:guidance|context|data)\.\s*/iu, '')
+		.replace(/^Source basis:\s*[^.?!]+[.?!]\s*/iu, '')
+		.trim();
 }
 
 function trimToCompleteSentence(answer: string): string {

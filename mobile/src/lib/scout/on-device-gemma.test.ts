@@ -339,7 +339,7 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /Use the strongest 2-4 tool findings visibly/);
 });
 
-test('polishOnDeviceAnswer names opened source documents without exposing tool labels', () => {
+test('polishOnDeviceAnswer hides internal source labels from the chat bubble', () => {
 	const hiddenSourceAnswer = polishOnDeviceAnswer(
 		'Tell your family your usual cadence, route area, next expected stop, and escalation window.',
 		'What should I tell family about check-ins and what they should do if I miss one?',
@@ -354,11 +354,12 @@ test('polishOnDeviceAnswer names opened source documents without exposing tool l
 		]
 	);
 
-	assert.match(hiddenSourceAnswer, /^Source basis: cached safety guidance\./u);
+	assert.match(hiddenSourceAnswer, /^Tell your family your usual cadence, route area, next expected stop, and escalation window\./u);
 	assert.doesNotMatch(hiddenSourceAnswer, /\b(?:source_search|open_source_doc|tool invocation|source skill)\b/iu);
+	assert.doesNotMatch(hiddenSourceAnswer, /^Source basis:/u);
 
-	const alreadyVisibleAnswer = polishOnDeviceAnswer(
-		'The safety guidance says to set a check-in cadence and escalation window before the trail.',
+	const sourceBasisAnswer = polishOnDeviceAnswer(
+		'Source basis: cached safety guidance. Tell your family your usual cadence, route area, next expected stop, and escalation window.',
 		'What should I tell family about check-ins and what they should do if I miss one?',
 		[
 			{
@@ -370,7 +371,8 @@ test('polishOnDeviceAnswer names opened source documents without exposing tool l
 			}
 		]
 	);
-	assert.doesNotMatch(alreadyVisibleAnswer, /^Source basis:/u);
+	assert.doesNotMatch(sourceBasisAnswer, /^Source basis:/u);
+	assert.match(sourceBasisAnswer, /^Tell your family/u);
 });
 
 test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions', () => {

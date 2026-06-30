@@ -115,6 +115,9 @@ function runAnswerChecks({ result, prompt, answer }) {
 	if (/\[(?:source_search|open_source_doc|next_water|next_shelter|next_town|weather_lookup|current_mile|bible_search|loadout_check|trail_conditions|park_services)\]/iu.test(trimmed)) {
 		add(checks, 'internal-tool-reference', 'error', 'Answer exposes internal tool labels.');
 	}
+	if (/^Source basis:/iu.test(trimmed)) {
+		add(checks, 'internal-source-basis-label', 'warning', 'Answer exposes internal source-basis wording instead of a plain hiker-facing answer.');
+	}
 	if (sourceGroundingVisibleMissing({ result, answer: trimmed })) {
 		add(checks, 'source-grounding-visible-missing', 'warning', 'Source-backed answer opened a document but does not visibly name its source/document basis.');
 	}

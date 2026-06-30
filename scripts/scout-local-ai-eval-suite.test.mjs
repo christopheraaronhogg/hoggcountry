@@ -24,6 +24,7 @@ const RELEASE_EVIDENCE_PATH = new URL('../docs/launch/release-evidence.json', im
 const MOBILE_SUITE_PATH = new URL('../mobile/static/scout/dad-local-ai-100.json', import.meta.url);
 const MOBILE_EVAL_LAB_PATH = new URL('../mobile/src/lib/components/ScoutEvalLab.svelte', import.meta.url);
 const IOS_SIM_GEMMA_RUNNER_PATH = new URL('../scripts/run-scout-ios-sim-gemma-eval.mjs', import.meta.url);
+const ANSWER_QUALITY_SCAN_PATH = new URL('../scripts/scan-scout-local-ai-answer-quality.mjs', import.meta.url);
 const PACKAGE_PATH = new URL('../package.json', import.meta.url);
 const XCODE_PROJECT_PATH = new URL('../mobile/ios/App/App.xcodeproj/project.pbxproj', import.meta.url);
 const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
@@ -536,6 +537,30 @@ test('package scripts expose the Scout local AI review handoff commands', async 
 	assert.equal(packageJson.scripts['wait:scout-local-ai-device-run:all'], 'node scripts/wait-scout-local-ai-device-run.mjs --source all');
 	assert.equal(packageJson.scripts['eval:scout-local-ai:ios-sim-gemma'], 'node scripts/run-scout-ios-sim-gemma-eval.mjs');
 	assert.equal(packageJson.scripts['scan:scout-local-ai-answers'], 'node scripts/scan-scout-local-ai-answer-quality.mjs');
+});
+
+test('answer-quality scan flags internal source-basis wording in visible answers', async () => {
+	const { scanScoutLocalAiAnswerQuality } = await import(ANSWER_QUALITY_SCAN_PATH.href);
+	const report = scanScoutLocalAiAnswerQuality({
+		runId: 'source-basis-visible',
+		results: [
+			{
+				caseId: 'DLA-061',
+				case: {
+					id: 'DLA-061',
+					domain: 'navigation',
+					phase: 'on-trail',
+					prompt: 'Where am I relative to the next road crossing or town?'
+				},
+				answer: 'Source basis: cached town guidance. Pilot Gap Road is about 4.8 mi ahead.',
+				toolInvocations: []
+			}
+		]
+	});
+
+	assert.equal(report.flaggedCount, 1);
+	assert.equal(report.byCheck['internal-source-basis-label'], 1);
+	assert.equal(report.flagged[0].checks[0].severity, 'warning');
 });
 
 test('README documents device review acceptance states', async () => {
