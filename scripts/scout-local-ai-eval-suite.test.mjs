@@ -3577,6 +3577,58 @@ test('device run wait command can receive copied clipboard JSON', async () => {
 	assert.match(await readFile(join(packetsDir, 'device-wait-clipboard-final.review.md'), 'utf8'), /DLA-001/u);
 });
 
+test('device run wait timeout summarizes invalid clipboard text cleanly', async () => {
+	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-device-wait-clipboard-invalid-'));
+	const binDir = join(outputDir, 'bin');
+	const inboxDir = join(outputDir, 'inbox');
+	const downloadsDir = join(outputDir, 'Downloads');
+	const clipboardPath = join(outputDir, 'clipboard.txt');
+	await mkdir(binDir, { recursive: true });
+	await mkdir(inboxDir, { recursive: true });
+	await mkdir(downloadsDir, { recursive: true });
+	await writeFile(clipboardPath, 'Dad says he ran it, but this clipboard text is not the JSON export.');
+	const fakePbpaste = join(binDir, 'pbpaste');
+	await writeFile(fakePbpaste, '#!/bin/sh\ncat "$SCOUT_FAKE_CLIPBOARD"\n');
+	await chmod(fakePbpaste, 0o755);
+
+	await assert.rejects(
+		execFileAsync(
+			process.execPath,
+			[
+				'scripts/wait-scout-local-ai-device-run.mjs',
+				'--source',
+				'clipboard',
+				'--poll-ms',
+				'25',
+				'--timeout-ms',
+				'100',
+				'--downloads-dir',
+				downloadsDir,
+				'--inbox-dir',
+				inboxDir,
+				'--json'
+			],
+			{
+				cwd: REPO_ROOT,
+				env: {
+					...process.env,
+					PATH: `${binDir}${delimiter}${process.env.PATH ?? ''}`,
+					SCOUT_FAKE_CLIPBOARD: clipboardPath
+				},
+				maxBuffer: 1024 * 1024 * 12
+			}
+		),
+		(err) => {
+			const report = JSON.parse(err.stdout);
+			assert.equal(report.status, 'timed-out');
+			assert.deepEqual(report.sources, ['clipboard']);
+			assert.match(report.sourceReports.clipboard.error, /no run-like JSON object found/u);
+			assert.doesNotMatch(report.sourceReports.clipboard.error, /Node\.js|at async|file:\/\//u);
+			return true;
+		}
+	);
+});
+
 test('device run wait timeout reports every watched handoff source', async () => {
 	const outputDir = await mkdtemp(join(tmpdir(), 'scout-local-ai-device-wait-timeout-'));
 	const inboxDir = join(outputDir, 'inbox');

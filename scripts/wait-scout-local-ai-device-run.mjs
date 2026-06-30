@@ -178,13 +178,14 @@ async function tryPrepare(source) {
 function summarizeCommandError(stderr, err) {
 	const text = String(stderr || err?.message || '').trim();
 	if (!text) return 'prepare command failed';
-	const errorLines = text
+	const lines = text
 		.split(/\r?\n/u)
 		.map((line) => line.trim())
-		.filter((line) => /^Error:/u.test(line));
+		.filter(Boolean);
+	const errorLines = lines.filter((line) => /^(?:[A-Za-z][\w.]*Error|Error):\s+/u.test(line));
 	const [lastErrorLine] = errorLines.slice(-1);
-	if (lastErrorLine) return lastErrorLine.replace(/^Error:\s*/u, '');
-	const firstMeaningfulLine = text.split(/\r?\n/u).map((line) => line.trim()).find(Boolean);
+	if (lastErrorLine) return lastErrorLine.replace(/^(?:[A-Za-z][\w.]*Error|Error):\s*/u, '');
+	const firstMeaningfulLine = lines.find((line) => !line.startsWith('file://')) ?? lines[0];
 	return firstMeaningfulLine ?? 'prepare command failed';
 }
 
