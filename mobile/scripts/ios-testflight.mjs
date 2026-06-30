@@ -179,16 +179,18 @@ function run(label, command, commandArgs, options = {}) {
     encoding: 'utf8',
     maxBuffer: 1024 * 1024 * 80
   });
+  const stdout = redactSensitiveText(result.stdout || '');
+  const stderr = redactSensitiveText(result.stderr || '');
   const output = [
     `$ ${printable}`,
     `cwd=${options.cwd || repoRoot}`,
     `exit=${result.status ?? 'null'}`,
     '',
     '--- stdout ---',
-    result.stdout || '',
+    stdout,
     '',
     '--- stderr ---',
-    result.stderr || ''
+    stderr
   ].join('\n');
   writeFileSync(logPath, output, 'utf8');
   const status = result.status === 0 ? 'pass' : options.allowFailure ? 'blocked' : 'fail';
@@ -201,7 +203,7 @@ function run(label, command, commandArgs, options = {}) {
 
   console.log(`  ${options.allowFailure ? 'blocked' : 'FAIL'} -> ${relative(repoRoot, logPath)}`);
   if (!options.allowFailure) {
-    const tail = tailText(`${result.stdout || ''}\n${result.stderr || ''}`, 80);
+    const tail = tailText(`${stdout}\n${stderr}`, 80);
     const error = new Error(`${label} failed with exit ${result.status}.\n${tail}`);
     error.exitCode = result.status || 1;
     throw error;
@@ -374,6 +376,13 @@ function redactCommandArgs(commandArgs) {
     }
   }
   return redacted;
+}
+
+function redactSensitiveText(text) {
+  return String(text).replace(
+    /(-authenticationKey(?:Path|ID|IssuerID)\s+)(?:'[^']*'|"[^"]*"|\S+)/gu,
+    '$1<redacted>'
+  );
 }
 
 function shellQuote(value) {
