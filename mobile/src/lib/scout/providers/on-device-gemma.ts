@@ -520,6 +520,10 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	) {
 		answer = buildDirectNextWaterDistanceAnswer(toolInvocations);
 	}
+	const directNextTownSummary = toolSummary(toolInvocations, 'next_town');
+	if (isDirectNextTownDistancePrompt(lowerPrompt) && hasActionableTownSummary(directNextTownSummary)) {
+		answer = buildDirectNextTownDistanceAnswer(toolInvocations);
+	}
 	if (isWeatherSensitivePrompt(lowerPrompt)) {
 		const weatherSummary = weatherLookupSummary(toolInvocations);
 		if (weatherSummary && !mentionsWeatherLookupSummary(answer, weatherSummary)) {
@@ -650,7 +654,11 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	if (isBailoutInjuryExitPrompt(lowerPrompt) && !mentionsBailoutInjuryExitContext(answer, toolInvocations)) {
 		answer = appendSentence(answer, buildBailoutInjuryExitNote(toolInvocations));
 	}
-	if (isRoadTownRelativePrompt(lowerPrompt) && !isBailoutInjuryExitPrompt(lowerPrompt)) {
+	if (
+		isRoadTownRelativePrompt(lowerPrompt) &&
+		!isDirectNextTownDistancePrompt(lowerPrompt) &&
+		!isBailoutInjuryExitPrompt(lowerPrompt)
+	) {
 		answer = normalizeRoadTownNavigationWording(answer);
 		if (!mentionsRoadTownNavigationContext(answer, toolInvocations)) {
 			answer = buildRoadTownNavigationNote(toolInvocations);
@@ -1710,6 +1718,10 @@ function hasActionableWaterSummary(summary: string | null): summary is string {
 	return Boolean(summary && !/\bNo water source or mapped water candidate found\b/iu.test(summary));
 }
 
+function hasActionableTownSummary(summary: string | null): summary is string {
+	return Boolean(summary && !/\bNo town found ahead\b/iu.test(summary));
+}
+
 function hasFalseMissingLocationContextDrift(answer: string): boolean {
 	return answer
 		.split(/\n{2,}/u)
@@ -1866,6 +1878,14 @@ function buildDirectNextWaterDistanceAnswer(toolInvocations: ToolInvocationRecor
 	return `Next water from the cached field pack: ${trimToolClause(nextWater)}. Visually confirm current flow before relying on it, filter or treat anything you collect, and carry enough to reach a verified source if it is dry.`;
 }
 
+function buildDirectNextTownDistanceAnswer(toolInvocations: ToolInvocationRecord[]): string {
+	const town = toolSummary(toolInvocations, 'next_town');
+	if (!hasActionableTownSummary(town)) {
+		return 'Cached pack: I do not have a loaded town or road access ahead. Refresh or verify from a current guide before planning around services.';
+	}
+	return `${compactTownAccessSentence(town, false)}\n\n${compactTownAccessCaveat(town)}`;
+}
+
 function buildCachedWeatherAnswer(toolInvocations: ToolInvocationRecord[]): string {
 	const weather = weatherLookupSummary(toolInvocations);
 	if (!weather) {
@@ -1938,11 +1958,49 @@ function buildGuidebookMileMismatchNote(toolInvocations: ToolInvocationRecord[])
 function buildRoadTownNavigationNote(toolInvocations: ToolInvocationRecord[]): string {
 	const current = toolSummary(toolInvocations, 'current_mile');
 	const town = toolSummary(toolInvocations, 'next_town');
-	const parts = [
-		current ? trimToolClause(current) : '',
-		town ? `next loaded road/town access is ${trimToolClause(town)}` : 'next loaded road/town access is not available in the current pack'
-	].filter(Boolean);
-	return `Road/town navigation note: ${parts.join('; ')}. Treat this as approximate loaded context. Confirm shuttle or pickup and do not assume services at a road crossing unless current service data proves them.`;
+	if (!hasActionableTownSummary(town)) {
+		const currentSentence = current ? `${compactCurrentMileSentence(current)} ` : '';
+		return `${currentSentence}Cached pack: I do not have a loaded town or road access ahead. Refresh or verify from a current guide before planning around services.`;
+	}
+	const currentPrefix = current ? `${compactCurrentMileSentence(current)} ` : '';
+	const townSentence = current
+		? compactTownAccessSentence(town, false).replace(/^Cached pack:\s*/u, '')
+		: compactTownAccessSentence(town, false);
+	return `${currentPrefix}${townSentence}\n\n${compactTownAccessCaveat(town)}`;
+}
+
+function compactCurrentMileSentence(summary: string): string {
+	const mile = summary.match(/\bmile\s+(\d+(?:\.\d+)?)/iu)?.[1];
+	return mile ? `Cached pack has you near mile ${mile}.` : `Cached pack: ${trimToolClause(summary)}.`;
+}
+
+function compactTownAccessSentence(summary: string, includeLoadedLabel = true): string {
+	const compact = compactTownAccess(summary);
+	if (!compact) return `Cached pack: ${trimToolClause(summary)}.`;
+	const label = includeLoadedLabel ? 'next loaded town/access' : 'next town/access';
+	const offTrail = compact.offTrail ? ` (${compact.offTrail})` : '';
+	return `Cached pack: ${compact.name} is the ${label}, about ${compact.distance} at mile ${compact.mile}${offTrail}.`;
+}
+
+function compactTownAccessCaveat(summary: string): string {
+	const lower = summary.toLowerCase();
+	const isCandidate = /\b(?:open-data|candidate)\b/u.test(lower);
+	const needsPickup = /\b(?:road|crossing|off trail|shuttle|pickup)\b/u.test(lower);
+	if (isCandidate && needsPickup) return 'Services are unconfirmed; verify shuttle/pickup and hours before counting on it.';
+	if (isCandidate) return 'Services are unconfirmed; verify grocery, lodging, and hours before counting on it.';
+	if (needsPickup) return 'Verify shuttle/pickup and current services before counting on it.';
+	return 'Verify current services before counting on it.';
+}
+
+function compactTownAccess(summary: string): { name: string; mile: string; distance: string; offTrail: string | null } | null {
+	const trimmed = trimToolClause(summary);
+	const match = /^(.+?)\s+at\s+mile\s+(\d+(?:\.\d+)?)\s+\((.*)\)(?:[.;]|$)/iu.exec(trimmed);
+	if (!match) return null;
+	const [, name, mile, parenthetical] = match;
+	const distance = parenthetical.match(/\b(\d+(?:\.\d+)?\s*mi\s+ahead)\b/iu)?.[1] ?? 'nearby';
+	const offTrailMatch = parenthetical.match(/\b([A-Z]{2})\s*·\s*(\d+(?:\.\d+)?)\s*mi\s+off\s+trail\b/u);
+	const offTrail = offTrailMatch ? `${offTrailMatch[1]}, ${offTrailMatch[2]} mi off trail` : null;
+	return { name: name.trim(), mile, distance: distance.replace(/\s+/gu, ' '), offTrail };
 }
 
 function buildTodayDifficultyNote(toolInvocations: ToolInvocationRecord[]): string {

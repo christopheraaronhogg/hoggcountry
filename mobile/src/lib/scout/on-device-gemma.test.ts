@@ -679,10 +679,10 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			}
 		]
 	);
-	assert.match(directTownAnswer, /Road\/town navigation note/);
-	assert.match(directTownAnswer, /Currently at mile 1530\.0/);
-	assert.match(directTownAnswer, /Salisbury at mile 1537\.1 \(7\.1 mi ahead/);
-	assert.match(directTownAnswer, /do not assume services/);
+	assert.doesNotMatch(directTownAnswer, /Road\/town navigation note/);
+	assert.doesNotMatch(directTownAnswer, /Currently at mile 1530\.0/);
+	assert.match(directTownAnswer, /Cached pack: Salisbury is the next town\/access, about 7\.1 mi ahead at mile 1537\.1/);
+	assert.match(directTownAnswer, /Services are unconfirmed; verify shuttle\/pickup and hours before counting on it/);
 
 	const todayDifficultyAnswer = polishOnDeviceAnswer(
 		'Today should be manageable if you pace yourself.',
@@ -1034,12 +1034,12 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	);
 	assert.doesNotMatch(roadTownNavigationAnswer, /reliable water source is a seasonal seep/i);
 	assert.doesNotMatch(roadTownNavigationAnswer, /closest loaded water candidate is a seasonal seep/i);
-	assert.match(roadTownNavigationAnswer, /Currently at mile 44\.7/);
-	assert.match(roadTownNavigationAnswer, /next loaded road\/town access is Pilot Gap Road at mile 49\.5/);
+	assert.doesNotMatch(roadTownNavigationAnswer, /Road\/town navigation note/);
+	assert.match(roadTownNavigationAnswer, /Cached pack has you near mile 44\.7/);
+	assert.match(roadTownNavigationAnswer, /Pilot Gap Road is the next town\/access, about 4\.8 mi ahead at mile 49\.5/);
 	assert.match(roadTownNavigationAnswer, /4\.8 mi ahead/);
 	assert.doesNotMatch(roadTownNavigationAnswer, /5\.3 miles/);
-	assert.match(roadTownNavigationAnswer, /confirm shuttle or pickup/i);
-	assert.match(roadTownNavigationAnswer, /do not assume services at a road crossing/i);
+	assert.match(roadTownNavigationAnswer, /verify shuttle\/pickup and hours before counting on it/i);
 
 	const climbTerrainAnswer = polishOnDeviceAnswer(
 		'The next section of the trail is about 20 miles long. The terrain ahead involves a seasonal seep around mile 249.1, a reliable creek crossing at mile 253.5, and a thin mapped branch at mile 258.7.\n\nFor the first week, you should start low mileage and focus on protecting your feet and knees. Adjust your pace based on your body condition, daylight, elevation, water spacing, weather, pack weight, and your foot or knee condition. You should stop while you can still recover normally and adjust only after several normal mornings.',

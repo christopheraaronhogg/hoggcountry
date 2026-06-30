@@ -19,7 +19,8 @@
 		| 'search'
 		| 'book'
 		| 'phone'
-		| 'message';
+		| 'message'
+		| 'speaker';
 
 	let {
 		name,
@@ -107,6 +108,11 @@
 	{:else if name === 'message'}
 		<!-- speech bubble -->
 		<path d="M5 5h14a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 19 16H9l-4 3.5V16a1.5 1.5 0 0 1-1.5-1.5v-8A1.5 1.5 0 0 1 5 5Z" />
+	{:else if name === 'speaker'}
+		<!-- speaker with sound waves -->
+		<path d="M4 9.5h3.4L12 5.8v12.4L7.4 14.5H4Z" />
+		<path d="M15.4 9.2a4 4 0 0 1 0 5.6" />
+		<path d="M17.8 6.8a7.4 7.4 0 0 1 0 10.4" />
 	{/if}
 </svg>
 

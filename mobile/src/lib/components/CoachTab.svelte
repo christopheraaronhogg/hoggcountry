@@ -69,8 +69,11 @@
 	let observedSignature = '';
 	let readerAnchor: { messageId: string; offsetFromTop: number } | null = null;
 	const MESSAGE_HASH_PREFIX = '#chat-message-';
+	let speechReady = $state(false);
+	let speakingMessageId = $state<string | null>(null);
 
 	onMount(() => {
+		speechReady = speechAvailable();
 		void restoreInitialReaderPosition();
 		return () => {
 			placementToken += 1;
@@ -78,8 +81,45 @@
 			if (scrollFrame !== null && typeof cancelAnimationFrame !== 'undefined') {
 				cancelAnimationFrame(scrollFrame);
 			}
+			cancelScoutSpeech();
 		};
 	});
+
+	function speechAvailable(): boolean {
+		return (
+			typeof window !== 'undefined' &&
+			'speechSynthesis' in window &&
+			typeof SpeechSynthesisUtterance !== 'undefined'
+		);
+	}
+
+	function cancelScoutSpeech(): void {
+		if (!speechAvailable()) return;
+		window.speechSynthesis.cancel();
+		speakingMessageId = null;
+	}
+
+	function toggleScoutSpeech(messageId: string, text: string): void {
+		if (!speechAvailable()) return;
+		pauseForReaderIntent();
+		if (speakingMessageId === messageId && window.speechSynthesis.speaking) {
+			cancelScoutSpeech();
+			return;
+		}
+		window.speechSynthesis.cancel();
+		const utterance = new SpeechSynthesisUtterance(text);
+		utterance.lang = 'en-US';
+		utterance.rate = 0.95;
+		utterance.pitch = 1;
+		utterance.onend = () => {
+			if (speakingMessageId === messageId) speakingMessageId = null;
+		};
+		utterance.onerror = () => {
+			if (speakingMessageId === messageId) speakingMessageId = null;
+		};
+		speakingMessageId = messageId;
+		window.speechSynthesis.speak(utterance);
+	}
 
 	function distanceFromBottom(): number {
 		if (!logRef) return 0;
@@ -617,6 +657,18 @@
 							{#if meta.confidence}
 								<ConfidenceBadge confidence={meta.confidence} short />
 							{/if}
+							{#if speechReady}
+								<button
+									class="speak-button"
+									type="button"
+									aria-label={speakingMessageId === message.id ? 'Stop reading Scout reply' : 'Read Scout reply aloud'}
+									aria-pressed={speakingMessageId === message.id}
+									title={speakingMessageId === message.id ? 'Stop reading' : 'Read aloud'}
+									onclick={() => toggleScoutSpeech(message.id, message.content)}
+								>
+									<Icon name="speaker" size={15} stroke={2} />
+								</button>
+							{/if}
 						</div>
 					{/if}
 
@@ -981,6 +1033,25 @@
 	.message-head strong {
 		font-size: var(--text-sm);
 		color: var(--forest);
+	}
+	.speak-button {
+		margin-left: auto;
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		display: grid;
+		place-items: center;
+		color: var(--forest);
+		background: var(--forest-soft);
+		border: 1px solid color-mix(in srgb, var(--forest) 12%, transparent);
+	}
+	.speak-button[aria-pressed='true'] {
+		background: var(--forest);
+		color: #fffdf8;
+	}
+	.speak-button:focus-visible {
+		outline: 2px solid var(--forest);
+		outline-offset: 2px;
 	}
 
 	.message-sources {
