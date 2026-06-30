@@ -73,9 +73,9 @@
     },
     "apple-archive-upload": {
       "status": "verified",
-      "verifiedAt": "2026-06-30T19:55:45.416Z",
+      "verifiedAt": "2026-06-30T21:02:12.987Z",
       "verifiedBy": "Codex via App Store Connect API",
-      "summary": "App Store Connect reports Hoggcountry iOS build 1.0 (36) (d885057d-0c84-4d5d-b5b6-11a0ededc6c6) is VALID, external state IN_BETA_TESTING, and attached to Dad Pilot.",
+      "summary": "App Store Connect reports Hoggcountry iOS build 1.0 (38) (baf248b1-39ff-48b4-aa0d-3f11e525d702) is VALID, external state IN_BETA_TESTING, and attached to Dad Pilot.",
       "files": [
         "docs/launch/proof/ios-testflight-upload-2026-06-21.md",
         "docs/launch/proof/ios-testflight-attempt-2026-06-21T14-36-45-831Z.md",
@@ -125,7 +125,9 @@
         "docs/launch/proof/ios-testflight-build-33-submit-2026-06-29.md",
         "docs/launch/proof/ios-testflight-build-34-submit-2026-06-29.md",
         "docs/launch/proof/ios-testflight-build-35-submit-2026-06-30.md",
-        "docs/launch/proof/ios-testflight-build-36-submit-2026-06-30.md"
+        "docs/launch/proof/ios-testflight-build-36-submit-2026-06-30.md",
+        "docs/launch/proof/ios-testflight-build-37-submit-2026-06-30.md",
+        "docs/launch/proof/ios-testflight-build-38-submit-2026-06-30.md"
       ],
       "commands": [
         "npm run ios:testflight -- --upload --team-id 3CFU9J87A5 --asc-key-path ~/.appstoreconnect/private_keys/AuthKey_T272T83N98.p8 --asc-key-id T272T83N98 --asc-issuer-id <issuer>",
@@ -181,14 +183,18 @@
         "node scripts/refresh-testflight-dad-pilot.mjs --build 35 --app-version 1.0 --attach --submit-review --remove-previous --update-release-evidence",
         "GET https://api.appstoreconnect.apple.com/v1/builds?filter[app]=6782505691&filter[version]=35",
         "node scripts/refresh-testflight-dad-pilot.mjs --build 36 --app-version 1.0 --attach --submit-review --remove-previous --update-release-evidence",
-        "GET https://api.appstoreconnect.apple.com/v1/builds?filter[app]=6782505691&filter[version]=36"
+        "GET https://api.appstoreconnect.apple.com/v1/builds?filter[app]=6782505691&filter[version]=36",
+        "node scripts/refresh-testflight-dad-pilot.mjs --build 37 --app-version 1.0 --attach --submit-review --remove-previous --update-release-evidence",
+        "GET https://api.appstoreconnect.apple.com/v1/builds?filter[app]=6782505691&filter[version]=37",
+        "node scripts/refresh-testflight-dad-pilot.mjs --build 38 --app-version 1.0 --attach --submit-review --remove-previous --update-release-evidence",
+        "GET https://api.appstoreconnect.apple.com/v1/builds?filter[app]=6782505691&filter[version]=38"
       ]
     },
     "dad-testflight-invite": {
       "status": "verified",
-      "verifiedAt": "2026-06-30T19:55:45.416Z",
+      "verifiedAt": "2026-06-30T21:02:12.987Z",
       "verifiedBy": "Codex via App Store Connect API",
-      "summary": "Dad Pilot is attached to Hoggcountry iOS build 1.0 (36), the public TestFlight link is enabled with limit 5, and App Store Connect reports external state IN_BETA_TESTING.",
+      "summary": "Dad Pilot is attached to Hoggcountry iOS build 1.0 (38), the public TestFlight link is enabled with limit 5, and App Store Connect reports external state IN_BETA_TESTING.",
       "files": [
         "docs/launch/proof/ios-testflight-upload-2026-06-21.md",
         "docs/launch/proof/ios-testflight-build-3-2026-06-21.md",
@@ -222,7 +228,9 @@
         "docs/launch/proof/ios-testflight-build-33-submit-2026-06-29.md",
         "docs/launch/proof/ios-testflight-build-34-submit-2026-06-29.md",
         "docs/launch/proof/ios-testflight-build-35-submit-2026-06-30.md",
-        "docs/launch/proof/ios-testflight-build-36-submit-2026-06-30.md"
+        "docs/launch/proof/ios-testflight-build-36-submit-2026-06-30.md",
+        "docs/launch/proof/ios-testflight-build-37-submit-2026-06-30.md",
+        "docs/launch/proof/ios-testflight-build-38-submit-2026-06-30.md"
       ],
       "publicLink": "https://testflight.apple.com/join/BagBCrzf"
     },
