@@ -1,6 +1,6 @@
 # Dad Scout local AI Eval Lab handoff
 
-Generated at: 2026-06-30T18:53:34.477Z
+Generated at: 2026-06-30T19:06:19.890Z
 
 This file is a generated snapshot. Run `npm run status:scout-local-ai` for live post-commit proof state.
 
@@ -8,21 +8,21 @@ This file is a generated snapshot. Run `npm run status:scout-local-ai` for live 
 
 - Eval suite: `dad-local-ai-100` version `2026-06-29.1`, 100 cases, hash `fnv1a32:92815d44`.
 - Mobile suite copy matches canonical: yes.
-- Eval gates complete: 7/12.
+- Eval gates complete: 8/12.
 - Suite final-proof app requirement: `1.0 (>= 13)`.
 - Target iOS build for Dad Eval Lab: `1.0 (35)`.
 - Target build meets suite requirement: yes.
-- Recorded Dad Pilot build: `1.0 (34)`.
+- Recorded Dad Pilot build: `1.0 (35)`.
 - Recorded Dad Pilot build meets suite requirement: yes.
-- Latest Dad Pilot proof: `docs/launch/proof/ios-testflight-build-34-submit-2026-06-29.md` (1.0 (34), IN_BETA_TESTING, checked 2026-06-29T08:32:46.331Z).
-- Latest Dad Pilot gates: 5/5 checked; targetReadyForDad yes.
+- Dad target-build proof: `docs/launch/proof/ios-testflight-build-35-submit-2026-06-30.md` (1.0 (35), IN_BETA_TESTING, checked 2026-06-30T19:06:11.693Z).
+- Dad target-build gates: 5/5 checked; targetReadyForDad yes.
 - Latest local target prep: `docs/launch/proof/ios-testflight-build-35-prep-2026-06-30.md` (1.0 (35), checked 2026-06-30T18:29:02Z; not App Store Connect proof).
-- Newer Xcode target pending App Store Connect: yes.
-- Snapshot checkout SHA: `060b1421fca2613287bdff9420e9f684810974ee`.
-- Latest native upload source: `docs/launch/proof/ios-testflight-attempt-2026-06-29T08-28-33-668Z.md` (repo SHA `cd3bb3c0c5d3f575724033c6f5e48501d375c704` from `.scout-artifacts/ios-testflight/2026-06-29T08-28-33-668Z/01-repo-sha.log`).
-- Latest native upload attempt: `docs/launch/proof/ios-testflight-attempt-2026-06-29T08-28-33-668Z.md` (passed, upload requested yes, checked 2026-06-29T08:29:50.833Z).
-- Snapshot checkout newer than latest native upload: yes.
-- Snapshot native app source newer than latest native upload: yes.
+- Newer Xcode target pending App Store Connect: no.
+- Snapshot checkout SHA: `bc6098e0383aa09bb5aa24782db07e00243e5690`.
+- Latest native upload source: `docs/launch/proof/ios-testflight-attempt-2026-06-30T18-59-02-099Z.md` (repo SHA `bc6098e0383aa09bb5aa24782db07e00243e5690` from `.scout-artifacts/ios-testflight/2026-06-30T18-59-02-099Z/01-repo-sha.log`).
+- Latest native upload attempt: `docs/launch/proof/ios-testflight-attempt-2026-06-30T18-59-02-099Z.md` (passed, upload requested yes, checked 2026-06-30T19:00:49.291Z).
+- Snapshot checkout newer than latest native upload: no.
+- Snapshot native app source newer than latest native upload: no.
 - Imported full device runs: 3.
 - Imported partial device runs: 0.
 - Imported suite-compatible full device runs: 0.
@@ -35,10 +35,10 @@ This file is a generated snapshot. Run `npm run status:scout-local-ai` for live 
 
 ## Phone build path
 
-- Use now: wait for current-suite TestFlight upload before asking Dad for Run 100.
-- Latest-code target: `1.0 (35)` still needs upload/refresh proof with the current eval suite.
-- Latest-source proof: latest native upload contains suite 2026-06-28.5 (fnv1a32:741b2381), not current suite 2026-06-29.1 (fnv1a32:92815d44); upload and refresh the target build before asking Dad for Run 100.
-- Do not count as final proof until: Dad Pilot/TestFlight proof and the exported run both show app build satisfying `1.0 (>= 13)` with the current eval suite.
+- Use now: install/update the latest Dad Pilot TestFlight target `1.0 (35)`.
+- Latest-code target: `1.0 (35)` is recorded in Dad Pilot and meets `1.0 (>= 13)`.
+- Latest-source proof: latest native upload contains the snapshot checkout.
+- Do not count as final proof until: Run 100 is imported from a TestFlight/iPhone export, reviewed 100/100 at 5/5, and strict/stability proof passes.
 
 ## Main local test method
 
@@ -50,8 +50,6 @@ This file is a generated snapshot. Run `npm run status:scout-local-ai` for live 
 - Latest simulator Run 100: `device-local-ai-20260630T183354Z` (100/100 cases, tools complete 100/100, sources complete 100/100, answer scan clean with 0 flagged).
 - Final-proof mismatch by design: device-local-ai-20260630T183354Z (install=debug, expected testflight).
 
-> Important: the recorded Dad Pilot build is not ready for this suite. Do not treat the final Eval Lab run as valid until App Store Connect shows Dad Pilot on the target build, or a current full TestFlight/iPhone export proves the target build was installed.
-
 ## Gate checklist
 
 - [x] Versioned 100-question suite: 100 cases, version 2026-06-29.1, hash fnv1a32:92815d44
@@ -60,7 +58,7 @@ This file is a generated snapshot. Run `npm run status:scout-local-ai` for live 
 - [x] Neighbor prompt-frame generalization coverage: next-water-decision=18(distance-ahead=5/carry-or-skip=7/reliability-or-conflict=6/treatment-or-gear=4), town-resupply-decision=20(arrival-recovery=4/food-carry-resupply=7/availability-contingency=6/offline-before-leaving-town=4), today-difficulty-decision=31(terrain-feature=14/pace-or-mileage=23/weather-interaction=14/body-safety-limit=12), offline-document-agent=22(offline-readiness=22/vault-reading=4/vault-writing=3/confirmation-privacy=3), safety-escalation=36(injury-or-symptoms=11/help-or-communication=7/environmental-threat=13/human-or-location-risk=10), missing-data-honesty=25(stale-cache=10/conflicting-source=5/failure-or-unavailable=10/safe-recovery-action=13)
 - [x] Full-suite tool routing proof: 4 current full run(s) with all required tools hit and source evidence recorded
 - [x] Simulator/debug local full-suite preflight: Latest simulator/debug local preflight device-local-ai-20260630T183354Z is clean: 100/100 cases, complete tools/source evidence, app 1.0 (35), install=debug, model=gemma-4-E2B-it-litert-lm
-- [ ] Dad Pilot has current suite-required TestFlight build: Latest TestFlight upload does not contain the current eval suite: target 1.0 (35); suite requires 1.0 (>= 13); Dad Pilot records 1.0 (34); latest native upload suite 2026-06-28.5 (fnv1a32:741b2381); current suite 2026-06-29.1 (fnv1a32:92815d44)
+- [x] Dad Pilot has current suite-required TestFlight build: Target build is available for Dad: target 1.0 (35); suite requires 1.0 (>= 13); Dad Pilot records 1.0 (35); latest native upload suite 2026-06-29.1 (fnv1a32:92815d44); current suite 2026-06-29.1 (fnv1a32:92815d44)
 - [ ] Full TestFlight/iPhone Eval Lab run imported: No current full suite-compatible TestFlight/iPhone run found; 3 full device-on-device-gemma run(s) failed final-proof context: device-local-ai-20260629T105851Z (install=debug, expected testflight); device-local-ai-20260629T111930Z (install=debug, expected testflight); device-local-ai-20260630T183354Z (install=debug, expected testflight)
 - [ ] Human review complete at 100/100 5-star: No current full device review is rated 100/100 at 5/5
 - [x] Below-5 answers create iteration work: No completed below-5 device reviews yet
@@ -71,14 +69,13 @@ This file is a generated snapshot. Run `npm run status:scout-local-ai` for live 
 
 - Xcode Release target: `1.0 (35)` from `mobile/ios/App/App.xcodeproj/project.pbxproj`.
 - Signing team/profile: `3CFU9J87A5` / `Hoggcountry App Store Connect`.
-- Latest successful native upload proof: `docs/launch/proof/ios-testflight-attempt-2026-06-29T08-28-33-668Z.md` (passed, checked 2026-06-29T08:29:50.833Z).
-- Latest native upload attempt: `docs/launch/proof/ios-testflight-attempt-2026-06-29T08-28-33-668Z.md` (passed, checked 2026-06-29T08:29:50.833Z).
-- Latest successful native upload repo SHA: `cd3bb3c0c5d3f575724033c6f5e48501d375c704` from `.scout-artifacts/ios-testflight/2026-06-29T08-28-33-668Z/01-repo-sha.log`.
-- Latest native upload suite: `2026-06-28.5` / `fnv1a32:741b2381`.
-- Latest native upload contains current suite: no.
-- Snapshot source newer than latest native upload: yes.
-- Snapshot native app source newer than latest native upload: yes.
-- Latest-source upload note: upload target build `1.0 (35)`; bump again only if App Store Connect already has build `35`.
+- Latest successful native upload proof: `docs/launch/proof/ios-testflight-attempt-2026-06-30T18-59-02-099Z.md` (passed, checked 2026-06-30T19:00:49.291Z).
+- Latest native upload attempt: `docs/launch/proof/ios-testflight-attempt-2026-06-30T18-59-02-099Z.md` (passed, checked 2026-06-30T19:00:49.291Z).
+- Latest successful native upload repo SHA: `bc6098e0383aa09bb5aa24782db07e00243e5690` from `.scout-artifacts/ios-testflight/2026-06-30T18-59-02-099Z/01-repo-sha.log`.
+- Latest native upload suite: `2026-06-29.1` / `fnv1a32:92815d44`.
+- Latest native upload contains current suite: yes.
+- Snapshot source newer than latest native upload: no.
+- Snapshot native app source newer than latest native upload: no.
 - App Store Connect API key in latest successful upload proof: yes.
 - App Store Connect API key in latest upload attempt: yes.
 - Future uploads require Chris/account-bound App Store Connect auth: `APP_STORE_CONNECT_API_KEY_PATH`, `APP_STORE_CONNECT_API_KEY_ID`, and `APP_STORE_CONNECT_API_ISSUER_ID`, or matching `--asc-*` flags.
@@ -99,7 +96,7 @@ npm run refresh:testflight-dad-pilot -- --build 35 --app-version 1.0 --attach --
 
 ## Phone run steps
 
-1. Confirm the phone build path above. For the next suite run, wait for current-suite TestFlight upload before asking Dad for Run 100.
+1. Confirm the phone build path above. For the next suite run, install/update the latest Dad Pilot TestFlight target `1.0 (35)`.
 2. On the iPhone, open TestFlight and update Hoggcountry.
 3. Open Hoggcountry > Settings > Scout Eval Lab.
 4. Confirm the Eval Lab status says `TestFlight ready`.
@@ -114,7 +111,7 @@ Before review starts, the shared JSON should satisfy all of these import-proof c
 - Suite fields: `suiteId=dad-local-ai-100`, `suiteVersion=2026-06-29.1`, `suiteHash=fnv1a32:92815d44`.
 - Result count: `100/100` completed results from `Run 100`, not `Run 3` or an interrupted partial run.
 - Evidence lane: `device-on-device-gemma` with `answerOrigin=device-on-device-gemma` answers.
-- Native context: TestFlight iPhone install, app build satisfying `1.0 (>= 13)`; current Dad Pilot proof records `1.0 (34)`, while latest Xcode target is `1.0 (35)`.
+- Native context: TestFlight iPhone install, app build satisfying `1.0 (>= 13)`; current Dad Pilot proof records `1.0 (35)`, while latest Xcode target is `1.0 (35)`.
 - Import status: `ready-for-final-intake` from the inspector, then `prepared-for-final-review` from the prepare command.
 - Review triage: any provider error, missing required tool, or missing source evidence starts in the review-first queue before normal answer-quality ratings.
 
@@ -180,7 +177,7 @@ npm run verify:scout-local-ai-stability-proof -- --pairs data/scout-local-ai/dev
 
 ## Next action
 
-Upload and attach target iOS build 1.0 (35) to Dad Pilot first; release evidence currently records Dad Pilot on 1.0 (34), while the suite requires 1.0 (>= 13). After App Store Connect shows the current-suite build through the TestFlight link, update the iPhone, open Settings > Scout Eval Lab, run Run 100, Share the JSON, then prepare review with npm run prepare-review:scout-local-ai-device-run -- --run inbox.
+Run 100 now on the latest Dad Pilot TestFlight build 1.0 (35). The latest successful native upload contains the current checkout. Open Settings > Scout Eval Lab, run Run 100, and Share the JSON. While waiting for the file, leave npm run wait:scout-local-ai-device-run running for inbox/Downloads, or use npm run wait:scout-local-ai-device-run -- --source all if the export may land in the macOS clipboard. Status also checks /Users/chrishogg/Downloads and will use npm run prepare-review:scout-local-ai-device-run -- --run latest if the export lands there. If Dad sends copied JSON text instead of a file, npm run wait:scout-local-ai-device-run -- --source clipboard can receive it automatically, or use npm run receive:scout-local-ai-device-run -- --clipboard / paste into npm run receive:scout-local-ai-device-run -- --stdin; the receiver saves it to the inbox, inspects it, and prepares the same review path as npm run prepare-review:scout-local-ai-device-run -- --run inbox when it is final-ready.
 
 ## Boundary
 
