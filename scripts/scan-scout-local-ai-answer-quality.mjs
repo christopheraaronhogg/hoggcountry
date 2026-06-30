@@ -118,6 +118,9 @@ function runAnswerChecks({ result, prompt, answer }) {
 	if (/^Source basis:/iu.test(trimmed)) {
 		add(checks, 'internal-source-basis-label', 'warning', 'Answer exposes internal source-basis wording instead of a plain hiker-facing answer.');
 	}
+	if (/\bLoaded (?:context|(?:shelter|exit|alert|nearby help\/access) context):|\bloaded (?:next )?(?:town\/access|terrain|shelter|water)[^.:]*candidate:/iu.test(trimmed)) {
+		add(checks, 'internal-loaded-context-label', 'warning', 'Answer exposes loaded-context plumbing instead of a compact hiker-facing cue.');
+	}
 	if (sourceGroundingVisibleMissing({ result, answer: trimmed })) {
 		add(checks, 'source-grounding-visible-missing', 'warning', 'Source-backed answer opened a document but does not visibly name its source/document basis.');
 	}

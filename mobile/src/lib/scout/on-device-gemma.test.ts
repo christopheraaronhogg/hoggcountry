@@ -767,7 +767,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 		'Eat, shower, do your foot care, and get some sleep.',
 		'How do I avoid wasting a town day and still feel human again?'
 	);
-	assert.match(townDayAnswer, /Town-day sequence/);
+	assert.match(townDayAnswer, /Town-day guidance/);
 	assert.match(townDayAnswer, /Time-box errands/);
 	assert.match(townDayAnswer, /do not skip food, rest, foot care, or sleep/);
 
@@ -785,19 +785,31 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 		'Buy common food in town at the next road crossing.',
 		'How do I choose the next resupply point without carrying too much food?',
 		[
-			{
-				toolId: 'next_town',
-				args: { fromMile: 344.1 },
-				summary: 'Pilot Gap Road at mile 348.9 (4.8 mi ahead via road crossing; emergency exit candidate, confirm shuttle or pickup). No guaranteed services at the crossing.',
-				confidence: 'medium',
-				receipts: []
-			}
-		]
-	);
+				{
+					toolId: 'next_town',
+					args: { fromMile: 344.1 },
+					summary: 'Pilot Gap Road at mile 348.9 (4.8 mi ahead via road crossing; emergency exit candidate, confirm shuttle or pickup). No guaranteed services at the crossing.',
+					confidence: 'medium',
+					receipts: []
+				},
+				{
+					toolId: 'upcoming_terrain',
+					args: { fromMile: 344.1 },
+					summary: 'Next 20 mi from 344.1: Terrain: next 15 mi from 344.1-359.1 has difficulty moderate-hard (6.8/10), +1,420 ft gain, -760 ft loss | Town: Pilot Gap Road (mi 348.9), Trail Town Market (mi 362.7).',
+					confidence: 'medium',
+					receipts: []
+				}
+			]
+		);
 	assert.match(resupplyPointAnswer, /Resupply-point choice/);
 	assert.match(resupplyPointAnswer, /Do not cut food carry just because Scout names a road or town candidate/);
 	assert.match(resupplyPointAnswer, /confirm services first/);
 	assert.match(resupplyPointAnswer, /carry conservatively to the next verified option/);
+	assert.match(resupplyPointAnswer, /Cached pack cue: Pilot Gap Road is the next town\/access, about 4\.8 mi ahead at mile 348\.9/);
+	assert.match(resupplyPointAnswer, /Next terrain looks moderate-hard \(6\.8\/10\)/);
+	assert.match(resupplyPointAnswer, /Terrain summary lists town\/access candidates: Pilot Gap Road \(mi 348\.9\), Trail Town Market \(mi 362\.7\)/);
+	assert.match(resupplyPointAnswer, /Confirm services and hours before shortening the food carry/);
+	assert.doesNotMatch(resupplyPointAnswer, /Loaded context|loaded next town\/access candidate/);
 
 	const scoutTownUpdateAnswer = polishOnDeviceAnswer(
 		'Before leaving town, check the current weather, any closures, fire or smoke alerts, and the water situation.',
@@ -1562,13 +1574,14 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	);
 	assert.doesNotMatch(prayerSafePlanAnswer, /\b(?:can't|cannot) pray\b/i);
 	assert.doesNotMatch(prayerSafePlanAnswer, /Esther 4:8|destroy them|The King James Bible offers/i);
-	assert.match(prayerSafePlanAnswer, /Yes\. Here is a short prayer you can pray: Lord, steady me, give me wisdom, and help me choose the safe next step\. Amen\./);
-	assert.match(prayerSafePlanAnswer, /Prayer and safety note: make the plan practical/);
+	assert.match(prayerSafePlanAnswer, /Yes\. Lord, steady me, give me wisdom, and help me choose the safe next step\. Amen\./);
+	assert.match(prayerSafePlanAnswer, /Safety plan: check immediate danger, weather, daylight, body symptoms, and alerts/);
 	assert.match(prayerSafePlanAnswer, /Lord, steady me, give me wisdom, and help me choose the safe next step/);
-	assert.match(prayerSafePlanAnswer, /Ridge Shelter at mile 250\.2/);
-	assert.match(prayerSafePlanAnswer, /verify current status, water, and crowding/);
+	assert.match(prayerSafePlanAnswer, /Cached pack cue: Near Ridge Shelter is about 3\.4 mi ahead at mile 250\.2/);
+	assert.match(prayerSafePlanAnswer, /Verify status, water, crowding, weather, alerts, and legal options/);
 	assert.match(prayerSafePlanAnswer, /Prayer is support, not a substitute for help/);
 	assert.match(prayerSafePlanAnswer, /911, inReach\/PLB, rangers\/authorities, or the emergency plan/);
+	assert.doesNotMatch(prayerSafePlanAnswer, /Loaded context|Prayer and safety note|I can help you make a safe plan/i);
 
 	assert.equal(
 		polishOnDeviceAnswer(

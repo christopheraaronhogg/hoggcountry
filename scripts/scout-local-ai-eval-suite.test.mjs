@@ -539,10 +539,10 @@ test('package scripts expose the Scout local AI review handoff commands', async 
 	assert.equal(packageJson.scripts['scan:scout-local-ai-answers'], 'node scripts/scan-scout-local-ai-answer-quality.mjs');
 });
 
-test('answer-quality scan flags internal source-basis wording in visible answers', async () => {
+test('answer-quality scan flags internal source/context wording in visible answers', async () => {
 	const { scanScoutLocalAiAnswerQuality } = await import(ANSWER_QUALITY_SCAN_PATH.href);
 	const report = scanScoutLocalAiAnswerQuality({
-		runId: 'source-basis-visible',
+		runId: 'internal-context-visible',
 		results: [
 			{
 				caseId: 'DLA-061',
@@ -554,13 +554,26 @@ test('answer-quality scan flags internal source-basis wording in visible answers
 				},
 				answer: 'Source basis: cached town guidance. Pilot Gap Road is about 4.8 mi ahead.',
 				toolInvocations: []
+			},
+			{
+				caseId: 'DLA-088',
+				case: {
+					id: 'DLA-088',
+					domain: 'resupply',
+					phase: 'on-trail',
+					prompt: 'How do I choose the next resupply point without carrying too much food?'
+				},
+				answer: 'Resupply-point choice: confirm services first. Loaded context: loaded next town/access candidate: Pilot Gap Road at mile 348.9.',
+				toolInvocations: []
 			}
 		]
 	});
 
-	assert.equal(report.flaggedCount, 1);
+	assert.equal(report.flaggedCount, 2);
 	assert.equal(report.byCheck['internal-source-basis-label'], 1);
+	assert.equal(report.byCheck['internal-loaded-context-label'], 1);
 	assert.equal(report.flagged[0].checks[0].severity, 'warning');
+	assert.equal(report.flagged[1].checks[0].severity, 'warning');
 });
 
 test('README documents device review acceptance states', async () => {

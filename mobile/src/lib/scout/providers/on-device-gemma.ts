@@ -112,7 +112,7 @@ const RESUPPLY_MAIL_DROP_NOTE =
 const TOWN_RECOVERY_FIRST_NOTE =
 	'Town recovery order: eat real calories first, then shower and laundry, inspect and treat feet, sleep or rest, charge the phone and battery bank, refresh/download Scout items, and only then handle shopping, shuttles, reservations, and next-section logistics. If foot pain, infection signs, injury, or exhaustion is present, handle that before chasing chores.';
 const TOWN_DAY_SEQUENCE_NOTE =
-	'Town-day sequence: make a short list, eat first, shower/laundry next, inspect feet and gear, resupply, then charge, refresh, and download before leaving service. Time-box errands so the day does not vanish, but do not skip food, rest, foot care, or sleep just to feel productive.';
+	'Town-day guidance: make a short list, eat first, shower/laundry next, inspect feet and gear, resupply, then charge, refresh, and download before leaving service. Time-box errands so the day does not vanish, but do not skip food, rest, foot care, or sleep just to feel productive.';
 const HOSTEL_CHORE_ORDER_NOTE =
 	'Hostel-stop order: claim/confirm the bed or pickup first, start laundry and shower early, inspect feet and shoes before shopping, eat, resupply, dry wet gear, charge batteries, refresh the field pack/current mile/weather/closures, update the local AI model on Wi-Fi if needed, and confirm checkout/shuttle timing. Treat laundry, showers, bunks, shuttles, and store access as unconfirmed until the hostel or town source confirms them.';
 const ZERO_NERO_DECISION_NOTE =
@@ -224,7 +224,7 @@ const SCARED_ALONE_NIGHT_NOTE =
 const SEVERE_FATIGUE_CLEAR_THINKING_NOTE =
 	'Severe-fatigue note: stop hiking now and sit in a safe spot. Eat a snack, drink treated water or electrolytes, adjust layers for warmth or cooling, and check daylight, weather, body symptoms, and whether you can think clearly. Choose the nearest lower-risk legal stop or help option; do not add miles for pride if your thinking is foggy. Use 911, inReach/PLB, rangers/authorities, or the emergency plan for confusion, worsening symptoms, injury, exposure, inability to continue safely, or inability to make decisions.';
 const PRAYER_SAFE_PLAN_NOTE =
-	'Prayer and safety note: yes. Here is a short prayer you can pray: Lord, steady me, give me wisdom, and help me choose the safe next step. Amen. Then make the plan practical: check immediate danger, weather, daylight, body symptoms, and alerts if possible; treat loaded shelter, water, town, or bailout context as candidates; verify status, water, crowding, and legal options; choose the nearest lower-risk option. Prayer is support, not a substitute for help; use 911, inReach/PLB, rangers/authorities, or the emergency plan for real danger, injury, exposure, confusion, or inability to continue safely.';
+	'Yes. Lord, steady me, give me wisdom, and help me choose the safe next step. Amen.\n\nSafety plan: check immediate danger, weather, daylight, body symptoms, and alerts; treat shelter, water, town, or bailout info as candidates until verified. Choose the lower-risk option, and use 911, inReach/PLB, rangers/authorities, or the emergency plan for real danger, injury, exposure, confusion, or inability to continue safely. Prayer is support, not a substitute for help.';
 
 export class OnDeviceGemmaProvider implements ScoutProvider {
 	private bridge?: OnDeviceGemmaBridge;
@@ -501,7 +501,7 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 		answer = removePrayerSafePlanScriptureDrift(answer);
 	}
 	if (isPrayerSafePlanPrompt(lowerPrompt) && !mentionsPrayerSafePlan(answer, toolInvocations)) {
-		answer = appendSentence(answer, buildPrayerSafePlanNote(toolInvocations, !hasPrayerSafePlanSupport(answer)));
+		answer = buildPrayerSafePlanNote(toolInvocations, true);
 	}
 	if (isPersonalDocumentPrompt(lowerPrompt) && !mentionsPrivateDocumentBoundary(answer)) {
 		answer = appendSentence(
@@ -1773,15 +1773,15 @@ function buildPrayerSafePlanNote(toolInvocations: ToolInvocationRecord[], includ
 	const water = toolSummary(toolInvocations, 'next_water');
 	const town = toolSummary(toolInvocations, 'next_town');
 	const context = [
-		shelter ? `shelter: ${trimToolClause(shelter)}` : '',
-		water ? `water: ${trimToolClause(water)}` : '',
-		town ? `town/help: ${trimToolClause(town)}` : ''
+		shelter ? compactShelterCandidateSentence(shelter) : '',
+		water ? compactWaterCandidateSentence(water) : '',
+		town ? compactTownAccessSentence(town, false).replace(/^Cached pack:\s*/u, '') : ''
 	].filter(Boolean);
 	const note = includePrayer
 		? PRAYER_SAFE_PLAN_NOTE
-		: 'Prayer and safety note: make the plan practical: check immediate danger, weather, daylight, body symptoms, and alerts if possible; treat loaded shelter, water, town, or bailout context as candidates; verify status, water, crowding, and legal options; choose the nearest lower-risk option. Prayer is support, not a substitute for help; use 911, inReach/PLB, rangers/authorities, or the emergency plan for real danger, injury, exposure, confusion, or inability to continue safely.';
+		: 'Safety plan: check immediate danger, weather, daylight, body symptoms, and alerts; treat shelter, water, town, or bailout info as candidates until verified. Choose the lower-risk option, and use 911, inReach/PLB, rangers/authorities, or the emergency plan for real danger, injury, exposure, confusion, or inability to continue safely. Prayer is support, not a substitute for help.';
 	if (!context.length) return note;
-	return `${note} Loaded context: ${context.join('; ')}. Treat those as candidates, not guarantees, and choose the lower-risk option if anything cannot be verified.`;
+	return `${note}\n\nCached pack cue: ${context.join(' ')} Verify status, water, crowding, weather, alerts, and legal options before committing.`;
 }
 
 function buildHostelFullTownNote(toolInvocations: ToolInvocationRecord[]): string {
@@ -1953,6 +1953,31 @@ function compactTownAccessSentence(summary: string, includeLoadedLabel = true): 
 	return `Cached pack: ${compact.name} is the ${label}, about ${compact.distance} at mile ${compact.mile}${offTrail}.`;
 }
 
+function compactShelterCandidateSentence(summary: string): string {
+	const compact = compactNamedMileAhead(summary);
+	if (!compact) return `Shelter candidate: ${firstToolSentence(summary)}.`;
+	return `${compact.name} is about ${compact.distance} at mile ${compact.mile}.`;
+}
+
+function compactWaterCandidateSentence(summary: string): string {
+	const compact = compactNamedMileAhead(summary.replace(/^Next loaded water:\s*/iu, ''));
+	if (!compact) return `Water candidate: ${firstToolSentence(summary)}.`;
+	return `${compact.name} is about ${compact.distance} at mile ${compact.mile}.`;
+}
+
+function compactNamedMileAhead(summary: string): { name: string; mile: string; distance: string } | null {
+	const trimmed = trimToolClause(summary);
+	const match = /^(.+?)\s+at\s+mile\s+(\d+(?:\.\d+)?)\s+\((.*)\)(?:[.;]|$)/iu.exec(trimmed);
+	if (!match) return null;
+	const [, name, mile, parenthetical] = match;
+	const distance = parenthetical.match(/\b(\d+(?:\.\d+)?\s*mi\s+ahead)\b/iu)?.[1] ?? 'nearby';
+	return { name: name.trim(), mile, distance: distance.replace(/\s+/gu, ' ') };
+}
+
+function firstToolSentence(summary: string): string {
+	return trimToolClause(summary).split(/(?<=[.!?])\s+/u)[0]?.trim() ?? trimToolClause(summary);
+}
+
 function compactTownAccessCaveat(summary: string): string {
 	const lower = summary.toLowerCase();
 	const isCandidate = /\b(?:open-data|candidate)\b/u.test(lower);
@@ -2046,12 +2071,33 @@ function buildZeroNeroDecisionNote(toolInvocations: ToolInvocationRecord[]): str
 function buildResupplyPointCarryNote(toolInvocations: ToolInvocationRecord[]): string {
 	const town = toolSummary(toolInvocations, 'next_town');
 	const terrain = toolSummary(toolInvocations, 'upcoming_terrain');
-	const context = [
-		town ? `loaded next town/access candidate: ${trimToolClause(town)}` : '',
-		terrain ? `loaded terrain context: ${trimToolClause(terrain)}` : ''
-	].filter(Boolean);
-	const contextNote = context.length ? ` Loaded context: ${context.join('; ')}.` : '';
+	const context = uniqueStrings([
+		town ? compactTownAccessSentence(town, false).replace(/^Cached pack:\s*/u, '') : '',
+		terrain ? compactTerrainDifficultySentence(terrain) : '',
+		terrain ? compactTerrainTownSentence(terrain) : ''
+	]);
+	const contextNote = context.length ? `\n\nCached pack cue: ${context.join(' ')} Confirm services and hours before shortening the food carry.` : '';
 	return `${RESUPPLY_POINT_CARRY_NOTE}${contextNote}`;
+}
+
+function compactTerrainDifficultySentence(summary: string): string {
+	const difficulty = summary.match(/\bdifficulty\s+([^,|]+(?:\([^)]*\))?)/iu)?.[1]?.trim();
+	if (!difficulty) return '';
+	return `Next terrain looks ${difficulty}.`;
+}
+
+function compactTerrainTownSentence(summary: string): string {
+	const townList = summary
+		.split(/\bTown:\s*/iu)[1]
+		?.split(/\s+\|\s+/u)[0]
+		?.replace(/\.\s*$/u, '')
+		.trim();
+	if (!townList) return '';
+	return `Terrain summary lists town/access candidates: ${townList}.`;
+}
+
+function uniqueStrings(values: string[]): string[] {
+	return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
 }
 
 function buildOffTrailImmediateNote(toolInvocations: ToolInvocationRecord[]): string {
