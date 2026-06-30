@@ -608,7 +608,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 		'When you reach town, confirm the details for services, hostels, shuttles, and stores right away.',
 		'What should I do first when I get to town so I recover well?'
 	);
-	assert.match(townRecoveryAnswer, /Town recovery order/);
+	assert.match(townRecoveryAnswer, /Town guidance: recovery order/);
 	assert.match(townRecoveryAnswer, /eat real calories first/);
 	assert.match(townRecoveryAnswer, /shower and laundry/);
 	assert.match(townRecoveryAnswer, /inspect and treat feet/);
@@ -635,12 +635,12 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			}
 		]
 	);
-	assert.match(foodDaysAnswer, /Food-days estimate/);
+	assert.match(foodDaysAnswer, /Food-days guidance/);
 	assert.match(foodDaysAnswer, /distance to the next confirmed resupply/);
 	assert.match(foodDaysAnswer, /realistic pace for the terrain/);
 	assert.match(foodDaysAnswer, /Do not base food days on the next water source/);
 	assert.match(foodDaysAnswer, /road crossing has food or store access unless current service data proves it/);
-	assert.match(foodDaysAnswer, /Pilot Gap Road at mile 71\.0/);
+	assert.match(foodDaysAnswer, /Pilot Gap Road is next, about 4\.8 mi ahead at AT mile 71\.0/);
 
 	const directWaterAnswer = polishOnDeviceAnswer(
 		'You should check your field pack for nearby sources.',
@@ -683,8 +683,33 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	);
 	assert.doesNotMatch(directTownAnswer, /Road\/town navigation note/);
 	assert.doesNotMatch(directTownAnswer, /Currently at mile 1530\.0/);
-	assert.match(directTownAnswer, /Cached pack: Salisbury is the next town\/access, about 7\.1 mi ahead at mile 1537\.1/);
-	assert.match(directTownAnswer, /Services are unconfirmed; verify shuttle\/pickup and hours before counting on it/);
+	assert.match(directTownAnswer, /Salisbury is next, about 7\.1 mi ahead at AT mile 1537\.1/);
+	assert.match(directTownAnswer, /Cached pack caveat: Services are unconfirmed; verify shuttle\/pickup and hours before counting on it/);
+
+	const directWhenTownAnswer = polishOnDeviceAnswer(
+		'Source basis: cached town guidance. Road/town navigation note: Currently at mile 1562.0 of 2197.4 (71.1% complete, 635.4 mi remaining); next loaded road/town access is Lenox at mile 1563.1 (1.1 mi ahead via Open-data settlement candidate (MA · 6.3 mi off trail)). Services are not confirmed from guidebook/current hiker reports in this pack; verify grocery, lodging, shuttle, and hours before planning around it. Treat this as approximate loaded context. Confirm shuttle or pickup and do not assume services at a road crossing unless current service data proves them.',
+		"when's my next town?",
+		[
+			{
+				toolId: 'current_mile',
+				args: {},
+				summary: 'Currently at mile 1562.0 of 2197.4 (71.1% complete, 635.4 mi remaining).',
+				confidence: 'high',
+				receipts: []
+			},
+			{
+				toolId: 'next_town',
+				args: { fromMile: 1562 },
+				summary: 'Lenox at mile 1563.1 (1.1 mi ahead via Open-data settlement candidate (MA · 6.3 mi off trail)). Services are not confirmed from guidebook/current hiker reports in this pack; verify grocery, lodging, shuttle, and hours before planning around it.',
+				confidence: 'low',
+				receipts: []
+			}
+		]
+	);
+	assert.equal(
+		directWhenTownAnswer,
+		'Lenox is next, about 1.1 mi ahead at AT mile 1563.1 (MA, 6.3 mi off trail).\n\nCached pack caveat: Services are unconfirmed; verify shuttle/pickup and hours before counting on it.'
+	);
 
 	const todayDifficultyAnswer = polishOnDeviceAnswer(
 		'Today should be manageable if you pace yourself.',
@@ -758,10 +783,10 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			}
 		]
 	);
-	assert.match(zeroNeroAnswer, /Zero\/nero decision/);
+	assert.match(zeroNeroAnswer, /Zero\/nero guidance/);
 	assert.match(zeroNeroAnswer, /do not default to miles or default to a full zero/);
 	assert.match(zeroNeroAnswer, /body condition, injury or foot issues, sleep debt, weather, required chores, budget, and the next section/);
-	assert.match(zeroNeroAnswer, /weather context: Cached weather near mile 101\.1/);
+	assert.match(zeroNeroAnswer, /Cached weather cue: Cached weather near mile 101\.1/);
 
 	const townDayAnswer = polishOnDeviceAnswer(
 		'Eat, shower, do your foot care, and get some sleep.',
@@ -941,9 +966,9 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			}
 		]
 	);
-	assert.match(rolledAnkleAnswer, /Rolled-ankle note/);
+	assert.match(rolledAnkleAnswer, /Rolled-ankle guidance/);
 	assert.match(rolledAnkleAnswer, /assess pain, swelling, weight-bearing, and gait/);
-	assert.match(rolledAnkleAnswer, /loaded exit candidate: Pilot Gap Road at mile 57\.0/);
+	assert.match(rolledAnkleAnswer, /Pilot Gap Road is next, about 4\.8 mi ahead at AT mile 57\.0/);
 	assert.match(rolledAnkleAnswer, /do not push through worsening pain/);
 	assert.match(rolledAnkleAnswer, /911, inReach\/PLB, rangers\/authorities, or the emergency plan/);
 
@@ -951,7 +976,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 		'If something goes wrong, you should use your personal emergency plan. For immediate danger, follow your established emergency protocol.',
 		'How do I use SOS or contact my support circle if something goes wrong?'
 	);
-	assert.match(sosSupportAnswer, /SOS\/support-circle note/);
+	assert.match(sosSupportAnswer, /SOS\/support-circle guidance/);
 	assert.match(sosSupportAnswer, /Scout cannot call 911, trigger SOS, or rescue you/);
 	assert.match(sosSupportAnswer, /current mile\/location or last known point/);
 	assert.match(sosSupportAnswer, /what happened, injury\/weather\/urgency, what you plan to do next/);
@@ -960,7 +985,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 		'If you lose signal and need help, your first priority is to stay put and assess your immediate situation.',
 		'What do I do if I lose phone signal but I need help soon?'
 	);
-	assert.match(noSignalHelpAnswer, /No-signal help note/);
+	assert.match(noSignalHelpAnswer, /No-signal help guidance/);
 	assert.match(noSignalHelpAnswer, /conserve battery/);
 	assert.match(noSignalHelpAnswer, /inReach\/PLB or 911\/SOS/);
 	assert.match(noSignalHelpAnswer, /queued texts may send when service returns/);
@@ -979,11 +1004,11 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			}
 		]
 	);
-	assert.match(overduePartnerAnswer, /Overdue-partner note/);
+	assert.match(overduePartnerAnswer, /Overdue-partner guidance/);
 	assert.match(overduePartnerAnswer, /last known mile\/location, intended stop, route, and how overdue/);
 	assert.match(overduePartnerAnswer, /beyond the escalation window/);
 	assert.match(overduePartnerAnswer, /Do not create a second emergency/);
-	assert.match(overduePartnerAnswer, /Pilot Gap Road at mile 180\.4/);
+	assert.match(overduePartnerAnswer, /Pilot Gap Road is next, about 3\.1 mi ahead at AT mile 180\.4/);
 
 	const medicalAdviceAnswer = polishOnDeviceAnswer(
 		'If you tell me about symptoms, I will tell you to stop hiking, find shade, cool down, and sip treated water with electrolytes if available. I will also tell you to escalate for dizziness or confusion.',
@@ -1050,7 +1075,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.doesNotMatch(roadTownNavigationAnswer, /closest loaded water candidate is a seasonal seep/i);
 	assert.doesNotMatch(roadTownNavigationAnswer, /Road\/town navigation note/);
 	assert.match(roadTownNavigationAnswer, /Cached pack has you near mile 44\.7/);
-	assert.match(roadTownNavigationAnswer, /Pilot Gap Road is the next town\/access, about 4\.8 mi ahead at mile 49\.5/);
+	assert.match(roadTownNavigationAnswer, /Pilot Gap Road is next, about 4\.8 mi ahead at AT mile 49\.5/);
 	assert.match(roadTownNavigationAnswer, /4\.8 mi ahead/);
 	assert.doesNotMatch(roadTownNavigationAnswer, /5\.3 miles/);
 	assert.match(roadTownNavigationAnswer, /verify shuttle\/pickup and hours before counting on it/i);
@@ -1098,11 +1123,10 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			}
 		]
 	);
-	assert.match(bailoutInjuryAnswer, /Bailout planning note/);
-	assert.match(bailoutInjuryAnswer, /Currently at mile 158\.2/);
-	assert.match(bailoutInjuryAnswer, /nearest loaded bailout\/access candidate is Pilot Gap Road at mile 163\.0/);
-	assert.match(bailoutInjuryAnswer, /4\.8 mi ahead via road crossing/);
-	assert.match(bailoutInjuryAnswer, /No guaranteed services at the crossing/);
+	assert.match(bailoutInjuryAnswer, /Bailout guidance/);
+	assert.match(bailoutInjuryAnswer, /Cached pack has you near mile 158\.2/);
+	assert.match(bailoutInjuryAnswer, /Nearest bailout\/access candidate: Pilot Gap Road is next, about 4\.8 mi ahead at AT mile 163\.0/);
+	assert.doesNotMatch(bailoutInjuryAnswer, /Loaded context|Bailout planning note|nearest loaded bailout/);
 	assert.match(bailoutInjuryAnswer, /do not push through it/);
 	assert.match(bailoutInjuryAnswer, /911, inReach\/PLB, rangers\/authorities, or the emergency plan/);
 
@@ -1124,7 +1148,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			'For practical next steps, first, check the weather and any immediate hazards around you. If you are cold or wet, get warm and dry immediately. Eat or drink if you have food or water available. Make a one-hour plan for what you need to do next, focusing on immediate safety. If you feel you are in immediate danger, use your emergency plan.\n\nYou need to check the weather and any immediate hazards around you. If you are cold or wet, get warm and dry immediately. Eat or drink if you have food or water available. Make a one-hour plan for what you need to do next, focusing on immediate safety. If you feel you are in immediate danger, use your emergency plan.',
 			'I am scared and alone tonight. Give me scripture and practical next steps.'
 		),
-		'For practical next steps, first, check the weather and any immediate hazards around you. If you are cold or wet, get warm and dry immediately. Eat or drink if you have food or water available. Make a one-hour plan for what you need to do next, focusing on immediate safety. If you feel you are in immediate danger, use your emergency plan.\n\nNight support note: take the loaded KJV scripture as comfort, then make the next hour concrete. Check immediate hazards, weather, and alerts if possible; get warm and dry, eat or drink if needed, use your headlamp, and choose the nearest safe legal sleep option or known public/help option. Do not let comfort verses override danger; use 911, inReach/PLB, ranger/authorities, or the emergency plan for real danger, injury, exposure, or repeated panic.'
+		'For practical next steps, first, check the weather and any immediate hazards around you. If you are cold or wet, get warm and dry immediately. Eat or drink if you have food or water available. Make a one-hour plan for what you need to do next, focusing on immediate safety. If you feel you are in immediate danger, use your emergency plan.\n\nNight support guidance: take the loaded KJV scripture as comfort, then make the next hour concrete. Check immediate hazards, weather, and alerts if possible; get warm and dry, eat or drink if needed, use your headlamp, and choose the nearest safe legal sleep option or known public/help option. Do not let comfort verses override danger; use 911, inReach/PLB, ranger/authorities, or the emergency plan for real danger, injury, exposure, or repeated panic.'
 	);
 
 	assert.equal(
@@ -1141,7 +1165,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 				}
 			]
 		),
-		'It sounds like you are feeling really scared and alone right now. Remember the loaded verse: "What time I am afraid, I will trust in thee" (Psalms 56:3). You are not alone in this moment, and there are people who care.\n\nFor right now, your first step is to focus on immediate safety. Check the weather and any local alerts for any immediate danger like severe weather or hazards. If you are feeling overwhelmed, take a moment to breathe. If you are in immediate danger, use your emergency plan right away.\n\nIf you are feeling scared or alone, remember that you have resources. You can call for help or reach out to someone you trust. If you are feeling scared or alone, remember that you are supported. You can find comfort in the verses that remind you that you are not facing this alone.\n\nNight support note: take the loaded KJV scripture as comfort, then make the next hour concrete. Check immediate hazards, weather, and alerts if possible; get warm and dry, eat or drink if needed, use your headlamp, and choose the nearest safe legal sleep option or known public/help option. Do not let comfort verses override danger; use 911, inReach/PLB, ranger/authorities, or the emergency plan for real danger, injury, exposure, or repeated panic. Loaded shelter context: Near Ridge Shelter at mile 75.3 (3.4 mi ahead). Open-data candidate; verify current status, water, and crowding. Treat that as a candidate, not a guarantee; verify status, water, and crowding when possible, and do not add risky night miles if it is not the safer legal option.'
+		'It sounds like you are feeling really scared and alone right now. Remember the loaded verse: "What time I am afraid, I will trust in thee" (Psalms 56:3). You are not alone in this moment, and there are people who care.\n\nFor right now, your first step is to focus on immediate safety. Check the weather and any local alerts for any immediate danger like severe weather or hazards. If you are feeling overwhelmed, take a moment to breathe. If you are in immediate danger, use your emergency plan right away.\n\nIf you are feeling scared or alone, remember that you have resources. You can call for help or reach out to someone you trust. If you are feeling scared or alone, remember that you are supported. You can find comfort in the verses that remind you that you are not facing this alone.\n\nNight support guidance: take the loaded KJV scripture as comfort, then make the next hour concrete. Check immediate hazards, weather, and alerts if possible; get warm and dry, eat or drink if needed, use your headlamp, and choose the nearest safe legal sleep option or known public/help option. Do not let comfort verses override danger; use 911, inReach/PLB, ranger/authorities, or the emergency plan for real danger, injury, exposure, or repeated panic.\n\nCached pack cue: Near Ridge Shelter is about 3.4 mi ahead at mile 75.3. Verify status, water, and crowding when possible, and do not add risky night miles if it is not the safer legal option.'
 	);
 
 	assert.equal(
@@ -1552,11 +1576,11 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 		]
 	);
 	assert.doesNotMatch(severeFatigueAnswer, /\bheat illness\b|find shade|cool down|nausea|cramps|stopped sweating/);
-	assert.match(severeFatigueAnswer, /Severe-fatigue note: stop hiking now and sit in a safe spot/);
+	assert.match(severeFatigueAnswer, /Severe-fatigue guidance: stop hiking now and sit in a safe spot/);
 	assert.match(severeFatigueAnswer, /Eat a snack, drink treated water or electrolytes, adjust layers/);
 	assert.match(severeFatigueAnswer, /check daylight, weather, body symptoms/);
-	assert.match(severeFatigueAnswer, /water: Next loaded water: Seasonal seep ahead at mile 191\.1/);
-	assert.match(severeFatigueAnswer, /shelter: Near Ridge Shelter at mile 192\.7/);
+	assert.match(severeFatigueAnswer, /Cached pack cue: Seasonal seep ahead is about 1\.8 mi ahead at mile 191\.1/);
+	assert.match(severeFatigueAnswer, /Near Ridge Shelter is about 3\.4 mi ahead at mile 192\.7/);
 	assert.match(severeFatigueAnswer, /inability to make decisions/);
 
 	const prayerSafePlanAnswer = polishOnDeviceAnswer(
@@ -1653,7 +1677,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 				}
 			]
 		),
-		'If you find a bear near camp, the first thing is to stop and stay calm. Do not run.\n\nIf you have food, keep it stored properly, away from your tent, and use bear canisters or hanging systems if available. If you are in an area where bears are known to be active, be extra vigilant about food storage and making noise while hiking.\n\nAlways prioritize your safety and follow the guidance of local safety protocols.\n\nBear-near-camp note: stay calm, create distance, do not run, and give the bear an exit. Secure food, trash, and scented items away from sleep; do not approach, feed, corner, or try to retrieve food from the bear. Verify current local bear guidance, alerts, and food-storage rules when available, and avoid species- or park-specific rules unless they are loaded. Use emergency communication or local authorities/rangers if there is immediate danger. Loaded alert context: Active trail conditions: Eval bear activity caution. Bear activity reports are volatile; confirm current local guidance and use proper food storage.'
+		'If you find a bear near camp, the first thing is to stop and stay calm. Do not run.\n\nIf you have food, keep it stored properly, away from your tent, and use bear canisters or hanging systems if available. If you are in an area where bears are known to be active, be extra vigilant about food storage and making noise while hiking.\n\nAlways prioritize your safety and follow the guidance of local safety protocols.\n\nBear-near-camp guidance: stay calm, create distance, do not run, and give the bear an exit. Secure food, trash, and scented items away from sleep; do not approach, feed, corner, or try to retrieve food from the bear. Verify current local bear guidance, alerts, and food-storage rules when available, and avoid species- or park-specific rules unless they are loaded. Use emergency communication or local authorities/rangers if there is immediate danger.\n\nAlert cue: Active trail conditions: Eval bear activity caution. Confirm current local guidance and food-storage rules before relying on it.'
 	);
 
 	assert.equal(
@@ -1677,7 +1701,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 				}
 			]
 		),
-		'If you feel unsafe at a shelter, your first step is to prioritize your safety. If you feel the situation is escalating or you are in immediate danger, you need to follow the emergency plan you have in place.\n\nIf you are in immediate danger, you should use your emergency communication device to contact help or follow the established emergency protocol. You should not feel obligated to stay in a situation that makes you feel unsafe.\n\nUnsafe-person shelter note: trust the concern and do not confront, negotiate, or stay to be polite. Create distance, move toward a safer public or known place when you can do so safely, contact a trusted person, hostel or shuttle, ridgerunner, land manager, or authorities, and use emergency communication immediately if there is danger. Loaded exit context: Pilot Gap Road at mile 124.2 (4.8 mi ahead via road crossing; emergency exit candidate, confirm shuttle or pickup). No guaranteed services at the crossing.'
+		'If you feel unsafe at a shelter, your first step is to prioritize your safety. If you feel the situation is escalating or you are in immediate danger, you need to follow the emergency plan you have in place.\n\nIf you are in immediate danger, you should use your emergency communication device to contact help or follow the established emergency protocol. You should not feel obligated to stay in a situation that makes you feel unsafe.\n\nUnsafe-person shelter guidance: trust the concern and do not confront, negotiate, or stay to be polite. Create distance, move toward a safer public or known place when you can do so safely, contact a trusted person, hostel or shuttle, ridgerunner, land manager, or authorities, and use emergency communication immediately if there is danger.\n\nCached exit cue: Pilot Gap Road is the next town/access, about 4.8 mi ahead at mile 124.2. Verify shuttle/pickup and move only if it is safer than staying put.'
 	);
 
 	assert.equal(
@@ -1693,7 +1717,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			'If you arrive late, prioritize safety and choose a backup before dark.',
 			'What if I am arriving at the shelter after dark?'
 		),
-		'If you arrive late, prioritize safety and keep a fallback if the shelter is full.\n\nAfter-dark shelter note: slow down, use the headlamp, avoid risky night navigation when tired, take the nearest safe legal option rather than adding extra night miles, and keep a fallback plan in case the shelter is full.'
+		'If you arrive late, prioritize safety and keep a fallback if the shelter is full.\n\nAfter-dark shelter guidance: slow down, use the headlamp, avoid risky night navigation when tired, take the nearest safe legal option rather than adding extra night miles, and keep a fallback plan in case the shelter is full.'
 	);
 
 	assert.equal(

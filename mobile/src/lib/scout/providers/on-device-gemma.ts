@@ -66,7 +66,7 @@ const DOCUMENT_WRITING_SOURCE_BOUNDARY_NOTE =
 const DOCUMENT_WRITING_SAVE_RECOVERY_NOTE =
 	'Document save boundary: if this draft is saved, keep the previous version recoverable or create a versioned update so the change can be reviewed and restored.';
 const MODEL_DOWNLOADING_STATUS_NOTE =
-	'Model-download status: a failed or stuck download means the on-device local AI model is not ready for offline Scout yet. In town or on reliable Wi-Fi, plug into power, confirm enough free storage, leave the app open long enough for download/verification, then retry from the model download control. If it stays stuck, restart the app and try again on Wi-Fi before leaving service. The field pack and saved maps/docs may still be available offline if already downloaded, but Scout should not pretend local AI can answer offline until the model reports ready and an airplane-mode Scout question succeeds.';
+	'Model-download guidance: a failed or stuck download means the on-device local AI model is not ready for offline Scout yet. In town or on reliable Wi-Fi, plug into power, confirm enough free storage, leave the app open long enough for download/verification, then retry from the model download control. If it stays stuck, restart the app and try again on Wi-Fi before leaving service. The field pack and saved maps/docs may still be available offline if already downloaded, but Scout should not pretend local AI can answer offline until the model reports ready and an airplane-mode Scout question succeeds.';
 const FIELD_PACK_STALENESS_NOTE =
 	"Field-pack status: Scout's field pack is the cached trail data on the phone, not the physical backpack. Before trusting it, check the pack age/status, current mile or downloaded region, and source timestamps when shown. If it is old, expired, for the wrong mile/region, or was loaded before weather, closures, water, or services changed, treat it as stale. Refresh on Wi-Fi or in town before water, weather, closure, bailout, or town-service decisions. Until refreshed, cached weather, closures, water, and services are caution signals, not current proof.";
 const SIGN_IN_CLOUD_SYNC_NOTE =
@@ -88,7 +88,7 @@ const OFF_TRAIL_IMMEDIATE_FALLBACK_NOTE =
 const CLIMB_TERRAIN_AHEAD_FALLBACK_NOTE =
 	'Climb/terrain note: Scout does not have a verified climb, elevation profile, gain/loss, or grade for this question, so do not invent a climb distance or difficulty. Use the loaded pack only as landmark spacing until an offline map, guide, GPS/elevation profile, or trail sign confirms the climb. Pace impact: slow the target pace, budget daylight, water spacing, pack weight, feet/knees, weather, and the next legal stop before committing to miles.';
 const BAILOUT_INJURY_EXIT_FALLBACK_NOTE =
-	'Bailout planning note: next loaded bailout/access candidate is not available in the current pack. Treat this as incomplete context: for worsening knee pain, swelling, changed gait, or inability to continue safely, do not push through it. Back off or stop, confirm the nearest road, town, shuttle, pickup, and services when possible, and use 911, inReach/PLB, rangers/authorities, or the emergency plan for real danger or if you cannot continue safely.';
+	'Bailout guidance: next bailout/access candidate is not available in the current pack. Treat this as incomplete context: for worsening knee pain, swelling, changed gait, or inability to continue safely, do not push through it. Back off or stop, confirm the nearest road, town, shuttle, pickup, and services when possible, and use 911, inReach/PLB, rangers/authorities, or the emergency plan for real danger or if you cannot continue safely.';
 const OFFLINE_EMERGENCY_BOUNDARY_NOTE =
 	'Emergency boundary: Scout and the phone do not replace inReach, PLB, 911, or the family emergency plan.';
 const MANUAL_MILE_AFTER_SHUTTLE_NOTE =
@@ -96,13 +96,13 @@ const MANUAL_MILE_AFTER_SHUTTLE_NOTE =
 const CONFUSING_JUNCTION_NOTE =
 	'Confusing-junction note: stop at the junction, do not guess, and do not keep hiking just because a line on the phone looks plausible. Compare the blaze, sign, map, compass, GPS, and last known clear blaze or landmark. Backtrack only on the obvious safe route to the last confirmed point if needed, and wait or ask another reliable source when visibility, weather, injury, or darkness makes the choice unsafe.';
 const ROLLED_ANKLE_NOW_NOTE =
-	'Rolled-ankle note: stop and assess pain, swelling, weight-bearing, and gait before making miles. Reduce load and pace, choose the nearest safe legal stop or loaded exit candidate, and do not push through worsening pain, swelling, numbness, deformity, changed gait, or inability to walk normally. Get medical help or use 911, inReach/PLB, rangers/authorities, or the emergency plan for severe pain, instability, worsening symptoms, exposure, or if you cannot continue safely.';
+	'Rolled-ankle guidance: stop and assess pain, swelling, weight-bearing, and gait before making miles. Reduce load and pace, choose the nearest safe legal stop or loaded exit candidate, and do not push through worsening pain, swelling, numbness, deformity, changed gait, or inability to walk normally. Get medical help or use 911, inReach/PLB, rangers/authorities, or the emergency plan for severe pain, instability, worsening symptoms, exposure, or if you cannot continue safely.';
 const SOS_SUPPORT_CIRCLE_NOTE =
-	'SOS/support-circle note: Scout cannot call 911, trigger SOS, or rescue you. For immediate danger, use phone SOS/911 if available or your inReach/PLB/emergency device, then contact your support circle when safe. Send concise facts: current mile/location or last known point, what happened, injury/weather/urgency, what you plan to do next, and when you will check in again. If it is not immediate danger, use your family emergency plan and escalation window, but do not wait on Scout for rescue.';
+	'SOS/support-circle guidance: Scout cannot call 911, trigger SOS, or rescue you. For immediate danger, use phone SOS/911 if available or your inReach/PLB/emergency device, then contact your support circle when safe. Send concise facts: current mile/location or last known point, what happened, injury/weather/urgency, what you plan to do next, and when you will check in again. If it is not immediate danger, use your family emergency plan and escalation window, but do not wait on Scout for rescue.';
 const NO_SIGNAL_HELP_SOON_NOTE =
-	'No-signal help note: if you need help soon, first get to a safe stable spot and conserve battery. Use inReach/PLB or 911/SOS if available; if not, send a text/call attempt with current mile or last known point, issue, plan, and check-in time because queued texts may send when service returns. Move for signal only if the route is obvious and safer than staying put; do not wander, climb exposed terrain, or leave a known safe location just to chase bars.';
+	'No-signal help guidance: if you need help soon, first get to a safe stable spot and conserve battery. Use inReach/PLB or 911/SOS if available; if not, send a text/call attempt with current mile or last known point, issue, plan, and check-in time because queued texts may send when service returns. Move for signal only if the route is obvious and safer than staying put; do not wander, climb exposed terrain, or leave a known safe location just to chase bars.';
 const OVERDUE_PARTNER_NOTE =
-	'Overdue-partner note: start from the agreed check-in plan, last known mile/location, intended stop, route, and how overdue they are. Try direct call/text and contact the support circle named in the plan. If they are beyond the escalation window, injured, exposed, missing in bad weather/darkness, or the situation feels unsafe, escalate to 911, rangers/authorities, hostel/shuttle/ridgerunner, or the emergency plan with the last known facts. Do not create a second emergency by leaving your own safe location without a clear plan.';
+	'Overdue-partner guidance: start from the agreed check-in plan, last known mile/location, intended stop, route, and how overdue they are. Try direct call/text and contact the support circle named in the plan. If they are beyond the escalation window, injured, exposed, missing in bad weather/darkness, or the situation feels unsafe, escalate to 911, rangers/authorities, hostel/shuttle/ridgerunner, or the emergency plan with the last known facts. Do not create a second emergency by leaving your own safe location without a clear plan.';
 const MEDICAL_ADVICE_BOUNDARY_NOTE =
 	'Medical-advice boundary: Scout can help you make a conservative field decision, but it cannot diagnose, clear you to keep hiking, or replace a clinician or emergency services. For symptoms, describe red flags, stop or reduce exertion, choose a safer stop or exit, and seek medical help or use 911/inReach/PLB for chest pain, trouble breathing, severe allergic reaction, head injury, fainting, confusion, severe bleeding, signs of stroke, severe/worsening pain, infection signs, heat illness, hypothermia, or inability to continue safely.';
 const STOP_HIKING_IMMEDIATE_NOTE =
@@ -110,15 +110,15 @@ const STOP_HIKING_IMMEDIATE_NOTE =
 const RESUPPLY_MAIL_DROP_NOTE =
 	'Before making a firm mail-versus-town call, confirm diet restrictions, expected pace, next town timing, store and post-office hours, hostel or shuttle access, and whether the item is hard to find locally. Default rule: buy common food in town; mail only constrained, medical, diet-specific, or hard-to-find items to verified stops.';
 const TOWN_RECOVERY_FIRST_NOTE =
-	'Town recovery order: eat real calories first, then shower and laundry, inspect and treat feet, sleep or rest, charge the phone and battery bank, refresh/download Scout items, and only then handle shopping, shuttles, reservations, and next-section logistics. If foot pain, infection signs, injury, or exhaustion is present, handle that before chasing chores.';
+	'Town guidance: recovery order is eat real calories first, then shower and laundry, inspect and treat feet, sleep or rest, charge the phone and battery bank, refresh/download Scout items, and only then handle shopping, shuttles, reservations, and next-section logistics. If foot pain, infection signs, injury, or exhaustion is present, handle that before chasing chores.';
 const TOWN_DAY_SEQUENCE_NOTE =
 	'Town-day guidance: make a short list, eat first, shower/laundry next, inspect feet and gear, resupply, then charge, refresh, and download before leaving service. Time-box errands so the day does not vanish, but do not skip food, rest, foot care, or sleep just to feel productive.';
 const HOSTEL_CHORE_ORDER_NOTE =
 	'Hostel-stop order: claim/confirm the bed or pickup first, start laundry and shower early, inspect feet and shoes before shopping, eat, resupply, dry wet gear, charge batteries, refresh the field pack/current mile/weather/closures, update the local AI model on Wi-Fi if needed, and confirm checkout/shuttle timing. Treat laundry, showers, bunks, shuttles, and store access as unconfirmed until the hostel or town source confirms them.';
 const ZERO_NERO_DECISION_NOTE =
-	'Zero/nero decision: do not default to miles or default to a full zero. Weigh body condition, injury or foot issues, sleep debt, weather, required chores, budget, and the next section. Take the zero when recovery, injury, dangerous weather, or unfinished chores would make tomorrow worse; take a nero when the essential chores are done and the next short move is safe. Rest is an investment, not a failure.';
+	'Zero/nero guidance: do not default to miles or default to a full zero. Weigh body condition, injury or foot issues, sleep debt, weather, required chores, budget, and the next section. Take the zero when recovery, injury, dangerous weather, or unfinished chores would make tomorrow worse; take a nero when the essential chores are done and the next short move is safe. Rest is an investment, not a failure.';
 const FOOD_DAYS_NEXT_STRETCH_NOTE =
-	'Food-days estimate: calculate days from the distance to the next confirmed resupply, your realistic pace for the terrain, appetite, and one small backup margin. Do not base food days on the next water source, and do not assume a road crossing has food or store access unless current service data proves it. If the next reliable resupply point is not loaded, ask for or verify the exact next town/store before giving a precise day count.';
+	'Food-days guidance: calculate days from the distance to the next confirmed resupply, your realistic pace for the terrain, appetite, and one small backup margin. Do not base food days on the next water source, and do not assume a road crossing has food or store access unless current service data proves it. If the next reliable resupply point is not loaded, ask for or verify the exact next town/store before giving a precise day count.';
 const RESUPPLY_POINT_CARRY_NOTE =
 	'Resupply-point choice: choose the next stop by distance, terrain difficulty, appetite, reliable store or hostel access, hours, shuttle/pickup reality, and a backup food margin. Do not cut food carry just because Scout names a road or town candidate; confirm services first. If Scout only has thin road/town context, ask for the next known resupply point or carry conservatively to the next verified option.';
 const SCOUT_TOWN_UPDATE_NOTE =
@@ -188,15 +188,15 @@ const LOW_IMPACT_CAMPSITE_NOTE =
 const CLIMB_STOP_NOTE =
 	'Climb-stop note: stop before the climb if daylight, legs, water, weather, or legal camp options are weak; climb only when you have enough daylight, water, energy, and a known legal stop after it.';
 const AFTER_DARK_SHELTER_NOTE =
-	'After-dark shelter note: slow down, use the headlamp, avoid risky night navigation when tired, take the nearest safe legal option rather than adding extra night miles, and keep a fallback plan in case the shelter is full.';
+	'After-dark shelter guidance: slow down, use the headlamp, avoid risky night navigation when tired, take the nearest safe legal option rather than adding extra night miles, and keep a fallback plan in case the shelter is full.';
 const WATERLESS_SHELTER_NOTE =
 	'Waterless-shelter note: do not assume shelter water is flowing; top off before the shelter, carry enough to the next verified source, or stop where both legal sleep and water are workable.';
 const BEAR_ACTIVITY_SHELTER_NOTE =
 	'Bear-activity shelter note: verify current local guidance, alerts, closures, and required food storage before committing. Use proper food storage and odor control such as a bear box, cable, canister, or approved hang as local rules require, keep food and scented items away from sleep, and choose an alternate legal stop if the report cannot be cleared.';
 const BEAR_NEAR_CAMP_NOTE =
-	'Bear-near-camp note: stay calm, create distance, do not run, and give the bear an exit. Secure food, trash, and scented items away from sleep; do not approach, feed, corner, or try to retrieve food from the bear. Verify current local bear guidance, alerts, and food-storage rules when available, and avoid species- or park-specific rules unless they are loaded. Use emergency communication or local authorities/rangers if there is immediate danger.';
+	'Bear-near-camp guidance: stay calm, create distance, do not run, and give the bear an exit. Secure food, trash, and scented items away from sleep; do not approach, feed, corner, or try to retrieve food from the bear. Verify current local bear guidance, alerts, and food-storage rules when available, and avoid species- or park-specific rules unless they are loaded. Use emergency communication or local authorities/rangers if there is immediate danger.';
 const UNSAFE_PERSON_SHELTER_NOTE =
-	'Unsafe-person shelter note: trust the concern and do not confront, negotiate, or stay to be polite. Create distance, move toward a safer public or known place when you can do so safely, contact a trusted person, hostel or shuttle, ridgerunner, land manager, or authorities, and use emergency communication immediately if there is danger.';
+	'Unsafe-person shelter guidance: trust the concern and do not confront, negotiate, or stay to be polite. Create distance, move toward a safer public or known place when you can do so safely, contact a trusted person, hostel or shuttle, ridgerunner, land manager, or authorities, and use emergency communication immediately if there is danger.';
 const THUNDERSTORM_HIKE_NOTE =
 	'Thunderstorm hike note: check live forecast or radar if available, avoid exposed ridges and high points during the storm window, shorten or shift mileage earlier, and stop or bail out if lightning, flooding, wet-cold exposure, or worsening weather appears.';
 const COLD_WIND_RIDGE_NOTE =
@@ -220,9 +220,9 @@ const CLOSURE_DETOUR_ROUTING_NOTE =
 const SMOKE_FIRE_TRAIL_NOTE =
 	'Smoke/fire trail note: treat smoke or visible fire near trail as a serious hazard. Do not continue toward or through smoke or visible fire; move away toward a known safe road, town, ranger station, or public area when you can do so safely. Follow official closures, evacuation orders, ranger, 911, or emergency-device instructions; do not invent a safe route through the hazard. Escalate immediately for visible flames, heavy smoke, blocked exits, fast-changing wind, or immediate danger.';
 const SCARED_ALONE_NIGHT_NOTE =
-	'Night support note: take the loaded KJV scripture as comfort, then make the next hour concrete. Check immediate hazards, weather, and alerts if possible; get warm and dry, eat or drink if needed, use your headlamp, and choose the nearest safe legal sleep option or known public/help option. Do not let comfort verses override danger; use 911, inReach/PLB, ranger/authorities, or the emergency plan for real danger, injury, exposure, or repeated panic.';
+	'Night support guidance: take the loaded KJV scripture as comfort, then make the next hour concrete. Check immediate hazards, weather, and alerts if possible; get warm and dry, eat or drink if needed, use your headlamp, and choose the nearest safe legal sleep option or known public/help option. Do not let comfort verses override danger; use 911, inReach/PLB, ranger/authorities, or the emergency plan for real danger, injury, exposure, or repeated panic.';
 const SEVERE_FATIGUE_CLEAR_THINKING_NOTE =
-	'Severe-fatigue note: stop hiking now and sit in a safe spot. Eat a snack, drink treated water or electrolytes, adjust layers for warmth or cooling, and check daylight, weather, body symptoms, and whether you can think clearly. Choose the nearest lower-risk legal stop or help option; do not add miles for pride if your thinking is foggy. Use 911, inReach/PLB, rangers/authorities, or the emergency plan for confusion, worsening symptoms, injury, exposure, inability to continue safely, or inability to make decisions.';
+	'Severe-fatigue guidance: stop hiking now and sit in a safe spot. Eat a snack, drink treated water or electrolytes, adjust layers for warmth or cooling, and check daylight, weather, body symptoms, and whether you can think clearly. Choose the nearest lower-risk legal stop or help option; do not add miles for pride if your thinking is foggy. Use 911, inReach/PLB, rangers/authorities, or the emergency plan for confusion, worsening symptoms, injury, exposure, inability to continue safely, or inability to make decisions.';
 const PRAYER_SAFE_PLAN_NOTE =
 	'Yes. Lord, steady me, give me wisdom, and help me choose the safe next step. Amen.\n\nSafety plan: check immediate danger, weather, daylight, body symptoms, and alerts; treat shelter, water, town, or bailout info as candidates until verified. Choose the lower-risk option, and use 911, inReach/PLB, rangers/authorities, or the emergency plan for real danger, injury, exposure, confusion, or inability to continue safely. Prayer is support, not a substitute for help.';
 
@@ -799,6 +799,7 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	}
 	answer = removeRedundantWaterCarryAdvice(answer);
 	answer = removeSourceBasisLead(answer);
+	answer = ensurePromptGuidanceCue(answer, lowerPrompt);
 
 	return trimToCompleteSentence(answer);
 }
@@ -1112,6 +1113,25 @@ function removeSourceBasisLead(answer: string): string {
 		.trim();
 }
 
+function ensurePromptGuidanceCue(answer: string, prompt: string): string {
+	if (hasVisibleGuidanceCue(answer)) return answer;
+	const label = guidanceCueLabelForPrompt(prompt);
+	return label ? `${label}: ${answer.trim()}` : answer;
+}
+
+function hasVisibleGuidanceCue(answer: string): boolean {
+	return /\b(?:Cached pack|cached field pack|Cached exit cue|Cached help\/access cue|Alert cue|Model-download guidance|After-dark shelter guidance|SOS\/support-circle guidance|No-signal help guidance|Overdue-partner guidance|Night support guidance|Severe-fatigue guidance|Bear-near-camp guidance|Unsafe-person shelter guidance)\b/iu.test(answer);
+}
+
+function guidanceCueLabelForPrompt(prompt: string): string | null {
+	if (isModelDownloadingStatusPrompt(prompt)) return 'Model-download guidance';
+	if (isAfterDarkShelterPrompt(prompt)) return 'After-dark shelter guidance';
+	if (isSosSupportCirclePrompt(prompt)) return 'SOS/support-circle guidance';
+	if (isNoSignalHelpSoonPrompt(prompt)) return 'No-signal help guidance';
+	if (isOverduePartnerPrompt(prompt)) return 'Overdue-partner guidance';
+	return null;
+}
+
 function trimToCompleteSentence(answer: string): string {
 	const trimmed = answer.trim();
 	if (!trimmed || /[.!?)]$/u.test(trimmed)) return trimmed;
@@ -1390,7 +1410,9 @@ function isDirectNextWaterDistancePrompt(prompt: string): boolean {
 
 function isDirectNextTownDistancePrompt(prompt: string): boolean {
 	if (/\b(?:where am i|relative to)\b/u.test(prompt)) return false;
-	return /\b(?:how far|nearest|next)\b[^.?!\n]*(?:town|resupply|road crossing|road|access)|\b(?:town|resupply|road crossing|road|access)\b[^.?!\n]*(?:how far|nearest|next)\b/u.test(prompt);
+	const townTarget = '(?:town|resupply|road crossing|road|access)';
+	const directAsk = "(?:how far|how long|how many miles|nearest|next|when(?:['’]s|\\s+is|\\s+will|\\s+do|\\s+am\\s+i)?)";
+	return new RegExp(`\\b${directAsk}\\b[^.?!\\n]*${townTarget}|\\b${townTarget}\\b[^.?!\\n]*\\b${directAsk}\\b`, 'u').test(prompt);
 }
 
 function isTodayDifficultyPrompt(prompt: string): boolean {
@@ -1765,7 +1787,7 @@ function buildSmokeFireTrailNote(toolInvocations: ToolInvocationRecord[]): strin
 function buildScaredAloneNightNote(toolInvocations: ToolInvocationRecord[]): string {
 	const shelter = toolSummary(toolInvocations, 'next_shelter');
 	if (!shelter) return SCARED_ALONE_NIGHT_NOTE;
-	return `${SCARED_ALONE_NIGHT_NOTE} Loaded shelter context: ${trimToolClause(shelter)}. Treat that as a candidate, not a guarantee; verify status, water, and crowding when possible, and do not add risky night miles if it is not the safer legal option.`;
+	return `${SCARED_ALONE_NIGHT_NOTE}\n\nCached pack cue: ${compactShelterCandidateSentence(shelter)} Verify status, water, and crowding when possible, and do not add risky night miles if it is not the safer legal option.`;
 }
 
 function buildPrayerSafePlanNote(toolInvocations: ToolInvocationRecord[], includePrayer = true): string {
@@ -1814,25 +1836,21 @@ function buildSevereFatigueClearThinkingNote(toolInvocations: ToolInvocationReco
 	const water = toolSummary(toolInvocations, 'next_water');
 	const shelter = toolSummary(toolInvocations, 'next_shelter');
 	const town = toolSummary(toolInvocations, 'next_town');
-	const context = [
-		water ? `water: ${trimToolClause(water)}` : '',
-		shelter ? `shelter: ${trimToolClause(shelter)}` : '',
-		town ? `town/help: ${trimToolClause(town)}` : ''
-	].filter(Boolean);
+	const context = compactSafetyContextCue({ water, shelter, town });
 	if (!context.length) return SEVERE_FATIGUE_CLEAR_THINKING_NOTE;
-	return `${SEVERE_FATIGUE_CLEAR_THINKING_NOTE} Loaded context: ${context.join('; ')}. Treat those as candidates, not guarantees; verify water, shelter status, daylight, weather, and legal options before committing.`;
+	return `${SEVERE_FATIGUE_CLEAR_THINKING_NOTE}\n\nCached pack cue: ${context.join(' ')} Verify water, shelter status, daylight, weather, and legal options before committing.`;
 }
 
 function buildUnsafePersonShelterNote(toolInvocations: ToolInvocationRecord[]): string {
 	const exit = toolSummary(toolInvocations, 'next_town');
 	if (!exit) return UNSAFE_PERSON_SHELTER_NOTE;
-	return `${UNSAFE_PERSON_SHELTER_NOTE} Loaded exit context: ${trimToolClause(exit)}.`;
+	return `${UNSAFE_PERSON_SHELTER_NOTE}\n\nCached exit cue: ${compactTownAccessSentence(exit, false).replace(/^Cached pack:\s*/u, '')} Verify shuttle/pickup and move only if it is safer than staying put.`;
 }
 
 function buildBearNearCampNote(toolInvocations: ToolInvocationRecord[]): string {
 	const condition = toolSummary(toolInvocations, 'trail_conditions');
 	if (!condition) return BEAR_NEAR_CAMP_NOTE;
-	return `${BEAR_NEAR_CAMP_NOTE} Loaded alert context: ${trimToolClause(condition)}.`;
+	return `${BEAR_NEAR_CAMP_NOTE}\n\nAlert cue: ${compactAlertSentence(condition)} Confirm current local guidance and food-storage rules before relying on it.`;
 }
 
 function buildNearestWaterVerificationNote(toolInvocations: ToolInvocationRecord[]): string {
@@ -1854,7 +1872,7 @@ function buildDirectNextTownDistanceAnswer(toolInvocations: ToolInvocationRecord
 	if (!hasActionableTownSummary(town)) {
 		return 'Cached pack: I do not have a loaded town or road access ahead. Refresh or verify from a current guide before planning around services.';
 	}
-	return `${compactTownAccessSentence(town, false)}\n\n${compactTownAccessCaveat(town)}`;
+	return `${compactTownAccessLead(town)}\n\nCached pack caveat: ${compactTownAccessCaveat(town)}`;
 }
 
 function buildCachedWeatherAnswer(toolInvocations: ToolInvocationRecord[]): string {
@@ -1935,9 +1953,9 @@ function buildRoadTownNavigationNote(toolInvocations: ToolInvocationRecord[]): s
 	}
 	const currentPrefix = current ? `${compactCurrentMileSentence(current)} ` : '';
 	const townSentence = current
-		? compactTownAccessSentence(town, false).replace(/^Cached pack:\s*/u, '')
-		: compactTownAccessSentence(town, false);
-	return `${currentPrefix}${townSentence}\n\n${compactTownAccessCaveat(town)}`;
+		? compactTownAccessLead(town)
+		: compactTownAccessLead(town);
+	return `${currentPrefix}${townSentence}\n\nCached pack caveat: ${compactTownAccessCaveat(town)}`;
 }
 
 function compactCurrentMileSentence(summary: string): string {
@@ -1951,6 +1969,13 @@ function compactTownAccessSentence(summary: string, includeLoadedLabel = true): 
 	const label = includeLoadedLabel ? 'next loaded town/access' : 'next town/access';
 	const offTrail = compact.offTrail ? ` (${compact.offTrail})` : '';
 	return `Cached pack: ${compact.name} is the ${label}, about ${compact.distance} at mile ${compact.mile}${offTrail}.`;
+}
+
+function compactTownAccessLead(summary: string): string {
+	const compact = compactTownAccess(summary);
+	if (!compact) return `Next town/access from the cached pack: ${firstToolSentence(summary)}`;
+	const offTrail = compact.offTrail ? ` (${compact.offTrail})` : '';
+	return `${compact.name} is next, about ${compact.distance} at AT mile ${compact.mile}${offTrail}.`;
 }
 
 function compactShelterCandidateSentence(summary: string): string {
@@ -2022,49 +2047,52 @@ function buildBailoutInjuryExitNote(toolInvocations: ToolInvocationRecord[]): st
 	if (!current && !town) {
 		return BAILOUT_INJURY_EXIT_FALLBACK_NOTE;
 	}
-	const parts = [
-		current ? trimToolClause(current) : '',
-		town ? `nearest loaded bailout/access candidate is ${trimToolClause(town)}` : 'nearest loaded bailout/access candidate is not available in the current pack'
-	].filter(Boolean);
-	return `Bailout planning note: ${parts.join('; ')}. Treat this as approximate loaded context: for worsening knee pain, swelling, changed gait, or inability to continue safely, do not push through it. Back off or stop, confirm shuttle/pickup and services when possible, and use 911, inReach/PLB, rangers/authorities, or the emergency plan for real danger or if you cannot continue safely.`;
+	const context = uniqueStrings([
+		current ? compactCurrentMileSentence(current) : '',
+		town
+			? `Nearest bailout/access candidate: ${compactTownAccessLead(town)}`
+			: 'No bailout/access candidate is available in the cached pack.'
+	]);
+	return `Bailout guidance: for worsening knee pain, swelling, changed gait, or inability to continue safely, do not push through it. Back off or stop, confirm shuttle/pickup and services when possible, and use 911, inReach/PLB, rangers/authorities, or the emergency plan for real danger or if you cannot continue safely.\n\nCached pack cue: ${context.join(' ')} Treat this as a candidate, not a guarantee.`;
 }
 
 function buildRolledAnkleNowNote(toolInvocations: ToolInvocationRecord[]): string {
 	const current = toolSummary(toolInvocations, 'current_mile');
 	const town = toolSummary(toolInvocations, 'next_town');
-	const context = [
-		current ? trimToolClause(current) : '',
-		town ? `loaded exit candidate: ${trimToolClause(town)}` : ''
-	].filter(Boolean);
+	const context = uniqueStrings([
+		current ? compactCurrentMileSentence(current) : '',
+		town ? `Exit candidate: ${compactTownAccessLead(town)}` : ''
+	]);
 	if (!context.length) return ROLLED_ANKLE_NOW_NOTE;
-	return `${ROLLED_ANKLE_NOW_NOTE} Loaded context: ${context.join('; ')}. Treat that exit as a candidate, not a guarantee; confirm shuttle, pickup, services, weather, and whether walking to it is safer than stopping.`;
+	return `${ROLLED_ANKLE_NOW_NOTE}\n\nCached exit cue: ${context.join(' ')} Treat that exit as a candidate, not a guarantee; confirm shuttle, pickup, services, weather, and whether walking to it is safer than stopping.`;
 }
 
 function buildOverduePartnerNote(toolInvocations: ToolInvocationRecord[]): string {
 	const town = toolSummary(toolInvocations, 'next_town');
 	if (!town) return OVERDUE_PARTNER_NOTE;
-	return `${OVERDUE_PARTNER_NOTE} Loaded nearby help/access context: ${trimToolClause(town)}. Treat it as a candidate for contacting help or arranging pickup, not proof that services are available.`;
+	return `${OVERDUE_PARTNER_NOTE}\n\nCached help/access cue: ${compactTownAccessLead(town)} Treat it as a candidate for contacting help or arranging pickup, not proof that services are available.`;
 }
 
 function buildFoodDaysNextStretchNote(toolInvocations: ToolInvocationRecord[]): string {
 	const town = toolSummary(toolInvocations, 'next_town');
 	const terrain = toolSummary(toolInvocations, 'upcoming_terrain');
-	const context = [
-		town ? `loaded next town/access candidate: ${trimToolClause(town)}` : '',
-		terrain ? `loaded terrain context: ${trimToolClause(terrain)}` : ''
-	].filter(Boolean);
-	const contextNote = context.length ? ` Loaded context: ${context.join('; ')}.` : '';
+	const context = uniqueStrings([
+		town ? compactTownAccessLead(town) : '',
+		terrain ? compactTerrainDifficultySentence(terrain) : '',
+		terrain ? compactTerrainTownSentence(terrain) : ''
+	]);
+	const contextNote = context.length ? `\n\nCached pack cue: ${context.join(' ')} Confirm the next reliable resupply before buying an exact food carry.` : '';
 	return `${FOOD_DAYS_NEXT_STRETCH_NOTE}${contextNote}`;
 }
 
 function buildZeroNeroDecisionNote(toolInvocations: ToolInvocationRecord[]): string {
 	const town = toolSummary(toolInvocations, 'next_town');
 	const weather = toolSummary(toolInvocations, 'weather_lookup');
-	const context = [
-		town ? `loaded town/access candidate: ${trimToolClause(town)}` : '',
-		weather ? `weather context: ${trimToolClause(weather)}` : ''
-	].filter(Boolean);
-	const contextNote = context.length ? ` Loaded context: ${context.join('; ')}. Verify before safety-critical choices.` : '';
+	const context = uniqueStrings([
+		town ? compactTownAccessLead(town) : '',
+		weather ? `Cached weather cue: ${compactWeatherSentence(weather)}` : ''
+	]);
+	const contextNote = context.length ? `\n\nCached pack cue: ${context.join(' ')} Verify before safety-critical choices.` : '';
 	return `${ZERO_NERO_DECISION_NOTE}${contextNote}`;
 }
 
@@ -2094,6 +2122,30 @@ function compactTerrainTownSentence(summary: string): string {
 		.trim();
 	if (!townList) return '';
 	return `Terrain summary lists town/access candidates: ${townList}.`;
+}
+
+function compactSafetyContextCue({
+	water,
+	shelter,
+	town
+}: {
+	water?: string | null;
+	shelter?: string | null;
+	town?: string | null;
+}): string[] {
+	return uniqueStrings([
+		water ? compactWaterCandidateSentence(water) : '',
+		shelter ? compactShelterCandidateSentence(shelter) : '',
+		town ? compactTownAccessLead(town) : ''
+	]);
+}
+
+function compactAlertSentence(summary: string): string {
+	return firstToolSentence(summary).replace(/\s+https?:\/\/\S+/giu, '').trim();
+}
+
+function compactWeatherSentence(summary: string): string {
+	return firstToolSentence(summary);
 }
 
 function uniqueStrings(values: string[]): string[] {
