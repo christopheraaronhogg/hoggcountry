@@ -1,6 +1,6 @@
 # Dad Scout local AI Eval Lab handoff
 
-Generated at: 2026-06-30T18:31:45.446Z
+Generated at: 2026-06-30T18:53:34.477Z
 
 This file is a generated snapshot. Run `npm run status:scout-local-ai` for live post-commit proof state.
 
@@ -18,12 +18,12 @@ This file is a generated snapshot. Run `npm run status:scout-local-ai` for live 
 - Latest Dad Pilot gates: 5/5 checked; targetReadyForDad yes.
 - Latest local target prep: `docs/launch/proof/ios-testflight-build-35-prep-2026-06-30.md` (1.0 (35), checked 2026-06-30T18:29:02Z; not App Store Connect proof).
 - Newer Xcode target pending App Store Connect: yes.
-- Snapshot checkout SHA: `e63f07b8403e4c5b336231140765b60502065516`.
+- Snapshot checkout SHA: `060b1421fca2613287bdff9420e9f684810974ee`.
 - Latest native upload source: `docs/launch/proof/ios-testflight-attempt-2026-06-29T08-28-33-668Z.md` (repo SHA `cd3bb3c0c5d3f575724033c6f5e48501d375c704` from `.scout-artifacts/ios-testflight/2026-06-29T08-28-33-668Z/01-repo-sha.log`).
 - Latest native upload attempt: `docs/launch/proof/ios-testflight-attempt-2026-06-29T08-28-33-668Z.md` (passed, upload requested yes, checked 2026-06-29T08:29:50.833Z).
 - Snapshot checkout newer than latest native upload: yes.
 - Snapshot native app source newer than latest native upload: yes.
-- Imported full device runs: 2.
+- Imported full device runs: 3.
 - Imported partial device runs: 0.
 - Imported suite-compatible full device runs: 0.
 - Imported suite-compatible partial device runs: 0.
@@ -44,11 +44,11 @@ This file is a generated snapshot. Run `npm run status:scout-local-ai` for live 
 
 - Main local iteration lane: iPhone Simulator Gemma on the Mac mini (`npm run eval:scout-local-ai:ios-sim-gemma -- --limit 100`).
 - Current simulator preflight: clean.
-- Simulator preflight evidence: Latest simulator/debug local preflight device-local-ai-20260629T111930Z is clean: 100/100 cases, complete tools/source evidence, app 1.0 (34), install=debug, model=gemma-4-E2B-it-litert-lm.
-- Simulator full runs: 2; partial runs: 0.
+- Simulator preflight evidence: Latest simulator/debug local preflight device-local-ai-20260630T183354Z is clean: 100/100 cases, complete tools/source evidence, app 1.0 (35), install=debug, model=gemma-4-E2B-it-litert-lm.
+- Simulator full runs: 3; partial runs: 0.
 - Boundary: simulator/debug local preflight drives iteration but does not replace final TestFlight/iPhone proof.
-- Latest simulator Run 100: `device-local-ai-20260629T111930Z` (100/100 cases, tools complete 100/100, sources complete 100/100, answer scan clean with 0 flagged).
-- Final-proof mismatch by design: device-local-ai-20260629T111930Z (install=debug, expected testflight).
+- Latest simulator Run 100: `device-local-ai-20260630T183354Z` (100/100 cases, tools complete 100/100, sources complete 100/100, answer scan clean with 0 flagged).
+- Final-proof mismatch by design: device-local-ai-20260630T183354Z (install=debug, expected testflight).
 
 > Important: the recorded Dad Pilot build is not ready for this suite. Do not treat the final Eval Lab run as valid until App Store Connect shows Dad Pilot on the target build, or a current full TestFlight/iPhone export proves the target build was installed.
 
@@ -58,10 +58,10 @@ This file is a generated snapshot. Run `npm run status:scout-local-ai` for live 
 - [x] Objective coverage across hiker situations: trail-prep=29, daily-hiking-decisions=57, water=18, shelter=16, weather=24, resupply=36, safety=40, gear=33, bible-spiritual-support=10, offline-local-ai-use=22, document-vault-user-docs=3, document-writing-user-docs=3, domain-transfer-readiness=3, confusing-edge-cases=36
 - [x] Representative task-class anti-overfit coverage: find-next-water=29, find-next-town-resupply=34, explain-today-difficulty=25, weather-tomorrow-or-stale=36, camp-or-push-decision=38, safety-escalation=61, offline-cache-honesty=34, source-backed-doc-answer=96, summarize-saved-user-docs=3, draft-update-vault-doc=3, compare-options=21, missing-data-honesty=24
 - [x] Neighbor prompt-frame generalization coverage: next-water-decision=18(distance-ahead=5/carry-or-skip=7/reliability-or-conflict=6/treatment-or-gear=4), town-resupply-decision=20(arrival-recovery=4/food-carry-resupply=7/availability-contingency=6/offline-before-leaving-town=4), today-difficulty-decision=31(terrain-feature=14/pace-or-mileage=23/weather-interaction=14/body-safety-limit=12), offline-document-agent=22(offline-readiness=22/vault-reading=4/vault-writing=3/confirmation-privacy=3), safety-escalation=36(injury-or-symptoms=11/help-or-communication=7/environmental-threat=13/human-or-location-risk=10), missing-data-honesty=25(stale-cache=10/conflicting-source=5/failure-or-unavailable=10/safe-recovery-action=13)
-- [x] Full-suite tool routing proof: 3 current full run(s) with all required tools hit and source evidence recorded
-- [x] Simulator/debug local full-suite preflight: Latest simulator/debug local preflight device-local-ai-20260629T111930Z is clean: 100/100 cases, complete tools/source evidence, app 1.0 (34), install=debug, model=gemma-4-E2B-it-litert-lm
+- [x] Full-suite tool routing proof: 4 current full run(s) with all required tools hit and source evidence recorded
+- [x] Simulator/debug local full-suite preflight: Latest simulator/debug local preflight device-local-ai-20260630T183354Z is clean: 100/100 cases, complete tools/source evidence, app 1.0 (35), install=debug, model=gemma-4-E2B-it-litert-lm
 - [ ] Dad Pilot has current suite-required TestFlight build: Latest TestFlight upload does not contain the current eval suite: target 1.0 (35); suite requires 1.0 (>= 13); Dad Pilot records 1.0 (34); latest native upload suite 2026-06-28.5 (fnv1a32:741b2381); current suite 2026-06-29.1 (fnv1a32:92815d44)
-- [ ] Full TestFlight/iPhone Eval Lab run imported: No current full suite-compatible TestFlight/iPhone run found; 2 full device-on-device-gemma run(s) failed final-proof context: device-local-ai-20260629T105851Z (install=debug, expected testflight); device-local-ai-20260629T111930Z (install=debug, expected testflight)
+- [ ] Full TestFlight/iPhone Eval Lab run imported: No current full suite-compatible TestFlight/iPhone run found; 3 full device-on-device-gemma run(s) failed final-proof context: device-local-ai-20260629T105851Z (install=debug, expected testflight); device-local-ai-20260629T111930Z (install=debug, expected testflight); device-local-ai-20260630T183354Z (install=debug, expected testflight)
 - [ ] Human review complete at 100/100 5-star: No current full device review is rated 100/100 at 5/5
 - [x] Below-5 answers create iteration work: No completed below-5 device reviews yet
 - [ ] Strict final device proof passed: No strict TestFlight/iPhone proof run passes

@@ -38,6 +38,13 @@ Checked at: 2026-06-30T18:29:02Z
 - XcodeBuildMCP `build_run_sim` passed on the booted `iPhone 16e` simulator
   using the `App` scheme from `mobile/ios/App/App.xcworkspace`; the native app
   launched as bundle `com.hoggcountry.trailassistant`.
+- `npm run eval:scout-local-ai:ios-sim-gemma -- --limit 100` passed on the
+  `iPhone 16e` simulator for run `device-local-ai-20260630T183354Z`: 100/100
+  cases, required-tool complete 100/100, source-evidence complete 100/100,
+  provider errors 0, and answer-quality flags 0. It imported as simulator
+  diagnostic evidence only because install source is `debug`, not `testflight`.
+- `npm run history:scout-local-ai` rebuilt the answer-evolution timeline after
+  the diagnostic run was imported.
 
 ## Boundary
 
