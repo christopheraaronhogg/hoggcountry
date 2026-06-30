@@ -1,6 +1,6 @@
 # Dad Scout local AI Eval Lab handoff
 
-Generated at: 2026-06-30T19:06:19.890Z
+Generated at: 2026-06-30T19:24:44.854Z
 
 This file is a generated snapshot. Run `npm run status:scout-local-ai` for live post-commit proof state.
 
@@ -18,10 +18,10 @@ This file is a generated snapshot. Run `npm run status:scout-local-ai` for live 
 - Dad target-build gates: 5/5 checked; targetReadyForDad yes.
 - Latest local target prep: `docs/launch/proof/ios-testflight-build-35-prep-2026-06-30.md` (1.0 (35), checked 2026-06-30T18:29:02Z; not App Store Connect proof).
 - Newer Xcode target pending App Store Connect: no.
-- Snapshot checkout SHA: `bc6098e0383aa09bb5aa24782db07e00243e5690`.
+- Snapshot checkout SHA: `c2c7ee9c76b00147298b40bd9a9b4e742e2e3a05`.
 - Latest native upload source: `docs/launch/proof/ios-testflight-attempt-2026-06-30T18-59-02-099Z.md` (repo SHA `bc6098e0383aa09bb5aa24782db07e00243e5690` from `.scout-artifacts/ios-testflight/2026-06-30T18-59-02-099Z/01-repo-sha.log`).
 - Latest native upload attempt: `docs/launch/proof/ios-testflight-attempt-2026-06-30T18-59-02-099Z.md` (passed, upload requested yes, checked 2026-06-30T19:00:49.291Z).
-- Snapshot checkout newer than latest native upload: no.
+- Snapshot checkout newer than latest native upload: yes.
 - Snapshot native app source newer than latest native upload: no.
 - Imported full device runs: 3.
 - Imported partial device runs: 0.
@@ -37,7 +37,7 @@ This file is a generated snapshot. Run `npm run status:scout-local-ai` for live 
 
 - Use now: install/update the latest Dad Pilot TestFlight target `1.0 (35)`.
 - Latest-code target: `1.0 (35)` is recorded in Dad Pilot and meets `1.0 (>= 13)`.
-- Latest-source proof: latest native upload contains the snapshot checkout.
+- Latest-source proof: repo changed after the latest native upload, but no native app source changes are detected; latest phone build still appears to contain the current app bundle source.
 - Do not count as final proof until: Run 100 is imported from a TestFlight/iPhone export, reviewed 100/100 at 5/5, and strict/stability proof passes.
 
 ## Main local test method
@@ -74,7 +74,7 @@ This file is a generated snapshot. Run `npm run status:scout-local-ai` for live 
 - Latest successful native upload repo SHA: `bc6098e0383aa09bb5aa24782db07e00243e5690` from `.scout-artifacts/ios-testflight/2026-06-30T18-59-02-099Z/01-repo-sha.log`.
 - Latest native upload suite: `2026-06-29.1` / `fnv1a32:92815d44`.
 - Latest native upload contains current suite: yes.
-- Snapshot source newer than latest native upload: no.
+- Snapshot source newer than latest native upload: yes.
 - Snapshot native app source newer than latest native upload: no.
 - App Store Connect API key in latest successful upload proof: yes.
 - App Store Connect API key in latest upload attempt: yes.
@@ -154,6 +154,7 @@ npm run wait:scout-local-ai-device-run -- --timeout-ms 300000 --poll-ms 10000
 If the export may arrive as copied text in the macOS clipboard, opt into clipboard watching:
 
 ```sh
+npm run wait:scout-local-ai-device-run:all
 npm run wait:scout-local-ai-device-run -- --source clipboard
 npm run wait:scout-local-ai-device-run -- --source all
 ```
@@ -177,7 +178,7 @@ npm run verify:scout-local-ai-stability-proof -- --pairs data/scout-local-ai/dev
 
 ## Next action
 
-Run 100 now on the latest Dad Pilot TestFlight build 1.0 (35). The latest successful native upload contains the current checkout. Open Settings > Scout Eval Lab, run Run 100, and Share the JSON. While waiting for the file, leave npm run wait:scout-local-ai-device-run running for inbox/Downloads, or use npm run wait:scout-local-ai-device-run -- --source all if the export may land in the macOS clipboard. Status also checks /Users/chrishogg/Downloads and will use npm run prepare-review:scout-local-ai-device-run -- --run latest if the export lands there. If Dad sends copied JSON text instead of a file, npm run wait:scout-local-ai-device-run -- --source clipboard can receive it automatically, or use npm run receive:scout-local-ai-device-run -- --clipboard / paste into npm run receive:scout-local-ai-device-run -- --stdin; the receiver saves it to the inbox, inspects it, and prepares the same review path as npm run prepare-review:scout-local-ai-device-run -- --run inbox when it is final-ready.
+Run 100 now on the latest Dad Pilot TestFlight build 1.0 (35). Repo changes after the latest successful native upload are outside native app source, so no fresh TestFlight upload is needed before Dad's Run 100. Open Settings > Scout Eval Lab, run Run 100, and Share the JSON. While waiting for the file, leave npm run wait:scout-local-ai-device-run running for inbox/Downloads, or use npm run wait:scout-local-ai-device-run:all if the export may land in the macOS clipboard. Status also checks /Users/chrishogg/Downloads and will use npm run prepare-review:scout-local-ai-device-run -- --run latest if the export lands there. If Dad sends copied JSON text instead of a file, npm run wait:scout-local-ai-device-run -- --source clipboard can receive it automatically, or use npm run receive:scout-local-ai-device-run -- --clipboard / paste into npm run receive:scout-local-ai-device-run -- --stdin; the receiver saves it to the inbox, inspects it, and prepares the same review path as npm run prepare-review:scout-local-ai-device-run -- --run inbox when it is final-ready.
 
 ## Boundary
 

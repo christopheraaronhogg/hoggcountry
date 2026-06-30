@@ -455,6 +455,7 @@ function createDadHandoffMarkdown({ status, iosBuild, releaseEvidence, latestIos
 		'If the export may arrive as copied text in the macOS clipboard, opt into clipboard watching:',
 		'',
 		'```sh',
+		'npm run wait:scout-local-ai-device-run:all',
 		'npm run wait:scout-local-ai-device-run -- --source clipboard',
 		'npm run wait:scout-local-ai-device-run -- --source all',
 		'```',

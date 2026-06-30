@@ -48,6 +48,7 @@
     "scan:scout-local-ai-answers": "node scripts/scan-scout-local-ai-answer-quality.mjs",
     "receive:scout-local-ai-device-run": "node scripts/receive-scout-local-ai-device-run.mjs",
     "wait:scout-local-ai-device-run": "node scripts/wait-scout-local-ai-device-run.mjs",
+    "wait:scout-local-ai-device-run:all": "node scripts/wait-scout-local-ai-device-run.mjs --source all",
     "apply-review:scout-local-ai": "node scripts/apply-scout-local-ai-review-packet.mjs",
     "finalize-review:scout-local-ai": "node scripts/finalize-scout-local-ai-review.mjs",
     "rate-case:scout-local-ai": "node scripts/rate-scout-local-ai-review-case.mjs",

@@ -69,6 +69,7 @@ const SCAFFOLD_EVIDENCE_LANE = 'scaffold-not-model';
 const DEVICE_REVIEW_PREP_COMMAND = 'npm run prepare-review:scout-local-ai-device-run -- --run inbox';
 const DEVICE_REVIEW_PREP_DOWNLOADS_COMMAND = 'npm run prepare-review:scout-local-ai-device-run -- --run latest';
 const DEVICE_REVIEW_WAIT_COMMAND = 'npm run wait:scout-local-ai-device-run';
+const DEVICE_REVIEW_WAIT_ALL_SHORTCUT_COMMAND = 'npm run wait:scout-local-ai-device-run:all';
 const DEVICE_REVIEW_WAIT_ALL_COMMAND = 'npm run wait:scout-local-ai-device-run -- --source all';
 const DEVICE_REVIEW_WAIT_CLIPBOARD_COMMAND = 'npm run wait:scout-local-ai-device-run -- --source clipboard';
 const DEVICE_RECEIVE_CLIPBOARD_COMMAND = 'npm run receive:scout-local-ai-device-run -- --clipboard';
@@ -668,7 +669,7 @@ function nextActionFor(
 				: `the current Dad Pilot TestFlight build (${testflight.recordedDadPilotBuild}; newer target ${testflight.targetBuild ?? '<unknown>'} is pending upload)`;
 		return {
 			kind: 'get-device-run',
-			text: `${phoneBuildAction?.text ?? `Install or update ${phoneBuild} on Dad/Chris iPhone.`} Open Settings > Scout Eval Lab, run Run 100, and Share the JSON. While waiting for the file, leave ${DEVICE_REVIEW_WAIT_COMMAND} running for inbox/Downloads, or use ${DEVICE_REVIEW_WAIT_ALL_COMMAND} if the export may land in the macOS clipboard. Status also checks ${downloads?.path ?? 'Downloads'} and will use ${DEVICE_REVIEW_PREP_DOWNLOADS_COMMAND} if the export lands there. If Dad sends copied JSON text instead of a file, ${DEVICE_REVIEW_WAIT_CLIPBOARD_COMMAND} can receive it automatically, or use ${DEVICE_RECEIVE_CLIPBOARD_COMMAND} / paste into ${DEVICE_RECEIVE_STDIN_COMMAND}; the receiver saves it to the inbox, inspects it, and prepares the same review path as ${DEVICE_REVIEW_PREP_COMMAND} when it is final-ready.`
+			text: `${phoneBuildAction?.text ?? `Install or update ${phoneBuild} on Dad/Chris iPhone.`} Open Settings > Scout Eval Lab, run Run 100, and Share the JSON. While waiting for the file, leave ${DEVICE_REVIEW_WAIT_COMMAND} running for inbox/Downloads, or use ${DEVICE_REVIEW_WAIT_ALL_SHORTCUT_COMMAND} if the export may land in the macOS clipboard. Status also checks ${downloads?.path ?? 'Downloads'} and will use ${DEVICE_REVIEW_PREP_DOWNLOADS_COMMAND} if the export lands there. If Dad sends copied JSON text instead of a file, ${DEVICE_REVIEW_WAIT_CLIPBOARD_COMMAND} can receive it automatically, or use ${DEVICE_RECEIVE_CLIPBOARD_COMMAND} / paste into ${DEVICE_RECEIVE_STDIN_COMMAND}; the receiver saves it to the inbox, inspects it, and prepares the same review path as ${DEVICE_REVIEW_PREP_COMMAND} when it is final-ready.`
 		};
 	}
 	const latestDeviceRun = currentFullFinalProofDeviceRuns.at(-1)?.value.runId ?? currentFullDeviceRuns.at(-1)?.value.runId ?? '<run-id>';
