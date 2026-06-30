@@ -625,7 +625,7 @@ function createPhoneBuildDecision({ status, recordedDadBuild, targetBuild, suite
 	}
 	if (status.phoneBuildAction?.kind === 'upload-current-suite-build') {
 		return {
-			useNow: 'Wait for current-suite TestFlight upload before asking Dad for Run 100',
+			useNow: 'wait for current-suite TestFlight upload before asking Dad for Run 100',
 			latestTarget: `\`${targetBuild}\` still needs upload/refresh proof with the current eval suite`,
 			finalProofBoundary: `Dad Pilot/TestFlight proof and the exported run both show app build satisfying \`${suiteRequiredBuild}\` with the current eval suite`
 		};

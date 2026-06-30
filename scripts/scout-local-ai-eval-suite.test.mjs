@@ -2455,7 +2455,7 @@ test('Dad handoff command summarizes current TestFlight/iPhone eval next steps',
 	assert.match(result.stdout, /Latest native upload source: .*ios-testflight-attempt-2026-06-27T02-39-27-165Z\.md` \(repo SHA `[0-9a-f]{40}` from `.*01-repo-sha\.log`\)/u);
 	assert.match(result.stdout, /Latest native upload attempt: .*ios-testflight-attempt-2026-06-27T11-22-27-901Z\.md` \(blocked, upload requested yes/u);
 	assert.match(result.stdout, /## Phone build path/u);
-	assert.match(result.stdout, /Use now: Wait for current-suite TestFlight upload before asking Dad for Run 100/u);
+	assert.match(result.stdout, /Use now: wait for current-suite TestFlight upload before asking Dad for Run 100/u);
 	assert.match(result.stdout, new RegExp(`Latest-code target: \`${escapeRegExp(CURRENT_IOS_TARGET_BUILD)}\` still needs upload/refresh proof`, 'u'));
 	assert.match(result.stdout, /targetReadyForDad/u);
 	assert.match(result.stdout, /## Main local test method/u);

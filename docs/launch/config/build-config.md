@@ -1,6 +1,6 @@
 # Build & version config — submission readiness
 
-Snapshot of the native build config as of 2026-06-29. Account-bound store
+Snapshot of the native build config as of 2026-06-30. Account-bound store
 records, iOS signing/upload, and physical-device smoke proof are still separate.
 Branch: `main`.
 
@@ -13,7 +13,7 @@ Branch: `main`.
 | Setting | Value | Status |
 |---|---|---|
 | MARKETING_VERSION | `1.0` | ✓ ready |
-| CURRENT_PROJECT_VERSION (local build target) | `30` | ⚠ local latest-source candidate; build `29` remains live in Dad Pilot with the current eval suite |
+| CURRENT_PROJECT_VERSION (local build target) | `35` | ⚠ local current-suite candidate; build `34` remains live in Dad Pilot, but contains eval suite `2026-06-28.5` instead of the current suite `2026-06-29.1` |
 | Deployment target | iOS 15.0 | ✓ required by LiteRT-LM Swift |
 | TARGETED_DEVICE_FAMILY | `1` (iPhone-only) | ✓ set tonight (was `1,2`; reversible decision) |
 | NSLocationWhenInUseUsageDescription | present | ✓ |
@@ -43,5 +43,5 @@ Branch: `main`.
 | Location permission | `ACCESS_COARSE_LOCATION` + `ACCESS_FINE_LOCATION`, no background location | ✓ foreground, user-initiated GPS-to-mile snapping; raw GPS stays on-device |
 
 ## What this means
-- **iOS** project-file blockers are cleared for the privacy manifest, shared scheme, LiteRT-LM package wiring, Release signing, and TestFlight archive/upload lane. Build `29` is uploaded, attached to Dad Pilot through the public TestFlight link, and App Store Connect reports it `VALID` with external state `IN_BETA_TESTING`. That upload contains the current eval suite `2026-06-28.5` (`fnv1a32:741b2381`), so Dad can run a suite-compatible diagnostic Run 100 now. The local Xcode target is now build `30` for latest-source phone proof; build `30` still needs upload, processing, and Dad Pilot refresh before it counts as latest-code TestFlight proof. Scout AI still needs the full 100-question Eval Lab export on a real TestFlight iPhone, human review at `100/100` rated `5/5`, strict device proof, and repeated stability proof before Dad-ready claims.
+- **iOS** project-file blockers are cleared for the privacy manifest, shared scheme, LiteRT-LM package wiring, Release signing, and TestFlight archive/upload lane. Build `34` is uploaded and attached to Dad Pilot through the public TestFlight link, but it contains eval suite `2026-06-28.5` (`fnv1a32:741b2381`). The current checkout contains suite `2026-06-29.1` (`fnv1a32:92815d44`), so the local Xcode target is now build `35` for the next current-suite phone proof. Build `35` still needs App Store Connect upload, processing, and Dad Pilot refresh before it counts as current-suite TestFlight proof. Scout AI still needs the full 100-question Eval Lab export on a real TestFlight iPhone, human review at `100/100` rated `5/5`, strict device proof, and repeated stability proof before Dad-ready claims.
 - **Android** can build a signed release AAB with the local upload keystore proof already recorded. Gemma and foreground GPS are wired in the native Android lane, but still need physical-device smoke proof before submission.
