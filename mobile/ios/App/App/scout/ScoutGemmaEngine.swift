@@ -52,7 +52,7 @@ struct UnavailableScoutGemmaEngine: ScoutGemmaEngine {
     static let targetModel = ScoutGemmaModelInfo(
         tier: "balanced",
         modelId: "gemma-4-E2B-it-litert-lm",
-        maxContextTokens: 4096
+        maxContextTokens: 128_000
     )
 
     var isAvailable: Bool { false }

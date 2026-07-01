@@ -174,6 +174,77 @@ test('generate compacts oversized tool context before calling native Gemma', asy
 	assert.match(seenContext, /Opened water document:/);
 });
 
+test('generate uses the long-context Gemma descriptor instead of the old 4k-token budget', async () => {
+	let seenContext = '';
+	const provider = new OnDeviceGemmaProvider({
+		bridge: {
+			isAvailable: async () => true,
+			describeModel: async () => ({
+				tier: 'balanced',
+				modelId: 'gemma-4-E2B-it-litert-lm',
+				maxContextTokens: 128_000
+			}),
+			generate: async (input) => {
+				seenContext = input.systemContext;
+				return { text: 'Use the expanded cached source packet.', truncated: false };
+			}
+		},
+		tier: 'balanced'
+	});
+
+	await provider.generate({
+		prompt: 'Use my saved trail notes and tell me the water and town plan.',
+		pack: cloneDefaultContextPack(),
+		toolInvocations: Array.from({ length: 12 }, (_, index) => ({
+			toolId: 'open_source_doc',
+			args: { sourceDocumentId: `doc-${index}` },
+			summary: `Opened saved source ${index}: ${'water, town, shelter, and bailout details from the local document vault. '.repeat(80)}`,
+			confidence: 'medium' as const,
+			receipts: []
+		})),
+		now: new Date('2026-06-20T12:00:00Z')
+	});
+
+	assert.ok(seenContext.length > 16_000, `expected expanded context, got ${seenContext.length} chars`);
+	assert.ok(seenContext.length <= 128_000);
+	assert.doesNotMatch(seenContext, /\[Middle context trimmed/u);
+});
+
+test('generate still caps context when a native descriptor reports a smaller window', async () => {
+	let seenContext = '';
+	const provider = new OnDeviceGemmaProvider({
+		bridge: {
+			isAvailable: async () => true,
+			describeModel: async () => ({
+				tier: 'balanced',
+				modelId: 'test-small-context-model',
+				maxContextTokens: 4_096
+			}),
+			generate: async (input) => {
+				seenContext = input.systemContext;
+				return { text: 'Use the retained source packet.', truncated: false };
+			}
+		},
+		tier: 'balanced'
+	});
+
+	await provider.generate({
+		prompt: 'Use all these saved notes and summarize the plan.',
+		pack: cloneDefaultContextPack(),
+		toolInvocations: Array.from({ length: 40 }, (_, index) => ({
+			toolId: 'open_source_doc',
+			args: { sourceDocumentId: `doc-${index}` },
+			summary: `Opened saved source ${index}: ${'resupply, weather, water, town, terrain, and safety details. '.repeat(60)}`,
+			confidence: 'medium' as const,
+			receipts: []
+		})),
+		now: new Date('2026-06-20T12:00:00Z')
+	});
+
+	assert.ok(seenContext.length <= 16_384);
+	assert.match(seenContext, /\[Middle context trimmed/u);
+});
+
 test('system context keeps Scout plain-spoken, compact, and topic-scoped', () => {
 	const pack = cloneDefaultContextPack();
 	pack.hiker.currentMile = 0;

@@ -13,7 +13,7 @@ package com.hoggcountry.trailassistant.scout;
  */
 public final class UnavailableScoutGemmaEngine implements ScoutGemmaEngine {
     static final ScoutGemmaModelInfo TARGET_MODEL =
-            new ScoutGemmaModelInfo("balanced", "gemma-4-E2B-it-litert-lm", 4096);
+            new ScoutGemmaModelInfo("balanced", "gemma-4-E2B-it-litert-lm", 128_000);
 
     @Override
     public boolean isAvailable() {

@@ -39,10 +39,20 @@ export interface OnDeviceGemmaProviderOptions {
 	tier?: GemmaTier;
 }
 
-const TIER_TO_CHARS: Record<GemmaTier, number> = {
-	fast: 24_000,
-	balanced: 16_000,
+interface RenderSystemContextOptions {
+	contextBudgetChars?: number;
+}
+
+const APPROX_CHARS_PER_TOKEN = 4;
+const TIER_TO_CONTEXT_TOKENS: Record<GemmaTier, number> = {
+	fast: 16_000,
+	balanced: 32_000,
 	small: 8_000
+};
+const TIER_TO_CHARS: Record<GemmaTier, number> = {
+	fast: TIER_TO_CONTEXT_TOKENS.fast * APPROX_CHARS_PER_TOKEN,
+	balanced: TIER_TO_CONTEXT_TOKENS.balanced * APPROX_CHARS_PER_TOKEN,
+	small: TIER_TO_CONTEXT_TOKENS.small * APPROX_CHARS_PER_TOKEN
 };
 const ON_DEVICE_MAX_TOKENS = 640;
 const SYSTEM_CONTEXT_TRIM_MARKER =
@@ -228,6 +238,7 @@ const PRAYER_SAFE_PLAN_NOTE =
 
 export class OnDeviceGemmaProvider implements ScoutProvider {
 	private bridge?: OnDeviceGemmaBridge;
+	private tier: GemmaTier;
 	private cachedDescriptor: GemmaModelDescriptor | null = null;
 	// Only a confirmed-true result is cached. A false/unknown result is left as
 	// null so the next call re-probes the (cheap) native isAvailable(). This
@@ -240,6 +251,7 @@ export class OnDeviceGemmaProvider implements ScoutProvider {
 	constructor(options: OnDeviceGemmaProviderOptions = {}) {
 		this.bridge = options.bridge;
 		const tier = options.tier ?? 'balanced';
+		this.tier = tier;
 		this.capabilities = {
 			id: 'on-device-gemma',
 			mode: 'on-device',
@@ -304,6 +316,13 @@ export class OnDeviceGemmaProvider implements ScoutProvider {
 		return this.cachedDescriptor;
 	}
 
+	private async contextBudgetChars(): Promise<number> {
+		const descriptor = await this.describe();
+		const budget = contextBudgetCharsForTier(this.tier, descriptor);
+		this.capabilities.maxContextChars = budget;
+		return budget;
+	}
+
 	async generate(request: ProviderRequest, onToken?: TokenSink): Promise<ProviderResponse> {
 		const ready = await this.available();
 		if (!ready || !this.bridge) {
@@ -312,7 +331,11 @@ export class OnDeviceGemmaProvider implements ScoutProvider {
 			);
 		}
 
-		const systemContext = fitSystemContext(renderSystemContext(request), this.capabilities.maxContextChars);
+		const contextBudgetChars = await this.contextBudgetChars();
+		const systemContext = fitSystemContext(
+			renderSystemContext(request, { contextBudgetChars }),
+			contextBudgetChars
+		);
 		const nativeInput = { prompt: request.prompt, systemContext, maxTokens: ON_DEVICE_MAX_TOKENS };
 		let result: { text: string; truncated: boolean };
 		try {
@@ -810,6 +833,14 @@ function fitSystemContext(systemContext: string, maxChars: number): string {
 	const headChars = Math.floor(available * 0.6);
 	const tailChars = available - headChars;
 	return `${systemContext.slice(0, headChars).trimEnd()}${SYSTEM_CONTEXT_TRIM_MARKER}${systemContext.slice(-tailChars).trimStart()}`;
+}
+
+function contextBudgetCharsForTier(tier: GemmaTier, descriptor: GemmaModelDescriptor | null): number {
+	const tierBudget = TIER_TO_CHARS[tier];
+	const modelBudget = descriptor?.maxContextTokens
+		? descriptor.maxContextTokens * APPROX_CHARS_PER_TOKEN
+		: Number.POSITIVE_INFINITY;
+	return Math.min(tierBudget, modelBudget);
 }
 
 function removeTrailingProvenanceParagraphs(answer: string): string {
@@ -3325,9 +3356,13 @@ function isTransientNativeGenerationError(error: unknown): boolean {
 	return /(?:native sendmessage returned null|invalid response from native layer)/iu.test(message);
 }
 
-export function renderSystemContext(request: ProviderRequest): string {
+export function renderSystemContext(
+	request: ProviderRequest,
+	options: RenderSystemContextOptions = {}
+): string {
 	const { pack, toolInvocations } = request;
-	const toolLines = toolInvocations.map((tool) => `- [${tool.toolId}] ${compactToolSummaryForContext(tool.toolId, tool.summary)}`);
+	const contextBudgetChars = options.contextBudgetChars ?? TIER_TO_CHARS.balanced;
+	const toolLines = toolInvocations.map((tool) => `- [${tool.toolId}] ${compactToolSummaryForContext(tool.toolId, tool.summary, contextBudgetChars)}`);
 	const lowerPrompt = request.prompt.toLowerCase();
 	const toolIds = new Set(toolInvocations.map((tool) => tool.toolId));
 	const guidanceLines = guidanceForScoutPrompt(lowerPrompt, toolIds);
@@ -3414,9 +3449,18 @@ function isLoadoutPrompt(prompt: string): boolean {
 	return /\b(?:gear|pack|loadout|carry|base weight|rain gear|rain pants|first aid|food carry|shakedown|sleep system|battery bank|camp shoes|filter)\b/u.test(prompt);
 }
 
-function compactToolSummaryForContext(toolId: string, summary: string): string {
+function compactToolSummaryForContext(toolId: string, summary: string, contextBudgetChars: number): string {
 	const normalized = summary.replace(/\s+/gu, ' ').trim();
-	const maxChars = toolId === 'bible_search' ? 900 : toolId === 'open_source_doc' ? 620 : toolId === 'source_search' ? 520 : 480;
+	const maxChars = sourceSummaryCharLimit(toolId, contextBudgetChars);
 	if (normalized.length <= maxChars) return normalized;
 	return `${normalized.slice(0, maxChars - 1).trimEnd()}...`;
+}
+
+function sourceSummaryCharLimit(toolId: string, contextBudgetChars: number): number {
+	const largeContext = contextBudgetChars >= 96_000;
+	const mediumContext = contextBudgetChars >= 48_000;
+	if (toolId === 'bible_search') return largeContext ? 2_400 : mediumContext ? 1_400 : 900;
+	if (toolId === 'open_source_doc') return largeContext ? 2_400 : mediumContext ? 1_200 : 620;
+	if (toolId === 'source_search') return largeContext ? 1_600 : mediumContext ? 900 : 520;
+	return largeContext ? 1_200 : mediumContext ? 700 : 480;
 }
