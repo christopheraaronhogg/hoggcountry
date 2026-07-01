@@ -169,7 +169,7 @@ class LiteRtScoutGemmaEngine private constructor(
                     backend = textBackend,
                     visionBackend = Backend.CPU(),
                     audioBackend = Backend.CPU(),
-                    maxNumTokens = null,
+                    maxNumTokens = minOf(modelInfo.maxContextTokens, RUNTIME_MAX_NUM_TOKENS),
                     maxNumImages = null,
                     cacheDir = cacheDir
                 )
@@ -188,6 +188,7 @@ class LiteRtScoutGemmaEngine private constructor(
 
     companion object {
         private const val TAG = "ScoutGemma"
+        private const val RUNTIME_MAX_NUM_TOKENS = 32_768
 
         // Upper bound for a single on-device generation. Generous enough for a
         // long answer on a slow device, but bounded so a wedged native callback

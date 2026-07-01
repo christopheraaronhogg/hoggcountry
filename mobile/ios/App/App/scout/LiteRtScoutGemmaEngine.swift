@@ -19,6 +19,8 @@ import LiteRTLM
 /// UnavailableScoutGemmaEngine stub without a runtime crash.
 @available(iOS 15.0, *)
 final class LiteRtScoutGemmaEngine: ScoutGemmaEngine {
+    private static let runtimeMaxNumTokens = 32_768
+
     private let modelPath: String
     private let cacheDir: String
     private let info: ScoutGemmaModelInfo
@@ -51,7 +53,15 @@ final class LiteRtScoutGemmaEngine: ScoutGemmaEngine {
     /// `initialize()` is heavy (seconds); run it lazily on the first generate.
     private func ensureEngine() async throws -> Engine {
         if let engine = engine { return engine }
-        let config = try EngineConfig(modelPath: modelPath, backend: .cpu(), cacheDir: cacheDir)
+        // LiteRT-LM's default Gemma 4 E2B cache is 4K on this export. Request a
+        // larger but phone-testable cache so Scout's long-context JS budget is
+        // backed by the native runtime instead of only the model descriptor.
+        let maxNumTokens = min(info.maxContextTokens, Self.runtimeMaxNumTokens)
+        let config = try EngineConfig(
+            modelPath: modelPath,
+            backend: .cpu(),
+            maxNumTokens: maxNumTokens,
+            cacheDir: cacheDir)
         // Verified against the real LiteRT-LM 0.13.x Swift API: the initializer
         // takes the `engineConfig:` argument label (compile-checked via a scratch
         // SwiftPM target — see docs/runbooks/ios-scout-gemma-bridge.md).

@@ -252,7 +252,7 @@ function createEvalBridge({ mode, command, timeoutMs, caseRef, bridgeDiagnostics
 			return {
 				tier: 'balanced',
 				modelId: mode === 'command' ? `command:${hashText(command)}` : 'eval-scaffold-not-a-model',
-				maxContextTokens: 4096
+				maxContextTokens: 128_000
 			};
 		},
 		async generate(input, onToken) {
