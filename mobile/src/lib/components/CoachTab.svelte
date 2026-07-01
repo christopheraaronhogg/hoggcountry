@@ -21,7 +21,9 @@
 	import ConfidenceBadge from './ConfidenceBadge.svelte';
 	import Icon from './Icon.svelte';
 	import ScoutModelStatusBubble from './ScoutModelStatusBubble.svelte';
+	import ScoutMessageText from './ScoutMessageText.svelte';
 	import { isScoutAuthResumeMessage } from '$lib/scout/scout-auth-resume';
+	import { scoutMarkdownToPlainText } from '$lib/scout/scout-markdown';
 
 	let draft = $state('');
 	let logRef = $state<HTMLDivElement | null>(null);
@@ -664,7 +666,7 @@
 									aria-label={speakingMessageId === message.id ? 'Stop reading Scout reply' : 'Read Scout reply aloud'}
 									aria-pressed={speakingMessageId === message.id}
 									title={speakingMessageId === message.id ? 'Stop reading' : 'Read aloud'}
-									onclick={() => toggleScoutSpeech(message.id, message.content)}
+									onclick={() => toggleScoutSpeech(message.id, scoutMarkdownToPlainText(message.content))}
 								>
 									<Icon name="speaker" size={15} stroke={2} />
 								</button>
@@ -672,7 +674,7 @@
 						</div>
 					{/if}
 
-					<p>{message.content}</p>
+					<ScoutMessageText content={message.content} />
 
 					{#if message.role === 'assistant' && isScoutAuthResumeMessage(message.id, trailAssistant.scoutAuthPrompt)}
 						<div class="auth-wall-actions" role="group" aria-label="Scout sign-in actions">

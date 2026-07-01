@@ -174,7 +174,7 @@ test('generate compacts oversized tool context before calling native Gemma', asy
 	assert.match(seenContext, /Opened water document:/);
 });
 
-test('system context keeps Scout plain-spoken and avoids markdown/corny voice', () => {
+test('system context keeps Scout plain-spoken, compact, and topic-scoped', () => {
 	const pack = cloneDefaultContextPack();
 	pack.hiker.currentMile = 0;
 	pack.hiker.dayNumber = 1;
@@ -197,146 +197,42 @@ test('system context keeps Scout plain-spoken and avoids markdown/corny voice', 
 	assert.match(systemContext, /plain-spoken/);
 	assert.match(systemContext, /Do not use "howdy", "partner", "well now"/);
 	assert.match(systemContext, /Answer the hiker's immediate question first/);
-	assert.match(systemContext, /Use plain text only/);
-	assert.match(systemContext, /Do not use Markdown headings, bold markers, tables, or long bullet lists/);
+	assert.match(systemContext, /Light Markdown is allowed/);
+	assert.match(systemContext, /Do not use tables or huge lists/);
 	assert.match(systemContext, /Use user-facing source wording/);
 	assert.match(systemContext, /cached safety guidance/);
-	assert.match(systemContext, /Never turn candidate water, shelters, towns, or weather into guarantees/);
-	assert.match(systemContext, /For water questions, use the next_water tool finding as the answer's spine/);
-	assert.match(systemContext, /visually confirm current flow/);
-	assert.match(systemContext, /filter or treat collected water/);
-	assert.match(systemContext, /For "skip this spring and make the next reliable water" questions/);
-	assert.match(systemContext, /current treated water carry, heat, exposure, climbing or effort, pace, daylight, and risk tolerance/);
-	assert.match(systemContext, /Do not guarantee the seasonal source is flowing/);
-	assert.match(systemContext, /For current water-report conflicts/);
-	assert.match(systemContext, /trust the current observed or recent dry report for flow/);
-	assert.match(systemContext, /Scout's cached pack as planning context, not proof of current flow/);
-	assert.match(systemContext, /For heat-wave water questions/);
-	assert.match(systemContext, /move hard miles into the cooler part of the day/);
-	assert.match(systemContext, /dizziness, confusion, headache, nausea, cramps, chills, stopped sweating/);
-	assert.match(systemContext, /For active heat illness or dizziness in heat/);
-	assert.match(systemContext, /confusion, fainting, stopped sweating/);
-	assert.match(systemContext, /For camel-up or ridge-water questions/);
-	assert.match(systemContext, /camel up at the last confirmed source and carry extra/);
-	assert.match(systemContext, /name both and make the carry decision/);
-	assert.match(systemContext, /For dry-stretch water-carry questions/);
-	assert.match(systemContext, /0\.5-1 liter per 3-5 miles/);
-	assert.match(systemContext, /For questionable-water, tired, or low-daylight treatment questions/);
-	assert.match(systemContext, /do not drink untreated questionable water/);
-	assert.match(systemContext, /For frozen or failing water-filter questions/);
-	assert.match(systemContext, /hollow-fiber filter may be compromised/);
-	assert.match(systemContext, /For shelter and camping decisions/);
-	assert.match(systemContext, /daylight, water, current shelter status\/crowding/);
-	assert.match(systemContext, /For full-shelter, stealth-camping, storm-campsite/);
-	assert.match(systemContext, /For bear-activity shelter questions/);
-	assert.match(systemContext, /proper food storage and odor control/);
-	assert.match(systemContext, /For bear-near-camp questions/);
-	assert.match(systemContext, /do not invent species- or park-specific rules/);
-	assert.match(systemContext, /For unsafe-person shelter or campsite questions/);
-	assert.match(systemContext, /do not suggest confrontation/);
-	assert.match(systemContext, /For closure or detour routing questions/);
-	assert.match(systemContext, /advisory context rather than turn-by-turn detour routing/);
-	assert.match(systemContext, /For smoke or fire near trail questions/);
-	assert.match(systemContext, /never invent a safe route through the hazard/);
-	assert.match(systemContext, /For severe fatigue or "too tired to keep going" prompts/);
-	assert.match(systemContext, /stop hiking, sit in a safe spot, eat, drink treated water or electrolytes/);
-	assert.match(systemContext, /use loaded water, shelter, town, or bailout context/);
-	assert.match(systemContext, /For prayer plus safe-plan prompts/);
-	assert.match(systemContext, /do not refuse to pray/);
-	assert.match(systemContext, /Prayer alone is not a request for Bible quotes/);
-	assert.match(systemContext, /prayer is support, not a substitute/);
-	assert.match(systemContext, /For after-dark shelter arrivals/);
-	assert.match(systemContext, /do not tell the hiker to choose a backup before dark/);
-	assert.match(systemContext, /roughly 200 feet from water and trail/);
-	assert.match(systemContext, /For rain-pants or rain-gear cut\/drop questions/);
-	assert.match(systemContext, /For camp-shoes questions/);
-	assert.match(systemContext, /When tool findings are labeled as guidance/);
-	assert.match(systemContext, /For dry-clothes priority questions/);
-	assert.match(systemContext, /For battery-bank planning questions/);
-	assert.match(systemContext, /For mail-home gear questions/);
-	assert.match(systemContext, /When preparation or training questions have pretrip/);
-	assert.match(systemContext, /include an immediate first-week checklist/);
-	assert.match(systemContext, /For first-run or newly installed app onboarding questions/);
-	assert.match(systemContext, /set the hiker profile\/current mile/);
-	assert.match(systemContext, /Do not call Scout ready for offline trail use until/);
-	assert.match(systemContext, /For airplane-mode, no-cell, or "what works offline" Scout questions/);
-	assert.match(systemContext, /cached field pack, on-device local AI model/);
-	assert.match(systemContext, /fresh weather, official closures\/fire alerts/);
-	assert.match(systemContext, /live\/tramily location/);
-	assert.match(systemContext, /For "test airplane mode" or offline rehearsal questions/);
-	assert.match(systemContext, /ask a water, weather, or offline Scout question/);
-	assert.match(systemContext, /go back online and refresh before relying on weather, closures, water reports, town services, or safety-critical facts/);
-	assert.match(systemContext, /For "what should I screenshot before day one"/);
-	assert.match(systemContext, /next resupply or town\/bailout plan/);
-	assert.match(systemContext, /do not paste private ID, insurance, medical, payment, or reservation numbers into Scout chat/);
-	assert.match(systemContext, /For document-writing prompts/);
-	assert.match(systemContext, /include a clearly labeled draft note\/checklist/);
-	assert.match(systemContext, /should not save or overwrite a document unless the user explicitly confirms it/);
-	assert.match(systemContext, /versioned or recoverable/u);
-	assert.match(systemContext, /For model-downloading, model status, stuck download, failed download/);
-	assert.match(systemContext, /not ready for offline Scout yet/);
-	assert.match(systemContext, /check Scout model status\/progress until it says ready/);
-	assert.match(systemContext, /For stale field-pack, field-pack status/);
-	assert.match(systemContext, /cached Scout trail data on the phone, not the physical backpack or loadout/);
-	assert.match(systemContext, /check pack age\/status, current mile or downloaded region/);
-	assert.match(systemContext, /For sign-in, login, account, cloud sync, backup, restore/);
-	assert.match(systemContext, /accounts are invite-only/);
-	assert.match(systemContext, /offline use does not require a live login/);
-	assert.match(systemContext, /For own-mile, manual-mile, wrong-mile, profile, GPS correction/);
-	assert.match(systemContext, /Settings > Edit hike details/);
-	assert.match(systemContext, /refresh the field pack when online, and re-ask Scout for water, shelter, town, terrain, and bailout/);
-	assert.match(systemContext, /a wrong mile shifts water, shelter, town, terrain, and bailout answers/);
-	assert.match(systemContext, /not to make water, shelter, town, or safety decisions from a wrong mile/);
-	assert.match(systemContext, /For GPS jumping, bad GPS fixes, or Scout showing the wrong spot/);
-	assert.match(systemContext, /wait for GPS to settle with clearer sky view/);
-	assert.match(systemContext, /set Current AT mile only from a confirmed location/);
-	assert.match(systemContext, /downstream tools can be wrong until the mile\/location is corrected/);
-	assert.match(systemContext, /For guidebook, trail-sign, Scout, GPS, or map mile-mismatch questions/);
-	assert.match(systemContext, /Scout uses a calibrated AT mile frame/);
-	assert.match(systemContext, /guidebook editions, reroutes or relocations/);
-	assert.match(systemContext, /do not let Scout mileage override posted signs, closures, or current official safety guidance/);
-	assert.match(systemContext, /For no-basemap, missing-map-tiles, no-cell, or offline map navigation questions/);
-	assert.match(systemContext, /cached trail line and field-pack mile context are only rough trail-corridor checks/);
-	assert.match(systemContext, /external offline map\/GPS app or paper map and compass/);
-	assert.match(systemContext, /stop and verify with blazes, signs, map, and GPS/);
-	assert.match(systemContext, /For lost or off-trail prompts/);
-	assert.match(systemContext, /conserve battery/);
-	assert.match(systemContext, /backtrack only if the route back is obvious and safe/);
-	assert.match(systemContext, /do not bushwhack, shortcut, or route through unknown terrain/);
-	assert.match(systemContext, /For bailout, exit, or worsening-injury questions/);
-	assert.match(systemContext, /nearest loaded bailout or access candidate/);
-	assert.match(systemContext, /do not tell the hiker to push through worsening knee or joint pain/);
-	assert.match(systemContext, /For "where am I relative to the next road crossing or town" questions/);
-	assert.match(systemContext, /start from the current_mile finding and the next_town road\/town access finding/);
-	assert.match(systemContext, /do not assume services at a crossing unless loaded current service data proves them/);
-	assert.match(systemContext, /For "how hard is today", "next climb", "how hard is the terrain ahead", elevation, gain\/loss, or grade questions/);
-	assert.match(systemContext, /If it has cached difficulty, gain\/loss, max grade, or steep sections/);
-	assert.match(systemContext, /If it lacks verified climb, elevation profile, gain\/loss, or grade detail/);
-	assert.match(systemContext, /do not invent it/);
-	assert.match(systemContext, /Give pace-impact guidance from daylight, water spacing, pack weight, feet\/knees/);
-	assert.match(systemContext, /End every answer with a complete sentence/);
-	assert.match(systemContext, /verify Bible text is available offline/);
-	assert.match(systemContext, /Do not include Bible verses, scripture, prayer, or spiritual encouragement unless the hiker explicitly asks/);
-	assert.match(systemContext, /For Bible or scripture questions/);
-	assert.match(systemContext, /Psalms 56:3, Isaiah 41:10, 2 Timothy 1:7/);
-	assert.match(systemContext, /Do not use disturbing, violent, judgment, or famine passages as comfort/);
-	assert.match(systemContext, /make a one-hour plan/);
-	assert.match(systemContext, /use loaded shelter context as a candidate rather than a guarantee/);
-	assert.match(systemContext, /do not spiritualize away real danger or symptoms/);
-	assert.match(systemContext, /never write "if you don't hear from you\."/);
-	assert.match(systemContext, /For zero, nero, or town-rest questions/);
-	assert.match(systemContext, /cached\/current weather, town chores, budget, and the next section/);
-	assert.match(systemContext, /For hostel-full or lodging-full town questions/);
-	assert.match(systemContext, /same-day bed space, shuttle\/pickup/);
-	assert.match(systemContext, /Do not invent availability or unsafe\/illegal sleeping spots/);
-	assert.match(systemContext, /For resupply or mail-drop questions/);
-	assert.match(systemContext, /diet restrictions, expected pace, next town timing/);
-	assert.match(systemContext, /For first-aid kit or blister questions/);
-	assert.match(systemContext, /spreading redness, drainage, fever, worsening pain/);
-	assert.match(systemContext, /do not tell the hiker to train through pain/);
-	assert.match(systemContext, /pain persists, worsens, swells, or changes gait/);
-	assert.match(systemContext, /Do not offer terrain lookups or custom workouts at the end/);
-	assert.match(systemContext, /Use the strongest 2-4 tool findings visibly/);
+	assert.match(systemContext, /Never turn candidate water, shelters, towns, weather, or services into guarantees/);
+	assert.match(systemContext, /Terrain\/difficulty: use upcoming_terrain as the loaded window/);
+	assert.match(systemContext, /Use the strongest 2-4 source\/tool findings visibly/);
+	assert.match(systemContext, /Source packet from local search\/tools/);
+	assert.doesNotMatch(systemContext, /Bible\/spiritual:/);
+	assert.doesNotMatch(systemContext, /Prayer alone is not a request/);
+	assert.ok(systemContext.length < 4_000);
+});
+
+test('system context grounds spiritual prompts in the KJV source packet without trail deflection', () => {
+	const pack = cloneDefaultContextPack();
+	const systemContext = renderSystemContext({
+		prompt: 'What must I do to be saved?',
+		pack,
+		toolInvocations: [
+			{
+				toolId: 'bible_search',
+				args: { query: 'what must I do to be saved' },
+				summary: 'Relevant King James Bible verses (quote with their reference):\nActs 16:30 — "Sirs, what must I do to be saved?"\nActs 16:31 — "Believe on the Lord Jesus Christ, and thou shalt be saved, and thy house."',
+				confidence: 'high',
+				receipts: []
+			}
+		],
+		now: new Date('2026-06-20T12:00:00Z')
+	});
+
+	assert.match(systemContext, /Bible\/spiritual: ground the answer in bible_search when available/);
+	assert.match(systemContext, /Quote only KJV verses supplied in the source packet/);
+	assert.match(systemContext, /For salvation, answer directly from scripture/);
+	assert.match(systemContext, /Warm Markdown structure is welcome/);
+	assert.match(systemContext, /Acts 16:31/);
+	assert.doesNotMatch(systemContext, /water questions/);
 });
 
 test('polishOnDeviceAnswer hides internal source labels from the chat bubble', () => {
@@ -872,12 +768,20 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 		'There is no other name under heaven given among men for salvation. That is a question about faith, not about the trail.',
 		'What must I do to be saved?'
 	);
-	assert.match(salvationAnswer, /believe on the Lord Jesus Christ/);
-	assert.match(salvationAnswer, /repent and turn to God/);
-	assert.match(salvationAnswer, /by grace through faith/);
+	assert.match(salvationAnswer, /## What Scripture says/);
+	assert.match(salvationAnswer, /Believe on the Lord Jesus Christ/);
+	assert.match(salvationAnswer, /grace through faith/);
 	assert.match(salvationAnswer, /call on the name of the Lord/);
-	assert.match(salvationAnswer, /Do not add denominational checklists/);
+	assert.match(salvationAnswer, /the exact words are not magic/);
 	assert.doesNotMatch(salvationAnswer, /not about the trail/);
+	assert.doesNotMatch(salvationAnswer, /Do not add denominational checklists/);
+
+	const strongNativeSalvationAnswer = polishOnDeviceAnswer(
+		'## Scripture answer\n\nBelieve on the Lord Jesus Christ. Salvation is by grace through faith, and Romans says to call upon the name of the Lord.',
+		'What must I do to be saved?'
+	);
+	assert.match(strongNativeSalvationAnswer, /^## Scripture answer/u);
+	assert.doesNotMatch(strongNativeSalvationAnswer, /## What Scripture says/);
 
 	const repeatLastAnswer = polishOnDeviceAnswer(
 		'You are at mile 246.8. For today, aim for 12 miles.',
