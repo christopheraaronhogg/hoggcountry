@@ -13,6 +13,7 @@ const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const anchorsDoc = yaml.load(fs.readFileSync(path.join(ROOT, 'src/data/at-mile-anchors.yaml'), 'utf8'));
 const calibration = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/data/at-mile-calibration.json'), 'utf8'));
 const milepostsPayload = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/at-mileposts.json'), 'utf8'));
+const mobileGeometry = JSON.parse(fs.readFileSync(path.join(ROOT, 'mobile/static/trail/elevation-100m.json'), 'utf8'));
 
 function haversineMiles(lat1, lon1, lat2, lon2) {
   const R = 3958.7613;
@@ -21,6 +22,26 @@ function haversineMiles(lat1, lon1, lat2, lon2) {
   const dLon = toRad(lon2 - lon1);
   const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+function snapToMobileGeometry(lat, lon) {
+  const toRad = Math.PI / 180;
+  const latRad = lat * toRad;
+  let best = mobileGeometry[0];
+  let bestDist = Infinity;
+  for (const p of mobileGeometry) {
+    const dx = (p.lon - lon) * toRad * Math.cos(latRad);
+    const dy = (p.lat - lat) * toRad;
+    const dist = dx * dx + dy * dy;
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = p;
+    }
+  }
+  return {
+    mile: best.m,
+    distanceMiles: Math.sqrt(bestDist) * 3958.8
+  };
 }
 
 test('calibration pairs are strictly monotonic in both frames', () => {
@@ -84,4 +105,40 @@ test('every anchor lands at its official mile in the milepost skeleton', () => {
       `${anchor.name}: nearest milepost says ${best.mile}, anchor says ${anchor.mile} (off-trail ${bestDist.toFixed(2)} mi)`
     );
   }
+});
+
+test('mobile geometry uses the same official mile frame as web mileposts', () => {
+  const total = anchorsDoc.frame.total_miles;
+  assert.ok(mobileGeometry.length > 30_000, 'mobile geometry should keep dense 100m samples');
+  assert.equal(mobileGeometry[0].m, 0);
+  assert.equal(mobileGeometry[mobileGeometry.length - 1].m, total);
+  for (let i = 1; i < mobileGeometry.length; i += 1) {
+    assert.ok(mobileGeometry[i].m >= mobileGeometry[i - 1].m, `mobile geometry mile went backwards at index ${i}`);
+  }
+});
+
+test('web mileposts snap back to matching mobile miles', () => {
+  const mileposts = milepostsPayload.mileposts;
+  let worstMileError = { mile: 0, error: 0, snapped: 0 };
+  let worstDistance = { mile: 0, distanceMiles: 0 };
+
+  for (const post of mileposts) {
+    const snapped = snapToMobileGeometry(post.lat, post.lon);
+    const error = snapped.mile - post.mile;
+    if (Math.abs(error) > Math.abs(worstMileError.error)) {
+      worstMileError = { mile: post.mile, error, snapped: snapped.mile };
+    }
+    if (snapped.distanceMiles > worstDistance.distanceMiles) {
+      worstDistance = { mile: post.mile, distanceMiles: snapped.distanceMiles };
+    }
+  }
+
+  assert.ok(
+    Math.abs(worstMileError.error) <= 0.1,
+    `mobile/web mile frame drift: web mile ${worstMileError.mile} snaps to mobile mile ${worstMileError.snapped} (${worstMileError.error.toFixed(3)} mi)`
+  );
+  assert.ok(
+    worstDistance.distanceMiles <= 0.075,
+    `mobile/web route geometry drift: web mile ${worstDistance.mile} is ${worstDistance.distanceMiles.toFixed(3)} mi from mobile geometry`
+  );
 });

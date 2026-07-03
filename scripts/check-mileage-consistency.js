@@ -15,6 +15,8 @@ const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..');
 
 const FACTS_FILE = path.join(ROOT, 'src/data/trail-facts.yaml');
+const WEB_MILEPOSTS_FILE = path.join(ROOT, 'public/at-mileposts.json');
+const MOBILE_GEOMETRY_FILE = path.join(ROOT, 'mobile/static/trail/elevation-100m.json');
 const ALLOWED_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.astro', '.svelte', '.md', '.mdx']);
 const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.astro', 'public', 'coverage']);
 
@@ -109,6 +111,90 @@ function checkConstants(totalMiles) {
   return issues;
 }
 
+function snapToMobileGeometry(mobileGeometry, lat, lon) {
+  const toRad = Math.PI / 180;
+  const latRad = lat * toRad;
+  let best = mobileGeometry[0];
+  let bestDist = Infinity;
+  for (const p of mobileGeometry) {
+    const dx = (p.lon - lon) * toRad * Math.cos(latRad);
+    const dy = (p.lat - lat) * toRad;
+    const dist = dx * dx + dy * dy;
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = p;
+    }
+  }
+  return {
+    mile: best.m,
+    distanceMiles: Math.sqrt(bestDist) * 3958.8
+  };
+}
+
+function checkMobileWebAlignment(totalMiles) {
+  const issues = [];
+  if (!fs.existsSync(WEB_MILEPOSTS_FILE)) {
+    return { issues: [`missing web mileposts (${WEB_MILEPOSTS_FILE})`], stats: null };
+  }
+  if (!fs.existsSync(MOBILE_GEOMETRY_FILE)) {
+    return { issues: [`missing mobile trail geometry (${MOBILE_GEOMETRY_FILE})`], stats: null };
+  }
+
+  const webMileposts = JSON.parse(fs.readFileSync(WEB_MILEPOSTS_FILE, 'utf8')).mileposts;
+  const mobileGeometry = JSON.parse(fs.readFileSync(MOBILE_GEOMETRY_FILE, 'utf8'));
+  if (!Array.isArray(webMileposts) || webMileposts.length < 2000) {
+    issues.push(`web mileposts unexpectedly small (${WEB_MILEPOSTS_FILE})`);
+  }
+  if (!Array.isArray(mobileGeometry) || mobileGeometry.length < 30_000) {
+    issues.push(`mobile geometry should keep dense 100m samples (${MOBILE_GEOMETRY_FILE})`);
+  }
+  if (issues.length) return { issues, stats: null };
+
+  if (mobileGeometry[0].m !== 0 || mobileGeometry[mobileGeometry.length - 1].m !== totalMiles) {
+    issues.push(
+      `mobile geometry is in the wrong mile frame: ${mobileGeometry[0].m}-${mobileGeometry[mobileGeometry.length - 1].m} (expected 0-${totalMiles})`
+    );
+  }
+  for (let i = 1; i < mobileGeometry.length; i += 1) {
+    if (mobileGeometry[i].m < mobileGeometry[i - 1].m) {
+      issues.push(`mobile geometry mile went backwards at index ${i}`);
+      break;
+    }
+  }
+
+  let worstMileError = { mile: 0, error: 0, snapped: 0 };
+  let worstDistance = { mile: 0, distanceMiles: 0 };
+  for (const post of webMileposts) {
+    const snapped = snapToMobileGeometry(mobileGeometry, post.lat, post.lon);
+    const error = snapped.mile - post.mile;
+    if (Math.abs(error) > Math.abs(worstMileError.error)) {
+      worstMileError = { mile: post.mile, error, snapped: snapped.mile };
+    }
+    if (snapped.distanceMiles > worstDistance.distanceMiles) {
+      worstDistance = { mile: post.mile, distanceMiles: snapped.distanceMiles };
+    }
+  }
+
+  if (Math.abs(worstMileError.error) > 0.1) {
+    issues.push(
+      `mobile/web mile frame drift: web mile ${worstMileError.mile} snaps to mobile mile ${worstMileError.snapped} (${worstMileError.error.toFixed(3)} mi)`
+    );
+  }
+  if (worstDistance.distanceMiles > 0.075) {
+    issues.push(
+      `mobile/web route geometry drift: web mile ${worstDistance.mile} is ${worstDistance.distanceMiles.toFixed(3)} mi from mobile geometry`
+    );
+  }
+
+  return {
+    issues,
+    stats: {
+      maxMileError: Math.abs(worstMileError.error),
+      maxRouteDistance: worstDistance.distanceMiles
+    }
+  };
+}
+
 function main() {
   const facts = loadFacts();
   const totalMiles = facts?.trail?.total_miles?.value;
@@ -126,8 +212,9 @@ function main() {
 
   const legacyIssues = findLegacyTotals(files);
   const constantIssues = checkConstants(totalMiles);
+  const alignment = checkMobileWebAlignment(totalMiles);
 
-  if (legacyIssues.length > 0 || constantIssues.length > 0) {
+  if (legacyIssues.length > 0 || constantIssues.length > 0 || alignment.issues.length > 0) {
     console.error('Mileage consistency check failed.');
 
     if (legacyIssues.length > 0) {
@@ -144,10 +231,20 @@ function main() {
       }
     }
 
+    if (alignment.issues.length > 0) {
+      console.error('\nMobile/web mileage alignment issues:');
+      for (const issue of alignment.issues) {
+        console.error(`- ${issue}`);
+      }
+    }
+
     process.exit(1);
   }
 
-  console.log(`Mileage check passed. Total miles = ${totalMiles}.`);
+  const alignmentText = alignment.stats
+    ? ` Mobile/web max drift = ${alignment.stats.maxMileError.toFixed(3)} mi; route delta = ${alignment.stats.maxRouteDistance.toFixed(3)} mi.`
+    : '';
+  console.log(`Mileage check passed. Total miles = ${totalMiles}.${alignmentText}`);
 }
 
 main();
