@@ -1,10 +1,3 @@
-<script module lang="ts">
-	// Survives MapTab re-mounts (tab switches destroy + recreate the component): the
-	// 1.46 MB hi-res route is a single immutable static file, so parse it once per
-	// session, not once per Map visit.
-	let routeHiCache: [number, number][] | null = null;
-</script>
-
 <script lang="ts">
 	import { onMount, onDestroy, tick, untrack } from 'svelte';
 	import type * as LeafletNS from 'leaflet';
@@ -71,12 +64,6 @@
 	// trail, not just the handful in the field pack near the current mile.
 	type TrailShelter = { name: string; mile: number; lat: number; lon: number };
 	let trailShelters = $state<TrailShelter[]>([]);
-
-	// High-resolution trail centerline (~0.1 mi sampling, 10x the elevation data)
-	// used to DRAW the route so it hugs the real path. Elevation/position/measure
-	// stay on the 1-mi data; this is geometry-only. Empty until loaded → the map
-	// falls back to the 1-mi line.
-	let routeHi = $state<[number, number][]>([]);
 
 	const geo = $derived(trailAssistant.trailGeometry);
 	const from = $derived(trailAssistant.currentMile);
@@ -179,20 +166,38 @@
 	});
 
 	// --- geometry helpers -----------------------------------------------------
-	// Interpolate a position along the SAME line we draw (the high-res centerline
-	// when loaded). Everything — the you-avatar, the measured point, the POIs —
-	// rides this one geometry, so nothing floats off on a parallel 1-mi track.
+	// Interpolate a position along the SAME calibrated 100-m geometry we draw.
+	// Everything — the you-avatar, the measured point, the POIs — rides this one
+	// official-mile frame, so mobile cannot drift back to the old 2106-mile route.
 	function interpAtMile(mile: number): [number, number] {
-		const src = routeSource;
-		if (src.length < 2) return [geo[0]?.lat ?? 34.6273, geo[0]?.lon ?? -84.194];
-		const span = (trailHi - trailLo) || 1;
-		const fi = Math.max(0, Math.min(1, (mile - trailLo) / span)) * (src.length - 1);
-		const lo = Math.floor(fi);
-		const hi = Math.min(src.length - 1, lo + 1);
-		const t = fi - lo;
-		return [src[lo][0] + (src[hi][0] - src[lo][0]) * t, src[lo][1] + (src[hi][1] - src[lo][1]) * t];
+		const a = geo;
+		if (a.length < 2) return [a[0]?.lat ?? 34.6273, a[0]?.lon ?? -84.194];
+		const m = clamp(mile, a[0].m, a[a.length - 1].m);
+		let lo = 0;
+		let hi = a.length - 1;
+		while (hi - lo > 1) {
+			const mid = (lo + hi) >> 1;
+			if (a[mid].m <= m) lo = mid;
+			else hi = mid;
+		}
+		const t = (m - a[lo].m) / Math.max(1e-6, a[hi].m - a[lo].m);
+		return [a[lo].lat + (a[hi].lat - a[lo].lat) * t, a[lo].lon + (a[hi].lon - a[lo].lon) * t];
 	}
 	const latlngs = $derived<[number, number][]>(geo.map((p) => [p.lat, p.lon]));
+	function indexAtMile(mile: number): number {
+		const a = geo;
+		if (a.length < 2) return 0;
+		if (mile <= a[0].m) return 0;
+		if (mile >= a[a.length - 1].m) return a.length - 1;
+		let lo = 0;
+		let hi = a.length - 1;
+		while (hi - lo > 1) {
+			const mid = (lo + hi) >> 1;
+			if (a[mid].m <= mile) lo = mid;
+			else hi = mid;
+		}
+		return hi;
+	}
 	const splitIdx = $derived.by(() => {
 		const a = geo;
 		if (a.length < 2) return 1;
@@ -211,16 +216,12 @@
 		return step <= 1 ? pts : pts.filter((_, i) => i % step === 0 || i === pts.length - 1);
 	}
 
-	// The line we DRAW: the high-res centerline when loaded, else the 1-mi points.
-	// Both are the same OSM trail at different densities, so positions map by
-	// fraction-along-trail and difficulty by the corresponding 1-mi geo segment.
-	const routeSource = $derived<[number, number][]>(routeHi.length > 1 ? routeHi : latlngs);
+	// The line we DRAW is the calibrated 100-m centerline. It is dense enough to
+	// hug the AT visually and, more importantly, uses the same official-mile index
+	// as GPS snapping, POIs, live family markers, and the elevation profile.
+	const routeSource = $derived<[number, number][]>(latlngs);
 	const routeCount = $derived(routeSource.length);
-	const splitIdxRoute = $derived.by(() => {
-		if (routeCount < 2 || geo.length < 2) return 1;
-		const frac = (fromClamped - trailLo) / ((trailHi - trailLo) || 1);
-		return Math.max(1, Math.min(routeCount - 1, Math.round(frac * (routeCount - 1))));
-	});
+	const splitIdxRoute = $derived(splitIdx);
 	// Sustained terrain difficulty at a mile — TOTAL vertical change (every up AND
 	// down) per mile over a ~0.4-mi window. We only have real elevation (no
 	// rock-surface data), and total change is the honest proxy for how punishing a
@@ -268,7 +269,6 @@
 	let youInitial = ''; // tracked so the avatar glyph only re-renders when it changes
 	let atBounds: LeafletNS.LatLngBounds | null = null;
 	let initialFrameReady = false;
-	let routeHiRequested = false;
 	let routeMoveRaf = 0; // rAF handle: keeps the drawn route window ahead of a fast pan
 
 	function addBasemapTiles(): void {
@@ -297,33 +297,6 @@
 			tileErrored = true;
 		});
 		tiles.addTo(map);
-	}
-
-	function loadRouteHi(): void {
-		if (routeHiRequested) return;
-		// Already parsed this session (e.g. a previous Map visit) → reuse, no re-fetch.
-		if (routeHiCache) {
-			routeHi = routeHiCache;
-			return;
-		}
-		routeHiRequested = true;
-		fetch('/trail/route-hi.json')
-			.then((r) => (r.ok ? r.json() : null))
-			.then((d) => {
-				if (d && Array.isArray(d.path) && d.path.length > 1) {
-					routeHiCache = d.path;
-					routeHi = d.path;
-				}
-			})
-			.catch(() => {
-				routeHiRequested = false;
-			});
-	}
-
-	function loadRouteHiDeferred(): void {
-		const go = () => loadRouteHi();
-		if (typeof requestIdleCallback === 'function') requestIdleCallback(go, { timeout: 2500 });
-		else setTimeout(go, 1200);
 	}
 
 	function fitWholeTrail(animate = true) {
@@ -361,7 +334,7 @@
 	const showRecenter = $derived(userInteracted && !isOverview);
 
 	function onMapClick(lat: number, lon: number) {
-		if (geo.length < 2 && routeHi.length < 2) return;
+		if (geo.length < 2) return;
 		// Snap the tap to the nearest point on the trail; a tap far out in open map
 		// clears it. Tolerance scales with zoom — generous on the whole-trail view
 		// (the line is a few pixels wide), tighter in the corridor.
@@ -369,70 +342,14 @@
 		measureMile = snapMeasureToTrail(lat, lon, tol);
 		measureFromPoi = false; // a free trail tap — show the draggable measure dot
 	}
-	// Snap straight to the nearest point on the DRAWN high-res line (not the 1-mi
-	// elevation points, whose geometry differs). This is exact at any zoom — a tap
-	// at 1-mi or tighter lands precisely where you touched, and a drag glides along
-	// the line. ~70k points is a sub-millisecond scan; fine per tap and per drag.
+	// Snap straight to the nearest point on the calibrated 100-m line. This keeps
+	// touch measurement, GPS, and live-location markers in the same official mile
+	// frame as the web app's AWOL-calibrated map.
 	function snapMeasureToTrail(lat: number, lon: number, tol: number): number | null {
-		if (routeHi.length < 2) return snapToMile(geo, lat, lon, tol);
-		const cosLat = Math.cos((lat * Math.PI) / 180);
-		let bestIdx = 0;
-		let bestD = Infinity;
-		for (let i = 0; i < routeHi.length; i++) {
-			const dLat = routeHi[i][0] - lat;
-			const dLon = (routeHi[i][1] - lon) * cosLat;
-			const d = dLat * dLat + dLon * dLon;
-			if (d < bestD) {
-				bestD = d;
-				bestIdx = i;
-			}
-		}
-		// 1° latitude ≈ 69 mi — reject taps farther than the tolerance from the line.
-		if (Math.sqrt(bestD) * 69 > tol) return null;
-		const span = (trailHi - trailLo) || 1;
-		return trailLo + (bestIdx / (routeHi.length - 1)) * span;
+		return snapToMile(geo, lat, lon, tol);
 	}
-	// Seed of the last drag snap (route-hi index), so a drag scans only a window around
-	// the previous point instead of all ~70k points every tick — the hottest gesture
-	// path. -1 = not dragging / unseeded → full scan.
-	let lastSnapIdx = -1;
-	// Drag-only windowed nearest: within one frame the cursor moves a few px, so the
-	// global nearest is always interior to a ±W-index window around the last snap (the
-	// AT never folds back within ~18 mi). If the best lands on a window edge (a tap-set
-	// start, or a hard fling), fall back to a full scan once and reseed. Returns the mile
-	// via the SAME formula as snapMeasureToTrail, so the snapped value is bit-identical.
 	function snapMeasureDrag(lat: number, lon: number): number | null {
-		const n = routeHi.length;
-		if (n < 2) return snapToMile(geo, lat, lon, Number.POSITIVE_INFINITY);
-		const W = 400;
-		const cosLat = Math.cos((lat * Math.PI) / 180);
-		const scan = (i0: number, i1: number) => {
-			let bi = i0;
-			let bd = Infinity;
-			for (let i = i0; i < i1; i++) {
-				const dLat = routeHi[i][0] - lat;
-				const dLon = (routeHi[i][1] - lon) * cosLat;
-				const d = dLat * dLat + dLon * dLon;
-				if (d < bd) {
-					bd = d;
-					bi = i;
-				}
-			}
-			return bi;
-		};
-		let bestIdx: number;
-		if (lastSnapIdx >= 0) {
-			const i0 = Math.max(0, lastSnapIdx - W);
-			const i1 = Math.min(n, lastSnapIdx + W + 1);
-			bestIdx = scan(i0, i1);
-			// Best at a real window edge → the true nearest may be just outside; full scan.
-			if ((bestIdx === i0 && i0 > 0) || (bestIdx === i1 - 1 && i1 < n)) bestIdx = scan(0, n);
-		} else {
-			bestIdx = scan(0, n);
-		}
-		lastSnapIdx = bestIdx;
-		const span = (trailHi - trailLo) || 1;
-		return trailLo + (bestIdx / (n - 1)) * span;
+		return snapToMile(geo, lat, lon, Number.POSITIVE_INFINITY);
 	}
 	function clearMeasure() {
 		measureMile = null;
@@ -789,7 +706,6 @@
 				else flyToCorridor(from, mapZoom as number, false);
 				initialFrameReady = true;
 				addBasemapTiles();
-				loadRouteHiDeferred();
 			}
 			onMoveEnd();
 		});
@@ -816,7 +732,6 @@
 		}
 		initialFrameReady = true;
 		addBasemapTiles();
-		loadRouteHiDeferred();
 		onMoveEnd();
 	});
 
@@ -837,15 +752,13 @@
 		if (!L || !map || !routeLayer || routeCount < 2) return;
 		routeLayer.clearLayers();
 		const overview = zoomBucket === 'ov';
-		const hires = routeHi.length > 1;
 		// Full resolution in the corridor so the line hugs every bend AND matches
 		// the measure highlight exactly (no parallel double-line). Lighter only at
 		// overview, where the fine bends aren't visible anyway.
-		const step = overview ? (hires ? 7 : 3) : 1;
+		const step = overview ? 3 : 1;
 		const src = routeSource;
 		const split = splitIdxRoute;
 		const n = routeCount;
-		const span = (trailHi - trailLo) || 1;
 
 		// Clip the corridor draw to the visible mile window (+ generous margin, see
 		// updateRouteWindow): off-screen segments are invisible, so drawing the whole
@@ -854,7 +767,7 @@
 		// indices, so a clipped window is byte-identical to the same span unclipped —
 		// only the off-screen tail (which the user can't see) is omitted.
 		const clipping = !overview && drawHi > drawLo;
-		const toIdx = (mile: number) => clamp(Math.round(((mile - trailLo) / span) * (n - 1)), 0, n - 1);
+		const toIdx = (mile: number) => clamp(indexAtMile(mile), 0, n - 1);
 		const clipLo = clipping ? toIdx(drawLo) : 0;
 		const clipHi = clipping ? toIdx(drawHi) : n - 1;
 		const doneA = Math.max(0, clipLo);
@@ -891,9 +804,9 @@
 
 		if (hasElev) {
 			// Difficulty band for a stretch of the drawn line, looked up from the
-			// matching 1-mi elevation segment(s).
+			// matching calibrated 100-m elevation segment(s).
 			const bandFor = (ra: number, rb: number): 0 | 1 | 2 =>
-				bandAtMile(trailLo + (((ra + rb) / 2) / (routeCount - 1)) * span);
+				bandAtMile(geo[Math.max(0, Math.min(geo.length - 1, Math.round((ra + rb) / 2)))].m);
 			// 2) difficulty-banded trail. Done = solid, upcoming remainder = dashed
 			//    (same gentle/moderate/steep colours), so progress still reads.
 			const drawBanded = (i0: number, i1: number, dashed: boolean) => {
@@ -1262,10 +1175,9 @@
 		}
 		const a = Math.min(fromClamped, m.mile);
 		const b = Math.max(fromClamped, m.mile);
-		// Slice the drawn (high-res) line so the highlight hugs the same path.
-		const span = (trailHi - trailLo) || 1;
-		const aIdx = Math.round(((a - trailLo) / span) * (routeCount - 1));
-		const bIdx = Math.round(((b - trailLo) / span) * (routeCount - 1));
+		// Slice the drawn calibrated line so the highlight hugs the same path.
+		const aIdx = indexAtMile(a);
+		const bIdx = indexAtMile(b);
 		const seg = routeSource.slice(Math.max(0, Math.min(aIdx, bIdx)), Math.max(aIdx, bIdx) + 1);
 		if (seg.length >= 2) {
 			L.polyline(seg, {
@@ -1312,28 +1224,16 @@
 				.addTo(map);
 			measureMarker.on('dragstart', () => {
 				measureDragging = true;
-				// Seed the windowed snap from where the dot starts (may be a tap-set mile).
-				const span = (trailHi - trailLo) || 1;
-				lastSnapIdx =
-					measureMile != null && routeHi.length > 1
-						? clamp(
-								Math.round(((clamp(measureMile, trailLo, trailHi) - trailLo) / span) * (routeHi.length - 1)),
-								0,
-								routeHi.length - 1
-							)
-						: -1;
 			});
 			measureMarker.on('drag', (e) => {
 				const p = (e.target as LeafletNS.Marker).getLatLng();
-				// Fine snap (no tolerance) — the point rides the high-res line smoothly
-				// instead of stepping mile to mile. Windowed around the last snap so each
-				// drag tick scans ~800 points, not all ~70k; bit-identical result.
+				// Fine snap (no tolerance) — the point rides the calibrated line smoothly
+				// instead of stepping mile to mile.
 				const snapped = snapMeasureDrag(p.lat, p.lng);
 				if (snapped != null) measureMile = snapped;
 			});
 			measureMarker.on('dragend', () => {
 				measureDragging = false;
-				lastSnapIdx = -1;
 				if (measureMile != null) measureMarker?.setLatLng(interpAtMile(clamp(measureMile, trailLo, trailHi)));
 			});
 		} else {

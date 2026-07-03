@@ -1,15 +1,14 @@
-import { browser } from '$app/environment';
-
 /**
  * Real Appalachian Trail route geometry + elevation, sampled at ~100-metre
- * (~0.06-mile) NOBO resolution from USGS 3DEP (public domain) — ~16x finer than
- * the old 1-mile cut, so gain/loss, grade, and the elevation profile are honest
- * at sub-mile scale. Fetched at runtime (same pattern as the offline KJV Bible).
- * Each point: mile (NOBO), elevation (ft), lat, lon.
+ * (~0.06-mile) NOBO resolution from USGS 3DEP (public domain). The coordinates
+ * stay on the open OSM-derived centerline, but `m` is calibrated through
+ * src/data/at-mile-calibration.json into the same 2197.4-mile official frame
+ * as public/at-mileposts.json. Each point: official NOBO mile, elevation (ft),
+ * lat, lon.
  *
  * Powers (a) the Today/Map elevation profile and (b) snapping an on-device GPS
- * fix to a real trail mile. This replaces the former hand-authored "illustrative"
- * elevation fixture.
+ * fix to a hiker-facing trail mile. This replaces the former hand-authored
+ * "illustrative" elevation fixture and the old generated 2106-mile frame.
  */
 export interface TrailGeoPoint {
 	m: number;
@@ -25,6 +24,7 @@ export interface ElevationPoint {
 }
 
 const ASSET_URL = '/trail/elevation-100m.json';
+const browser = typeof window !== 'undefined' && typeof document !== 'undefined';
 
 let cache: TrailGeoPoint[] | null = null;
 let inFlight: Promise<TrailGeoPoint[]> | null = null;
@@ -92,7 +92,8 @@ const EARTH_RADIUS_MILES = 3958.8;
 
 /**
  * Snap a GPS fix to the nearest real trail mile. Uses an equirectangular
- * approximation (accurate at trail scale) over the 1-mile sample points.
+ * approximation (accurate at trail scale) over the 100-m calibrated sample
+ * points.
  *
  * Returns null when geometry isn't loaded OR when the fix is farther than
  * `maxMiles` from the trail — so an off-trail location (a town hitch, a bad

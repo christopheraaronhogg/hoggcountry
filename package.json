@@ -66,6 +66,7 @@
     "history:scout-local-ai": "node scripts/build-scout-local-ai-history.mjs",
     "refresh:testflight-dad-pilot": "node scripts/refresh-testflight-dad-pilot.mjs",
     "sync:scout-local-ai-suite": "mkdir -p mobile/static/scout && cp data/scout-local-ai/dad-local-ai-100.json mobile/static/scout/dad-local-ai-100.json",
+    "calibrate:mobile-trail": "node scripts/calibrate-mobile-trail-assets.mjs",
     "check:mileage": "node scripts/check-mileage-consistency.js",
     "check:water": "node scripts/validate-water-sources.js",
     "check:hydro": "node scripts/validate-hydro-crossings.js",
