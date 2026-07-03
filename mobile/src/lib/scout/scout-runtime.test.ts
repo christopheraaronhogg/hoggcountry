@@ -40,6 +40,46 @@ test('on-device engine failure surfaces instead of using a synthetic answer', as
 	await assert.rejects(() => runtime.ask({ prompt: 'where is the next water', onlineStatus: false }), /engine boom/);
 });
 
+test('Scout runtime emits privacy-bounded diagnostics around success', async () => {
+	const events: Array<{ name: string; context: Record<string, unknown> }> = [];
+	const { runtime } = createScoutRuntime({
+		initialPack: cloneDefaultContextPack(),
+		onDeviceBridge: okBridge,
+		diagnostics: (event) => {
+			events.push(event);
+		}
+	});
+
+	await runtime.ask({ prompt: 'private camp question', onlineStatus: false });
+
+	assert.deepEqual(
+		events.map((event) => event.name),
+		['ask_started', 'tools_ready', 'provider_selected', 'ask_succeeded']
+	);
+	assert.equal(events[0].context.prompt_chars, 'private camp question'.length);
+	assert.equal(JSON.stringify(events).includes('private camp question'), false);
+});
+
+test('Scout runtime emits failure diagnostics with provider and phase', async () => {
+	const events: Array<{ name: string; context: Record<string, unknown> }> = [];
+	const { runtime } = createScoutRuntime({
+		initialPack: cloneDefaultContextPack(),
+		onDeviceBridge: throwingBridge,
+		diagnostics: (event) => {
+			events.push(event);
+		}
+	});
+
+	await assert.rejects(() => runtime.ask({ prompt: 'where is the next water', onlineStatus: false }), /engine boom/);
+
+	const failed = events.find((event) => event.name === 'ask_failed');
+	assert.ok(failed);
+	assert.equal(failed.context.phase, 'provider_generate');
+	assert.equal(failed.context.provider, 'on-device-gemma');
+	assert.equal(failed.context.error_summary, 'engine boom');
+	assert.equal(JSON.stringify(events).includes('where is the next water'), false);
+});
+
 test('under preferredMode on-device, an engine failure REthrows — never a silent template answer', async () => {
 	// Regression for the "asked a question, it acted offline" bug: in a Gemma-only
 	// build the caller forces preferredMode 'on-device'. A native generate() failure

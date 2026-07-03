@@ -310,11 +310,22 @@ export interface ModelRouter {
 	providers(): ScoutProvider[];
 }
 
+export type ScoutDiagnosticSeverity = 'debug' | 'info' | 'warn' | 'error';
+
+export interface ScoutDiagnosticEvent {
+	name: string;
+	severity: ScoutDiagnosticSeverity;
+	context: Record<string, unknown>;
+}
+
+export type ScoutDiagnosticsSink = (event: ScoutDiagnosticEvent) => void | Promise<void>;
+
 export interface ScoutRuntimeOptions {
 	store: ContextPackStore;
 	registry: ToolRegistry;
 	router: ModelRouter;
 	clock?: () => Date;
+	diagnostics?: ScoutDiagnosticsSink;
 }
 
 export interface ScoutAskInput {

@@ -6,7 +6,7 @@ const RAW_BASE =
 	// `?.` so the module also imports cleanly outside Vite (e.g. node:test), where
 	// import.meta.env is undefined; in the app Vite injects PUBLIC_API_BASE.
 	(import.meta.env?.PUBLIC_API_BASE as string | undefined) ?? 'https://hoggcountry.com/api/v1';
-const API_BASE = RAW_BASE.replace(/\/$/, '');
+export const API_BASE = RAW_BASE.replace(/\/$/, '');
 
 export interface ApiError {
 	code: string;

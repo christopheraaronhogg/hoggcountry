@@ -3,8 +3,9 @@ import { DefaultModelRouter } from './model-router.ts';
 import { CloudScoutProvider, type CloudScoutBridge } from './providers/cloud-scout.ts';
 import { OnDeviceGemmaProvider, type OnDeviceGemmaBridge, type GemmaTier } from './providers/on-device-gemma.ts';
 import { DefaultScoutRuntime } from './scout-runtime.ts';
+import { recordScoutDiagnostic } from './scout-diagnostics.ts';
 import { defaultToolRegistry } from './tool-registry.ts';
-import type { ContextPack, ContextPackStore, ScoutRuntime, ToolRegistry } from './types.ts';
+import type { ContextPack, ContextPackStore, ScoutDiagnosticsSink, ScoutRuntime, ToolRegistry } from './types.ts';
 
 export * from './types.ts';
 export { InMemoryContextPackStore, createCapacitorPreferencesAdapter } from './context-pack-store.ts';
@@ -24,6 +25,7 @@ export interface CreateScoutRuntimeOptions {
 	onDeviceBridge?: OnDeviceGemmaBridge;
 	onDeviceTier?: GemmaTier;
 	cloudBridge?: CloudScoutBridge;
+	diagnostics?: ScoutDiagnosticsSink;
 }
 
 export function createScoutRuntime(options: CreateScoutRuntimeOptions = {}): {
@@ -40,7 +42,12 @@ export function createScoutRuntime(options: CreateScoutRuntimeOptions = {}): {
 	const cloud = options.cloudBridge ? new CloudScoutProvider({ bridge: options.cloudBridge }) : undefined;
 
 	const router = new DefaultModelRouter({ onDevice, cloud });
-	const runtime = new DefaultScoutRuntime({ store, registry, router });
+	const runtime = new DefaultScoutRuntime({
+		store,
+		registry,
+		router,
+		diagnostics: options.diagnostics ?? recordScoutDiagnostic
+	});
 
 	return { runtime, store, registry, onDeviceProvider: onDevice };
 }

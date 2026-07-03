@@ -22,6 +22,7 @@ import { NativeScoutRuntime } from './scout/native-scout-runtime.ts';
 import { getCapacitorScoutInstallSource } from './scout/capacitor-gemma-bridge.ts';
 import { NoScoutModelAvailableError } from './scout/model-router.ts';
 import { createCloudScoutBridge } from './scout/cloud-scout-bridge.ts';
+import { describeDiagnosticError, recordScoutDiagnostic } from './scout/scout-diagnostics.ts';
 import { scoutUsesCloud, scoutLaneLabel } from './scout/scout-lane.ts';
 import {
 	SCOUT_AUTH_WALL_MESSAGE,
@@ -169,7 +170,8 @@ class TrailAssistantStore {
 		store: this.#fieldPackStore,
 		createCloudBridge: CLOUD_SCOUT_ENABLED
 			? () => createCloudScoutBridge({ getToken: () => cloudAuth.token })
-			: undefined
+			: undefined,
+		diagnostics: recordScoutDiagnostic
 	});
 	#fieldPack = $state.raw<ContextPack>(this.#fieldPackStore.get());
 	#fieldPackStatus = $state<ContextPackStatus>(this.#fieldPackStore.getStatus());
@@ -921,11 +923,18 @@ class TrailAssistantStore {
 	}
 
 	async #dispatchScoutReply(prompt: string, currentMessageId: string) {
-		// Self-heal the native wiring in case Capacitor wasn't ready at construction.
-		this.#nativeScout.ensureNativeWiring();
-		if (REQUIRE_GEMMA) await this.refreshModelStatus();
 		this.#activeScoutReplies += 1;
 		this.#scoutThinking = true;
+		recordScoutDiagnostic('ui_dispatch_started', {
+			scout_lane: scoutLaneLabel,
+			prompt_chars: prompt.length,
+			online_status: this.#state.onlineStatus,
+			battery_saver: this.#state.trailSettings.batterySaver,
+			cloud_enabled: CLOUD_SCOUT_ENABLED,
+			require_gemma: REQUIRE_GEMMA,
+			model_state: this.#modelDownloads.status?.state ?? null,
+			signed_in: CLOUD_SCOUT_ENABLED ? cloudAuth.signedIn : null
+		});
 
 		// Stream tokens into a live-updating assistant bubble. The bubble is only
 		// created on the FIRST token, so the "thinking" dots show until words start
@@ -938,6 +947,9 @@ class TrailAssistantStore {
 		};
 
 		try {
+			// Self-heal the native wiring in case Capacitor wasn't ready at construction.
+			this.#nativeScout.ensureNativeWiring();
+			if (REQUIRE_GEMMA) await this.refreshModelStatus();
 			await this.#refreshFieldPackForPrompt(prompt);
 
 			if (CLOUD_SCOUT_ENABLED) {
@@ -947,6 +959,12 @@ class TrailAssistantStore {
 				await cloudAuth.init();
 				const block = this.#cloudScoutBlock();
 				if (block) {
+					recordScoutDiagnostic('ui_blocked', {
+						reason: block.kind,
+						scout_lane: scoutLaneLabel,
+						online_status: this.#state.onlineStatus,
+						signed_in: cloudAuth.signedIn
+					}, 'warn');
 					const message = this.#addCoachMessage('assistant', block.message);
 					if (block.kind === 'signed-out') {
 						this.#pendingScoutAuthPrompt = createPendingScoutAuthPrompt({
@@ -963,6 +981,14 @@ class TrailAssistantStore {
 				// model answer, so the chat shows no confidence badge or source chips.
 				const autoStart = await this.#nativeScout.startModelDownloadIfUseful();
 				const answer = this.#nativeScout.gemmaUnavailableAnswer(autoStart);
+				recordScoutDiagnostic('model_unavailable', {
+					scout_lane: scoutLaneLabel,
+					auto_start: autoStart,
+					model_state: this.#modelDownloads.status?.state ?? null,
+					model_id: this.#modelDownloads.status?.modelId ?? null,
+					runtime_configured: this.#modelDownloads.status?.runtimeConfigured ?? null,
+					download_configured: this.#modelDownloads.status?.downloadConfigured ?? null
+				}, 'warn');
 				this.#addCoachMessage('assistant', answer.answer);
 				return;
 			}
@@ -1001,6 +1027,13 @@ class TrailAssistantStore {
 				const block = this.#cloudScoutBlock();
 				const message =
 					block?.message ?? 'Scout needs a connection in the web app — reconnect and ask again.';
+				recordScoutDiagnostic('ui_blocked_after_router', {
+					reason: block?.kind ?? 'model_unavailable',
+					scout_lane: scoutLaneLabel,
+					online_status: this.#state.onlineStatus,
+					signed_in: cloudAuth.signedIn,
+					...describeDiagnosticError(error)
+				}, 'warn');
 				if (streamingId !== null) {
 					this.#setCoachMessageContent(streamingId, message);
 					if (block?.kind === 'signed-out') {
@@ -1030,6 +1063,13 @@ class TrailAssistantStore {
 			// Log the real error so a genuine bug (store/tool failure) is debuggable
 			// from device logs rather than silently swallowed.
 			console.error('Scout reply failed', error);
+			recordScoutDiagnostic('ui_reply_failed', {
+				scout_lane: scoutLaneLabel,
+				online_status: this.#state.onlineStatus,
+				model_state: this.#modelDownloads.status?.state ?? null,
+				model_id: this.#modelDownloads.status?.modelId ?? null,
+				...describeDiagnosticError(error)
+			}, 'error');
 			this.#nativeScout.invalidateAvailability();
 			this.#nativeScout.warmUpModel();
 			// Keep the wording accurate for any failure here (on-device generation is

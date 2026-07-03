@@ -15,6 +15,7 @@ import type {
 	ScoutAskInput,
 	ScoutRuntime,
 	ScoutAnswer,
+	ScoutDiagnosticsSink,
 	TokenSink
 } from './types.ts';
 import type {
@@ -61,6 +62,7 @@ type NativeScoutRuntimeFactory = (input: {
 	onDeviceBridge?: OnDeviceGemmaBridge;
 	onDeviceTier: GemmaTier;
 	cloudBridge?: CloudScoutBridge;
+	diagnostics?: ScoutDiagnosticsSink;
 }) => ScoutRuntimeHandle;
 
 export interface NativeScoutRuntimeOptions {
@@ -76,6 +78,7 @@ export interface NativeScoutRuntimeOptions {
 	createCloudBridge?: () => CloudScoutBridge | null;
 	createRuntime?: NativeScoutRuntimeFactory;
 	createDownloadSession?: (input: NativeDownloadSessionInput) => NativeDownloadSession;
+	diagnostics?: ScoutDiagnosticsSink;
 }
 
 export class NativeScoutRuntime {
@@ -89,6 +92,7 @@ export class NativeScoutRuntime {
 	#cloudBridge: CloudScoutBridge | null;
 	#modelManager: ScoutModelManager | null;
 	#scout: ScoutRuntimeHandle;
+	#diagnostics?: ScoutDiagnosticsSink;
 
 	readonly downloads: NativeDownloadSession;
 
@@ -99,6 +103,7 @@ export class NativeScoutRuntime {
 		this.#createBridge = options.createBridge ?? createCapacitorGemmaBridge;
 		this.#createManager = options.createManager ?? createCapacitorModelManager;
 		this.#createRuntime = options.createRuntime ?? createScoutRuntime;
+		this.#diagnostics = options.diagnostics;
 		this.#gemmaBridge = this.#browserAvailable ? this.#createBridge() : null;
 		this.#cloudBridge = this.#browserAvailable ? (options.createCloudBridge?.() ?? null) : null;
 		this.#modelManager = this.#browserAvailable ? this.#createManager() : null;
@@ -128,7 +133,8 @@ export class NativeScoutRuntime {
 			store: new InMemoryContextPackStore({ initial: pack }),
 			onDeviceBridge: this.#gemmaBridge ?? undefined,
 			onDeviceTier: this.#tier,
-			cloudBridge: this.#cloudBridge ?? undefined
+			cloudBridge: this.#cloudBridge ?? undefined,
+			diagnostics: this.#diagnostics
 		});
 		return evalRuntime.runtime.ask(input, onToken);
 	}
@@ -194,7 +200,8 @@ export class NativeScoutRuntime {
 			store: this.#store,
 			onDeviceBridge: onDeviceBridge ?? undefined,
 			onDeviceTier: this.#tier,
-			cloudBridge: this.#cloudBridge ?? undefined
+			cloudBridge: this.#cloudBridge ?? undefined,
+			diagnostics: this.#diagnostics
 		});
 	}
 
