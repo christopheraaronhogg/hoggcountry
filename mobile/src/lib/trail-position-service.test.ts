@@ -5,7 +5,8 @@ import {
 	TrailPositionService,
 	type TrailGeolocation,
 	type TrailGpsPosition,
-	type TrailPositionPoint
+	type TrailPositionPoint,
+	type TrailSnapGeometry
 } from './trail-position-service.ts';
 import type { PrivacySettings, TrailSettings } from './types.ts';
 
@@ -13,6 +14,11 @@ const points: TrailPositionPoint[] = [
 	{ m: 0, ft: 0, lat: 0, lon: 0 },
 	{ m: 88.04, ft: 1000, lat: 1, lon: 1 }
 ];
+const snapGeometry: TrailSnapGeometry = {
+	m: points.map((point) => point.m),
+	lat: points.map((point) => point.lat),
+	lon: points.map((point) => point.lon)
+};
 
 function position(lat: number, lon: number): TrailGpsPosition {
 	return { coords: { latitude: lat, longitude: lon } };
@@ -61,13 +67,20 @@ function createService(options: {
 	privacy?: Pick<PrivacySettings, 'sharePreciseLocation'>;
 	settings?: Pick<TrailSettings, 'autoLogMileage'>;
 	geometry?: TrailPositionPoint[];
+	snapGeometry?: TrailSnapGeometry | null;
 	currentMile?: number;
 	onUpdate?: (mile: number, source: string) => void;
 	onActive?: (active: boolean) => void;
 	loadGeometry?: () => Promise<TrailPositionPoint[]>;
-	snapToMile?: (points: TrailPositionPoint[], lat: number, lon: number) => number | null;
+	loadSnapGeometry?: () => Promise<TrailSnapGeometry | null>;
+	snapToMile?: (
+		points: TrailPositionPoint[] | TrailSnapGeometry | null,
+		lat: number,
+		lon: number
+	) => number | null;
 } = {}) {
 	let geometry = options.geometry ?? points;
+	let loadedSnapGeometry = options.snapGeometry === undefined ? snapGeometry : options.snapGeometry;
 	let currentMile = options.currentMile ?? 0;
 	const updates: Array<{ mile: number; source: string }> = [];
 	const activeStates: boolean[] = [];
@@ -80,6 +93,10 @@ function createService(options: {
 		setTrailGeometry: (points) => {
 			geometry = points;
 		},
+		getSnapGeometry: () => loadedSnapGeometry,
+		setSnapGeometry: (geometry) => {
+			loadedSnapGeometry = geometry;
+		},
 		setAutoGpsActive: (active) => {
 			activeStates.push(active);
 			options.onActive?.(active);
@@ -91,6 +108,7 @@ function createService(options: {
 			options.onUpdate?.(mile, source);
 		},
 		loadGeometry: options.loadGeometry ?? (() => Promise.resolve(geometry)),
+		loadSnapGeometry: options.loadSnapGeometry ?? (() => Promise.resolve(loadedSnapGeometry)),
 		snapToMile:
 			options.snapToMile ??
 			((_points, lat) => {
@@ -102,6 +120,9 @@ function createService(options: {
 		activeStates,
 		get geometry() {
 			return geometry;
+		},
+		get snapGeometry() {
+			return loadedSnapGeometry;
 		},
 		get currentMile() {
 			return currentMile;
@@ -126,6 +147,27 @@ test('TrailPositionService loads geometry and starts the auto GPS watcher when a
 	assert.equal(fake.calls.watch, 1);
 	assert.equal(harness.service.autoGpsActive, true);
 	assert.deepEqual(harness.activeStates, [true]);
+});
+
+test('TrailPositionService loads snap geometry before adopting a manual GPS fix', async () => {
+	const fake = createFakeGeolocation(position(1, 1));
+	let loadSnapCalls = 0;
+	const harness = createService({
+		geolocation: fake.geolocation,
+		geometry: [],
+		snapGeometry: null,
+		loadSnapGeometry: () => {
+			loadSnapCalls += 1;
+			return Promise.resolve(snapGeometry);
+		}
+	});
+
+	const result = await harness.service.useGpsForMile();
+
+	assert.deepEqual(result, { ok: true, mile: 88 });
+	assert.equal(loadSnapCalls, 1);
+	assert.equal(harness.snapGeometry, snapGeometry);
+	assert.deepEqual(harness.updates, [{ mile: 88, source: 'gps' }]);
 });
 
 test('TrailPositionService stops the watcher when precise location is disabled', () => {

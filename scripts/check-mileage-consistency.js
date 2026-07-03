@@ -16,7 +16,8 @@ const ROOT = path.resolve(__dirname, '..');
 
 const FACTS_FILE = path.join(ROOT, 'src/data/trail-facts.yaml');
 const WEB_MILEPOSTS_FILE = path.join(ROOT, 'public/at-mileposts.json');
-const MOBILE_GEOMETRY_FILE = path.join(ROOT, 'mobile/static/trail/elevation-100m.json');
+const MOBILE_ELEVATION_FILE = path.join(ROOT, 'mobile/static/trail/elevation-100m.json');
+const MOBILE_SNAP_FILE = path.join(ROOT, 'mobile/static/trail/route-snap-20m.json');
 const ALLOWED_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.astro', '.svelte', '.md', '.mdx']);
 const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.astro', 'public', 'coverage']);
 
@@ -113,21 +114,33 @@ function checkConstants(totalMiles) {
 
 function snapToMobileGeometry(mobileGeometry, lat, lon) {
   const toRad = Math.PI / 180;
-  const latRad = lat * toRad;
-  let best = mobileGeometry[0];
+  const lonScale = 3958.8 * toRad * Math.cos(lat * toRad);
+  const latScale = 3958.8 * toRad;
+  const { m, lat: lats, lon: lons } = mobileGeometry;
+  let bestMile = m[0];
   let bestDist = Infinity;
-  for (const p of mobileGeometry) {
-    const dx = (p.lon - lon) * toRad * Math.cos(latRad);
-    const dy = (p.lat - lat) * toRad;
-    const dist = dx * dx + dy * dy;
+  let ax = (lons[0] - lon) * lonScale;
+  let ay = (lats[0] - lat) * latScale;
+  for (let i = 1; i < m.length; i += 1) {
+    const bx = (lons[i] - lon) * lonScale;
+    const by = (lats[i] - lat) * latScale;
+    const abx = bx - ax;
+    const aby = by - ay;
+    const len2 = abx * abx + aby * aby;
+    const t = len2 > 0 ? Math.min(1, Math.max(0, -(ax * abx + ay * aby) / len2)) : 0;
+    const px = ax + abx * t;
+    const py = ay + aby * t;
+    const dist = px * px + py * py;
     if (dist < bestDist) {
       bestDist = dist;
-      best = p;
+      bestMile = m[i - 1] + (m[i] - m[i - 1]) * t;
     }
+    ax = bx;
+    ay = by;
   }
   return {
-    mile: best.m,
-    distanceMiles: Math.sqrt(bestDist) * 3958.8
+    mile: bestMile,
+    distanceMiles: Math.sqrt(bestDist)
   };
 }
 
@@ -136,28 +149,54 @@ function checkMobileWebAlignment(totalMiles) {
   if (!fs.existsSync(WEB_MILEPOSTS_FILE)) {
     return { issues: [`missing web mileposts (${WEB_MILEPOSTS_FILE})`], stats: null };
   }
-  if (!fs.existsSync(MOBILE_GEOMETRY_FILE)) {
-    return { issues: [`missing mobile trail geometry (${MOBILE_GEOMETRY_FILE})`], stats: null };
+  if (!fs.existsSync(MOBILE_ELEVATION_FILE)) {
+    return { issues: [`missing mobile trail geometry (${MOBILE_ELEVATION_FILE})`], stats: null };
+  }
+  if (!fs.existsSync(MOBILE_SNAP_FILE)) {
+    return { issues: [`missing mobile GPS snap geometry (${MOBILE_SNAP_FILE})`], stats: null };
   }
 
   const webMileposts = JSON.parse(fs.readFileSync(WEB_MILEPOSTS_FILE, 'utf8')).mileposts;
-  const mobileGeometry = JSON.parse(fs.readFileSync(MOBILE_GEOMETRY_FILE, 'utf8'));
+  const mobileElevation = JSON.parse(fs.readFileSync(MOBILE_ELEVATION_FILE, 'utf8'));
+  const mobileGeometry = JSON.parse(fs.readFileSync(MOBILE_SNAP_FILE, 'utf8'));
   if (!Array.isArray(webMileposts) || webMileposts.length < 2000) {
     issues.push(`web mileposts unexpectedly small (${WEB_MILEPOSTS_FILE})`);
   }
-  if (!Array.isArray(mobileGeometry) || mobileGeometry.length < 30_000) {
-    issues.push(`mobile geometry should keep dense 100m samples (${MOBILE_GEOMETRY_FILE})`);
+  if (!Array.isArray(mobileElevation) || mobileElevation.length < 30_000) {
+    issues.push(`mobile elevation geometry should keep dense 100m samples (${MOBILE_ELEVATION_FILE})`);
+  }
+  if (
+    !mobileGeometry ||
+    !Array.isArray(mobileGeometry.m) ||
+    !Array.isArray(mobileGeometry.lat) ||
+    !Array.isArray(mobileGeometry.lon) ||
+    mobileGeometry.m.length < 160_000 ||
+    mobileGeometry.m.length !== mobileGeometry.lat.length ||
+    mobileGeometry.m.length !== mobileGeometry.lon.length
+  ) {
+    issues.push(`mobile GPS snap geometry should keep dense 20m samples (${MOBILE_SNAP_FILE})`);
   }
   if (issues.length) return { issues, stats: null };
 
-  if (mobileGeometry[0].m !== 0 || mobileGeometry[mobileGeometry.length - 1].m !== totalMiles) {
+  if (mobileElevation[0].m !== 0 || mobileElevation[mobileElevation.length - 1].m !== totalMiles) {
     issues.push(
-      `mobile geometry is in the wrong mile frame: ${mobileGeometry[0].m}-${mobileGeometry[mobileGeometry.length - 1].m} (expected 0-${totalMiles})`
+      `mobile elevation geometry is in the wrong mile frame: ${mobileElevation[0].m}-${mobileElevation[mobileElevation.length - 1].m} (expected 0-${totalMiles})`
     );
   }
-  for (let i = 1; i < mobileGeometry.length; i += 1) {
-    if (mobileGeometry[i].m < mobileGeometry[i - 1].m) {
-      issues.push(`mobile geometry mile went backwards at index ${i}`);
+  if (mobileGeometry.m[0] !== 0 || mobileGeometry.m[mobileGeometry.m.length - 1] !== totalMiles) {
+    issues.push(
+      `mobile GPS snap geometry is in the wrong mile frame: ${mobileGeometry.m[0]}-${mobileGeometry.m[mobileGeometry.m.length - 1]} (expected 0-${totalMiles})`
+    );
+  }
+  for (let i = 1; i < mobileElevation.length; i += 1) {
+    if (mobileElevation[i].m < mobileElevation[i - 1].m) {
+      issues.push(`mobile elevation geometry mile went backwards at index ${i}`);
+      break;
+    }
+  }
+  for (let i = 1; i < mobileGeometry.m.length; i += 1) {
+    if (mobileGeometry.m[i] < mobileGeometry.m[i - 1]) {
+      issues.push(`mobile GPS snap geometry mile went backwards at index ${i}`);
       break;
     }
   }

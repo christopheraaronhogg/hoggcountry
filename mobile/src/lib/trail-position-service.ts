@@ -14,6 +14,12 @@ export interface TrailPositionPoint {
 	lon: number;
 }
 
+export interface TrailSnapGeometry {
+	m: number[];
+	lat: number[];
+	lon: number[];
+}
+
 export interface TrailGpsPosition {
 	coords: {
 		latitude: number;
@@ -60,11 +66,18 @@ interface TrailPositionServiceOptions {
 	getTrailSettings: () => Pick<TrailSettings, 'autoLogMileage'>;
 	getTrailGeometry: () => TrailPositionPoint[];
 	setTrailGeometry: (points: TrailPositionPoint[]) => void;
+	getSnapGeometry: () => TrailSnapGeometry | null;
+	setSnapGeometry: (geometry: TrailSnapGeometry | null) => void;
 	setAutoGpsActive: (active: boolean) => void;
 	getCurrentMile: () => number;
 	updateCurrentMile: (mile: number, source: MileSource) => void | Promise<void>;
 	loadGeometry: () => Promise<TrailPositionPoint[]>;
-	snapToMile: (points: TrailPositionPoint[], lat: number, lon: number) => number | null;
+	loadSnapGeometry: () => Promise<TrailSnapGeometry | null>;
+	snapToMile: (
+		points: TrailPositionPoint[] | TrailSnapGeometry | null,
+		lat: number,
+		lon: number
+	) => number | null;
 	onGeometryError?: (error: unknown) => void;
 }
 
@@ -75,11 +88,18 @@ export class TrailPositionService {
 	#getTrailSettings: () => Pick<TrailSettings, 'autoLogMileage'>;
 	#getTrailGeometry: () => TrailPositionPoint[];
 	#setTrailGeometry: (points: TrailPositionPoint[]) => void;
+	#getSnapGeometry: () => TrailSnapGeometry | null;
+	#setSnapGeometry: (geometry: TrailSnapGeometry | null) => void;
 	#setAutoGpsActive: (active: boolean) => void;
 	#getCurrentMile: () => number;
 	#updateCurrentMile: (mile: number, source: MileSource) => void | Promise<void>;
 	#loadGeometry: () => Promise<TrailPositionPoint[]>;
-	#snapToMile: (points: TrailPositionPoint[], lat: number, lon: number) => number | null;
+	#loadSnapGeometry: () => Promise<TrailSnapGeometry | null>;
+	#snapToMile: (
+		points: TrailPositionPoint[] | TrailSnapGeometry | null,
+		lat: number,
+		lon: number
+	) => number | null;
 	#onGeometryError?: (error: unknown) => void;
 	#gpsWatchId: number | null = null;
 	#lastAutoGpsAt = 0;
@@ -91,10 +111,13 @@ export class TrailPositionService {
 		this.#getTrailSettings = options.getTrailSettings;
 		this.#getTrailGeometry = options.getTrailGeometry;
 		this.#setTrailGeometry = options.setTrailGeometry;
+		this.#getSnapGeometry = options.getSnapGeometry;
+		this.#setSnapGeometry = options.setSnapGeometry;
 		this.#setAutoGpsActive = options.setAutoGpsActive;
 		this.#getCurrentMile = options.getCurrentMile;
 		this.#updateCurrentMile = options.updateCurrentMile;
 		this.#loadGeometry = options.loadGeometry;
+		this.#loadSnapGeometry = options.loadSnapGeometry;
 		this.#snapToMile = options.snapToMile;
 		this.#onGeometryError = options.onGeometryError;
 	}
@@ -115,10 +138,16 @@ export class TrailPositionService {
 	reconcileAutoGpsWatch(): void {
 		const geolocation = this.#geolocation();
 		if (!geolocation) return;
-		if (!this.#shouldAutoGpsWatch(geolocation)) {
+		if (!this.#autoGpsRequested(geolocation)) {
 			this.#stopAutoGpsWatch(geolocation);
 			return;
 		}
+		if (this.#snapPointCount() === 0) {
+			this.#stopAutoGpsWatch(geolocation);
+			void this.#ensureSnapGeometry();
+			return;
+		}
+		if (!this.#shouldAutoGpsWatch(geolocation)) return;
 		if (this.#gpsWatchId !== null) return;
 
 		this.#gpsWatchId = geolocation.watchPosition(
@@ -136,13 +165,24 @@ export class TrailPositionService {
 
 	async useGpsForMile(): Promise<ManualGpsMileResult> {
 		const sharePreciseLocation = this.#getPrivacySettings().sharePreciseLocation;
-		const position = sharePreciseLocation ? await this.getCurrentPosition() : null;
-		const snappedMile = position ? this.#snapPosition(position) : null;
+		if (!sharePreciseLocation) {
+			return resolveManualGpsMile({
+				sharePreciseLocation,
+				hasPosition: false,
+				snappedMile: null,
+				trailGeometryLoaded: this.#snapPointCount() > 0
+			});
+		}
+
+		const snapReadyPromise = this.#ensureSnapGeometry();
+		const position = await this.getCurrentPosition();
+		const snapReady = position ? await snapReadyPromise : this.#snapPointCount() > 0;
+		const snappedMile = position && snapReady ? this.#snapPosition(position) : null;
 		const result = resolveManualGpsMile({
 			sharePreciseLocation,
 			hasPosition: position !== null,
 			snappedMile,
-			trailGeometryLoaded: this.#getTrailGeometry().length > 0
+			trailGeometryLoaded: snapReady
 		});
 		if (result.ok) await this.#updateCurrentMile(result.mile, 'gps');
 		return result;
@@ -162,8 +202,10 @@ export class TrailPositionService {
 		});
 	}
 
-	snapPositionToTrailMile(position: TrailGpsPosition | null): number {
+	async snapPositionToTrailMile(position: TrailGpsPosition | null): Promise<number> {
 		if (!position) return this.#getCurrentMile();
+		const snapReady = await this.#ensureSnapGeometry();
+		if (!snapReady) return this.#getCurrentMile();
 		return this.#snapPosition(position) ?? this.#getCurrentMile();
 	}
 
@@ -175,10 +217,36 @@ export class TrailPositionService {
 		return shouldAutoGpsWatch({
 			browserAvailable: this.#browserAvailable,
 			hasGeolocation: Boolean(geolocation),
-			trailPointCount: this.#getTrailGeometry().length,
+			trailPointCount: this.#snapPointCount(),
 			privacySettings: this.#getPrivacySettings(),
 			trailSettings: this.#getTrailSettings()
 		});
+	}
+
+	#autoGpsRequested(geolocation: TrailGeolocation): boolean {
+		return shouldAutoGpsWatch({
+			browserAvailable: this.#browserAvailable,
+			hasGeolocation: Boolean(geolocation),
+			trailPointCount: 1,
+			privacySettings: this.#getPrivacySettings(),
+			trailSettings: this.#getTrailSettings()
+		});
+	}
+
+	#snapPointCount(): number {
+		return this.#getSnapGeometry()?.m.length ?? 0;
+	}
+
+	async #ensureSnapGeometry(): Promise<boolean> {
+		if (this.#snapPointCount() > 0) return true;
+		try {
+			this.#setSnapGeometry(await this.#loadSnapGeometry());
+			this.reconcileAutoGpsWatch();
+			return this.#snapPointCount() > 0;
+		} catch (error) {
+			this.#onGeometryError?.(error);
+			return false;
+		}
 	}
 
 	#stopAutoGpsWatch(geolocation: TrailGeolocation): void {
@@ -203,7 +271,7 @@ export class TrailPositionService {
 
 	#snapPosition(position: TrailGpsPosition): number | null {
 		return this.#snapToMile(
-			this.#getTrailGeometry(),
+			this.#getSnapGeometry(),
 			position.coords.latitude,
 			position.coords.longitude
 		);

@@ -86,7 +86,13 @@ import {
 	loadOfflineSourceDocs,
 	mergeOfflineSourceDocs
 } from './scout/offline-source-docs.ts';
-import { loadTrailGeometry, snapToMile, type TrailGeoPoint } from './trail/trail-geometry';
+import {
+	loadTrailGeometry,
+	loadTrailSnapGeometry,
+	snapToMile,
+	type TrailGeoPoint,
+	type TrailSnapGeometry
+} from './trail/trail-geometry';
 import { createBrowserGeolocation, TrailPositionService } from './trail-position-service';
 import { InMemoryContextPackStore } from './scout';
 import type { ContextPack, ContextPackStatus, ScoutAnswer } from './scout';
@@ -189,10 +195,14 @@ class TrailAssistantStore {
 	#pendingAction = $state<ProposedAction | null>(null);
 	#pendingApply: (() => void) | null = null;
 	#pendingScoutAuthPrompt = $state<PendingScoutAuthPrompt | null>(null);
-	// Real AT route geometry + USGS elevation (1-mi NOBO samples), fetched once
-	// from static/. Powers the elevation profile and GPS→mile snapping. Empty
-	// until loaded, so UI renders an honest empty state in the meantime.
+	// Real AT route geometry + USGS elevation (~100-m NOBO samples), fetched once
+	// from static/. Powers the elevation profile/map. Empty until loaded, so UI
+	// renders an honest empty state in the meantime.
 	#trailGeo = $state.raw<TrailGeoPoint[]>([]);
+	// Denser ~20-m route index for GPS -> official-mile snapping. Kept separate
+	// from the map geometry so opening the map does not always parse the larger
+	// asset; location features load it only when needed.
+	#trailSnapGeo = $state.raw<TrailSnapGeometry | null>(null);
 	#geoLoadStarted = false; // lazy one-shot guard for trailGeometry (see the getter)
 	#autoGpsActive = $state(false);
 	// True while the "My hike" calibration sheet is showing. Opened on first run
@@ -207,12 +217,17 @@ class TrailAssistantStore {
 		setTrailGeometry: (points) => {
 			this.#trailGeo = points;
 		},
+		getSnapGeometry: () => this.#trailSnapGeo,
+		setSnapGeometry: (geometry) => {
+			this.#trailSnapGeo = geometry;
+		},
 		setAutoGpsActive: (active) => {
 			this.#autoGpsActive = active;
 		},
 		getCurrentMile: () => this.#state.currentMile,
 		updateCurrentMile: (mile, source) => this.updateCurrentMile(mile, source),
 		loadGeometry: loadTrailGeometry,
+		loadSnapGeometry: loadTrailSnapGeometry,
 		snapToMile,
 		onGeometryError: (error) => {
 			console.error('Failed to load trail geometry', error);
@@ -762,7 +777,7 @@ class TrailAssistantStore {
 		this.#hikeSetupOpen = false;
 	}
 
-	/** Real AT route geometry + elevation (1-mi samples), or [] before it loads. */
+	/** Real AT route geometry + elevation (~100-m samples), or [] before it loads. */
 	get trailGeometry() {
 		// Lazily fetch+parse the 1.9 MB geometry on first read (whichever tab needs it —
 		// Map or Today), instead of eagerly in the constructor on the boot/hydration
@@ -1511,7 +1526,7 @@ class TrailAssistantStore {
 			chipText,
 			noteText,
 			reporterTrailName: input.reporterTrailName,
-			snappedMile: this.#position.snapPositionToTrailMile(position),
+			snappedMile: await this.#position.snapPositionToTrailMile(position),
 			syncState: syncStateForLocalWrite(this.#state.onlineStatus),
 			photo: input.photo
 		});
