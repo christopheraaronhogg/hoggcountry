@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import AccountTab from './AccountTab.svelte';
+	import AppVersionCard from './AppVersionCard.svelte';
 	import SafetyTab from './SafetyTab.svelte';
 	import ScoutEvalLab from './ScoutEvalLab.svelte';
 
@@ -23,6 +24,10 @@
 		</button>
 		<h1>Settings</h1>
 	</header>
+
+	<section class="group">
+		<AppVersionCard />
+	</section>
 
 	<section class="group">
 		<h2 class="group-title">Account &amp; on-device AI</h2>

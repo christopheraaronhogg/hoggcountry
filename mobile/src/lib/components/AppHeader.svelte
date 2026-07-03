@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { appVersion } from '$lib/app-version.svelte';
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import Icon from './Icon.svelte';
 
@@ -9,6 +11,10 @@
 	// The header is deliberately a single slim strip now — the rich status
 	// (progress, sync, check-in, terrain) lives in the Today HUD, and the chat
 	// screen stays uncluttered. Tapping the status strip jumps to Today.
+
+	onMount(() => {
+		void appVersion.init();
+	});
 </script>
 
 <header class="header">
@@ -55,6 +61,9 @@
 			aria-current={trailAssistant.activeTab === 'Settings' ? 'page' : undefined}
 		>
 			<Icon name="settings" size={20} stroke={1.7} />
+			{#if appVersion.updateAvailable}
+				<span class="update-dot" aria-hidden="true"></span>
+			{/if}
 		</button>
 	</div>
 </header>
@@ -193,6 +202,7 @@
 	}
 
 	.gear {
+		position: relative;
 		width: 44px;
 		height: 44px;
 		border-radius: 10px;
@@ -207,5 +217,16 @@
 	.gear[aria-current='page'] {
 		background: rgba(47, 75, 53, 0.1);
 		color: var(--forest);
+	}
+
+	.update-dot {
+		position: absolute;
+		top: 7px;
+		right: 7px;
+		width: 9px;
+		height: 9px;
+		border-radius: 50%;
+		background: var(--warn);
+		box-shadow: 0 0 0 2px var(--surface-strong);
 	}
 </style>

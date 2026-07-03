@@ -17,6 +17,7 @@ apps/openclaw-web/.svelte-kit/
 apps/openclaw-web/.netlify/
 apps/openclaw-web/build/
 apps/scout-chatgpt-app/build/
+mobile/static/app-version.json
 # generated types
 .astro/
 
