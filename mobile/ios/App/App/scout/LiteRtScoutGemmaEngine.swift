@@ -46,7 +46,7 @@ final class LiteRtScoutGemmaEngine: ScoutGemmaEngine {
             return GenerateResult(text: response.toString, truncated: false)
         } catch {
             // Never fabricate output: any runtime failure surfaces as unavailable.
-            throw ScoutGemmaError.unavailable("On-device Gemma generation failed: \(error.localizedDescription)")
+            throw ScoutGemmaError.unavailable("On-device Gemma generation failed: \(Self.describeNativeError(error))")
         }
     }
 
@@ -69,6 +69,14 @@ final class LiteRtScoutGemmaEngine: ScoutGemmaEngine {
         try await created.initialize()
         engine = created
         return created
+    }
+
+    private static func describeNativeError(_ error: Error) -> String {
+        let nsError = error as NSError
+        if nsError.domain.isEmpty {
+            return error.localizedDescription
+        }
+        return "\(error.localizedDescription) [domain=\(nsError.domain) code=\(nsError.code)]"
     }
 
     /// Returns the engine only when a checksum-verified model is on the device;

@@ -3,6 +3,7 @@
 	import AccountTab from './AccountTab.svelte';
 	import AppVersionCard from './AppVersionCard.svelte';
 	import SafetyTab from './SafetyTab.svelte';
+	import ScoutDiagnosticsCard from './ScoutDiagnosticsCard.svelte';
 	import ScoutEvalLab from './ScoutEvalLab.svelte';
 
 	// Settings is reached from the header gear, not the bottom nav. It gathers the
@@ -32,6 +33,7 @@
 	<section class="group">
 		<h2 class="group-title">Account &amp; on-device AI</h2>
 		<AccountTab />
+		<ScoutDiagnosticsCard />
 		<ScoutEvalLab />
 	</section>
 

@@ -131,7 +131,7 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
                     prompt: prompt, systemContext: systemContext, maxTokens: maxTokens)
                 call.resolve(["text": result.text, "truncated": result.truncated])
             } catch {
-                call.reject(error.localizedDescription)
+                call.reject(Self.describeNativeError(error))
             }
         }
     }
@@ -181,7 +181,7 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
                 } else {
                     self.notifyListeners(
                         "scoutModelDownloadError",
-                        data: ["message": error.localizedDescription])
+                        data: ["message": Self.describeNativeError(error)])
                 }
             }
         }
@@ -292,6 +292,15 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
         #else
         return false
         #endif
+    }
+
+    private static func describeNativeError(_ error: Error) -> String {
+        let nsError = error as NSError
+        var detail = error.localizedDescription
+        if !nsError.domain.isEmpty {
+            detail += " [domain=\(nsError.domain) code=\(nsError.code)]"
+        }
+        return detail
     }
 
     #if DEBUG && targetEnvironment(simulator)

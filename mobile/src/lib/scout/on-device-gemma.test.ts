@@ -103,6 +103,46 @@ test('generate retries a transient non-streaming native null response once', asy
 	assert.equal(response.answer, 'Use the cached trail pack and answer plainly.');
 });
 
+test('generate retries a transient native null with a stream sink before tokens are emitted', async () => {
+	let attempts = 0;
+	let warmed = 0;
+	let tokenCount = 0;
+	const provider = new OnDeviceGemmaProvider({
+		bridge: {
+			isAvailable: async () => true,
+			describeModel: async () => null,
+			warmUp: async () => {
+				warmed += 1;
+			},
+			generate: async (_input, onToken) => {
+				attempts += 1;
+				if (attempts === 1) {
+					throw new Error('Invalid response from native layer: Native sendMessage returned null.');
+				}
+				onToken?.('Use cached reports.');
+				return { text: 'Use cached reports.', truncated: false };
+			}
+		}
+	});
+
+	const response = await provider.generate(
+		{
+			prompt: 'What water is ahead?',
+			pack: cloneDefaultContextPack(),
+			toolInvocations: [],
+			now: new Date('2026-06-20T12:00:00Z')
+		},
+		() => {
+			tokenCount += 1;
+		}
+	);
+
+	assert.equal(attempts, 2);
+	assert.equal(warmed, 1);
+	assert.equal(tokenCount, 1);
+	assert.equal(response.answer, 'Use cached reports.');
+});
+
 test('generate does not retry a transient native null after streaming begins', async () => {
 	let attempts = 0;
 	const provider = new OnDeviceGemmaProvider({

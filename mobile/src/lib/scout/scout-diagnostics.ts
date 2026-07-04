@@ -3,12 +3,14 @@ import type { ScoutDiagnosticEvent, ScoutDiagnosticSeverity } from './types.ts';
 
 const INSTALL_ID_KEY = 'hc.scoutDiagnostics.installId';
 const QUEUE_KEY = 'hc.scoutDiagnostics.queue.v1';
+const HISTORY_KEY = 'hc.scoutDiagnostics.history.v1';
 const MAX_QUEUE_EVENTS = 50;
+const MAX_HISTORY_EVENTS = 80;
 const MAX_CONTEXT_DEPTH = 4;
 const MAX_CONTEXT_ITEMS = 40;
 const MAX_CONTEXT_STRING = 500;
 
-type DiagnosticPayload = {
+export type DiagnosticPayload = {
 	event_id: string;
 	install_id: string;
 	session_id: string;
@@ -29,6 +31,15 @@ type RuntimeMetadata = Pick<
 	DiagnosticPayload,
 	'app_version' | 'app_build' | 'build_sha' | 'platform' | 'native' | 'user_agent'
 >;
+
+export type ScoutDiagnosticsSnapshot = {
+	generated_at: string;
+	install_id: string;
+	session_id: string;
+	queued_count: number;
+	event_count: number;
+	events: DiagnosticPayload[];
+};
 
 const PRIVATE_CONTEXT_KEYS = new Set([
 	'answer',
@@ -56,6 +67,7 @@ const sessionId = makeId('sess');
 let metadataPromise: Promise<RuntimeMetadata> | null = null;
 let flushing = false;
 let memoryQueue: DiagnosticPayload[] = [];
+let memoryHistory: DiagnosticPayload[] = [];
 
 export function recordScoutDiagnostic(event: ScoutDiagnosticEvent): void;
 export function recordScoutDiagnostic(
@@ -122,6 +134,7 @@ async function buildPayload(event: ScoutDiagnosticEvent): Promise<DiagnosticPayl
 }
 
 async function enqueueAndFlush(payload: DiagnosticPayload): Promise<void> {
+	appendHistory(payload);
 	const queue = readQueue();
 	queue.push(payload);
 	writeQueue(queue.slice(-MAX_QUEUE_EVENTS));
@@ -131,6 +144,19 @@ async function enqueueAndFlush(payload: DiagnosticPayload): Promise<void> {
 export async function flushScoutDiagnostics(): Promise<void> {
 	if (!canRecord()) return;
 	await flushQueue();
+}
+
+export function getScoutDiagnosticsSnapshot(limit = 25): ScoutDiagnosticsSnapshot {
+	const safeLimit = Math.min(Math.max(Math.round(limit) || 25, 1), MAX_HISTORY_EVENTS);
+	const events = readHistory().slice(-safeLimit);
+	return {
+		generated_at: new Date().toISOString(),
+		install_id: installId(),
+		session_id: sessionId,
+		queued_count: readQueue().length,
+		event_count: events.length,
+		events
+	};
 }
 
 async function flushQueue(): Promise<void> {
@@ -227,26 +253,52 @@ function installId(): string {
 }
 
 function readQueue(): DiagnosticPayload[] {
+	return readPayloadList(QUEUE_KEY, memoryQueue);
+}
+
+function writeQueue(queue: DiagnosticPayload[]): void {
+	writePayloadList(QUEUE_KEY, queue, (next) => {
+		memoryQueue = next;
+	});
+}
+
+function readHistory(): DiagnosticPayload[] {
+	return readPayloadList(HISTORY_KEY, memoryHistory);
+}
+
+function appendHistory(payload: DiagnosticPayload): void {
+	const history = readHistory();
+	history.push(payload);
+	writePayloadList(HISTORY_KEY, history.slice(-MAX_HISTORY_EVENTS), (next) => {
+		memoryHistory = next;
+	});
+}
+
+function readPayloadList(key: string, memoryFallback: DiagnosticPayload[]): DiagnosticPayload[] {
 	const storage = safeStorage();
-	if (!storage) return memoryQueue;
+	if (!storage) return memoryFallback;
 	try {
-		const parsed = JSON.parse(storage.getItem(QUEUE_KEY) ?? '[]') as unknown;
+		const parsed = JSON.parse(storage.getItem(key) ?? '[]') as unknown;
 		return Array.isArray(parsed) ? (parsed as DiagnosticPayload[]) : [];
 	} catch {
 		return [];
 	}
 }
 
-function writeQueue(queue: DiagnosticPayload[]): void {
+function writePayloadList(
+	key: string,
+	payloads: DiagnosticPayload[],
+	writeMemoryFallback: (next: DiagnosticPayload[]) => void
+): void {
 	const storage = safeStorage();
 	if (!storage) {
-		memoryQueue = queue;
+		writeMemoryFallback(payloads);
 		return;
 	}
 	try {
-		storage.setItem(QUEUE_KEY, JSON.stringify(queue));
+		storage.setItem(key, JSON.stringify(payloads));
 	} catch {
-		memoryQueue = queue;
+		writeMemoryFallback(payloads);
 	}
 }
 

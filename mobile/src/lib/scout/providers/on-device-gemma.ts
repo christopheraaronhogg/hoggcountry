@@ -338,15 +338,22 @@ export class OnDeviceGemmaProvider implements ScoutProvider {
 		);
 		const nativeInput = { prompt: request.prompt, systemContext, maxTokens: ON_DEVICE_MAX_TOKENS };
 		let result: { text: string; truncated: boolean };
+		let streamed = false;
+		const tokenSink = onToken
+			? (chunk: string) => {
+					if (chunk.length > 0) streamed = true;
+					onToken(chunk);
+				}
+			: undefined;
 		try {
-			result = await this.bridge.generate(nativeInput, onToken);
+			result = await this.bridge.generate(nativeInput, tokenSink);
 		} catch (error) {
 			// The iOS LiteRT bridge can very occasionally return a null native
-			// response during long non-streaming eval runs. Retry once only when no
+			// response during long eval runs. Retry once only when no
 			// token stream has been emitted to avoid duplicating user-visible text.
-			if (!onToken && isTransientNativeGenerationError(error)) {
+			if (!streamed && isTransientNativeGenerationError(error)) {
 				await this.warmUp();
-				result = await this.bridge.generate(nativeInput);
+				result = await this.bridge.generate(nativeInput, onToken);
 			} else {
 				throw error;
 			}
