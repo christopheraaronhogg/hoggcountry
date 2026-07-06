@@ -234,6 +234,12 @@
 				Signed in as <strong>{cloudAuth.user?.email}</strong>. Your position, check-ins, notes, gear
 				and people sync to the cloud, so they survive a lost or dead phone and restore on a new one.
 			</p>
+			{#if syncEngine.quarantinedCount > 0}
+				<p class="backup-sub">
+					{syncEngine.quarantinedCount} change{syncEngine.quarantinedCount === 1 ? '' : 's'} couldn't
+					be backed up and {syncEngine.quarantinedCount === 1 ? 'was' : 'were'} set aside.
+				</p>
+			{/if}
 			<button class="backup-signout" type="button" onclick={() => cloudAuth.logout()}>Sign out</button>
 
 			<div class="toggle-row push-row">

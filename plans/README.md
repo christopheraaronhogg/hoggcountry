@@ -15,7 +15,7 @@ when no user selection is available). Chris can reprioritize freely.
 |---|------|--------|-----------|--------|
 | 001 | [SyncEngine test harness + characterization tests](001-sync-engine-test-harness.md) | M | — | DONE |
 | 002 | [Recover from token expiry (401) instead of silent retry loop](002-sync-auth-expiry-recovery.md) | S | 001 | DONE |
-| 003 | [Poison-batch quarantine so one bad doc can't wedge backup](003-sync-poison-batch-resilience.md) | M | 001, after 002 | TODO |
+| 003 | [Poison-batch quarantine so one bad doc can't wedge backup](003-sync-poison-batch-resilience.md) | M | 001, after 002 | DONE |
 | 004 | [Manual "Use GPS" canopy resilience (timeout + coarse fallback)](004-manual-gps-fix-resilience.md) | S | — | DONE |
 | 005 | [Quarantine corrupt persisted hike state instead of silent reset](005-persisted-state-corruption-quarantine.md) | M | — | TODO |
 

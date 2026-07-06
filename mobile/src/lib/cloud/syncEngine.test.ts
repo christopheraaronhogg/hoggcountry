@@ -41,6 +41,7 @@ interface FakeAuth {
 
 interface PersistedOutboxSnapshot {
 	pending: Record<string, unknown>;
+	quarantined?: Record<string, unknown>;
 	synced: Record<string, string>;
 	lastBackupAt: string | null;
 	cursor: string;
@@ -187,8 +188,8 @@ function enqueuePending(
 	engine.stopForTest();
 }
 
-function apiError(status: number, code = 'http_error', message = code): ApiError {
-	return { code, message, status };
+function apiError(status: number, code = 'http_error', message = code, details?: unknown): ApiError {
+	return { code, message, status, ...(details === undefined ? {} : { details }) };
 }
 
 function throwing(error: ApiError): ApiResponder {
@@ -253,6 +254,24 @@ function withImmediateTimeouts(fn: () => void): void {
 	globalThis.clearTimeout = ((_id?: ReturnType<typeof setTimeout>) => {}) as typeof clearTimeout;
 	try {
 		fn();
+	} finally {
+		globalThis.setTimeout = originalSetTimeout;
+		globalThis.clearTimeout = originalClearTimeout;
+	}
+}
+
+async function withCapturedTimeouts(fn: () => Promise<void>): Promise<number[]> {
+	const originalSetTimeout = globalThis.setTimeout;
+	const originalClearTimeout = globalThis.clearTimeout;
+	const delays: number[] = [];
+	globalThis.setTimeout = ((_handler: TimerHandler, timeout?: number, ..._args: unknown[]) => {
+		delays.push(Number(timeout ?? 0));
+		return delays.length as unknown as ReturnType<typeof setTimeout>;
+	}) as unknown as typeof setTimeout;
+	globalThis.clearTimeout = ((_id?: ReturnType<typeof setTimeout>) => {}) as typeof clearTimeout;
+	try {
+		await fn();
+		return delays;
 	} finally {
 		globalThis.setTimeout = originalSetTimeout;
 		globalThis.clearTimeout = originalClearTimeout;
@@ -383,19 +402,180 @@ test('syncEngine: signed-out auth revalidation stops retries and preserves pendi
 	assert.ok(snapshot.pending['profile:me']);
 });
 
-test('syncEngine: non-retryable push error currently leaves pending untouched', async () => {
-	// plan 003 will change this
+test('syncEngine: validation push error quarantines the rejected pending change', async () => {
 	const h = await createHarness();
 	h.api.queue('/sync/bootstrap', { docs: [], cursor: '1' });
-	h.api.queue('/sync/push', throwing(apiError(422, 'validation_failed')));
+	h.api.queue(
+		'/sync/push',
+		throwing(
+			apiError(422, 'validation_failed', 'The given data was invalid.', {
+				errors: { 'changes.0.content': ['The changes.0.content field is required.'] }
+			})
+		)
+	);
 	enqueuePending(h.engine, 'settings', 'me', { units: 'miles' });
 
 	await withSilencedConsole(async () => {
 		await h.engine.flushForTest();
 	});
+	h.engine.stopForTest();
+
+	assert.equal(h.engine.status, 'error');
+	assert.equal(h.engine.pendingCount, 0);
+	assert.equal(h.engine.quarantinedCount, 1);
+	const snapshot = persistedOutbox(h.storage);
+	assert.equal(snapshot.pending['settings:me'], undefined);
+	assert.ok(snapshot.quarantined?.['settings:me']);
+});
+
+test('syncEngine: out-of-range validation index backs off instead of hot-looping', async () => {
+	const h = await createHarness();
+	h.api.queue('/sync/bootstrap', { docs: [], cursor: '1' });
+	h.api.queue(
+		'/sync/push',
+		throwing(
+			apiError(422, 'validation_failed', 'The given data was invalid.', {
+				errors: { 'changes.9.content': ['The changes.9.content field must be an array.'] }
+			})
+		)
+	);
+	enqueuePending(h.engine, 'settings', 'me', { units: 'miles' });
+
+	let delays: number[] = [];
+	await withSilencedConsole(async () => {
+		delays = await withCapturedTimeouts(async () => {
+			await h.engine.flushForTest();
+			await settleMicrotasks();
+		});
+	});
+	h.engine.stopForTest();
 
 	assert.equal(h.engine.status, 'error');
 	assert.equal(h.engine.pendingCount, 1);
+	assert.equal(h.engine.quarantinedCount, 0);
+	assert.equal(h.api.callsFor('/sync/push').length, 1);
+	assert.equal(delays[delays.length - 1], 20_000);
+});
+
+test('syncEngine: indexed 422 quarantines one bad change and drains the rest', async () => {
+	const h = await createHarness();
+	h.api.queue('/sync/bootstrap', { docs: [], cursor: '1' });
+	h.api.queue(
+		'/sync/push',
+		throwing(
+			apiError(422, 'validation_failed', 'The given data was invalid.', {
+				errors: { 'changes.1.content': ['The changes.1.content field must be an array.'] }
+			})
+		)
+	);
+	enqueuePending(h.engine, 'documents', 'one', { body: 'one' });
+	enqueuePending(h.engine, 'documents', 'two', { body: 'two' });
+	enqueuePending(h.engine, 'documents', 'three', { body: 'three' });
+
+	await withSilencedConsole(async () => {
+		await h.engine.flushForTest();
+	});
+	h.engine.stopForTest();
+
+	assert.equal(h.engine.status, 'error');
+	assert.equal(h.engine.pendingCount, 2);
+	assert.equal(h.engine.quarantinedCount, 1);
+	let snapshot = persistedOutbox(h.storage);
+	assert.ok(snapshot.pending['documents:one']);
+	assert.equal(snapshot.pending['documents:two'], undefined);
+	assert.ok(snapshot.pending['documents:three']);
+	assert.ok(snapshot.quarantined?.['documents:two']);
+
+	h.api.queue('/sync/push', pushAppliesAll);
+	await h.engine.flushForTest();
+	h.engine.stopForTest();
+
+	assert.equal(h.engine.status, 'idle');
+	assert.equal(h.engine.pendingCount, 0);
+	assert.equal(h.engine.quarantinedCount, 1);
+	snapshot = persistedOutbox(h.storage);
+	assert.equal(Object.keys(snapshot.pending).length, 0);
+	assert.ok(snapshot.quarantined?.['documents:two']);
+});
+
+test('syncEngine: unparseable 422 bisects until a single bad change is quarantined', async () => {
+	const h = await createHarness();
+	h.api.queue('/sync/bootstrap', { docs: [], cursor: '1' });
+	h.api.repeat('/sync/push', (call: ApiCall) => {
+		const body = call.options?.body as {
+			changes?: Array<{ doc_id: string }>;
+		};
+		if ((body.changes?.length ?? 0) === 1) {
+			throw apiError(422, 'validation_failed', 'The given data was invalid.');
+		}
+		if ((body.changes?.length ?? 0) === 2) return pushAppliesAll(call);
+		throw apiError(422, 'validation_failed', 'The given data was invalid.');
+	});
+	enqueuePending(h.engine, 'documents', 'one', { body: 'one' });
+	enqueuePending(h.engine, 'documents', 'two', { body: 'two' });
+	enqueuePending(h.engine, 'documents', 'three', { body: 'three' });
+
+	await withSilencedConsole(async () => {
+		for (let i = 0; i < 8; i++) {
+			await h.engine.flushForTest();
+			h.engine.stopForTest();
+		}
+	});
+
+	assert.equal(h.engine.status, 'error');
+	assert.equal(h.engine.pendingCount, 2);
+	assert.equal(h.engine.quarantinedCount, 1);
+	let snapshot = persistedOutbox(h.storage);
+	assert.equal(snapshot.pending['documents:one'], undefined);
+	assert.ok(snapshot.pending['documents:two']);
+	assert.ok(snapshot.pending['documents:three']);
+	assert.ok(snapshot.quarantined?.['documents:one']);
+
+	await h.engine.flushForTest();
+	h.engine.stopForTest();
+
+	assert.equal(h.engine.status, 'idle');
+	assert.equal(h.engine.pendingCount, 0);
+	assert.equal(h.engine.quarantinedCount, 1);
+	snapshot = persistedOutbox(h.storage);
+	assert.equal(Object.keys(snapshot.pending).length, 0);
+	assert.ok(snapshot.quarantined?.['documents:one']);
+	const pushLengths = h.api.callsFor('/sync/push').map((call) => {
+		const body = call.options?.body as { changes?: unknown[] };
+		return body.changes?.length ?? 0;
+	});
+	assert.deepEqual(pushLengths, [3, 3, 3, 3, 3, 3, 3, 1, 2]);
+});
+
+test('syncEngine: applied newer copy clears an older quarantined copy', async () => {
+	const storage = new MemoryPersistenceAdapter();
+	await storage.set(
+		STORE_KEY,
+		JSON.stringify({
+			pending: {
+				'settings:me': makeUpsert('settings', 'me', { units: 'kilometers' }, `${NOW}-new`)
+			},
+			quarantined: {
+				'settings:me': makeUpsert('settings', 'me', { units: 'miles' }, `${NOW}-old`)
+			},
+			synced: {},
+			lastBackupAt: null,
+			cursor: '0'
+		} satisfies PersistedOutboxSnapshot)
+	);
+	const h = await createHarness({ storage });
+	h.api.queue('/sync/bootstrap', { docs: [], cursor: '1' });
+	h.api.queue('/sync/push', pushAppliesAll);
+
+	await h.engine.flushForTest();
+	h.engine.stopForTest();
+
+	assert.equal(h.engine.status, 'idle');
+	assert.equal(h.engine.pendingCount, 0);
+	assert.equal(h.engine.quarantinedCount, 0);
+	const snapshot = persistedOutbox(h.storage);
+	assert.equal(snapshot.pending['settings:me'], undefined);
+	assert.equal(snapshot.quarantined?.['settings:me'], undefined);
 });
 
 test('syncEngine: unknown_device push response re-registers device', async () => {

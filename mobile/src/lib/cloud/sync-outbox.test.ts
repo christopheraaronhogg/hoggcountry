@@ -5,6 +5,7 @@ import {
 	etagOf,
 	makeDelete,
 	makeUpsert,
+	parsePoisonIndexes,
 	reconcilePush,
 	restoreDecision,
 	shouldEnqueueUpsert,
@@ -68,6 +69,44 @@ test('toPushChanges emits the server wire shape; delete carries no content', () 
 	});
 	assert.equal(changes[1].op, 'delete');
 	assert.equal('content' in changes[1], false, 'delete changes omit content per the API contract');
+});
+
+test('parsePoisonIndexes extracts Laravel validation error indexes', () => {
+	assert.deepEqual(
+		parsePoisonIndexes(
+			{
+				message: 'The given data was invalid.',
+				errors: {
+					'changes.3.client_updated_at': ['The changes.3.client_updated_at field is required.'],
+					'changes.1.content': ['The changes.1.content field must be an array.']
+				}
+			},
+			undefined
+		),
+		[1, 3]
+	);
+});
+
+test('parsePoisonIndexes extracts invalid_change message indexes', () => {
+	assert.deepEqual(
+		parsePoisonIndexes(undefined, 'changes.2.content is required for upsert operations.'),
+		[2]
+	);
+});
+
+test('parsePoisonIndexes dedupes indexes from details and message', () => {
+	assert.deepEqual(
+		parsePoisonIndexes(
+			{ errors: { 'changes.4.content': ['bad'], 'changes.2.etag': ['bad'] } },
+			'changes.4.content is required for upsert operations.'
+		),
+		[2, 4]
+	);
+});
+
+test('parsePoisonIndexes returns empty for garbage', () => {
+	assert.deepEqual(parsePoisonIndexes(null, undefined), []);
+	assert.deepEqual(parsePoisonIndexes({ errors: { 'documents.1.content': ['bad'] } }, 'no index here'), []);
 });
 
 test('reconcilePush: applied records the server etag and clears the queue', () => {

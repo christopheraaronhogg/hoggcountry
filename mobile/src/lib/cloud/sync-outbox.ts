@@ -125,6 +125,32 @@ export function toPushChanges(entries: OutboxEntry[], schemaVersion: number): Pu
 	}));
 }
 
+export function parsePoisonIndexes(details: unknown, message: string | undefined): number[] {
+	const indexes = new Set<number>();
+	const add = (value: string) => {
+		const parsed = Number(value);
+		if (Number.isSafeInteger(parsed) && parsed >= 0) indexes.add(parsed);
+	};
+
+	if (details && typeof details === 'object') {
+		const errors = (details as { errors?: unknown }).errors;
+		if (errors && typeof errors === 'object') {
+			for (const key of Object.keys(errors)) {
+				const match = /^changes\.(\d+)\./.exec(key);
+				if (match?.[1]) add(match[1]);
+			}
+		}
+	}
+
+	if (typeof message === 'string') {
+		for (const match of message.matchAll(/changes\.(\d+)\./g)) {
+			if (match[1]) add(match[1]);
+		}
+	}
+
+	return [...indexes].sort((a, b) => a - b);
+}
+
 /**
  * Fold a push response back into the outbox:
  *  - applied  → record the server etag; clear the queue entry UNLESS it was

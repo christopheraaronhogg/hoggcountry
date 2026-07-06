@@ -45,7 +45,12 @@ export async function apiRequest<T>(
 
 	if (!res.ok || json?.error) {
 		const err = json?.error ?? { code: 'http_error', message: `HTTP ${res.status}` };
-		throw { code: err.code, message: err.message, details: err.details, status: res.status } satisfies ApiError;
+		throw {
+			code: err.code,
+			message: err.message,
+			details: err.details ?? (!res.ok ? json : undefined),
+			status: res.status
+		} satisfies ApiError;
 	}
 	return json?.data as T;
 }

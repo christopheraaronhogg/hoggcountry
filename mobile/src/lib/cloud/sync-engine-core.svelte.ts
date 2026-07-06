@@ -5,6 +5,7 @@ import {
 	etagOf,
 	makeDelete,
 	makeUpsert,
+	parsePoisonIndexes,
 	reconcilePush,
 	restoreDecision,
 	shouldEnqueueUpsert,
@@ -62,6 +63,7 @@ const HEARTBEAT_MS = 60_000;
 
 interface PersistedOutbox {
 	pending: PendingMap;
+	quarantined?: PendingMap;
 	synced: SyncedMap;
 	lastBackupAt: string | null;
 	cursor: string;
@@ -91,9 +93,11 @@ export class SyncEngine {
 	status = $state<BackupStatus>('signed-out');
 	lastBackupAt = $state<string | null>(null);
 	#pending = $state<PendingMap>({});
+	#quarantined = $state<PendingMap>({});
 
 	#synced: SyncedMap = {};
 	#cursor = '0'; // highest change seq we've reconciled (for future incremental pulls)
+	#batchLimit = PUSH_BATCH;
 	#storage: PersistenceAdapter | null;
 	#restore: RestoreProvider | null = null;
 	#started = false;
@@ -131,6 +135,10 @@ export class SyncEngine {
 		return Object.keys(this.#pending).length;
 	}
 
+	get quarantinedCount(): number {
+		return Object.keys(this.#quarantined).length;
+	}
+
 	/**
 	 * Record the latest durable state of one document. Cheap and synchronous:
 	 * fingerprints the content and skips entirely if it already matches what's
@@ -158,6 +166,27 @@ export class SyncEngine {
 		this.#pending = { ...this.#pending, [key]: entry };
 		this.#persistSoon();
 		this.#scheduleDrain();
+	}
+
+	#quarantine(keys: string[], reason: string): boolean {
+		const nextPending = { ...this.#pending };
+		const nextQuarantined = { ...this.#quarantined };
+		let moved = false;
+
+		for (const key of keys) {
+			const entry = nextPending[key];
+			if (!entry) continue;
+			nextQuarantined[key] = entry;
+			delete nextPending[key];
+			moved = true;
+			console.error(`Backup change quarantined for ${key}: ${reason}`);
+		}
+
+		if (!moved) return false;
+		this.#pending = nextPending;
+		this.#quarantined = nextQuarantined;
+		this.#persistNow();
+		return true;
 	}
 
 	/** Register the store-aware restore applier (called once at boot, before start). */
@@ -375,6 +404,7 @@ export class SyncEngine {
 			if (raw) {
 				const parsed = JSON.parse(raw) as Partial<PersistedOutbox>;
 				this.#pending = parsed.pending ?? {};
+				this.#quarantined = parsed.quarantined ?? {};
 				this.#synced = parsed.synced ?? {};
 				this.lastBackupAt = parsed.lastBackupAt ?? null;
 				this.#cursor = parsed.cursor ?? '0';
@@ -419,13 +449,13 @@ export class SyncEngine {
 			this.status = 'idle';
 			return;
 		}
+		const batchKeys = keys.slice(0, this.#batchLimit);
 
 		this.#draining = true;
 		this.status = 'backing-up';
 		try {
 			const token = this.#deps.auth.token;
 			const deviceId = await this.#deps.auth.deviceId();
-			const batchKeys = keys.slice(0, PUSH_BATCH);
 			const changes = toPushChanges(
 				batchKeys.map((k) => this.#pending[k]),
 				SCHEMA_VERSION
@@ -444,6 +474,13 @@ export class SyncEngine {
 			);
 			this.#pending = reconciled.pending;
 			this.#synced = reconciled.synced;
+			this.#batchLimit = PUSH_BATCH;
+			const appliedKeys = (result.applied ?? []).map((applied) => docKey(applied.doc_type, applied.doc_id));
+			if (appliedKeys.some((key) => this.#quarantined[key])) {
+				const nextQuarantined = { ...this.#quarantined };
+				for (const key of appliedKeys) delete nextQuarantined[key];
+				this.#quarantined = nextQuarantined;
+			}
 			// Only claim a backup happened if the server actually accepted something —
 			// an all-rejected push must not show "Backed up · just now".
 			if ((result.applied?.length ?? 0) > 0) this.lastBackupAt = this.#deps.now();
@@ -478,6 +515,31 @@ export class SyncEngine {
 				// to signed-out. Until then, backup is paused and will retry later.
 				this.status = 'error';
 				void this.#deps.auth.revalidate();
+			} else if (err?.status === 422) {
+				// A single malformed outbox doc can make Laravel reject the whole batch;
+				// isolate it so it cannot wedge every later backup on a hiker's phone.
+				const badIndexes = parsePoisonIndexes(err?.details, err?.message);
+				let progress = false;
+				if (badIndexes.length) {
+					const badKeys = badIndexes
+						.map((i) => batchKeys[i])
+						.filter((key): key is string => typeof key === 'string');
+					progress = this.#quarantine(
+						badKeys,
+						'rejected by server validation'
+					);
+					this.#batchLimit = PUSH_BATCH;
+				} else if (this.#batchLimit === 1) {
+					const badKey = batchKeys[0];
+					if (badKey) progress = this.#quarantine([badKey], 'single-item push rejected by server');
+					this.#batchLimit = PUSH_BATCH;
+				} else {
+					const nextBatchLimit = Math.max(1, Math.floor(this.#batchLimit / 2));
+					progress = nextBatchLimit < this.#batchLimit;
+					this.#batchLimit = nextBatchLimit;
+				}
+				this.status = 'error';
+				this.#scheduleDrain(progress ? 0 : RETRY_MS);
 			} else {
 				console.error('Backup push failed', error);
 				this.status = 'error';
@@ -491,6 +553,7 @@ export class SyncEngine {
 	#snapshot(): string {
 		return JSON.stringify({
 			pending: this.#pending,
+			quarantined: this.#quarantined,
 			synced: this.#synced,
 			lastBackupAt: this.lastBackupAt,
 			cursor: this.#cursor
