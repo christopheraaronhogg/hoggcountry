@@ -60,6 +60,7 @@ const PUSH_BATCH = 200; // server accepts up to 250 changes/push
 const DRAIN_DEBOUNCE_MS = 1200;
 const RETRY_MS = 20_000;
 const HEARTBEAT_MS = 60_000;
+const CLOCK_SKEW_WARN_MS = 5 * 60_000;
 
 interface PersistedOutbox {
 	pending: PendingMap;
@@ -67,6 +68,13 @@ interface PersistedOutbox {
 	synced: SyncedMap;
 	lastBackupAt: string | null;
 	cursor: string;
+	serverClockOffsetMs?: number;
+}
+
+interface BootstrapResponse {
+	docs: RemoteDoc[];
+	cursor: string;
+	server_time?: string | null;
 }
 
 export interface SyncEngineDeps {
@@ -97,6 +105,8 @@ export class SyncEngine {
 
 	#synced: SyncedMap = {};
 	#cursor = '0'; // highest change seq we've reconciled (for future incremental pulls)
+	#serverClockOffsetMs = 0;
+	#clockSkewWarned = false;
 	#batchLimit = PUSH_BATCH;
 	#storage: PersistenceAdapter | null;
 	#restore: RestoreProvider | null = null;
@@ -151,7 +161,7 @@ export class SyncEngine {
 		const key = docKey(docType, docId);
 		const etag = etagOf(content);
 		if (!shouldEnqueueUpsert(this.#pending, this.#synced, key, etag)) return;
-		this.#queue(key, makeUpsert(docType, docId, content, this.#deps.now()));
+		this.#queue(key, makeUpsert(docType, docId, content, this.#stampIso()));
 	}
 
 	/** Queue a backup-side deletion (tombstone) for a document. */
@@ -159,7 +169,7 @@ export class SyncEngine {
 		if (!this.#deps.browser) return;
 		const key = docKey(docType, docId);
 		if (this.#synced[key] === undefined && this.#pending[key] === undefined) return;
-		this.#queue(key, makeDelete(docType, docId, this.#deps.now()));
+		this.#queue(key, makeDelete(docType, docId, this.#stampIso()));
 	}
 
 	#queue(key: string, entry: OutboxEntry): void {
@@ -342,6 +352,7 @@ export class SyncEngine {
 		// another account's docs onto a signed-out/other-account device is data loss.
 		if (epoch !== this.#authEpoch || !this.#deps.auth.signedIn) return false;
 
+		this.#updateServerClockOffset(bootstrap.server_time);
 		const fresh = this.#restore.isFresh();
 		for (const doc of bootstrap.docs) {
 			if (doc.op === 'delete') continue;
@@ -367,9 +378,9 @@ export class SyncEngine {
 		return true;
 	}
 
-	async #fetchBootstrap(): Promise<{ docs: RemoteDoc[]; cursor: string } | null> {
+	async #fetchBootstrap(): Promise<BootstrapResponse | null> {
 		try {
-			return await this.#deps.api<{ docs: RemoteDoc[]; cursor: string }>('/sync/bootstrap', {
+			return await this.#deps.api<BootstrapResponse>('/sync/bootstrap', {
 				token: this.#deps.auth.token
 			});
 		} catch (error) {
@@ -408,6 +419,9 @@ export class SyncEngine {
 				this.#synced = parsed.synced ?? {};
 				this.lastBackupAt = parsed.lastBackupAt ?? null;
 				this.#cursor = parsed.cursor ?? '0';
+				this.#serverClockOffsetMs = Number.isFinite(parsed.serverClockOffsetMs)
+					? (parsed.serverClockOffsetMs as number)
+					: 0;
 			}
 		} catch (error) {
 			console.error('Failed to restore sync outbox', error);
@@ -550,13 +564,29 @@ export class SyncEngine {
 		}
 	}
 
+	#stampIso(): string {
+		return new Date(Date.now() + this.#serverClockOffsetMs).toISOString();
+	}
+
+	#updateServerClockOffset(serverTime: unknown): void {
+		const serverMs = typeof serverTime === 'string' ? Date.parse(serverTime) : Number.NaN;
+		this.#serverClockOffsetMs = Number.isFinite(serverMs) ? serverMs - Date.now() : 0;
+		if (Math.abs(this.#serverClockOffsetMs) > CLOCK_SKEW_WARN_MS && !this.#clockSkewWarned) {
+			this.#clockSkewWarned = true;
+			console.warn(
+				`Cloud backup clock differs from server by ${Math.round(this.#serverClockOffsetMs / 1000)} seconds; client_updated_at will use server time.`
+			);
+		}
+	}
+
 	#snapshot(): string {
 		return JSON.stringify({
 			pending: this.#pending,
 			quarantined: this.#quarantined,
 			synced: this.#synced,
 			lastBackupAt: this.lastBackupAt,
-			cursor: this.#cursor
+			cursor: this.#cursor,
+			serverClockOffsetMs: this.#serverClockOffsetMs
 		} satisfies PersistedOutbox);
 	}
 

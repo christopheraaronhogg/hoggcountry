@@ -9,6 +9,9 @@ test('Scout diagnostics sanitizer redacts private trail and prompt fields', () =
 		prompt: 'Where should I sleep?',
 		lat: 42.1,
 		lon: -73.2,
+		currentMile: 1507.2,
+		current_mile: 1507.3,
+		mile: 1507.4,
 		nested: {
 			token: 'secret',
 			error_summary: 'engine boom'
@@ -19,6 +22,9 @@ test('Scout diagnostics sanitizer redacts private trail and prompt fields', () =
 	assert.equal(context.prompt, '[redacted]');
 	assert.equal(context.lat, '[redacted]');
 	assert.equal(context.lon, '[redacted]');
+	assert.equal(context.currentMile, '[redacted]');
+	assert.equal(context.current_mile, '[redacted]');
+	assert.equal(context.mile, '[redacted]');
 	assert.deepEqual(context.nested, {
 		token: '[redacted]',
 		error_summary: 'engine boom'

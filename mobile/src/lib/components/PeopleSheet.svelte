@@ -27,16 +27,36 @@
 	let joinCode = $state('');
 	let copied = $state(false);
 	let shared = $state(false);
+	let shareError = $state<string | null>(null);
+
+	function shareErrorMessage(error: unknown): string {
+		return error instanceof Error ? error.message : 'A private share code could not be created.';
+	}
 
 	function ensureInvite(): { url: string; text: string } | null {
-		if (!activeGroup.sharing) people.setSharing(activeGroup.id, true);
-		const code = people.ensureShareCode(activeGroup.id);
-		if (!code) return null;
-		const url = buildPeopleInviteUrl({ groupId: activeGroup.id, shareCode: code });
-		return {
-			url,
-			text: buildPeopleInviteText({ groupName: activeGroup.name, shareCode: code, inviteUrl: url })
-		};
+		shareError = null;
+		try {
+			if (!activeGroup.sharing) people.setSharing(activeGroup.id, true);
+			const code = people.ensureShareCode(activeGroup.id);
+			if (!code) return null;
+			const url = buildPeopleInviteUrl({ groupId: activeGroup.id, shareCode: code });
+			return {
+				url,
+				text: buildPeopleInviteText({ groupName: activeGroup.name, shareCode: code, inviteUrl: url })
+			};
+		} catch (error) {
+			shareError = shareErrorMessage(error);
+			return null;
+		}
+	}
+
+	function setLiveSharing(on: boolean): void {
+		shareError = null;
+		try {
+			people.setSharing(activeGroup.id, on);
+		} catch (error) {
+			shareError = shareErrorMessage(error);
+		}
 	}
 
 	function copyInviteLink() {
@@ -172,9 +192,13 @@
 					aria-checked={activeGroup.sharing ?? false}
 					aria-label="Share my live location with {activeGroup.name}"
 					type="button"
-					onclick={() => people.setSharing(activeGroup.id, !activeGroup.sharing)}
+					onclick={() => setLiveSharing(!activeGroup.sharing)}
 				></button>
 			</div>
+
+			{#if shareError}
+				<p class="share-error" role="alert">{shareError}</p>
+			{/if}
 
 			{#if activeGroup.sharing && activeGroup.shareCode}
 				<div class="invite-code">
@@ -546,6 +570,16 @@
 		color: var(--muted);
 		line-height: 1.4;
 		margin: 0;
+	}
+	.share-error {
+		margin: 0;
+		padding: 8px 10px;
+		border-radius: var(--radius-control, 10px);
+		background: var(--danger-soft);
+		color: var(--danger);
+		font-size: 0.76rem;
+		font-weight: 700;
+		line-height: 1.35;
 	}
 	.member-list {
 		display: grid;

@@ -26,6 +26,7 @@ type ApiOptions = { method?: string; token?: string | null; body?: unknown };
 type ApiCall = { path: string; options?: ApiOptions };
 type ApiResponder = unknown | ((call: ApiCall) => unknown | Promise<unknown>);
 type AuthStatus = 'unknown' | 'signed-out' | 'signed-in';
+type PushChangePayload = { client_updated_at: string; doc_type: string; doc_id: string };
 
 interface FakeAuth {
 	status: AuthStatus;
@@ -45,6 +46,7 @@ interface PersistedOutboxSnapshot {
 	synced: Record<string, string>;
 	lastBackupAt: string | null;
 	cursor: string;
+	serverClockOffsetMs?: number;
 }
 
 const engines: SyncEngineInstance[] = [];
@@ -244,6 +246,36 @@ async function withSilencedConsole(fn: () => Promise<void>): Promise<void> {
 	}
 }
 
+async function withCapturedConsoleWarn(fn: () => Promise<void>): Promise<string[]> {
+	const originalWarn = console.warn;
+	const warnings: string[] = [];
+	try {
+		console.warn = (message?: unknown) => {
+			warnings.push(String(message));
+		};
+		await fn();
+		return warnings;
+	} finally {
+		console.warn = originalWarn;
+	}
+}
+
+async function withMockedDateNow<T>(
+	initialNowMs: number,
+	fn: (setNow: (nextNowMs: number) => void) => Promise<T>
+): Promise<T> {
+	const originalNow = Date.now;
+	let nowMs = initialNowMs;
+	Date.now = () => nowMs;
+	try {
+		return await fn((nextNowMs) => {
+			nowMs = nextNowMs;
+		});
+	} finally {
+		Date.now = originalNow;
+	}
+}
+
 function withImmediateTimeouts(fn: () => void): void {
 	const originalSetTimeout = globalThis.setTimeout;
 	const originalClearTimeout = globalThis.clearTimeout;
@@ -307,6 +339,107 @@ test('syncEngine: restore success unlocks drain', async () => {
 	assert.equal(h.engine.pendingCount, 0);
 	assert.equal(h.engine.status, 'idle');
 	assert.equal(h.engine.lastBackupAt, NOW);
+});
+
+test('syncEngine: server_time clock offset stamps later queued changes', async () => {
+	const baseNowMs = Date.parse(NOW);
+	await withMockedDateNow(baseNowMs, async (setNow) => {
+		const warnings = await withCapturedConsoleWarn(async () => {
+			const h = await createHarness();
+			h.api.queue('/sync/bootstrap', {
+				docs: [],
+				cursor: '1',
+				server_time: new Date(baseNowMs + 10 * 60_000).toISOString()
+			});
+
+			await h.engine.flushForTest();
+			h.engine.stopForTest();
+
+			setNow(baseNowMs + 1000);
+			enqueuePending(h.engine, 'position', 'me', { mile: 1507.2 });
+			h.api.queue('/sync/push', pushAppliesAll);
+
+			await h.engine.flushForTest();
+
+			const pushCalls = h.api.callsFor('/sync/push');
+			assert.equal(pushCalls.length, 1);
+			const body = pushCalls[0].options?.body as { changes: PushChangePayload[] };
+			assert.equal(
+				body.changes[0].client_updated_at,
+				new Date(baseNowMs + 10 * 60_000 + 1000).toISOString()
+			);
+			assert.equal(h.engine.lastBackupAt, NOW);
+		});
+
+		assert.deepEqual(warnings, [
+			'Cloud backup clock differs from server by 600 seconds; client_updated_at will use server time.'
+		]);
+	});
+});
+
+test('syncEngine: server clock offset survives a persistence round-trip', async () => {
+	const baseNowMs = Date.parse(NOW);
+	await withMockedDateNow(baseNowMs, async (setNow) => {
+		const storage = new MemoryPersistenceAdapter();
+		await withCapturedConsoleWarn(async () => {
+			const h = await createHarness({ storage });
+			h.api.queue('/sync/bootstrap', {
+				docs: [],
+				cursor: '1',
+				server_time: new Date(baseNowMs + 10 * 60_000).toISOString()
+			});
+
+			await h.engine.flushForTest();
+			h.engine.stopForTest();
+		});
+
+		let snapshot = persistedOutbox(storage);
+		assert.equal(snapshot.serverClockOffsetMs, 10 * 60_000);
+
+		const fresh = await createHarness({ auth: createFakeAuth('signed-out'), storage });
+		setNow(baseNowMs + 2000);
+		withImmediateTimeouts(() => {
+			fresh.engine.enqueue('profile', 'me', { trailName: 'Clocked Dad' });
+		});
+		fresh.engine.stopForTest();
+
+		snapshot = persistedOutbox(storage);
+		const entry = snapshot.pending['profile:me'] as { clientUpdatedAt: string };
+		assert.equal(entry.clientUpdatedAt, new Date(baseNowMs + 10 * 60_000 + 2000).toISOString());
+	});
+});
+
+test('syncEngine: missing or garbage server_time keeps local clock stamps', async () => {
+	const baseNowMs = Date.parse(NOW);
+	for (const serverTime of [undefined, 'not-a-date']) {
+		await withMockedDateNow(baseNowMs, async (setNow) => {
+			const warnings = await withCapturedConsoleWarn(async () => {
+				const h = await createHarness();
+				h.api.queue('/sync/bootstrap', {
+					docs: [],
+					cursor: '1',
+					server_time: serverTime
+				});
+
+				await h.engine.flushForTest();
+				h.engine.stopForTest();
+
+				setNow(baseNowMs + 3000);
+				enqueuePending(h.engine, 'settings', String(serverTime ?? 'missing'), { units: 'miles' });
+				h.api.queue('/sync/push', pushAppliesAll);
+
+				await h.engine.flushForTest();
+
+				const pushCalls = h.api.callsFor('/sync/push');
+				assert.equal(pushCalls.length, 1);
+				const body = pushCalls[0].options?.body as { changes: PushChangePayload[] };
+				assert.equal(body.changes[0].client_updated_at, new Date(baseNowMs + 3000).toISOString());
+				assert.equal(persistedOutbox(h.storage).serverClockOffsetMs, 0);
+			});
+
+			assert.deepEqual(warnings, []);
+		});
+	}
 });
 
 test('syncEngine: restore applies remote docs into the synced baseline', async () => {

@@ -26,6 +26,7 @@ class SyncController extends ApiController
         return $this->ok([
             'docs' => $docs->map(fn (SyncDocument $doc): array => $this->documentPayload($doc))->all(),
             'cursor' => (string) $cursor,
+            'server_time' => now()->utc()->toIso8601String(),
         ]);
     }
 

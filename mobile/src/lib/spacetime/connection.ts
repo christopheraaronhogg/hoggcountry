@@ -1,5 +1,6 @@
 import { browser } from '$app/environment';
 import { DbConnection, type ErrorContext } from '../../../../apps/openclaw-web/src/lib/module_bindings';
+import { getSpacetimeToken, setSpacetimeToken } from './token-store.ts';
 
 // ONE shared SpacetimeDB connection for the whole app (best practice: a single
 // DbConnection, not one per feature). Trail Pulse, water reports, and live
@@ -12,7 +13,6 @@ import { DbConnection, type ErrorContext } from '../../../../apps/openclaw-web/s
 const host = import.meta.env.PUBLIC_SPACETIMEDB_HOST ?? '';
 const dbName = import.meta.env.PUBLIC_SPACETIMEDB_DB_NAME ?? '';
 export const spacetimeEnabled = Boolean(host && dbName);
-const tokenKey = spacetimeEnabled ? `${host}/${dbName}/mobile_auth_token` : 'spacetime/mobile-disabled';
 
 const MAX_RECONNECT_ATTEMPTS = 6;
 const BASE_RECONNECT_MS = 1000;
@@ -114,48 +114,51 @@ export function connect(): Promise<DbConnection | null> {
 	if (connection?.isActive) return Promise.resolve(connection);
 	wireLifecycle();
 	connecting ??= new Promise((resolve) => {
-		try {
-			DbConnection.builder()
-				.withUri(host)
-				.withDatabaseName(dbName)
-				.withToken(localStorage.getItem(tokenKey) || undefined)
-				.onConnect((conn, identity, token) => {
-					localStorage.setItem(tokenKey, token);
-					connection = conn;
-					identityHex = idHex(identity as IdLike);
-					reconnectAttempts = 0;
-					connecting = null;
-					for (const handler of connectHandlers) {
-						try {
-							handler(conn);
-						} catch (error) {
-							console.warn('SpacetimeDB connect handler failed:', error);
+		void (async () => {
+			try {
+				const token = await getSpacetimeToken();
+				DbConnection.builder()
+					.withUri(host)
+					.withDatabaseName(dbName)
+					.withToken(token || undefined)
+					.onConnect((conn, identity, token) => {
+						void setSpacetimeToken(token);
+						connection = conn;
+						identityHex = idHex(identity as IdLike);
+						reconnectAttempts = 0;
+						connecting = null;
+						for (const handler of connectHandlers) {
+							try {
+								handler(conn);
+							} catch (error) {
+								console.warn('SpacetimeDB connect handler failed:', error);
+							}
 						}
-					}
-					notify();
-					resolve(conn);
-				})
-				.onDisconnect(() => {
-					connection = null;
-					connecting = null;
-					notify();
-					scheduleReconnect();
-				})
-				.onConnectError((_ctx: ErrorContext, error: Error) => {
-					console.warn('SpacetimeDB connection failed:', error.message);
-					connection = null;
-					connecting = null;
-					notify();
-					scheduleReconnect();
-					resolve(null);
-				})
-				.build();
-		} catch (error) {
-			console.warn('SpacetimeDB unavailable:', error instanceof Error ? error.message : error);
-			connection = null;
-			connecting = null;
-			resolve(null);
-		}
+						notify();
+						resolve(conn);
+					})
+					.onDisconnect(() => {
+						connection = null;
+						connecting = null;
+						notify();
+						scheduleReconnect();
+					})
+					.onConnectError((_ctx: ErrorContext, error: Error) => {
+						console.warn('SpacetimeDB connection failed:', error.message);
+						connection = null;
+						connecting = null;
+						notify();
+						scheduleReconnect();
+						resolve(null);
+					})
+					.build();
+			} catch (error) {
+				console.warn('SpacetimeDB unavailable:', error instanceof Error ? error.message : error);
+				connection = null;
+				connecting = null;
+				resolve(null);
+			}
+		})();
 	});
 	return connecting;
 }

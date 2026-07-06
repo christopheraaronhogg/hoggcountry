@@ -56,15 +56,13 @@ export interface PeopleGroup {
  *  name/id, which would be guessable. */
 export function generateShareCode(): string {
 	const bytes = new Uint8Array(12);
-	if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+	if (typeof crypto === 'undefined' || typeof crypto.getRandomValues !== 'function') {
+		throw new Error('Secure random is unavailable on this device, so a private share code cannot be created.');
+	}
+	try {
 		crypto.getRandomValues(bytes);
-	} else {
-		// Defense-in-depth: crypto is universally available in the browser/WebView,
-		// but never emit a CONSTANT code if it isn't — that would drop every device
-		// into the same group and leak locations. Vary from time + Math.random.
-		for (let i = 0; i < bytes.length; i++) {
-			bytes[i] = Math.floor((Math.random() * 256 + Date.now() + i) % 256);
-		}
+	} catch {
+		throw new Error('Secure random is unavailable on this device, so a private share code cannot be created.');
 	}
 	const base32 = 'abcdefghijkmnpqrstuvwxyz23456789';
 	let code = '';

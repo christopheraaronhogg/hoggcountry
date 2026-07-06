@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -223,6 +224,9 @@ class AuthAndSyncTest extends TestCase
             ->assertJsonCount(1, 'data.docs')
             ->assertJsonPath('data.docs.0.doc_type', 'character')
             ->assertJsonPath('data.docs.0.content.trail.currentMile', 123.4);
+        $serverTime = $bootstrapResponse->json('data.server_time');
+        $this->assertIsString($serverTime);
+        $this->assertInstanceOf(Carbon::class, Carbon::parse($serverTime));
 
         $pullResponse = $this->withHeader('Authorization', "Bearer {$token}")
             ->getJson('/api/v1/sync/pull?cursor=0');
