@@ -23,9 +23,23 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-          cache-dependency-path: mobile/package-lock.json
+          cache-dependency-path: |
+            mobile/package-lock.json
+            package-lock.json
       - run: npm ci
       - name: Type-check (svelte-check)
         run: npm run check
       - name: On-device Scout regression tests
         run: npm test
+      # The static build imports SpacetimeDB bindings cross-tree from
+      # apps/openclaw-web, whose tsconfig extends the generated
+      # .svelte-kit/tsconfig.json — so the build gate needs the root workspace
+      # installed and scout-web synced first.
+      - name: Root workspace install (cross-tree bindings)
+        run: npm ci
+        working-directory: .
+      - name: Sync scout-web (generates .svelte-kit/tsconfig.json)
+        run: npx svelte-kit sync
+        working-directory: apps/openclaw-web
+      - name: Build (PWA + Capacitor web assets)
+        run: npm run build
