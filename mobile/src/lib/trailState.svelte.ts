@@ -47,7 +47,10 @@ import {
 	resetToUncalibratedStarterState
 } from './trail-state-defaults';
 import {
+	dismissedQuarantineRecord,
 	parsePersistedTrailState,
+	parseQuarantineRecord,
+	quarantineRecord,
 	snapshotTrailState,
 	type PersistedTrailState
 } from './trail-state-persistence';
@@ -130,6 +133,7 @@ import {
 } from './chat-transcript';
 
 const STORAGE_KEY = 'hoggcountry:trail-assistant:mobile-prototype:v1';
+const QUARANTINE_KEY = 'hc-trail-state-quarantine-v1';
 const FIELD_PACK_ENDPOINT =
 	(import.meta.env.VITE_SCOUT_FIELD_PACK_URL as string | undefined) ??
 	'https://hoggcountry.com/scout/field-pack';
@@ -168,6 +172,7 @@ class TrailAssistantStore {
 	#syncTimer: ReturnType<typeof setTimeout> | null = null;
 	#stateStorage: PersistenceAdapter | null = mobilePersistence;
 	#stateHydrated = $state(false);
+	stateRecoveryNotice = $state(false);
 	#fieldPackStore = new InMemoryContextPackStore({
 		adapter: mobilePersistence ?? undefined
 	});
@@ -401,16 +406,47 @@ class TrailAssistantStore {
 		const raw = await this.#stateStorage?.get(STORAGE_KEY).catch(() => null);
 		if (!raw) {
 			this.#stateHydrated = true;
+			void this.#checkQuarantineNotice();
 			return;
 		}
 
 		try {
 			this.#state = parsePersistedTrailState(raw);
 		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
 			console.error('Failed to restore Trail Assistant state', error);
+			const existing = (await this.#stateStorage?.get(QUARANTINE_KEY).catch(() => null)) ?? null;
+			const record = quarantineRecord(raw, message, existing, new Date().toISOString());
+			if (record) {
+				this.stateRecoveryNotice = true;
+				void this.#stateStorage?.set(QUARANTINE_KEY, record).catch((quarantineError) => {
+					console.error('Failed to quarantine Trail Assistant state', quarantineError);
+				});
+			} else if (parseQuarantineRecord(existing)?.dismissed === false) {
+				this.stateRecoveryNotice = true;
+			}
+			recordScoutDiagnostic('trail_state_corrupt', { reason: message });
 		} finally {
 			this.#stateHydrated = true;
+			void this.#checkQuarantineNotice();
 		}
+	}
+
+	async #checkQuarantineNotice() {
+		const value = (await this.#stateStorage?.get(QUARANTINE_KEY).catch(() => null)) ?? null;
+		if (parseQuarantineRecord(value)?.dismissed === false) {
+			this.stateRecoveryNotice = true;
+		}
+	}
+
+	async dismissStateRecoveryNotice(): Promise<void> {
+		this.stateRecoveryNotice = false;
+		const value = (await this.#stateStorage?.get(QUARANTINE_KEY).catch(() => null)) ?? null;
+		const record = parseQuarantineRecord(value);
+		if (!record) return;
+		await this.#stateStorage?.set(QUARANTINE_KEY, dismissedQuarantineRecord(record)).catch((error) => {
+			console.error('Failed to dismiss Trail Assistant state recovery notice', error);
+		});
 	}
 
 	async #persistState(snapshot: PersistedTrailState) {

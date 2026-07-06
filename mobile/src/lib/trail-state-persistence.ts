@@ -8,8 +8,25 @@ import { normalizeTrailDocuments } from './local-documents.ts';
 
 export type PersistedTrailState = TrailState;
 
+export interface TrailStateQuarantineRecord {
+	savedAt: string;
+	reason: string;
+	raw: string;
+	dismissed: boolean;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null;
+}
+
+function isQuarantineRecord(value: unknown): value is TrailStateQuarantineRecord {
+	return (
+		isRecord(value) &&
+		typeof value.savedAt === 'string' &&
+		typeof value.reason === 'string' &&
+		typeof value.raw === 'string' &&
+		typeof value.dismissed === 'boolean'
+	);
 }
 
 export function restorePersistedTrailState(
@@ -42,6 +59,45 @@ export function restorePersistedTrailState(
 
 export function parsePersistedTrailState(raw: string): TrailState {
 	return restorePersistedTrailState(JSON.parse(raw));
+}
+
+export function parseQuarantineRecord(value: string | null): TrailStateQuarantineRecord | null {
+	if (!value) return null;
+
+	try {
+		const parsed = JSON.parse(value);
+		return isQuarantineRecord(parsed)
+			? {
+					savedAt: parsed.savedAt,
+					reason: parsed.reason,
+					raw: parsed.raw,
+					dismissed: parsed.dismissed
+				}
+			: null;
+	} catch {
+		return null;
+	}
+}
+
+export function quarantineRecord(
+	raw: string,
+	reason: string,
+	existing: string | null,
+	nowIso: string
+): string | null {
+	if (parseQuarantineRecord(existing)) return null;
+
+	const record: TrailStateQuarantineRecord = {
+		savedAt: nowIso,
+		reason,
+		raw,
+		dismissed: false
+	};
+	return JSON.stringify(record);
+}
+
+export function dismissedQuarantineRecord(record: TrailStateQuarantineRecord): string {
+	return JSON.stringify({ ...record, dismissed: true });
 }
 
 export function snapshotTrailState(state: TrailState): PersistedTrailState {

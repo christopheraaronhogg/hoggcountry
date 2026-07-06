@@ -3,7 +3,10 @@ import { test } from 'node:test';
 
 import { createDefaultTrailState } from './trail-state-defaults.ts';
 import {
+	dismissedQuarantineRecord,
 	parsePersistedTrailState,
+	parseQuarantineRecord,
+	quarantineRecord,
 	restorePersistedTrailState,
 	snapshotTrailState
 } from './trail-state-persistence.ts';
@@ -80,6 +83,10 @@ test('parsePersistedTrailState restores JSON snapshots', () => {
 	assert.deepEqual(restored.documents, []);
 });
 
+test('parsePersistedTrailState throws on corrupt JSON', () => {
+	assert.throws(() => parsePersistedTrailState('not json {{{'));
+});
+
 test('snapshotTrailState clones persisted containers', () => {
 	const state = defaultState();
 	state.supportCircle = [{ name: 'Home', role: 'Contact', method: 'Text', phone: '555-0100' }];
@@ -104,4 +111,90 @@ test('snapshotTrailState clones persisted containers', () => {
 	assert.notEqual(snapshot.coachMessages[0], state.coachMessages[0]);
 	assert.notEqual(snapshot.documents[0], state.documents[0]);
 	assert.notEqual(snapshot.supportCircle[0], state.supportCircle[0]);
+});
+
+test('quarantineRecord writes a first corruption record', () => {
+	const serialized = quarantineRecord(
+		'not json {{{',
+		'Unexpected token',
+		null,
+		'2026-07-06T12:00:00.000Z'
+	);
+
+	assert.ok(serialized);
+	assert.deepEqual(JSON.parse(serialized), {
+		savedAt: '2026-07-06T12:00:00.000Z',
+		reason: 'Unexpected token',
+		raw: 'not json {{{',
+		dismissed: false
+	});
+});
+
+test('quarantineRecord preserves a valid existing record', () => {
+	const existing = JSON.stringify({
+		savedAt: '2026-07-06T12:00:00.000Z',
+		reason: 'first failure',
+		raw: 'original blob',
+		dismissed: false
+	});
+
+	const serialized = quarantineRecord(
+		'later blob',
+		'later failure',
+		existing,
+		'2026-07-06T13:00:00.000Z'
+	);
+
+	assert.equal(serialized, null);
+});
+
+test('quarantineRecord overwrites garbage existing records', () => {
+	const serialized = quarantineRecord(
+		'recovered raw',
+		'new failure',
+		'not quarantine json',
+		'2026-07-06T14:00:00.000Z'
+	);
+
+	assert.ok(serialized);
+	assert.deepEqual(JSON.parse(serialized), {
+		savedAt: '2026-07-06T14:00:00.000Z',
+		reason: 'new failure',
+		raw: 'recovered raw',
+		dismissed: false
+	});
+});
+
+test('parseQuarantineRecord round-trips valid quarantine JSON', () => {
+	const serialized = JSON.stringify({
+		savedAt: '2026-07-06T12:00:00.000Z',
+		reason: 'SyntaxError',
+		raw: '{"partial"',
+		dismissed: false
+	});
+
+	assert.deepEqual(parseQuarantineRecord(serialized), {
+		savedAt: '2026-07-06T12:00:00.000Z',
+		reason: 'SyntaxError',
+		raw: '{"partial"',
+		dismissed: false
+	});
+	assert.equal(parseQuarantineRecord('garbage'), null);
+	assert.equal(parseQuarantineRecord(null), null);
+});
+
+test('dismissedQuarantineRecord serializes the same record as dismissed', () => {
+	const serialized = dismissedQuarantineRecord({
+		savedAt: '2026-07-06T12:00:00.000Z',
+		reason: 'SyntaxError',
+		raw: '{"partial"',
+		dismissed: false
+	});
+
+	assert.deepEqual(JSON.parse(serialized), {
+		savedAt: '2026-07-06T12:00:00.000Z',
+		reason: 'SyntaxError',
+		raw: '{"partial"',
+		dismissed: true
+	});
 });

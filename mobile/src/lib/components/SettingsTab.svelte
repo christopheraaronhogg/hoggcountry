@@ -26,6 +26,18 @@
 		<h1>Settings</h1>
 	</header>
 
+	{#if trailAssistant.stateRecoveryNotice}
+		<section class="card recovery-notice" role="status">
+			<p>
+				A previous copy of your hike data couldn't be read and was set aside. Cloud restore or
+				support can recover it.
+			</p>
+			<button type="button" onclick={() => void trailAssistant.dismissStateRecoveryNotice()}>
+				Dismiss
+			</button>
+		</section>
+	{/if}
+
 	<section class="group">
 		<AppVersionCard />
 	</section>
@@ -89,5 +101,30 @@
 		letter-spacing: 0.08em;
 		color: var(--muted);
 		padding-left: 2px;
+	}
+
+	.recovery-notice {
+		display: grid;
+		gap: 12px;
+		padding: 14px;
+		background: var(--clay-soft);
+		border-color: var(--clay);
+	}
+
+	.recovery-notice p {
+		font-size: 0.9rem;
+		line-height: 1.42;
+		color: var(--ink);
+	}
+
+	.recovery-notice button {
+		justify-self: start;
+		min-height: 40px;
+		border-radius: var(--radius-control);
+		padding: 0 14px;
+		background: var(--surface-strong);
+		color: var(--forest);
+		font-weight: 800;
+		box-shadow: 0 0 0 1px var(--line);
 	}
 </style>
