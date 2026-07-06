@@ -13,3 +13,9 @@ Schedule::command('trackers:refresh')
     ->withoutOverlapping(5)
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/trackers-refresh.log'));
+
+Schedule::command('checkins:watch')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping(10)
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/checkins-watch.log'));
