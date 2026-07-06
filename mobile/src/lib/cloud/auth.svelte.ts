@@ -24,6 +24,7 @@ class CloudAuth {
 	busy = $state(false);
 	error = $state<string | null>(null);
 	#token: string | null = null;
+	#revalidating: Promise<void> | null = null;
 
 	get signedIn(): boolean {
 		return this.status === 'signed-in';
@@ -48,6 +49,36 @@ class CloudAuth {
 				await this.#clear();
 			} else {
 				this.status = 'signed-in';
+			}
+		}
+	}
+
+	/**
+	 * A signed request got a 401 mid-session. Re-validate the token once against
+	 * /auth/me; if the server confirms it is dead, sign out so the UI tells the
+	 * hiker to sign back in. A transient/offline failure keeps the session.
+	 */
+	async revalidate(): Promise<void> {
+		if (this.#revalidating) return this.#revalidating;
+		if (this.status !== 'signed-in' || !this.#token) return;
+		this.#revalidating = this.#revalidateOnce();
+		try {
+			await this.#revalidating;
+		} finally {
+			this.#revalidating = null;
+		}
+	}
+
+	async #revalidateOnce(): Promise<void> {
+		const token = this.#token;
+		if (!token) return;
+		try {
+			const me = await apiRequest<{ user: CloudUser }>('/auth/me', { token });
+			if (this.#token === token && this.status === 'signed-in') this.user = me.user;
+		} catch (e) {
+			if ((e as ApiError).status === 401 && this.#token === token) {
+				this.error = 'Your session expired. Sign in again to resume cloud backup.';
+				await this.#clear();
 			}
 		}
 	}

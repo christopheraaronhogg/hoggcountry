@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 
 import type { ApiError } from './api.ts';
-import type { RemoteDoc } from './sync-outbox.ts';
+import { makeUpsert, type RemoteDoc } from './sync-outbox.ts';
 import type { PersistenceAdapter } from '../mobile-persistence.ts';
 
 const g = globalThis as Record<string, unknown>;
@@ -33,8 +33,10 @@ interface FakeAuth {
 	token: string | null;
 	deviceIdCalls: number;
 	ensureDeviceRegisteredCalls: number;
+	revalidateCalls: number;
 	deviceId(): Promise<string>;
 	ensureDeviceRegistered(): Promise<void>;
+	revalidate(): Promise<void>;
 }
 
 interface PersistedOutboxSnapshot {
@@ -68,12 +70,17 @@ class MemoryPersistenceAdapter implements PersistenceAdapter {
 	}
 }
 
-function createFakeAuth(status: AuthStatus = 'signed-in'): FakeAuth {
-	return {
+function createFakeAuth(
+	status: AuthStatus = 'signed-in',
+	revalidate?: (auth: FakeAuth) => void | Promise<void>
+): FakeAuth {
+	let auth: FakeAuth;
+	auth = {
 		status,
 		token: status === 'signed-in' ? 'token-1' : null,
 		deviceIdCalls: 0,
 		ensureDeviceRegisteredCalls: 0,
+		revalidateCalls: 0,
 		get signedIn() {
 			return this.status === 'signed-in';
 		},
@@ -83,8 +90,13 @@ function createFakeAuth(status: AuthStatus = 'signed-in'): FakeAuth {
 		},
 		async ensureDeviceRegistered() {
 			this.ensureDeviceRegisteredCalls++;
+		},
+		async revalidate() {
+			auth.revalidateCalls++;
+			await revalidate?.(auth);
 		}
 	};
+	return auth;
 }
 
 function createFakeApi() {
@@ -308,8 +320,7 @@ test('syncEngine: offline signed-in device keeps pending local', async () => {
 	assert.equal(h.api.calls.length, 0);
 });
 
-test('syncEngine: bootstrap 401 currently errors without signing out', async () => {
-	// plan 002 will change this
+test('syncEngine: bootstrap 401 requests auth revalidation without signing out', async () => {
 	const h = await createHarness();
 	h.api.repeat('/sync/bootstrap', throwing(apiError(401, 'unauthenticated')));
 	enqueuePending(h.engine);
@@ -321,11 +332,11 @@ test('syncEngine: bootstrap 401 currently errors without signing out', async () 
 	assert.equal(h.api.callsFor('/sync/push').length, 0);
 	assert.equal(h.auth.status, 'signed-in');
 	assert.equal(h.auth.signedIn, true);
+	assert.ok(h.auth.revalidateCalls > 0);
 	assert.equal(h.auth.ensureDeviceRegisteredCalls, 0);
 });
 
-test('syncEngine: push 401 currently marks backup signed out only', async () => {
-	// plan 002 will change this
+test('syncEngine: push 401 marks backup error and requests auth revalidation', async () => {
 	const h = await createHarness();
 	h.api.queue('/sync/bootstrap', { docs: [], cursor: '1' });
 	h.api.queue('/sync/push', throwing(apiError(401, 'unauthenticated')));
@@ -333,9 +344,43 @@ test('syncEngine: push 401 currently marks backup signed out only', async () => 
 
 	await h.engine.flushForTest();
 
-	assert.equal(h.engine.status, 'signed-out');
+	assert.equal(h.engine.status, 'error');
 	assert.equal(h.auth.status, 'signed-in');
 	assert.equal(h.auth.signedIn, true);
+	assert.equal(h.auth.revalidateCalls, 1);
+});
+
+test('syncEngine: signed-out auth revalidation stops retries and preserves pending outbox', async () => {
+	const storage = new MemoryPersistenceAdapter();
+	await storage.set(
+		STORE_KEY,
+		JSON.stringify({
+			pending: {
+				'profile:me': makeUpsert('profile', 'me', { trailName: 'Dad' }, NOW)
+			},
+			synced: {},
+			lastBackupAt: null,
+			cursor: '0'
+		} satisfies PersistedOutboxSnapshot)
+	);
+	const auth = createFakeAuth('signed-in', (current) => {
+		current.status = 'signed-out';
+		current.token = null;
+	});
+	const h = await createHarness({ auth, storage });
+
+	await h.auth.revalidate();
+	h.engine.notifyAuthChangedForTest();
+	await h.engine.flushForTest();
+	await settleMicrotasks();
+
+	assert.equal(h.auth.revalidateCalls, 1);
+	assert.equal(h.engine.status, 'signed-out');
+	assert.equal(h.api.calls.length, 0);
+	assert.equal(h.engine.pendingCount, 1);
+	const snapshot = persistedOutbox(h.storage);
+	assert.equal(Object.keys(snapshot.pending).length, 1);
+	assert.ok(snapshot.pending['profile:me']);
 });
 
 test('syncEngine: non-retryable push error currently leaves pending untouched', async () => {

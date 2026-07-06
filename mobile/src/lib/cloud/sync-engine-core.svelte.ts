@@ -79,6 +79,7 @@ export interface SyncEngineDeps {
 		readonly token: string | null;
 		deviceId(): Promise<string>;
 		ensureDeviceRegistered(): Promise<void>;
+		revalidate(): Promise<void>;
 	};
 	storage: PersistenceAdapter | null;
 	isOnline: () => boolean;
@@ -345,6 +346,7 @@ export class SyncEngine {
 		} catch (error) {
 			const err = error as ApiError;
 			// Offline or a dead token → no restore this pass; the backup is untouched.
+			if (err?.status === 401) void this.#deps.auth.revalidate();
 			if (err?.status !== 0 && err?.code !== 'offline' && err?.status !== 401) {
 				console.error('Bootstrap pull failed', error);
 			}
@@ -472,8 +474,10 @@ export class SyncEngine {
 			} else if (err?.status === 0 || err?.code === 'offline') {
 				this.status = 'offline';
 			} else if (err?.status === 401) {
-				// Token died; auth.init/logout owns the sign-out, just pause backup.
-				this.status = 'signed-out';
+				// Auth owns confirming whether the token is dead and flipping the UI
+				// to signed-out. Until then, backup is paused and will retry later.
+				this.status = 'error';
+				void this.#deps.auth.revalidate();
 			} else {
 				console.error('Backup push failed', error);
 				this.status = 'error';
