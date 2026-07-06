@@ -188,16 +188,36 @@ export class TrailPositionService {
 		return result;
 	}
 
-	getCurrentPosition(): Promise<TrailGpsPosition | null> {
+	async getCurrentPosition(): Promise<TrailGpsPosition | null> {
 		const geolocation = this.#geolocation();
 		if (!geolocation) return Promise.resolve(null);
 		if (!this.#getPrivacySettings().sharePreciseLocation) return Promise.resolve(null);
 
+		const precisePosition = await this.#requestPosition(geolocation, {
+			enableHighAccuracy: true,
+			maximumAge: 60_000,
+			timeout: 15_000
+		});
+		if (precisePosition) return precisePosition;
+
+		// Fresh high-accuracy fixes can lose to AT canopy; a coarse fallback is safe
+		// because the 2-mile snap guard still refuses far-off-trail positions.
+		return this.#requestPosition(geolocation, {
+			enableHighAccuracy: false,
+			maximumAge: 5 * 60_000,
+			timeout: 8_000
+		});
+	}
+
+	#requestPosition(
+		geolocation: TrailGeolocation,
+		options: TrailGpsOptions
+	): Promise<TrailGpsPosition | null> {
 		return new Promise((resolve) => {
 			geolocation.getCurrentPosition(
 				(position) => resolve(position),
 				() => resolve(null),
-				{ enableHighAccuracy: true, maximumAge: 60_000, timeout: 4_000 }
+				options
 			);
 		});
 	}

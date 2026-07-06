@@ -24,18 +24,30 @@ function position(lat: number, lon: number): TrailGpsPosition {
 	return { coords: { latitude: lat, longitude: lon } };
 }
 
-function createFakeGeolocation(nextPosition: TrailGpsPosition | null = null) {
+function createFakeGeolocation(nextPosition: TrailGpsPosition | null | Array<TrailGpsPosition | null> = null) {
 	let watchSuccess: ((position: TrailGpsPosition) => void) | null = null;
+	let queuedPositions = Array.isArray(nextPosition) ? [...nextPosition] : null;
+	let currentPosition = Array.isArray(nextPosition) ? null : nextPosition;
 	const calls = {
 		watch: 0,
 		clear: [] as number[],
-		get: 0
+		get: 0,
+		getOptions: [] as Array<
+			| {
+					enableHighAccuracy?: boolean;
+					maximumAge?: number;
+					timeout?: number;
+			  }
+			| undefined
+		>
 	};
 	const geolocation: TrailGeolocation = {
-		getCurrentPosition(success, error) {
+		getCurrentPosition(success, error, options) {
 			calls.get += 1;
-			if (nextPosition) {
-				success(nextPosition);
+			calls.getOptions.push(options);
+			const position = queuedPositions ? (queuedPositions.shift() ?? null) : currentPosition;
+			if (position) {
+				success(position);
 			} else {
 				error?.();
 			}
@@ -57,7 +69,8 @@ function createFakeGeolocation(nextPosition: TrailGpsPosition | null = null) {
 			watchSuccess?.(position);
 		},
 		setNextPosition(position: TrailGpsPosition | null) {
-			nextPosition = position;
+			queuedPositions = null;
+			currentPosition = position;
 		}
 	};
 }
@@ -199,6 +212,58 @@ test('TrailPositionService does not request a GPS fix when precise location is d
 	});
 	assert.equal(fake.calls.get, 0);
 	assert.deepEqual(harness.updates, []);
+});
+
+test('TrailPositionService resolves the first high-accuracy GPS position', async () => {
+	const expected = position(1, 1);
+	const fake = createFakeGeolocation(expected);
+	const harness = createService({ geolocation: fake.geolocation });
+
+	const result = await harness.service.getCurrentPosition();
+
+	assert.equal(result, expected);
+	assert.equal(fake.calls.get, 1);
+	assert.deepEqual(fake.calls.getOptions, [
+		{ enableHighAccuracy: true, maximumAge: 60_000, timeout: 15_000 }
+	]);
+});
+
+test('TrailPositionService falls back to one coarse GPS request', async () => {
+	const coarsePosition = position(2, 2);
+	const fake = createFakeGeolocation([null, coarsePosition]);
+	const harness = createService({ geolocation: fake.geolocation });
+
+	const result = await harness.service.getCurrentPosition();
+
+	assert.equal(result, coarsePosition);
+	assert.equal(fake.calls.get, 2);
+	assert.deepEqual(fake.calls.getOptions, [
+		{ enableHighAccuracy: true, maximumAge: 60_000, timeout: 15_000 },
+		{ enableHighAccuracy: false, maximumAge: 5 * 60_000, timeout: 8_000 }
+	]);
+});
+
+test('TrailPositionService keeps the null GPS contract when both requests fail', async () => {
+	const fake = createFakeGeolocation([null, null]);
+	const harness = createService({ geolocation: fake.geolocation });
+
+	const result = await harness.service.getCurrentPosition();
+
+	assert.equal(result, null);
+	assert.equal(fake.calls.get, 2);
+});
+
+test('TrailPositionService getCurrentPosition honors the precise-location privacy guard', async () => {
+	const fake = createFakeGeolocation(position(1, 1));
+	const harness = createService({
+		geolocation: fake.geolocation,
+		privacy: { sharePreciseLocation: false }
+	});
+
+	const result = await harness.service.getCurrentPosition();
+
+	assert.equal(result, null);
+	assert.equal(fake.calls.get, 0);
 });
 
 test('TrailPositionService snaps a manual GPS fix and updates the current mile', async () => {
