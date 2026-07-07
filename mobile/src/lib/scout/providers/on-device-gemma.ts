@@ -2,6 +2,7 @@ import type {
 	ProviderCapabilities,
 	ProviderRequest,
 	ProviderResponse,
+	RequiredConfirmation,
 	ScoutProvider,
 	ToolInvocationRecord,
 	TokenSink
@@ -336,7 +337,11 @@ export class OnDeviceGemmaProvider implements ScoutProvider {
 			renderSystemContext(request, { contextBudgetChars }),
 			contextBudgetChars
 		);
-		const nativeInput = { prompt: request.prompt, systemContext, maxTokens: ON_DEVICE_MAX_TOKENS };
+		const nativeInput = {
+			prompt: request.prompt,
+			systemContext: systemContext.text,
+			maxTokens: ON_DEVICE_MAX_TOKENS
+		};
 		let result: { text: string; truncated: boolean };
 		let streamed = false;
 		const tokenSink = onToken
@@ -367,21 +372,30 @@ export class OnDeviceGemmaProvider implements ScoutProvider {
 			throw new OnDeviceModelUnavailableError('On-device model returned an empty response.');
 		}
 
+		const additionalConfirmations: RequiredConfirmation[] = [];
+		if (systemContext.truncated) {
+			additionalConfirmations.push({
+				id: 'on-device-context-trimmed',
+				prompt:
+					'Some cached trail context was trimmed to fit the on-device model — verify safety-critical details against the saved pack.',
+				reason: 'low-confidence'
+			});
+		}
+		if (result.truncated) {
+			additionalConfirmations.push({
+				id: 'on-device-truncated',
+				prompt: 'On-device context was truncated — verify the answer matches the cached trail pack.',
+				reason: 'low-confidence'
+			});
+		}
+
 		return {
 			answer,
 			confidence: 'medium',
 			mode: 'on-device',
 			provider: 'on-device-gemma',
 			additionalReceipts: [],
-			additionalConfirmations: result.truncated
-				? [
-					{
-						id: 'on-device-truncated',
-						prompt: 'On-device context was truncated — verify the answer matches the cached trail pack.',
-						reason: 'low-confidence'
-					}
-				]
-				: [],
+			additionalConfirmations,
 			contextUsed: ['on-device-gemma']
 		};
 	}
@@ -834,12 +848,15 @@ export function polishOnDeviceAnswer(text: string, prompt: string, toolInvocatio
 	return trimToCompleteSentence(answer);
 }
 
-function fitSystemContext(systemContext: string, maxChars: number): string {
-	if (systemContext.length <= maxChars) return systemContext;
+function fitSystemContext(systemContext: string, maxChars: number): { text: string; truncated: boolean } {
+	if (systemContext.length <= maxChars) return { text: systemContext, truncated: false };
 	const available = Math.max(0, maxChars - SYSTEM_CONTEXT_TRIM_MARKER.length);
 	const headChars = Math.floor(available * 0.6);
 	const tailChars = available - headChars;
-	return `${systemContext.slice(0, headChars).trimEnd()}${SYSTEM_CONTEXT_TRIM_MARKER}${systemContext.slice(-tailChars).trimStart()}`;
+	return {
+		text: `${systemContext.slice(0, headChars).trimEnd()}${SYSTEM_CONTEXT_TRIM_MARKER}${systemContext.slice(-tailChars).trimStart()}`,
+		truncated: true
+	};
 }
 
 function contextBudgetCharsForTier(tier: GemmaTier, descriptor: GemmaModelDescriptor | null): number {

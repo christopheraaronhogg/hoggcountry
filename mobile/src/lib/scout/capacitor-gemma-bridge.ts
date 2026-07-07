@@ -130,6 +130,20 @@ export type ScoutEvalKeepAwakeResult = {
 	platform?: string;
 };
 
+export const WATCHDOG_STALL_MS = 120_000;
+const MODEL_DOWNLOAD_STALLED_MESSAGE =
+	'Model download stalled — no progress from the downloader for 2 minutes. Check your connection and try again.';
+
+export type ModelDownloadWatchdogTimers = {
+	setTimeout(callback: () => void, ms: number): unknown;
+	clearTimeout(handle: unknown): void;
+};
+
+const defaultWatchdogTimers: ModelDownloadWatchdogTimers = {
+	setTimeout: (callback, ms) => globalThis.setTimeout(callback, ms),
+	clearTimeout: (handle) => globalThis.clearTimeout(handle as ReturnType<typeof globalThis.setTimeout>)
+};
+
 export interface ScoutModelManager {
 	getStatus(): Promise<ScoutGemmaModelStatus | null>;
 	prepareDownload(): Promise<ScoutGemmaModelStatus | null>;
@@ -164,6 +178,11 @@ type CapacitorWindow = Window & {
 			ScoutGemma?: ScoutGemmaPlugin;
 		};
 	};
+};
+
+type ScoutModelManagerOptions = {
+	watchdogStallMs?: number;
+	watchdogTimers?: ModelDownloadWatchdogTimers;
 };
 
 /**
@@ -250,12 +269,17 @@ export async function setCapacitorScoutEvalKeepAwake(
  * bridge. Returns null off-native or when the ScoutGemma plugin is absent, so
  * web/dev builds simply show no on-device model controls.
  */
-export function createCapacitorModelManager(win: Window = window): ScoutModelManager | null {
+export function createCapacitorModelManager(
+	win: Window = window,
+	options: ScoutModelManagerOptions = {}
+): ScoutModelManager | null {
 	const capacitor = (win as CapacitorWindow).Capacitor;
 	if (!capacitor?.isNativePlatform?.()) return null;
 
 	const plugin = capacitor.Plugins?.ScoutGemma;
 	if (!plugin) return null;
+	const watchdogStallMs = options.watchdogStallMs ?? WATCHDOG_STALL_MS;
+	const watchdogTimers = options.watchdogTimers ?? defaultWatchdogTimers;
 
 	// Attaches progress + terminal listeners and returns a promise that settles
 	// when the background download ends. Shared by startDownload (which also kicks
@@ -267,7 +291,17 @@ export function createCapacitorModelManager(win: Window = window): ScoutModelMan
 		onProgress?: (progress: ModelDownloadProgress) => void
 	): Promise<{ done: Promise<ScoutGemmaModelStatus>; abort: () => Promise<void> }> => {
 		const handles: Array<{ remove: () => Promise<void> }> = [];
+		let closed = false;
+		let watchdog: unknown = null;
+
+		const clearWatchdog = () => {
+			if (watchdog === null) return;
+			watchdogTimers.clearTimeout(watchdog);
+			watchdog = null;
+		};
+
 		const removeAll = async () => {
+			clearWatchdog();
 			const pending = handles.splice(0);
 			await Promise.all(pending.map((h) => h.remove().catch(() => {})));
 		};
@@ -279,25 +313,46 @@ export function createCapacitorModelManager(win: Window = window): ScoutModelMan
 			fail = reject;
 		});
 
+		const close = (): boolean => {
+			if (closed) return false;
+			closed = true;
+			void removeAll();
+			return true;
+		};
+
+		const rejectStalledDownload = () => {
+			if (!close()) return;
+			fail(new Error(MODEL_DOWNLOAD_STALLED_MESSAGE));
+		};
+
+		const resetWatchdog = () => {
+			if (closed) return;
+			clearWatchdog();
+			watchdog = watchdogTimers.setTimeout(rejectStalledDownload, watchdogStallMs);
+		};
+
 		if (plugin.addListener) {
-			if (onProgress) {
-				handles.push(await plugin.addListener('scoutModelDownloadProgress', onProgress));
-			}
+			handles.push(
+				await plugin.addListener('scoutModelDownloadProgress', (progress) => {
+					onProgress?.(progress);
+					resetWatchdog();
+				})
+			);
 			handles.push(
 				await plugin.addListener('scoutModelDownloadComplete', (status) => {
-					void removeAll();
+					if (!close()) return;
 					settle(status);
 				})
 			);
 			handles.push(
 				await plugin.addListener('scoutModelDownloadError', (data) => {
-					void removeAll();
+					if (!close()) return;
 					fail(new Error(data?.message || 'Model download failed.'));
 				})
 			);
 			handles.push(
 				await plugin.addListener('scoutModelDownloadCancelled', () => {
-					void removeAll();
+					if (!close()) return;
 					// A user cancel is not an error: resolve with the current (partial)
 					// status so callers clear progress without surfacing a failure.
 					void plugin
@@ -306,8 +361,16 @@ export function createCapacitorModelManager(win: Window = window): ScoutModelMan
 						.catch(() => fail(new Error('Model download cancelled.')));
 				})
 			);
+			resetWatchdog();
 		}
-		return { done, abort: removeAll };
+		return {
+			done,
+			async abort() {
+				if (closed) return;
+				closed = true;
+				await removeAll();
+			}
+		};
 	};
 
 	return {

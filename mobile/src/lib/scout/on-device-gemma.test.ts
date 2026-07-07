@@ -285,6 +285,108 @@ test('generate still caps context when a native descriptor reports a smaller win
 	assert.match(seenContext, /\[Middle context trimmed/u);
 });
 
+test('generate flags when cached input context was trimmed for the on-device model', async () => {
+	let seenContext = '';
+	const provider = new OnDeviceGemmaProvider({
+		bridge: {
+			isAvailable: async () => true,
+			describeModel: async () => ({
+				tier: 'balanced',
+				modelId: 'test-tiny-context-model',
+				maxContextTokens: 128
+			}),
+			generate: async (input) => {
+				seenContext = input.systemContext;
+				return { text: 'Use the retained source packet.', truncated: false };
+			}
+		},
+		tier: 'balanced'
+	});
+
+	const response = await provider.generate({
+		prompt: 'Use all my saved trail context and summarize the safety plan.',
+		pack: cloneDefaultContextPack(),
+		toolInvocations: Array.from({ length: 12 }, (_, index) => ({
+			toolId: 'open_source_doc',
+			args: { sourceDocumentId: `doc-${index}` },
+			summary: `Opened saved source ${index}: ${'water, bailout, weather, town, and safety details. '.repeat(30)}`,
+			confidence: 'medium' as const,
+			receipts: []
+		})),
+		now: new Date('2026-06-20T12:00:00Z')
+	});
+
+	assert.match(seenContext, /\[Middle context trimmed/u);
+	assert.deepEqual(response.additionalConfirmations, [
+		{
+			id: 'on-device-context-trimmed',
+			prompt:
+				'Some cached trail context was trimmed to fit the on-device model — verify safety-critical details against the saved pack.',
+			reason: 'low-confidence'
+		}
+	]);
+});
+
+test('generate does not flag input trimming while system context is under budget', async () => {
+	const provider = new OnDeviceGemmaProvider({
+		bridge: {
+			isAvailable: async () => true,
+			describeModel: async () => null,
+			generate: async () => ({ text: 'Use the cached pack.', truncated: false })
+		},
+		tier: 'balanced'
+	});
+
+	const response = await provider.generate({
+		prompt: 'How far to the next water?',
+		pack: cloneDefaultContextPack(),
+		toolInvocations: [],
+		now: new Date('2026-06-20T12:00:00Z')
+	});
+
+	assert.equal(
+		response.additionalConfirmations?.some((confirmation) => confirmation.id === 'on-device-context-trimmed'),
+		false
+	);
+});
+
+test('generate can show both input-trimmed and output-truncated confirmations', async () => {
+	const provider = new OnDeviceGemmaProvider({
+		bridge: {
+			isAvailable: async () => true,
+			describeModel: async () => ({
+				tier: 'balanced',
+				modelId: 'test-tiny-context-model',
+				maxContextTokens: 128
+			}),
+			generate: async () => ({ text: 'Use retained context, then verify details.', truncated: true })
+		},
+		tier: 'balanced'
+	});
+
+	const response = await provider.generate({
+		prompt: 'Use all these saved notes and summarize the plan.',
+		pack: cloneDefaultContextPack(),
+		toolInvocations: Array.from({ length: 12 }, (_, index) => ({
+			toolId: 'open_source_doc',
+			args: { sourceDocumentId: `doc-${index}` },
+			summary: `Opened saved source ${index}: ${'resupply, weather, water, town, terrain, and safety details. '.repeat(30)}`,
+			confidence: 'medium' as const,
+			receipts: []
+		})),
+		now: new Date('2026-06-20T12:00:00Z')
+	});
+
+	assert.deepEqual(
+		response.additionalConfirmations?.map((confirmation) => confirmation.id),
+		['on-device-context-trimmed', 'on-device-truncated']
+	);
+	assert.equal(
+		response.additionalConfirmations?.find((confirmation) => confirmation.id === 'on-device-truncated')?.prompt,
+		'On-device context was truncated — verify the answer matches the cached trail pack.'
+	);
+});
+
 test('system context keeps Scout plain-spoken, compact, and topic-scoped', () => {
 	const pack = cloneDefaultContextPack();
 	pack.hiker.currentMile = 0;
