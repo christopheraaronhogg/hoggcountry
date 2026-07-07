@@ -55,6 +55,7 @@ import {
 	type PersistedTrailState
 } from './trail-state-persistence';
 import { syncEngine } from './cloud/syncEngine.svelte';
+import { buildCheckpointDoc, checkpointDocId } from './checkpoint';
 import {
 	prepareQueuedReportsForSync,
 	settledSyncState,
@@ -390,6 +391,14 @@ class TrailAssistantStore {
 				if (typeof c.nextDueAt === 'string') {
 					this.#state.nextCheckInDueAt = c.nextDueAt;
 				}
+				return true;
+			}
+			case 'checkpoint': {
+				if (!isRecordObject(content)) return false;
+				const c = content as { at?: unknown; mile?: unknown };
+				if (typeof c.at !== 'string' || typeof c.mile !== 'number') return false;
+				// Deliberately acknowledge only: checkpoints are a server-side record,
+				// not device state; adopting the etag stops bootstrap re-delivery.
 				return true;
 			}
 			default:
@@ -1537,6 +1546,13 @@ class TrailAssistantStore {
 		this.#state.lastCheckIn = record;
 		this.#state.checkInHistory = [record, ...this.#state.checkInHistory].slice(0, 6);
 		this.#state.nextCheckInDueAt = isoHoursFromNow(nextCheckInHours(status));
+		const checkpoint = buildCheckpointDoc({
+			atIso: record.timestamp,
+			currentMile: this.#state.currentMile,
+			dayNumber: this.#state.dayNumber,
+			status: record.status
+		});
+		syncEngine.enqueue('checkpoint', checkpointDocId(checkpoint.at), checkpoint);
 
 		if (this.#state.onlineStatus) {
 			this.#finishSync('syncing');
