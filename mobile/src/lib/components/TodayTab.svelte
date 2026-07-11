@@ -1,13 +1,23 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import {
+		SAFE_CHECK_IN_DISCLOSURE,
+		SAFE_CHECK_IN_RECORDED,
+		buildCheckInSmsDraft
+	} from '$lib/check-in-ui';
+	import { formatAge, formatTimeUntil } from '$lib/freshness';
+	import { minuteClock } from '$lib/minute-clock.svelte';
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import { elevationWindow, climbFeet } from '$lib/trail/trail-geometry';
 	import Icon, { type IconName } from './Icon.svelte';
 	import TrailPulsePanel from './TrailPulsePanel.svelte';
 
-	// Today = the hiker's day, now → camp (M1 "Day Timeline"). No readiness score —
+	// Today is a forward look from the hiker's current position. No readiness score —
 	// we have no vitals, so the HUD anchors only on REAL data: position, the day's
-	// arc, the last cached forecast, and the next honest move. The structure
+	// nearby landmarks, the last cached forecast, and the next honest move. The structure
 	// answers "what do I do next?" at a 2-second glance.
+	onMount(() => minuteClock.retain());
+	const nowMs = $derived(minuteClock.nowMs);
 
 	const TOTAL_MILES = 2197.4;
 	const from = $derived(trailAssistant.currentMile);
@@ -24,11 +34,9 @@
 	// server can reach NWS it is an official point forecast; otherwise the UI stays
 	// honest about cache/missing state.
 	const wx = $derived(trailAssistant.fieldPack.weather);
-	const wxUpdated = $derived(
-		wx ? new Date(wx.generatedAt).toLocaleDateString([], { month: 'short', day: 'numeric' }) : ''
-	);
+	const wxUpdated = $derived(wx ? formatAge(wx.generatedAt, nowMs) : '');
 	const wxIsNws = $derived(wx?.source === 'nws');
-	const wxSourceLabel = $derived(wx ? (wxIsNws ? `NWS ${wxUpdated}` : `Cached ${wxUpdated}`) : 'No forecast');
+	const wxSourceLabel = $derived(wx ? `${wxIsNws ? 'NWS' : 'Cached'} · ${wxUpdated}` : 'No forecast');
 	const wxCaveat = $derived(
 		wxIsNws
 			? 'Official NWS point forecast · refresh before exposed terrain'
@@ -44,7 +52,7 @@
 	);
 	const packMissingCount = $derived(loadout.filter((i) => !i.carried).length);
 
-	// --- upcoming landmarks (keep mile, derive the day to camp) ----------------
+	// --- upcoming landmarks -----------------------------------------------------
 	// Cap the look-ahead so a pack that doesn't bracket the hiker's mile (e.g. an
 	// offline self user still holding the bundled Dad-pilot NY pack) can't render
 	// absurd "815 mi to water" distances. Real trail-ahead data sits within ~80 mi;
@@ -61,16 +69,17 @@
 			.sort((a, b) => a.mile - b.mile)
 	);
 	const nextWater = $derived(watersAhead[0] ?? null);
-	const camp = $derived(sheltersAhead[0] ?? null); // the day's planned end
+	// A mapped shelter is not a destination until the hiker deliberately chooses it.
+	const nextShelter = $derived(sheltersAhead[0] ?? null);
 
-	// Ascent between here and camp, summed from the real USGS elevation profile.
+	// Ascent between here and the next shelter, summed from the real USGS profile.
 	const geo = $derived(trailAssistant.trailGeometry);
 	const climbFt = $derived.by(() => {
-		if (!camp) return 0;
-		return climbFeet(elevationWindow(geo, from, camp.mile - from));
+		if (!nextShelter) return 0;
+		return climbFeet(elevationWindow(geo, from, nextShelter.mile - from));
 	});
 
-	type Node = { kind: 'done' | 'now' | 'water' | 'camp' | 'evening'; title: string; detail?: string; flag?: string };
+	type Node = { kind: 'done' | 'now' | 'water' | 'shelter' | 'evening'; title: string; detail?: string; flag?: string };
 	const dayNodes = $derived.by<Node[]>(() => {
 		const nodes: Node[] = [];
 		// Spine starts at NOW (real position) — no fabricated "Broke camp" the app
@@ -80,24 +89,32 @@
 			title: `Now · Mile ${from.toFixed(1)}`,
 			detail: trailAssistant.hikeProfile.direction === 'SOBO' ? 'On trail, heading south.' : 'On trail, heading north.'
 		});
-		const dayWaters = camp ? watersAhead.filter((w) => w.mile <= camp.mile + 0.01) : watersAhead.slice(0, 2);
+		const landmarks: Array<{ mile: number; node: Node }> = [];
+		const dayWaters = watersAhead.slice(0, 2);
 		for (const w of dayWaters.slice(0, 2)) {
 			const candidate = w.reliability !== 'reliable';
-			nodes.push({
-				kind: 'water',
-				title: `Water · ${w.name}`,
-				detail: `${(w.mile - from).toFixed(1)} mi ahead${candidate ? '' : ' · reliable'}`,
-				flag: candidate ? 'candidate — confirm flow' : undefined
+			landmarks.push({
+				mile: w.mile,
+				node: {
+					kind: 'water',
+					title: `Water · ${w.name}`,
+					detail: `${(w.mile - from).toFixed(1)} mi ahead${candidate ? '' : ' · reliable'}`,
+					flag: candidate ? 'candidate — confirm flow' : undefined
+				}
 			});
 		}
-		if (camp) {
-			nodes.push({
-				kind: 'camp',
-				title: `Camp · ${camp.name}`,
-				detail: `${(camp.mile - from).toFixed(1)} mi to go${climbFt > 0 ? ` · +${climbFt.toLocaleString()} ft climb` : ''}`
+		if (nextShelter) {
+			landmarks.push({
+				mile: nextShelter.mile,
+				node: {
+					kind: 'shelter',
+					title: `Next shelter · ${nextShelter.name}`,
+					detail: `${(nextShelter.mile - from).toFixed(1)} mi ahead${climbFt > 0 ? ` · +${climbFt.toLocaleString()} ft climb` : ''} · not a selected stop`
+				}
 			});
 		}
-		nodes.push({ kind: 'evening', title: 'Tonight · verse & journal', detail: 'When you reach camp: read and log the day.' });
+		nodes.push(...landmarks.sort((a, b) => a.mile - b.mile).map((landmark) => landmark.node));
+		nodes.push({ kind: 'evening', title: 'Tonight · verse & journal', detail: 'At your chosen stop: read and log the day.' });
 		return nodes;
 	});
 
@@ -105,7 +122,7 @@
 		done: 'check',
 		now: 'now',
 		water: 'water',
-		camp: 'shelter',
+		shelter: 'shelter',
 		evening: 'moon'
 	};
 
@@ -121,16 +138,29 @@
 		trailAssistant.runQuickPrompt(prompt);
 	}
 	const lastAnswer = $derived(trailAssistant.lastScoutAnswer);
+	const checkInSmsDraft = $derived(
+		buildCheckInSmsDraft({
+			contacts: trailAssistant.supportCircle,
+			currentMile: trailAssistant.currentMile,
+			trailName: trailAssistant.hikeProfile.trailName
+		})
+	);
+	let checkInNote = $state('');
 	let helpNote = $state('');
+	function safeCheckIn() {
+		trailAssistant.performCheckIn('safe', 'Quick safe check-in from Today.');
+		checkInNote = SAFE_CHECK_IN_RECORDED;
+	}
+	function textCircle() {
+		if (checkInSmsDraft) window.location.href = checkInSmsDraft.href;
+	}
 	function needHelp() {
 		const request = trailAssistant.requestHelp('Today');
 		helpNote = request.message;
 		if (request.href) window.location.href = request.href;
 	}
 
-	const checkInDue = $derived(
-		new Date(trailAssistant.nextCheckInDueAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-	);
+	const checkInDue = $derived(formatTimeUntil(trailAssistant.nextCheckInDueAt, nowMs));
 </script>
 
 <div class="today">
@@ -155,28 +185,33 @@
 		</div>
 		<div class="bar"><div class="fill" style="width:{pct}%"></div></div>
 		<div class="checkin">
-			<span class="ci-due">Check-in due {checkInDue}</span>
+			<span class="ci-due">Check-in {checkInDue}</span>
 			<div class="checkin-buttons">
-				<button class="safe-btn" onclick={() => trailAssistant.performCheckIn('safe', 'Quick safe check-in from Today.')}>
+				<button class="safe-btn" onclick={safeCheckIn}>
 					I'm safe ✓
 				</button>
+				{#if checkInSmsDraft}
+					<button class="circle-btn" onclick={textCircle}>Text my circle</button>
+				{/if}
 				<button class="help-btn" onclick={needHelp}>Need help</button>
 			</div>
 		</div>
+		<p class="checkin-disclosure">{SAFE_CHECK_IN_DISCLOSURE}</p>
+		{#if checkInNote}<p class="today-checkin-note">{checkInNote}</p>{/if}
 		{#if helpNote}<p class="today-help-note">{helpNote}</p>{/if}
 	</section>
 
-	<!-- NEXT: glance-first next actions, read in travel order -->
-	{#if nextWater || camp}
+	<!-- Nearby field-pack landmarks; a shelter is not a selected destination. -->
+	{#if nextWater || nextShelter}
 		<section class="next card">
 			<div class="next-head">
-				<span class="eyebrow">Next</span>
-				{#if camp}<span class="next-day">Today · {(camp.mile - from).toFixed(1)} mi</span>{/if}
+				<span class="eyebrow">Ahead</span>
+				{#if nextShelter}<span class="next-day">Next shelter · {(nextShelter.mile - from).toFixed(1)} mi</span>{/if}
 			</div>
 			{#if nextWater}
 				{@const cand = nextWater.reliability !== 'reliable'}
 				<div class="next-row">
-					<span class="ord ord-1">1st</span>
+					<span class="ord ord-1">Water</span>
 					<div class="next-copy">
 						<p class="next-title">Top off water</p>
 						<p class="next-meta" class:flag={cand}>{cand ? 'candidate — confirm flow' : 'reliable source'}</p>
@@ -186,14 +221,14 @@
 					</div>
 				</div>
 			{/if}
-			{#if camp}
+			{#if nextShelter}
 				<div class="next-row" class:divided={nextWater}>
-					<span class="ord {nextWater ? 'ord-2' : 'ord-1'}">{nextWater ? 'Then' : '1st'}</span>
+					<span class="ord {nextWater ? 'ord-2' : 'ord-1'}">Shelter</span>
 					<div class="next-copy">
-						<p class="next-title">{camp.name}</p>
-						{#if climbFt > 0}<p class="next-meta">+{climbFt.toLocaleString()} ft climb</p>{/if}
+						<p class="next-title">{nextShelter.name}</p>
+						<p class="next-meta">Mapped candidate · choose your own stop{climbFt > 0 ? ` · +${climbFt.toLocaleString()} ft climb` : ''}</p>
 					</div>
-					<div class="next-num"><b>{(camp.mile - from).toFixed(1)}</b><span>mi on</span></div>
+					<div class="next-num"><b>{(nextShelter.mile - from).toFixed(1)}</b><span>mi ahead</span></div>
 				</div>
 			{/if}
 		</section>
@@ -230,9 +265,9 @@
 
 	<TrailPulsePanel />
 
-	<!-- Day spine: the day, now → camp -->
+	<!-- Forward-looking landmarks; the hiker still chooses the day's stop. -->
 	<section class="spine card">
-		<span class="eyebrow">Your day · now → camp</span>
+		<span class="eyebrow">Ahead from here · no stop selected</span>
 		<ol class="timeline">
 			{#each dayNodes as n, i (n.kind + i)}
 				<li class="node {n.kind}">
@@ -439,10 +474,12 @@
 		align-items: center;
 		justify-content: flex-end;
 		gap: 8px;
+		flex-wrap: wrap;
 	}
 	/* Compact pills on the hero — present and tappable (44px hit area) without the
 	   bulk of the old full-width light-card buttons. */
 	.safe-btn,
+	.circle-btn,
 	.help-btn {
 		min-height: 44px;
 		padding: 7px 14px;
@@ -457,6 +494,7 @@
 	/* The two emergency interactions must confirm the press landed — tapped at
 	   night or under stress, silence reads as "did it register?". */
 	.safe-btn:active,
+	.circle-btn:active,
 	.help-btn:active {
 		transform: scale(0.96);
 	}
@@ -464,10 +502,34 @@
 		background: rgba(255, 255, 255, 0.14);
 		color: var(--hud-cream);
 	}
+	.circle-btn {
+		border: 1px solid rgba(255, 255, 255, 0.32);
+		color: var(--hud-cream);
+		background: transparent;
+	}
 	.help-btn {
 		background: rgba(240, 154, 136, 0.95);
 		color: #2c100a;
 		font-weight: 900;
+	}
+	.checkin-disclosure {
+		position: relative;
+		margin-top: 10px;
+		color: var(--hud-faint);
+		font-size: var(--text-floor);
+		line-height: 1.45;
+		font-weight: 700;
+	}
+	.today-checkin-note {
+		position: relative;
+		margin-top: 10px;
+		padding: 9px 11px;
+		border-radius: 10px;
+		background: rgba(185, 202, 169, 0.16);
+		color: var(--hud-cream);
+		font-size: 0.88rem;
+		line-height: 1.4;
+		font-weight: 700;
 	}
 	.today-help-note {
 		position: relative;
@@ -700,7 +762,7 @@
 		background: var(--forest);
 		color: var(--on-accent);
 	}
-	.node.camp .dot {
+	.node.shelter .dot {
 		background: var(--clay-soft);
 		color: var(--clay);
 	}

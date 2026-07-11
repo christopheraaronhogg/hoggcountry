@@ -1,7 +1,26 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import {
+		SAFE_CHECK_IN_DISCLOSURE,
+		SAFE_CHECK_IN_RECORDED,
+		buildCheckInSmsDraft
+	} from '$lib/check-in-ui';
+	import { formatAge, formatTimeUntil } from '$lib/freshness';
+	import { minuteClock } from '$lib/minute-clock.svelte';
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import SourceChip from './SourceChip.svelte';
 	import { toUiSourceReceipt } from './source-receipts';
+
+	onMount(() => minuteClock.retain());
+	const nowMs = $derived(minuteClock.nowMs);
+	const checkInSmsDraft = $derived(
+		buildCheckInSmsDraft({
+			contacts: trailAssistant.supportCircle,
+			currentMile: trailAssistant.currentMile,
+			trailName: trailAssistant.hikeProfile.trailName
+		})
+	);
+	let checkInNote = $state('');
 
 	function send(status: 'safe' | 'delayed') {
 		const notes = {
@@ -10,6 +29,11 @@
 		};
 
 		trailAssistant.performCheckIn(status, notes[status]);
+		checkInNote = SAFE_CHECK_IN_RECORDED;
+	}
+
+	function textCircle() {
+		if (checkInSmsDraft) window.location.href = checkInSmsDraft.href;
 	}
 
 	// "Need help": ALWAYS log locally, then — if a reachable contact exists — open
@@ -40,33 +64,20 @@
 		newRole = '';
 	}
 
+	const currentRisk = $derived.by(() => {
+		void nowMs;
+		return trailAssistant.missedCheckInRisk;
+	});
 	const riskLabel = $derived(
-		trailAssistant.missedCheckInRisk === 'high'
+		currentRisk === 'high'
 			? 'High'
-			: trailAssistant.missedCheckInRisk === 'medium'
+			: currentRisk === 'medium'
 				? 'Medium'
 				: 'Low'
 	);
 
-	const lastCheckInAge = $derived(
-		(() => {
-			const minutes = Math.floor((Date.now() - new Date(trailAssistant.lastCheckIn.timestamp).getTime()) / 60000);
-			if (minutes < 60) return `${minutes}m ago`;
-			const hours = Math.floor(minutes / 60);
-			return `${hours}h ago`;
-		})()
-	);
-
-	const dueIn = $derived(
-		(() => {
-			const minutes = Math.floor(
-				(new Date(trailAssistant.nextCheckInDueAt).getTime() - Date.now()) / 60000
-			);
-			if (minutes <= 0) return 'overdue';
-			if (minutes < 60) return `in ${minutes}m`;
-			return `in ${Math.floor(minutes / 60)}h ${minutes % 60}m`;
-		})()
-	);
+	const lastCheckInAge = $derived(formatAge(trailAssistant.lastCheckIn.timestamp, nowMs));
+	const dueIn = $derived(formatTimeUntil(trailAssistant.nextCheckInDueAt, nowMs));
 
 	// Bailout options derived from the loaded field pack (nearest town + shelter
 	// ahead) — not a hardcoded list. Empty when the pack window has none.
@@ -91,7 +102,7 @@
 </script>
 
 <div class="section-stack">
-	<section class="card safety-hero" data-risk={trailAssistant.missedCheckInRisk}>
+	<section class="card safety-hero" data-risk={currentRisk}>
 		<div class="hero-head">
 			<div>
 				<p class="eyebrow">Safety · Check-in window</p>
@@ -104,7 +115,7 @@
 					{/if}
 				</p>
 			</div>
-			<div class="risk-dial" data-risk={trailAssistant.missedCheckInRisk}>
+			<div class="risk-dial" data-risk={currentRisk}>
 				<strong>{riskLabel}</strong>
 				<span>risk</span>
 			</div>
@@ -126,12 +137,17 @@
 		</div>
 
 		<div class="checkin-actions">
-			<button class="cta-button" onclick={() => send('safe')}>I am safe ✓</button>
+			<button class="cta-button" onclick={() => send('safe')}>I’m safe ✓</button>
 			<button class="outline-button" onclick={() => send('delayed')}>Running late</button>
+			{#if checkInSmsDraft}
+				<button class="outline-button" onclick={textCircle}>Text my circle</button>
+			{/if}
 			<button class="danger-button" onclick={needHelp}>
 				{trailAssistant.reachableSupportContacts.length ? 'Need help — text my circle' : 'Need help'}
 			</button>
 		</div>
+		<p class="checkin-fineprint">{SAFE_CHECK_IN_DISCLOSURE}</p>
+		{#if checkInNote}<p class="checkin-note">{checkInNote}</p>{/if}
 		<p class="help-fineprint">
 			“Need help” logs to this phone and {trailAssistant.reachableSupportContacts.length
 				? 'opens a text to your circle'
@@ -158,8 +174,8 @@
 			<li><span>Weather context</span><strong>{trailAssistant.fieldPack.weather ? 'Cached field pack' : 'Needs refresh'}</strong></li>
 		</ul>
 		<p class="offline-note">
-			Offline check-ins stay on this phone. No contact receives them until a text, call, or later upload
-			actually sends.
+			Offline check-ins stay on this phone and queue for account backup. Family receives nothing unless
+			you separately send a text or make a call.
 		</p>
 	</section>
 
@@ -435,7 +451,7 @@
 
 	.checkin-actions {
 		display: grid;
-		grid-template-columns: 1.2fr 1fr 1fr;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 6px;
 	}
 
@@ -580,11 +596,22 @@
 		color: var(--ink);
 		font-size: 0.95rem;
 	}
+	.checkin-fineprint,
 	.help-fineprint {
 		font-size: 0.82rem;
 		line-height: 1.4;
 		color: var(--muted);
 		margin-top: 8px;
+	}
+	.checkin-fineprint {
+		font-weight: 700;
+		color: var(--ink);
+	}
+	.checkin-note {
+		font-size: 0.82rem;
+		font-weight: 700;
+		color: var(--success);
+		margin-top: 6px;
 	}
 	.help-note {
 		font-size: 0.82rem;

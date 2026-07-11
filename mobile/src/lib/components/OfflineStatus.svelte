@@ -1,5 +1,11 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { formatAge } from '$lib/freshness';
+	import { minuteClock } from '$lib/minute-clock.svelte';
 	import { trailAssistant } from '$lib/trailState.svelte';
+
+	onMount(() => minuteClock.retain());
+	const nowMs = $derived(minuteClock.nowMs);
 
 	const scoutTier = 'Scout Gemma 4 (compact)';
 
@@ -14,16 +20,6 @@
 		stale: 'Stale pack',
 		error: 'Cached pack'
 	} as const;
-
-	function formatRelative(iso: string | null): string {
-		if (!iso) return 'Bundled';
-		const minutes = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / (60 * 1000)));
-		if (minutes < 60) return `${minutes}m ago`;
-		const hours = Math.floor(minutes / 60);
-		if (hours < 24) return `${hours}h ago`;
-		const days = Math.floor(hours / 24);
-		return `${days}d ago`;
-	}
 
 	const status = $derived(trailAssistant.fieldPackStatus);
 	const packRegions = $derived(trailAssistant.fieldPack.downloadedRegions);
@@ -53,7 +49,7 @@
 		</div>
 		<div>
 			<dt>Loaded</dt>
-			<dd>{formatRelative(status.lastLoadedAt)}</dd>
+			<dd>{formatAge(status.lastLoadedAt, nowMs, 'Bundled')}</dd>
 		</div>
 		<div>
 			<dt>Live signal</dt>

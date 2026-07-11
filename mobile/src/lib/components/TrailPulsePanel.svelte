@@ -1,27 +1,18 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
+	import { formatAge } from '$lib/freshness';
+	import { minuteClock } from '$lib/minute-clock.svelte';
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import type { TrailConditionReport } from '$lib/types';
 	import TrailPulseReportAction from './TrailPulseReportAction.svelte';
 
 	let activeAlert = $state<TrailConditionReport | null>(null);
+	onMount(() => minuteClock.retain());
+	const nowMs = $derived(minuteClock.nowMs);
 
 	const nearbyReports = $derived(trailAssistant.nearbyTrailPulseReports);
 	const rangeLabel = $derived(trailAssistant.trailPulseRangeMiles.toFixed(1));
-
-	function formatAge(iso: string): string {
-		const deltaSeconds = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
-		if (deltaSeconds < 60) return 'just now';
-
-		const deltaMinutes = Math.floor(deltaSeconds / 60);
-		if (deltaMinutes < 60) return `${deltaMinutes}m ago`;
-
-		const deltaHours = Math.floor(deltaMinutes / 60);
-		if (deltaHours < 24) return `${deltaHours}h ago`;
-
-		const deltaDays = Math.floor(deltaHours / 24);
-		return `${deltaDays}d ago`;
-	}
 
 	async function pulseHaptic() {
 		if (!browser) return;
@@ -89,7 +80,7 @@
 					<div class="mile-chip">Mile {report.snappedMile.toFixed(1)}</div>
 					<div class="pulse-copy">
 						<strong>{trailAssistant.formatTrailPulseReport(report)}</strong>
-						<span>{formatAge(report.observedAt)} {report.syncState === 'queued-offline' ? '| queued offline' : ''}</span>
+						<span>{formatAge(report.observedAt, nowMs)} {report.syncState === 'queued-offline' ? '| queued offline' : ''}</span>
 					</div>
 					{#if report.photo}
 						<img class="pulse-photo" src={report.photo} alt="Trail photo at mile {report.snappedMile.toFixed(1)}" />
