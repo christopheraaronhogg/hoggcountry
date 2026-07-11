@@ -110,8 +110,13 @@ function checkIosToolchain() {
 		fail('iOS builds require macOS with Xcode.');
 		return;
 	}
-	if (hasCommand('xcodebuild')) ok('Xcode command-line tools found (xcodebuild)');
-	else fail('xcodebuild not found. Install Xcode, then run "xcode-select --install".');
+	const xcode = spawnSync('xcodebuild', ['-version'], { encoding: 'utf8' });
+	if (xcode.status === 0) {
+		const version = `${xcode.stdout ?? ''}${xcode.stderr ?? ''}`.trim().split(/\r?\n/)[0];
+		ok(`Full Xcode selected${version ? ` (${version})` : ''}`);
+	} else {
+		fail('Full Xcode is unavailable or not selected. Install Xcode, then run "sudo xcode-select -s /Applications/Xcode.app/Contents/Developer".');
+	}
 
 	if (hasCommand('pod')) ok('CocoaPods found (pod)');
 	else fail('CocoaPods not found. Install it: "sudo gem install cocoapods" (or "brew install cocoapods").');

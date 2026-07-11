@@ -3,25 +3,29 @@
 	import {
 		SAFE_CHECK_IN_DISCLOSURE,
 		SAFE_CHECK_IN_RECORDED,
-		buildCheckInSmsDraft
+		buildCheckInShareText,
+		helpShareOutcomeNote,
+		safeShareOutcomeNote
 	} from '$lib/check-in-ui';
 	import { formatAge, formatTimeUntil } from '$lib/freshness';
 	import { minuteClock } from '$lib/minute-clock.svelte';
-	import { buildEmergencyShareText } from '$lib/safety';
+	import { buildEmergencyShareText, type EmergencyShareFix } from '$lib/safety';
+	import { copyHandoffText, handoffText } from '$lib/text-handoff';
 	import { trailAssistant } from '$lib/trailState.svelte';
+	import PreparedHelpDraft from './PreparedHelpDraft.svelte';
 	import SourceChip from './SourceChip.svelte';
 	import { toUiSourceReceipt } from './source-receipts';
 
 	onMount(() => minuteClock.retain());
 	const nowMs = $derived(minuteClock.nowMs);
-	const checkInSmsDraft = $derived(
-		buildCheckInSmsDraft({
-			contacts: trailAssistant.supportCircle,
+	const checkInShare = $derived(
+		buildCheckInShareText({
 			currentMile: trailAssistant.currentMile,
 			trailName: trailAssistant.hikeProfile.trailName
 		})
 	);
 	let checkInNote = $state('');
+	let safeShareBusy = $state(false);
 
 	function send(status: 'safe' | 'delayed') {
 		const notes = {
@@ -33,77 +37,138 @@
 		checkInNote = SAFE_CHECK_IN_RECORDED;
 	}
 
-	function textCircle() {
-		if (checkInSmsDraft) window.location.href = checkInSmsDraft.href;
+	async function shareSafeUpdate() {
+		if (safeShareBusy) return;
+		safeShareBusy = true;
+		try {
+			checkInNote = safeShareOutcomeNote(
+				await handoffText({ title: 'Trail check-in', text: checkInShare.text })
+			);
+		} finally {
+			safeShareBusy = false;
+		}
 	}
 
-	// "Need help": ALWAYS log locally, then — if a reachable contact exists — open
-	// the phone's Messages app pre-filled to the circle. This only sends when there
-	// is signal; it is NOT a 911/PLB/SOS service. When no contact has a number we
-	// say so instead of pretending help is wired.
+	// "Need help" always logs locally, then prepares an explicit platform share or
+	// clipboard handoff. It never claims delivery and is not a 911/PLB/SOS service.
 	let helpNote = $state('');
-	let emergencyShareBusy = $state(false);
+	let helpPreparedText = $state('');
+	let helpShareBusy = $state(false);
+	let emergencyPrepareBusy = $state(false);
+	let emergencyHandoffAction = $state<'share' | 'copy' | null>(null);
+	let emergencyCheckInLogged = $state(false);
+	let emergencyPreparedText = $state('');
 	let emergencyShareNote = $state('');
-	function needHelp() {
-		const request = trailAssistant.requestHelp('Safety');
-		helpNote = request.message;
-		if (request.href) window.location.href = request.href;
+	async function needHelp() {
+		if (helpShareBusy) return;
+		helpShareBusy = true;
+		try {
+			let text = helpPreparedText;
+			if (!text) {
+				const request = trailAssistant.requestHelp('Safety');
+				text = request.text;
+				helpPreparedText = text;
+				helpNote = request.message;
+			} else {
+				helpNote = 'Reopening the existing prepared details; no new check-in was logged.';
+			}
+			const outcome = await handoffText({ title: 'Need help', text });
+			helpNote = helpShareOutcomeNote(outcome);
+		} finally {
+			helpShareBusy = false;
+		}
+	}
+	function startNewHelpRequest() {
+		if (helpShareBusy) return;
+		helpPreparedText = '';
+		void needHelp();
 	}
 
-	async function shareEmergencyLocation() {
-		if (emergencyShareBusy) return;
-		emergencyShareBusy = true;
+	async function prepareEmergencyLocation() {
+		if (emergencyPrepareBusy || emergencyHandoffAction) return;
+		emergencyPrepareBusy = true;
 		emergencyShareNote = 'Getting one GPS fix (up to 9 seconds)…';
-		let checkInLogged = false;
 
 		try {
-			trailAssistant.performCheckIn(
-				'need-help',
-				'Emergency share prepared from Safety; Scout cannot confirm delivery.'
-			);
-			checkInLogged = true;
-			const fix = await trailAssistant.getEmergencyShareFix();
+			if (!emergencyCheckInLogged) {
+				trailAssistant.performCheckIn(
+					'need-help',
+					'Emergency share prepared from Safety; Scout cannot confirm delivery.'
+				);
+				emergencyCheckInLogged = true;
+			}
+			let fix: EmergencyShareFix | null = null;
+			try {
+				fix = await trailAssistant.getEmergencyShareFix();
+			} catch {
+				// A useful draft still includes its preparation time and last saved mile.
+			}
+			if (!fix && emergencyPreparedText) {
+				emergencyShareNote =
+					'No new GPS fix was available. Your previous time-stamped draft remains below.';
+				return;
+			}
 			const share = buildEmergencyShareText({
 				currentMile: trailAssistant.currentMile,
 				trailName: trailAssistant.hikeProfile.trailName,
 				preparedAt: new Date(),
 				fix
 			});
-
-			if (typeof navigator.share === 'function') {
-				try {
-					await navigator.share({ title: 'Emergency location', text: share.text });
-					emergencyShareNote =
-						'Share sheet closed. Scout cannot confirm anything was sent; verify with the person or emergency service.';
-					return;
-				} catch (error) {
-					if (
-						typeof error === 'object' &&
-						error !== null &&
-						'name' in error &&
-						error.name === 'AbortError'
-					) {
-						emergencyShareNote = 'Share canceled. The need-help check-in remains logged; nothing was sent.';
-						return;
-					}
-					// Fall through to clipboard when the platform share sheet fails.
-				}
-			}
-
-			if (navigator.clipboard?.writeText) {
-				await navigator.clipboard.writeText(share.text);
-				emergencyShareNote =
-					'Emergency details copied. Paste them into a text or other channel; Scout cannot confirm anything was sent.';
-				return;
-			}
-
-			throw new Error('No supported share or clipboard handoff is available.');
+			emergencyPreparedText = share.text;
+			emergencyShareNote = share.usedCoordinates
+				? 'Emergency details are ready with a GPS fix. Review them, then choose Share or Copy.'
+				: 'Emergency details are ready without a GPS fix. They still include the last saved trail mile; review them before sharing.';
 		} catch {
-			emergencyShareNote = checkInLogged
-				? 'The need-help check-in was logged, but the location draft could not be prepared. Use text, call, 911, or your emergency device directly.'
-				: 'The need-help check-in and location draft could not be prepared. Nothing was sent. Use text, call, 911, or your emergency device directly.';
+			emergencyShareNote = emergencyPreparedText
+				? 'The GPS refresh failed. Your previous prepared draft remains below.'
+				: emergencyCheckInLogged
+					? 'The need-help check-in was logged, but emergency details could not be prepared. Use text, call, 911, or your emergency device directly.'
+					: 'The need-help check-in and location draft could not be prepared. Nothing was sent. Use text, call, 911, or your emergency device directly.';
 		} finally {
-			emergencyShareBusy = false;
+			emergencyPrepareBusy = false;
+		}
+	}
+
+	async function sharePreparedEmergency() {
+		if (!emergencyPreparedText || emergencyHandoffAction) return;
+		emergencyHandoffAction = 'share';
+		try {
+			const outcome = await handoffText({
+				title: 'Emergency location',
+				text: emergencyPreparedText
+			});
+			if (outcome === 'share-handoff-complete') {
+				emergencyShareNote =
+					'Returned from the share chooser. Scout cannot confirm anything was sent; verify with the person or emergency service.';
+			} else if (outcome === 'copied') {
+				emergencyShareNote =
+					'Emergency details copied. Paste them into a message and send it yourself; Scout cannot confirm delivery.';
+			} else if (outcome === 'cancelled-or-no-target') {
+				emergencyShareNote =
+					'Share did not complete or no target was available. The need-help check-in remains logged, and the draft remains below.';
+			} else {
+				emergencyShareNote =
+					'Sharing and automatic copy are unavailable. The prepared draft remains below for manual selection.';
+			}
+		} finally {
+			emergencyHandoffAction = null;
+		}
+	}
+
+	async function copyPreparedEmergency() {
+		if (!emergencyPreparedText || emergencyHandoffAction) return;
+		emergencyHandoffAction = 'copy';
+		try {
+			const outcome = await copyHandoffText({
+				title: 'Emergency location',
+				text: emergencyPreparedText
+			});
+			emergencyShareNote =
+				outcome === 'copied'
+					? 'Emergency details copied. Paste them into a message and send it yourself.'
+					: 'Copy is unavailable. The prepared draft remains below for manual selection.';
+		} finally {
+			emergencyHandoffAction = null;
 		}
 	}
 
@@ -199,37 +264,81 @@
 		<div class="checkin-actions">
 			<button class="cta-button" onclick={() => send('safe')}>I’m safe ✓</button>
 			<button class="outline-button" onclick={() => send('delayed')}>Running late</button>
-			{#if checkInSmsDraft}
-				<button class="outline-button" onclick={textCircle}>Text my circle</button>
-			{/if}
-			<button class="danger-button" onclick={needHelp}>
-				{trailAssistant.reachableSupportContacts.length ? 'Need help — text my circle' : 'Need help'}
+			<button class="outline-button" type="button" disabled={safeShareBusy} onclick={shareSafeUpdate}>
+				{safeShareBusy ? 'Opening share…' : 'Share safe update'}
+			</button>
+			<button class="danger-button" type="button" disabled={helpShareBusy} onclick={needHelp}>
+				{helpShareBusy
+					? 'Opening share…'
+					: helpPreparedText
+						? 'Share help details again'
+						: 'Need help — share details'}
 			</button>
 		</div>
 		<p class="checkin-fineprint">{SAFE_CHECK_IN_DISCLOSURE}</p>
 		{#if checkInNote}<p class="checkin-note">{checkInNote}</p>{/if}
 		<p class="help-fineprint">
-			“Need help” logs to this phone and {trailAssistant.reachableSupportContacts.length
-				? 'opens a text to your circle'
-				: 'prompts you to add a contact'} — it sends only when you have signal. This is not a 911 or
+			“Need help” logs to this phone and prepares details for an explicit share. Scout cannot send or
+			confirm delivery. This is not a 911 or
 			satellite SOS. For a true emergency use your PLB / inReach.
 		</p>
 		{#if helpNote}<p class="help-note">{helpNote}</p>{/if}
+		{#if helpPreparedText}
+			<PreparedHelpDraft
+				text={helpPreparedText}
+				newRequestBusy={helpShareBusy}
+				onStartNew={startNewHelpRequest}
+			/>
+		{/if}
 		<div class="emergency-share">
-			<button
-				class="outline-button emergency-share-button"
-				type="button"
-				disabled={emergencyShareBusy}
-				aria-describedby="emergency-share-copy"
-				onclick={() => void shareEmergencyLocation()}
-			>
-				{emergencyShareBusy ? 'Getting GPS…' : 'Prepare emergency share'}
-			</button>
+			{#if !emergencyPreparedText}
+				<button
+					class="outline-button emergency-share-button"
+					type="button"
+					disabled={emergencyPrepareBusy}
+					aria-describedby="emergency-share-copy"
+					onclick={() => void prepareEmergencyLocation()}
+				>
+					{emergencyPrepareBusy ? 'Getting GPS…' : 'Prepare emergency share'}
+				</button>
+			{/if}
 			<p id="emergency-share-copy" class="emergency-share-copy">
-				Logs a need-help check-in, requests one foreground GPS fix without enabling tracking, then opens
-				the share sheet or copies the details. Scout cannot confirm anything was sent and is not 911,
-				inReach, or PLB.
+				First logs a need-help check-in and requests one foreground GPS fix without enabling tracking.
+				Review the resulting draft, then explicitly Share or Copy it. Scout cannot confirm anything was
+				sent and is not 911, inReach, or PLB.
 			</p>
+			{#if emergencyPreparedText}
+				<div class="emergency-share-draft">
+					<strong>Prepared details — review before sharing</strong>
+					<pre>{emergencyPreparedText}</pre>
+				</div>
+				<div class="emergency-share-actions">
+					<button
+						class="outline-button emergency-share-button"
+						type="button"
+						disabled={emergencyHandoffAction !== null}
+						onclick={() => void sharePreparedEmergency()}
+					>
+						{emergencyHandoffAction === 'share' ? 'Opening share…' : 'Share prepared details'}
+					</button>
+					<button
+						class="outline-button"
+						type="button"
+						disabled={emergencyHandoffAction !== null}
+						onclick={() => void copyPreparedEmergency()}
+					>
+						{emergencyHandoffAction === 'copy' ? 'Copying…' : 'Copy prepared details'}
+					</button>
+				</div>
+				<button
+					class="outline-button"
+					type="button"
+					disabled={emergencyPrepareBusy || emergencyHandoffAction !== null}
+					onclick={() => void prepareEmergencyLocation()}
+				>
+					{emergencyPrepareBusy ? 'Refreshing GPS…' : 'Refresh GPS & draft'}
+				</button>
+			{/if}
 			{#if emergencyShareNote}
 				<p class="emergency-share-note" role="status">{emergencyShareNote}</p>
 			{/if}
@@ -342,7 +451,7 @@
 		<div class="section-heading">
 			<p class="eyebrow">Support circle</p>
 			<h2>Who to contact</h2>
-			<p>Add the people “Need help” should text. A contact needs a phone number to be reachable.</p>
+			<p>Add the people you may contact for help. A usable phone number makes a contact reachable.</p>
 		</div>
 
 		<div class="stack-tight">
@@ -717,6 +826,35 @@
 	}
 	.emergency-share-copy {
 		color: var(--muted);
+	}
+	.emergency-share-draft {
+		display: grid;
+		gap: 6px;
+		min-width: 0;
+		padding: 10px;
+		border: 1px solid var(--line);
+		border-radius: var(--radius-sm);
+		background: var(--surface);
+	}
+	.emergency-share-draft strong {
+		font-size: var(--text-floor);
+		color: var(--forest);
+	}
+	.emergency-share-draft pre {
+		max-width: 100%;
+		margin: 0;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+		font: inherit;
+		font-size: var(--text-floor);
+		line-height: 1.45;
+		color: var(--text);
+		user-select: text;
+	}
+	.emergency-share-actions {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 8px;
 	}
 	.emergency-share-note {
 		font-weight: 700;

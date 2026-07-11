@@ -4,7 +4,9 @@ import { test } from 'node:test';
 import {
 	SAFE_CHECK_IN_DISCLOSURE,
 	SAFE_CHECK_IN_RECORDED,
-	buildCheckInSmsDraft
+	buildCheckInShareText,
+	helpShareOutcomeNote,
+	safeShareOutcomeNote
 } from './check-in-ui.ts';
 
 test('safe check-in copy distinguishes record and backup from family notification', () => {
@@ -15,22 +17,30 @@ test('safe check-in copy distinguishes record and backup from family notificatio
 	assert.match(SAFE_CHECK_IN_RECORDED, /family was not notified/i);
 });
 
-test('buildCheckInSmsDraft creates a separate user-sent circle text', () => {
-	assert.equal(buildCheckInSmsDraft({
-		contacts: [{ name: 'Reference only', role: 'Friend', method: 'Reference' }],
-		currentMile: 42,
-		trailName: 'Sprout'
-	}), null);
+test('portable check-in handoff outcomes never claim delivery', () => {
+	assert.match(safeShareOutcomeNote('share-handoff-complete'), /cannot confirm/i);
+	assert.match(safeShareOutcomeNote('copied'), /paste/i);
+	assert.match(safeShareOutcomeNote('cancelled-or-no-target'), /no target/i);
+	assert.match(safeShareOutcomeNote('unavailable'), /unavailable/i);
 
-	const draft = buildCheckInSmsDraft({
-		contacts: [
-			{ name: 'A', role: 'Mom', method: 'Text', phone: '(555) 123-4567' },
-			{ name: 'B', role: 'Dad', method: 'Text', phone: '+1 555 765 4321' }
-		],
+	assert.match(helpShareOutcomeNote('share-handoff-complete'), /cannot confirm anyone/i);
+	assert.match(helpShareOutcomeNote('copied'), /paste/i);
+	assert.match(helpShareOutcomeNote('cancelled-or-no-target'), /remains logged/i);
+	assert.match(helpShareOutcomeNote('unavailable'), /911/i);
+});
+
+test('buildCheckInShareText creates portable, truthful circle text', () => {
+	const draft = buildCheckInShareText({
 		currentMile: 42.34,
 		trailName: '  Sprout '
 	});
 
-	assert.deepEqual(draft?.recipients.map((contact) => contact.name), ['A', 'B']);
-	assert.equal(draft?.href, 'sms:5551234567,+15557654321?&body=Sprout%20checking%20in%20near%20AT%20mile%2042.3.%20This%20message%20is%20sent%20only%20when%20I%20tap%20Send.');
+	assert.equal(
+		draft.text,
+		[
+			'Sprout checking in.',
+			'Last saved AT mile (may be stale): 42.3.',
+			'Scout cannot send this or confirm delivery.'
+		].join('\n')
+	);
 });

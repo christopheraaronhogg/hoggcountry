@@ -12,12 +12,22 @@ test('Today presents the first mapped shelter as the next shelter, not a chosen 
 	assert.doesNotMatch(source, /the day's planned end|Camp ·|now → camp|const camp\b/);
 });
 
-test('safe check-ins use explicit truth copy and keep circle texting separate', () => {
+test('safe check-ins use explicit truth copy and keep portable sharing separate', () => {
 	for (const name of ['TodayTab', 'SafetyTab']) {
 		const source = componentSource(name);
 		assert.match(source, /SAFE_CHECK_IN_DISCLOSURE/, `${name} should show the disclosure`);
 		assert.match(source, /SAFE_CHECK_IN_RECORDED/, `${name} should confirm the actual outcome`);
-		assert.match(source, /Text my circle/, `${name} should expose a separate text action`);
+		assert.match(source, /Share safe update/, `${name} should expose a separate share action`);
+		assert.match(source, /handoffText/, `${name} should use the portable handoff`);
+		assert.match(source, /if \(safeShareBusy\) return/, `${name} should guard duplicate safe shares`);
+		assert.match(source, /if \(helpShareBusy\) return/, `${name} should guard duplicate help logs`);
+		assert.match(source, /let text = helpPreparedText/, `${name} should reuse an existing help draft`);
+		assert.match(source, /if \(!text\)[\s\S]*requestHelp/, `${name} should log only the first help attempt`);
+		assert.match(source, /helpPreparedText = text/, `${name} should retain help text for recovery`);
+		assert.match(source, /Share help details again/, `${name} should label retries as shares, not new logs`);
+		assert.match(source, /function startNewHelpRequest\(\)/, `${name} should allow a deliberate new incident`);
+		assert.match(source, /helpPreparedText = ''[\s\S]*needHelp\(\)/, `${name} should rebuild a new incident`);
+		assert.match(source, /PreparedHelpDraft/, `${name} should expose explicit copy recovery`);
 	}
 
 	const safety = componentSource('SafetyTab');

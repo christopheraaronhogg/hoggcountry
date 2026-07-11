@@ -4,7 +4,6 @@
 	import {
 		people,
 		AVATAR_TINTS,
-		buildPeopleInviteSmsHref,
 		buildPeopleInviteText,
 		buildPeopleInviteUrl,
 		personInitial,
@@ -12,6 +11,7 @@
 		dialString,
 		type Person
 	} from '$lib/people/people.svelte';
+	import { copyHandoffText, handoffText } from '$lib/text-handoff';
 	import { memberLocation } from '$lib/people/memberLocation.svelte';
 	import Icon from './Icon.svelte';
 
@@ -26,7 +26,8 @@
 	let joinOpen = $state(false);
 	let joinCode = $state('');
 	let copied = $state(false);
-	let shareSheetClosed = $state(false);
+	let inviteNote = $state('');
+	let inviteAction = $state<'share' | 'copy' | null>(null);
 	let shareError = $state<string | null>(null);
 
 	function shareErrorMessage(error: unknown): string {
@@ -58,38 +59,53 @@
 		}
 	}
 
-	function copyInviteLink() {
+	function createInviteLink(): void {
+		if (!ensureInvite()) return;
+		inviteNote = activeGroup.sharing
+			? 'Invite created. Your explicit live-location setting is still on.'
+			: 'Invite created. Live-location sharing remains off.';
+	}
+
+	async function copyInviteLink() {
+		if (inviteAction) return;
 		const invite = ensureInvite();
-		if (!invite || !navigator.clipboard) return;
-		navigator.clipboard.writeText(invite.url).then(
-			() => {
+		if (!invite) return;
+		inviteAction = 'copy';
+		try {
+			const outcome = await copyHandoffText({ title: `${activeGroup.name} map invite`, text: invite.url });
+			if (outcome === 'copied') {
 				copied = true;
+				inviteNote = 'Invite link copied. Paste it into a message and send it yourself.';
 				setTimeout(() => (copied = false), 1500);
-			},
-			() => {}
-		);
+			} else {
+				inviteNote = 'Copy is unavailable. Select the visible invite link and send it yourself.';
+			}
+		} finally {
+			inviteAction = null;
+		}
 	}
 
 	async function shareInvite() {
+		if (inviteAction) return;
 		const invite = ensureInvite();
 		if (!invite) return;
-		if (navigator.share) {
-			try {
-				await navigator.share({ title: `${activeGroup.name} map invite`, text: invite.text, url: invite.url });
-				shareSheetClosed = true;
-				setTimeout(() => (shareSheetClosed = false), 1500);
-				return;
-			} catch {
-				// Share cancellation is a normal user choice; leave the sheet as-is.
-			}
+		inviteAction = 'share';
+		try {
+			const outcome = await handoffText({
+				title: `${activeGroup.name} map invite`,
+				text: invite.text
+			});
+			inviteNote =
+				outcome === 'share-handoff-complete'
+					? 'Returned from the share chooser. Scout cannot confirm the invite was sent or received.'
+					: outcome === 'copied'
+						? 'Invite details copied. Paste them into a message and send it yourself.'
+						: outcome === 'cancelled-or-no-target'
+							? 'Share did not complete or no target was available. Scout did not confirm anything was sent.'
+							: 'Sharing and automatic copy are unavailable. Copy the visible invite link manually.';
+		} finally {
+			inviteAction = null;
 		}
-		copyInviteLink();
-	}
-
-	function textInvite(phone?: string) {
-		const invite = ensureInvite();
-		if (!invite) return;
-		window.location.href = buildPeopleInviteSmsHref({ phone, message: invite.text });
 	}
 
 	function submitJoin() {
@@ -199,23 +215,35 @@
 				<p class="share-error" role="alert">{shareError}</p>
 			{/if}
 
-			{#if activeGroup.sharing && activeGroup.shareCode}
+			{#if activeGroup.shareCode}
 				<div class="invite-code">
-					<div class="ic-label">Invite link — send it to {activeGroup.name.toLowerCase()}</div>
+					<div class="ic-label">Invite link — live sharing stays a separate choice</div>
 					<div class="ic-row invite-link">
 						<code>{inviteUrl}</code>
 					</div>
 					<div class="invite-actions">
-						<button class="ic-copy" type="button" onclick={shareInvite}>
-							{shareSheetClosed ? 'Share sheet closed' : 'Share'}
+						<button
+							class="ic-copy"
+							type="button"
+							disabled={inviteAction !== null}
+							onclick={() => void shareInvite()}
+						>
+							{inviteAction === 'share' ? 'Opening…' : 'Share'}
 						</button>
-						<button class="ic-copy secondary" type="button" onclick={copyInviteLink}>
-							{copied ? 'Copied' : 'Copy link'}
+						<button
+							class="ic-copy secondary"
+							type="button"
+							disabled={inviteAction !== null}
+							onclick={() => void copyInviteLink()}
+						>
+							{inviteAction === 'copy' ? 'Copying…' : copied ? 'Copied' : 'Copy link'}
 						</button>
-						<button class="ic-copy secondary" type="button" onclick={() => textInvite()}>Text</button>
 					</div>
+					{#if inviteNote}<p class="live-note" role="status">{inviteNote}</p>{/if}
 					<div class="manual-code">Code: <code>{activeGroup.shareCode}</code></div>
 				</div>
+			{:else}
+				<button class="join-toggle" type="button" onclick={createInviteLink}>Create invite link</button>
 			{/if}
 
 			{#if joinOpen}
@@ -271,20 +299,12 @@
 							</div>
 							<div class="member-actions">
 								{#if m.phone}
-									<!-- Hand off to the phone's own dialer / Messages — no in-app messaging. -->
+									<!-- Direct calling stays targeted; invite sharing uses the group-level chooser. -->
 									<a
 										class="contact-btn call"
 										href="tel:{dialString(m.phone)}"
 										aria-label={`Call ${m.name}`}><Icon name="phone" size={16} stroke={2} /></a
 									>
-									<button
-										class="contact-btn msg"
-										type="button"
-										onclick={() => textInvite(m.phone)}
-										aria-label={`Text map invite to ${m.name}`}
-									>
-										<Icon name="message" size={16} stroke={2} />
-									</button>
 								{:else if !m.self}
 									<button class="contact-btn add" type="button" onclick={() => startEditPhone(m)}>
 										+ number
@@ -651,7 +671,7 @@
 		font-weight: 800;
 		font-size: 0.78rem;
 	}
-	/* One-tap call / text — hands off to the phone's own apps (tel:/sms:). */
+	/* A direct call remains explicitly targeted to one saved person. */
 	.member-actions {
 		display: flex;
 		align-items: center;
@@ -669,10 +689,6 @@
 	.contact-btn.call {
 		background: var(--forest-soft);
 		color: var(--forest);
-	}
-	.contact-btn.msg {
-		background: var(--sky-soft);
-		color: var(--sky);
 	}
 	.contact-btn.add {
 		width: auto;

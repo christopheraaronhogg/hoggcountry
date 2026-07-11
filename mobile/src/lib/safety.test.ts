@@ -3,7 +3,7 @@ import { test } from 'node:test';
 
 import {
 	buildEmergencyShareText,
-	buildHelpSms,
+	buildHelpShareText,
 	createCheckInRecord,
 	isoHoursFromNow,
 	missedCheckInRisk,
@@ -88,36 +88,27 @@ test('normalizeSupportContact trims fields and rejects blank names', () => {
 test('support contact helpers filter reachable contacts and remove by name', () => {
 	const contacts = [
 		{ name: 'A', role: 'Mom', method: 'Text', phone: '555-1111' },
-		{ name: 'B', role: 'Friend', method: 'Reference' }
+		{ name: 'B', role: 'Friend', method: 'Reference' },
+		{ name: 'Broken', role: 'Friend', method: 'Text', phone: '---' }
 	];
 
 	assert.deepEqual(reachableSupportContacts(contacts).map((contact) => contact.name), ['A']);
-	assert.deepEqual(removeSupportContactByName(contacts, 'A').map((contact) => contact.name), ['B']);
+	assert.deepEqual(removeSupportContactByName(contacts, 'A').map((contact) => contact.name), ['B', 'Broken']);
 });
 
-test('buildHelpSms returns null without phone contacts and encodes a signal-gated sms link', () => {
-	assert.equal(
-		buildHelpSms({
-			contacts: [{ name: 'B', role: 'Friend', method: 'Reference' }],
-			currentMile: 42,
-			trailName: 'Sprout'
-		}),
-		null
-	);
-
-	const sms = buildHelpSms({
-		contacts: [
-			{ name: 'A', role: 'Mom', method: 'Text', phone: '(555) 123-4567' },
-			{ name: 'B', role: 'Dad', method: 'Text', phone: '+1 555 765 4321' }
-		],
+test('buildHelpShareText returns portable, truthful help text', () => {
+	const share = buildHelpShareText({
 		currentMile: 42.34,
 		trailName: '  Sprout '
 	});
 
-	assert.equal(sms?.recipients.length, 2);
 	assert.equal(
-		sms?.href,
-		'sms:5551234567,+15557654321?&body=Sprout%20needs%20help%20on%20the%20AT.%20Near%20mile%2042.3.%20Sent%20from%20Hogg%20Country%20Trail%20Assistant.'
+		share.text,
+		[
+			'Sprout needs help.',
+			'Last saved AT mile (may be stale): 42.3.',
+			'Scout cannot send this or confirm delivery. It is not 911 or satellite SOS.'
+		].join('\n')
 	);
 });
 

@@ -12,7 +12,6 @@ export {
 	PEOPLE_INVITE_APP_URL,
 	PEOPLE_INVITE_CODE_PARAM,
 	PEOPLE_INVITE_GROUP_PARAM,
-	buildPeopleInviteSmsHref,
 	buildPeopleInviteText,
 	buildPeopleInviteUrl,
 	dialString,

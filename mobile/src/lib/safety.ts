@@ -62,31 +62,27 @@ export function normalizeSupportContact(contact: SupportContact): SupportContact
 }
 
 export function reachableSupportContacts(contacts: SupportContact[]): SupportContact[] {
-	return contacts.filter((contact) => !!contact.phone);
+	return contacts.filter((contact) => (contact.phone ?? '').replace(/\D/g, '').length >= 7);
 }
 
 export function removeSupportContactByName(contacts: SupportContact[], name: string): SupportContact[] {
 	return contacts.filter((contact) => contact.name !== name);
 }
 
-export function buildHelpSms(input: {
-	contacts: SupportContact[];
+export function buildHelpShareText(input: {
 	currentMile: number;
 	trailName?: string;
 	fallbackTrailName?: string;
-}): { href: string; recipients: SupportContact[] } | null {
-	const recipients = reachableSupportContacts(input.contacts);
-	if (!recipients.length) return null;
-
-	const mile = input.currentMile.toFixed(1);
+}): { text: string } {
+	const mile = Number.isFinite(input.currentMile) ? input.currentMile.toFixed(1) : 'unavailable';
 	const name = input.trailName?.trim() || input.fallbackTrailName || 'Hiker';
-	const body = `${name} needs help on the AT. Near mile ${mile}. Sent from Hogg Country Trail Assistant.`;
-	const numbers = recipients
-		.map((contact) => (contact.phone ?? '').replace(/[^+\d]/g, ''))
-		.filter(Boolean);
-	const href = `sms:${numbers.join(',')}?&body=${encodeURIComponent(body)}`;
+	const text = [
+		`${name} needs help.`,
+		`Last saved AT mile (may be stale): ${mile}.`,
+		'Scout cannot send this or confirm delivery. It is not 911 or satellite SOS.'
+	].join('\n');
 
-	return { href, recipients };
+	return { text };
 }
 
 export interface EmergencyShareFix {

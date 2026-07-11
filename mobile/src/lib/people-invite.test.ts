@@ -3,7 +3,6 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
 import {
-	buildPeopleInviteSmsHref,
 	buildPeopleInviteText,
 	buildPeopleInviteUrl,
 	normalizeShareCode,
@@ -29,14 +28,11 @@ test('people invite parsing defaults to family and rejects missing codes', () =>
 	assert.equal(normalizeShareCode(' HC-AB CD '), 'hc-abcd');
 });
 
-test('people invite sms body is encoded for the phone handoff', () => {
+test('people invite text is portable and names the code', () => {
 	const inviteUrl = buildPeopleInviteUrl({ groupId: 'family', shareCode: 'hc-family123' });
 	const message = buildPeopleInviteText({ groupName: 'Family', shareCode: 'hc-family123', inviteUrl });
 
-	assert.equal(
-		buildPeopleInviteSmsHref({ phone: '(555) 123-4567', message }),
-		'sms:5551234567?&body=Join%20my%20Hoggcountry%20family%20map%3A%20https%3A%2F%2Fapp.hoggcountry.com%2F%3FhcInvite%3Dhc-family123%26hcGroup%3Dfamily%0AInvite%20code%3A%20hc-family123'
-	);
+	assert.equal(message, `Join my Hoggcountry family map: ${inviteUrl}\nInvite code: hc-family123`);
 });
 
 test('people invite params are stripped after the app consumes a link', () => {
@@ -57,6 +53,7 @@ test('preparing an invite never enables live-location publishing', () => {
 });
 
 test('closing the platform share sheet never claims an invite was delivered', () => {
-	assert.match(peopleSheetSource, /Share sheet closed/u);
-	assert.doesNotMatch(peopleSheetSource, /\? 'Shared' : 'Share'/u);
+	assert.match(peopleSheetSource, /handoffText/u);
+	assert.match(peopleSheetSource, /cannot confirm the invite was sent or received/u);
+	assert.doesNotMatch(peopleSheetSource, /window\.location\.href\s*=\s*buildPeopleInviteSmsHref/u);
 });

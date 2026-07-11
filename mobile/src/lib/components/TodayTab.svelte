@@ -3,13 +3,17 @@
 	import {
 		SAFE_CHECK_IN_DISCLOSURE,
 		SAFE_CHECK_IN_RECORDED,
-		buildCheckInSmsDraft
+		buildCheckInShareText,
+		helpShareOutcomeNote,
+		safeShareOutcomeNote
 	} from '$lib/check-in-ui';
 	import { formatAge, formatTimeUntil } from '$lib/freshness';
 	import { minuteClock } from '$lib/minute-clock.svelte';
+	import { handoffText } from '$lib/text-handoff';
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import { elevationWindow, climbFeet } from '$lib/trail/trail-geometry';
 	import Icon, { type IconName } from './Icon.svelte';
+	import PreparedHelpDraft from './PreparedHelpDraft.svelte';
 	import TrailPulsePanel from './TrailPulsePanel.svelte';
 
 	// Today is a forward look from the hiker's current position. No readiness score —
@@ -144,26 +148,55 @@
 		trailAssistant.runQuickPrompt(prompt);
 	}
 	const lastAnswer = $derived(trailAssistant.lastScoutAnswer);
-	const checkInSmsDraft = $derived(
-		buildCheckInSmsDraft({
-			contacts: trailAssistant.supportCircle,
+	const checkInShare = $derived(
+		buildCheckInShareText({
 			currentMile: trailAssistant.currentMile,
 			trailName: trailAssistant.hikeProfile.trailName
 		})
 	);
 	let checkInNote = $state('');
 	let helpNote = $state('');
+	let helpPreparedText = $state('');
+	let safeShareBusy = $state(false);
+	let helpShareBusy = $state(false);
 	function safeCheckIn() {
 		trailAssistant.performCheckIn('safe', 'Quick safe check-in from Today.');
 		checkInNote = SAFE_CHECK_IN_RECORDED;
 	}
-	function textCircle() {
-		if (checkInSmsDraft) window.location.href = checkInSmsDraft.href;
+	async function shareSafeUpdate() {
+		if (safeShareBusy) return;
+		safeShareBusy = true;
+		try {
+			checkInNote = safeShareOutcomeNote(
+				await handoffText({ title: 'Trail check-in', text: checkInShare.text })
+			);
+		} finally {
+			safeShareBusy = false;
+		}
 	}
-	function needHelp() {
-		const request = trailAssistant.requestHelp('Today');
-		helpNote = request.message;
-		if (request.href) window.location.href = request.href;
+	async function needHelp() {
+		if (helpShareBusy) return;
+		helpShareBusy = true;
+		try {
+			let text = helpPreparedText;
+			if (!text) {
+				const request = trailAssistant.requestHelp('Today');
+				text = request.text;
+				helpPreparedText = text;
+				helpNote = request.message;
+			} else {
+				helpNote = 'Reopening the existing prepared details; no new check-in was logged.';
+			}
+			const outcome = await handoffText({ title: 'Need help', text });
+			helpNote = helpShareOutcomeNote(outcome);
+		} finally {
+			helpShareBusy = false;
+		}
+	}
+	function startNewHelpRequest() {
+		if (helpShareBusy) return;
+		helpPreparedText = '';
+		void needHelp();
 	}
 	function refreshTrailData() {
 		void trailAssistant.refreshFieldPack();
@@ -199,15 +232,24 @@
 				<button class="safe-btn" onclick={safeCheckIn}>
 					I'm safe ✓
 				</button>
-				{#if checkInSmsDraft}
-					<button class="circle-btn" onclick={textCircle}>Text my circle</button>
-				{/if}
-				<button class="help-btn" onclick={needHelp}>Need help</button>
+				<button class="circle-btn" type="button" disabled={safeShareBusy} onclick={shareSafeUpdate}>
+					{safeShareBusy ? 'Opening share…' : 'Share safe update'}
+				</button>
+				<button class="help-btn" type="button" disabled={helpShareBusy} onclick={needHelp}>
+					{helpShareBusy ? 'Opening share…' : helpPreparedText ? 'Share help details again' : 'Need help'}
+				</button>
 			</div>
 		</div>
 		<p class="checkin-disclosure">{SAFE_CHECK_IN_DISCLOSURE}</p>
 		{#if checkInNote}<p class="today-checkin-note">{checkInNote}</p>{/if}
 		{#if helpNote}<p class="today-help-note">{helpNote}</p>{/if}
+		{#if helpPreparedText}
+			<PreparedHelpDraft
+				text={helpPreparedText}
+				newRequestBusy={helpShareBusy}
+				onStartNew={startNewHelpRequest}
+			/>
+		{/if}
 	</section>
 
 	<!-- Nearby field-pack landmarks; a shelter is not a selected destination. -->

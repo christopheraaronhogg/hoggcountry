@@ -45,11 +45,6 @@ export function buildPeopleInviteText(input: {
 	].join('\n');
 }
 
-export function buildPeopleInviteSmsHref(input: { phone?: string; message: string }): string {
-	const target = input.phone ? dialString(input.phone) : '';
-	return `sms:${target}?&body=${encodeURIComponent(input.message)}`;
-}
-
 export function parsePeopleInviteUrl(rawUrl: string): PeopleInvite | null {
 	try {
 		const url = new URL(rawUrl);

@@ -115,7 +115,7 @@ import {
 	updateTrailPulseSyncState
 } from './trail-pulse';
 import {
-	buildHelpSms as buildHelpSmsLink,
+	buildHelpShareText,
 	createCheckInRecord,
 	isoHoursFromNow,
 	missedCheckInRisk,
@@ -1526,14 +1526,12 @@ class TrailAssistantStore {
 	}
 
 	/**
-	 * Build a signal-gated "need help" SMS deep link to the support circle. This is
-	 * NOT an SOS/PLB service — it opens the phone's Messages app pre-filled, which
-	 * only sends when the hiker has a bar. Returns null when no contact has a phone,
-	 * so the UI can prompt to add one instead of pretending help is wired.
+	 * Build portable "need help" text for an explicit share action. This is not an
+	 * SOS/PLB service and cannot send or confirm delivery. The platform chooser
+	 * owns the explicit recipient decision.
 	 */
-	buildHelpSms(): { href: string; recipients: SupportContact[] } | null {
-		return buildHelpSmsLink({
-			contacts: this.#state.supportCircle,
+	buildHelpShare(): { text: string } {
+		return buildHelpShareText({
 			currentMile: this.#state.currentMile,
 			trailName: this.#state.hikeProfile.trailName,
 			fallbackTrailName: this.#fieldPack.hiker.trailName
@@ -1541,27 +1539,14 @@ class TrailAssistantStore {
 	}
 
 	requestHelp(source: 'Today' | 'Safety' = 'Today'): {
-		href: string | null;
+		text: string;
 		message: string;
-		recipients: SupportContact[];
 	} {
 		this.performCheckIn('need-help', `Need help — flagged from ${source}.`);
-		const sms = this.buildHelpSms();
-		if (!sms) {
-			return {
-				href: null,
-				recipients: [],
-				message: 'Logged on this phone. Add a support contact with a phone number so this can text someone.'
-			};
-		}
-
-		const names = sms.recipients.map((contact) => contact.name).join(', ');
+		const share = this.buildHelpShare();
 		return {
-			href: sms.href,
-			recipients: sms.recipients,
-			message: this.#state.onlineStatus
-				? `Opening a text to ${names}…`
-				: `No signal detected — opening a text draft to ${names}. It will not send until your phone has service and you send it.`
+			text: share.text,
+			message: 'Need-help check-in logged. Choose who to contact in the share chooser; Scout cannot send or confirm delivery.'
 		};
 	}
 
