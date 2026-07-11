@@ -5,6 +5,7 @@ import {
 	resetToUncalibratedStarterState
 } from './trail-state-defaults.ts';
 import { normalizeTrailDocuments } from './local-documents.ts';
+import { isValidMile } from './scout/hike-profile.ts';
 
 export type PersistedTrailState = TrailState;
 
@@ -16,7 +17,7 @@ export interface TrailStateQuarantineRecord {
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === 'object' && value !== null;
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function recordOrEmpty(value: unknown): Record<string, unknown> {
@@ -35,8 +36,16 @@ function finiteNumberOr(value: unknown, fallback: number): number {
 	return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
 
-function arrayOr<T>(value: unknown, fallback: T[]): T[] {
-	return Array.isArray(value) ? (value as T[]) : [...fallback];
+function arrayOr<T>(
+	value: unknown,
+	fallback: T[],
+	accept: (entry: unknown) => boolean = () => true
+): T[] {
+	return Array.isArray(value) ? (value.filter(accept) as T[]) : [...fallback];
+}
+
+function validMileOr(value: unknown, fallback: number): number {
+	return isValidMile(value) ? value : fallback;
 }
 
 function isQuarantineRecord(value: unknown): value is TrailStateQuarantineRecord {
@@ -109,32 +118,34 @@ export function restorePersistedTrailState(
 		)
 	};
 
-	state.coachMessages = arrayOr(persisted.coachMessages, defaultState.coachMessages);
-	state.checkInHistory = arrayOr(persisted.checkInHistory, defaultState.checkInHistory);
-	state.personalLoadout = arrayOr(persisted.personalLoadout, defaultState.personalLoadout);
-	state.trailPulseReports = arrayOr(persisted.trailPulseReports, defaultState.trailPulseReports);
+	state.coachMessages = arrayOr(persisted.coachMessages, defaultState.coachMessages, isRecord);
+	state.checkInHistory = arrayOr(persisted.checkInHistory, defaultState.checkInHistory, isRecord);
+	state.personalLoadout = arrayOr(persisted.personalLoadout, defaultState.personalLoadout, isRecord);
+	state.trailPulseReports = arrayOr(persisted.trailPulseReports, defaultState.trailPulseReports, isRecord);
 	state.seenTrailPulseReportIds = arrayOr(
 		persisted.seenTrailPulseReportIds,
-		defaultState.seenTrailPulseReportIds
+		defaultState.seenTrailPulseReportIds,
+		(entry) => typeof entry === 'string'
 	);
-	state.supportCircle = arrayOr(persisted.supportCircle, defaultState.supportCircle);
+	state.supportCircle = arrayOr(persisted.supportCircle, defaultState.supportCircle, isRecord);
 	state.lastCheckIn = isRecord(persisted.lastCheckIn)
 		? state.lastCheckIn
 		: { ...defaultState.lastCheckIn };
-	state.currentMile = finiteNumberOr(persisted.currentMile, defaultState.currentMile);
+	state.currentMile = validMileOr(persisted.currentMile, defaultState.currentMile);
 	state.dayNumber = finiteNumberOr(persisted.dayNumber, defaultState.dayNumber);
 
 	const hikeProfile = isRecord(persisted.hikeProfile) ? persisted.hikeProfile : null;
 	if (!hikeProfile || (hikeProfile.mode !== 'self' && hikeProfile.mode !== 'dad-pilot')) {
 		state = resetToUncalibratedStarterState(state);
 	} else {
+		const profileMile = validMileOr(hikeProfile.currentMile, state.currentMile);
 		state.hikeProfile = {
 			...defaultState.hikeProfile,
 			...hikeProfile,
 			mode: hikeProfile.mode,
 			calibrated: booleanOr(hikeProfile.calibrated, false),
 			direction: hikeProfile.direction === 'SOBO' ? 'SOBO' : 'NOBO',
-			currentMile: finiteNumberOr(hikeProfile.currentMile, state.currentMile),
+			currentMile: profileMile,
 			mileSource:
 				hikeProfile.mileSource === 'onboarding' ||
 				hikeProfile.mileSource === 'check-in' ||
@@ -145,9 +156,10 @@ export function restorePersistedTrailState(
 					: defaultState.hikeProfile.mileSource,
 			updatedAt: stringOr(hikeProfile.updatedAt, defaultState.hikeProfile.updatedAt)
 		};
+		if (hikeProfile.mode === 'self') state.currentMile = profileMile;
 	}
 	state.documents = normalizeTrailDocuments(
-		arrayOr(persisted.documents, defaultState.documents)
+		arrayOr(persisted.documents, defaultState.documents, isRecord)
 	);
 
 	return state;

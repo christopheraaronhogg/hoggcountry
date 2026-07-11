@@ -129,6 +129,47 @@ test('restorePersistedTrailState repairs damaged branches without discarding val
 	assert.deepEqual(restored.trailLogSettings, defaults.trailLogSettings);
 });
 
+test('restorePersistedTrailState salvages a valid self-profile mile when the duplicate mile is damaged', () => {
+	const defaults = defaultState();
+	const restored = restorePersistedTrailState({
+		hikeProfile: {
+			...defaults.hikeProfile,
+			calibrated: true,
+			mode: 'self',
+			currentMile: 702.4,
+			mileSource: 'manual'
+		},
+		currentMile: null
+	}, defaults);
+
+	assert.equal(restored.currentMile, 702.4);
+	assert.equal(restored.hikeProfile.currentMile, 702.4);
+});
+
+test('restorePersistedTrailState drops invalid collection members before downstream use', () => {
+	const defaults = defaultState();
+	const restored = restorePersistedTrailState({
+		hikeProfile: { ...defaults.hikeProfile, calibrated: true, mode: 'self' },
+		coachMessages: [null],
+		checkInHistory: [null],
+		documents: [null],
+		personalLoadout: [null],
+		trailPulseReports: [null],
+		seenTrailPulseReportIds: [null, 'seen-1'],
+		supportCircle: [null],
+		lastCheckIn: []
+	}, defaults);
+
+	assert.deepEqual(restored.coachMessages, []);
+	assert.deepEqual(restored.checkInHistory, []);
+	assert.deepEqual(restored.documents, []);
+	assert.deepEqual(restored.personalLoadout, []);
+	assert.deepEqual(restored.trailPulseReports, []);
+	assert.deepEqual(restored.seenTrailPulseReportIds, ['seen-1']);
+	assert.deepEqual(restored.supportCircle, []);
+	assert.deepEqual(restored.lastCheckIn, defaults.lastCheckIn);
+});
+
 test('parsePersistedTrailState restores JSON snapshots', () => {
 	const restored = parsePersistedTrailState(JSON.stringify({ activeTab: 'Gear', documents: [] }));
 
