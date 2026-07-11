@@ -26,7 +26,7 @@
 	let joinOpen = $state(false);
 	let joinCode = $state('');
 	let copied = $state(false);
-	let shared = $state(false);
+	let shareSheetClosed = $state(false);
 	let shareError = $state<string | null>(null);
 
 	function shareErrorMessage(error: unknown): string {
@@ -36,7 +36,6 @@
 	function ensureInvite(): { url: string; text: string } | null {
 		shareError = null;
 		try {
-			if (!activeGroup.sharing) people.setSharing(activeGroup.id, true);
 			const code = people.ensureShareCode(activeGroup.id);
 			if (!code) return null;
 			const url = buildPeopleInviteUrl({ groupId: activeGroup.id, shareCode: code });
@@ -77,8 +76,8 @@
 		if (navigator.share) {
 			try {
 				await navigator.share({ title: `${activeGroup.name} map invite`, text: invite.text, url: invite.url });
-				shared = true;
-				setTimeout(() => (shared = false), 1500);
+				shareSheetClosed = true;
+				setTimeout(() => (shareSheetClosed = false), 1500);
 				return;
 			} catch {
 				// Share cancellation is a normal user choice; leave the sheet as-is.
@@ -207,7 +206,9 @@
 						<code>{inviteUrl}</code>
 					</div>
 					<div class="invite-actions">
-						<button class="ic-copy" type="button" onclick={shareInvite}>{shared ? 'Shared' : 'Share'}</button>
+						<button class="ic-copy" type="button" onclick={shareInvite}>
+							{shareSheetClosed ? 'Share sheet closed' : 'Share'}
+						</button>
 						<button class="ic-copy secondary" type="button" onclick={copyInviteLink}>
 							{copied ? 'Copied' : 'Copy link'}
 						</button>

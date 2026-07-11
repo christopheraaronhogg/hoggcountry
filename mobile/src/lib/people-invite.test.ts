@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
 import {
@@ -9,6 +10,8 @@ import {
 	parsePeopleInviteUrl,
 	stripPeopleInviteUrl
 } from './people/invite.ts';
+
+const peopleSheetSource = readFileSync(new URL('./components/PeopleSheet.svelte', import.meta.url), 'utf8');
 
 test('people invite links target the production app and carry code plus group', () => {
 	const url = buildPeopleInviteUrl({ groupId: 'tramily', shareCode: ' HC-AbC 123 ' });
@@ -41,4 +44,19 @@ test('people invite params are stripped after the app consumes a link', () => {
 		stripPeopleInviteUrl('https://app.hoggcountry.com/?hcInvite=hc-family123&hcGroup=family&tab=Map#top'),
 		'/?tab=Map#top'
 	);
+});
+
+test('preparing an invite never enables live-location publishing', () => {
+	const ensureInvite = peopleSheetSource.match(
+		/function ensureInvite\(\):[\s\S]*?\n\tfunction setLiveSharing/u
+	)?.[0];
+
+	assert.ok(ensureInvite, 'expected the invite preparation function');
+	assert.match(ensureInvite, /people\.ensureShareCode\(activeGroup\.id\)/u);
+	assert.doesNotMatch(ensureInvite, /setSharing\(/u);
+});
+
+test('closing the platform share sheet never claims an invite was delivered', () => {
+	assert.match(peopleSheetSource, /Share sheet closed/u);
+	assert.doesNotMatch(peopleSheetSource, /\? 'Shared' : 'Share'/u);
 });
