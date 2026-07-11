@@ -88,3 +88,64 @@ export function buildHelpSms(input: {
 
 	return { href, recipients };
 }
+
+export interface EmergencyShareCoordinates {
+	latitude: number;
+	longitude: number;
+}
+
+export function buildEmergencyShareSms(input: {
+	contacts: SupportContact[];
+	currentMile: number;
+	trailName?: string;
+	preparedAt: Date;
+	coordinates: EmergencyShareCoordinates | null;
+}): { href: string; recipients: SupportContact[]; usedCoordinates: boolean } | null {
+	const reachable = reachableSupportContacts(input.contacts)
+		.map((contact) => ({
+			contact,
+			number: (contact.phone ?? '').replace(/[^+\d]/g, '')
+		}))
+		.filter((entry) => entry.number.length > 0);
+	if (!reachable.length) return null;
+
+	const coordinates = input.coordinates;
+	const coordinatesAreValid = Boolean(
+		coordinates &&
+			Number.isFinite(coordinates.latitude) &&
+			Number.isFinite(coordinates.longitude) &&
+			Math.abs(coordinates.latitude) <= 90 &&
+			Math.abs(coordinates.longitude) <= 180
+	);
+	const name = input.trailName?.trim() || 'Hiker';
+	const preparedAt = Number.isFinite(input.preparedAt.getTime())
+		? input.preparedAt.toISOString()
+		: 'unavailable';
+	const mile = Number.isFinite(input.currentMile) ? input.currentMile.toFixed(1) : 'unavailable';
+	const lines = [
+		`${name} needs help on the AT.`,
+		`Draft time (UTC): ${preparedAt}.`
+	];
+
+	if (coordinatesAreValid && coordinates) {
+		const latitude = coordinates.latitude.toFixed(5);
+		const longitude = coordinates.longitude.toFixed(5);
+		lines.push(
+			`GPS fix: ${latitude}, ${longitude}. Map: https://maps.google.com/?q=${latitude},${longitude}`
+		);
+	} else {
+		lines.push('GPS fix unavailable.');
+	}
+
+	lines.push(
+		`Last saved AT mile: ${mile}.`,
+		'This message sends only when I tap Send. It is not 911 or satellite SOS.'
+	);
+	const body = lines.join('\n');
+
+	return {
+		href: `sms:${reachable.map((entry) => entry.number).join(',')}?&body=${encodeURIComponent(body)}`,
+		recipients: reachable.map((entry) => entry.contact),
+		usedCoordinates: coordinatesAreValid
+	};
+}

@@ -1426,6 +1426,23 @@ class TrailAssistantStore {
 		return this.#position.useGpsForMile();
 	}
 
+	/**
+	 * Get one position fix for an explicit user-initiated share. The underlying
+	 * one-shot service still honors the app's precise-location privacy toggle and
+	 * returns null when permission, hardware, or a usable fix is unavailable.
+	 */
+	async getCoordinatesForExplicitShare(): Promise<{
+		latitude: number;
+		longitude: number;
+	} | null> {
+		const position = await this.#position.getCurrentPosition();
+		if (!position) return null;
+		return {
+			latitude: position.coords.latitude,
+			longitude: position.coords.longitude
+		};
+	}
+
 	/** Refresh the on-device model file status (cheap; no network). */
 	async refreshModelStatus() {
 		return this.#modelDownloads.refreshStatus();

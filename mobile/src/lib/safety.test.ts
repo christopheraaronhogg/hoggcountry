@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import {
+	buildEmergencyShareSms,
 	buildHelpSms,
 	createCheckInRecord,
 	isoHoursFromNow,
@@ -11,6 +12,10 @@ import {
 	reachableSupportContacts,
 	removeSupportContactByName
 } from './safety.ts';
+
+function smsBody(href: string): string {
+	return decodeURIComponent(href.split('body=')[1] ?? '');
+}
 
 test('isoHoursFromNow and nextCheckInHours preserve check-in timing policy', () => {
 	const now = new Date('2026-02-02T12:00:00.000Z');
@@ -117,5 +122,63 @@ test('buildHelpSms returns null without phone contacts and encodes a signal-gate
 	assert.equal(
 		sms?.href,
 		'sms:5551234567,+15557654321?&body=Sprout%20needs%20help%20on%20the%20AT.%20Near%20mile%2042.3.%20Sent%20from%20Hogg%20Country%20Trail%20Assistant.'
+	);
+});
+
+test('buildEmergencyShareSms includes UTC draft time, GPS fix, map link, and saved mile', () => {
+	const sms = buildEmergencyShareSms({
+		contacts: [
+			{ name: 'A', role: 'Mom', method: 'Text', phone: '(555) 123-4567' },
+			{ name: 'B', role: 'Dad', method: 'Text', phone: '+1 555 765 4321' }
+		],
+		currentMile: 42.34,
+		trailName: '  Sprout ',
+		preparedAt: new Date('2026-07-11T12:34:56.000Z'),
+		coordinates: { latitude: 34.123456, longitude: -84.987654 }
+	});
+
+	assert.deepEqual(sms?.recipients.map((contact) => contact.name), ['A', 'B']);
+	assert.equal(sms?.usedCoordinates, true);
+	assert.equal(
+		smsBody(sms?.href ?? ''),
+		[
+			'Sprout needs help on the AT.',
+			'Draft time (UTC): 2026-07-11T12:34:56.000Z.',
+			'GPS fix: 34.12346, -84.98765. Map: https://maps.google.com/?q=34.12346,-84.98765',
+			'Last saved AT mile: 42.3.',
+			'This message sends only when I tap Send. It is not 911 or satellite SOS.'
+		].join('\n')
+	);
+});
+
+test('buildEmergencyShareSms honestly falls back when GPS is missing or invalid', () => {
+	const contacts = [{ name: 'A', role: 'Mom', method: 'Text', phone: '555-1234' }];
+	const withoutGps = buildEmergencyShareSms({
+		contacts,
+		currentMile: 42,
+		trailName: '',
+		preparedAt: new Date('2026-07-11T12:34:56.000Z'),
+		coordinates: null
+	});
+	const invalidGps = buildEmergencyShareSms({
+		contacts,
+		currentMile: 42,
+		preparedAt: new Date('2026-07-11T12:34:56.000Z'),
+		coordinates: { latitude: 120, longitude: Number.NaN }
+	});
+
+	assert.equal(withoutGps?.usedCoordinates, false);
+	assert.match(smsBody(withoutGps?.href ?? ''), /GPS fix unavailable/);
+	assert.doesNotMatch(smsBody(withoutGps?.href ?? ''), /maps\.google/);
+	assert.equal(invalidGps?.usedCoordinates, false);
+	assert.match(smsBody(invalidGps?.href ?? ''), /GPS fix unavailable/);
+	assert.equal(
+		buildEmergencyShareSms({
+			contacts: [{ name: 'Reference', role: 'Friend', method: 'Reference' }],
+			currentMile: 42,
+			preparedAt: new Date(),
+			coordinates: null
+		}),
+		null
 	);
 });

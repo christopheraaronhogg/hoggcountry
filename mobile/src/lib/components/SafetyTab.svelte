@@ -7,6 +7,7 @@
 	} from '$lib/check-in-ui';
 	import { formatAge, formatTimeUntil } from '$lib/freshness';
 	import { minuteClock } from '$lib/minute-clock.svelte';
+	import { buildEmergencyShareSms } from '$lib/safety';
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import SourceChip from './SourceChip.svelte';
 	import { toUiSourceReceipt } from './source-receipts';
@@ -41,10 +42,63 @@
 	// is signal; it is NOT a 911/PLB/SOS service. When no contact has a number we
 	// say so instead of pretending help is wired.
 	let helpNote = $state('');
+	let emergencyShareBusy = $state(false);
+	let emergencyShareNote = $state('');
 	function needHelp() {
 		const request = trailAssistant.requestHelp('Safety');
 		helpNote = request.message;
 		if (request.href) window.location.href = request.href;
+	}
+
+	async function shareEmergencyLocation() {
+		if (emergencyShareBusy) return;
+		if (!trailAssistant.privacySettings.sharePreciseLocation) {
+			emergencyShareNote =
+				'Turn on Trail-mile reports below to allow the one-time GPS fix. Nothing was logged or sent.';
+			return;
+		}
+		if (!trailAssistant.reachableSupportContacts.length) {
+			emergencyShareNote =
+				'Add a support contact with a phone number first. Nothing was logged or sent.';
+			return;
+		}
+
+		emergencyShareBusy = true;
+		emergencyShareNote = 'Getting one GPS fix…';
+		let checkInLogged = false;
+
+		try {
+			trailAssistant.performCheckIn(
+				'need-help',
+				'Emergency location share opened from Safety; the text draft still requires Send.'
+			);
+			checkInLogged = true;
+			const coordinates = await trailAssistant.getCoordinatesForExplicitShare();
+			const draft = buildEmergencyShareSms({
+				contacts: trailAssistant.supportCircle,
+				currentMile: trailAssistant.currentMile,
+				trailName: trailAssistant.hikeProfile.trailName,
+				preparedAt: new Date(),
+				coordinates
+			});
+			if (!draft) {
+				emergencyShareNote =
+					'The need-help check-in was logged, but no usable support-circle phone number was found.';
+				return;
+			}
+
+			const names = draft.recipients.map((contact) => contact.name).join(', ');
+			emergencyShareNote = draft.usedCoordinates
+				? `Opening a GPS and time draft to ${names}. It is not sent until you tap Send.`
+				: `No GPS fix was available. Opening a time and saved-mile draft to ${names}; tap Send to notify them.`;
+			window.location.href = draft.href;
+		} catch {
+			emergencyShareNote = checkInLogged
+				? 'The need-help check-in was logged, but the location draft could not be prepared. Use text, call, 911, or your emergency device directly.'
+				: 'The need-help check-in and location draft could not be prepared. Nothing was sent. Use text, call, 911, or your emergency device directly.';
+		} finally {
+			emergencyShareBusy = false;
+		}
 	}
 
 	// Add-contact form (the missing editor — Support Circle was read-only and empty).
@@ -155,6 +209,24 @@
 			satellite SOS. For a true emergency use your PLB / inReach.
 		</p>
 		{#if helpNote}<p class="help-note">{helpNote}</p>{/if}
+		<div class="emergency-share">
+			<button
+				class="outline-button emergency-share-button"
+				type="button"
+				disabled={emergencyShareBusy}
+				aria-describedby="emergency-share-copy"
+				onclick={() => void shareEmergencyLocation()}
+			>
+				{emergencyShareBusy ? 'Getting GPS…' : 'Share emergency location'}
+			</button>
+			<p id="emergency-share-copy" class="emergency-share-copy">
+				Logs a need-help check-in, requests one privacy-gated GPS fix, and opens a timestamped text draft.
+				It does not send automatically and is not 911, inReach, or PLB.
+			</p>
+			{#if emergencyShareNote}
+				<p class="emergency-share-note" role="status">{emergencyShareNote}</p>
+			{/if}
+		</div>
 	</section>
 
 	<section class="card low-signal-card">
@@ -618,6 +690,30 @@
 		font-weight: 700;
 		color: var(--forest);
 		margin-top: 6px;
+	}
+	.emergency-share {
+		display: grid;
+		gap: 6px;
+		padding-top: 12px;
+		border-top: 1px solid var(--divider-soft);
+	}
+	.emergency-share-button {
+		width: 100%;
+		border-color: var(--danger);
+		color: var(--danger);
+	}
+	.emergency-share-copy,
+	.emergency-share-note {
+		font-size: 0.82rem;
+		line-height: 1.4;
+		margin: 0;
+	}
+	.emergency-share-copy {
+		color: var(--muted);
+	}
+	.emergency-share-note {
+		font-weight: 700;
+		color: var(--forest);
 	}
 
 	.bailout-card {
