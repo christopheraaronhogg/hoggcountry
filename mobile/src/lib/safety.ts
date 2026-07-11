@@ -6,6 +6,9 @@ const CHECK_IN_FALLBACK_NOTES: Record<CheckInStatus, string> = {
 	'need-help': 'Need human review on the next move.'
 };
 
+const CHECK_IN_DUE_SOON_MS = 2 * 60 * 60 * 1000;
+const CHECK_IN_ESCALATION_OVERDUE_MS = 2 * 60 * 60 * 1000;
+
 export function isoHoursFromNow(hours: number, now = new Date()): string {
 	return new Date(now.getTime() + hours * 60 * 60 * 1000).toISOString();
 }
@@ -36,14 +39,20 @@ export function createCheckInRecord(input: {
 
 export function missedCheckInRisk(input: {
 	nextCheckInDueAt: string;
-	onlineStatus: boolean;
+	hasRecordedCheckIn?: boolean;
 	now?: Date;
 }): 'low' | 'medium' | 'high' {
+	if (input.hasRecordedCheckIn === false) return 'low';
 	const now = input.now ?? new Date();
-	const hoursUntilDue = (new Date(input.nextCheckInDueAt).getTime() - now.getTime()) / (60 * 60 * 1000);
+	const nowMs = now.getTime();
+	const dueAtMs = Date.parse(input.nextCheckInDueAt);
+	if (!Number.isFinite(nowMs) || !Number.isFinite(dueAtMs)) return 'medium';
+	const timeUntilDueMs = dueAtMs - nowMs;
 
-	if (!input.onlineStatus && hoursUntilDue < 1.5) return 'high';
-	if (hoursUntilDue < 2) return 'medium';
+	// A missed deadline is about the agreed check-in clock, not whether this phone
+	// currently has service. Trail dead zones are normal and are shown separately.
+	if (timeUntilDueMs <= -CHECK_IN_ESCALATION_OVERDUE_MS) return 'high';
+	if (timeUntilDueMs <= CHECK_IN_DUE_SOON_MS) return 'medium';
 	return 'low';
 }
 

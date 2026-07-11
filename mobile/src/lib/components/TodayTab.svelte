@@ -207,7 +207,11 @@
 		void trailAssistant.refreshFieldPack();
 	}
 
-	const checkInDue = $derived(formatTimeUntil(trailAssistant.nextCheckInDueAt, nowMs));
+	const checkInDue = $derived(
+		trailAssistant.hasCheckedIn
+			? formatTimeUntil(trailAssistant.nextCheckInDueAt, nowMs)
+			: 'not started'
+	);
 </script>
 
 <div class="today">

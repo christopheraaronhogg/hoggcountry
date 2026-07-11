@@ -852,7 +852,7 @@ class TrailAssistantStore {
 	get missedCheckInRisk() {
 		return missedCheckInRisk({
 			nextCheckInDueAt: this.#state.nextCheckInDueAt,
-			onlineStatus: this.#state.onlineStatus
+			hasRecordedCheckIn: this.hasCheckedIn
 		});
 	}
 

@@ -195,7 +195,9 @@
 		return trailAssistant.missedCheckInRisk;
 	});
 	const riskLabel = $derived(
-		currentRisk === 'high'
+		!trailAssistant.hasCheckedIn
+			? 'Not set'
+			: currentRisk === 'high'
 			? 'High'
 			: currentRisk === 'medium'
 				? 'Medium'
@@ -203,7 +205,11 @@
 	);
 
 	const lastCheckInAge = $derived(formatAge(trailAssistant.lastCheckIn.timestamp, nowMs));
-	const dueIn = $derived(formatTimeUntil(trailAssistant.nextCheckInDueAt, nowMs));
+	const dueIn = $derived(
+		trailAssistant.hasCheckedIn
+			? formatTimeUntil(trailAssistant.nextCheckInDueAt, nowMs)
+			: 'not started'
+	);
 
 	// Bailout options derived from the loaded field pack (nearest town + shelter
 	// ahead) — not a hardcoded list. Empty when the pack window has none.
@@ -244,7 +250,7 @@
 			</div>
 			<div class="risk-dial" data-risk={currentRisk}>
 				<strong>{riskLabel}</strong>
-				<span>risk</span>
+				<span>{trailAssistant.hasCheckedIn ? 'risk' : 'check-in'}</span>
 			</div>
 		</div>
 

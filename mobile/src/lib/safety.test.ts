@@ -38,19 +38,49 @@ test('createCheckInRecord formats mile location and fallback notes', () => {
 	assert.equal(record.note, 'Still on plan and moving well.');
 });
 
-test('missedCheckInRisk matches offline and due-soon thresholds', () => {
+test('missedCheckInRisk follows the deadline instead of treating offline as danger', () => {
 	const now = new Date('2026-02-02T12:00:00.000Z');
 
 	assert.equal(
-		missedCheckInRisk({ nextCheckInDueAt: '2026-02-02T13:00:00.000Z', onlineStatus: false, now }),
-		'high'
-	);
-	assert.equal(
-		missedCheckInRisk({ nextCheckInDueAt: '2026-02-02T13:00:00.000Z', onlineStatus: true, now }),
+		missedCheckInRisk({ nextCheckInDueAt: '2026-02-02T13:00:00.000Z', now }),
 		'medium'
 	);
 	assert.equal(
-		missedCheckInRisk({ nextCheckInDueAt: '2026-02-02T15:00:00.000Z', onlineStatus: false, now }),
+		missedCheckInRisk({ nextCheckInDueAt: '2026-02-02T15:00:00.000Z', now }),
+		'low'
+	);
+});
+
+test('missedCheckInRisk becomes high only after the escalation window', () => {
+	const now = new Date('2026-02-02T12:00:00.000Z');
+
+	assert.equal(
+		missedCheckInRisk({ nextCheckInDueAt: '2026-02-02T11:00:01.000Z', now }),
+		'medium'
+	);
+	assert.equal(
+		missedCheckInRisk({ nextCheckInDueAt: '2026-02-02T10:00:00.000Z', now }),
+		'high'
+	);
+});
+
+test('missedCheckInRisk treats a broken deadline as unknown attention, not low risk', () => {
+	assert.equal(
+		missedCheckInRisk({
+			nextCheckInDueAt: 'not-a-date',
+			now: new Date('2026-02-02T12:00:00.000Z')
+		}),
+		'medium'
+	);
+});
+
+test('missedCheckInRisk stays low until the hiker starts the real check-in log', () => {
+	assert.equal(
+		missedCheckInRisk({
+			nextCheckInDueAt: '2026-02-02T08:00:00.000Z',
+			hasRecordedCheckIn: false,
+			now: new Date('2026-02-02T12:00:00.000Z')
+		}),
 		'low'
 	);
 });
