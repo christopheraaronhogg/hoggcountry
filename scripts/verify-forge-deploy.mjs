@@ -1,8 +1,21 @@
+import { execFileSync } from 'node:child_process';
+
 const args = process.argv.slice(2);
+
+function localGitHead() {
+  try {
+    return execFileSync('git', ['rev-parse', 'HEAD'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore']
+    }).trim();
+  } catch {
+    return '';
+  }
+}
 
 const options = {
   baseUrl: process.env.FORGE_BASE_URL || 'https://hoggcountry.on-forge.com',
-  expectedSha: process.env.EXPECTED_SHA || '',
+  expectedSha: process.env.EXPECTED_SHA?.trim() || localGitHead(),
   includeMcp: false,
   json: false
 };
@@ -29,6 +42,11 @@ for (let i = 0; i < args.length; i += 1) {
 
   if (arg === '--include-mcp') {
     options.includeMcp = true;
+    continue;
+  }
+
+  if (arg === '--no-sha-check') {
+    options.expectedSha = '';
     continue;
   }
 
@@ -389,7 +407,9 @@ for (const [index, result] of results.entries()) {
 const health = results.find((result) => result.label === 'health');
 const build = health?.json?.meta?.build ?? null;
 
-if (options.expectedSha && build?.sha && build.sha !== options.expectedSha) {
+if (options.expectedSha && !build?.sha) {
+  problems.push(`health build SHA missing: expected ${options.expectedSha}`);
+} else if (options.expectedSha && build.sha !== options.expectedSha) {
   problems.push(`health build SHA mismatch: expected ${options.expectedSha}, got ${build.sha}`);
 }
 
@@ -413,6 +433,7 @@ if (health?.status === 200) {
 
 const summary = {
   baseUrl,
+  expectedSha: options.expectedSha || null,
   ok: problems.length === 0,
   build,
   results: results.map((result) => ({
@@ -437,6 +458,12 @@ if (options.json) {
 
   if (build) {
     console.log('- build:', JSON.stringify(build));
+  }
+
+  if (options.expectedSha) {
+    console.log(`- expected build SHA: ${options.expectedSha}`);
+  } else {
+    console.log('- expected build SHA: skipped');
   }
 
   if (problems.length > 0) {
