@@ -67,10 +67,32 @@ const TRAIL_UPDATES_CACHE_MS = 60 * 1000;
 const TRACK_CACHE_MS = 60 * 1000;
 const TRACK_HISTORY_CACHE_MS = 5 * 60 * 1000;
 const VIDEOS_CACHE_MS = 5 * 60 * 1000;
+export const DAD_FIX_STALE_AFTER_MINUTES = 90;
+const DAD_FIX_STALE_AFTER_MS = DAD_FIX_STALE_AFTER_MINUTES * 60 * 1000;
+const DAD_FIX_FUTURE_SKEW_MS = 5 * 60 * 1000;
 let cachedTrailUpdates: { readonly items: DadTrailUpdateSummary[]; readonly ts: number } | null = null;
 let cachedTrack: { readonly track: GarminFeatureCollection; readonly ts: number } | null = null;
 let cachedTrackHistory: { readonly track: GarminFeatureCollection; readonly ts: number; readonly days: number } | null = null;
 let cachedVideos: { readonly items: YtVideo[]; readonly ts: number } | null = null;
+
+/**
+ * A cached Garmin track is useful as a last-known location, but it is not a
+ * live fix forever. Keep this threshold aligned with the map-pack tracker
+ * contract so every Dad surface degrades at the same age boundary.
+ */
+export function isDadFixFresh(
+  latestPoint: { readonly coords?: [number, number]; readonly when?: string } | undefined,
+  nowMs = Date.now()
+): boolean {
+  const coords = latestPoint?.coords;
+  if (!coords || !coords.every(Number.isFinite) || !Number.isFinite(nowMs)) return false;
+
+  const observedAt = Date.parse(latestPoint.when ?? '');
+  if (!Number.isFinite(observedAt)) return false;
+
+  const ageMs = nowMs - observedAt;
+  return ageMs >= -DAD_FIX_FUTURE_SKEW_MS && ageMs <= DAD_FIX_STALE_AFTER_MS;
+}
 
 export async function loadDadVideos(limit = 8): Promise<YtVideo[]> {
   // Two live YouTube RSS fetches per call made homepage TTFB ride YouTube's
@@ -338,7 +360,10 @@ export async function loadDadPilotSummary(): Promise<DadPilotSummary> {
       ? `${latestPoint.coords[0].toFixed(3)}, ${latestPoint.coords[1].toFixed(3)}`
       : 'Preview fix',
     latestFixAt: typeof latestPoint?.when === 'string' ? latestPoint.when : null,
-    latestFixIsPreview: !latestPoint?.coords,
+    // Cached real coordinates remain visible as a last-known fix, but once the
+    // timestamp is missing/invalid/stale they must not center a new field pack
+    // or be presented as a live safety signal.
+    latestFixIsPreview: !isDadFixFresh(latestPoint),
     latestTrailLocation,
     dispatchCount: videos.length,
     latestDispatchTitle: videos[0]?.title ?? null,

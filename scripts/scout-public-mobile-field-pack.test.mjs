@@ -40,6 +40,24 @@ async function loadFieldPackBuilder() {
   return server.ssrLoadModule(path.join(scoutWebRoot, 'src/lib/server/public-mobile-field-pack.ts'));
 }
 
+async function loadDadModule() {
+  viteServerPromise ??= createServer({
+    configFile: false,
+    root: scoutWebRoot,
+    logLevel: 'error',
+    resolve: {
+      alias: {
+        $lib: path.join(scoutWebRoot, 'src/lib')
+      }
+    },
+    server: { middlewareMode: true },
+    appType: 'custom'
+  });
+
+  const server = await viteServerPromise;
+  return server.ssrLoadModule(path.join(scoutWebRoot, 'src/lib/server/dad.ts'));
+}
+
 async function loadFieldPackRoute(route = 'api/v1/public/scout/field-pack') {
   viteServerPromise ??= createServer({
     configFile: false,
@@ -63,6 +81,23 @@ test.after(async () => {
     const server = await viteServerPromise;
     await server.close();
   }
+});
+
+test('Dad fix freshness rejects stale, missing, invalid, and implausibly future fixes', async () => {
+  const { DAD_FIX_STALE_AFTER_MINUTES, isDadFixFresh } = await loadDadModule();
+  const nowMs = Date.parse('2026-07-11T20:00:00.000Z');
+  const point = (when) => ({ coords: [37.25, -80.5], when });
+
+  assert.equal(DAD_FIX_STALE_AFTER_MINUTES, 90);
+  assert.equal(isDadFixFresh(point('2026-07-11T18:31:00.000Z'), nowMs), true);
+  assert.equal(isDadFixFresh(point('2026-07-11T18:30:00.000Z'), nowMs), true);
+  assert.equal(isDadFixFresh(point('2026-07-11T18:29:59.000Z'), nowMs), false);
+  assert.equal(isDadFixFresh(point('2026-07-11T20:04:00.000Z'), nowMs), true);
+  assert.equal(isDadFixFresh(point('2026-07-11T20:06:00.000Z'), nowMs), false);
+  assert.equal(isDadFixFresh(point('not-a-date'), nowMs), false);
+  assert.equal(isDadFixFresh({ coords: [37.25, -80.5] }, nowMs), false);
+  assert.equal(isDadFixFresh({ when: '2026-07-11T19:30:00.000Z' }, nowMs), false);
+  assert.equal(isDadFixFresh(undefined, nowMs), false);
 });
 
 test('mobile field-pack route exposes public read CORS headers', async () => {
