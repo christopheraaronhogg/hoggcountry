@@ -1,11 +1,69 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import type { PageData } from './$types';
+  import {
+    GUIDE_OFFLINE_RESOURCES,
+    guideIsSavedOffline,
+    saveGuideOffline,
+    type GuideOfflineProgress
+  } from './offline-guide';
   import FullGuideNav from '../../../../../src/components/FullGuideNav.svelte';
   import GuideInlineSearch from '../../../../../src/components/GuideInlineSearch.svelte';
   import DownloadGuideButton from '../../../../../src/components/DownloadGuideButton.svelte';
   import GuideHighlighter from '../../../../../src/components/GuideHighlighter.svelte';
 
   const { data } = $props<{ data: PageData }>();
+
+  type OfflineState = 'checking' | 'idle' | 'saving' | 'saved' | 'error';
+
+  let offlineState = $state<OfflineState>('checking');
+  let offlineError = $state('');
+  let isOnline = $state(true);
+  let offlineProgress = $state<GuideOfflineProgress>({
+    completed: 0,
+    total: GUIDE_OFFLINE_RESOURCES.length,
+    label: 'Checking offline storage'
+  });
+
+  const offlineTitle = $derived(
+    offlineState === 'checking'
+      ? 'Checking Offline Guide'
+      : offlineState === 'saving'
+        ? 'Saving Guide Offline'
+        : offlineState === 'saved'
+          ? 'Guide Saved Offline'
+          : offlineState === 'error'
+            ? 'Guide Not Fully Saved'
+            : 'Save Guide Offline'
+  );
+  const offlineIcon = $derived(
+    offlineState === 'saved' ? 'OK' : offlineState === 'error' ? '!' : offlineState === 'saving' ? '…' : 'DL'
+  );
+  const offlineDescription = $derived.by(() => {
+    if (offlineState === 'checking') return 'Checking this browser’s offline storage.';
+    if (offlineState === 'saving') {
+      return offlineProgress.completed === 0
+        ? offlineProgress.label
+        : `${offlineProgress.label} saved (${offlineProgress.completed} of ${offlineProgress.total})`;
+    }
+    if (offlineState === 'saved') return 'Guide page, search, and guide text verified in offline storage.';
+    if (offlineState === 'error') return offlineError;
+    return 'Save the full guide page, search index, and guide text for use without service.';
+  });
+  const offlineButtonText = $derived(
+    offlineState === 'saving'
+      ? `${offlineProgress.completed}/${offlineProgress.total}`
+      : offlineState === 'saved'
+        ? 'Saved'
+        : offlineState === 'error'
+          ? 'Retry'
+          : offlineState === 'checking'
+            ? 'Checking…'
+            : 'Save'
+  );
+  const offlineButtonDisabled = $derived(
+    offlineState === 'checking' || offlineState === 'saving' || offlineState === 'saved' || !isOnline
+  );
 
   const mainChapters = $derived(data.chapters.filter((chapter) => !chapter.quickRef));
   const quickRefs = $derived(data.chapters.filter((chapter) => chapter.quickRef));
@@ -27,6 +85,78 @@
     if (!element) return;
     element.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+
+  function errorMessage(error: unknown): string {
+    return error instanceof Error && error.message
+      ? error.message
+      : 'Offline storage failed. Check your connection and try again.';
+  }
+
+  async function refreshOfflineStatus() {
+    if (offlineState === 'saving') return;
+    isOnline = navigator.onLine;
+
+    try {
+      if (await guideIsSavedOffline()) {
+        offlineState = 'saved';
+        offlineError = '';
+        return;
+      }
+
+      if (!isOnline) {
+        offlineState = 'error';
+        offlineError = 'This guide is not fully saved on this device. Reconnect, then tap Retry.';
+        return;
+      }
+
+      offlineState = 'idle';
+      offlineError = '';
+    } catch (error) {
+      offlineState = 'error';
+      offlineError = errorMessage(error);
+    }
+  }
+
+  async function handleOfflineSave() {
+    isOnline = navigator.onLine;
+    if (!isOnline) {
+      offlineState = 'error';
+      offlineError = 'Connect to the internet before saving the guide for offline use.';
+      return;
+    }
+
+    offlineState = 'saving';
+    offlineError = '';
+    offlineProgress = {
+      completed: 0,
+      total: GUIDE_OFFLINE_RESOURCES.length,
+      label: 'Preparing offline storage'
+    };
+
+    try {
+      await saveGuideOffline({
+        onProgress: (progress) => {
+          offlineProgress = progress;
+        }
+      });
+      offlineState = 'saved';
+    } catch (error) {
+      offlineState = 'error';
+      offlineError = errorMessage(error);
+    }
+  }
+
+  onMount(() => {
+    const syncStatus = () => void refreshOfflineStatus();
+    window.addEventListener('online', syncStatus);
+    window.addEventListener('offline', syncStatus);
+    void refreshOfflineStatus();
+
+    return () => {
+      window.removeEventListener('online', syncStatus);
+      window.removeEventListener('offline', syncStatus);
+    };
+  });
 </script>
 
 <svelte:head>
@@ -107,13 +237,36 @@
         <DownloadGuideButton variant="toc" markdownContent={data.markdownContent} />
       </div>
 
-      <div class="offline-card">
-        <div class="offline-card-icon">📶</div>
+      <div
+        class="offline-card"
+        class:saving={offlineState === 'saving'}
+        class:saved={offlineState === 'saved'}
+        class:error={offlineState === 'error'}
+        aria-live="polite"
+        aria-busy={offlineState === 'saving'}
+      >
+        <div class="offline-card-icon" aria-hidden="true">{offlineIcon}</div>
         <div class="offline-card-content">
-          <div class="offline-card-title">Save for Offline</div>
-          <div class="offline-card-desc">Tap to save this guide for trail use without service</div>
+          <div class="offline-card-title">{offlineTitle}</div>
+          <div id="guide-offline-status" class="offline-card-desc">{offlineDescription}</div>
+          {#if offlineState === 'saving'}
+            <progress
+              class="offline-progress"
+              max={offlineProgress.total}
+              value={offlineProgress.completed}
+              aria-label={`Saving guide offline: ${offlineProgress.completed} of ${offlineProgress.total}`}
+            ></progress>
+          {/if}
         </div>
-        <button type="button" class="offline-save-btn">Save</button>
+        <button
+          type="button"
+          class="offline-save-btn"
+          disabled={offlineButtonDisabled}
+          aria-describedby="guide-offline-status"
+          onclick={handleOfflineSave}
+        >
+          {offlineButtonText}
+        </button>
       </div>
     </nav>
 
@@ -470,6 +623,20 @@
     transition: all 0.2s ease;
   }
 
+  .offline-card.saving {
+    border-color: var(--terra);
+  }
+
+  .offline-card.saved {
+    border-color: var(--pine);
+    background: linear-gradient(135deg, rgba(77, 89, 74, 0.16), rgba(166, 181, 137, 0.08));
+  }
+
+  .offline-card.error {
+    border-color: #9f1239;
+    background: linear-gradient(135deg, rgba(159, 18, 57, 0.09), rgba(159, 18, 57, 0.03));
+  }
+
   .offline-card-icon {
     font-size: 1.5rem;
     flex-shrink: 0;
@@ -493,6 +660,19 @@
     margin-top: 0.15rem;
   }
 
+  .offline-card.error .offline-card-title,
+  .offline-card.error .offline-card-desc {
+    color: #9f1239;
+  }
+
+  .offline-progress {
+    display: block;
+    width: min(100%, 18rem);
+    height: 0.45rem;
+    margin-top: 0.55rem;
+    accent-color: var(--pine);
+  }
+
   .offline-save-btn {
     padding: 0.5rem 1rem;
     background: var(--pine);
@@ -507,9 +687,14 @@
     white-space: nowrap;
   }
 
-  .offline-save-btn:hover {
+  .offline-save-btn:not(:disabled):hover {
     background: var(--ink);
     transform: translateY(-1px);
+  }
+
+  .offline-save-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
   }
 
   .chapter-section {
