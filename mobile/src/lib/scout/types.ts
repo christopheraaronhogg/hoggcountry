@@ -271,6 +271,7 @@ export interface ProviderRequest {
 	pack: ContextPack;
 	toolInvocations: ToolInvocationRecord[];
 	now: Date;
+	batterySaver?: boolean;
 }
 
 export interface ProviderResponse {

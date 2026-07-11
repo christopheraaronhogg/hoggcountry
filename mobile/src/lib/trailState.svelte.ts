@@ -19,7 +19,10 @@ import type {
 import { publishTrailPulseReport } from './trailPulseSpacetime';
 import { resolveModelPolicy } from './scout/model-policy.ts';
 import { NativeScoutRuntime } from './scout/native-scout-runtime.ts';
-import { getCapacitorScoutInstallSource } from './scout/capacitor-gemma-bridge.ts';
+import {
+	getCapacitorScoutInstallSource,
+	type ScoutGemmaModelStatus
+} from './scout/capacitor-gemma-bridge.ts';
 import { NoScoutModelAvailableError } from './scout/model-router.ts';
 import { createCloudScoutBridge } from './scout/cloud-scout-bridge.ts';
 import { describeDiagnosticError, recordScoutDiagnostic } from './scout/scout-diagnostics.ts';
@@ -30,6 +33,21 @@ import {
 	type PendingScoutAuthPrompt
 } from './scout/scout-auth-resume.ts';
 import { deriveModelPhase } from './scout/model-download-phase.ts';
+import {
+	createScoutOfflineProof,
+	createScoutOfflineProofIdentity,
+	deriveScoutOfflineReadiness,
+	loadScoutOfflineAppIdentity,
+	loadScoutOfflineProof,
+	saveScoutOfflineProof,
+	SCOUT_OFFLINE_SMOKE_PROMPT,
+	scoutOfflineSmokePassed,
+	scoutOfflineWaterExpectation,
+	type ScoutOfflineAppIdentity,
+	type ScoutOfflineProof,
+	type ScoutOfflineTestState,
+	type ScoutRuntimeReadiness
+} from './scout/offline-readiness.ts';
 import { cloudAuth } from './cloud/auth.svelte';
 import {
 	activeTrailDocuments,
@@ -168,6 +186,11 @@ function isRecordObject(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function modelRuntimeFingerprint(status: ScoutGemmaModelStatus | null): string | null {
+	if (!status || status.state !== 'ready') return null;
+	return [status.modelId, status.expectedChecksum ?? '', status.expectedBytes].join(':');
+}
+
 class TrailAssistantStore {
 	#state = $state<TrailState>(createDefaultTrailState());
 	#syncTimer: ReturnType<typeof setTimeout> | null = null;
@@ -190,6 +213,11 @@ class TrailAssistantStore {
 	#lastScoutAnswer = $state<ScoutAnswer | null>(null);
 	#scoutAnswersByMessage = new Map<string, ScoutAnswer>();
 	#modelDownloads = this.#nativeScout.downloads;
+	#offlineAppIdentity = $state.raw<ScoutOfflineAppIdentity | null>(null);
+	#offlineProof = $state.raw<ScoutOfflineProof | null>(null);
+	#scoutRuntimeReadiness = $state<ScoutRuntimeReadiness>('idle');
+	#offlineTestState = $state<ScoutOfflineTestState>('idle');
+	#offlineTestError = $state<string | null>(null);
 	// True while a Scout reply is being generated (on-device inference can take
 	// many seconds), so the chat can show a "thinking" indicator instead of
 	// looking frozen.
@@ -252,6 +280,7 @@ class TrailAssistantStore {
 			this.#fieldPackStatus = status;
 		});
 		void this.#bootstrap();
+		void this.#bootstrapOfflineReadiness();
 		// Trail geometry (1.9 MB fetch + parse) is NOT kicked here — it loads lazily on
 		// the first read of `trailGeometry` (whichever tab needs it), keeping the heavy
 		// parse off the boot/hydration frame. See the getter below.
@@ -409,6 +438,15 @@ class TrailAssistantStore {
 	async #bootstrap() {
 		await this.#hydrate();
 		await this.#loadFieldPack();
+	}
+
+	async #bootstrapOfflineReadiness() {
+		const [appIdentity, proof] = await Promise.all([
+			loadScoutOfflineAppIdentity(),
+			loadScoutOfflineProof(this.#stateStorage)
+		]);
+		this.#offlineAppIdentity = appIdentity;
+		this.#offlineProof = proof;
 	}
 
 	async #hydrate() {
@@ -656,7 +694,10 @@ class TrailAssistantStore {
 
 	resumePendingScoutPrompt(): boolean {
 		const pending = this.#pendingScoutAuthPrompt;
-		if (!pending || this.#scoutThinking) return false;
+		// The thinking flag turns false as soon as the first streamed token lands,
+		// while the native reply is still running. Gate on the full reply lifetime so
+		// an auth resume can never overlap that in-flight generation.
+		if (!pending || this.#activeScoutReplies > 0) return false;
 
 		this.#pendingScoutAuthPrompt = null;
 		this.#settingsReturnTab = 'Scout';
@@ -780,6 +821,25 @@ class TrailAssistantStore {
 		return this.#modelDownloads.supportsModelManagement;
 	}
 
+	get scoutOfflineReadiness() {
+		return deriveScoutOfflineReadiness({
+			supported: this.#modelDownloads.supportsModelManagement,
+			model: this.#modelDownloads.status,
+			identity: createScoutOfflineProofIdentity(
+				this.#modelDownloads.status,
+				this.#offlineAppIdentity
+			),
+			proof: this.#offlineProof,
+			runtime: this.#scoutRuntimeReadiness,
+			test: this.#offlineTestState,
+			error: this.#offlineTestError
+		});
+	}
+
+	get scoutOfflineTestRunning(): boolean {
+		return this.#offlineTestState === 'testing';
+	}
+
 	get syncState() {
 		return this.#state.syncState;
 	}
@@ -886,6 +946,10 @@ class TrailAssistantStore {
 	sendCoachMessage(content: string): ChatMessage | null {
 		const trimmed = content.trim();
 		if (!trimmed) return null;
+		// One Scout turn at a time. Besides preserving transcript order, this keeps
+		// multiple listeners from attaching to the native plugin's shared token event
+		// while an answer is still streaming.
+		if (this.#activeScoutReplies > 0) return null;
 
 		const userMessage = this.#addCoachMessage('user', trimmed);
 
@@ -983,6 +1047,36 @@ class TrailAssistantStore {
 		return null;
 	}
 
+	async #ensureGemmaRuntimeReady(required: boolean): Promise<boolean> {
+		if (!required) return true;
+		if (this.#nativeScout.runtimeInitialized) {
+			this.#scoutRuntimeReadiness = 'ready';
+			return true;
+		}
+
+		this.#scoutRuntimeReadiness = 'initializing';
+		const ready = await this.#nativeScout.gemmaReady(true);
+		this.#scoutRuntimeReadiness = ready ? 'ready' : 'failed';
+		if (!ready) {
+			this.#offlineTestError =
+				this.#nativeScout.runtimeFailureReason ??
+				'Gemma 4 is verified on disk but LiteRT could not initialize it on this phone.';
+		}
+		return ready;
+	}
+
+	async #runExclusiveScoutOperation<T>(operation: () => Promise<T>): Promise<T> {
+		if (this.#activeScoutReplies > 0) {
+			throw new Error('Scout is already running another local AI operation.');
+		}
+		this.#activeScoutReplies += 1;
+		try {
+			return await operation();
+		} finally {
+			this.#activeScoutReplies = Math.max(0, this.#activeScoutReplies - 1);
+		}
+	}
+
 	async #dispatchScoutReply(prompt: string, currentMessageId: string) {
 		this.#activeScoutReplies += 1;
 		this.#scoutThinking = true;
@@ -1036,12 +1130,16 @@ class TrailAssistantStore {
 					}
 					return;
 				}
-			} else if (!(await this.#nativeScout.gemmaReady(REQUIRE_GEMMA))) {
+			} else if (!(await this.#ensureGemmaRuntimeReady(REQUIRE_GEMMA))) {
 				// Model unavailable: append a PLAIN status message. Deliberately do
 				// NOT register it as a ScoutAnswer or set lastScoutAnswer — it isn't a
 				// model answer, so the chat shows no confidence badge or source chips.
 				const autoStart = await this.#nativeScout.startModelDownloadIfUseful();
 				const answer = this.#nativeScout.gemmaUnavailableAnswer(autoStart);
+				const runtimeFailure =
+					this.#modelDownloads.status?.state === 'ready'
+						? this.#nativeScout.runtimeFailureReason
+						: null;
 				recordScoutDiagnostic('model_unavailable', {
 					scout_lane: scoutLaneLabel,
 					auto_start: autoStart,
@@ -1050,7 +1148,7 @@ class TrailAssistantStore {
 					runtime_configured: this.#modelDownloads.status?.runtimeConfigured ?? null,
 					download_configured: this.#modelDownloads.status?.downloadConfigured ?? null
 				}, 'warn');
-				this.#addCoachMessage('assistant', answer.answer);
+				this.#addCoachMessage('assistant', runtimeFailure ?? answer.answer);
 				return;
 			}
 
@@ -1058,7 +1156,9 @@ class TrailAssistantStore {
 				{
 					prompt,
 					conversationHistory: buildScoutConversationHistory(this.#state.coachMessages, {
-						excludeMessageId: currentMessageId
+						excludeMessageId: currentMessageId,
+						maxMessages: this.#state.trailSettings.batterySaver ? 4 : undefined,
+						maxChars: this.#state.trailSettings.batterySaver ? 1_800 : undefined
 					}),
 					onlineStatus: this.#state.onlineStatus,
 					batterySaver: this.#state.trailSettings.batterySaver,
@@ -1131,14 +1231,19 @@ class TrailAssistantStore {
 				model_id: this.#modelDownloads.status?.modelId ?? null,
 				...describeDiagnosticError(error)
 			}, 'error');
+			const failureMessage = error instanceof Error ? error.message : String(error);
 			this.#nativeScout.invalidateAvailability();
-			this.#nativeScout.warmUpModel();
+			this.#scoutRuntimeReadiness = 'failed';
+			this.#offlineTestError =
+				failureMessage.trim() || 'Scout local inference failed. Retry while the phone is on power.';
+			void this.#nativeScout.warmUpModel();
 			// Keep the wording accurate for any failure here (on-device generation is
 			// the dominant case under the Gemma-only policy, but a store/tool error
 			// could also land here) while still nudging a retry — the warm-up above
 			// means the next attempt usually succeeds.
-			const snag =
-				'Scout hit a snag answering that just now — give it a few seconds and ask again.';
+			const snag = /timed out|close and reopen|restart/iu.test(failureMessage)
+				? 'Scout local AI timed out. Close and reopen the app before trying another local answer.'
+				: 'Scout hit a snag answering that just now — give it a few seconds and ask again.';
 			if (streamingId !== null) {
 				this.#setCoachMessageContent(streamingId, snag);
 			} else {
@@ -1156,11 +1261,16 @@ class TrailAssistantStore {
 	 * Throws (model unavailable) so the Bible reader can fall back to verses-only.
 	 */
 	async generateScripture(input: { systemContext: string; prompt: string }): Promise<string> {
-		if (!(await this.#nativeScout.gemmaReady(REQUIRE_GEMMA))) {
-			await this.#nativeScout.startModelDownloadIfUseful();
-			throw new Error('on-device-model-unavailable');
-		}
-		return this.#nativeScout.generateText({ ...input, maxTokens: 512 });
+		return this.#runExclusiveScoutOperation(async () => {
+			if (!(await this.#ensureGemmaRuntimeReady(REQUIRE_GEMMA))) {
+				await this.#nativeScout.startModelDownloadIfUseful();
+				throw new Error('on-device-model-unavailable');
+			}
+			return this.#nativeScout.generateText({
+				...input,
+				maxTokens: this.#state.trailSettings.batterySaver ? 192 : 512
+			});
+		});
 	}
 
 	async runLocalAiEvalSuite(input: {
@@ -1174,30 +1284,32 @@ class TrailAssistantStore {
 		if (CLOUD_SCOUT_ENABLED) {
 			throw new Error('The local-AI eval must run in the installed iOS app, not the web cloud lane.');
 		}
-		this.#nativeScout.ensureNativeWiring();
-		if (!(await this.#nativeScout.gemmaReady(true))) {
-			await this.#nativeScout.startModelDownloadIfUseful();
-			throw new Error('Scout local AI is not ready on this device yet.');
-		}
+		return this.#runExclusiveScoutOperation(async () => {
+			this.#nativeScout.ensureNativeWiring();
+			if (!(await this.#ensureGemmaRuntimeReady(true))) {
+				await this.#nativeScout.startModelDownloadIfUseful();
+				throw new Error('Scout local AI is not ready on this device yet.');
+			}
 
-		return runScoutLocalAiEval({
-			suite: input.suite,
-			limit: input.limit,
-			caseIds: input.caseIds,
-			evidenceLane: 'device-on-device-gemma',
-			runContext: await this.#buildLocalAiEvalRunContext(),
-			onProgress: input.onProgress,
-			onSnapshot: input.onSnapshot,
-			previousRun: input.previousRun,
-			ask: ({ testCase, pack, conversationHistory }) =>
-				this.#nativeScout.askWithContextPack(pack, {
-					prompt: testCase.prompt,
-					conversationHistory,
-					onlineStatus: false,
-					batterySaver: this.#state.trailSettings.batterySaver,
-					allowCloud: false,
-					preferredMode: 'on-device'
-				})
+			return runScoutLocalAiEval({
+				suite: input.suite,
+				limit: input.limit,
+				caseIds: input.caseIds,
+				evidenceLane: 'device-on-device-gemma',
+				runContext: await this.#buildLocalAiEvalRunContext(),
+				onProgress: input.onProgress,
+				onSnapshot: input.onSnapshot,
+				previousRun: input.previousRun,
+				ask: ({ testCase, pack, conversationHistory }) =>
+					this.#nativeScout.askWithContextPack(pack, {
+						prompt: testCase.prompt,
+						conversationHistory,
+						onlineStatus: false,
+						batterySaver: this.#state.trailSettings.batterySaver,
+						allowCloud: false,
+						preferredMode: 'on-device'
+					})
+			});
 		});
 	}
 
@@ -1458,14 +1570,115 @@ class TrailAssistantStore {
 
 	/** Refresh the on-device model file status (cheap; no network). */
 	async refreshModelStatus() {
-		return this.#modelDownloads.refreshStatus();
+		const previousFingerprint = modelRuntimeFingerprint(this.#modelDownloads.status);
+		const status = await this.#modelDownloads.refreshStatus();
+		if (modelRuntimeFingerprint(status) !== previousFingerprint) {
+			this.#nativeScout.invalidateRuntimeReadiness();
+			this.#scoutRuntimeReadiness = 'idle';
+			this.#offlineTestState = 'idle';
+			this.#offlineTestError = null;
+		}
+		return status;
+	}
+
+	/**
+	 * Prove the complete local path on this exact phone. The native connection
+	 * probe must report disconnected both before and after a real grounded Gemma
+	 * turn; no cloud lane, chat-history mutation, or field-pack refresh is allowed.
+	 */
+	async testScoutOffline(): Promise<boolean> {
+		if (this.#activeScoutReplies > 0 || this.#offlineTestState === 'testing') return false;
+		return this.#runExclusiveScoutOperation(() => this.#performScoutOfflineTest());
+	}
+
+	async #performScoutOfflineTest(): Promise<boolean> {
+		this.#offlineTestError = null;
+
+		const model = await this.refreshModelStatus();
+		if (!model || model.state !== 'ready') {
+			this.#offlineTestState = 'failed';
+			this.#offlineTestError = 'Download and verify the Gemma 4 model before testing Scout.';
+			return false;
+		}
+
+		this.#offlineTestState = 'testing';
+		const networkBefore = await this.#nativeScout.getNetworkStatus();
+		if (!networkBefore || networkBefore.connected) {
+			this.#offlineTestState = 'network-required';
+			this.#offlineTestError = networkBefore
+				? 'Turn on Airplane Mode and turn Wi-Fi off, then run the test again.'
+				: 'Scout could not verify that this phone is disconnected. Retry in the installed app.';
+			return false;
+		}
+
+		try {
+			if (!(await this.#ensureGemmaRuntimeReady(true))) {
+				throw new Error('LiteRT could not initialize the verified Gemma 4 model.');
+			}
+
+			const expectedWater = scoutOfflineWaterExpectation(this.#fieldPack);
+			if (!expectedWater) {
+				throw new Error('Refresh a field pack with water references before running the offline test.');
+			}
+			const answer = await this.#nativeScout.askWithContextPack(this.#fieldPack, {
+				prompt: SCOUT_OFFLINE_SMOKE_PROMPT,
+				onlineStatus: false,
+				batterySaver: true,
+				allowCloud: false,
+				preferredMode: 'on-device'
+			});
+			if (!scoutOfflineSmokePassed(answer, expectedWater)) {
+				throw new Error(
+					`Gemma answered, but did not repeat the saved ${expectedWater.name} mile evidence.`
+				);
+			}
+
+			const networkAfter = await this.#nativeScout.getNetworkStatus();
+			if (!networkAfter || networkAfter.connected) {
+				throw new Error('The phone was no longer fully disconnected when the test finished.');
+			}
+
+			this.#offlineAppIdentity ??= await loadScoutOfflineAppIdentity();
+			const identity = createScoutOfflineProofIdentity(model, this.#offlineAppIdentity);
+			if (!identity || !this.#stateStorage) {
+				throw new Error('Scout could not bind this pass to the installed app and model build.');
+			}
+
+			const proof = createScoutOfflineProof(identity);
+			await saveScoutOfflineProof(this.#stateStorage, proof);
+			this.#offlineProof = proof;
+			this.#offlineTestState = 'passed';
+			this.#offlineTestError = null;
+			recordScoutDiagnostic('offline_smoke_passed', {
+				model_id: model.modelId,
+				app_version: identity.appVersion,
+				app_build: identity.appBuild,
+				platform: identity.platform,
+				tool_count: answer.toolInvocations.length,
+				receipt_count: answer.receipts.length
+			});
+			return true;
+		} catch (error) {
+			this.#offlineTestState = 'failed';
+			this.#offlineTestError =
+				error instanceof Error ? error.message : 'Scout could not complete the offline test.';
+			recordScoutDiagnostic(
+				'offline_smoke_failed',
+				{
+					model_id: model.modelId,
+					...describeDiagnosticError(error)
+				},
+				'error'
+			);
+			return false;
+		}
 	}
 
 	/**
 	 * Download + verify the on-device Gemma model, tracking live progress. The
-	 * native side runs the transfer in a foreground service so it survives the app
-	 * being backgrounded; this method tracks it while the UI is open and reconciles
-	 * on completion.
+	 * Android side runs a foreground service; iOS currently requires the app to
+	 * remain active and unlocked. This method tracks either platform while the UI
+	 * is open and reconciles on completion.
 	 *
 	 * Wi-Fi-aware: on a metered (cellular/hotspot) connection it stops and sets
 	 * {@link meteredDownloadPrompt} so the UI can warn about the ~2.5GB cost; pass
@@ -1481,10 +1694,9 @@ class TrailAssistantStore {
 	}
 
 	/**
-	 * Re-observe a download that may have kept running in the background service
-	 * while the app was closed/backgrounded. Call on app resume / when the model UI
-	 * mounts: it re-attaches progress + terminal handling if a transfer is still in
-	 * flight, and refreshes status (which may now be ready). No-op otherwise.
+	 * Re-observe a native download on resume. Android may still own a transfer in
+	 * its foreground service; iOS honestly reports inactive after termination.
+	 * Refreshes status either way and re-attaches when supported.
 	 */
 	async reconcileDownload(): Promise<void> {
 		await this.#modelDownloads.reconcileDownload();

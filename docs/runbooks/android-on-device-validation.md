@@ -36,15 +36,16 @@ this source").
 In the app: **Account tab → "On-device AI · Gemma 4" card → Download model**.
 - Watch the progress bar to ~2.6 GB. It is resumable — if Wi-Fi drops, reopen
   and tap Download again; it continues, it doesn't restart.
-- Success looks like: **"✓ Installed and verified — Scout works fully offline."**
-  (The file is SHA-256 verified before it's ever marked ready — fail-closed.)
+- Success looks like: **"Model verified"** with **"Test Scout offline"** available.
+  File verification proves the pinned SHA-256, not that LiteRT initialized.
 
 ## 3. Prove it runs offline
 
-1. Put the phone in **airplane mode** (proves no cloud).
-2. Ask Scout a trail question (e.g. "what's my next water and shelter?").
-3. A real on-device answer should come back. First answer is slow (the engine
-   does a one-time load of seconds); later answers are faster.
+1. Put the phone in **airplane mode** and turn Wi-Fi off.
+2. In the Offline brain card, tap **Test Scout offline**.
+3. Success is **"Offline test passed"**. The proof is bound to this model and app
+   build; an update deliberately requires a fresh test.
+4. Ask a real trail question (e.g. "what's my next water and shelter?").
 
 ## Diagnostics — if anything looks off
 

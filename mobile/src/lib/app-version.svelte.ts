@@ -10,6 +10,7 @@ export type AppVersionManifest = {
 	label?: string;
 	gitSha?: string;
 	gitShortSha?: string;
+	sourceBuild?: string;
 	sourceDate?: string | null;
 	testFlightUrl?: string;
 };

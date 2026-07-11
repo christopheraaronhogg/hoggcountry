@@ -14,6 +14,11 @@ protocol ScoutGemmaEngine {
     /// weights are absent (informational), or nil when nothing is configured.
     func describeModel() -> ScoutGemmaModelInfo?
 
+    /// Eagerly initializes the native runtime and verifies that the model can be
+    /// loaded. This is intentionally awaited: callers must not report the
+    /// runtime as warmed until LiteRT-LM initialization has actually completed.
+    func warmUp() async throws
+
     /// Runs a single on-device completion. Throws `ScoutGemmaError.unavailable`
     /// when the engine cannot generate — implementations must never return
     /// fabricated text.
@@ -35,10 +40,24 @@ struct ScoutGemmaModelInfo {
 
 enum ScoutGemmaError: LocalizedError {
     case unavailable(String)
+    case timedOut(seconds: Int)
+    case cancelled
 
     var errorDescription: String? {
         switch self {
         case .unavailable(let message): return message
+        case .timedOut(let seconds):
+            return "On-device Gemma timed out after \(seconds)s. Close and reopen Scout before trying local AI again."
+        case .cancelled:
+            return "On-device Gemma generation was cancelled."
+        }
+    }
+
+    var code: String {
+        switch self {
+        case .unavailable: return "SCOUT_GEMMA_UNAVAILABLE"
+        case .timedOut: return "SCOUT_GEMMA_TIMEOUT"
+        case .cancelled: return "SCOUT_GEMMA_CANCELLED"
         }
     }
 }
@@ -49,15 +68,21 @@ enum ScoutGemmaError: LocalizedError {
 /// paid/cloud model. `describeModel()` still returns the target descriptor so
 /// UI/telemetry can show what model this build is built around.
 struct UnavailableScoutGemmaEngine: ScoutGemmaEngine {
-    static let targetModel = ScoutGemmaModelInfo(
-        tier: "balanced",
-        modelId: "gemma-4-E2B-it-litert-lm",
-        maxContextTokens: 128_000
-    )
+	static let targetModel = ScoutGemmaModelInfo(
+		tier: "balanced",
+		modelId: "gemma-4-E2B-it-litert-lm",
+		maxContextTokens: 32_768
+	)
 
     var isAvailable: Bool { false }
 
     func describeModel() -> ScoutGemmaModelInfo? { Self.targetModel }
+
+    func warmUp() async throws {
+        throw ScoutGemmaError.unavailable(
+            "On-device Gemma cannot warm up until the LiteRT-LM runtime and a verified model are available."
+        )
+    }
 
     func generate(prompt: String, systemContext: String, maxTokens: Int) async throws -> GenerateResult {
         throw ScoutGemmaError.unavailable(

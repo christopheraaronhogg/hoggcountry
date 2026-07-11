@@ -364,7 +364,7 @@
 			</span>
 		</div>
 		<ul class="signal-list">
-			<li><span>Local Scout answers</span><strong>{trailAssistant.modelStatus?.state === 'ready' ? 'Available' : 'Needs model download'}</strong></li>
+			<li><span>Local Scout answers</span><strong>{trailAssistant.scoutOfflineReadiness.stage === 'offline_ready' ? 'Available · offline tested' : trailAssistant.scoutOfflineReadiness.label}</strong></li>
 			<li><span>Field guide + mileposts</span><strong>Available</strong></li>
 			<li><span>Check-in log</span><strong>Stored locally</strong></li>
 			<li><span>Weather context</span><strong>{trailAssistant.fieldPack.weather ? 'Cached field pack' : 'Needs refresh'}</strong></li>

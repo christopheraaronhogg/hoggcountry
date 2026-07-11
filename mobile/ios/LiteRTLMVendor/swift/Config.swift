@@ -149,17 +149,26 @@ public struct ConversationConfig {
   // If `nil`, then uses the engine's default values.
   public let samplerConfig: SamplerConfig?
 
+  // Maximum number of tokens the model may decode for one response. This is
+  // separate from EngineConfig.maxNumTokens, which sizes the combined
+  // input/output KV cache. LiteRT-LM's C session API supports this limit even
+  // though the upstream 0.13.1 Swift wrapper does not expose it yet.
+  public let maxOutputTokens: Int?
+
   /// - Parameters:
   ///   - systemMessage: The system message to be used in the conversation.
   ///   - initialMessages: The initial messages to populate the conversation history.
   ///   - tools: The list of tool instances to be used in the conversation.
   ///   - samplerConfig: Configuration for the sampling process. If `nil`, then uses the engine's
   ///     default values.
+  ///   - maxOutputTokens: Maximum decoded tokens for one response. Values less
+  ///     than one are ignored and use the runtime default.
   public init(
     systemMessage: Message? = nil,
     initialMessages: [Message] = [],
     tools: [Tool] = [],
-    samplerConfig: SamplerConfig? = nil
+    samplerConfig: SamplerConfig? = nil,
+    maxOutputTokens: Int? = nil
   ) {
     self.systemMessage = systemMessage.map { msg in
       msg.role == .system
@@ -168,5 +177,6 @@ public struct ConversationConfig {
     self.initialMessages = initialMessages
     self.tools = tools
     self.samplerConfig = samplerConfig
+    self.maxOutputTokens = maxOutputTokens
   }
 }

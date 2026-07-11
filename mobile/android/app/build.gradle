@@ -16,8 +16,10 @@ android {
         applicationId "com.hoggcountry.trailassistant"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0.0"
+        // Keep Android release identity aligned with the current iOS/TestFlight
+        // marketing/build numbers; offline-runtime proof also binds a source hash.
+        versionCode 43
+        versionName "1.0"
         // On-device Gemma 4 model source. Public, ungated, Apache-2.0 LiteRT-LM
         // weights served from the Hugging Face CDN (Range/resume supported).
         // Pinned SHA-256 + byte size are verified before the file is ever loaded.

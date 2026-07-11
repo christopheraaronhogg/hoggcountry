@@ -47,12 +47,16 @@
 				? 'Online'
 				: trailAssistant.scoutUsesCloud
 					? 'Offline — Scout needs a connection'
-					: 'Offline — Scout still works on-device'}
+					: trailAssistant.scoutOfflineReadiness.stage === 'offline_ready'
+						? 'Offline — Scout passed its local test on this phone'
+						: 'Offline — saved trail data is available; Scout is not yet offline-tested'}
 			aria-label={trailAssistant.onlineStatus
 				? 'Online'
 				: trailAssistant.scoutUsesCloud
 					? 'Offline'
-					: 'Offline ready'}
+					: trailAssistant.scoutOfflineReadiness.stage === 'offline_ready'
+						? 'Offline; Scout tested'
+						: 'Offline; Scout test pending'}
 		>
 			<span class="conn-dot"></span>
 			{#if !trailAssistant.onlineStatus}<span class="conn-label">Offline</span>{/if}

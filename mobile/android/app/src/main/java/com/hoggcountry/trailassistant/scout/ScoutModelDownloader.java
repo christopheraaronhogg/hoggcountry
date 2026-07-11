@@ -42,7 +42,8 @@ public final class ScoutModelDownloader {
     private static final String PART_SUFFIX = ".part";
     private static final int BUFFER_BYTES = 1 << 16; // 64 KB
     private static final long PROGRESS_STEP_BYTES = 1L << 19; // notify every ~512 KB
-    private static final long FREE_SPACE_MARGIN_BYTES = 64L << 20; // 64 MB headroom
+    private static final long MIN_FREE_SPACE_MARGIN_BYTES = 512L << 20; // OS + LiteRT cache headroom
+    private static final double FREE_SPACE_MARGIN_RATIO = 0.15d;
     private static final int CONNECT_TIMEOUT_MS = 30_000;
     private static final int READ_TIMEOUT_MS = 60_000;
     private static final int MAX_REDIRECTS = 5;
@@ -95,6 +96,28 @@ public final class ScoutModelDownloader {
         // Already downloaded + verified? Nothing to do.
         if (ScoutModelStatus.READY.equals(store.getStatus().state)) {
             return store.getStatus();
+        }
+
+        // A previous app version may have written a legacy verification marker, or
+        // a new build may intentionally change the marker manifest. Re-hash a
+        // correctly-sized final file before spending another 2.6 GB of bandwidth.
+        if (finalFile.isFile()
+                && (!spec.hasExpectedSize() || finalFile.length() == spec.expectedSizeBytes)) {
+            try {
+                if (store.verify()) {
+                    return store.getStatus();
+                }
+                // Same-size but wrong-manifest/hash bytes can never become usable;
+                // discard them before the storage precheck so we do not require
+                // space for two full model files.
+                if (!finalFile.delete()) {
+                    throw new ScoutModelDownloadException(
+                            "Existing model failed verification and could not be discarded.");
+                }
+            } catch (IOException e) {
+                throw new ScoutModelDownloadException(
+                        "Existing model verification IO error: " + e.getMessage(), e);
+            }
         }
 
         ensureFreeSpace(finalFile, expected, partFile.length());
@@ -285,7 +308,7 @@ public final class ScoutModelDownloader {
         if (expectedSize <= 0L) {
             return; // size unknown — skip the precheck rather than guess.
         }
-        long needed = expectedSize - alreadyOnDisk + FREE_SPACE_MARGIN_BYTES;
+        long needed = requiredFreeBytes(expectedSize, alreadyOnDisk);
         if (needed <= 0L) {
             return;
         }
@@ -294,7 +317,26 @@ public final class ScoutModelDownloader {
         if (free < needed) {
             throw new ScoutModelDownloadException(
                     "Not enough free storage for the model: need ~"
-                            + (needed >> 20) + " MB more, have " + (free >> 20) + " MB free.");
+                            + (needed >> 20) + " MB free before download, have "
+                            + (free >> 20) + " MB free.");
         }
+    }
+
+    /**
+     * Required free bytes = remaining model bytes plus the larger of 512 MiB or
+     * 15% of the model. The old 64 MiB margin did not leave realistic room for
+     * Android, verification IO, and LiteRT's first-run cache artifacts.
+     */
+    static long requiredFreeBytes(long expectedSize, long alreadyOnDisk) {
+        if (expectedSize <= 0L) {
+            return 0L;
+        }
+        long remaining = Math.max(0L, expectedSize - Math.max(0L, alreadyOnDisk));
+        long proportional = (long) Math.ceil(expectedSize * FREE_SPACE_MARGIN_RATIO);
+        long margin = Math.max(MIN_FREE_SPACE_MARGIN_BYTES, proportional);
+        if (remaining > Long.MAX_VALUE - margin) {
+            return Long.MAX_VALUE;
+        }
+        return remaining + margin;
     }
 }

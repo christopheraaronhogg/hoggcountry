@@ -36,7 +36,13 @@ test('Scout Eval Lab proof status unlocks the full run only for the required Tes
 
 	assert.equal(status.canRunSmoke, true);
 	assert.equal(status.canRunFinal, true);
-	assert.equal(status.statusLabel, 'TestFlight ready');
+	assert.equal(status.statusLabel, 'Run 100 available');
+	assert.deepEqual(status.checks.find((check) => check.id === 'model'), {
+		id: 'model',
+		label: 'Model file',
+		value: 'Verified',
+		ok: true
+	});
 	assert.equal(status.checks.find((check) => check.id === 'install')?.ok, true);
 	assert.equal(status.checks.find((check) => check.id === 'build')?.ok, true);
 });
@@ -57,7 +63,7 @@ test('Scout Eval Lab proof status allows smoke but blocks final 100 on debug ins
 
 	assert.equal(status.canRunSmoke, true);
 	assert.equal(status.canRunFinal, false);
-	assert.equal(status.statusLabel, 'Smoke only');
+	assert.equal(status.statusLabel, 'Run 3 available');
 	assert.deepEqual(
 		status.checks.map((check) => [check.id, check.ok]),
 		[
@@ -136,7 +142,7 @@ test('Scout Eval Lab proof status blocks while running or while the model is mis
 	assert.equal(running.canRunFinal, false);
 	assert.equal(running.statusLabel, 'Running');
 	assert.equal(missingModel.canRunSmoke, false);
-	assert.equal(missingModel.statusLabel, 'Needs model');
+	assert.equal(missingModel.statusLabel, 'Needs model file');
 });
 
 test('Scout Eval Lab run context proves a full export came from the required TestFlight iPhone build', () => {

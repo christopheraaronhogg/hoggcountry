@@ -790,7 +790,7 @@ test('mobile Eval Lab turns proof state into the next Dad checkpoint', async () 
 	const component = await readFile(MOBILE_EVAL_LAB_PATH, 'utf8');
 	assert.match(component, /summarizeNextCheckpoint/u, 'Eval Lab should derive one immediate phone action from proof state');
 	assert.match(component, /Next checkpoint/u, 'Eval Lab should label the immediate next action for Dad');
-	assert.match(component, /Prepare local model/u, 'Eval Lab should point at local model readiness before running');
+	assert.match(component, /Verify local model file/u, 'Eval Lab should point at file verification before running');
 	assert.match(component, /Use local AI lane/u, 'Eval Lab should protect final proof from cloud Scout');
 	assert.match(component, /Open iPhone app/u, 'Eval Lab should keep final proof on the installed iOS path');
 	assert.match(component, /Run smoke check/u, 'Eval Lab should surface Run 3 when final proof is not ready yet');

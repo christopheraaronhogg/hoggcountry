@@ -60,7 +60,7 @@ test('deriveModelPhase handles unknown download totals without fake percentages'
 	});
 });
 
-test('deriveModelPhase distinguishes metered, error, ready, and idle states', () => {
+test('deriveModelPhase distinguishes metered, error, file-verified, and idle states', () => {
 	assert.deepEqual(
 		deriveModelPhase({
 			download: null,
@@ -88,7 +88,7 @@ test('deriveModelPhase distinguishes metered, error, ready, and idle states', ()
 			error: null,
 			meteredPrompt: null
 		}),
-		{ kind: 'ready' }
+		{ kind: 'file_verified' }
 	);
 
 	assert.deepEqual(

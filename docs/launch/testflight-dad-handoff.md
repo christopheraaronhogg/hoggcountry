@@ -100,7 +100,7 @@ npm run refresh:testflight-dad-pilot -- --build 42 --app-version 1.0 --attach --
 1. Confirm the phone build path above. For the next suite run, install/update the latest Dad Pilot TestFlight target `1.0 (42)`.
 2. On the iPhone, open TestFlight and update Hoggcountry.
 3. Open Hoggcountry > Settings > Scout Eval Lab.
-4. Confirm the Eval Lab status says `TestFlight ready`.
+4. Confirm the Eval Lab status says `Run 100 available`.
 5. Run `Run 3` only as a smoke check if needed; use `Run 100` for real proof.
 6. When `Run 100` finishes, tap Share first and send the JSON export back. Use Copy only if Share fails.
 7. Keep the phone awake and plugged in during the run; if interrupted, reopen Settings and tap Resume.

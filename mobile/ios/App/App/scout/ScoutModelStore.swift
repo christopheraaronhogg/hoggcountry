@@ -86,8 +86,9 @@ struct ScoutModelStatus {
 /// app-private storage; the byte transfer lives in `ScoutModelDownloader`.
 /// Nothing here fabricates a ready model, and no cloud inference is invoked.
 final class ScoutModelStore {
-    private static let modelDirName = "scout-models"
-    private static let verifiedSuffix = ".verified"
+	private static let modelDirName = "scout-models"
+	private static let verifiedSuffix = ".verified"
+	private static let verifiedMarkerVersion = "v2"
 
     let spec: ScoutModelSpec
     private let fileManager = FileManager.default
@@ -169,10 +170,10 @@ final class ScoutModelStore {
     }
 
     /// Verifies a downloaded file against the configured size and SHA-256 and, on
-    /// success, writes a sibling `.verified` marker CONTAINING the verified file's
-    /// byte-size and last-modified-time (fail-closed binding). Returns false (and
-    /// clears any marker) when the spec has no checksum, the file is missing, or
-    /// the size/hash mismatch.
+	/// success, writes a sibling `.verified` marker bound to the pinned manifest
+	/// plus the file's byte-size and last-modified-time. Returns false (and clears
+	/// any marker) when the spec has no checksum, the file is missing, or the
+	/// size/hash mismatch.
     @discardableResult
     func verify() throws -> Bool {
         guard spec.hasExpectedChecksum, let expected = spec.expectedSha256 else { return false }
@@ -196,13 +197,12 @@ final class ScoutModelStore {
         clearVerifiedMarker()
     }
 
-    // MARK: - Fail-closed marker (size + mtime binding)
+	// MARK: - Fail-closed marker (manifest + file identity binding)
 
-    /// Returns true ONLY if the marker exists AND the recorded size and mtime
-    /// match the current file's attributes. Any mismatch deletes the stale marker
-    /// and returns false — a post-verify replacement that changes size or mtime
-    /// fails closed without a per-load re-hash.
-    private func isVerified(for fileURL: URL) -> Bool {
+	/// Returns true only when the marker matches the pinned model manifest and the
+	/// current file identity. App/model updates therefore cannot inherit an older
+	/// size+mtime-only proof.
+	private func isVerified(for fileURL: URL) -> Bool {
         let markerPath = verifiedMarkerURL.path
         guard fileManager.fileExists(atPath: markerPath),
               let markerContents = fileManager.contents(atPath: markerPath),
@@ -210,10 +210,15 @@ final class ScoutModelStore {
             return false
         }
         let lines = markerString.components(separatedBy: "\n")
-        guard lines.count >= 2,
-              let recordedSize = Int64(lines[0]),
-              let recordedMtime = Int64(lines[1]) else {
-            // Marker is in the old empty format or corrupt — delete and fail closed.
+		guard lines.count >= 6,
+			  lines[0] == Self.verifiedMarkerVersion,
+			  lines[1] == spec.modelId,
+			  let recordedExpectedSize = Int64(lines[2]),
+			  lines[3].lowercased() == (spec.expectedSha256 ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+			  let recordedSize = Int64(lines[4]),
+			  let recordedMtime = Int64(lines[5]),
+			  recordedExpectedSize == spec.expectedSizeBytes else {
+			// Legacy, changed-manifest, or corrupt marker — delete and fail closed.
             clearVerifiedMarker()
             return false
         }
@@ -232,14 +237,23 @@ final class ScoutModelStore {
         return false
     }
 
-    /// Writes the marker file containing "<sizeBytes>\n<mtimeMillis>" so the
-    /// verification is bound to this exact file identity.
-    private func writeVerifiedMarker(for fileURL: URL) {
+	/// Writes version, model id, expected size/SHA, and actual file size/mtime.
+	private func writeVerifiedMarker(for fileURL: URL) {
         guard let attrs = try? fileManager.attributesOfItem(atPath: fileURL.path),
               let size = (attrs[.size] as? NSNumber)?.int64Value,
               let modDate = attrs[.modificationDate] as? Date else { return }
         let mtime = Int64(modDate.timeIntervalSince1970 * 1000)
-        let content = "\(size)\n\(mtime)"
+		let checksum = (spec.expectedSha256 ?? "")
+			.trimmingCharacters(in: .whitespacesAndNewlines)
+			.lowercased()
+		let content = [
+			Self.verifiedMarkerVersion,
+			spec.modelId,
+			String(spec.expectedSizeBytes),
+			checksum,
+			String(size),
+			String(mtime)
+		].joined(separator: "\n")
         ensureModelDir()
         fileManager.createFile(
             atPath: verifiedMarkerURL.path,

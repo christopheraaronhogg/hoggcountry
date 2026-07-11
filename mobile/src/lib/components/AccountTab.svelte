@@ -155,6 +155,7 @@
 	}
 
 	const model = $derived(trailAssistant.modelStatus);
+	const offlineReadiness = $derived(trailAssistant.scoutOfflineReadiness);
 	const dl = $derived(trailAssistant.modelDownload);
 	const runtimeUnavailable = $derived(model?.runtimeConfigured === false);
 	const pct = $derived(
@@ -281,8 +282,8 @@
 				</div>
 			</div>
 			<p class="backup-sub">
-				Optional — the app works fully offline. Sign in to keep your position, check-ins, notes and
-				people safe in the cloud and restore them on a new phone.
+				Optional — saved trail data and logs work offline. Sign in to keep your position, check-ins,
+				notes and people safe in the cloud and restore them on a new phone.
 			</p>
 
 			<div class="auth-tabs" role="tablist" aria-label="Sign in or create an account">
@@ -437,7 +438,13 @@
 					{#if trailAssistant.modelError}
 						<span class="pill pill-danger">Error</span>
 					{:else if modelPhase === 'ready'}
-						<span class="pill pill-forest">Ready</span>
+						<span
+							class:pill-forest={offlineReadiness.stage === 'offline_ready'}
+							class:pill-sky={offlineReadiness.stage === 'initializing' || offlineReadiness.stage === 'testing'}
+							class:pill-danger={offlineReadiness.stage === 'failed'}
+							class:pill-warn={offlineReadiness.stage !== 'offline_ready' && offlineReadiness.stage !== 'initializing' && offlineReadiness.stage !== 'testing' && offlineReadiness.stage !== 'failed'}
+							class="pill"
+						>{offlineReadiness.label}</span>
 					{:else if modelPhase === 'downloading'}
 						<span class="pill pill-sky">Downloading</span>
 					{:else if modelPhase === 'metered'}
@@ -448,8 +455,8 @@
 				</div>
 				<p>
 					Scout's chat runs on a Gemma 4 model stored on your phone. Download it once on Wi-Fi and
-					Scout answers keep working with no signal. The download continues in the background — you
-					can leave this screen or lock your phone.
+					then test a real answer in airplane mode before relying on it offline. On iPhone this is a
+					foreground download, so keep the app open and the phone unlocked until verification finishes.
 				</p>
 			</div>
 
@@ -470,10 +477,26 @@
 					Install a runtime-enabled build before testing on-device Scout answers.
 				</p>
 			{:else if modelPhase === 'ready'}
-				<p class="state-banner state-ok">
-					<span class="state-ic" aria-hidden="true">✓</span>
-					Installed and verified — Scout works fully offline.
-				</p>
+				<div
+					class="state-banner"
+					class:state-ok={offlineReadiness.stage === 'offline_ready'}
+					class:state-danger={offlineReadiness.stage === 'failed'}
+					class:state-warn={offlineReadiness.stage !== 'offline_ready' && offlineReadiness.stage !== 'failed'}
+					role={offlineReadiness.stage === 'failed' ? 'alert' : 'status'}
+				>
+					<span class="state-ic" aria-hidden="true">{offlineReadiness.stage === 'offline_ready' ? '✓' : offlineReadiness.stage === 'failed' ? '!' : '○'}</span>
+					<p><strong>{offlineReadiness.label}.</strong> {offlineReadiness.detail}</p>
+				</div>
+				<div class="readiness-actions">
+					<button
+						class="cta-button compact"
+						onclick={() => void trailAssistant.testScoutOffline()}
+						disabled={!offlineReadiness.canTest || trailAssistant.scoutOfflineTestRunning || trailAssistant.scoutReplyInProgress}
+					>
+						{trailAssistant.scoutOfflineTestRunning ? 'Testing local Scout…' : offlineReadiness.stage === 'offline_ready' ? 'Test Scout again' : 'Test Scout offline'}
+					</button>
+					<span>Requires Airplane Mode with Wi-Fi turned off.</span>
+				</div>
 			{:else if modelPhase === 'metered'}
 				<div class="state-banner state-warn metered">
 					<p>
@@ -507,8 +530,8 @@
 				</div>
 			{:else}
 				<p class="model-note">
-					The on-device model isn't configured in this build yet. Scout uses its offline field-pack
-					answers until the model is available.
+					The on-device model isn't configured in this build yet. Scout chat stays unavailable until
+					the model and runtime are installed; Today, Map, and the Guide can still use saved data.
 				</p>
 			{/if}
 
@@ -668,7 +691,7 @@
 		</div>
 		<div class="region-meta">
 			<span>{fieldPack.downloadedRegions.length} {fieldPack.downloadedRegions.length === 1 ? 'region' : 'regions'} cached</span>
-			<span>{model?.state === 'ready' ? `${fmtBytes(model.expectedBytes)} model on device` : 'Model not downloaded'}</span>
+			<span>{model?.state === 'ready' ? `${fmtBytes(model.expectedBytes)} model file verified` : 'Model not downloaded'}</span>
 		</div>
 		<p class="region-caveat">
 			Field packs are planning context, not a basemap. Offline logs stay local until a real upload or
@@ -1102,6 +1125,15 @@
 	.model-progress {
 		display: grid;
 		gap: 8px;
+	}
+
+	.readiness-actions {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		flex-wrap: wrap;
+		font-size: 0.78rem;
+		color: var(--muted);
 	}
 
 	.heading-with-status {

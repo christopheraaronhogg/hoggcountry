@@ -84,7 +84,7 @@ function bridge(available = true, warmups: string[] = []): OnDeviceGemmaBridge {
 		describeModel: () => Promise.resolve(null),
 		warmUp: () => {
 			warmups.push('warm');
-			return Promise.resolve();
+			return Promise.resolve({ warmed: true, state: 'ready' });
 		},
 		generate: () => Promise.resolve({ text: 'ok', truncated: false })
 	};
@@ -136,6 +136,7 @@ test('native runtime self-heals when a bridge appears after construction', async
 
 	assert.deepEqual(runtimeCalls, [{ hasBridge: false }, { hasBridge: true }]);
 	assert.equal(await runtime.gemmaReady(true), true);
+	assert.equal(runtime.runtimeInitialized, true);
 
 	const downloadInput = downloadInputs[0];
 	assert.ok(downloadInput);
@@ -143,6 +144,94 @@ test('native runtime self-heals when a bridge appears after construction', async
 
 	assert.equal(invalidations, 1);
 	assert.deepEqual(warmups, ['warm']);
+});
+
+test('native runtime does not call a file-present bridge ready until awaited warm-up succeeds', async () => {
+	let warmUps = 0;
+	const coldBridge: OnDeviceGemmaBridge = {
+		isAvailable: () => Promise.resolve(true),
+		describeModel: () => Promise.resolve(null),
+		warmUp: async () => {
+			warmUps += 1;
+			return { warmed: false, state: 'failed', error: 'LiteRT init failed' };
+		},
+		generate: () => Promise.resolve({ text: 'should not run', truncated: false })
+	};
+	const runtime = new NativeScoutRuntime({
+		browserAvailable: true,
+		store: contextStore(),
+		createBridge: () => coldBridge,
+		createManager: () => manager(),
+		createDownloadSession: downloadSession
+	});
+
+	assert.equal(await runtime.gemmaReady(true), false);
+	assert.equal(runtime.runtimeInitialized, false);
+	assert.equal(runtime.runtimeFailureReason, 'LiteRT init failed');
+	assert.equal(warmUps, 1);
+});
+
+test('native runtime preserves rejected warm-up recovery instructions', async () => {
+	const failedBridge: OnDeviceGemmaBridge = {
+		isAvailable: () => Promise.resolve(true),
+		describeModel: () => Promise.resolve(null),
+		warmUp: () => Promise.reject(new Error('Close and reopen Scout before trying local AI again.')),
+		generate: () => Promise.resolve({ text: 'should not run', truncated: false })
+	};
+	const runtime = new NativeScoutRuntime({
+		browserAvailable: true,
+		store: contextStore(),
+		createBridge: () => failedBridge,
+		createManager: () => manager(),
+		createDownloadSession: downloadSession
+	});
+
+	assert.equal(await runtime.gemmaReady(true), false);
+	assert.equal(
+		runtime.runtimeFailureReason,
+		'Close and reopen Scout before trying local AI again.'
+	);
+});
+
+test('native runtime coalesces concurrent warm-ups and caches successful initialization', async () => {
+	const warmUpReleases: Array<() => void> = [];
+	let warmUps = 0;
+	const warmingBridge: OnDeviceGemmaBridge = {
+		isAvailable: () => Promise.resolve(true),
+		describeModel: () => Promise.resolve(null),
+		warmUp: () => {
+			warmUps += 1;
+			return new Promise((resolve) => {
+				warmUpReleases.push(() => resolve({ warmed: true, state: 'ready' }));
+			});
+		},
+		generate: () => Promise.resolve({ text: 'ok', truncated: false })
+	};
+	const runtime = new NativeScoutRuntime({
+		browserAvailable: true,
+		store: contextStore(),
+		createBridge: () => warmingBridge,
+		createManager: () => manager(),
+		createDownloadSession: downloadSession
+	});
+
+	const first = runtime.warmUpModel();
+	const second = runtime.warmUpModel();
+	await Promise.resolve();
+	assert.equal(warmUps, 1);
+	warmUpReleases[0]?.();
+	assert.deepEqual(await Promise.all([first, second]), [true, true]);
+	assert.equal(await runtime.warmUpModel(), true);
+	assert.equal(warmUps, 1);
+
+	runtime.invalidateRuntimeReadiness();
+	assert.equal(runtime.runtimeInitialized, false);
+	assert.equal(runtime.runtimeFailureReason, null);
+	const third = runtime.warmUpModel();
+	await Promise.resolve();
+	assert.equal(warmUps, 2);
+	warmUpReleases[1]?.();
+	assert.equal(await third, true);
 });
 
 test('native runtime stays inert off-browser and treats Gemma as unavailable when required', async () => {
@@ -185,6 +274,25 @@ test('native runtime catches transient availability probe failures', async () =>
 	});
 
 	assert.equal(await runtime.gemmaReady(true), false);
+});
+
+test('native runtime exposes native network truth for the airplane-mode gate', async () => {
+	const disconnected = {
+		connected: false,
+		metered: false,
+		type: 'none' as const
+	};
+	const networkManager = manager();
+	networkManager.getNetworkStatus = () => Promise.resolve(disconnected);
+	const runtime = new NativeScoutRuntime({
+		browserAvailable: true,
+		store: contextStore(),
+		createBridge: () => bridge(),
+		createManager: () => networkManager,
+		createDownloadSession: downloadSession
+	});
+
+	assert.deepEqual(await runtime.getNetworkStatus(), disconnected);
 });
 
 test('native runtime asks with an isolated context pack for device evals', async () => {

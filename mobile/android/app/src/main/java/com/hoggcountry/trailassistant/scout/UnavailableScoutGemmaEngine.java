@@ -13,7 +13,10 @@ package com.hoggcountry.trailassistant.scout;
  */
 public final class UnavailableScoutGemmaEngine implements ScoutGemmaEngine {
     static final ScoutGemmaModelInfo TARGET_MODEL =
-            new ScoutGemmaModelInfo("balanced", "gemma-4-E2B-it-litert-lm", 128_000);
+            // The published Gemma 4 E2B LiteRT-LM model supports a 32K context.
+            // Keep this descriptor aligned with the native 32,768-token KV cache;
+            // advertising 128K lets JS overfill the real runtime window.
+            new ScoutGemmaModelInfo("balanced", "gemma-4-E2B-it-litert-lm", 32_768);
 
     @Override
     public boolean isAvailable() {

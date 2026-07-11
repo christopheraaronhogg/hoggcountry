@@ -1,13 +1,21 @@
 import type { PersistenceAdapter } from './context-pack-store.ts';
-import type { ScoutGemmaModelStatus } from './capacitor-gemma-bridge.ts';
+import {
+	getCapacitorScoutInstallSource,
+	type ScoutGemmaModelStatus
+} from './capacitor-gemma-bridge.ts';
+import { trailAhead } from '@hoggcountry/trail-data/trail-direction';
+import type { ContextPack, ScoutAnswer } from './types.ts';
 
-export const SCOUT_OFFLINE_PROOF_SCHEMA = 1;
-export const SCOUT_OFFLINE_PROOF_STORAGE_KEY = 'hoggcountry:scout-offline-proof:v1';
+export const SCOUT_OFFLINE_PROOF_SCHEMA = 2;
+export const SCOUT_OFFLINE_PROOF_STORAGE_KEY = 'hoggcountry:scout-offline-proof:v2';
+export const SCOUT_OFFLINE_SMOKE_PROMPT =
+	"Scout offline readiness test: using only the saved field pack, identify the next water source ahead of the hiker's current mile and include its saved mile. If none is loaded, say that clearly. Keep it to two short sentences.";
 
 export type ScoutOfflineAppIdentity = {
 	version: string;
 	build: string;
 	platform: string;
+	sourceBuild: string;
 };
 
 export type ScoutOfflineProofIdentity = {
@@ -18,10 +26,16 @@ export type ScoutOfflineProofIdentity = {
 	appVersion: string;
 	appBuild: string;
 	platform: string;
+	sourceBuild: string;
 };
 
 export type ScoutOfflineProof = ScoutOfflineProofIdentity & {
 	passedAt: string;
+};
+
+export type ScoutOfflineWaterExpectation = {
+	name: string;
+	mile: number;
 };
 
 export type ScoutRuntimeReadiness = 'idle' | 'initializing' | 'ready' | 'failed';
@@ -60,7 +74,8 @@ export function createScoutOfflineProofIdentity(
 		model.expectedBytes <= 0 ||
 		!app?.version.trim() ||
 		!app.build.trim() ||
-		!app.platform.trim()
+		!app.platform.trim() ||
+		!app.sourceBuild.trim()
 	) {
 		return null;
 	}
@@ -72,7 +87,8 @@ export function createScoutOfflineProofIdentity(
 		expectedBytes: model.expectedBytes,
 		appVersion: app.version.trim(),
 		appBuild: app.build.trim(),
-		platform: app.platform.trim().toLowerCase()
+		platform: app.platform.trim().toLowerCase(),
+		sourceBuild: app.sourceBuild.trim()
 	};
 }
 
@@ -103,6 +119,8 @@ export function parseScoutOfflineProof(raw: string | null | undefined): ScoutOff
 			!value.appBuild.trim() ||
 			typeof value.platform !== 'string' ||
 			!value.platform.trim() ||
+			typeof value.sourceBuild !== 'string' ||
+			!value.sourceBuild.trim() ||
 			typeof value.passedAt !== 'string' ||
 			!validIsoDate(value.passedAt)
 		) {
@@ -117,6 +135,7 @@ export function parseScoutOfflineProof(raw: string | null | undefined): ScoutOff
 			appVersion: value.appVersion.trim(),
 			appBuild: value.appBuild.trim(),
 			platform: value.platform.trim().toLowerCase(),
+			sourceBuild: value.sourceBuild.trim(),
 			passedAt: value.passedAt
 		};
 	} catch {
@@ -136,7 +155,48 @@ export function scoutOfflineProofMatches(
 		proof.expectedBytes === identity.expectedBytes &&
 		proof.appVersion === identity.appVersion &&
 		proof.appBuild === identity.appBuild &&
-		proof.platform === identity.platform
+		proof.platform === identity.platform &&
+		proof.sourceBuild === identity.sourceBuild
+	);
+}
+
+export function scoutOfflineWaterExpectation(
+	pack: ContextPack
+): ScoutOfflineWaterExpectation | null {
+	const [water] = trailAhead(
+		pack.water,
+		pack.hiker.currentMile,
+		pack.hiker.direction,
+		pack.frame.totalMiles
+	);
+	if (!water?.name.trim() || !Number.isFinite(water.mile)) return null;
+	return { name: water.name.trim(), mile: water.mile };
+}
+
+export function scoutOfflineSmokePassed(
+	answer: ScoutAnswer | null | undefined,
+	expectedWater: ScoutOfflineWaterExpectation | null
+): boolean {
+	if (
+		!answer ||
+		!expectedWater ||
+		answer.mode !== 'on-device' ||
+		answer.provider !== 'on-device-gemma' ||
+		!answer.answer.trim()
+	) {
+		return false;
+	}
+
+	const usedWaterTool = answer.toolInvocations.some(
+		(invocation) => invocation.toolId === 'next_water' && invocation.receipts.length > 0
+	);
+	if (!usedWaterTool || answer.receipts.length === 0) return false;
+
+	const normalizedAnswer = normalizeEvidenceText(answer.answer);
+	const normalizedName = normalizeEvidenceText(expectedWater.name);
+	return (
+		normalizedAnswer.includes(normalizedName) &&
+		answerContainsEvidenceMile(answer.answer, expectedWater.mile)
 	);
 }
 
@@ -163,12 +223,20 @@ export async function loadScoutOfflineAppIdentity(): Promise<ScoutOfflineAppIden
 			import('@capacitor/app')
 		]);
 		if (!Capacitor.isNativePlatform()) return null;
-		const info = await App.getInfo();
-		if (!info.version?.trim() || !info.build?.trim()) return null;
+		// App.getInfo and ScoutGemma both cross the native bridge. The latter reads
+		// app-version.json directly from the installed bundle, bypassing the WebView
+		// service worker so an older precache can never preserve stale offline proof.
+		const [info, installSource] = await Promise.all([
+			App.getInfo(),
+			getCapacitorScoutInstallSource()
+		]);
+		const sourceBuild = installSource?.sourceBuild?.trim();
+		if (!info.version?.trim() || !info.build?.trim() || !sourceBuild) return null;
 		return {
 			version: info.version.trim(),
 			build: info.build.trim(),
-			platform: Capacitor.getPlatform()
+			platform: Capacitor.getPlatform(),
+			sourceBuild
 		};
 	} catch {
 		return null;
@@ -219,9 +287,21 @@ export function deriveScoutOfflineReadiness(input: {
 	if (input.runtime === 'failed' || input.test === 'failed') {
 		return readiness(
 			'failed',
-			'Test failed',
+			input.test === 'failed' ? 'Offline test failed' : 'Local AI failed',
 			input.error?.trim() || 'Scout could not complete the local test. Try again while on power.',
 			null,
+			true
+		);
+	}
+
+	if (scoutOfflineProofMatches(input.proof, input.identity)) {
+		return readiness(
+			'offline_ready',
+			'Offline test passed',
+			input.test === 'network-required'
+				? `Gemma 4 answered locally on this phone ${formatProofTime(input.proof?.passedAt)}. To retest, turn on Airplane Mode and turn Wi-Fi off.`
+				: `Gemma 4 answered locally on this phone ${formatProofTime(input.proof?.passedAt)}.`,
+			input.proof?.passedAt ?? null,
 			true
 		);
 	}
@@ -232,16 +312,6 @@ export function deriveScoutOfflineReadiness(input: {
 			'Model verified',
 			'Turn on Airplane Mode and turn Wi-Fi off, then test again.',
 			null,
-			true
-		);
-	}
-
-	if (scoutOfflineProofMatches(input.proof, input.identity)) {
-		return readiness(
-			'offline_ready',
-			'Offline test passed',
-			`Gemma 4 answered locally on this phone ${formatProofTime(input.proof?.passedAt)}.`,
-			input.proof?.passedAt ?? null,
 			true
 		);
 	}
@@ -288,4 +358,20 @@ function formatProofTime(value: string | undefined): string {
 		hour: 'numeric',
 		minute: '2-digit'
 	});
+}
+
+function normalizeEvidenceText(value: string): string {
+	return value
+		.toLocaleLowerCase()
+		.replace(/[^\p{L}\p{N}.]+/gu, ' ')
+		.replace(/\s+/gu, ' ')
+		.trim();
+}
+
+function answerContainsEvidenceMile(answer: string, expectedMile: number): boolean {
+	// Parse complete numeric tokens instead of using substring matching: mile 42.5
+	// must never accept a hallucinated 142.5, and mile 42 must not accept 42.5.
+	// Strip thousands separators first so a valid "1,234.5" remains one number.
+	const numericTokens = answer.replace(/(\d),(?=\d)/gu, '$1').match(/\d+(?:\.\d+)?/gu) ?? [];
+	return numericTokens.some((token) => Math.abs(Number(token) - expectedMile) < 1e-6);
 }

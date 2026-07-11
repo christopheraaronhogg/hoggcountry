@@ -80,6 +80,7 @@ test('generate retries a transient non-streaming native null response once', asy
 			describeModel: async () => null,
 			warmUp: async () => {
 				warmed += 1;
+				return { warmed: true, state: 'ready' };
 			},
 			generate: async () => {
 				attempts += 1;
@@ -113,6 +114,7 @@ test('generate retries a transient native null with a stream sink before tokens 
 			describeModel: async () => null,
 			warmUp: async () => {
 				warmed += 1;
+				return { warmed: true, state: 'ready' };
 			},
 			generate: async (_input, onToken) => {
 				attempts += 1;
@@ -222,7 +224,7 @@ test('generate uses the long-context Gemma descriptor instead of the old 4k-toke
 			describeModel: async () => ({
 				tier: 'balanced',
 				modelId: 'gemma-4-E2B-it-litert-lm',
-				maxContextTokens: 128_000
+				maxContextTokens: 32_768
 			}),
 			generate: async (input) => {
 				seenContext = input.systemContext;
@@ -248,6 +250,48 @@ test('generate uses the long-context Gemma descriptor instead of the old 4k-toke
 	assert.ok(seenContext.length > 16_000, `expected expanded context, got ${seenContext.length} chars`);
 	assert.ok(seenContext.length <= 128_000);
 	assert.doesNotMatch(seenContext, /\[Middle context trimmed/u);
+});
+
+test('battery saver sends a shorter prompt window and output budget to native Gemma', async () => {
+	const nativeInputs: Array<{ systemContext: string; maxTokens: number }> = [];
+	const provider = new OnDeviceGemmaProvider({
+		bridge: {
+			isAvailable: async () => true,
+			describeModel: async () => ({
+				tier: 'balanced',
+				modelId: 'gemma-4-E2B-it-litert-lm',
+				maxContextTokens: 32_768
+			}),
+			generate: async (input) => {
+				nativeInputs.push({ systemContext: input.systemContext, maxTokens: input.maxTokens });
+				return { text: 'Use the saved field pack.', truncated: false };
+			}
+		}
+	});
+	const base = {
+		prompt: 'Summarize the saved water and bailout plan.',
+		pack: cloneDefaultContextPack(),
+		toolInvocations: Array.from({ length: 20 }, (_, index) => ({
+			toolId: 'open_source_doc',
+			args: { sourceDocumentId: `battery-${index}` },
+			summary: `Saved plan ${index}: ${'water, shelter, bailout, and town facts. '.repeat(100)}`,
+			confidence: 'medium' as const,
+			receipts: []
+		})),
+		now: new Date('2026-06-20T12:00:00Z')
+	};
+
+	await provider.generate({ ...base, batterySaver: false });
+	await provider.generate({ ...base, batterySaver: true });
+
+	assert.equal(nativeInputs[0]?.maxTokens, 640);
+	assert.equal(nativeInputs[1]?.maxTokens, 192);
+	assert.ok((nativeInputs[1]?.systemContext.length ?? Infinity) <= 12_000);
+	assert.ok(
+		(nativeInputs[1]?.systemContext.length ?? Infinity) <
+			(nativeInputs[0]?.systemContext.length ?? 0)
+	);
+	assert.match(nativeInputs[1]?.systemContext ?? '', /Battery saver is on/u);
 });
 
 test('generate still caps context when a native descriptor reports a smaller window', async () => {

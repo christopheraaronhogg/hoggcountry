@@ -3,6 +3,55 @@ import Foundation
 #if canImport(LiteRTLM)
 import LiteRTLM
 
+/// Independently resolves a native generation result exactly once. The LiteRT
+/// stream may fail to finish even after cancellation; this gate lets the 120s
+/// watchdog release the Capacitor call without waiting on that stuck stream.
+private final class ScoutGemmaResultGate: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<GenerateResult, Error>?
+    private var result: Result<GenerateResult, Error>?
+    private var tasks: [Task<Void, Never>] = []
+
+    func install(_ continuation: CheckedContinuation<GenerateResult, Error>) {
+        lock.lock()
+        if let result = result {
+            lock.unlock()
+            continuation.resume(with: result)
+            return
+        }
+        self.continuation = continuation
+        lock.unlock()
+    }
+
+    func attach(_ tasks: Task<Void, Never>...) {
+        lock.lock()
+        if result != nil {
+            lock.unlock()
+            tasks.forEach { $0.cancel() }
+            return
+        }
+        self.tasks.append(contentsOf: tasks)
+        lock.unlock()
+    }
+
+    func resolve(_ result: Result<GenerateResult, Error>) {
+        lock.lock()
+        guard self.result == nil else {
+            lock.unlock()
+            return
+        }
+        self.result = result
+        let continuation = self.continuation
+        self.continuation = nil
+        let tasks = self.tasks
+        self.tasks.removeAll()
+        lock.unlock()
+
+        tasks.forEach { $0.cancel() }
+        continuation?.resume(with: result)
+    }
+}
+
 /// On-device Gemma 4 engine backed by LiteRT-LM's Swift API. Inference runs
 /// entirely on the phone — no paid/cloud model APIs. The Swift mirror of
 /// Android's `LiteRtScoutGemmaEngine`, against the same `.litertlm` model file
@@ -20,11 +69,14 @@ import LiteRTLM
 @available(iOS 15.0, *)
 final class LiteRtScoutGemmaEngine: ScoutGemmaEngine {
     private static let runtimeMaxNumTokens = 32_768
+    private static let maxOutputTokensPerTurn = 2_048
+    private static let generationTimeoutSeconds = 120
 
     private let modelPath: String
     private let cacheDir: String
     private let info: ScoutGemmaModelInfo
     private var engine: Engine?
+    private var runtimePoisonedReason: String?
 
     private init(modelPath: String, cacheDir: String, info: ScoutGemmaModelInfo) {
         self.modelPath = modelPath
@@ -36,22 +88,100 @@ final class LiteRtScoutGemmaEngine: ScoutGemmaEngine {
 
     func describeModel() -> ScoutGemmaModelInfo? { info }
 
+    func warmUp() async throws {
+        _ = try await ensureEngine()
+    }
+
     func generate(prompt: String, systemContext: String, maxTokens: Int) async throws -> GenerateResult {
-        let input = systemContext.isEmpty ? prompt : systemContext + "\n\n" + prompt
         do {
             let engine = try await ensureEngine()
-            let conversation = try await engine.createConversation()
-            let response = try await conversation.sendMessage(Message(input))
-            // Per-call maxTokens is not yet plumbed; truncation can't be detected.
-            return GenerateResult(text: response.toString, truncated: false)
+            let outputTokenLimit = min(max(maxTokens, 1), Self.maxOutputTokensPerTurn)
+            let trimmedSystemContext = systemContext.trimmingCharacters(in: .whitespacesAndNewlines)
+            let conversationConfig = ConversationConfig(
+                systemMessage: trimmedSystemContext.isEmpty
+                    ? nil
+                    : Message(trimmedSystemContext, role: .system),
+                maxOutputTokens: outputTokenLimit)
+            let conversation = try await engine.createConversation(with: conversationConfig)
+
+			return try await generateBounded(
+				conversation: conversation,
+				prompt: prompt)
+        } catch let honest as ScoutGemmaError {
+            if case .timedOut = honest {
+                runtimePoisonedReason =
+                    "The previous Gemma turn timed out. Close and reopen Scout before trying local AI again."
+            }
+            throw honest
         } catch {
             // Never fabricate output: any runtime failure surfaces as unavailable.
             throw ScoutGemmaError.unavailable("On-device Gemma generation failed: \(Self.describeNativeError(error))")
         }
     }
 
+    /// Runs one streamed turn with two independent native boundaries:
+    /// ConversationConfig enforces the real LiteRT-LM decode-token limit, while
+    /// Conversation.cancel() interrupts a wedged turn after the timeout or when
+    /// the parent Swift task is cancelled. The plugin serializes calls into this
+    /// method so LiteRT-LM never initializes or infers two turns at once.
+	private func generateBounded(
+		conversation: Conversation,
+		prompt: String
+	) async throws -> GenerateResult {
+        let gate = ScoutGemmaResultGate()
+        return try await withTaskCancellationHandler(
+            operation: {
+                try await withCheckedThrowingContinuation { continuation in
+                    gate.install(continuation)
+
+                    let generationTask = Task<Void, Never> {
+                        do {
+                            var text = ""
+                            for try await chunk in conversation.sendMessageStream(
+                                Message(prompt, role: .user)) {
+                                text.append(chunk.toString)
+                            }
+                            if Task.isCancelled {
+                                gate.resolve(.failure(ScoutGemmaError.cancelled))
+                            } else {
+                                // The native session enforces the exact decode cap,
+                                // but its Swift stream exposes no finish reason.
+                                gate.resolve(.success(GenerateResult(text: text, truncated: false)))
+                            }
+                        } catch {
+                            gate.resolve(
+                                .failure(Task.isCancelled ? ScoutGemmaError.cancelled : error))
+                        }
+                    }
+
+                    let watchdogTask = Task<Void, Never> {
+                        do {
+                            try await Task.sleep(
+                                nanoseconds: UInt64(Self.generationTimeoutSeconds) * 1_000_000_000)
+                        } catch {
+                            return
+                        }
+                        guard !Task.isCancelled else { return }
+                        // Resolve first: even if the native cancel call wedges, the
+                        // plugin lane and UI are released at the hard deadline.
+                        gate.resolve(.failure(
+                            ScoutGemmaError.timedOut(seconds: Self.generationTimeoutSeconds)))
+                        try? conversation.cancel()
+                    }
+                    gate.attach(generationTask, watchdogTask)
+                }
+            },
+            onCancel: {
+                gate.resolve(.failure(ScoutGemmaError.cancelled))
+                try? conversation.cancel()
+            })
+    }
+
     /// `initialize()` is heavy (seconds); run it lazily on the first generate.
     private func ensureEngine() async throws -> Engine {
+        if let reason = runtimePoisonedReason {
+            throw ScoutGemmaError.unavailable(reason)
+        }
         if let engine = engine { return engine }
         // LiteRT-LM's default Gemma 4 E2B cache is 4K on this export. Request a
         // larger but phone-testable cache so Scout's long-context JS budget is

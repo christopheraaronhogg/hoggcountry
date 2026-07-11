@@ -78,7 +78,8 @@ export class DefaultScoutRuntime implements ScoutRuntime {
 					conversationHistory: [...(input.conversationHistory ?? [])],
 					pack,
 					toolInvocations,
-					now
+					now,
+					batterySaver: input.batterySaver ?? false
 				},
 				onToken
 			);

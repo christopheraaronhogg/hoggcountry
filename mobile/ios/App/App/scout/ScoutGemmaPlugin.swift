@@ -3,6 +3,48 @@ import Network
 import Capacitor
 import UIKit
 
+/// FIFO async gate for the heavy LiteRT-LM lane. Actor methods are re-entrant,
+/// so a plain actor around `generate` is not enough: a second turn could enter
+/// while the first awaits the native stream. This explicit acquire/release gate
+/// keeps warm-up, lazy initialization, and complete turns strictly one-at-a-time.
+private actor ScoutGemmaInferenceLane {
+    private var busy = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    func run<T>(_ operation: () async throws -> T) async rethrows -> T {
+        await acquire()
+        defer { release() }
+        return try await operation()
+    }
+
+    private func acquire() async {
+        if !busy {
+            busy = true
+            return
+        }
+        await withCheckedContinuation { continuation in
+            waiters.append(continuation)
+        }
+    }
+
+    private func release() {
+        if waiters.isEmpty {
+            busy = false
+        } else {
+            waiters.removeFirst().resume()
+        }
+    }
+}
+
+private enum ScoutGemmaRuntimeState: String {
+    case runtimeUnavailable = "runtime_unavailable"
+    case modelMissing = "model_missing"
+    case cold
+    case warming
+    case ready
+    case failed
+}
+
 /// iOS `ScoutGemma` Capacitor plugin — the Swift mirror of Android's
 /// `ScoutGemmaPlugin`. Marshals isAvailable / describeModel / generate /
 /// model-download calls to/from a `ScoutGemmaEngine`, and never talks to a model
@@ -24,6 +66,7 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "isAvailable", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "describeModel", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "warmUp", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "generate", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getModelStatus", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "prepareModelDownload", returnType: CAPPluginReturnPromise),
@@ -39,12 +82,13 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
     ]
 
     private let store = ScoutModelStore()
+    private let inferenceLane = ScoutGemmaInferenceLane()
     private static let simEvalTriggerDefaultsKey = "CapacitorStorage.hoggcountry:scout-gemma-sim-eval-probe:v1"
     private static let simEvalResultDefaultsKey = "CapacitorStorage.hoggcountry:scout-gemma-sim-eval-result:v1"
     private static let simEvalDiagnosticDefaultsKey = "CapacitorStorage.hoggcountry:scout-gemma-sim-eval-diagnostic:v1"
 
     /// Serial queue that owns all reads and writes of `_engine`, `_downloader`,
-    /// and `_lastProgress`.
+    /// `_lastProgress`, and the structured runtime-readiness snapshot.
     private let stateQueue = DispatchQueue(label: "com.hoggcountry.scoutgemma.state")
 
     // Backing storage — never accessed directly; always go through stateQueue.sync.
@@ -53,6 +97,8 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
     // Last progress sample, so getDownloadState() can report a live download's
     // position (used by the JS reconcile-on-resume path).
     private var _lastProgress: (bytes: Int64, total: Int64)?
+    private var _runtimeState = ScoutGemmaRuntimeState.runtimeUnavailable
+    private var _runtimeReason: String?
 
     // MARK: - Thread-safe accessors
 
@@ -73,6 +119,20 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
     /// thread-safe) so `_engine` is set before any plugin method can be called.
     public override func load() {
         _engine = ScoutGemmaEngineFactory.create(store: store)
+        let modelStatus = store.status()
+        if !runtimeConfigured() {
+            _runtimeState = .runtimeUnavailable
+            _runtimeReason = "Gemma 4 LiteRT-LM runtime is not linked in this iOS build."
+        } else if modelStatus.state != ScoutModelStatus.ready {
+            _runtimeState = .modelMissing
+            _runtimeReason = "Gemma 4 model file is not downloaded and verified on this device."
+        } else if _engine.isAvailable {
+            _runtimeState = .cold
+            _runtimeReason = "Gemma 4 is verified but the runtime has not been initialized on this launch."
+        } else {
+            _runtimeState = .failed
+            _runtimeReason = "Gemma 4 runtime could not create an engine for the verified model."
+        }
         #if DEBUG && targetEnvironment(simulator)
         if shouldRunSimulatorGemmaProbe() {
             runSimulatorGemmaProbe()
@@ -84,7 +144,8 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func isAvailable(_ call: CAPPluginCall) {
         let available = engine.isAvailable
-        var result: [String: Any] = ["available": available]
+        var result = runtimeReadinessPayload()
+        result["available"] = available
         if !available {
             let status = store.status()
             result["modelId"] = status.modelId
@@ -103,19 +164,45 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func describeModel(_ call: CAPPluginCall) {
         guard let info = engine.describeModel() else {
-            call.resolve([
-                "available": false,
-                "modelId": "gemma-4-not-installed",
-                "reason": "Gemma 4 LiteRT-LM runtime is not installed in this iOS build."
-            ])
+            var result = runtimeReadinessPayload()
+            result["available"] = false
+            result["modelId"] = "gemma-4-not-installed"
+            call.resolve(result)
             return
         }
-        call.resolve([
-            "available": engine.isAvailable,
-            "tier": info.tier,
-            "modelId": info.modelId,
-            "maxContextTokens": info.maxContextTokens
-        ])
+        var result = runtimeReadinessPayload()
+        result["available"] = engine.isAvailable
+        result["tier"] = info.tier
+        result["modelId"] = info.modelId
+        result["maxContextTokens"] = info.maxContextTokens
+        call.resolve(result)
+    }
+
+    /// Actually awaits LiteRT-LM initialization. The previous cross-platform JS
+    /// hook was already optional, so adding the native method is API-compatible.
+    /// Failure resolves as a structured result (rather than claiming success),
+    /// while generation itself still rejects on failure.
+    @objc func warmUp(_ call: CAPPluginCall) {
+        let capturedEngine = engine
+        updateRuntimeState(.warming, reason: "Initializing Gemma 4 on this device.")
+        Task {
+            do {
+                try await self.inferenceLane.run {
+                    try await capturedEngine.warmUp()
+                }
+                self.updateRuntimeState(.ready, reason: nil)
+                var result = self.runtimeReadinessPayload()
+                result["warmed"] = true
+                call.resolve(result)
+            } catch {
+                self.recordRuntimeFailure(error)
+                var result = self.runtimeReadinessPayload()
+                result["warmed"] = false
+                result["errorCode"] = Self.nativeErrorCode(error)
+                result["error"] = Self.describeNativeError(error)
+                call.resolve(result)
+            }
+        }
     }
 
     @objc func generate(_ call: CAPPluginCall) {
@@ -125,13 +212,22 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
         // Capture the engine via stateQueue.sync BEFORE the Task so the async
         // body never races against a post-download engine swap on stateQueue.
         let capturedEngine = engine
+        beginRuntimeWork()
         Task {
             do {
-                let result = try await capturedEngine.generate(
-                    prompt: prompt, systemContext: systemContext, maxTokens: maxTokens)
+                let result = try await self.inferenceLane.run {
+                    try await capturedEngine.generate(
+                        prompt: prompt, systemContext: systemContext, maxTokens: maxTokens)
+                }
+                self.updateRuntimeState(.ready, reason: nil)
                 call.resolve(["text": result.text, "truncated": result.truncated])
             } catch {
-                call.reject(Self.describeNativeError(error))
+                self.recordRuntimeFailure(error)
+                call.reject(
+                    Self.describeNativeError(error),
+                    Self.nativeErrorCode(error),
+                    error,
+                    self.runtimeReadinessPayload())
             }
         }
     }
@@ -168,6 +264,9 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
                 // Model is on device and verified — rebuild the engine so the next
                 // isAvailable()/generate() picks it up, then emit the terminal event.
                 self.engine = ScoutGemmaEngineFactory.create(store: self.store)
+                self.updateRuntimeState(
+                    .cold,
+                    reason: "Gemma 4 is verified and ready to initialize on this device.")
                 self.clearDownload()
                 self.notifyListeners("scoutModelDownloadComplete", data: self.modelStatusPayload(status))
             } catch {
@@ -208,7 +307,10 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
             call.resolve([
                 "active": _downloader != nil,
                 "bytesDownloaded": progress?.bytes ?? 0,
-                "totalBytes": progress?.total ?? store.spec.expectedSizeBytes
+                "totalBytes": progress?.total ?? store.spec.expectedSizeBytes,
+                "backgroundCapable": false,
+                "survivesAppTermination": false,
+                "requiresAppActive": true
             ])
         }
     }
@@ -294,6 +396,47 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
         #endif
     }
 
+    private func beginRuntimeWork() {
+        stateQueue.sync {
+            if _runtimeState != .ready {
+                _runtimeState = .warming
+                _runtimeReason = "Initializing Gemma 4 on this device."
+            }
+        }
+    }
+
+    private func updateRuntimeState(_ state: ScoutGemmaRuntimeState, reason: String?) {
+        stateQueue.sync {
+            _runtimeState = state
+            _runtimeReason = reason
+        }
+    }
+
+    private func recordRuntimeFailure(_ error: Error) {
+        let status = store.status()
+        let reason = Self.describeNativeError(error)
+        if !runtimeConfigured() {
+            updateRuntimeState(.runtimeUnavailable, reason: reason)
+        } else if status.state != ScoutModelStatus.ready {
+            updateRuntimeState(.modelMissing, reason: reason)
+        } else {
+            updateRuntimeState(.failed, reason: reason)
+        }
+    }
+
+    private func runtimeReadinessPayload() -> [String: Any] {
+        let snapshot = stateQueue.sync { (_runtimeState, _runtimeReason) }
+        var payload: [String: Any] = [
+            "runtimeConfigured": runtimeConfigured(),
+            "runtimeState": snapshot.0.rawValue,
+            "readyForInference": snapshot.0 == .ready
+        ]
+        if let reason = snapshot.1, !reason.isEmpty {
+            payload["reason"] = reason
+        }
+        return payload
+    }
+
     private static func describeNativeError(_ error: Error) -> String {
         let nsError = error as NSError
         var detail = error.localizedDescription
@@ -301,6 +444,13 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
             detail += " [domain=\(nsError.domain) code=\(nsError.code)]"
         }
         return detail
+    }
+
+    private static func nativeErrorCode(_ error: Error) -> String {
+        if let scoutError = error as? ScoutGemmaError {
+            return scoutError.code
+        }
+        return "SCOUT_GEMMA_GENERATION_FAILED"
     }
 
     #if DEBUG && targetEnvironment(simulator)
@@ -363,10 +513,12 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
 
         Task {
             do {
-                let result = try await capturedEngine.generate(
-                    prompt: "Say READY in one word.",
-                    systemContext: "You are Scout. This is an iOS Simulator Gemma smoke test.",
-                    maxTokens: 16)
+                let result = try await self.inferenceLane.run {
+                    try await capturedEngine.generate(
+                        prompt: "Say READY in one word.",
+                        systemContext: "You are Scout. This is an iOS Simulator Gemma smoke test.",
+                        maxTokens: 16)
+                }
                 let preview = String(result.text.prefix(160))
                 NSLog(
                     "SCOUT_GEMMA_SIM_PROBE generate ok truncated=%@ chars=%d preview=%@",
@@ -397,10 +549,15 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
 
     private func modelStatusPayload(_ status: ScoutModelStatus) -> [String: Any] {
         var payload = status.toDict()
-        payload["runtimeConfigured"] = runtimeConfigured()
-        if !runtimeConfigured() {
-            payload["reason"] = "Gemma 4 LiteRT-LM runtime is not linked in this iOS build."
+        for (key, value) in runtimeReadinessPayload() {
+            payload[key] = value
         }
+        // iOS currently uses URLSessionConfiguration.default. Be explicit in
+        // the native payload so shared UI can never infer Android foreground-
+        // service semantics for this build.
+        payload["downloadBackgroundCapable"] = false
+        payload["downloadSurvivesAppTermination"] = false
+        payload["downloadRequiresAppActive"] = true
         return payload
     }
 
@@ -465,6 +622,33 @@ public class ScoutGemmaPlugin: CAPPlugin, CAPBridgedPlugin {
         } else {
             payload["receiptLastPathComponent"] = NSNull()
         }
+        if let sourceBuild = bundledSourceBuild() {
+            payload["sourceBuild"] = sourceBuild
+        }
         return payload
+    }
+
+    /// Read the fingerprint from the installed application bundle. Do not fetch
+    /// it through the WebView: on the first launch after an update, an older
+    /// controlling service worker can briefly serve its previous precache.
+    private func bundledSourceBuild() -> String? {
+        var candidates: [URL] = []
+        if let url = Bundle.main.url(
+            forResource: "app-version", withExtension: "json", subdirectory: "public") {
+            candidates.append(url)
+        }
+        if let resourceURL = Bundle.main.resourceURL {
+            candidates.append(resourceURL.appendingPathComponent("public/app-version.json"))
+        }
+
+        for url in candidates {
+            guard let data = try? Data(contentsOf: url),
+                  let object = try? JSONSerialization.jsonObject(with: data),
+                  let manifest = object as? [String: Any],
+                  let sourceBuild = manifest["sourceBuild"] as? String else { continue }
+            let trimmed = sourceBuild.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty { return trimmed }
+        }
+        return nil
     }
 }

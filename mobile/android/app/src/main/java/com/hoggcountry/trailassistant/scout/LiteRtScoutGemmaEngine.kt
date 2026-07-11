@@ -4,12 +4,19 @@ import android.content.Context
 import android.util.Log
 import com.google.ai.edge.litertlm.Backend
 import com.google.ai.edge.litertlm.Content
+import com.google.ai.edge.litertlm.Contents
+import com.google.ai.edge.litertlm.Conversation
+import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
 import com.google.ai.edge.litertlm.Message
 import com.google.ai.edge.litertlm.MessageCallback
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * On-device Gemma 4 engine backed by LiteRT-LM
@@ -37,22 +44,52 @@ class LiteRtScoutGemmaEngine private constructor(
     // Guarded by synchronized(this) for both lazy init and close().
     private var engine: Engine? = null
 
+    // Cancellation must never be queued on ScoutGemmaPlugin's serial inference
+    // executor (it would sit behind the generation it is meant to stop). Output
+    // budget cancellation uses this dedicated, tiny executor; user/timeout cancel
+    // can also call Conversation.cancelProcess() directly from their own thread.
+    private val cancellationExecutor = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "scout-gemma-cancel").apply { isDaemon = true }
+    }
+    private val activeRun = AtomicReference<ActiveRun?>(null)
+
     override fun isAvailable(): Boolean = true
+
+    override fun isRuntimeReady(): Boolean = synchronized(this) {
+        engine?.isInitialized() == true
+    }
 
     override fun describeModel(): ScoutGemmaModelInfo = modelInfo
 
     /**
      * Eagerly run the costly [Engine.initialize] so the first real chat turn is
      * fast and doesn't risk the cold GPU/CPU-delegate init failing under the
-     * user's first message. Best-effort and never throws — if warm-up fails the
-     * engine stays null and the next [generate] retries init exactly as before.
+     * user's first message. A failure is surfaced so callers never report a false
+     * positive warm-up; a later call may still retry initialization.
      */
-    override fun warmUp() {
+    override fun warmUp(): Boolean {
         try {
             ensureEngine()
+            return true
+        } catch (oom: OutOfMemoryError) {
+            resetEngine()
+            throw ScoutGemmaUnavailableException(
+                "Not enough free memory to initialize the on-device model on this device."
+            )
         } catch (failure: Throwable) {
-            Log.w(TAG, "Engine warm-up failed (will retry on first generate): ${failure.message}")
+            Log.w(TAG, "Engine warm-up failed: ${failure.message}", failure)
+            throw ScoutGemmaUnavailableException(
+                "On-device Gemma warm-up failed: ${failure.message ?: failure.javaClass.simpleName}"
+            )
         }
+    }
+
+    override fun cancelGeneration(): Boolean {
+        val run = activeRun.get() ?: return false
+        run.acceptingTokens.set(false)
+        run.cancelReason.compareAndSet(CancelReason.NONE, CancelReason.USER)
+        safeCancel(run.conversation)
+        return true
     }
 
     @Throws(ScoutGemmaUnavailableException::class)
@@ -62,61 +99,112 @@ class LiteRtScoutGemmaEngine private constructor(
         maxTokens: Int,
         sink: ScoutGemmaEngine.TokenSink?
     ): ScoutGemmaEngine.GenerateResult {
-        val input = if (systemContext.isNullOrEmpty()) prompt else "$systemContext\n\n$prompt"
+        if (prompt.isBlank()) {
+            throw ScoutGemmaUnavailableException("Scout needs a non-empty prompt.")
+        }
+        val outputBudget = ScoutOutputBudget(maxTokens.coerceIn(1, MAX_REQUEST_TOKENS))
         try {
             val active = ensureEngine()
             // A fresh conversation per call keeps turns independent and releases
             // native resources deterministically (Conversation is Closeable).
-            active.createConversation().use { conversation ->
-                val full = StringBuilder()
-                val failure = arrayOfNulls<Throwable>(1)
-                val done = CountDownLatch(1)
-                // Stream tokens as they are produced. onMessage delivers
-                // incremental Content parts; we forward each text chunk to the
-                // sink and accumulate the full answer to return.
-                conversation.sendMessageAsync(
-                    input,
-                    object : MessageCallback {
-                        override fun onMessage(message: Message) {
-                            val chunk = message.contents.contents
-                                .filterIsInstance<Content.Text>()
-                                .joinToString("") { it.text }
-                            if (chunk.isNotEmpty()) {
-                                full.append(chunk)
-                                sink?.onToken(chunk)
-                            }
-                        }
-
-                        override fun onDone() {
-                            done.countDown()
-                        }
-
-                        override fun onError(t: Throwable) {
-                            failure[0] = t
-                            done.countDown()
-                        }
-                    },
-                    emptyMap<String, Any>()
-                )
-                // Bounded wait: if the native runtime wedges and never calls
-                // onDone/onError, fail honestly instead of blocking the single
-                // inference thread (and every later turn) forever. Exiting the
-                // `use` block closes the Conversation, aborting the in-flight call.
-                val completed = done.await(GENERATE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                if (!completed) {
+            val conversationConfig = ConversationConfig(
+                systemInstruction = systemContext
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let(Contents::of)
+            )
+            active.createConversation(conversationConfig).use { conversation ->
+                val acceptingTokens = AtomicBoolean(true)
+                val run = ActiveRun(conversation, acceptingTokens)
+                if (!activeRun.compareAndSet(null, run)) {
                     throw ScoutGemmaUnavailableException(
-                        "On-device Gemma timed out after ${GENERATE_TIMEOUT_SECONDS}s — give it a moment and try again."
+                        "Another on-device Scout answer is already running."
                     )
                 }
-                failure[0]?.let { throw it }
+                val full = StringBuilder()
+                val fullLock = Any()
+                val failure = AtomicReference<Throwable?>(null)
+                val done = CountDownLatch(1)
+                try {
+                    // ConversationConfig is the real system-role boundary. Sending
+                    // only the user prompt here prevents trusted instructions and
+                    // untrusted user input from being flattened into one USER turn.
+                    conversation.sendMessageAsync(
+                        prompt,
+                        object : MessageCallback {
+                            override fun onMessage(message: Message) {
+                                if (!acceptingTokens.get()) return
+                                val chunk = message.contents.contents
+                                    .filterIsInstance<Content.Text>()
+                                    .joinToString("") { it.text }
+                                if (chunk.isEmpty()) return
 
-                val text = full.toString()
-                if (text.isBlank()) {
-                    // Diagnostic: engine ran but produced no Content.Text.
-                    // `adb logcat -s ScoutGemma:*` surfaces this.
-                    Log.w(TAG, "Gemma stream produced no text parts")
+                                val accepted = outputBudget.take(chunk)
+                                if (accepted.isNotEmpty()) {
+                                    synchronized(fullLock) {
+                                        full.append(accepted)
+                                    }
+                                    sink?.onToken(accepted)
+                                }
+                                if (outputBudget.isTruncated() &&
+                                    run.cancelReason.compareAndSet(
+                                        CancelReason.NONE,
+                                        CancelReason.OUTPUT_LIMIT
+                                    )
+                                ) {
+                                    requestCancel(conversation)
+                                }
+                            }
+
+                            override fun onDone() {
+                                done.countDown()
+                            }
+
+                            override fun onError(throwable: Throwable) {
+                                failure.compareAndSet(null, throwable)
+                                done.countDown()
+                            }
+                        },
+                        emptyMap<String, Any>()
+                    )
+
+                    // Bounded wait: if the runtime wedges, explicitly invoke the
+                    // official cancellation API and give its callback a short grace
+                    // period. Closing a live Conversation is not documented as a
+                    // substitute for cancelProcess().
+                    val completed = done.await(GENERATE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    if (!completed) {
+                        acceptingTokens.set(false)
+                        run.cancelReason.compareAndSet(CancelReason.NONE, CancelReason.TIMEOUT)
+                        safeCancel(conversation)
+                        done.await(CANCEL_GRACE_SECONDS, TimeUnit.SECONDS)
+                        throw ScoutGemmaUnavailableException(
+                            "On-device Gemma timed out after ${GENERATE_TIMEOUT_SECONDS}s; generation was cancelled."
+                        )
+                    }
+
+                    val cancellation = run.cancelReason.get()
+                    val callbackFailure = failure.get()
+                    if (callbackFailure != null && cancellation != CancelReason.OUTPUT_LIMIT) {
+                        if (cancellation == CancelReason.USER) {
+                            throw ScoutGemmaUnavailableException(
+                                "On-device Gemma generation was cancelled."
+                            )
+                        }
+                        throw callbackFailure
+                    }
+
+                    val text = synchronized(fullLock) { full.toString() }
+                    if (text.isBlank()) {
+                        Log.w(TAG, "Gemma stream produced no text parts")
+                    }
+                    return ScoutGemmaEngine.GenerateResult(
+                        text,
+                        cancellation == CancelReason.OUTPUT_LIMIT || outputBudget.isTruncated()
+                    )
+                } finally {
+                    acceptingTokens.set(false)
+                    activeRun.compareAndSet(run, null)
                 }
-                return ScoutGemmaEngine.GenerateResult(text, false)
             }
         } catch (alreadyHonest: ScoutGemmaUnavailableException) {
             // Preserve the specific message (e.g. timeout) — don't re-wrap it.
@@ -125,7 +213,7 @@ class LiteRtScoutGemmaEngine private constructor(
             // The model needs substantial RAM. Surface an honest device-capability
             // message and drop the engine so a retry starts clean. Never fabricate.
             Log.w(TAG, "Out of memory running on-device model", oom)
-            close()
+            resetEngine()
             throw ScoutGemmaUnavailableException(
                 "Not enough free memory to run the on-device model on this device."
             )
@@ -143,9 +231,40 @@ class LiteRtScoutGemmaEngine private constructor(
      * when swapping engines or when the plugin is destroyed.
      */
     override fun close() {
+        activeRun.get()?.let { run ->
+            run.acceptingTokens.set(false)
+            run.cancelReason.compareAndSet(CancelReason.NONE, CancelReason.USER)
+            safeCancel(run.conversation)
+        }
+        resetEngine()
+        cancellationExecutor.shutdownNow()
+    }
+
+    private fun resetEngine() {
         synchronized(this) {
-            engine?.close()
+            engine?.let { active ->
+                if (active.isInitialized()) {
+                    runCatching { active.close() }
+                        .onFailure { Log.w(TAG, "LiteRT-LM engine close failed", it) }
+                }
+            }
             engine = null
+        }
+    }
+
+    private fun requestCancel(conversation: Conversation) {
+        try {
+            cancellationExecutor.execute { safeCancel(conversation) }
+        } catch (_: RejectedExecutionException) {
+            safeCancel(conversation)
+        }
+    }
+
+    private fun safeCancel(conversation: Conversation) {
+        try {
+            if (conversation.isAlive) conversation.cancelProcess()
+        } catch (failure: Throwable) {
+            Log.w(TAG, "LiteRT-LM cancellation failed: ${failure.message}")
         }
     }
 
@@ -159,6 +278,7 @@ class LiteRtScoutGemmaEngine private constructor(
         // can force a specific backend later.
         var lastError: Throwable? = null
         for (textBackend in listOf(Backend.GPU(), Backend.CPU())) {
+            var created: Engine? = null
             try {
                 Log.i(TAG, "Initializing LiteRT-LM engine on ${textBackend.name} backend (can take seconds)")
                 // Only the text backend is accelerated. The model constrains its
@@ -173,7 +293,7 @@ class LiteRtScoutGemmaEngine private constructor(
                     maxNumImages = null,
                     cacheDir = cacheDir
                 )
-                val created = Engine(config)
+                created = Engine(config)
                 created.initialize()
                 Log.i(TAG, "LiteRT-LM engine initialized on ${textBackend.name}")
                 engine = created
@@ -181,6 +301,11 @@ class LiteRtScoutGemmaEngine private constructor(
             } catch (failure: Throwable) {
                 lastError = failure
                 Log.w(TAG, "Backend ${textBackend.name} unavailable (${failure.message}); trying next.")
+                created?.let { candidate ->
+                    if (candidate.isInitialized()) {
+                        runCatching { candidate.close() }
+                    }
+                }
             }
         }
         throw lastError ?: IllegalStateException("No usable LiteRT-LM backend available")
@@ -189,11 +314,13 @@ class LiteRtScoutGemmaEngine private constructor(
     companion object {
         private const val TAG = "ScoutGemma"
         private const val RUNTIME_MAX_NUM_TOKENS = 32_768
+        private const val MAX_REQUEST_TOKENS = 2_048
 
         // Upper bound for a single on-device generation. Generous enough for a
         // long answer on a slow device, but bounded so a wedged native callback
         // can't hang the inference thread (and all later turns) indefinitely.
         private const val GENERATE_TIMEOUT_SECONDS = 120L
+        private const val CANCEL_GRACE_SECONDS = 5L
 
         /**
          * Loads the LiteRT-LM engine against the verified on-device model, or
@@ -225,4 +352,17 @@ class LiteRtScoutGemmaEngine private constructor(
             }
         }
     }
+
+    private enum class CancelReason {
+        NONE,
+        OUTPUT_LIMIT,
+        USER,
+        TIMEOUT
+    }
+
+    private data class ActiveRun(
+        val conversation: Conversation,
+        val acceptingTokens: AtomicBoolean,
+        val cancelReason: AtomicReference<CancelReason> = AtomicReference(CancelReason.NONE)
+    )
 }

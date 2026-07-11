@@ -107,7 +107,7 @@ export class ScoutModelDownloadSession {
 		let answer = 'My on-device model is still warming up. Give it a few seconds and ask again.';
 		if (notInstalled) {
 			if (autoStart === 'started') {
-				answer = `I'm downloading my on-device model now (${modelSize}). You can watch progress right here. Once it verifies, ask again and I'll answer fully offline.`;
+				answer = `I'm downloading my on-device model now (${modelSize}). You can watch progress right here. After it verifies, run the disconnected Scout test before relying on it offline.`;
 			} else if (autoStart === 'downloading' || this.#download) {
 				answer =
 					"My on-device model is still downloading. Watch the progress here; once it verifies, ask again and I'll answer from the local model.";
@@ -123,7 +123,7 @@ export class ScoutModelDownloadSession {
 					"The on-device model download isn't available in this build yet. Scout will answer after the verified model/runtime is installed.";
 			} else {
 				answer =
-					"My on-device model isn't installed yet. Send a message on Wi-Fi and I'll start the download here, then I can answer fully offline.";
+					"My on-device model isn't installed yet. Send a message on Wi-Fi and I'll start the download here; after verification, run the disconnected Scout test.";
 			}
 		}
 		return {

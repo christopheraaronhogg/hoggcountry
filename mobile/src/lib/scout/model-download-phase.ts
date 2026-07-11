@@ -6,7 +6,7 @@ import type {
 
 export type ScoutModelPhase =
 	| { kind: 'idle' }
-	| { kind: 'ready' }
+	| { kind: 'file_verified' }
 	| { kind: 'metered'; connectionType: NetworkStatus['type']; modelSize: string }
 	| { kind: 'downloading'; bytesLabel: string; percent: number | null }
 	| { kind: 'error'; detail: string };
@@ -46,7 +46,7 @@ export function deriveModelPhase(input: {
 	}
 
 	if (input.error) return { kind: 'error', detail: input.error };
-	if (input.status?.state === 'ready') return { kind: 'ready' };
+	if (input.status?.state === 'ready') return { kind: 'file_verified' };
 
 	return { kind: 'idle' };
 }

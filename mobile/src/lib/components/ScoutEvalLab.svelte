@@ -98,16 +98,15 @@
 	});
 	let evalWakeLock: ScoutEvalWakeLockController | null = null;
 
-	const modelReady = $derived(
-		trailAssistant.modelStatus?.state === 'ready' &&
-			trailAssistant.modelStatus.runtimeConfigured !== false
+	const modelFileVerified = $derived(
+		trailAssistant.modelStatus?.state === 'ready'
 	);
 	const activeRun = $derived(run ?? savedRun);
 	const savedRunTarget = $derived(savedRun ? (savedRun.filters?.limit ?? savedRun.totalSuiteCases) : 0);
 	const proofStatus = $derived(
 		scoutLocalAiEvalProofStatus({
 			suiteLoaded: Boolean(suite),
-			modelReady,
+			modelReady: modelFileVerified,
 			scoutUsesCloud: trailAssistant.scoutUsesCloud,
 			running,
 			native: nativePreflight,
@@ -198,7 +197,7 @@
 		if (!suite || running) return;
 		const fullRun = !limit || (resume && savedRunIsFullTarget);
 		if (!proofStatus.canRunSmoke) {
-			error = 'Scout local AI is not ready for an iOS Eval Lab run yet.';
+			error = 'Scout Eval Lab cannot start on this device yet.';
 			return;
 		}
 		if (fullRun && !proofStatus.canRunFinal) {
@@ -663,11 +662,11 @@
 				action: 'Share'
 			};
 		}
-		if (!modelReady) {
+		if (!modelFileVerified) {
 			return {
 				state: 'blocked',
-				label: 'Prepare local model',
-				detail: 'Scout needs the on-device model ready before the eval run.',
+				label: 'Verify local model file',
+				detail: 'Scout needs the on-device model file downloaded and checksum verified before the eval run.',
 				action: 'Model'
 			};
 		}

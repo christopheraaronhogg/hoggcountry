@@ -34,11 +34,9 @@
 	const dayNumber = $derived(trailAssistant.dayNumber);
 	const progress = $derived(trailProgress(from, TOTAL_MILES, direction));
 	const pct = $derived(Math.round(progress.percent));
-	// Only surface AI status in the hero when it's a reassurance ("On-device AI").
-	// Download / not-installed / runtime states are handled by Scout's own status
-	// bubble — a hero billboard reading "AI NOT INSTALLED" makes a working app look
-	// broken on the day's anchor panel.
-	const scoutReady = $derived(trailAssistant.modelStatus?.state === 'ready');
+	const scoutOfflineTested = $derived(
+		trailAssistant.scoutOfflineReadiness.stage === 'offline_ready'
+	);
 
 	// Forecast that travels with the field pack (CachedWeather | null). When the
 	// server can reach NWS it is an official point forecast; otherwise the UI stays
@@ -149,6 +147,7 @@
 		'Give me the safest next move.'
 	];
 	function ask(prompt: string) {
+		if (trailAssistant.scoutReplyInProgress) return;
 		trailAssistant.activeTab = 'Scout';
 		trailAssistant.runQuickPrompt(prompt);
 	}
@@ -219,7 +218,7 @@
 	<section class="hud">
 		<div class="hud-top">
 			<span class="day">Day {dayNumber}</span>
-			{#if scoutReady}<span class="off">On-device AI</span>{/if}
+			{#if scoutOfflineTested}<span class="off">Scout offline tested</span>{/if}
 		</div>
 		<div class="mile tabular">{from.toFixed(1)}<span class="of"> / {TOTAL_MILES.toLocaleString()} mi</span></div>
 		<div class="splits">
@@ -362,9 +361,9 @@
 	<!-- Ask Scout — calm, opens the real chat -->
 	<section class="ask card">
 		<div class="eyebrow">Ask Scout</div>
-		<p class="greet">Cited{trailAssistant.scoutUsesCloud ? '' : ', on-device'} answers — for the trail or the Word.</p>
+		<p class="greet">Cited answers — for the trail or the Word.</p>
 		{#each prompts as prompt (prompt)}
-			<button class="prompt-row" onclick={() => ask(prompt)}>
+			<button class="prompt-row" disabled={trailAssistant.scoutReplyInProgress} onclick={() => ask(prompt)}>
 				<span class="q">›</span><span class="qtext">{prompt}</span><span class="arrow">+</span>
 			</button>
 		{/each}
@@ -918,6 +917,10 @@
 		font-size: 0.9rem;
 		color: var(--ink);
 		text-align: left;
+	}
+	.prompt-row:disabled {
+		opacity: 0.48;
+		cursor: not-allowed;
 	}
 	.prompt-row .q {
 		font-size: 0.85rem;

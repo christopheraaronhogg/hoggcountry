@@ -369,13 +369,15 @@
 	}
 
 	function submit() {
-		if (!draft.trim()) return;
+		if (!draft.trim() || scoutReplyInProgress) return;
 		const message = trailAssistant.sendCoachMessage(draft);
+		if (!message) return;
 		draft = '';
-		if (message) void placeTurnAtReadingStart(message.id, false, true);
+		void placeTurnAtReadingStart(message.id, false, true);
 	}
 
 	function usePrompt(prompt: string) {
+		if (scoutReplyInProgress) return;
 		const message = trailAssistant.runQuickPrompt(prompt);
 		if (message) void placeTurnAtReadingStart(message.id, false, true);
 	}
@@ -590,7 +592,7 @@
 			<p class="welcome-eyebrow">Ask Scout</p>
 			<div class="prompt-grid">
 				{#each quickPrompts as prompt (prompt)}
-					<button class="prompt-chip" onclick={() => usePrompt(prompt)}>
+					<button class="prompt-chip" disabled={scoutReplyInProgress} onclick={() => usePrompt(prompt)}>
 						<span>{prompt}</span>
 						<span class="chip-go" aria-hidden="true">›</span>
 					</button>
@@ -783,7 +785,12 @@
 					onfocus={pauseForReaderIntent}
 					onkeydown={onComposerKeydown}
 				></textarea>
-				<button class="send" onclick={submit} disabled={!draft.trim()} aria-label="Send message">
+				<button
+					class="send"
+					onclick={submit}
+					disabled={!draft.trim() || scoutReplyInProgress}
+					aria-label={scoutReplyInProgress ? 'Scout is still replying' : 'Send message'}
+				>
 					<span aria-hidden="true">↑</span>
 				</button>
 			</div>
@@ -852,6 +859,10 @@
 	}
 	.prompt-chip .chip-go {
 		opacity: 0.55;
+	}
+	.prompt-chip:disabled {
+		opacity: 0.48;
+		cursor: not-allowed;
 	}
 
 	.transcript-tools {

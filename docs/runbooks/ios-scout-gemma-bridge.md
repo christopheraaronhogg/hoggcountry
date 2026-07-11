@@ -11,11 +11,11 @@ Native Swift, in the App target (`mobile/ios/App/App/scout/`):
 
 | File | Role |
 |------|------|
-| `ScoutGemmaPlugin.swift` | `@objc(ScoutGemmaPlugin)` Capacitor plugin (`CAPBridgedPlugin`, jsName `ScoutGemma`). Same methods as Android: `isAvailable` / `describeModel` / `generate` / `getModelStatus` / `prepareModelDownload` / `startModelDownload` / `cancelModelDownload`, streaming `scoutModelDownloadProgress` events. Auto-registered by Capacitor. |
+| `ScoutGemmaPlugin.swift` | `@objc(ScoutGemmaPlugin)` Capacitor plugin (`CAPBridgedPlugin`, jsName `ScoutGemma`). Exposes `isAvailable` / `describeModel` / awaited `warmUp` / serialized `generate` / model-download methods and structured runtime readiness. Auto-registered by Capacitor. |
 | `ScoutGemmaEngine.swift` | The `ScoutGemmaEngine` protocol + `UnavailableScoutGemmaEngine` fail-closed stub + value types. |
 | `ScoutModelStore.swift` | `ScoutModelSpec` (HF model defaults, same file/size/SHA-256 as Android) + `ScoutModelStatus` + app-private store with streaming CryptoKit SHA-256 `verify()`. |
 | `ScoutModelDownloader.swift` | Resumable `URLSessionDownloadTask` download → progress → `verify()`. Free-space precheck; resume data on interruption; fail-closed. |
-| `LiteRtScoutGemmaEngine.swift` | The real engine, gated behind `#if canImport(LiteRTLM)`, plus `ScoutGemmaEngineFactory`. The local `LiteRTLMVendor` package now makes this branch compile into the iOS app. |
+| `LiteRtScoutGemmaEngine.swift` | The real engine, gated behind `#if canImport(LiteRTLM)`, plus `ScoutGemmaEngineFactory`. It uses a true LiteRT-LM system message, a native per-turn decode cap, streamed generation, and native cancellation after a 120-second timeout. |
 
 The **JS contract is identical to Android** — `capacitor-gemma-bridge.ts`,
 `ScoutModelManager`, the AccountTab download card, and `ModelRouter` are
@@ -26,6 +26,18 @@ Current first-load behavior: the LiteRT-LM runtime is linked, and
 `downloadConfigured: true`, and `exists: false` until the user downloads the
 verified model. Gemma-only chat still blocks until the model file passes the
 SHA-256 check — fail-closed, nothing fabricated.
+
+`state: ready` describes the verified model file. Runtime readiness is reported
+separately as `runtimeState` (`runtime_unavailable`, `model_missing`, `cold`,
+`warming`, `ready`, or `failed`) plus `readyForInference`. Only an awaited,
+successful `warmUp` or generation moves the runtime to `ready`.
+
+The current iOS downloader is foreground-only (`URLSessionConfiguration.default`).
+It can continue while the app remains alive, but it is not promised to survive
+termination and may be suspended after locking/backgrounding. Native status
+therefore reports `downloadBackgroundCapable: false`,
+`downloadSurvivesAppTermination: false`, and `downloadRequiresAppActive: true`.
+Keep the app open, on power, and preferably on Wi-Fi until verification finishes.
 
 ## Engine activation
 

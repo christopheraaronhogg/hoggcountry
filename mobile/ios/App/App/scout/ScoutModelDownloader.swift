@@ -7,7 +7,8 @@ import Foundation
 /// for SHA-256 verification before the file is ever treated as ready.
 /// Downloading weights is NOT cloud model usage — inference runs on-device.
 final class ScoutModelDownloader: NSObject, URLSessionDownloadDelegate {
-    private static let freeSpaceMarginBytes: Int64 = 64 << 20
+	private static let minimumFreeSpaceMarginBytes: Int64 = 512 << 20
+	private static let freeSpaceMarginRatio = 0.15
 
     private let store: ScoutModelStore
     private let spec: ScoutModelSpec
@@ -41,8 +42,17 @@ final class ScoutModelDownloader: NSObject, URLSessionDownloadDelegate {
         guard spec.hasDownloadURL, let urlString = spec.downloadURL, let url = URL(string: urlString) else {
             throw ScoutGemmaError.unavailable("No model download endpoint is configured for \(spec.modelId).")
         }
-        if store.status().state == ScoutModelStatus.ready { return store.status() }
-        store.ensureModelDir()
+		let initialStatus = store.status()
+		if initialStatus.state == ScoutModelStatus.ready { return initialStatus }
+		store.ensureModelDir()
+		// A legacy marker or changed app manifest can leave the exact final model
+		// present but unverified. Re-hash it locally before spending another 2.6 GB.
+		if initialStatus.state == ScoutModelStatus.presentUnverified,
+		   (!spec.hasExpectedSize || initialStatus.bytesOnDevice == spec.expectedSizeBytes) {
+			if try store.verify() { return store.status() }
+			try? FileManager.default.removeItem(at: store.modelFileURL)
+			store.clearVerifiedMarkerForReplace()
+		}
         // Skip the free-space precheck when resuming — the bytes are already
         // partially on device, so the gross required-space check is overly conservative
         // and can spuriously refuse a resumable download.
@@ -160,7 +170,11 @@ final class ScoutModelDownloader: NSObject, URLSessionDownloadDelegate {
         let dir = store.modelFileURL.deletingLastPathComponent()
         guard let values = try? dir.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]),
               let available = values.volumeAvailableCapacityForImportantUsage else { return }
-        let needed = spec.expectedSizeBytes + Self.freeSpaceMarginBytes
+		let proportionalMargin = Int64(ceil(Double(spec.expectedSizeBytes) * Self.freeSpaceMarginRatio))
+		let margin = max(Self.minimumFreeSpaceMarginBytes, proportionalMargin)
+		let needed = spec.expectedSizeBytes > Int64.max - margin
+			? Int64.max
+			: spec.expectedSizeBytes + margin
         if available < needed {
             throw ScoutGemmaError.unavailable(
                 "Not enough free storage for the model: need ~\(needed >> 20) MB, have \(available >> 20) MB free.")

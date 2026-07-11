@@ -16,6 +16,13 @@ export interface GemmaModelDescriptor {
 	maxContextTokens: number;
 }
 
+export type ScoutGemmaWarmUpResult = {
+	warmed: boolean;
+	state?: 'ready' | 'failed' | 'busy';
+	backend?: string;
+	error?: string;
+};
+
 export interface OnDeviceGemmaBridge {
 	isAvailable(): Promise<boolean>;
 	describeModel(): Promise<GemmaModelDescriptor | null>;
@@ -24,7 +31,7 @@ export interface OnDeviceGemmaBridge {
 	 * doesn't pay (or risk) the heavy, sometimes-flaky lazy LiteRT init. Best-effort
 	 * and safe to call repeatedly; resolves whether or not warm-up succeeded.
 	 */
-	warmUp?(): Promise<void>;
+	warmUp?(): Promise<ScoutGemmaWarmUpResult>;
 	generate(
 		input: {
 			prompt: string;
@@ -56,6 +63,9 @@ const TIER_TO_CHARS: Record<GemmaTier, number> = {
 	small: TIER_TO_CONTEXT_TOKENS.small * APPROX_CHARS_PER_TOKEN
 };
 const ON_DEVICE_MAX_TOKENS = 640;
+const ON_DEVICE_BATTERY_SAVER_MAX_TOKENS = 192;
+const BATTERY_SAVER_CONTEXT_CHARS = 12_000;
+const CONTEXT_FIXED_RESERVE_CHARS = 4_096;
 const SYSTEM_CONTEXT_TRIM_MARKER =
 	'\n\n[Middle context trimmed to fit the on-device model window. Use only retained tool findings and cite only supplied sources.]\n\n';
 const TOWN_OFFLINE_READINESS_NOTE =
@@ -317,9 +327,18 @@ export class OnDeviceGemmaProvider implements ScoutProvider {
 		return this.cachedDescriptor;
 	}
 
-	private async contextBudgetChars(): Promise<number> {
+	private async contextBudgetChars(request: ProviderRequest, maxOutputTokens: number): Promise<number> {
 		const descriptor = await this.describe();
-		const budget = contextBudgetCharsForTier(this.tier, descriptor);
+		const nativeWindow = contextBudgetCharsForTier(this.tier, descriptor);
+		const promptReserve = Math.max(2_048, request.prompt.length);
+		const outputReserve = maxOutputTokens * APPROX_CHARS_PER_TOKEN;
+		const safeNativeBudget = Math.max(
+			256,
+			nativeWindow - promptReserve - outputReserve - CONTEXT_FIXED_RESERVE_CHARS
+		);
+		const budget = request.batterySaver
+			? Math.min(safeNativeBudget, BATTERY_SAVER_CONTEXT_CHARS)
+			: safeNativeBudget;
 		this.capabilities.maxContextChars = budget;
 		return budget;
 	}
@@ -332,7 +351,10 @@ export class OnDeviceGemmaProvider implements ScoutProvider {
 			);
 		}
 
-		const contextBudgetChars = await this.contextBudgetChars();
+		const maxOutputTokens = request.batterySaver
+			? ON_DEVICE_BATTERY_SAVER_MAX_TOKENS
+			: ON_DEVICE_MAX_TOKENS;
+		const contextBudgetChars = await this.contextBudgetChars(request, maxOutputTokens);
 		const systemContext = fitSystemContext(
 			renderSystemContext(request, { contextBudgetChars }),
 			contextBudgetChars
@@ -340,7 +362,7 @@ export class OnDeviceGemmaProvider implements ScoutProvider {
 		const nativeInput = {
 			prompt: request.prompt,
 			systemContext: systemContext.text,
-			maxTokens: ON_DEVICE_MAX_TOKENS
+			maxTokens: maxOutputTokens
 		};
 		let result: { text: string; truncated: boolean };
 		let streamed = false;
@@ -3403,6 +3425,9 @@ export function renderSystemContext(
 		`Answer the hiker's immediate question first. Keep field-decision replies short; let spiritual, document, or planning replies breathe when the user asks for that kind of help.`,
 		`End every answer with a complete sentence. Do not end with an unfinished offer, and do not add "I can look..." follow-up offers inside the answer. Use the loaded context to answer the current prompt.`,
 		`Light Markdown is allowed when it helps: short headings, numbered steps, bullets, and blockquotes. Do not use tables or huge lists on the phone screen.`,
+		request.batterySaver
+			? `Battery saver is on. Answer in no more than three short sentences unless immediate safety requires a short numbered action list.`
+			: '',
 		`Do not expose internal tool names or labels such as "source skill", "source_search", "open_source_doc", or "tool invocation" in the answer. Use user-facing source wording such as "cached safety guidance", "town guidance", "saved document", or "field-pack context" when source documents shaped the answer.`,
 		guidanceLines.length ? `Topic guidance:\n${guidanceLines.map((line) => `- ${line}`).join('\n')}` : '',
 		conversationLines.length

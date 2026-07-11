@@ -1,4 +1,8 @@
-import type { GemmaModelDescriptor, OnDeviceGemmaBridge } from './providers/on-device-gemma.ts';
+import type {
+	GemmaModelDescriptor,
+	OnDeviceGemmaBridge,
+	ScoutGemmaWarmUpResult
+} from './providers/on-device-gemma.ts';
 
 type ScoutGemmaAvailability = {
 	available: boolean;
@@ -50,18 +54,18 @@ type ScoutGemmaPlugin = {
 	}): Promise<{ text: string; truncated?: boolean }>;
 	/** Eagerly initialize the native engine (off the main thread) so the first
 	 *  chat turn doesn't carry the heavy, sometimes-flaky lazy LiteRT init. */
-	warmUp?: () => Promise<{ warmed: boolean }>;
+	warmUp?: () => Promise<ScoutGemmaWarmUpResult & { reason?: string }>;
 	getModelStatus?: () => Promise<ScoutGemmaModelStatus>;
 	prepareModelDownload?: () => Promise<ScoutGemmaModelStatus>;
 	/**
-	 * Kicks off the foreground-service download and resolves IMMEDIATELY (the
-	 * transfer is decoupled from this call so it survives the app closing). The
-	 * terminal outcome arrives via the scoutModelDownload{Complete,Error,Cancelled}
-	 * events. {@code started} is false when the model is already ready.
+	 * Kicks off the native download and resolves IMMEDIATELY. Android decouples the
+	 * transfer in a foreground service; iOS is foreground-only. The terminal outcome
+	 * arrives via scoutModelDownload{Complete,Error,Cancelled} events. {@code started}
+	 * is false when the model is already ready.
 	 */
 	startModelDownload?: () => Promise<ScoutDownloadStartResult>;
 	cancelModelDownload?: () => Promise<{ cancelled: boolean }>;
-	/** Whether a background download is in flight + its last known progress. */
+	/** Whether a native download is in flight + its last known progress. */
 	getDownloadState?: () => Promise<DownloadState>;
 	/** Active network type + metered flag, for Wi-Fi-aware downloads. */
 	getNetworkStatus?: () => Promise<NetworkStatus>;
@@ -108,6 +112,8 @@ export type NetworkStatus = {
 
 export type ScoutInstallSource = {
 	type: string;
+	/** Build fingerprint read directly from the installed native app bundle. */
+	sourceBuild?: string;
 	platform?: string;
 	detectedBy?: string;
 	receiptPresent?: boolean;
@@ -149,15 +155,15 @@ export interface ScoutModelManager {
 	prepareDownload(): Promise<ScoutGemmaModelStatus | null>;
 	/**
 	 * Starts the download and resolves when it terminates (complete/cancelled) or
-	 * rejects on error. The transfer runs in a native foreground service, so if the
-	 * app is closed mid-download this promise is lost but the download continues;
-	 * use {@link reattachDownload} on resume to re-observe it.
+	 * rejects on error. Android owns the transfer in a foreground service and can
+	 * reattach after the Activity closes. iOS currently requires the app to remain
+	 * active; callers must not infer Android durability from this shared contract.
 	 */
 	startDownload(onProgress?: (progress: ModelDownloadProgress) => void): Promise<ScoutGemmaModelStatus>;
 	cancelDownload(): Promise<boolean>;
 	/** Active network type + metered flag, or null when unsupported (e.g. iOS/web). */
 	getNetworkStatus(): Promise<NetworkStatus | null>;
-	/** Snapshot of any in-flight background download, or null when unsupported. */
+	/** Snapshot of any in-flight native download, or null when unsupported. */
 	getDownloadState(): Promise<DownloadState | null>;
 	/**
 	 * Re-observe a download already running in the background service (after the
@@ -200,6 +206,7 @@ export function createCapacitorGemmaBridge(win: Window = window): OnDeviceGemmaB
 
 	const plugin = capacitor.Plugins?.ScoutGemma;
 	if (!plugin) return null;
+	let generationActive = false;
 
 	return {
 		async isAvailable() {
@@ -212,22 +219,54 @@ export function createCapacitorGemmaBridge(win: Window = window): OnDeviceGemmaB
 			return descriptor;
 		},
 		async warmUp() {
-			// Best-effort: only call through if the native build exposes it.
-			await plugin.warmUp?.();
+			if (!plugin.warmUp) {
+				return {
+					warmed: false,
+					state: 'failed' as const,
+					error: 'This native build does not expose awaited Gemma initialization.'
+				};
+			}
+			const result = await plugin.warmUp();
+			const error =
+				typeof result?.error === 'string' && result.error.trim()
+					? result.error.trim()
+					: typeof result?.reason === 'string' && result.reason.trim()
+						? result.reason.trim()
+						: undefined;
+			const { reason: _nativeReason, ...normalizedResult } = result;
+			return {
+				...normalizedResult,
+				warmed: result?.warmed === true,
+				...(error ? { error } : {}),
+				state:
+					result?.state === 'ready' || result?.state === 'busy' || result?.state === 'failed'
+						? result.state
+						: result?.warmed === true
+							? 'ready'
+							: 'failed'
+			};
 		},
 		async generate(input, onToken) {
-			let handle: { remove: () => Promise<void> } | undefined;
-			if (onToken && plugin.addListener) {
-				handle = await plugin.addListener('scoutGenerateToken', (data) => onToken(data.text));
+			if (generationActive) {
+				throw new Error('Another on-device Scout answer is already running.');
 			}
+			generationActive = true;
+			let handle: { remove: () => Promise<void> } | undefined;
 			try {
+				if (onToken && plugin.addListener) {
+					handle = await plugin.addListener('scoutGenerateToken', (data) => onToken(data.text));
+				}
 				const result = await plugin.generate(input);
 				return {
 					text: result.text,
 					truncated: result.truncated ?? false
 				};
 			} finally {
-				await handle?.remove();
+				try {
+					await handle?.remove();
+				} finally {
+					generationActive = false;
+				}
 			}
 		}
 	};
@@ -239,13 +278,19 @@ export async function getCapacitorScoutInstallSource(win: Window = window): Prom
 
 	const source = await capacitor.Plugins?.ScoutGemma?.getInstallSource?.();
 	if (!source || typeof source !== 'object') return null;
-	return {
+	const normalized: ScoutInstallSource = {
 		...source,
 		type: typeof source.type === 'string' && source.type ? source.type : 'unknown',
 		receiptLastPathComponent:
 			typeof source.receiptLastPathComponent === 'string' ? source.receiptLastPathComponent : null,
 		installerPackage: typeof source.installerPackage === 'string' ? source.installerPackage : null
 	};
+	if (typeof source.sourceBuild === 'string' && source.sourceBuild.trim()) {
+		normalized.sourceBuild = source.sourceBuild.trim();
+	} else {
+		delete normalized.sourceBuild;
+	}
+	return normalized;
 }
 
 export async function setCapacitorScoutEvalKeepAwake(
@@ -282,7 +327,7 @@ export function createCapacitorModelManager(
 	const watchdogTimers = options.watchdogTimers ?? defaultWatchdogTimers;
 
 	// Attaches progress + terminal listeners and returns a promise that settles
-	// when the background download ends. Shared by startDownload (which also kicks
+	// when the native download ends. Shared by startDownload (which also kicks
 	// the service off) and reattachDownload (which only observes). All four
 	// listeners are removed exactly once, on the first terminal event or on abort.
 	// Defined as a const arrow (not a hoisted declaration) so the non-null

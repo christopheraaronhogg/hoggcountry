@@ -171,6 +171,10 @@ public actor Engine {
       )
       litert_lm_session_config_set_sampler_params(cSessionConfig, &params)
     }
+    if let maxOutputTokens = conversationConfig.maxOutputTokens, maxOutputTokens > 0 {
+      litert_lm_session_config_set_max_output_tokens(
+        cSessionConfig, Int32(clamping: maxOutputTokens))
+    }
 
     guard let cConversationConfig = litert_lm_conversation_config_create() else {
       throw LiteRTLMError.engine(.failedToCreateConversationConfig)

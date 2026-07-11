@@ -70,7 +70,7 @@ It works without signal. No account. No login. No ads. No third-party tracking.
 See your day laid out from camp to camp: your current mile and percent complete, miles done and miles to go, and the next water, shelter, and town with real distances. A first-class weather block translates the forecast into a plain-language "what it means" safety line, with a daylight-left bar so you know how much light you have. No fake "fitness score" — the app has no vitals and won't pretend it does. Candidate trail data is labeled honestly, so you always know what to confirm in the field.
 
 — SCOUT: PRIVATE AI, ON YOUR PHONE —
-Scout is an on-device AI trail assistant. It answers trail questions and scripture questions with cited sources — the field guide, trail and landmark data, and the King James Bible. Nothing leaves your phone: no question, prompt, or answer is ever sent to any server or AI cloud. Scout works fully offline. A one-time model download (~2.6 GB, over Wi-Fi by default, checksum-verified) powers it; the app is fully usable before and without it.
+Scout is an on-device AI trail assistant. It answers trail questions and scripture questions with cited sources — the field guide, trail and landmark data, and the King James Bible. Nothing leaves your phone: no question, prompt, or answer is ever sent to any server or AI cloud. After a one-time model download (~2.6 GB, over Wi-Fi by default), checksum verification, and the in-app airplane-mode test, Scout works fully offline. Today, Map, the guide, Bible, and trail logs remain useful before the model is installed; Scout chat waits for the local model.
 
 — MAP: A TRAIL RIBBON, NOT A BATTERY DRAIN —
 A quiet trail-ribbon map shows your position and the water, shelters, and towns ahead, pinned by trail mile — plus a zoomable elevation profile with real ascent and descent. No heavy tile map draining your battery.
@@ -303,16 +303,16 @@ authoritative doc governs; this is the must-match digest):
 Trail Assistant v1.0 — offline-first companion for the Appalachian Trail.
 
 • TODAY: your day from camp to camp — current mile, next water, shelter & town, weather with a plain-language safety line and daylight-left bar.
-• SCOUT: private on-device AI that cites its sources. Works fully offline.
+• SCOUT: private on-device AI with citations; airplane-mode test before the trail.
 • MAP: calm trail-ribbon view + real elevation profile.
 • TRAIL: offline field guide, full KJV Bible with verse search, journal & gear.
 
 No account. No ads. No tracking. Built with love for Dad.
 ```
 
-- Limit: 500 characters. Count: **489**. ✅
-- Keeps the same AI wording discipline as the description ("works fully offline," no
-  day-one guarantee). Safe for the Android listing.
+- Limit: 500 characters. Count: **497**. ✅
+- Keeps the same AI wording discipline as the description: offline use follows
+  download, checksum verification, and a real airplane-mode test.
 
 ---
 

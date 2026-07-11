@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Locale;
 
 /**
  * App-private store + download-readiness boundary for the on-device Gemma model.
@@ -24,17 +25,18 @@ import java.security.NoSuchAlgorithmException;
  * ready model, and no model API/cloud inference is invoked.
  *
  * <h3>Fail-closed marker design</h3>
- * The {@code .verified} sibling marker is BOUND to the verified file's identity
- * (size in bytes + last-modified time in milliseconds). {@link #isVerified()}
- * returns {@code true} ONLY when the marker exists AND its recorded size and
- * mtime match the current file. A post-verify replacement that changes size or
- * mtime fails closed without a per-load re-hash. The downloader MUST call
+ * The {@code .verified} sibling marker is BOUND to the build's model manifest
+ * (model id + expected size + expected SHA-256) and the verified file's identity
+ * (actual size + last-modified time). {@link #isVerified()} returns {@code true}
+ * ONLY when all fields still match. A model-spec update or post-verify file
+ * replacement fails closed without a per-load re-hash. The downloader MUST call
  * {@link #invalidateVerification()} before moving new bytes into the final path
  * so a crash mid-replace can never leave a stale marker over an unverified file.
  */
 public final class ScoutModelStore {
     private static final String MODEL_DIR = "scout-models";
     private static final String VERIFIED_SUFFIX = ".verified";
+    private static final String VERIFIED_MARKER_VERSION = "v2";
     private static final int READ_BUFFER_BYTES = 1 << 16;
 
     private final File modelDir;
@@ -45,8 +47,13 @@ public final class ScoutModelStore {
     }
 
     public ScoutModelStore(Context context, ScoutModelSpec spec) {
+        this(context.getFilesDir(), spec);
+    }
+
+    /** Package-private filesystem constructor for local JVM verification tests. */
+    ScoutModelStore(File filesDir, ScoutModelSpec spec) {
         this.spec = spec;
-        this.modelDir = new File(context.getFilesDir(), MODEL_DIR);
+        this.modelDir = new File(filesDir, MODEL_DIR);
     }
 
     public ScoutModelSpec spec() {
@@ -172,9 +179,11 @@ public final class ScoutModelStore {
     // -------------------------------------------------------------------------
 
     /**
-     * Returns {@code true} only when the marker exists AND its recorded size and
-     * mtime exactly match the current file. Any mismatch deletes the stale marker
-     * so it can never again cause a false-ready result.
+     * Returns {@code true} only when the marker is bound to BOTH the build's model
+     * manifest (model id, expected size, expected SHA-256) and the current file
+     * identity (actual size + mtime). This prevents an app update that changes the
+     * expected model from inheriting an old marker merely because the filename,
+     * size, and mtime happen to match.
      */
     private boolean isVerified(File file) {
         File marker = verifiedMarker();
@@ -182,16 +191,20 @@ public final class ScoutModelStore {
             return false;
         }
         try {
-            long[] identity = readMarker(marker);
-            long recordedSize = identity[0];
-            long recordedMtime = identity[1];
-            if (recordedSize == file.length() && recordedMtime == file.lastModified()) {
+            VerifiedIdentity identity = readMarker(marker);
+            String expectedSha = normalizedChecksum(spec.expectedSha256);
+            if (VERIFIED_MARKER_VERSION.equals(identity.version)
+                    && spec.modelId.equals(identity.modelId)
+                    && spec.expectedSizeBytes == identity.expectedSize
+                    && expectedSha.equals(identity.expectedSha256)
+                    && identity.fileSize == file.length()
+                    && identity.fileMtime == file.lastModified()) {
                 return true;
             }
-            // Stale marker — file was replaced or tampered. Remove it.
+            // Stale marker — spec changed, file was replaced, or it was tampered.
             clearVerifiedMarker();
             return false;
-        } catch (IOException e) {
+        } catch (IOException | RuntimeException e) {
             clearVerifiedMarker();
             return false;
         }
@@ -202,28 +215,74 @@ public final class ScoutModelStore {
     }
 
     /**
-     * Writes the marker file containing two lines: {@code <sizeBytes>\n<mtimeMillis>}.
-     * Binding the marker to the file's identity makes a same-content replacement
-     * detectable by mtime even when size is identical.
+     * Writes a versioned marker bound to the build manifest and file identity:
+     * version, model id, expected bytes, expected SHA, file bytes, file mtime.
      */
     private void writeVerifiedMarker(File file) throws IOException {
         ensureModelDir();
         File marker = verifiedMarker();
         try (FileWriter writer = new FileWriter(marker, false)) {
-            writer.write(file.length() + "\n" + file.lastModified() + "\n");
+            writer.write(VERIFIED_MARKER_VERSION + "\n");
+            writer.write(spec.modelId + "\n");
+            writer.write(spec.expectedSizeBytes + "\n");
+            writer.write(normalizedChecksum(spec.expectedSha256) + "\n");
+            writer.write(file.length() + "\n");
+            writer.write(file.lastModified() + "\n");
         }
     }
 
-    /** Reads {@code <sizeBytes>\n<mtimeMillis>} from the marker file. */
-    private static long[] readMarker(File marker) throws IOException {
+    private static VerifiedIdentity readMarker(File marker) throws IOException {
         try (BufferedReader reader =
                      new BufferedReader(new InputStreamReader(new FileInputStream(marker)))) {
-            String sizeLine = reader.readLine();
-            String mtimeLine = reader.readLine();
-            if (sizeLine == null || mtimeLine == null) {
+            String version = reader.readLine();
+            String modelId = reader.readLine();
+            String expectedSize = reader.readLine();
+            String expectedSha = reader.readLine();
+            String fileSize = reader.readLine();
+            String fileMtime = reader.readLine();
+            if (version == null
+                    || modelId == null
+                    || expectedSize == null
+                    || expectedSha == null
+                    || fileSize == null
+                    || fileMtime == null) {
                 throw new IOException("Marker file truncated: " + marker);
             }
-            return new long[]{Long.parseLong(sizeLine.trim()), Long.parseLong(mtimeLine.trim())};
+            return new VerifiedIdentity(
+                    version.trim(),
+                    modelId.trim(),
+                    Long.parseLong(expectedSize.trim()),
+                    normalizedChecksum(expectedSha),
+                    Long.parseLong(fileSize.trim()),
+                    Long.parseLong(fileMtime.trim()));
+        }
+    }
+
+    private static String normalizedChecksum(String checksum) {
+        return checksum == null ? "" : checksum.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static final class VerifiedIdentity {
+        final String version;
+        final String modelId;
+        final long expectedSize;
+        final String expectedSha256;
+        final long fileSize;
+        final long fileMtime;
+
+        VerifiedIdentity(
+                String version,
+                String modelId,
+                long expectedSize,
+                String expectedSha256,
+                long fileSize,
+                long fileMtime) {
+            this.version = version;
+            this.modelId = modelId;
+            this.expectedSize = expectedSize;
+            this.expectedSha256 = expectedSha256;
+            this.fileSize = fileSize;
+            this.fileMtime = fileMtime;
         }
     }
 

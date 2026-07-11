@@ -2,6 +2,7 @@ import { createScoutRuntime } from './index.ts';
 import {
 	createCapacitorGemmaBridge,
 	createCapacitorModelManager,
+	type NetworkStatus,
 	type ScoutModelManager
 } from './capacitor-gemma-bridge.ts';
 import { InMemoryContextPackStore } from './context-pack-store.ts';
@@ -93,6 +94,10 @@ export class NativeScoutRuntime {
 	#modelManager: ScoutModelManager | null;
 	#scout: ScoutRuntimeHandle;
 	#diagnostics?: ScoutDiagnosticsSink;
+	#runtimeInitialized = false;
+	#runtimeWarmUpPromise: Promise<boolean> | null = null;
+	#runtimeGeneration = 0;
+	#runtimeFailureReason: string | null = null;
 
 	readonly downloads: NativeDownloadSession;
 
@@ -123,6 +128,14 @@ export class NativeScoutRuntime {
 		return this.#scout.runtime;
 	}
 
+	get runtimeInitialized(): boolean {
+		return this.#runtimeInitialized;
+	}
+
+	get runtimeFailureReason(): string | null {
+		return this.#runtimeFailureReason;
+	}
+
 	async askWithContextPack(
 		pack: ContextPack,
 		input: ScoutAskInput,
@@ -146,20 +159,69 @@ export class NativeScoutRuntime {
 
 		const bridge = this.#createBridge();
 		if (!bridge) return;
+		this.invalidateRuntimeReadiness();
 		this.#gemmaBridge = bridge;
 		this.#scout = this.#buildRuntime(bridge);
 	}
 
-	warmUpModel(): void {
+	warmUpModel(): Promise<boolean> {
 		this.ensureNativeWiring();
-		void this.#gemmaBridge?.warmUp?.();
+		if (this.#runtimeInitialized) return Promise.resolve(true);
+		if (this.#runtimeWarmUpPromise) return this.#runtimeWarmUpPromise;
+		const bridge = this.#gemmaBridge;
+		if (!bridge?.warmUp) return Promise.resolve(false);
+
+		const generation = this.#runtimeGeneration;
+		const promise = (async () => {
+			if (!(await bridge.isAvailable())) {
+				if (generation === this.#runtimeGeneration) {
+					this.#runtimeFailureReason = 'The verified Gemma model is not available to the native runtime.';
+				}
+				return false;
+			}
+			const result = await bridge.warmUp?.();
+			const warmed = result?.warmed === true;
+			if (generation === this.#runtimeGeneration && bridge === this.#gemmaBridge) {
+				this.#runtimeInitialized = warmed;
+				this.#runtimeFailureReason = warmed
+					? null
+					: cleanRuntimeFailureReason(result?.error) ??
+						'Gemma 4 is verified, but the native runtime could not initialize it.';
+			}
+			return warmed;
+		})()
+			.catch((error) => {
+				if (generation === this.#runtimeGeneration) {
+					this.#runtimeInitialized = false;
+					this.#runtimeFailureReason =
+						cleanRuntimeFailureReason(error) ?? 'The native Gemma runtime failed to initialize.';
+				}
+				return false;
+			})
+			.finally(() => {
+				if (this.#runtimeWarmUpPromise === promise) this.#runtimeWarmUpPromise = null;
+			});
+		this.#runtimeWarmUpPromise = promise;
+		return promise;
 	}
 
 	async gemmaReady(required: boolean): Promise<boolean> {
 		if (!required) return true;
 		this.ensureNativeWiring();
 		if (!this.#gemmaBridge) return false;
-		return this.#gemmaBridge.isAvailable().catch(() => false);
+		return this.warmUpModel();
+	}
+
+	async getNetworkStatus(): Promise<NetworkStatus | null> {
+		this.ensureNativeWiring();
+		return this.#modelManager?.getNetworkStatus().catch(() => null) ?? null;
+	}
+
+	invalidateRuntimeReadiness(): void {
+		this.#runtimeGeneration += 1;
+		this.#runtimeInitialized = false;
+		this.#runtimeWarmUpPromise = null;
+		this.#runtimeFailureReason = null;
 	}
 
 	/**
@@ -169,7 +231,7 @@ export class NativeScoutRuntime {
 	 */
 	async generateText(input: { systemContext: string; prompt: string; maxTokens?: number }): Promise<string> {
 		this.ensureNativeWiring();
-		if (!this.#gemmaBridge || !(await this.#gemmaBridge.isAvailable().catch(() => false))) {
+		if (!this.#gemmaBridge || !(await this.gemmaReady(true))) {
 			throw new Error('On-device model is not available.');
 		}
 		const result = await this.#gemmaBridge.generate({
@@ -193,6 +255,7 @@ export class NativeScoutRuntime {
 
 	invalidateAvailability(): void {
 		this.#scout.onDeviceProvider?.invalidateAvailability();
+		this.invalidateRuntimeReadiness();
 	}
 
 	#buildRuntime(onDeviceBridge: OnDeviceGemmaBridge | null): ScoutRuntimeHandle {
@@ -207,6 +270,19 @@ export class NativeScoutRuntime {
 
 	#handleModelReady(): void {
 		this.invalidateAvailability();
-		this.warmUpModel();
+		void this.warmUpModel();
 	}
+}
+
+function cleanRuntimeFailureReason(value: unknown): string | null {
+	const raw =
+		typeof value === 'string'
+			? value
+			: value instanceof Error
+				? value.message
+				: value && typeof value === 'object' && 'message' in value
+					? String(value.message)
+					: '';
+	const trimmed = raw.trim();
+	return trimmed || null;
 }

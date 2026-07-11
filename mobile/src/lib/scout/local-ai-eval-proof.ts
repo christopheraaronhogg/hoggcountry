@@ -64,8 +64,8 @@ export function scoutLocalAiEvalProofStatus(
 		},
 		{
 			id: 'model',
-			label: 'Model',
-			value: modelOk ? 'Ready' : 'Needs model',
+			label: 'Model file',
+			value: modelOk ? 'Verified' : 'Needs download',
 			ok: modelOk
 		},
 		{
@@ -158,12 +158,12 @@ function statusLabel(input: {
 	buildOk: boolean;
 }): string {
 	if (input.input.running) return 'Running';
-	if (input.canRunFinal) return 'TestFlight ready';
+	if (input.canRunFinal) return 'Run 100 available';
 	if (!input.input.suiteLoaded) return 'Loading suite';
-	if (!input.input.modelReady) return 'Needs model';
+	if (!input.input.modelReady) return 'Needs model file';
 	if (input.input.scoutUsesCloud) return 'Web lane';
 	if (!input.shellOk) return 'iOS app only';
-	if (input.canRunSmoke && !input.installOk) return 'Smoke only';
+	if (input.canRunSmoke && !input.installOk) return 'Run 3 available';
 	if (input.canRunSmoke && !input.buildOk) return 'Build too old';
 	return 'Checking';
 }

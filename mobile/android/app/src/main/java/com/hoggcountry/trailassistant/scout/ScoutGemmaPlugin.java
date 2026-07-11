@@ -8,6 +8,7 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.os.Build;
+import android.util.JsonReader;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PermissionState;
@@ -18,8 +19,13 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @CapacitorPlugin(
         name = "ScoutGemma",
@@ -42,6 +48,13 @@ public class ScoutGemmaPlugin extends Plugin {
     // On-device generation (and the lazy first-call model load, which takes
     // seconds) must run off the Capacitor thread or it risks an ANR.
     private final ExecutorService inference = Executors.newSingleThreadExecutor();
+
+    /**
+     * Fail-fast single-turn guard. The executor alone only serializes calls, which
+     * silently queues duplicate asks and lets their global token listeners overlap.
+     * Rejecting the second call keeps one request/one token stream invariant.
+     */
+    private final AtomicBoolean generationInProgress = new AtomicBoolean(false);
 
     /**
      * Guards lazy creation in {@link #getEngine()} and the engine swap on download
@@ -124,6 +137,9 @@ public class ScoutGemmaPlugin extends Plugin {
             currentEngine = engine;
             engine = null;
         }
+        if (currentEngine != null && generationInProgress.get()) {
+            currentEngine.cancelGeneration();
+        }
         // Close on the inference executor so teardown happens-AFTER any in-flight
         // generate() (FIFO order), never freeing the native engine mid-call.
         // Use shutdown() (graceful) rather than shutdownNow(): the latter would
@@ -139,6 +155,7 @@ public class ScoutGemmaPlugin extends Plugin {
         ScoutGemmaEngine currentEngine = getEngine();
         JSObject result = new JSObject();
         result.put("available", currentEngine.isAvailable());
+        result.put("runtimeReady", currentEngine.isRuntimeReady());
         if (!currentEngine.isAvailable()) {
             result.put("modelId", "gemma-4-not-installed");
             result.put("reason", "Gemma 4 LiteRT-LM runtime is not installed in this Android build.");
@@ -160,6 +177,7 @@ public class ScoutGemmaPlugin extends Plugin {
 
         JSObject result = new JSObject();
         result.put("available", getEngine().isAvailable());
+        result.put("runtimeReady", getEngine().isRuntimeReady());
         result.put("tier", modelInfo.tier);
         result.put("modelId", modelInfo.modelId);
         result.put("maxContextTokens", modelInfo.maxContextTokens);
@@ -170,7 +188,22 @@ public class ScoutGemmaPlugin extends Plugin {
     public void generate(PluginCall call) {
         String prompt = call.getString("prompt", "");
         String systemContext = call.getString("systemContext", "");
-        int maxTokens = call.getInt("maxTokens", 512);
+        int maxTokens = Math.max(1, call.getInt("maxTokens", 512));
+        String requestId = call.getCallbackId();
+
+        if (prompt == null || prompt.trim().isEmpty()) {
+            rejectGeneration(call, "SCOUT_INVALID_PROMPT", "Scout needs a non-empty prompt.", requestId, false);
+            return;
+        }
+        if (!generationInProgress.compareAndSet(false, true)) {
+            rejectGeneration(
+                    call,
+                    "SCOUT_GENERATION_BUSY",
+                    "Scout is already answering another question.",
+                    requestId,
+                    true);
+            return;
+        }
 
         inference.execute(() -> {
             final StringBuilder buffer = new StringBuilder();
@@ -187,7 +220,7 @@ public class ScoutGemmaPlugin extends Plugin {
                                 buffer.append(chunk);
                                 long now = System.currentTimeMillis();
                                 if (now - lastEmit[0] >= 60) {
-                                    emitToken(buffer.toString());
+                                    emitToken(requestId, buffer.toString());
                                     buffer.setLength(0);
                                     lastEmit[0] = now;
                                 }
@@ -195,42 +228,99 @@ public class ScoutGemmaPlugin extends Plugin {
                         });
                 synchronized (buffer) {
                     if (buffer.length() > 0) {
-                        emitToken(buffer.toString());
+                        emitToken(requestId, buffer.toString());
                     }
                 }
                 JSObject result = new JSObject();
                 result.put("text", generated.text);
                 result.put("truncated", generated.truncated);
+                result.put("requestId", requestId);
                 call.resolve(result);
             } catch (ScoutGemmaUnavailableException exception) {
-                call.reject(exception.getMessage());
+                String message = exception.getMessage() != null
+                        ? exception.getMessage()
+                        : "On-device Gemma generation failed.";
+                String code = message.contains("timed out")
+                        ? "SCOUT_GENERATION_TIMEOUT"
+                        : message.contains("cancelled")
+                                ? "SCOUT_GENERATION_CANCELLED"
+                                : "SCOUT_GENERATION_UNAVAILABLE";
+                rejectGeneration(call, code, message, requestId, !message.contains("cancelled"));
+            } catch (Throwable failure) {
+                rejectGeneration(
+                        call,
+                        "SCOUT_GENERATION_FAILED",
+                        "On-device Gemma generation failed: "
+                                + (failure.getMessage() != null
+                                        ? failure.getMessage()
+                                        : failure.getClass().getSimpleName()),
+                        requestId,
+                        true);
+            } finally {
+                generationInProgress.set(false);
             }
         });
     }
 
-    private void emitToken(String text) {
+    private void emitToken(String requestId, String text) {
         JSObject event = new JSObject();
+        event.put("requestId", requestId);
         event.put("text", text);
         notifyListeners("scoutGenerateToken", event);
+    }
+
+    private void rejectGeneration(
+            PluginCall call,
+            String code,
+            String message,
+            String requestId,
+            boolean retryable) {
+        JSObject data = new JSObject();
+        data.put("requestId", requestId);
+        data.put("retryable", retryable);
+        data.put("runtimeReady", getEngine().isRuntimeReady());
+        call.reject(message, code, data);
     }
 
     /**
      * Eagerly initializes the on-device engine off the Capacitor thread so the
      * first chat turn doesn't carry the heavy (and occasionally flaky) lazy
-     * LiteRT init. Resolves immediately; the actual warm-up runs on the inference
-     * executor and never blocks the caller or the UI.
+     * LiteRT init. The promise resolves only after initialization succeeds, so
+     * {@code warmed:true} is a real runtime-readiness signal rather than a queued
+     * work acknowledgement.
      */
     @PluginMethod
     public void warmUp(PluginCall call) {
         inference.execute(() -> {
             try {
-                getEngine().warmUp();
-            } catch (Throwable ignored) {
-                // Best-effort: warm-up failure just means the first generate retries init.
+                boolean warmed = getEngine().warmUp();
+                JSObject result = new JSObject();
+                result.put("warmed", warmed && getEngine().isRuntimeReady());
+                result.put("runtimeReady", getEngine().isRuntimeReady());
+                result.put("available", getEngine().isAvailable());
+                call.resolve(result);
+            } catch (ScoutGemmaUnavailableException failure) {
+                JSObject data = new JSObject();
+                data.put("runtimeReady", getEngine().isRuntimeReady());
+                data.put("available", getEngine().isAvailable());
+                call.reject(
+                        failure.getMessage() != null
+                                ? failure.getMessage()
+                                : "On-device Gemma warm-up failed.",
+                        "SCOUT_WARMUP_FAILED",
+                        data);
             }
         });
+    }
+
+    /** Cancels the active native generation immediately (never queued behind it). */
+    @PluginMethod
+    public void cancelGeneration(PluginCall call) {
+        boolean active = generationInProgress.get();
+        boolean signalled = active && getEngine().cancelGeneration();
         JSObject result = new JSObject();
-        result.put("warmed", true);
+        result.put("cancelled", signalled);
+        result.put("active", active);
         call.resolve(result);
     }
 
@@ -361,7 +451,35 @@ public class ScoutGemmaPlugin extends Plugin {
         result.put("detectedBy", "android-package-manager");
         result.put("installerPackage", installerPackage);
         result.put("debugBuild", debugBuild);
+        String sourceBuild = bundledSourceBuild();
+        if (sourceBuild != null) {
+            result.put("sourceBuild", sourceBuild);
+        }
         call.resolve(result);
+    }
+
+    /**
+     * Reads the fingerprint from the APK asset itself, not through the WebView.
+     * A previous service worker can briefly control the first launch after an app
+     * update, so fetching /app-version.json from JS is not safe proof identity.
+     */
+    private String bundledSourceBuild() {
+        try (InputStream input = getContext().getAssets().open("public/app-version.json");
+                JsonReader reader = new JsonReader(
+                        new InputStreamReader(input, StandardCharsets.UTF_8))) {
+            reader.beginObject();
+            while (reader.hasNext()) {
+                String name = reader.nextName();
+                if ("sourceBuild".equals(name)) {
+                    String value = reader.nextString();
+                    return value != null && !value.trim().isEmpty() ? value.trim() : null;
+                }
+                reader.skipValue();
+            }
+        } catch (IOException | IllegalStateException ignored) {
+            // Fail closed in JS: no native fingerprint means no persisted proof.
+        }
+        return null;
     }
 
     /**

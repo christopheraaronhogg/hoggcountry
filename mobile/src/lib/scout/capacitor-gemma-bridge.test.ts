@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+	createCapacitorGemmaBridge,
 	createCapacitorModelManager,
 	getCapacitorScoutInstallSource,
 	isNativePlatform,
@@ -15,10 +16,93 @@ const WATCHDOG_TEST_MS = 100;
 const STALLED_MESSAGE =
 	'Model download stalled — no progress from the downloader for 2 minutes. Check your connection and try again.';
 
+test('Gemma bridge reports awaited native warm-up truth', async () => {
+	const bridge = createCapacitorGemmaBridge(
+		nativeWindow({
+			isAvailable: async () => ({ available: true }),
+			describeModel: async () => null,
+			generate: async () => ({ text: 'ok' }),
+			warmUp: async () => ({ warmed: true, backend: 'cpu' })
+		})
+	);
+	assert.ok(bridge);
+	assert.deepEqual(await bridge.warmUp?.(), {
+		warmed: true,
+		state: 'ready',
+		backend: 'cpu'
+	});
+});
+
+test('Gemma bridge preserves native warm-up recovery instructions', async () => {
+	const bridge = createCapacitorGemmaBridge(
+		nativeWindow({
+			isAvailable: async () => ({ available: true }),
+			describeModel: async () => null,
+			generate: async () => ({ text: 'should not run' }),
+			warmUp: async () => ({
+				warmed: false,
+				state: 'failed',
+				reason: 'Close and reopen Scout before trying local AI again.'
+			})
+		})
+	);
+	assert.ok(bridge);
+	assert.deepEqual(await bridge.warmUp?.(), {
+		warmed: false,
+		state: 'failed',
+		error: 'Close and reopen Scout before trying local AI again.'
+	});
+});
+
+test('Gemma bridge fails closed when an older native build has no awaited warm-up', async () => {
+	const bridge = createCapacitorGemmaBridge(
+		nativeWindow({
+			isAvailable: async () => ({ available: true }),
+			describeModel: async () => null,
+			generate: async () => ({ text: 'ok' })
+		})
+	);
+	assert.ok(bridge);
+	assert.deepEqual(await bridge.warmUp?.(), {
+		warmed: false,
+		state: 'failed',
+		error: 'This native build does not expose awaited Gemma initialization.'
+	});
+});
+
+test('Gemma bridge admits only one native generation listener at a time', async () => {
+	const releases: Array<() => void> = [];
+	let generateCalls = 0;
+	const bridge = createCapacitorGemmaBridge(
+		nativeWindow({
+			isAvailable: async () => ({ available: true }),
+			describeModel: async () => null,
+			generate: async () => {
+				generateCalls += 1;
+				return new Promise<{ text: string }>((resolve) => {
+					releases.push(() => resolve({ text: 'local answer' }));
+				});
+			},
+			addListener: async () => ({ remove: async () => {} })
+		})
+	);
+	assert.ok(bridge);
+
+	const first = bridge.generate({ prompt: 'first', systemContext: 'system', maxTokens: 32 });
+	await assert.rejects(
+		bridge.generate({ prompt: 'second', systemContext: 'system', maxTokens: 32 }),
+		/already running/u
+	);
+	assert.equal(generateCalls, 1);
+	releases[0]?.();
+	assert.deepEqual(await first, { text: 'local answer', truncated: false });
+});
+
 test('install-source helper reads native ScoutGemma diagnostics', async () => {
 	const win = nativeWindow({
 		getInstallSource: async () => ({
 			type: 'testflight',
+			sourceBuild: ' abc123 ',
 			platform: 'ios',
 			detectedBy: 'ios-app-store-receipt',
 			receiptPresent: true,
@@ -31,6 +115,7 @@ test('install-source helper reads native ScoutGemma diagnostics', async () => {
 	assert.equal(isNativePlatform(win), true);
 	assert.deepEqual(await getCapacitorScoutInstallSource(win), {
 		type: 'testflight',
+		sourceBuild: 'abc123',
 		platform: 'ios',
 		detectedBy: 'ios-app-store-receipt',
 		receiptPresent: true,
@@ -93,6 +178,7 @@ test('install-source helper normalizes incomplete native payloads', async () => 
 	const win = nativeWindow({
 		getInstallSource: async () => ({
 			type: '',
+			sourceBuild: 42,
 			platform: 'ios',
 			receiptLastPathComponent: 42,
 			installerPackage: 42

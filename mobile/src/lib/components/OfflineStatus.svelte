@@ -10,7 +10,7 @@
 	const scoutTier = 'Scout Gemma 4 (compact)';
 
 	const statusLabel = {
-		ready: 'Offline ready',
+		ready: 'Pack current',
 		updating: 'Updating',
 		partial: 'Partial pack',
 		'cloud-only': 'Cloud only',

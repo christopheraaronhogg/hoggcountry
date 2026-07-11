@@ -35,6 +35,34 @@ test('offline ask with an available on-device engine answers on-device', async (
 	assert.ok(ans.generatedAt, 'stamps generatedAt');
 });
 
+test('runtime carries battery saver through to the native Gemma budget', async () => {
+	let maxTokens = 0;
+	const batteryBridge: OnDeviceGemmaBridge = {
+		isAvailable: async () => true,
+		describeModel: async () => ({
+			tier: 'balanced',
+			modelId: 'gemma-4-E2B-it-litert-lm',
+			maxContextTokens: 32_768
+		}),
+		generate: async (input) => {
+			maxTokens = input.maxTokens;
+			return { text: 'Short local answer.', truncated: false };
+		}
+	};
+	const { runtime } = createScoutRuntime({
+		initialPack: cloneDefaultContextPack(),
+		onDeviceBridge: batteryBridge
+	});
+
+	await runtime.ask({
+		prompt: 'What water is ahead?',
+		onlineStatus: false,
+		batterySaver: true
+	});
+
+	assert.equal(maxTokens, 192);
+});
+
 test('on-device engine failure surfaces instead of using a synthetic answer', async () => {
 	const { runtime } = createScoutRuntime({ initialPack: cloneDefaultContextPack(), onDeviceBridge: throwingBridge });
 	await assert.rejects(() => runtime.ask({ prompt: 'where is the next water', onlineStatus: false }), /engine boom/);

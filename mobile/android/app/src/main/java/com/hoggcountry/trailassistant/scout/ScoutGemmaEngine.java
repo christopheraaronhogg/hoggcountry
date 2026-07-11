@@ -15,8 +15,18 @@ package com.hoggcountry.trailassistant.scout;
  */
 public interface ScoutGemmaEngine {
 
-    /** True only when a runtime is loaded and model weights are usable. */
+    /**
+     * True when this engine can attempt generation (runtime linked + verified
+     * weights present). Runtime initialization readiness is reported separately by
+     * {@link #isRuntimeReady()} because loading LiteRT-LM is intentionally kept off
+     * the Capacitor/UI thread.
+     */
     boolean isAvailable();
+
+    /** True only after the native LiteRT-LM engine has initialized successfully. */
+    default boolean isRuntimeReady() {
+        return false;
+    }
 
     /**
      * Returns the model this build targets. Implementations may return the
@@ -40,13 +50,24 @@ public interface ScoutGemmaEngine {
 
     /**
      * Eagerly initializes the underlying runtime so the FIRST {@link #generate}
-     * call doesn't pay (or risk) the heavy, sometimes-flaky lazy init. Best-effort:
-     * implementations MUST NOT throw — a warm-up failure just means the first real
-     * turn behaves as before. The default is a no-op (the unavailable stub has
-     * nothing to warm).
+     * call doesn't pay (or risk) the heavy, sometimes-flaky lazy init. Returns only
+     * after initialization has succeeded; failures are surfaced honestly to the
+     * caller instead of reporting a false-positive warm-up.
      */
-    default void warmUp() {
-        // No-op by default.
+    default boolean warmUp() throws ScoutGemmaUnavailableException {
+        if (!isAvailable()) {
+            throw new ScoutGemmaUnavailableException("On-device Gemma is not available.");
+        }
+        return isRuntimeReady();
+    }
+
+    /**
+     * Cooperatively cancels the active generation, if any. This must be callable
+     * from outside the serial inference executor; queueing it behind generation
+     * would make cancellation ineffective.
+     */
+    default boolean cancelGeneration() {
+        return false;
     }
 
     /** Receives incremental text chunks as the engine streams a response. */
