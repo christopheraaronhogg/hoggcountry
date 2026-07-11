@@ -76,6 +76,59 @@ test('restorePersistedTrailState repairs missing document arrays from old persis
 	assert.deepEqual(restored.documents, []);
 });
 
+test('restorePersistedTrailState repairs damaged branches without discarding valid hike data', () => {
+	const defaults = defaultState();
+	const restored = restorePersistedTrailState(
+		{
+			activeTab: 'Map',
+			hikeProfile: {
+				...defaults.hikeProfile,
+				calibrated: true,
+				mode: 'self',
+				trailName: 'Dad',
+				currentMile: 702.4,
+				mileSource: 'manual'
+			},
+			currentMile: 702.4,
+			dayNumber: 88,
+			coachMessages: { broken: true },
+			checkInHistory: null,
+			documents: 'not-an-array',
+			personalLoadout: null,
+			trailPulseReports: {},
+			seenTrailPulseReportIds: 'all',
+			supportCircle: null,
+			lastCheckIn: null,
+			privacySettings: { stealthMode: false },
+			trailSettings: { waterAlerts: false },
+			trailLogSettings: null
+		},
+		defaults
+	);
+
+	assert.equal(restored.activeTab, 'Map');
+	assert.equal(restored.currentMile, 702.4);
+	assert.equal(restored.dayNumber, 88);
+	assert.equal(restored.hikeProfile.trailName, 'Dad');
+	assert.deepEqual(restored.coachMessages, defaults.coachMessages);
+	assert.deepEqual(restored.checkInHistory, []);
+	assert.deepEqual(restored.documents, []);
+	assert.deepEqual(restored.personalLoadout, []);
+	assert.deepEqual(restored.trailPulseReports, []);
+	assert.deepEqual(restored.seenTrailPulseReportIds, []);
+	assert.deepEqual(restored.supportCircle, []);
+	assert.deepEqual(restored.lastCheckIn, defaults.lastCheckIn);
+	assert.deepEqual(restored.privacySettings, {
+		...defaults.privacySettings,
+		stealthMode: false
+	});
+	assert.deepEqual(restored.trailSettings, {
+		...defaults.trailSettings,
+		waterAlerts: false
+	});
+	assert.deepEqual(restored.trailLogSettings, defaults.trailLogSettings);
+});
+
 test('parsePersistedTrailState restores JSON snapshots', () => {
 	const restored = parsePersistedTrailState(JSON.stringify({ activeTab: 'Gear', documents: [] }));
 
