@@ -518,9 +518,9 @@
 
 	<section class="card">
 		<div class="section-heading">
-			<p class="eyebrow">Trail log automation</p>
-			<h2>What Scout writes for you</h2>
-			<p>These toggles decide how much of the daily summary Scout drafts from your route, check-ins, and field reports.</p>
+			<p class="eyebrow">Trail preferences</p>
+			<h2>Controls that change the app</h2>
+			<p>These switches have a visible effect on mileage tracking and the Today screen.</p>
 		</div>
 
 		<div class="toggle-row">
@@ -548,57 +548,19 @@
 
 		<div class="toggle-row">
 			<div class="toggle-copy">
-				<strong>Water alerts</strong>
-				<span>Highlight reliable sources before dry ridges.</span>
+				<strong>Show water ahead</strong>
+				<span>Keep the next mapped water sources on Today. Always confirm flow in the field.</span>
 			</div>
 			<button
 				class:on={trailAssistant.trailSettings.waterAlerts}
 				class="toggle"
 				role="switch"
 				aria-checked={trailAssistant.trailSettings.waterAlerts}
-				aria-label="Water alerts"
+				aria-label="Show water ahead"
 				onclick={() =>
 					trailAssistant.updateTrailSetting(
 						'waterAlerts',
 						!trailAssistant.trailSettings.waterAlerts
-					)}
-			></button>
-		</div>
-
-		<div class="toggle-row">
-			<div class="toggle-copy">
-				<strong>Battery saver</strong>
-				<span>Reduce sync behavior to protect charge on long days.</span>
-			</div>
-			<button
-				class:on={trailAssistant.trailSettings.batterySaver}
-				class="toggle"
-				role="switch"
-				aria-checked={trailAssistant.trailSettings.batterySaver}
-				aria-label="Battery saver"
-				onclick={() =>
-					trailAssistant.updateTrailSetting(
-						'batterySaver',
-						!trailAssistant.trailSettings.batterySaver
-					)}
-			></button>
-		</div>
-
-		<div class="toggle-row">
-			<div class="toggle-copy">
-				<strong>Low-signal mode</strong>
-				<span>Prefer local Scout answers; network actions wait until service is available.</span>
-			</div>
-			<button
-				class:on={trailAssistant.trailSettings.lowSignalMode}
-				class="toggle"
-				role="switch"
-				aria-checked={trailAssistant.trailSettings.lowSignalMode}
-				aria-label="Low-signal mode"
-				onclick={() =>
-					trailAssistant.updateTrailSetting(
-						'lowSignalMode',
-						!trailAssistant.trailSettings.lowSignalMode
 					)}
 			></button>
 		</div>

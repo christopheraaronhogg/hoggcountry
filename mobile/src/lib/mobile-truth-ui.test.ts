@@ -32,3 +32,15 @@ test('scoped freshness labels depend on the shared minute clock', () => {
 		assert.match(source, /formatAge|formatTimeUntil/, `${name} should use a shared formatter`);
 	}
 });
+
+test('every visible trail preference has an observable app effect', () => {
+	const account = componentSource('AccountTab');
+	const today = componentSource('TodayTab');
+
+	assert.match(account, /Controls that change the app/);
+	assert.match(account, /Show water ahead/);
+	assert.match(today, /trailSettings\.waterAlerts/);
+	assert.doesNotMatch(account, /<strong>Battery saver<\/strong>/);
+	assert.doesNotMatch(account, /<strong>Low-signal mode<\/strong>/);
+	assert.doesNotMatch(account, /Reduce sync behavior/);
+});

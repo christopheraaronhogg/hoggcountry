@@ -59,9 +59,11 @@
 	// anything past LOOKAHEAD is stale-for-this-mile and shown as an honest empty.
 	const LOOKAHEAD = 120;
 	const watersAhead = $derived(
-		trailAssistant.fieldPack.water
-			.filter((w) => w.mile >= from - 0.01 && w.mile <= from + LOOKAHEAD)
-			.sort((a, b) => a.mile - b.mile)
+		trailAssistant.trailSettings.waterAlerts
+			? trailAssistant.fieldPack.water
+					.filter((w) => w.mile >= from - 0.01 && w.mile <= from + LOOKAHEAD)
+					.sort((a, b) => a.mile - b.mile)
+			: []
 	);
 	const sheltersAhead = $derived(
 		trailAssistant.fieldPack.shelters
