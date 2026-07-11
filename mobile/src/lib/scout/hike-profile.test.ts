@@ -258,6 +258,76 @@ test('sanitizeContextPackForSelfProfile strips stale Dad pack surfaces immediate
 	assert.match(sanitized.pilotNotice ?? '', /Personal pack pending refresh/);
 });
 
+test('sanitizeContextPackForSelfProfile clears an opposite-direction cached slice', () => {
+	const pack = cloneDefaultContextPack();
+	pack.hiker = { ...pack.hiker, currentMile: 100, direction: 'NOBO' };
+	pack.water = [{ name: 'Wrong-side source', mile: 101, reliability: 'reliable' }];
+	pack.shelters = [{ name: 'Wrong-side shelter', mile: 102 }];
+	pack.towns = [{ name: 'Wrong-side town', mile: 105, access: 'road' }];
+	pack.terrain = {
+		fromMile: 100,
+		toMile: 115,
+		lookaheadMiles: 15,
+		gainFt: 100,
+		lossFt: 50,
+		maxGradePercent: 10,
+		difficultyScore: 4,
+		difficultyLabel: 'steady',
+		climbs: [],
+		sourceLabel: 'NOBO fixture',
+		generatedAt: '2026-03-11T08:00:00.000Z'
+	};
+
+	const sanitized = sanitizeContextPackForSelfProfile(
+		pack,
+		selfProfile({ currentMile: 100, direction: 'SOBO' }),
+		new Date('2026-03-11T09:00:00.000Z')
+	);
+
+	assert.equal(sanitized.hiker.direction, 'SOBO');
+	assert.deepEqual(sanitized.water, []);
+	assert.deepEqual(sanitized.shelters, []);
+	assert.deepEqual(sanitized.towns, []);
+	assert.equal(sanitized.terrain, null);
+	assert.equal(sanitized.validUntil, undefined);
+	assert.match(sanitized.pilotNotice ?? '', /direction changed/i);
+});
+
+test('sanitizeContextPackForSelfProfile keeps a compatible SOBO slice but removes behind entries', () => {
+	const pack = cloneDefaultContextPack();
+	pack.hiker = { ...pack.hiker, currentMile: 100, direction: 'SOBO' };
+	pack.water = [
+		{ name: 'Ahead source', mile: 99, reliability: 'reliable' },
+		{ name: 'Behind source', mile: 101, reliability: 'reliable' }
+	];
+	pack.downloadedRegions = ['Trail ahead 100.0→64.0 SOBO'];
+	pack.validUntil = '2026-03-12T09:00:00.000Z';
+	pack.terrain = {
+		fromMile: 100,
+		toMile: 115,
+		lookaheadMiles: 15,
+		gainFt: 100,
+		lossFt: 50,
+		maxGradePercent: 10,
+		difficultyScore: 4,
+		difficultyLabel: 'steady',
+		climbs: [],
+		sourceLabel: 'stale NOBO terrain',
+		generatedAt: '2026-03-11T08:00:00.000Z'
+	};
+
+	const sanitized = sanitizeContextPackForSelfProfile(
+		pack,
+		selfProfile({ currentMile: 100, direction: 'SOBO' }),
+		new Date('2026-03-11T09:00:00.000Z')
+	);
+
+	assert.deepEqual(sanitized.water.map((item) => item.name), ['Ahead source']);
+	assert.deepEqual(sanitized.downloadedRegions, ['Trail ahead 100.0→64.0 SOBO']);
+	assert.equal(sanitized.validUntil, '2026-03-12T09:00:00.000Z');
+	assert.equal(sanitized.terrain, null);
+});
+
 test('resolvePosition: uncalibrated / dad-pilot reads position from the pack', () => {
 	const pack = cloneDefaultContextPack();
 	const now = new Date('2026-03-15T08:00:00');

@@ -4,7 +4,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { snapToMile, type TrailGeoPoint, type TrailSnapGeometry } from './trail-geometry.ts';
+import {
+	climbFeet,
+	elevationWindow,
+	snapToMile,
+	type TrailGeoPoint,
+	type TrailSnapGeometry
+} from './trail-geometry.ts';
 
 const MOBILE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const geometry = JSON.parse(
@@ -74,4 +80,21 @@ test('mobile GPS snap agrees with the web/AWOL frame near the MA mismatch report
 	assert.ok(snapped != null, 'expected coordinate to snap to the AT');
 	assert.ok(snapped > 1581 && snapped < 1583, `expected about mile 1582, got ${snapped}`);
 	assert.ok(Math.abs(snapped - 1541.6) > 20, 'must not return the old generated-route mile frame');
+});
+
+test('SOBO elevation windows are returned in travel order so climb remains truthful', () => {
+	const profile: TrailGeoPoint[] = [
+		{ m: 8, ft: 100, lat: 0, lon: 0 },
+		{ m: 9, ft: 200, lat: 0, lon: 0 },
+		{ m: 10, ft: 150, lat: 0, lon: 0 }
+	];
+
+	const nobo = elevationWindow(profile, 8, 2, 'NOBO');
+	const sobo = elevationWindow(profile, 10, 2, 'SOBO');
+
+	assert.deepEqual(nobo.map((point) => point.mile), [8, 9, 10]);
+	assert.deepEqual(sobo.map((point) => point.mile), [10, 9, 8]);
+	assert.equal(climbFeet(nobo), 100);
+	assert.equal(climbFeet(sobo), 50);
+	assert.deepEqual(elevationWindow(profile, 0, 2, 'SOBO'), []);
 });

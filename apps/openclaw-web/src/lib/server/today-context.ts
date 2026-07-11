@@ -1,3 +1,10 @@
+import {
+  directedTrailWindow,
+  trailAhead,
+  trailProgress,
+  type TrailDirection
+} from '@hoggcountry/trail-data/trail-direction';
+
 export interface TodayWaypoint {
   readonly name: string;
   readonly mile: number;
@@ -27,6 +34,7 @@ export interface TodayTrailContext {
   readonly generatedAt: string;
   readonly mile: number;
   readonly mileSource: 'profile' | 'tracker';
+  readonly direction: TrailDirection;
   readonly totalMiles: number;
   readonly percentComplete: number;
   readonly milesRemaining: number;
@@ -78,6 +86,7 @@ interface LoadTodayTrailContextOptions {
   readonly fetch: typeof fetch;
   readonly requestOrigin: string;
   readonly profileMile: number | null;
+  readonly profileDirection: TrailDirection;
 }
 
 const TERRAIN_LOOKAHEAD_MILES = 15;
@@ -151,15 +160,23 @@ export function zipDailyWeather(daily: unknown): TodayWeatherDay[] {
   return days;
 }
 
-export function nextWaypointAhead(list: readonly NextWaypointCandidate[], mile: number): TodayWaypoint | null {
+export function nextWaypointAhead(
+  list: readonly NextWaypointCandidate[],
+  mile: number,
+  direction: TrailDirection = 'NOBO'
+): TodayWaypoint | null {
   if (!Number.isFinite(mile)) return null;
-  const next = list.find((point) => point.mile != null && Number.isFinite(point.mile) && point.mile >= mile) ?? null;
+  const next = trailAhead(
+    list.filter((point): point is NextWaypointCandidate & { readonly mile: number } => point.mile != null),
+    mile,
+    direction
+  )[0] ?? null;
   if (!next || next.mile == null) return null;
 
   return {
     name: next.name,
     mile: next.mile,
-    milesAhead: roundTenth(next.mile - mile),
+    milesAhead: roundTenth(direction === 'SOBO' ? mile - next.mile : next.mile - mile),
     type: next.type
   };
 }
@@ -167,16 +184,18 @@ export function nextWaypointAhead(list: readonly NextWaypointCandidate[], mile: 
 export function summarizeTerrainAhead(
   terrain: TerrainAheadInput,
   mile: number,
-  lookaheadMiles: number = TERRAIN_LOOKAHEAD_MILES
+  lookaheadMiles: number = TERRAIN_LOOKAHEAD_MILES,
+  direction: TrailDirection = 'NOBO'
 ): TodayTerrainAhead | null {
   if (!Number.isFinite(mile) || !Number.isFinite(lookaheadMiles) || lookaheadMiles <= 0) return null;
 
-  const windowEnd = mile + lookaheadMiles;
+  const window = directedTrailWindow(mile, lookaheadMiles, Number.MAX_SAFE_INTEGER, direction);
+  if (!window) return null;
   const overlapping = terrain.segments.filter((segment) =>
     Number.isFinite(segment.startMile)
     && Number.isFinite(segment.endMile)
-    && segment.endMile > mile
-    && segment.startMile < windowEnd);
+    && segment.endMile > window.minMile
+    && segment.startMile < window.maxMile);
 
   let gainFt: number | null = null;
   let lossFt: number | null = null;
@@ -188,18 +207,25 @@ export function summarizeTerrainAhead(
     const overlapFraction = (segment: TerrainSegmentLike): number => {
       const span = segment.endMile - segment.startMile;
       if (!Number.isFinite(span) || span <= 0) return 1;
-      const overlap = Math.min(segment.endMile, windowEnd) - Math.max(segment.startMile, mile);
+      const overlap = Math.min(segment.endMile, window.maxMile) - Math.max(segment.startMile, window.minMile);
       return clamp(overlap / span, 0, 1);
     };
 
-    gainFt = Math.round(overlapping.reduce((sum, segment) =>
+    const authoredGain = Math.round(overlapping.reduce((sum, segment) =>
       sum + (Number.isFinite(segment.gainFt) ? segment.gainFt * overlapFraction(segment) : 0), 0));
-    lossFt = Math.round(overlapping.reduce((sum, segment) =>
+    const authoredLoss = Math.round(overlapping.reduce((sum, segment) =>
       sum + (Number.isFinite(segment.lossFt) ? segment.lossFt * overlapFraction(segment) : 0), 0));
+    gainFt = direction === 'SOBO' ? authoredLoss : authoredGain;
+    lossFt = direction === 'SOBO' ? authoredGain : authoredLoss;
     maxGradePercent = roundTenth(Math.max(...overlapping.map((segment) => Number.isFinite(segment.maxGradePercent) ? segment.maxGradePercent : 0)));
   }
 
-  const difficultyEntry = terrain.difficulty.find((entry) => mile >= entry.startMile && mile <= entry.endMile) ?? null;
+  // Cached difficulty weights ascent and descent differently and is authored
+  // NOBO. Do not present that score as SOBO truth until direction-specific
+  // difficulty is generated.
+  const difficultyEntry = direction === 'NOBO'
+    ? terrain.difficulty.find((entry) => mile >= entry.startMile && mile <= entry.endMile) ?? null
+    : null;
   const difficultyScore = difficultyEntry && Number.isFinite(difficultyEntry.score) ? difficultyEntry.score : null;
   const difficultyLabel = difficultyEntry ? difficultyEntry.label.replace(/_/gu, ' ') : null;
 
@@ -327,8 +353,10 @@ async function loadTodayTrailContextUnsafe(options: LoadTodayTrailContextOptions
 
   // Official AT length per src/data/trail-facts.yaml (AWOL 2026).
   const totalMiles = pack.route.displayMiles;
-  const percentComplete = roundTenth(clamp((mile / totalMiles) * 100, 0, 100));
-  const milesRemaining = roundTenth(Math.max(0, totalMiles - mile));
+  const direction = options.profileDirection;
+  const progress = trailProgress(mile, totalMiles, direction);
+  const percentComplete = roundTenth(progress.percent);
+  const milesRemaining = roundTenth(progress.remainingMiles);
 
   // Waypoints and terrain are measured on the OSM-derived route scale
   // (~2106.2 mi) while the query mile is canonical (2197.4). Convert into the
@@ -375,6 +403,7 @@ async function loadTodayTrailContextUnsafe(options: LoadTodayTrailContextOptions
     generatedAt: new Date().toISOString(),
     mile,
     mileSource,
+    direction,
     totalMiles,
     percentComplete,
     milesRemaining,
@@ -382,13 +411,18 @@ async function loadTodayTrailContextUnsafe(options: LoadTodayTrailContextOptions
     weather,
     weatherError,
     next: {
-      shelter: toCanonicalWaypoint(nextWaypointAhead(pack.waypoints.shelters, measuredMile)),
-      water: toCanonicalWaypoint(nextWaypointAhead(pack.waypoints.water, measuredMile)),
-      town: toCanonicalWaypoint(nextWaypointAhead(pack.waypoints.towns, measuredMile)),
-      road: toCanonicalWaypoint(nextWaypointAhead(pack.waypoints.roads, measuredMile))
+      shelter: toCanonicalWaypoint(nextWaypointAhead(pack.waypoints.shelters, measuredMile, direction)),
+      water: toCanonicalWaypoint(nextWaypointAhead(pack.waypoints.water, measuredMile, direction)),
+      town: toCanonicalWaypoint(nextWaypointAhead(pack.waypoints.towns, measuredMile, direction)),
+      road: toCanonicalWaypoint(nextWaypointAhead(pack.waypoints.roads, measuredMile, direction))
     },
     terrainAhead: ((): TodayTerrainAhead | null => {
-      const summary = summarizeTerrainAhead(pack.terrain, measuredMile, TERRAIN_LOOKAHEAD_MILES * measuredFactor);
+      const summary = summarizeTerrainAhead(
+        pack.terrain,
+        measuredMile,
+        TERRAIN_LOOKAHEAD_MILES * measuredFactor,
+        direction
+      );
       return summary === null ? null : { ...summary, lookaheadMiles: TERRAIN_LOOKAHEAD_MILES };
     })()
   };

@@ -14,6 +14,7 @@
 
 import type { CheckInRecord } from '../types';
 import type { ContextPack, SourceReceipt } from './types.ts';
+import { directedMileDelta, trailAhead } from '@hoggcountry/trail-data/trail-direction';
 
 /** Calibrated AT length (AWOL 2026, per repo CLAUDE.md). */
 export const TOTAL_AT_MILES = 2197.4;
@@ -140,6 +141,11 @@ export function sanitizeContextPackForSelfProfile(
 
 	const currentMile = clampMile(profile.currentMile);
 	const packLooksPilotOwned = isDadPilotContextPack(pack);
+	const directionChanged = pack.hiker.direction !== profile.direction;
+	const packCenteredElsewhere = Math.abs(pack.hiker.currentMile - currentMile) > SELF_CONTEXT_RADIUS_MILES;
+	const incompatibleTrailSlice = packLooksPilotOwned || directionChanged || packCenteredElsewhere;
+	const terrainMatchesDirection = !pack.terrain
+		|| directedMileDelta(currentMile, pack.terrain.toMile, profile.direction) >= -0.01;
 	const dayNumber = profile.startDate ? deriveDayNumber(profile.startDate, now) : 1;
 	const weather =
 		pack.weather &&
@@ -148,6 +154,21 @@ export function sanitizeContextPackForSelfProfile(
 			? pack.weather
 			: null;
 	const sourceReceipts = (pack.sourceReceipts ?? []).filter((receipt) => !receiptLooksPilotOwned(receipt));
+	const water = incompatibleTrailSlice
+		? []
+		: trailAhead(pack.water, currentMile, profile.direction, SELF_CONTEXT_RADIUS_MILES);
+	const shelters = incompatibleTrailSlice
+		? []
+		: trailAhead(pack.shelters, currentMile, profile.direction, SELF_CONTEXT_RADIUS_MILES);
+	const towns = incompatibleTrailSlice
+		? []
+		: trailAhead(pack.towns, currentMile, profile.direction, SELF_CONTEXT_RADIUS_MILES);
+	let pendingReason = 'Personal pack pending refresh.';
+	if (!packLooksPilotOwned && directionChanged) {
+		pendingReason = 'Your hike direction changed, so the old directional trail slice was cleared.';
+	} else if (!packLooksPilotOwned && packCenteredElsewhere) {
+		pendingReason = 'The saved trail slice was centered on a different section and was cleared.';
+	}
 
 	return {
 		...pack,
@@ -164,17 +185,21 @@ export function sanitizeContextPackForSelfProfile(
 			direction: profile.direction,
 			dayNumber
 		},
-		water: pack.water.filter((item) => keepNearbyMile(item.mile, currentMile, SELF_CONTEXT_RADIUS_MILES)),
-		shelters: pack.shelters.filter((item) => keepNearbyMile(item.mile, currentMile, SELF_CONTEXT_RADIUS_MILES)),
-		towns: pack.towns.filter((item) => keepNearbyMile(item.mile, currentMile, SELF_CONTEXT_RADIUS_MILES)),
+		water,
+		shelters,
+		towns,
+		terrain: incompatibleTrailSlice || !terrainMatchesDirection ? null : pack.terrain,
 		loadout: packLooksPilotOwned ? [] : pack.loadout,
 		weather,
-		downloadedRegions: [`Personal pack pending refresh around mile ${currentMile.toFixed(1)}`],
-		generatedAt: now.toISOString(),
-		validUntil: undefined,
+		downloadedRegions: incompatibleTrailSlice
+			? [`Personal pack pending refresh around mile ${currentMile.toFixed(1)}`]
+			: pack.downloadedRegions,
+		generatedAt: incompatibleTrailSlice ? now.toISOString() : pack.generatedAt,
+		validUntil: incompatibleTrailSlice ? undefined : pack.validUntil,
 		sourceReceipts,
-		pilotNotice:
-			'Personal pack pending refresh. Scout is using your saved mile and local documents; refresh when connectivity returns, and verify water, weather, services, rules, and access before relying on them.'
+		pilotNotice: incompatibleTrailSlice
+			? `${pendingReason} Scout is using your saved mile and local documents; refresh when connectivity returns, and verify water, weather, services, rules, and access before relying on them.`
+			: pack.pilotNotice
 	};
 }
 

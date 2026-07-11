@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { directedMileDelta, trailAhead } from '@hoggcountry/trail-data/trail-direction';
 	import { onMount } from 'svelte';
 	import {
 		SAFE_CHECK_IN_DISCLOSURE,
@@ -208,14 +209,15 @@
 	// ahead) — not a hardcoded list. Empty when the pack window has none.
 	const bailouts = $derived.by(() => {
 		const from = trailAssistant.currentMile;
+		const direction = trailAssistant.hikeProfile.direction;
 		const pack = trailAssistant.fieldPack;
 		const ahead = <T extends { mile: number; name: string }>(items: T[]) =>
-			items.filter((i) => i.mile >= from - 0.01).sort((a, b) => a.mile - b.mile)[0];
+			trailAhead(items, from, direction)[0];
 		const out: Array<{ name: string; detail: string }> = [];
 		const town = ahead(pack.towns);
-		if (town) out.push({ name: town.name, detail: `town candidate, ${(town.mile - from).toFixed(1)} mi ahead — verify services before relying on them` });
+		if (town) out.push({ name: town.name, detail: `town candidate, ${directedMileDelta(from, town.mile, direction).toFixed(1)} mi ahead — verify services before relying on them` });
 		const shelter = ahead(pack.shelters);
-		if (shelter) out.push({ name: shelter.name, detail: `shelter candidate, ${(shelter.mile - from).toFixed(1)} mi ahead` });
+		if (shelter) out.push({ name: shelter.name, detail: `shelter candidate, ${directedMileDelta(from, shelter.mile, direction).toFixed(1)} mi ahead` });
 		return out;
 	});
 	const bailoutSourceChips = $derived.by(() =>

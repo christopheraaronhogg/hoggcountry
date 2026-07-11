@@ -1,4 +1,11 @@
 import { loadBibleIndex } from '../bible/bible-index.ts';
+import {
+	directedMileDelta,
+	directedTrailWindow,
+	trailAhead,
+	trailProgress,
+	type TrailDirection
+} from '@hoggcountry/trail-data/trail-direction';
 import type {
 	CachedWeather,
 	ContextPack,
@@ -165,17 +172,21 @@ function parkServicesReceipt(parkServices: ParkServicesContext): SourceReceipt {
 	};
 }
 
-function nextOnTrail<T extends { mile: number }>(items: T[], fromMile: number): T | null {
-	const ahead = items
-		.filter((item) => item.mile >= fromMile - 0.01)
-		.sort((a, b) => a.mile - b.mile);
-	return ahead[0] ?? null;
+function nextOnTrail<T extends { readonly mile: number }>(
+	items: readonly T[],
+	fromMile: number,
+	direction: TrailDirection
+): T | null {
+	return trailAhead(items, fromMile, direction)[0] ?? null;
 }
 
-function withinMiles<T extends { mile: number }>(items: T[], fromMile: number, span: number): T[] {
-	return items
-		.filter((item) => item.mile >= fromMile - 0.01 && item.mile <= fromMile + span)
-		.sort((a, b) => a.mile - b.mile);
+function withinMiles<T extends { readonly mile: number }>(
+	items: readonly T[],
+	fromMile: number,
+	span: number,
+	direction: TrailDirection
+): T[] {
+	return trailAhead(items, fromMile, direction, span);
 }
 
 function hoursSince(timestamp: string, now: Date): number {
@@ -267,8 +278,12 @@ function hikerDocumentTags(document: LocalDocumentReference): string[] {
 	return Array.from(tags);
 }
 
-function describeWaterSource(source: WaterReference, fromMile: number): string {
-	const distance = source.mile - fromMile;
+function describeWaterSource(
+	source: WaterReference,
+	fromMile: number,
+	direction: TrailDirection
+): string {
+	const distance = directedMileDelta(fromMile, source.mile, direction);
 	return `${source.name} at mile ${source.mile.toFixed(1)} (${distance.toFixed(1)} mi ahead, ${source.reliability}).${source.note ? ' ' + source.note : ''}`;
 }
 
@@ -325,13 +340,12 @@ const currentMileTool: ToolHandler<{ fromMile?: number }> = {
 	run(args, ctx) {
 		const mile = args.fromMile ?? ctx.pack.hiker.currentMile;
 		const total = ctx.pack.frame.totalMiles;
-		const remaining = total - mile;
-		const percent = (mile / total) * 100;
+		const { remainingMiles, percent } = trailProgress(mile, total, ctx.pack.hiker.direction);
 
 		return {
 			toolId: 'current_mile',
 			args: toolArgs(args),
-			summary: `Currently at mile ${mile.toFixed(1)} of ${total.toFixed(1)} (${percent.toFixed(1)}% complete, ${remaining.toFixed(1)} mi remaining).`,
+			summary: `Currently at mile ${mile.toFixed(1)} of ${total.toFixed(1)} (${percent.toFixed(1)}% complete, ${remainingMiles.toFixed(1)} mi remaining).`,
 			confidence: 'high',
 			receipts: [trailPackReceipt('Calibrated AT mile frame', { from: mile })]
 		};
@@ -343,23 +357,27 @@ const nextWaterTool: ToolHandler<NextWaterArgs> = {
 	description: 'Return the next loaded water source or mapped candidate ahead of the hiker.',
 	run(args, ctx) {
 		const fromMile = args.fromMile ?? ctx.pack.hiker.currentMile;
+		const direction = ctx.pack.hiker.direction;
 		const wantsReliable = args.reliabilityPreference === 'reliable';
 		const includeSeasonal = args.includeSeasonal ?? false;
-		const nextAny = nextOnTrail(ctx.pack.water, fromMile);
+		const nextAny = nextOnTrail(ctx.pack.water, fromMile, direction);
 		const nextReliable = nextOnTrail(
 			ctx.pack.water.filter((source) => source.reliability === 'reliable'),
-			fromMile
+			fromMile,
+			direction
 		);
 		const nextSeasonal = nextOnTrail(
 			ctx.pack.water.filter((source) => source.reliability === 'seasonal'),
-			fromMile
+			fromMile,
+			direction
 		);
 		const nextPreferred = wantsReliable
 			? nextReliable ?? nextSeasonal ?? nextAny
 			: includeSeasonal
 				? nextOnTrail(
 						ctx.pack.water.filter((source) => source.reliability !== 'thin'),
-						fromMile
+						fromMile,
+						direction
 					) ?? nextAny
 				: nextAny;
 
@@ -382,29 +400,36 @@ const nextWaterTool: ToolHandler<NextWaterArgs> = {
 
 		const parts: string[] = [];
 		if (wantsReliable && nextReliable) {
-			parts.push(`Next reliable water loaded: ${describeWaterSource(nextReliable, fromMile)}`);
-			if (nextAny && nextAny.mile < nextReliable.mile && nextAny.reliability !== 'reliable') {
-				parts.push(`Closer unconfirmed water before that: ${describeWaterSource(nextAny, fromMile)}`);
+			parts.push(`Next reliable water loaded: ${describeWaterSource(nextReliable, fromMile, direction)}`);
+			if (
+				nextAny
+				&& directedMileDelta(fromMile, nextAny.mile, direction) < directedMileDelta(fromMile, nextReliable.mile, direction)
+				&& nextAny.reliability !== 'reliable'
+			) {
+				parts.push(`Closer unconfirmed water before that: ${describeWaterSource(nextAny, fromMile, direction)}`);
 			}
 		} else if (wantsReliable && !nextReliable) {
 			if (nextSeasonal) {
-				parts.push(`Best loaded water source: ${describeWaterSource(nextSeasonal, fromMile)}`);
-				if (nextAny && nextAny.mile < nextSeasonal.mile) {
-					parts.push(`Closer mapped candidate before that: ${describeWaterSource(nextAny, fromMile)}`);
+				parts.push(`Best loaded water source: ${describeWaterSource(nextSeasonal, fromMile, direction)}`);
+				if (
+					nextAny
+					&& directedMileDelta(fromMile, nextAny.mile, direction) < directedMileDelta(fromMile, nextSeasonal.mile, direction)
+				) {
+					parts.push(`Closer mapped candidate before that: ${describeWaterSource(nextAny, fromMile, direction)}`);
 				}
 				parts.push('No reliable water source is loaded ahead in the current field pack.');
 			} else {
-				parts.push(`Nearest mapped candidate: ${describeWaterSource(nextPreferred, fromMile)}`);
+				parts.push(`Nearest mapped candidate: ${describeWaterSource(nextPreferred, fromMile, direction)}`);
 				parts.push('No reliable or seasonal water source is loaded ahead in the current field pack.');
 			}
 		} else {
-			parts.push(`Next loaded water: ${describeWaterSource(nextPreferred, fromMile)}`);
+			parts.push(`Next loaded water: ${describeWaterSource(nextPreferred, fromMile, direction)}`);
 			if (
 				nextPreferred.reliability === 'thin' &&
 				nextSeasonal &&
-				nextSeasonal.mile > nextPreferred.mile
+				directedMileDelta(fromMile, nextSeasonal.mile, direction) > directedMileDelta(fromMile, nextPreferred.mile, direction)
 			) {
-				parts.push(`Next better-known source after that: ${describeWaterSource(nextSeasonal, fromMile)}`);
+				parts.push(`Next better-known source after that: ${describeWaterSource(nextSeasonal, fromMile, direction)}`);
 			}
 		}
 
@@ -425,7 +450,8 @@ const nextShelterTool: ToolHandler<NextShelterArgs> = {
 	description: 'Return the next shelter ahead of the hiker.',
 	run(args, ctx) {
 		const fromMile = args.fromMile ?? ctx.pack.hiker.currentMile;
-		const next = nextOnTrail(ctx.pack.shelters, fromMile);
+		const direction = ctx.pack.hiker.direction;
+		const next = nextOnTrail(ctx.pack.shelters, fromMile, direction);
 
 		if (!next) {
 			return {
@@ -437,7 +463,7 @@ const nextShelterTool: ToolHandler<NextShelterArgs> = {
 			};
 		}
 
-		const distance = next.mile - fromMile;
+		const distance = directedMileDelta(fromMile, next.mile, direction);
 		const openCandidate = isOpenDataCandidate(next.note);
 		return {
 			toolId: 'next_shelter',
@@ -455,7 +481,8 @@ const nextTownTool: ToolHandler<NextTownArgs> = {
 	description: 'Return the next resupply town ahead of the hiker.',
 	run(args, ctx) {
 		const fromMile = args.fromMile ?? ctx.pack.hiker.currentMile;
-		const next = nextOnTrail(ctx.pack.towns, fromMile);
+		const direction = ctx.pack.hiker.direction;
+		const next = nextOnTrail(ctx.pack.towns, fromMile, direction);
 
 		if (!next) {
 			return {
@@ -467,7 +494,7 @@ const nextTownTool: ToolHandler<NextTownArgs> = {
 			};
 		}
 
-		const distance = next.mile - fromMile;
+		const distance = directedMileDelta(fromMile, next.mile, direction);
 		const openCandidate = isOpenDataCandidate(next.access) || isOpenDataCandidate(next.servicesNote);
 		return {
 			toolId: 'next_town',
@@ -486,11 +513,12 @@ const upcomingTerrainTool: ToolHandler<UpcomingTerrainArgs> = {
 	run(args, ctx) {
 		const fromMile = args.fromMile ?? ctx.pack.hiker.currentMile;
 		const span = args.spanMiles ?? 20;
+		const direction = ctx.pack.hiker.direction;
 		const terrain = ctx.pack.terrain ?? null;
 
-		const waters = withinMiles(ctx.pack.water, fromMile, span);
-		const shelters = withinMiles(ctx.pack.shelters, fromMile, span);
-		const towns = withinMiles(ctx.pack.towns, fromMile, span);
+		const waters = withinMiles(ctx.pack.water, fromMile, span, direction);
+		const shelters = withinMiles(ctx.pack.shelters, fromMile, span, direction);
+		const towns = withinMiles(ctx.pack.towns, fromMile, span, direction);
 
 		const parts: string[] = [];
 		if (terrain) {
@@ -503,7 +531,7 @@ const upcomingTerrainTool: ToolHandler<UpcomingTerrainArgs> = {
 				terrain.maxGradePercent !== null ? `${terrain.maxGradePercent.toFixed(1)}% max grade` : ''
 			].filter(Boolean);
 			const climbs = terrain.climbs.slice(0, 3).map((climb) => {
-				const distance = Math.max(0, climb.startMile - fromMile);
+				const distance = Math.max(0, directedMileDelta(fromMile, climb.startMile, direction));
 				return `${climb.direction} mi ${climb.startMile.toFixed(1)}-${climb.endMile.toFixed(1)} (${distance.toFixed(1)} mi ahead, ${climb.gradePercent.toFixed(1)}%, ${Math.round(Math.abs(climb.verticalFt)).toLocaleString()} ft)`;
 			});
 			parts.push(
@@ -527,13 +555,17 @@ const upcomingTerrainTool: ToolHandler<UpcomingTerrainArgs> = {
 			? `Next ${span} mi from ${fromMile.toFixed(1)}: ${parts.join(' | ')}`
 			: `No landmarks loaded for the next ${span} mi from ${fromMile.toFixed(1)}. Verify from a current source.`;
 
+		const receiptWindow = directedTrailWindow(fromMile, span, ctx.pack.frame.totalMiles, direction);
 		return {
 			toolId: 'upcoming_terrain',
 			args: toolArgs(args),
 			summary,
 			confidence: terrain ? 'high' : parts.length ? 'medium' : 'low',
 			receipts: [
-				trailPackReceipt(`Upcoming ${span} mi window`, { from: fromMile, to: fromMile + span }),
+				trailPackReceipt(
+					`Upcoming ${span} mi window`,
+					receiptWindow ? { from: receiptWindow.minMile, to: receiptWindow.maxMile } : { from: fromMile }
+				),
 				...(terrain
 					? [
 							{

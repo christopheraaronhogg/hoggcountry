@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { trailProgress } from '@hoggcountry/trail-data/trail-direction';
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import { isSelfTracked, TOTAL_AT_MILES } from '$lib/scout/hike-profile';
 	import type { MileSource } from '$lib/scout/hike-profile';
@@ -100,6 +101,10 @@
 	// Once the user calibrates, the profile is the source of truth — never Dad's
 	// pilot pack. Following Dad is its own honest mode, labeled as such.
 	const profile = $derived(trailAssistant.hikeProfile);
+	const hikeProgress = $derived(
+		trailProgress(trailAssistant.currentMile, TOTAL_AT_MILES, profile.direction)
+	);
+	const destinationLabel = $derived(profile.direction === 'SOBO' ? 'to Springer' : 'to Katahdin');
 	const selfTracked = $derived(isSelfTracked(profile));
 	const displayName = $derived(
 		selfTracked ? profile.trailName?.trim() || 'My hike' : trailAssistant.fieldPack.hiker.trailName ?? 'Hogg'
@@ -208,12 +213,12 @@
 				<small>days on trail</small>
 			</div>
 			<div>
-				<span class="num tabular">{trailAssistant.currentMile.toFixed(0)}</span>
+				<span class="num tabular">{hikeProgress.completedMiles.toFixed(0)}</span>
 				<small>miles done</small>
 			</div>
 			<div>
-				<span class="num tabular">{(2197.4 - trailAssistant.currentMile).toFixed(0)}</span>
-				<small>to Katahdin</small>
+				<span class="num tabular">{hikeProgress.remainingMiles.toFixed(0)}</span>
+				<small>{destinationLabel}</small>
 			</div>
 		</div>
 	</section>
@@ -375,7 +380,7 @@
 			<div class="mile-figure tabular">{trailAssistant.currentMile.toFixed(1)}<span>mi</span></div>
 			<div class="mile-meta">
 				<span class="mile-src">{mileSourceLabel[profile.mileSource]}</span>
-				<span class="mile-dir">{profile.direction} · {(TOTAL_AT_MILES - trailAssistant.currentMile).toFixed(0)} mi to go</span>
+				<span class="mile-dir">{profile.direction} · {hikeProgress.remainingMiles.toFixed(0)} mi to go</span>
 			</div>
 		</div>
 

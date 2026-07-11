@@ -18,6 +18,7 @@ export const GET: RequestHandler = async (event) => {
   const { workspaceId, betaProfile } = requireWorkspace(event);
   const record = await getWorkspaceRecord(workspaceId, betaProfile);
   const profileMile = record.profile && Number.isFinite(record.profile.currentMile) ? record.profile.currentMile : null;
+  const profileDirection = record.profile?.direction === 'SOBO' ? 'SOBO' : 'NOBO';
 
   const rawMile = event.url.searchParams.get('mile');
   let overrideMile: number | null = null;
@@ -35,7 +36,8 @@ export const GET: RequestHandler = async (event) => {
     context = await loadTodayTrailContext({
       fetch: globalThis.fetch,
       requestOrigin: event.url.origin,
-      profileMile: overrideMile ?? profileMile
+      profileMile: overrideMile ?? profileMile,
+      profileDirection
     });
   } catch (caught) {
     console.error('[today-context] failed to build trail context', caught);

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { buildTodayCards, getTrailPhase, TRAIL_FACTS, type TodayCard } from '@hoggcountry/trail-data';
+  import { directedTrailWindow, trailProgress } from '@hoggcountry/trail-data/trail-direction';
   import { createDefaultProfile, getProfile, initializeManual, listImportedDocuments, listWorkspaceResources, setCurrentMile } from '$lib/manual-db';
   import {
     offlineFieldPackSummary,
@@ -59,6 +60,7 @@
   interface TrailAheadContext {
     readonly mile: number;
     readonly mileSource: 'profile' | 'tracker';
+    readonly direction: 'NOBO' | 'SOBO';
     readonly weather: readonly TrailAheadWeatherDay[];
     readonly weatherError: string | null;
     readonly next: {
@@ -97,8 +99,12 @@
   const hasMile = $derived(currentMile > 0);
   const phase = $derived(profile ? getTrailPhase(currentMile) : null);
   const targetPace = $derived(profile && profile.targetPace > 0 ? profile.targetPace : 12);
-  const targetMile = $derived(Math.min(TRAIL_FACTS.totalMiles, currentMile + targetPace));
-  const progressPercent = $derived(Math.max(2, Math.min(98, (currentMile / TRAIL_FACTS.totalMiles) * 100)));
+  const direction = $derived(profile?.direction ?? 'NOBO');
+  const targetMile = $derived(
+    directedTrailWindow(currentMile, targetPace, TRAIL_FACTS.totalMiles, direction)?.toMile ?? currentMile
+  );
+  const journeyProgress = $derived(trailProgress(currentMile, TRAIL_FACTS.totalMiles, direction));
+  const progressPercent = $derived(Math.max(2, Math.min(98, journeyProgress.percent)));
   const waterCard = $derived(todayCards.find((card) => card.id === 'water') ?? null);
   const shelterCard = $derived(todayCards.find((card) => card.id === 'shelter') ?? null);
   const paceCard = $derived(todayCards.find((card) => card.id === 'pace') ?? null);
@@ -427,7 +433,7 @@
       <span style={`width:${progressPercent}%`}></span>
     </div>
     <a class="journey-link" href="/app/progress">
-      Your journey — {hasMile ? `mile ${currentMile.toFixed(1)} of ${TRAIL_FACTS.totalMiles.toLocaleString()}` : 'see the whole trail'} →
+      Your journey — {hasMile ? `${journeyProgress.completedMiles.toFixed(1)} mi complete · ${journeyProgress.remainingMiles.toFixed(1)} to go` : 'see the whole trail'} →
     </a>
   </header>
 

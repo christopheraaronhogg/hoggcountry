@@ -31,6 +31,7 @@
 		"android:release-bundle": "bash scripts/android-release-bundle.sh"
 	},
 	"dependencies": {
+		"@hoggcountry/trail-data": "file:../packages/trail-data",
 		"@capacitor/android": "^7.6.6",
 		"@capacitor/app": "^7.1.0",
 		"@capacitor/clipboard": "^7.0.4",

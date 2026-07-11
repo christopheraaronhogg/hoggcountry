@@ -1,4 +1,9 @@
 <script lang="ts">
+	import {
+		directedMileDelta,
+		trailAhead,
+		trailProgress
+	} from '@hoggcountry/trail-data/trail-direction';
 	import { onMount } from 'svelte';
 	import {
 		SAFE_CHECK_IN_DISCLOSURE,
@@ -25,9 +30,10 @@
 
 	const TOTAL_MILES = 2197.4;
 	const from = $derived(trailAssistant.currentMile);
+	const direction = $derived(trailAssistant.hikeProfile.direction);
 	const dayNumber = $derived(trailAssistant.dayNumber);
-	const pct = $derived(Math.min(100, Math.round((from / TOTAL_MILES) * 100)));
-	const toGo = $derived(Math.max(0, TOTAL_MILES - from));
+	const progress = $derived(trailProgress(from, TOTAL_MILES, direction));
+	const pct = $derived(Math.round(progress.percent));
 	// Only surface AI status in the hero when it's a reassurance ("On-device AI").
 	// Download / not-installed / runtime states are handled by Scout's own status
 	// bubble — a hero billboard reading "AI NOT INSTALLED" makes a working app look
@@ -68,25 +74,23 @@
 	const LOOKAHEAD = 120;
 	const watersAhead = $derived(
 		trailAssistant.trailSettings.waterAlerts
-			? trailAssistant.fieldPack.water
-					.filter((w) => w.mile >= from - 0.01 && w.mile <= from + LOOKAHEAD)
-					.sort((a, b) => a.mile - b.mile)
+			? trailAhead(trailAssistant.fieldPack.water, from, direction, LOOKAHEAD)
 			: []
 	);
 	const sheltersAhead = $derived(
-		trailAssistant.fieldPack.shelters
-			.filter((s) => s.mile >= from - 0.01 && s.mile <= from + LOOKAHEAD)
-			.sort((a, b) => a.mile - b.mile)
+		trailAhead(trailAssistant.fieldPack.shelters, from, direction, LOOKAHEAD)
 	);
 	const nextWater = $derived(watersAhead[0] ?? null);
 	// A mapped shelter is not a destination until the hiker deliberately chooses it.
 	const nextShelter = $derived(sheltersAhead[0] ?? null);
+	const nextWaterDistance = $derived(nextWater ? directedMileDelta(from, nextWater.mile, direction) : 0);
+	const nextShelterDistance = $derived(nextShelter ? directedMileDelta(from, nextShelter.mile, direction) : 0);
 
 	// Ascent between here and the next shelter, summed from the real USGS profile.
 	const geo = $derived(trailAssistant.trailGeometry);
 	const climbFt = $derived.by(() => {
 		if (!nextShelter) return 0;
-		return climbFeet(elevationWindow(geo, from, nextShelter.mile - from));
+		return climbFeet(elevationWindow(geo, from, nextShelterDistance, direction));
 	});
 
 	type Node = { kind: 'done' | 'now' | 'water' | 'shelter' | 'evening'; title: string; detail?: string; flag?: string };
@@ -97,33 +101,34 @@
 		nodes.push({
 			kind: 'now',
 			title: `Now · Mile ${from.toFixed(1)}`,
-			detail: trailAssistant.hikeProfile.direction === 'SOBO' ? 'On trail, heading south.' : 'On trail, heading north.'
+			detail: direction === 'SOBO' ? 'On trail, heading south.' : 'On trail, heading north.'
 		});
-		const landmarks: Array<{ mile: number; node: Node }> = [];
+		const landmarks: Array<{ distance: number; node: Node }> = [];
 		const dayWaters = watersAhead.slice(0, 2);
 		for (const w of dayWaters.slice(0, 2)) {
 			const candidate = w.reliability !== 'reliable';
+			const distance = directedMileDelta(from, w.mile, direction);
 			landmarks.push({
-				mile: w.mile,
+				distance,
 				node: {
 					kind: 'water',
 					title: `Water · ${w.name}`,
-					detail: `${(w.mile - from).toFixed(1)} mi ahead${candidate ? '' : ' · reliable'}`,
+					detail: `${distance.toFixed(1)} mi ahead${candidate ? '' : ' · reliable'}`,
 					flag: candidate ? 'candidate — confirm flow' : undefined
 				}
 			});
 		}
 		if (nextShelter) {
 			landmarks.push({
-				mile: nextShelter.mile,
+				distance: nextShelterDistance,
 				node: {
 					kind: 'shelter',
 					title: `Next shelter · ${nextShelter.name}`,
-					detail: `${(nextShelter.mile - from).toFixed(1)} mi ahead${climbFt > 0 ? ` · +${climbFt.toLocaleString()} ft climb` : ''} · not a selected stop`
+					detail: `${nextShelterDistance.toFixed(1)} mi ahead${climbFt > 0 ? ` · +${climbFt.toLocaleString()} ft climb` : ''} · not a selected stop`
 				}
 			});
 		}
-		nodes.push(...landmarks.sort((a, b) => a.mile - b.mile).map((landmark) => landmark.node));
+		nodes.push(...landmarks.sort((a, b) => a.distance - b.distance).map((landmark) => landmark.node));
 		nodes.push({ kind: 'evening', title: 'Tonight · verse & journal', detail: 'At your chosen stop: read and log the day.' });
 		return nodes;
 	});
@@ -216,12 +221,12 @@
 		<div class="splits">
 			<div class="s">
 				<span class="k">Done</span>
-				<b class="tabular">{from.toFixed(0)}<span class="u"> mi</span></b>
+				<b class="tabular">{progress.completedMiles.toFixed(0)}<span class="u"> mi</span></b>
 				<span class="pct tabular">{pct}%</span>
 			</div>
 			<div class="s">
 				<span class="k">To go</span>
-				<b class="tabular">{toGo.toFixed(0)}<span class="u"> mi</span></b>
+				<b class="tabular">{progress.remainingMiles.toFixed(0)}<span class="u"> mi</span></b>
 				<span class="pct tabular">{100 - pct}%</span>
 			</div>
 		</div>
@@ -257,7 +262,7 @@
 		<section class="next card">
 			<div class="next-head">
 				<span class="eyebrow">Ahead</span>
-				{#if nextShelter}<span class="next-day">Next shelter · {(nextShelter.mile - from).toFixed(1)} mi</span>{/if}
+				{#if nextShelter}<span class="next-day">Next shelter · {nextShelterDistance.toFixed(1)} mi</span>{/if}
 			</div>
 			{#if nextWater}
 				{@const cand = nextWater.reliability !== 'reliable'}
@@ -268,7 +273,7 @@
 						<p class="next-meta" class:flag={cand}>{cand ? 'candidate — confirm flow' : 'reliable source'}</p>
 					</div>
 					<div class="next-num" class:cand>
-						<b>{(nextWater.mile - from).toFixed(1)}</b><span>mi ahead</span>
+						<b>{nextWaterDistance.toFixed(1)}</b><span>mi ahead</span>
 					</div>
 				</div>
 			{/if}
@@ -279,7 +284,7 @@
 						<p class="next-title">{nextShelter.name}</p>
 						<p class="next-meta">Mapped candidate · choose your own stop{climbFt > 0 ? ` · +${climbFt.toLocaleString()} ft climb` : ''}</p>
 					</div>
-					<div class="next-num"><b>{(nextShelter.mile - from).toFixed(1)}</b><span>mi ahead</span></div>
+					<div class="next-num"><b>{nextShelterDistance.toFixed(1)}</b><span>mi ahead</span></div>
 				</div>
 			{/if}
 		</section>

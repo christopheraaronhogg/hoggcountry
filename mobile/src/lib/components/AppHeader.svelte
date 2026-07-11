@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { trailProgress } from '@hoggcountry/trail-data/trail-direction';
 	import { onMount } from 'svelte';
 	import { appVersion } from '$lib/app-version.svelte';
 	import { trailAssistant } from '$lib/trailState.svelte';
@@ -6,7 +7,10 @@
 
 	// Calibrated AT length per CLAUDE.md (AWOL 2026).
 	const trailMiles = 2197.4;
-	const percentComplete = $derived(((trailAssistant.currentMile / trailMiles) * 100).toFixed(0));
+	const progress = $derived(
+		trailProgress(trailAssistant.currentMile, trailMiles, trailAssistant.hikeProfile.direction)
+	);
+	const percentComplete = $derived(progress.percent.toFixed(0));
 
 	// The header is deliberately a single slim strip now — the rich status
 	// (progress, sync, check-in, terrain) lives in the Today HUD, and the chat

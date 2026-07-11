@@ -71,6 +71,21 @@ test('returns null when no waypoint is ahead or input is unusable', () => {
   assert.equal(nextWaypointAhead(list, Number.NaN), null);
 });
 
+test('finds the next waypoint in SOBO encounter order', () => {
+  const list = [
+    { name: 'North', mile: 102, type: 'water' },
+    { name: 'Far south', mile: 95, type: 'water' },
+    { name: 'Near south', mile: 98, type: 'water' }
+  ];
+
+  assert.deepEqual(nextWaypointAhead(list, 100, 'SOBO'), {
+    name: 'Near south',
+    mile: 98,
+    milesAhead: 2,
+    type: 'water'
+  });
+});
+
 test('summarizes gain, loss, max grade, and difficulty over the lookahead window', () => {
   const terrain = {
     segments: [
@@ -108,6 +123,25 @@ test('prorates a segment that only partially overlaps the window end', () => {
   const summary = summarizeTerrainAhead(terrain, 12, 5);
   assert.equal(summary?.gainFt, 500);
   assert.equal(summary?.lossFt, 250);
+});
+
+test('SOBO terrain uses the lower-mile window and reverses authored gain and loss', () => {
+  const terrain = {
+    segments: [
+      { startMile: 95, endMile: 100, gainFt: 100, lossFt: 400, maxGradePercent: 15 },
+      { startMile: 100, endMile: 105, gainFt: 900, lossFt: 50, maxGradePercent: 25 }
+    ],
+    difficulty: [{ startMile: 90, endMile: 110, score: 8.2, label: 'hard_screening' }]
+  };
+
+  assert.deepEqual(summarizeTerrainAhead(terrain, 100, 5, 'SOBO'), {
+    lookaheadMiles: 5,
+    gainFt: 400,
+    lossFt: 100,
+    maxGradePercent: 15,
+    difficultyScore: null,
+    difficultyLabel: null
+  });
 });
 
 test('terrain summary keeps difficulty when no segments overlap, and nulls out cleanly', () => {

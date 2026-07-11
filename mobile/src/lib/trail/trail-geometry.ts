@@ -1,3 +1,5 @@
+import type { TrailDirection } from '@hoggcountry/trail-data/trail-direction';
+
 /**
  * Real Appalachian Trail route geometry + elevation. The elevation/profile
  * asset stays at ~100-metre (~0.06-mile) resolution from USGS 3DEP (public
@@ -129,13 +131,17 @@ export async function loadTrailSnapGeometry(
 export function elevationWindow(
 	points: TrailGeoPoint[],
 	fromMile: number,
-	miles: number
+	miles: number,
+	direction: TrailDirection = 'NOBO'
 ): ElevationPoint[] {
-	if (!points.length || !Number.isFinite(fromMile)) return [];
-	const to = fromMile + miles;
-	return points
-		.filter((p) => p.m >= fromMile && p.m <= to)
+	if (!points.length || !Number.isFinite(fromMile) || !Number.isFinite(miles) || miles < 0) return [];
+	const toMile = direction === 'SOBO' ? fromMile - miles : fromMile + miles;
+	const minMile = Math.min(fromMile, toMile);
+	const maxMile = Math.max(fromMile, toMile);
+	const window = points
+		.filter((p) => p.m >= minMile && p.m <= maxMile)
 		.map((p) => ({ mile: p.m, elevation: p.ft }));
+	return direction === 'SOBO' ? window.reverse() : window;
 }
 
 /** Total feet of climb across an ordered elevation window. */

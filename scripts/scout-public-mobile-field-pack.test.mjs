@@ -246,3 +246,41 @@ test('personal mobile field packs do not fall back to the cached pilot forecast 
     globalThis.fetch = originalFetch;
   }
 });
+
+test('personal SOBO field packs contain only lower-mile trail-ahead context in encounter order', async () => {
+  const { buildPublicMobileFieldPack } = await loadFieldPackBuilder();
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => {
+    throw new Error('simulated NWS outage');
+  };
+
+  try {
+    const pack = await buildPublicMobileFieldPack(fixedNow, {
+      personal: true,
+      mile: 600.4,
+      direction: 'SOBO'
+    });
+    const context = pack.data.context_pack;
+    const assertDescendingAhead = (items, maxDistance) => {
+      assert.ok(items.length > 0, 'expected real trail-ahead entries');
+      assert.ok(items.every((item) => item.mile <= 600.41));
+      assert.ok(items.every((item) => 600.4 - item.mile <= maxDistance + 0.01));
+      assert.deepEqual(items.map((item) => item.mile), [...items].map((item) => item.mile).sort((a, b) => b - a));
+    };
+
+    assert.equal(context.hiker.direction, 'SOBO');
+    assertDescendingAhead(context.water, 36);
+    assertDescendingAhead(context.shelters, 80);
+    assertDescendingAhead(context.towns, 80);
+    assert.equal(context.terrain?.fromMile, 600.4);
+    assert.equal(context.terrain?.toMile, 585.4);
+    assert.equal(context.terrain?.difficultyScore, null);
+    assert.equal(context.terrain?.difficultyLabel, null);
+    assert.ok((context.terrain?.climbs ?? []).every((section, index, all) =>
+      index === 0 || all[index - 1].startMile >= section.startMile));
+    assert.ok(pack.meta.source_receipts.every((receipt) =>
+      !receipt.miles?.to || receipt.miles.from <= receipt.miles.to));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

@@ -67,3 +67,27 @@ test('Today puts a truthful trail-data refresh beside weather', () => {
 	assert.match(source, /role="status"/);
 	assert.match(source, /Cached forecast — not live/);
 });
+
+test('direction-sensitive mobile surfaces use the shared trail-direction contract', () => {
+	const today = componentSource('TodayTab');
+	assert.match(today, /@hoggcountry\/trail-data\/trail-direction/);
+	assert.match(today, /trailProgress\(/);
+	assert.match(today, /trailAhead\(/);
+	assert.match(today, /directedMileDelta\(/);
+	assert.match(today, /elevationWindow\(geo, from, nextShelterDistance, direction\)/);
+	assert.doesNotMatch(today, /next(?:Water|Shelter)\.mile - from/);
+
+	const safety = componentSource('SafetyTab');
+	assert.match(safety, /trailAhead\(/);
+	assert.match(safety, /directedMileDelta\(/);
+	assert.doesNotMatch(safety, /(?:town|shelter)\.mile - from/);
+
+	const account = componentSource('AccountTab');
+	assert.match(account, /trailProgress\(/);
+	assert.match(account, /hikeProgress\.completedMiles/);
+	assert.match(account, /hikeProgress\.remainingMiles/);
+
+	const header = componentSource('AppHeader');
+	assert.match(header, /trailProgress\(/);
+	assert.match(header, /progress\.percent/);
+});

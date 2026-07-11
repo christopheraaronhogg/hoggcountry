@@ -5,6 +5,12 @@
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import { isDadPilot, isSelfTracked } from '$lib/scout/hike-profile';
 	import { elevationWindow, snapToMile } from '$lib/trail/trail-geometry';
+	import {
+		directedMileDelta,
+		trailAhead,
+		trailProgress,
+		type TrailDirection
+	} from '@hoggcountry/trail-data/trail-direction';
 	import Icon, { type IconName } from './Icon.svelte';
 	import TrailPulseReportAction from './TrailPulseReportAction.svelte';
 	import PeopleSheet from './PeopleSheet.svelte';
@@ -67,6 +73,7 @@
 
 	const geo = $derived(trailAssistant.trailGeometry);
 	const from = $derived(trailAssistant.currentMile);
+	const direction = $derived(trailAssistant.hikeProfile.direction);
 	// 0.1-mi quantized current mile — throttles the route rebuild to real movement.
 	const fromQ = $derived(Math.round(from * 10) / 10);
 	const trailLo = $derived(geo.length ? geo[0].m : 0);
@@ -144,14 +151,15 @@
 	}
 	const visibleLandmarks = $derived(landmarks.filter((lm) => poiFilter.has(lm.kind)));
 	const nextWater = $derived.by(() => {
-		const w = trailAssistant.fieldPack.water
-			.filter((s) => s.mile >= from - 0.01)
-			.sort((a, b) => a.mile - b.mile)[0];
+		const w = trailAhead(trailAssistant.fieldPack.water, from, direction)[0];
 		if (!w) return null;
-		return { dist: Math.max(0, w.mile - from), candidate: w.reliability !== 'reliable' };
+		return {
+			dist: Math.max(0, directedMileDelta(from, w.mile, direction)),
+			candidate: w.reliability !== 'reliable'
+		};
 	});
 	function distanceLabel(mile: number): string {
-		const d = mile - from;
+		const d = directedMileDelta(from, mile, direction);
 		if (Math.abs(d) < 0.05) return 'here';
 		return d > 0 ? `${d.toFixed(1)}mi` : `${Math.abs(d).toFixed(1)}mi back`;
 	}
@@ -425,10 +433,10 @@
 		host?.classList.toggle('z-overview', liveZoom < 8.5);
 	}
 
-	// head-up bearing along the trail at the current mile
-	function bearingAtMile(mile: number): number {
-		const [aLat, aLon] = interpAtMile(mile - 0.5);
-		const [bLat, bLon] = interpAtMile(mile + 0.5);
+	// Head-up follows the hiker's travel direction while canonical miles remain NOBO.
+	function bearingAtMile(mile: number, direction: TrailDirection): number {
+		const [aLat, aLon] = interpAtMile(direction === 'SOBO' ? mile + 0.5 : mile - 0.5);
+		const [bLat, bLon] = interpAtMile(direction === 'SOBO' ? mile - 0.5 : mile + 0.5);
 		const dLon = ((bLon - aLon) * Math.PI) / 180;
 		const y = Math.sin(dLon) * Math.cos((bLat * Math.PI) / 180);
 		const x =
@@ -436,7 +444,7 @@
 			Math.sin((aLat * Math.PI) / 180) * Math.cos((bLat * Math.PI) / 180) * Math.cos(dLon);
 		return Math.round(((Math.atan2(y, x) * 180) / Math.PI + 360) % 360);
 	}
-	const bearing = $derived(geo.length > 1 ? bearingAtMile(fromClamped) : 0);
+	const bearing = $derived(geo.length > 1 ? bearingAtMile(fromClamped, direction) : 0);
 
 	// Elevation (ft) interpolated at an exact mile from the 100-m profile.
 	function elevAtMile(mile: number): number {
@@ -489,10 +497,11 @@
 		if (measureMile == null || geo.length < 2) return null;
 		const target = clamp(measureMile, trailLo, trailHi);
 		const { gain, loss } = elevChangeTo(target);
+		const travelDelta = directedMileDelta(fromClamped, target, direction);
 		return {
 			mile: target,
-			ahead: target >= fromClamped,
-			dist: Math.abs(target - fromClamped),
+			ahead: travelDelta >= 0,
+			dist: Math.abs(travelDelta),
 			gain,
 			loss
 		};
@@ -590,7 +599,9 @@
 				? 'Whole-hike elevation'
 				: 'Elevation in view'
 	);
-	const progressLabel = $derived(`${Math.round((from / TOTAL_MILES) * 100)}% complete`);
+	const progressLabel = $derived(
+		`${Math.round(trailProgress(from, TOTAL_MILES, direction).percent)}% complete`
+	);
 	const fmt = (n: number) => n.toLocaleString('en-US');
 
 	// --- lifecycle ------------------------------------------------------------
@@ -770,10 +781,18 @@
 		const toIdx = (mile: number) => clamp(indexAtMile(mile), 0, n - 1);
 		const clipLo = clipping ? toIdx(drawLo) : 0;
 		const clipHi = clipping ? toIdx(drawHi) : n - 1;
-		const doneA = Math.max(0, clipLo);
-		const doneB = Math.min(split, clipHi);
-		const remA = Math.max(split, clipLo);
-		const remB = Math.min(n - 1, clipHi);
+		// Geometry is always stored low-to-high (NOBO). Which physical side is
+		// complete flips for SOBO: the northern/high-mile side is behind the hiker,
+		// while the southern/low-mile side remains ahead.
+		const lowerA = Math.max(0, clipLo);
+		const lowerB = Math.min(split, clipHi);
+		const upperA = Math.max(split, clipLo);
+		const upperB = Math.min(n - 1, clipHi);
+		const doneIsUpper = direction === 'SOBO';
+		const doneA = doneIsUpper ? upperA : lowerA;
+		const doneB = doneIsUpper ? upperB : lowerB;
+		const remA = doneIsUpper ? lowerA : upperA;
+		const remB = doneIsUpper ? lowerB : upperB;
 
 		// 1) casing/halo — solid under the done portion, dash-matched under the
 		//    remainder, so each coloured dash keeps its outline (no white line

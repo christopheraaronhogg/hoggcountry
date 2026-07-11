@@ -545,11 +545,12 @@ class TrailAssistantStore {
 
 	async #sanitizeFieldPackForSelfProfile() {
 		if (!isSelfTracked(this.#state.hikeProfile)) return;
+		const source = this.#fieldPackStatus.source;
 		const sanitized = sanitizeContextPackForSelfProfile(
 			this.#fieldPackStore.get(),
 			this.#state.hikeProfile
 		);
-		await this.#fieldPackStore.replace(sanitized, 'saved');
+		await this.#fieldPackStore.replace(sanitized, source);
 		this.#fieldPack = this.#fieldPackStore.get();
 		this.#fieldPackStatus = this.#fieldPackStore.getStatus();
 	}
@@ -1263,6 +1264,7 @@ class TrailAssistantStore {
 		// explicit Dad-pilot mode fetches the public pilot pack at the bare endpoint.
 		const endpoint = buildFieldPackUrl(FIELD_PACK_ENDPOINT, this.#state.hikeProfile);
 		await this.#fieldPackStore.refreshFromEndpoint(endpoint);
+		await this.#sanitizeFieldPackForSelfProfile();
 		await this.#mergeOfflineSourceDocs();
 		await this.#syncDocumentsToFieldPack();
 		await this.#syncLoadoutToFieldPack();

@@ -23,6 +23,12 @@ import {
   type AwolWaterSource
 } from '$lib/server/generated/awol-water-reference';
 import type { TrailMapElevationPoint, TrailMapWaypoint } from '$lib/map-pack-types';
+import {
+  directedMileDelta,
+  directedTrailWindow,
+  trailAhead,
+  type TrailDirection
+} from '@hoggcountry/trail-data/trail-direction';
 
 const TOTAL_AT_MILES = 2197.4;
 const PACK_VALID_MS = 6 * 60 * 60 * 1000;
@@ -352,10 +358,6 @@ function conditionsNotice(conditions: MobileContextPack['conditions']): string {
     : `${base}; confirm each before relying on it.`;
 }
 
-function inWindow(startMile: number, endMile: number) {
-  return (point: TrailMapWaypoint) => point.mile >= startMile - 0.01 && point.mile <= endMile;
-}
-
 function statesFor(points: readonly TrailMapWaypoint[]): string {
   const states = Array.from(new Set(points.map((point) => point.state).filter(Boolean)));
   return states.length ? states.join('/') : 'AT corridor';
@@ -423,81 +425,115 @@ function mapTown(point: TrailMapWaypoint): MobileTownReference {
 function buildTerrainSummary(
   reference: Awaited<ReturnType<typeof loadReferencePack>>,
   currentMile: number,
-  generatedAt: string
+  generatedAt: string,
+  direction: TrailDirection
 ): MobileContextPack['terrain'] {
-  const summary = summarizeTerrainAhead(reference.terrain, currentMile, TERRAIN_LOOKAHEAD_MILES);
+  const window = directedTrailWindow(currentMile, TERRAIN_LOOKAHEAD_MILES, TOTAL_AT_MILES, direction);
+  if (!window) return null;
+  const summary = summarizeTerrainAhead(
+    reference.terrain,
+    currentMile,
+    TERRAIN_LOOKAHEAD_MILES,
+    direction
+  );
   if (!summary) return null;
 
-  const toMile = roundMile(Math.min(TOTAL_AT_MILES, currentMile + TERRAIN_LOOKAHEAD_MILES));
   const climbs = reference.terrain.steep
-    .filter((section) => section.endMile > currentMile - 0.01 && section.startMile < toMile + 0.01)
-    .sort((a, b) => a.startMile - b.startMile)
+    .filter((section) => section.endMile > window.minMile - 0.01 && section.startMile < window.maxMile + 0.01)
+    .sort((a, b) => {
+      const aEntry = direction === 'SOBO' ? a.endMile : a.startMile;
+      const bEntry = direction === 'SOBO' ? b.endMile : b.startMile;
+      return directedMileDelta(currentMile, aEntry, direction) - directedMileDelta(currentMile, bEntry, direction);
+    })
     .slice(0, MAX_TERRAIN_CLIMBS)
-    .map((section) => ({
-      startMile: roundMile(section.startMile),
-      endMile: roundMile(section.endMile),
-      direction: section.direction,
-      gradePercent: Math.round(section.gradePercent * 10) / 10,
-      verticalFt: Math.round(section.verticalFt),
-      state: section.state || undefined
-    }));
+    .map((section) => {
+      const reversedDirection = section.direction === 'climb'
+        ? 'descent'
+        : section.direction === 'descent'
+          ? 'climb'
+          : 'mixed';
+      return {
+        startMile: roundMile(direction === 'SOBO' ? section.endMile : section.startMile),
+        endMile: roundMile(direction === 'SOBO' ? section.startMile : section.endMile),
+        direction: direction === 'SOBO' ? reversedDirection : section.direction,
+        gradePercent: Math.round(section.gradePercent * 10) / 10,
+        verticalFt: Math.round(direction === 'SOBO' ? -section.verticalFt : section.verticalFt),
+        state: section.state || undefined
+      };
+    });
 
   return {
     fromMile: roundMile(currentMile),
-    toMile,
-    lookaheadMiles: TERRAIN_LOOKAHEAD_MILES,
+    toMile: roundMile(window.toMile),
+    lookaheadMiles: window.spanMiles,
     gainFt: summary.gainFt,
     lossFt: summary.lossFt,
     maxGradePercent: summary.maxGradePercent,
     difficultyScore: summary.difficultyScore,
     difficultyLabel: summary.difficultyLabel,
     climbs,
-    sourceLabel: 'Scout open-reference terrain: USGS 3DEP elevation + terrain-only difficulty screen',
+    sourceLabel: direction === 'SOBO'
+      ? 'Scout open-reference terrain: USGS 3DEP elevation in SOBO travel order'
+      : 'Scout open-reference terrain: USGS 3DEP elevation + terrain-only difficulty screen',
     generatedAt
   };
 }
 
-async function buildTrailAheadSlice(currentMile: number, now: Date, personal = false): Promise<TrailAheadSlice | null> {
+async function buildTrailAheadSlice(
+  currentMile: number,
+  now: Date,
+  personal = false,
+  direction: TrailDirection = 'NOBO'
+): Promise<TrailAheadSlice | null> {
   const reference = await loadReferencePack();
-  const endMile = Math.min(TOTAL_AT_MILES, roundMile(currentMile + TRAIL_AHEAD_MILES));
-  const townEndMile = Math.min(TOTAL_AT_MILES, roundMile(currentMile + TOWN_LOOKAHEAD_MILES));
+  const trailWindow = directedTrailWindow(currentMile, TRAIL_AHEAD_MILES, TOTAL_AT_MILES, direction);
+  const townWindow = directedTrailWindow(currentMile, TOWN_LOOKAHEAD_MILES, TOTAL_AT_MILES, direction);
+  const terrainWindow = directedTrailWindow(currentMile, TERRAIN_LOOKAHEAD_MILES, TOTAL_AT_MILES, direction);
+  if (!trailWindow || !townWindow || !terrainWindow) return null;
+  const endMile = roundMile(trailWindow.toMile);
   const generatedAt = now.toISOString();
 
   // Water layer: AWOL-listed real, named sources (facts from The A.T. Guide,
   // re-expressed + cited) are the primary list; OSM/USGS hydrography candidates
   // backfill only genuine gaps (>0.3 mi from any AWOL source), so a hiker sees
   // real named water instead of "unnamed mapped stream, potability unknown".
-  const awolWaterPoints = AWOL_WATER_SOURCES.filter(
-    (source) => source.mile >= currentMile - 0.01 && source.mile <= endMile
-  );
-  const osmWaterAll = reference.waypoints.water
-    .filter(inWindow(currentMile, endMile))
-    .sort((a, b) => a.mile - b.mile);
+  const awolWaterPoints = trailAhead(AWOL_WATER_SOURCES, currentMile, direction, TRAIL_AHEAD_MILES);
+  const osmWaterAll = trailAhead(reference.waypoints.water, currentMile, direction, TRAIL_AHEAD_MILES);
   const osmGapFill = osmWaterAll.filter(
     (osm) => !awolWaterPoints.some((awol) => Math.abs(awol.mile - osm.mile) <= 0.3)
   );
   const waterReferences: MobileWaterReference[] = [
     ...awolWaterPoints.map(mapAwolWater),
     ...osmGapFill.map(mapWater)
-  ]
-    .sort((a, b) => a.mile - b.mile)
-    .slice(0, MAX_WATER_POINTS);
+  ];
+  const orderedWaterReferences = trailAhead(
+    waterReferences,
+    currentMile,
+    direction,
+    TRAIL_AHEAD_MILES
+  ).slice(0, MAX_WATER_POINTS);
 
-  const shelterPoints = reference.waypoints.shelters
-    .filter(inWindow(currentMile, townEndMile))
-    .sort((a, b) => a.mile - b.mile)
+  const shelterPoints = trailAhead(
+    reference.waypoints.shelters,
+    currentMile,
+    direction,
+    TOWN_LOOKAHEAD_MILES
+  )
     .slice(0, MAX_SHELTERS);
 
-  const townPoints = reference.waypoints.towns
-    .filter(inWindow(currentMile, townEndMile))
+  const townPoints = trailAhead(
+    reference.waypoints.towns,
+    currentMile,
+    direction,
+    TOWN_LOOKAHEAD_MILES
+  )
     .filter((point) => {
       const distance = distanceFromDetail(point.detail);
       return distance === null || distance <= 8;
     })
-    .sort((a, b) => a.mile - b.mile)
     .slice(0, MAX_TOWNS);
 
-  if (!waterReferences.length && !shelterPoints.length && !townPoints.length) return null;
+  if (!orderedWaterReferences.length && !shelterPoints.length && !townPoints.length) return null;
 
   // statesFor needs waypoints carrying a `state`; the OSM shelter/town/water
   // points are the canonical state source for the window label.
@@ -506,14 +542,14 @@ async function buildTrailAheadSlice(currentMile: number, now: Date, personal = f
   return {
     startMile: roundMile(currentMile),
     endMile,
-    water: uniqueByName(waterReferences),
+    water: uniqueByName(orderedWaterReferences),
     shelters: uniqueByName(shelterPoints.map(mapShelter)),
     towns: uniqueByName(townPoints.map(mapTown)),
-    terrain: buildTerrainSummary(reference, currentMile, generatedAt),
+    terrain: buildTerrainSummary(reference, currentMile, generatedAt, direction),
     downloadedRegions: [
       personal
-        ? `Trail ahead ${roundMile(currentMile).toFixed(1)}-${endMile.toFixed(1)}`
-        : `Dad trail-ahead ${roundMile(currentMile).toFixed(1)}-${endMile.toFixed(1)}`,
+        ? `Trail ahead ${roundMile(currentMile).toFixed(1)}→${endMile.toFixed(1)} ${direction}`
+        : `Dad trail-ahead ${roundMile(currentMile).toFixed(1)}→${endMile.toFixed(1)} NOBO`,
       `AT open-reference candidates (${states})`
     ],
     sourceReceipts: [
@@ -523,7 +559,7 @@ async function buildTrailAheadSlice(currentMile: number, now: Date, personal = f
         kind: 'trail-pack',
         citation: 'Scout full-trail open-reference pack, anchor-calibrated to AWOL 2026 frame',
         generatedAt,
-        miles: { from: roundMile(currentMile), to: endMile }
+        miles: { from: trailWindow.minMile, to: trailWindow.maxMile }
       },
       {
         id: 'derived:terrain-summary',
@@ -531,7 +567,7 @@ async function buildTrailAheadSlice(currentMile: number, now: Date, personal = f
         kind: 'derived',
         citation: 'USGS 3DEP elevation sampled along Scout open route geometry; terrain-only difficulty screen, not a substitute for current guide/sign conditions',
         generatedAt,
-        miles: { from: roundMile(currentMile), to: roundMile(Math.min(TOTAL_AT_MILES, currentMile + TERRAIN_LOOKAHEAD_MILES)) }
+        miles: { from: terrainWindow.minMile, to: terrainWindow.maxMile }
       },
       ...(awolWaterPoints.length
         ? [
@@ -541,7 +577,7 @@ async function buildTrailAheadSlice(currentMile: number, now: Date, personal = f
               kind: 'field-guide' as const,
               citation: AWOL_WATER_CITATION,
               url: 'https://www.theatguide.com/',
-              miles: { from: roundMile(currentMile), to: endMile }
+              miles: { from: trailWindow.minMile, to: trailWindow.maxMile }
             }
           ]
         : []),
@@ -550,14 +586,14 @@ async function buildTrailAheadSlice(currentMile: number, now: Date, personal = f
         title: 'Mapped water candidates (gap-fill)',
         kind: 'derived',
         citation: 'USGS/NHD public hydrography; used only where AWOL has no nearby source — reliability and potability unknown',
-        miles: { from: roundMile(currentMile), to: endMile }
+        miles: { from: trailWindow.minMile, to: trailWindow.maxMile }
       },
       {
         id: 'derived:osm-corridor-candidates',
         title: 'Shelter and town candidates',
         kind: 'derived',
         citation: 'OpenStreetMap contributors, ODbL; mapped candidates, not confirmed logistics',
-        miles: { from: roundMile(currentMile), to: townEndMile }
+        miles: { from: townWindow.minMile, to: townWindow.maxMile }
       }
     ]
   };
@@ -783,6 +819,12 @@ function sourceReceipts(
   parkServices: ParkFacilitiesPack | null,
   personal: boolean
 ): MobileSourceReceipt[] {
+  const defaultEnd = personal ? contextPack.hiker.currentMile : 606.0;
+  const receiptEnd = trailAhead?.endMile ?? defaultEnd;
+  const packMiles = {
+    from: Math.min(contextPack.hiker.currentMile, receiptEnd),
+    to: Math.max(contextPack.hiker.currentMile, receiptEnd)
+  };
   return [
     personal
       ? {
@@ -791,7 +833,7 @@ function sourceReceipts(
           kind: 'trail-pack',
           citation: 'Hogg Country public Scout mobile bootstrap, centered on your current mile',
           generatedAt: now.toISOString(),
-          miles: { from: contextPack.hiker.currentMile, to: trailAhead?.endMile ?? contextPack.hiker.currentMile }
+          miles: packMiles
         }
       : {
           id: 'field-pack:dad-pilot',
@@ -799,7 +841,7 @@ function sourceReceipts(
           kind: 'trail-pack',
           citation: 'Hogg Country public Scout mobile bootstrap',
           generatedAt: now.toISOString(),
-          miles: { from: contextPack.hiker.currentMile, to: trailAhead?.endMile ?? 606.0 }
+          miles: packMiles
         },
     ...(trailAhead?.sourceReceipts ?? []),
     ...(weatherPack.receipt ? [weatherPack.receipt] : []),
@@ -838,7 +880,7 @@ export async function buildPublicMobileFieldPack(now = new Date(), options: Fiel
   const generatedAt = now.toISOString();
   const centerState = approximateAtStateForMile(centerMile);
   const [trailAhead, weatherPack, conditions, parkServices] = await Promise.all([
-    buildTrailAheadSlice(centerMile, now, personal).catch(() => null),
+    buildTrailAheadSlice(centerMile, now, personal, direction).catch(() => null),
     buildWeatherPack(centerMile, generatedAt),
     // Live closures/detours/fire alerts ride the pack build (the build is the
     // cadence); never let a flaky upstream block the pack.

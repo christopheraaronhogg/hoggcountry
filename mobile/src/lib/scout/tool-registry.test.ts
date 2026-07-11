@@ -69,6 +69,48 @@ function packWithTrailPlanningContext(): ContextPack {
 	};
 }
 
+function packWithSoboTrailPlanningContext(): ContextPack {
+	return {
+		...DEFAULT_CONTEXT_PACK,
+		frame: { ...DEFAULT_CONTEXT_PACK.frame, totalMiles: 200, endMile: 200 },
+		hiker: { ...DEFAULT_CONTEXT_PACK.hiker, currentMile: 180, direction: 'SOBO' },
+		water: [
+			{ name: 'Behind spring', mile: 181, reliability: 'reliable' },
+			{ name: 'Thin creek', mile: 179, reliability: 'thin' },
+			{ name: 'Reliable spring', mile: 175, reliability: 'reliable' }
+		],
+		shelters: [
+			{ name: 'Behind shelter', mile: 182 },
+			{ name: 'South shelter', mile: 176 }
+		],
+		towns: [
+			{ name: 'Behind town', mile: 184, access: 'road' },
+			{ name: 'South town', mile: 170, access: 'road' }
+		],
+		terrain: {
+			fromMile: 180,
+			toMile: 165,
+			lookaheadMiles: 15,
+			gainFt: 800,
+			lossFt: 500,
+			maxGradePercent: 18,
+			difficultyScore: null,
+			difficultyLabel: null,
+			climbs: [
+				{
+					startMile: 178,
+					endMile: 177,
+					direction: 'climb',
+					gradePercent: 18,
+					verticalFt: 400
+				}
+			],
+			sourceLabel: 'SOBO terrain fixture',
+			generatedAt: '2026-06-20T11:00:00.000Z'
+		}
+	};
+}
+
 test('defaultToolRegistry exposes the built-in Scout tool set', () => {
 	const toolIds = defaultToolRegistry()
 		.list()
@@ -716,6 +758,30 @@ test('next_water reliable prompts preserve the next reliable source and mention 
 	assert.ok(water);
 	assert.match(water.summary, /Next reliable water loaded: Bull Spring at mile 1538\.2 \(8\.2 mi ahead, reliable\)/);
 	assert.match(water.summary, /Closer unconfirmed water before that: Unnamed mapped stream at mile 1531\.9 \(1\.9 mi ahead, thin\)/);
+});
+
+test('SOBO Scout tools select lower-mile trail context and report positive ahead distances', async () => {
+	const pack = packWithSoboTrailPlanningContext();
+	const registry = defaultToolRegistry();
+	const current = await registry.get('current_mile')?.run({}, { pack, now: FIXED_NOW });
+	const water = await registry.get('next_water')?.run({}, { pack, now: FIXED_NOW });
+	const reliableWater = await registry
+		.get('next_water')
+		?.run({ reliabilityPreference: 'reliable' }, { pack, now: FIXED_NOW });
+	const shelter = await registry.get('next_shelter')?.run({}, { pack, now: FIXED_NOW });
+	const town = await registry.get('next_town')?.run({}, { pack, now: FIXED_NOW });
+	const terrain = await registry.get('upcoming_terrain')?.run({ spanMiles: 20 }, { pack, now: FIXED_NOW });
+
+	assert.match(current?.summary ?? '', /10\.0% complete, 180\.0 mi remaining/);
+	assert.match(water?.summary ?? '', /Thin creek at mile 179\.0 \(1\.0 mi ahead, thin\)/);
+	assert.doesNotMatch(water?.summary ?? '', /Behind spring/);
+	assert.match(reliableWater?.summary ?? '', /Reliable spring at mile 175\.0 \(5\.0 mi ahead, reliable\)/);
+	assert.match(reliableWater?.summary ?? '', /Closer unconfirmed water before that: Thin creek at mile 179\.0 \(1\.0 mi ahead/);
+	assert.match(shelter?.summary ?? '', /South shelter at mile 176\.0 \(4\.0 mi ahead\)/);
+	assert.match(town?.summary ?? '', /South town at mile 170\.0 \(10\.0 mi ahead/);
+	assert.match(terrain?.summary ?? '', /Thin creek \(mi 179\.0\).*Reliable spring \(mi 175\.0\)/);
+	assert.doesNotMatch(terrain?.summary ?? '', /Behind/);
+	assert.deepEqual(terrain?.receipts[0]?.miles, { from: 160, to: 180 });
 });
 
 test('trail_conditions surfaces active closures with a high-severity safety flag', async () => {
