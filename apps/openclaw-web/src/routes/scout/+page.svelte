@@ -2,6 +2,7 @@
   import WaitlistSignup from '$lib/components/WaitlistSignup.svelte';
   import ScoutCapabilities from '$lib/components/ScoutCapabilities.svelte';
   import AppLaunchCTA from '$lib/components/AppLaunchCTA.svelte';
+  import LiveScoutDemo from '$lib/components/LiveScoutDemo.svelte';
 
   // Example exchanges are illustrative. The numbers are drawn from the same
   // calibrated AT data the map and journey use, and the Pine Grove plan
@@ -58,6 +59,8 @@
     </p>
   </header>
 
+  <LiveScoutDemo />
+
   <section class="principles" aria-label="What makes Scout different">
     {#each principles as p (p.k)}
       <article class="principle">
@@ -71,8 +74,8 @@
   <ScoutCapabilities />
 
   <section class="demo" aria-label="Example exchanges">
-    <h2 class="demo-title">What that looks like</h2>
-    <p class="demo-note">Example exchanges — illustrative, with real calibrated trail miles.</p>
+    <h2 class="demo-title">How Scout answers</h2>
+    <p class="demo-note">Planning examples — illustrative. The live panel above is Dad's current app data.</p>
     <div class="threads">
       {#each exchanges as x (x.q)}
         <article class="thread">

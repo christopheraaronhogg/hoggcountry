@@ -9,20 +9,22 @@ quickRef: true
 
 # Resupply Locations
 
+Miles use Scout's calibrated 2,197.4-mile NOBO frame. Store access, hours, package policies, and side-trail distance can change; verify them before committing food or medicine to a stop.
+
 ## Walkable Dollar General
 
 | Town | Mile | Distance |
 |------|------|----------|
-| Hot Springs, NC | ~274.5 | 0.3 mi |
-| Erwin, TN | ~343.8 | 0.6 mi |
-| Hampton, TN | ~421.9 | 0.8 mi |
-| Pearisburg, VA | ~635.7 | 0.9 mi |
-| Daleville, VA | ~727.3 | 0.7 mi |
-| Waynesboro, VA | ~861.7 | 1.1 mi |
+| Hot Springs, NC | ~275.2 | 0.3 mi |
+| Erwin, TN | ~344.6 | 0.6 mi |
+| Hampton, TN | ~420.3 | 0.8 mi |
+| Pearisburg, VA | ~636.4 | 0.9 mi |
+| Daleville, VA | ~731.1 | 0.7 mi |
+| Waynesboro, VA | ~865.1 | 1.1 mi |
 | Front Royal, VA | ~971.1 | 1.0 mi |
-| Palmerton, PA | ~1266.6 | 0.9 mi |
-| Great Barrington, MA | ~1518.8 | 1.4 mi |
-| Gorham, NH | ~1890.7 | 1.2 mi |
+| Palmerton, PA | ~1261.5 | 0.9 mi |
+| Great Barrington, MA | ~1528.0 | 1.4 mi |
+| Gorham, NH | ~1898.9 | 1.2 mi |
 
 ---
 
@@ -30,14 +32,14 @@ quickRef: true
 
 | Location | Mile | Notes |
 |----------|------|-------|
-| Hot Springs, NC | ~274.6 | Most reliable on AT |
+| Hot Springs, NC | ~275.2 | Most reliable on AT |
 | Damascus, VA | ~471 | AT hub, generous hold |
-| Daleville, VA | ~685.3 | Easy access |
-| Harpers Ferry, WV | ~860.6 | Halfway, very reliable |
-| Duncannon, PA | ~1090.5 | Great PO + hostel |
-| Hanover, NH | ~1460.4 | Before the Whites |
-| Monson, ME | ~1893.1 | 100-Mile gateway (14-day max) |
-| Shaw's Hiker Hostel, ME | ~1893 | Full resupply + gear ship |
+| Daleville, VA | ~731.1 | Easy access |
+| Harpers Ferry, WV | ~1026.5 | Halfway, very reliable |
+| Duncannon, PA | ~1150.8 | Great PO + hostel |
+| Hanover, NH | ~1755 | Before the Whites |
+| Monson, ME | ~2079.4 | 100-Mile gateway (14-day max) |
+| Shaw's Hiker Hostel, ME | ~2079.4 | Full resupply + gear ship |
 
 ---
 

@@ -14,6 +14,7 @@ const anchorsDoc = yaml.load(fs.readFileSync(path.join(ROOT, 'src/data/at-mile-a
 const calibration = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/data/at-mile-calibration.json'), 'utf8'));
 const milepostsPayload = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/at-mileposts.json'), 'utf8'));
 const mobileGeometry = JSON.parse(fs.readFileSync(path.join(ROOT, 'mobile/static/trail/elevation-100m.json'), 'utf8'));
+const resupplyQuickRef = fs.readFileSync(path.join(ROOT, 'src/content/guide/quick/resupply.md'), 'utf8');
 
 function haversineMiles(lat1, lon1, lat2, lon2) {
   const R = 3958.7613;
@@ -55,6 +56,43 @@ test('calibration pairs are strictly monotonic in both frames', () => {
 
 test('calibration frame matches the anchor table', () => {
   assert.equal(calibration.frame.totalMiles, anchorsDoc.frame.total_miles);
+});
+
+test('hiker-facing resupply quick reference uses the calibrated mile frame consistently', () => {
+  const rows = [...resupplyQuickRef.matchAll(/^\|\s*([^|]+?)\s*\|\s*~?([0-9.]+)\s*\|/gmu)];
+  const valuesByLocation = new Map();
+  for (const [, location, rawMile] of rows) {
+    const key = location.trim();
+    const values = valuesByLocation.get(key) ?? new Set();
+    values.add(Number(rawMile));
+    valuesByLocation.set(key, values);
+  }
+
+  for (const [location, values] of valuesByLocation) {
+    assert.equal(values.size, 1, `${location} has contradictory quick-reference miles: ${[...values].join(', ')}`);
+  }
+
+  const expectedAnchors = new Map([
+    ['Hot Springs, NC', 'Hot Springs, NC'],
+    ['Erwin, TN', 'Nolichucky River / Erwin'],
+    ['Pearisburg, VA', 'Pearisburg VA'],
+    ['Daleville, VA', 'Daleville VA'],
+    ['Waynesboro, VA', 'Rockfish Gap / Waynesboro'],
+    ['Palmerton, PA', 'Lehigh Gap / Palmerton'],
+    ['Great Barrington, MA', 'Great Barrington MA'],
+    ['Gorham, NH', 'Gorham NH'],
+    ['Damascus, VA', 'Damascus, VA'],
+    ['Harpers Ferry, WV', 'Harpers Ferry WV'],
+    ['Duncannon, PA', 'Duncannon PA'],
+    ['Hanover, NH', 'Hanover NH'],
+    ['Monson, ME', 'Monson ME']
+  ]);
+
+  for (const [location, anchorFragment] of expectedAnchors) {
+    const anchor = anchorsDoc.anchors.find((candidate) => candidate.name.includes(anchorFragment));
+    assert.ok(anchor, `missing canonical anchor for ${location}`);
+    assert.deepEqual([...valuesByLocation.get(location) ?? []], [anchor.mile], `${location} must use calibrated mile ${anchor.mile}`);
+  }
 });
 
 test('mileposts cover the official frame with monotonic miles', () => {
