@@ -44,3 +44,16 @@ test('every visible trail preference has an observable app effect', () => {
 	assert.doesNotMatch(account, /<strong>Low-signal mode<\/strong>/);
 	assert.doesNotMatch(account, /Reduce sync behavior/);
 });
+
+test('Today puts a truthful trail-data refresh beside weather', () => {
+	const source = componentSource('TodayTab');
+
+	assert.match(source, /fieldPackStatus/);
+	assert.match(source, /Refresh trail data/);
+	assert.match(source, /refreshFieldPack\(\)/);
+	assert.match(source, /!trailAssistant\.onlineStatus/);
+	assert.match(source, /packStatus\.state === 'refreshing'/);
+	assert.match(source, /packStatus\.detail/);
+	assert.match(source, /role="status"/);
+	assert.match(source, /Cached forecast — not live/);
+});

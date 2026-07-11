@@ -34,6 +34,10 @@
 	// server can reach NWS it is an official point forecast; otherwise the UI stays
 	// honest about cache/missing state.
 	const wx = $derived(trailAssistant.fieldPack.weather);
+	const packStatus = $derived(trailAssistant.fieldPackStatus);
+	const packRefreshNeedsAttention = $derived(
+		packStatus.state === 'error' || packStatus.state === 'stale'
+	);
 	const wxUpdated = $derived(wx ? formatAge(wx.generatedAt, nowMs) : '');
 	const wxIsNws = $derived(wx?.source === 'nws');
 	const wxSourceLabel = $derived(wx ? `${wxIsNws ? 'NWS' : 'Cached'} · ${wxUpdated}` : 'No forecast');
@@ -161,6 +165,9 @@
 		helpNote = request.message;
 		if (request.href) window.location.href = request.href;
 	}
+	function refreshTrailData() {
+		void trailAssistant.refreshFieldPack();
+	}
 
 	const checkInDue = $derived(formatTimeUntil(trailAssistant.nextCheckInDueAt, nowMs));
 </script>
@@ -239,9 +246,26 @@
 	<!-- Weather: first-class, with what-it-means + daylight -->
 	<section class="wx card">
 		<div class="wx-head">
-			<span class="eyebrow">Weather</span>
-			<span class="wx-src">{wxSourceLabel}</span>
+			<div>
+				<span class="eyebrow">Weather</span>
+				<span class="wx-src">{wxSourceLabel}</span>
+			</div>
+			<button
+				class="wx-refresh"
+				type="button"
+				onclick={refreshTrailData}
+				disabled={!trailAssistant.onlineStatus || packStatus.state === 'refreshing'}
+			>
+				{packStatus.state === 'refreshing'
+					? 'Refreshing…'
+					: trailAssistant.onlineStatus
+						? 'Refresh trail data'
+						: 'Offline'}
+			</button>
 		</div>
+		{#if packRefreshNeedsAttention}
+			<p class="wx-refresh-status" role="status">{packStatus.detail}</p>
+		{/if}
 		{#if wx}
 			<div class="wx-now">
 				<div class="temp tabular">{wx.highF}°</div>
@@ -647,18 +671,47 @@
 	}
 	.wx-head {
 		display: flex;
-		align-items: baseline;
+		align-items: flex-start;
 		justify-content: space-between;
+		gap: 12px;
 	}
 	.wx-head .eyebrow {
 		margin-bottom: 0;
 	}
 	.wx-src {
+		display: block;
 		font-size: var(--text-floor);
 		font-weight: 800;
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
 		color: var(--muted);
+		margin-top: 4px;
+	}
+	.wx-refresh {
+		min-height: 40px;
+		padding: 0 11px;
+		border: 1px solid var(--sky);
+		border-radius: var(--radius-control);
+		background: var(--sky-soft);
+		color: var(--sky);
+		font-size: var(--text-floor);
+		font-weight: 900;
+		line-height: 1.2;
+		text-align: center;
+	}
+	.wx-refresh:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+	.wx-refresh-status {
+		margin: 9px 0 0;
+		padding: 8px 10px;
+		border-radius: 9px;
+		background: var(--warn-soft);
+		color: var(--warn);
+		font-size: var(--text-floor);
+		font-weight: 800;
+		line-height: 1.4;
 	}
 	.wx-now {
 		display: flex;
