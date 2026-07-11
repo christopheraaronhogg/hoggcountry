@@ -12,13 +12,63 @@ import { build, files, prerendered, version } from '$service-worker';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 
-const CACHE = `hoggcountry-${version}`;
-// build = hashed JS/CSS, files = static/ assets, prerendered = the HTML pages.
-const PRECACHE = [...build, ...files, ...prerendered];
+const CACHE_PREFIX = 'hoggcountry-';
+const CACHE = `${CACHE_PREFIX}${version}`;
+
+// Hashed JS/CSS and the root HTML are the minimum viable offline app shell.
+// Large static datasets and any additional pages are useful but optional: one
+// failed Bible/map/reference asset must not prevent the shell from installing.
+const REQUIRED_SHELL = [
+	...new Set([
+		...build,
+		'/',
+		...prerendered.filter((path) => path === '/' || path === '/index.html')
+	])
+];
+const requiredPaths = new Set(REQUIRED_SHELL);
+const PRECACHE = [...new Set([...REQUIRED_SHELL, ...files, ...prerendered])];
+const OPTIONAL_ASSETS = PRECACHE.filter((path) => !requiredPaths.has(path));
+const precachePaths = new Set(PRECACHE);
+
+async function findPreviousResponse(path: string): Promise<Response | undefined> {
+	const previousKeys = (await caches.keys())
+		.filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE)
+		.reverse();
+
+	for (const key of previousKeys) {
+		const response = await (await caches.open(key)).match(path);
+		if (response) return response;
+	}
+	return undefined;
+}
+
+async function cacheOptionalAsset(cache: Cache, path: string): Promise<void> {
+	try {
+		await cache.add(path);
+		return;
+	} catch {
+		// Stable static paths can reuse the prior version when the update happens
+		// over weak/no connectivity. A truly new missing asset remains optional.
+		const previous = await findPreviousResponse(path);
+		if (previous) await cache.put(path, previous.clone());
+	}
+}
 
 sw.addEventListener('install', (event) => {
 	event.waitUntil(
-		caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).then(() => sw.skipWaiting())
+		(async () => {
+			const cache = await caches.open(CACHE);
+
+			// Required shell failures keep the previous worker active.
+			for (const path of REQUIRED_SHELL) await cache.add(path);
+
+			// Optional assets are isolated: one failed large Bible/map payload
+			// cannot reject the entire service-worker installation.
+			await Promise.allSettled(
+				OPTIONAL_ASSETS.map((path) => cacheOptionalAsset(cache, path))
+			);
+			await sw.skipWaiting();
+		})()
 	);
 });
 
@@ -26,7 +76,9 @@ sw.addEventListener('activate', (event) => {
 	event.waitUntil(
 		(async () => {
 			for (const key of await caches.keys()) {
-				if (key !== CACHE) await caches.delete(key);
+				if (key.startsWith(CACHE_PREFIX) && key !== CACHE) {
+					await caches.delete(key);
+				}
 			}
 			await sw.clients.claim();
 		})()
@@ -85,7 +137,7 @@ sw.addEventListener('fetch', (event) => {
 			const cache = await caches.open(CACHE);
 
 			// Immutable, versioned build assets: cache-first.
-			if (PRECACHE.includes(url.pathname)) {
+			if (precachePaths.has(url.pathname)) {
 				const hit = await cache.match(url.pathname);
 				if (hit) return hit;
 			}
@@ -95,7 +147,7 @@ sw.addEventListener('fetch', (event) => {
 			try {
 				const response = await fetch(event.request);
 				if (response.ok && response.type === 'basic') {
-					cache.put(event.request, response.clone());
+					await cache.put(event.request, response.clone());
 				}
 				return response;
 			} catch {

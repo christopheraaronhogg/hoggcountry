@@ -194,6 +194,11 @@ test('live envelope normalizes into a ContextPack and persists through the adapt
 	assert.equal(status.state, 'ready');
 	assert.equal(status.source, 'remote');
 	assert.equal(status.validUntil, envelope.meta.valid_until);
+	assert.deepEqual(store.getPersistenceResult(), {
+		state: 'persisted',
+		verified: true,
+		error: null
+	});
 
 	// Persisted to the adapter under the expected key.
 	assert.equal(adapter.writes, 1);
@@ -341,7 +346,7 @@ test('a malformed remote payload is rejected and the cached pack is preserved', 
 	assert.ok(status.error && status.error.includes('ContextPack contract'));
 });
 
-test('a persistence write failure is non-fatal: the normalized pack still serves', async () => {
+test('a persistence write failure keeps the pack session-only and never reports offline-ready', async () => {
 	const adapter = new MockAdapter();
 	adapter.failOnSet = true;
 	const store = new InMemoryContextPackStore({ adapter, storageKey: STORAGE_KEY });
@@ -354,7 +359,54 @@ test('a persistence write failure is non-fatal: the normalized pack still serves
 	// The refresh succeeds in memory even though the adapter.set threw.
 	assert.equal(pack.hiker.currentMile, 615.5);
 	const status = store.getStatus();
-	assert.equal(status.state, 'ready');
+	assert.equal(status.state, 'error');
+	assert.equal(status.label, 'Field pack loaded for this session');
 	assert.equal(status.source, 'remote');
+	assert.match(status.detail, /not saved for offline use/i);
+	assert.match(status.error, /simulated persistence failure/i);
+	assert.deepEqual(store.getPersistenceResult(), {
+		state: 'loaded-only',
+		verified: false,
+		error: 'simulated persistence failure'
+	});
 	assert.equal(adapter.store.has(STORAGE_KEY), false);
+});
+
+test('read-after-write verification preserves the last known-good cached pack', async () => {
+	const previousPack = {
+		...cloneDefaultContextPack(),
+		hiker: { ...cloneDefaultContextPack().hiker, currentMile: 588.2 }
+	};
+	const previousRaw = JSON.stringify(previousPack);
+	const adapter = {
+		value: previousRaw,
+		writes: 0,
+		async get() {
+			return this.value;
+		},
+		async set(_key, _value) {
+			this.writes += 1;
+			// Simulate a storage layer that resolves without committing the write.
+		}
+	};
+	const store = new InMemoryContextPackStore({ adapter, storageKey: STORAGE_KEY });
+	await store.load();
+
+	const current = await store.refreshFromEndpoint(
+		'https://example.test/field-pack',
+		makeFetcher(jsonResponse(buildRemoteEnvelope({ currentMile: 633.7 })))
+	);
+
+	assert.equal(current.hiker.currentMile, 633.7, 'fresh data remains usable this session');
+	assert.equal(adapter.value, previousRaw, 'verified previous cache remains intact');
+	assert.equal(store.getStatus().state, 'error');
+	assert.match(store.getStatus().detail, /previously saved pack is still available/i);
+	assert.deepEqual(store.getPersistenceResult(), {
+		state: 'loaded-only',
+		verified: false,
+		error: 'Field pack storage verification failed.'
+	});
+
+	const relaunched = new InMemoryContextPackStore({ adapter, storageKey: STORAGE_KEY });
+	assert.equal((await relaunched.load()).hiker.currentMile, 588.2);
 });
