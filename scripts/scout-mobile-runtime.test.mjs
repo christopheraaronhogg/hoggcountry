@@ -21,7 +21,7 @@ function makeRuntime(overrides = {}) {
 	});
 }
 
-function fakeBridge(text = 'Model-authored answer from the local Gemma bridge.') {
+function fakeBridge(text = 'Model-authored answer from the local Gemma bridge.', expectedToolId) {
 	return {
 		async isAvailable() {
 			return true;
@@ -30,7 +30,11 @@ function fakeBridge(text = 'Model-authored answer from the local Gemma bridge.')
 			return { tier: 'balanced', modelId: 'gemma-fake', maxContextTokens: 8192 };
 		},
 		async generate(input, onToken) {
-			assert.ok(input.systemContext.includes('Trail tool findings'));
+			assert.match(input.systemContext, /Source packet from local search\/tools:/u);
+			assert.ok(
+				input.systemContext.includes(`[${expectedToolId}]`),
+				`expected ${expectedToolId} result in the model context`
+			);
 			onToken?.(text);
 			return { text, truncated: false };
 		}
@@ -62,7 +66,10 @@ test('runtime rejects offline questions when no real model provider is available
 test('runtime answers offline through the on-device model and still runs tools first', async () => {
 	const { runtime } = createScoutRuntime({
 		initialPack: { ...DEFAULT_CONTEXT_PACK },
-		onDeviceBridge: fakeBridge('Use the source chips below; water is not loaded yet.')
+		onDeviceBridge: fakeBridge(
+			'Use the source chips below; water is not loaded yet.',
+			'next_water'
+		)
 	});
 	const answer = await runtime.ask({ prompt: 'Where is the next reliable water?', onlineStatus: false });
 	const waterTool = answer.toolInvocations.find((tool) => tool.toolId === 'next_water');
@@ -79,7 +86,10 @@ test('runtime answers offline through the on-device model and still runs tools f
 test('volatile prompts still attach source/confirmation records before model synthesis', async () => {
 	const { runtime } = createScoutRuntime({
 		initialPack: { ...DEFAULT_CONTEXT_PACK },
-		onDeviceBridge: fakeBridge('No cached weather is loaded. Refresh from NWS before exposed terrain.')
+		onDeviceBridge: fakeBridge(
+			'No cached weather is loaded. Refresh from NWS before exposed terrain.',
+			'weather_lookup'
+		)
 	});
 	const answer = await runtime.ask({ prompt: 'What is the weather looking like on the ridge?', onlineStatus: false });
 
