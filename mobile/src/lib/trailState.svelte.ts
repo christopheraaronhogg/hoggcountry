@@ -1427,19 +1427,30 @@ class TrailAssistantStore {
 	}
 
 	/**
-	 * Get one position fix for an explicit user-initiated share. The underlying
-	 * one-shot service still honors the app's precise-location privacy toggle and
-	 * returns null when permission, hardware, or a usable fix is unavailable.
+	 * Get one position fix for an explicit user-initiated share. This does not
+	 * enable the persistent trail-report/auto-mile GPS setting or start a watcher.
 	 */
-	async getCoordinatesForExplicitShare(): Promise<{
+	async getEmergencyShareFix(): Promise<{
 		latitude: number;
 		longitude: number;
+		fixedAt: string | null;
+		accuracyM: number | null;
 	} | null> {
-		const position = await this.#position.getCurrentPosition();
+		const position = await this.#position.getPositionForExplicitShare();
 		if (!position) return null;
+		const timestamp = position.timestamp;
+		const accuracy = position.coords.accuracy;
 		return {
 			latitude: position.coords.latitude,
-			longitude: position.coords.longitude
+			longitude: position.coords.longitude,
+			fixedAt:
+				typeof timestamp === 'number' && Number.isFinite(timestamp)
+					? new Date(timestamp).toISOString()
+					: null,
+			accuracyM:
+				typeof accuracy === 'number' && Number.isFinite(accuracy) && accuracy >= 0
+					? accuracy
+					: null
 		};
 	}
 

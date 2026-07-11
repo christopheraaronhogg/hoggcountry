@@ -89,63 +89,60 @@ export function buildHelpSms(input: {
 	return { href, recipients };
 }
 
-export interface EmergencyShareCoordinates {
+export interface EmergencyShareFix {
 	latitude: number;
 	longitude: number;
+	fixedAt: string | null;
+	accuracyM: number | null;
 }
 
-export function buildEmergencyShareSms(input: {
-	contacts: SupportContact[];
+export function buildEmergencyShareText(input: {
 	currentMile: number;
 	trailName?: string;
 	preparedAt: Date;
-	coordinates: EmergencyShareCoordinates | null;
-}): { href: string; recipients: SupportContact[]; usedCoordinates: boolean } | null {
-	const reachable = reachableSupportContacts(input.contacts)
-		.map((contact) => ({
-			contact,
-			number: (contact.phone ?? '').replace(/[^+\d]/g, '')
-		}))
-		.filter((entry) => entry.number.length > 0);
-	if (!reachable.length) return null;
-
-	const coordinates = input.coordinates;
-	const coordinatesAreValid = Boolean(
-		coordinates &&
-			Number.isFinite(coordinates.latitude) &&
-			Number.isFinite(coordinates.longitude) &&
-			Math.abs(coordinates.latitude) <= 90 &&
-			Math.abs(coordinates.longitude) <= 180
+	fix: EmergencyShareFix | null;
+}): { text: string; usedCoordinates: boolean; cachedFix: boolean } {
+	const fix = input.fix;
+	const fixIsValid = Boolean(
+		fix &&
+			Number.isFinite(fix.latitude) &&
+			Number.isFinite(fix.longitude) &&
+			Math.abs(fix.latitude) <= 90 &&
+			Math.abs(fix.longitude) <= 180
 	);
 	const name = input.trailName?.trim() || 'Hiker';
-	const preparedAt = Number.isFinite(input.preparedAt.getTime())
+	const preparedAtMs = input.preparedAt.getTime();
+	const preparedAt = Number.isFinite(preparedAtMs)
 		? input.preparedAt.toISOString()
 		: 'unavailable';
 	const mile = Number.isFinite(input.currentMile) ? input.currentMile.toFixed(1) : 'unavailable';
-	const lines = [
-		`${name} needs help on the AT.`,
-		`Draft time (UTC): ${preparedAt}.`
-	];
+	const fixedAtMs = fix?.fixedAt ? Date.parse(fix.fixedAt) : Number.NaN;
+	const cachedFix = fixIsValid && Number.isFinite(fixedAtMs) && Number.isFinite(preparedAtMs)
+		? preparedAtMs - fixedAtMs > 60_000
+		: false;
+	const lines = [`${name} needs help.`, `Draft time (UTC): ${preparedAt}.`];
 
-	if (coordinatesAreValid && coordinates) {
-		const latitude = coordinates.latitude.toFixed(5);
-		const longitude = coordinates.longitude.toFixed(5);
+	if (fixIsValid && fix) {
+		const latitude = fix.latitude.toFixed(5);
+		const longitude = fix.longitude.toFixed(5);
 		lines.push(
-			`GPS fix: ${latitude}, ${longitude}. Map: https://maps.google.com/?q=${latitude},${longitude}`
+			`GPS fix${cachedFix ? ' (cached)' : ''}: ${latitude}, ${longitude}.`,
+			`GPS fix time (UTC): ${fix.fixedAt ?? 'unavailable'}.`,
+			`GPS accuracy: ${fix.accuracyM === null ? 'unknown' : `about ${Math.round(fix.accuracyM)} m`}.`,
+			`Map: https://maps.google.com/?q=${latitude},${longitude}`
 		);
 	} else {
 		lines.push('GPS fix unavailable.');
 	}
 
 	lines.push(
-		`Last saved AT mile: ${mile}.`,
-		'This message sends only when I tap Send. It is not 911 or satellite SOS.'
+		`Last saved AT mile (may be stale): ${mile}.`,
+		'Scout cannot send this or confirm delivery. It is not 911 or satellite SOS.'
 	);
-	const body = lines.join('\n');
 
 	return {
-		href: `sms:${reachable.map((entry) => entry.number).join(',')}?&body=${encodeURIComponent(body)}`,
-		recipients: reachable.map((entry) => entry.contact),
-		usedCoordinates: coordinatesAreValid
+		text: lines.join('\n'),
+		usedCoordinates: fixIsValid,
+		cachedFix
 	};
 }

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import {
-	buildEmergencyShareSms,
+	buildEmergencyShareText,
 	buildHelpSms,
 	createCheckInRecord,
 	isoHoursFromNow,
@@ -12,10 +12,6 @@ import {
 	reachableSupportContacts,
 	removeSupportContactByName
 } from './safety.ts';
-
-function smsBody(href: string): string {
-	return decodeURIComponent(href.split('body=')[1] ?? '');
-}
 
 test('isoHoursFromNow and nextCheckInHours preserve check-in timing policy', () => {
 	const now = new Date('2026-02-02T12:00:00.000Z');
@@ -125,60 +121,57 @@ test('buildHelpSms returns null without phone contacts and encodes a signal-gate
 	);
 });
 
-test('buildEmergencyShareSms includes UTC draft time, GPS fix, map link, and saved mile', () => {
-	const sms = buildEmergencyShareSms({
-		contacts: [
-			{ name: 'A', role: 'Mom', method: 'Text', phone: '(555) 123-4567' },
-			{ name: 'B', role: 'Dad', method: 'Text', phone: '+1 555 765 4321' }
-		],
+test('buildEmergencyShareText labels fix time, accuracy, map link, and saved mile', () => {
+	const share = buildEmergencyShareText({
 		currentMile: 42.34,
 		trailName: '  Sprout ',
 		preparedAt: new Date('2026-07-11T12:34:56.000Z'),
-		coordinates: { latitude: 34.123456, longitude: -84.987654 }
+		fix: {
+			latitude: 34.123456,
+			longitude: -84.987654,
+			fixedAt: '2026-07-11T12:34:30.000Z',
+			accuracyM: 37.4
+		}
 	});
 
-	assert.deepEqual(sms?.recipients.map((contact) => contact.name), ['A', 'B']);
-	assert.equal(sms?.usedCoordinates, true);
+	assert.equal(share.usedCoordinates, true);
+	assert.equal(share.cachedFix, false);
 	assert.equal(
-		smsBody(sms?.href ?? ''),
+		share.text,
 		[
-			'Sprout needs help on the AT.',
+			'Sprout needs help.',
 			'Draft time (UTC): 2026-07-11T12:34:56.000Z.',
-			'GPS fix: 34.12346, -84.98765. Map: https://maps.google.com/?q=34.12346,-84.98765',
-			'Last saved AT mile: 42.3.',
-			'This message sends only when I tap Send. It is not 911 or satellite SOS.'
+			'GPS fix: 34.12346, -84.98765.',
+			'GPS fix time (UTC): 2026-07-11T12:34:30.000Z.',
+			'GPS accuracy: about 37 m.',
+			'Map: https://maps.google.com/?q=34.12346,-84.98765',
+			'Last saved AT mile (may be stale): 42.3.',
+			'Scout cannot send this or confirm delivery. It is not 911 or satellite SOS.'
 		].join('\n')
 	);
 });
 
-test('buildEmergencyShareSms honestly falls back when GPS is missing or invalid', () => {
-	const contacts = [{ name: 'A', role: 'Mom', method: 'Text', phone: '555-1234' }];
-	const withoutGps = buildEmergencyShareSms({
-		contacts,
+test('buildEmergencyShareText labels cached and unavailable GPS honestly', () => {
+	const cached = buildEmergencyShareText({
 		currentMile: 42,
-		trailName: '',
-		preparedAt: new Date('2026-07-11T12:34:56.000Z'),
-		coordinates: null
+		preparedAt: new Date('2026-07-11T12:40:00.000Z'),
+		fix: {
+			latitude: 34.1,
+			longitude: -84.9,
+			fixedAt: '2026-07-11T12:35:00.000Z',
+			accuracyM: null
+		}
 	});
-	const invalidGps = buildEmergencyShareSms({
-		contacts,
+	const withoutGps = buildEmergencyShareText({
 		currentMile: 42,
-		preparedAt: new Date('2026-07-11T12:34:56.000Z'),
-		coordinates: { latitude: 120, longitude: Number.NaN }
+		preparedAt: new Date('2026-07-11T12:40:00.000Z'),
+		fix: null
 	});
 
-	assert.equal(withoutGps?.usedCoordinates, false);
-	assert.match(smsBody(withoutGps?.href ?? ''), /GPS fix unavailable/);
-	assert.doesNotMatch(smsBody(withoutGps?.href ?? ''), /maps\.google/);
-	assert.equal(invalidGps?.usedCoordinates, false);
-	assert.match(smsBody(invalidGps?.href ?? ''), /GPS fix unavailable/);
-	assert.equal(
-		buildEmergencyShareSms({
-			contacts: [{ name: 'Reference', role: 'Friend', method: 'Reference' }],
-			currentMile: 42,
-			preparedAt: new Date(),
-			coordinates: null
-		}),
-		null
-	);
+	assert.equal(cached.cachedFix, true);
+	assert.match(cached.text, /GPS fix \(cached\)/);
+	assert.match(cached.text, /GPS accuracy: unknown/);
+	assert.equal(withoutGps.usedCoordinates, false);
+	assert.match(withoutGps.text, /GPS fix unavailable/);
+	assert.doesNotMatch(withoutGps.text, /maps\.google/);
 });

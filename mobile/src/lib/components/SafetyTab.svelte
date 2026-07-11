@@ -7,7 +7,7 @@
 	} from '$lib/check-in-ui';
 	import { formatAge, formatTimeUntil } from '$lib/freshness';
 	import { minuteClock } from '$lib/minute-clock.svelte';
-	import { buildEmergencyShareSms } from '$lib/safety';
+	import { buildEmergencyShareText } from '$lib/safety';
 	import { trailAssistant } from '$lib/trailState.svelte';
 	import SourceChip from './SourceChip.svelte';
 	import { toUiSourceReceipt } from './source-receipts';
@@ -52,46 +52,52 @@
 
 	async function shareEmergencyLocation() {
 		if (emergencyShareBusy) return;
-		if (!trailAssistant.privacySettings.sharePreciseLocation) {
-			emergencyShareNote =
-				'Turn on Trail-mile reports below to allow the one-time GPS fix. Nothing was logged or sent.';
-			return;
-		}
-		if (!trailAssistant.reachableSupportContacts.length) {
-			emergencyShareNote =
-				'Add a support contact with a phone number first. Nothing was logged or sent.';
-			return;
-		}
-
 		emergencyShareBusy = true;
-		emergencyShareNote = 'Getting one GPS fix…';
+		emergencyShareNote = 'Getting one GPS fix (up to 9 seconds)…';
 		let checkInLogged = false;
 
 		try {
 			trailAssistant.performCheckIn(
 				'need-help',
-				'Emergency location share opened from Safety; the text draft still requires Send.'
+				'Emergency share prepared from Safety; Scout cannot confirm delivery.'
 			);
 			checkInLogged = true;
-			const coordinates = await trailAssistant.getCoordinatesForExplicitShare();
-			const draft = buildEmergencyShareSms({
-				contacts: trailAssistant.supportCircle,
+			const fix = await trailAssistant.getEmergencyShareFix();
+			const share = buildEmergencyShareText({
 				currentMile: trailAssistant.currentMile,
 				trailName: trailAssistant.hikeProfile.trailName,
 				preparedAt: new Date(),
-				coordinates
+				fix
 			});
-			if (!draft) {
+
+			if (typeof navigator.share === 'function') {
+				try {
+					await navigator.share({ title: 'Emergency location', text: share.text });
+					emergencyShareNote =
+						'Share sheet closed. Scout cannot confirm anything was sent; verify with the person or emergency service.';
+					return;
+				} catch (error) {
+					if (
+						typeof error === 'object' &&
+						error !== null &&
+						'name' in error &&
+						error.name === 'AbortError'
+					) {
+						emergencyShareNote = 'Share canceled. The need-help check-in remains logged; nothing was sent.';
+						return;
+					}
+					// Fall through to clipboard when the platform share sheet fails.
+				}
+			}
+
+			if (navigator.clipboard?.writeText) {
+				await navigator.clipboard.writeText(share.text);
 				emergencyShareNote =
-					'The need-help check-in was logged, but no usable support-circle phone number was found.';
+					'Emergency details copied. Paste them into a text or other channel; Scout cannot confirm anything was sent.';
 				return;
 			}
 
-			const names = draft.recipients.map((contact) => contact.name).join(', ');
-			emergencyShareNote = draft.usedCoordinates
-				? `Opening a GPS and time draft to ${names}. It is not sent until you tap Send.`
-				: `No GPS fix was available. Opening a time and saved-mile draft to ${names}; tap Send to notify them.`;
-			window.location.href = draft.href;
+			throw new Error('No supported share or clipboard handoff is available.');
 		} catch {
 			emergencyShareNote = checkInLogged
 				? 'The need-help check-in was logged, but the location draft could not be prepared. Use text, call, 911, or your emergency device directly.'
@@ -217,11 +223,12 @@
 				aria-describedby="emergency-share-copy"
 				onclick={() => void shareEmergencyLocation()}
 			>
-				{emergencyShareBusy ? 'Getting GPS…' : 'Share emergency location'}
+				{emergencyShareBusy ? 'Getting GPS…' : 'Prepare emergency share'}
 			</button>
 			<p id="emergency-share-copy" class="emergency-share-copy">
-				Logs a need-help check-in, requests one privacy-gated GPS fix, and opens a timestamped text draft.
-				It does not send automatically and is not 911, inReach, or PLB.
+				Logs a need-help check-in, requests one foreground GPS fix without enabling tracking, then opens
+				the share sheet or copies the details. Scout cannot confirm anything was sent and is not 911,
+				inReach, or PLB.
 			</p>
 			{#if emergencyShareNote}
 				<p class="emergency-share-note" role="status">{emergencyShareNote}</p>

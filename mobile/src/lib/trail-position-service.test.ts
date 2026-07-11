@@ -266,6 +266,27 @@ test('TrailPositionService getCurrentPosition honors the precise-location privac
 	assert.equal(fake.calls.get, 0);
 });
 
+test('explicit share requests one fresh fix without enabling persistent GPS watching', async () => {
+	const expected: TrailGpsPosition = {
+		coords: { latitude: 1, longitude: 1, accuracy: 37 },
+		timestamp: Date.parse('2026-07-11T12:30:00.000Z')
+	};
+	const fake = createFakeGeolocation(expected);
+	const harness = createService({
+		geolocation: fake.geolocation,
+		privacy: { sharePreciseLocation: false }
+	});
+
+	const result = await harness.service.getPositionForExplicitShare();
+
+	assert.equal(result, expected);
+	assert.equal(fake.calls.get, 1);
+	assert.equal(fake.calls.watch, 0);
+	assert.deepEqual(fake.calls.getOptions, [
+		{ enableHighAccuracy: true, maximumAge: 60_000, timeout: 9_000 }
+	]);
+});
+
 test('TrailPositionService snaps a manual GPS fix and updates the current mile', async () => {
 	const fake = createFakeGeolocation(position(1, 1));
 	const harness = createService({ geolocation: fake.geolocation });

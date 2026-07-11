@@ -8,17 +8,19 @@ const safetySource = readFileSync(
 );
 const trailStateSource = readFileSync(new URL('./trailState.svelte.ts', import.meta.url), 'utf8');
 
-test('Safety exposes a separate, explicit emergency-location draft action', () => {
-	assert.match(safetySource, /Share emergency location/);
-	assert.match(safetySource, /buildEmergencyShareSms/);
-	assert.match(safetySource, /getCoordinatesForExplicitShare/);
-	assert.match(safetySource, /does not send automatically/i);
+test('Safety exposes a separate, explicit emergency-location share action', () => {
+	assert.match(safetySource, /Prepare emergency share/);
+	assert.match(safetySource, /buildEmergencyShareText/);
+	assert.match(safetySource, /getEmergencyShareFix/);
+	assert.match(safetySource, /cannot confirm anything was sent/i);
+	assert.match(safetySource, /navigator\.share/);
+	assert.match(safetySource, /clipboard\.writeText/);
 	assert.doesNotMatch(safetySource, /navigator\.geolocation/);
 });
 
-test('explicit sharing reaches the existing privacy-gated one-shot position service through the store', () => {
+test('explicit sharing reaches the dedicated one-shot position service through the store', () => {
 	assert.match(
 		trailStateSource,
-		/getCoordinatesForExplicitShare[\s\S]*this\.#position\.getCurrentPosition\(\)/
+		/getEmergencyShareFix[\s\S]*this\.#position\.getPositionForExplicitShare\(\)/
 	);
 });

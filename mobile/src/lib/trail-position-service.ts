@@ -24,7 +24,9 @@ export interface TrailGpsPosition {
 	coords: {
 		latitude: number;
 		longitude: number;
+		accuracy?: number;
 	};
+	timestamp?: number;
 }
 
 interface TrailGpsOptions {
@@ -206,6 +208,18 @@ export class TrailPositionService {
 			enableHighAccuracy: false,
 			maximumAge: 5 * 60_000,
 			timeout: 8_000
+		});
+	}
+
+	/** One foreground fix for a user-tapped share action. This does not read or
+	 * mutate the persistent auto-mile/report setting and never starts a watcher. */
+	async getPositionForExplicitShare(): Promise<TrailGpsPosition | null> {
+		const geolocation = this.#geolocation();
+		if (!geolocation) return null;
+		return this.#requestPosition(geolocation, {
+			enableHighAccuracy: true,
+			maximumAge: 60_000,
+			timeout: 9_000
 		});
 	}
 
