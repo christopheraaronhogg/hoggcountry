@@ -63,13 +63,6 @@ const APP_RUNTIME_PATHS = [
   '/videos',
   '/videohogg',
   '/trail-assistant',
-  '/app-api/workspace',
-  '/app-api/scout',
-  '/app-api/scout/daily-brief',
-  '/app-api/claw',
-  '/app-api/claw/daily-brief',
-  '/app-api/offline-pack',
-  '/app-api/map/pack',
   '/updates',
   '/tools',
   '/about',
@@ -87,9 +80,23 @@ function isRuntimePath(pathname: string): boolean {
   return APP_RUNTIME_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 
+function isPrivateAppRequestPath(pathname: string): boolean {
+  return pathname === '/app-api' || pathname.startsWith('/app-api/');
+}
+
+function isPrivateAppCachePath(pathname: string): boolean {
+  return pathname === '/app'
+    || pathname.startsWith('/app/')
+    || isPrivateAppRequestPath(pathname);
+}
+
 function isStaticAsset(url: URL): boolean {
   return STATIC_ASSETS.includes(url.pathname)
     || /\.(?:css|js|mjs|json|jsonl|txt|pdf|svg|png|jpg|jpeg|webp|avif|woff2?|mp4)$/iu.test(url.pathname);
+}
+
+async function networkOnly(request: Request): Promise<Response> {
+  return fetch(request, { cache: 'no-store' });
 }
 
 async function cacheFirst(request: Request): Promise<Response> {
@@ -121,6 +128,33 @@ async function networkFirst(request: Request): Promise<Response> {
   }
 }
 
+async function purgePrivateRuntimeCacheEntries(): Promise<void> {
+  const cacheNames = await caches.keys();
+  await Promise.all(cacheNames
+    .filter((cacheName) => cacheName.startsWith('scout-runtime-'))
+    .map(async (cacheName) => {
+      const cache = await caches.open(cacheName);
+      const requests = await cache.keys();
+      await Promise.all(requests
+        .filter((request) => {
+          const url = new URL(request.url);
+          return url.origin === worker.location.origin && isPrivateAppCachePath(url.pathname);
+        })
+        .map((request) => cache.delete(request)));
+    }));
+}
+
+worker.addEventListener('message', (event) => {
+  if (event.data?.type !== 'PURGE_PRIVATE_APP_DATA') return;
+
+  const purge = purgePrivateRuntimeCacheEntries();
+  event.waitUntil(purge);
+  void purge.then(
+    () => event.ports[0]?.postMessage({ ok: true }),
+    () => event.ports[0]?.postMessage({ ok: false })
+  );
+});
+
 worker.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE)
@@ -147,6 +181,14 @@ worker.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== worker.location.origin) return;
+
+  // Authenticated API responses must never enter a shared URL-keyed cache.
+  // Keep this guard before the static-extension check so future .json API
+  // routes are also network-only.
+  if (isPrivateAppRequestPath(url.pathname)) {
+    event.respondWith(networkOnly(request));
+    return;
+  }
 
   if (isStaticAsset(url)) {
     event.respondWith(cacheFirst(request));

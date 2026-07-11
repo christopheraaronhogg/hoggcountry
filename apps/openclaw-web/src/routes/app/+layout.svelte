@@ -1,11 +1,26 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
+  import { browser } from '$app/environment';
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
+  import {
+    configureOfflineFieldPackScope,
+    purgePrivateAppData
+  } from '$lib/offline-field-pack';
   import type { LayoutData } from './$types';
 
   const { data, children } = $props<{ data: LayoutData; children: import('svelte').Snippet }>();
   let isOffline = $state(false);
+  let isLoggingOut = $state(false);
+
+  const initialData = untrack(() => data);
+  if (browser && initialData.authUser && initialData.workspaceId) {
+    configureOfflineFieldPackScope({
+      identityId: initialData.authUser.id,
+      identityEmail: initialData.authUser.email,
+      workspaceId: initialData.workspaceId
+    });
+  }
 
   const appTabs = [
     {
@@ -82,6 +97,18 @@
     isOffline = !navigator.onLine;
   }
 
+  async function handleLogout(event: MouseEvent) {
+    event.preventDefault();
+    if (isLoggingOut) return;
+    isLoggingOut = true;
+
+    try {
+      await purgePrivateAppData();
+    } finally {
+      window.location.assign(resolve('/app/logout'));
+    }
+  }
+
   onMount(() => {
     updateOnlineState();
     window.addEventListener('online', updateOnlineState);
@@ -121,7 +148,9 @@
     {#each visibleAppTabs as tab (tab.href)}
       <a href={resolve(tab.href)} class:is-active={tabActive(tab.href)}>{tab.label}</a>
     {/each}
-    <a href={resolve('/app/logout')}>Switch</a>
+    <a href={resolve('/app/logout')} onclick={handleLogout} aria-disabled={isLoggingOut}>
+      {isLoggingOut ? 'Switching…' : 'Switch'}
+    </a>
   </nav>
 </section>
 

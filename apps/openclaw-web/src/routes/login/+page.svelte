@@ -1,9 +1,25 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import { purgePrivateAppData } from '$lib/offline-field-pack';
   import type { ActionData, PageData } from './$types';
 
   const { data, form } = $props<{ data: PageData; form: ActionData }>();
   const message = $derived(form?.message || data.message);
   const redirectTo = $derived(form?.redirectTo || data.redirectTo || '/app');
+
+  onMount(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('signed_out') !== '1') return;
+
+    void purgePrivateAppData().finally(() => {
+      url.searchParams.delete('signed_out');
+      window.history.replaceState(
+        window.history.state,
+        '',
+        `${url.pathname}${url.search}${url.hash}`
+      );
+    });
+  });
 </script>
 
 <svelte:head>

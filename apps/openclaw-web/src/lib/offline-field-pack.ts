@@ -158,10 +158,49 @@ export interface OfflineFieldPack {
   readonly atReference: OfflineAtReferenceSummary | null;
 }
 
-const FIELD_PACK_STORAGE_KEY = 'hoggcountry.scout.offlineFieldPack.v1';
+export interface OfflineFieldPackScope {
+  readonly identityId: string;
+  readonly identityEmail: string;
+  readonly workspaceId: string;
+}
 
-function storageAvailable(): boolean {
-  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+interface OfflineFieldPackEnvelope {
+  readonly version: 2;
+  readonly identityId: string;
+  readonly workspaceId: string;
+  readonly pack: OfflineFieldPack;
+}
+
+const LEGACY_FIELD_PACK_STORAGE_KEY = 'hoggcountry.scout.offlineFieldPack.v1';
+const SCOPED_FIELD_PACK_STORAGE_PREFIX = 'hoggcountry.scout.offlineFieldPack.v2:';
+const PRIVATE_RUNTIME_CACHE_PREFIX = 'scout-runtime-';
+const PRIVATE_CACHE_PURGE_MESSAGE = 'PURGE_PRIVATE_APP_DATA';
+let activeFieldPackScope: OfflineFieldPackScope | null = null;
+
+function browserStorage(): Storage | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+function fieldPackStorageKey(scope: OfflineFieldPackScope): string {
+  return `${SCOPED_FIELD_PACK_STORAGE_PREFIX}${encodeURIComponent(scope.identityId)}:${encodeURIComponent(scope.workspaceId)}`;
+}
+
+export function configureOfflineFieldPackScope(scope: OfflineFieldPackScope | null): void {
+  const identityId = scope?.identityId.trim() ?? '';
+  const identityEmail = scope ? normalizeEmail(scope.identityEmail) : '';
+  const workspaceId = scope?.workspaceId.trim() ?? '';
+  activeFieldPackScope = identityId && identityEmail && workspaceId
+    ? { identityId, identityEmail, workspaceId }
+    : null;
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -184,32 +223,126 @@ function normalizePack(input: unknown): OfflineFieldPack | null {
   };
 }
 
+function normalizeEnvelope(input: unknown): OfflineFieldPackEnvelope | null {
+  if (
+    !isObject(input)
+    || input.version !== 2
+    || typeof input.identityId !== 'string'
+    || typeof input.workspaceId !== 'string'
+  ) {
+    return null;
+  }
+
+  const pack = normalizePack(input.pack);
+  if (!pack) return null;
+
+  return {
+    version: 2,
+    identityId: input.identityId,
+    workspaceId: input.workspaceId,
+    pack
+  };
+}
+
+function packBelongsToScope(pack: OfflineFieldPack, scope: OfflineFieldPackScope): boolean {
+  if (pack.workspaceId !== scope.workspaceId) return false;
+  if (pack.workspace && pack.workspace.workspaceId !== scope.workspaceId) return false;
+  if (pack.claw && pack.claw.workspaceId !== scope.workspaceId) return false;
+
+  const workspaceEmail = pack.workspace?.betaProfile?.email;
+  return !workspaceEmail || normalizeEmail(workspaceEmail) === scope.identityEmail;
+}
+
+function legacyPackBelongsToScope(pack: OfflineFieldPack, scope: OfflineFieldPackScope): boolean {
+  const workspaceEmail = pack.workspace?.betaProfile?.email;
+  return packBelongsToScope(pack, scope)
+    && typeof workspaceEmail === 'string'
+    && normalizeEmail(workspaceEmail) === scope.identityEmail;
+}
+
 export function readOfflineFieldPack(): OfflineFieldPack | null {
-  if (!storageAvailable()) return null;
+  const storage = browserStorage();
+  const scope = activeFieldPackScope;
+  if (!storage || !scope) return null;
 
   try {
-    const raw = window.localStorage.getItem(FIELD_PACK_STORAGE_KEY);
-    if (!raw) return null;
-    return normalizePack(JSON.parse(raw));
+    const storageKey = fieldPackStorageKey(scope);
+    const raw = storage.getItem(storageKey);
+    if (raw) {
+      const envelope = normalizeEnvelope(JSON.parse(raw));
+      if (
+        envelope
+        && envelope.identityId === scope.identityId
+        && envelope.workspaceId === scope.workspaceId
+        && packBelongsToScope(envelope.pack, scope)
+      ) {
+        return envelope.pack;
+      }
+      storage.removeItem(storageKey);
+    }
+
+    const legacyRaw = storage.getItem(LEGACY_FIELD_PACK_STORAGE_KEY);
+    if (!legacyRaw) return null;
+    const legacyPack = normalizePack(JSON.parse(legacyRaw));
+    if (!legacyPack || !legacyPackBelongsToScope(legacyPack, scope)) {
+      storage.removeItem(LEGACY_FIELD_PACK_STORAGE_KEY);
+      return null;
+    }
+
+    const migrated = writeOfflineFieldPack(legacyPack);
+    if (migrated) storage.removeItem(LEGACY_FIELD_PACK_STORAGE_KEY);
+    return migrated;
   } catch {
     return null;
   }
 }
 
 export function writeOfflineFieldPack(pack: OfflineFieldPack): OfflineFieldPack | null {
-  if (!storageAvailable()) return null;
+  const storage = browserStorage();
+  const scope = activeFieldPackScope;
+  const normalized = normalizePack(pack);
+  if (!storage || !scope || !normalized || !packBelongsToScope(normalized, scope)) return null;
 
   try {
-    window.localStorage.setItem(FIELD_PACK_STORAGE_KEY, JSON.stringify(pack));
-    return pack;
+    const envelope: OfflineFieldPackEnvelope = {
+      version: 2,
+      identityId: scope.identityId,
+      workspaceId: scope.workspaceId,
+      pack: normalized
+    };
+    storage.setItem(fieldPackStorageKey(scope), JSON.stringify(envelope));
+    return normalized;
   } catch {
     return null;
   }
 }
 
+export function purgeOfflineFieldPackStorage(): void {
+  const storage = browserStorage();
+  activeFieldPackScope = null;
+  if (!storage) return;
+
+  try {
+    const keys = Array.from({ length: storage.length }, (_, index) => storage.key(index))
+      .filter((key): key is string => typeof key === 'string');
+    for (const key of keys) {
+      if (key === LEGACY_FIELD_PACK_STORAGE_KEY || key.startsWith(SCOPED_FIELD_PACK_STORAGE_PREFIX)) {
+        storage.removeItem(key);
+      }
+    }
+  } catch {
+    // Privacy cleanup is best-effort in browsers that block storage access.
+  }
+}
+
 function updatePack(update: Partial<OfflineFieldPack> & { readonly workspaceId?: string }): OfflineFieldPack | null {
   const existing = readOfflineFieldPack();
-  const workspaceId = update.workspaceId ?? existing?.workspaceId ?? update.workspace?.workspaceId ?? update.claw?.workspaceId ?? 'unknown';
+  const workspaceId = update.workspaceId
+    ?? existing?.workspaceId
+    ?? update.workspace?.workspaceId
+    ?? update.claw?.workspaceId
+    ?? activeFieldPackScope?.workspaceId;
+  if (!workspaceId) return null;
   return writeOfflineFieldPack({
     version: 1,
     cachedAt: new Date().toISOString(),
@@ -219,6 +352,78 @@ function updatePack(update: Partial<OfflineFieldPack> & { readonly workspaceId?:
     dailyBrief: update.dailyBrief ?? existing?.dailyBrief ?? null,
     atReference: update.atReference ?? existing?.atReference ?? null
   });
+}
+
+function isPrivateAppCachePath(pathname: string): boolean {
+  return pathname === '/app'
+    || pathname.startsWith('/app/')
+    || pathname === '/app-api'
+    || pathname.startsWith('/app-api/');
+}
+
+async function purgePrivateRuntimeCachesDirectly(): Promise<void> {
+  if (typeof window === 'undefined' || !('caches' in window)) return;
+
+  const cacheNames = await window.caches.keys();
+  await Promise.all(cacheNames
+    .filter((cacheName) => cacheName.startsWith(PRIVATE_RUNTIME_CACHE_PREFIX))
+    .map(async (cacheName) => {
+      const cache = await window.caches.open(cacheName);
+      const requests = await cache.keys();
+      await Promise.all(requests
+        .filter((request) => {
+          try {
+            return isPrivateAppCachePath(new URL(request.url).pathname);
+          } catch {
+            return false;
+          }
+        })
+        .map((request) => cache.delete(request)));
+    }));
+}
+
+async function requestPrivateCachePurgeFromServiceWorker(): Promise<boolean> {
+  if (
+    typeof navigator === 'undefined'
+    || !('serviceWorker' in navigator)
+    || !navigator.serviceWorker.controller
+    || typeof MessageChannel === 'undefined'
+  ) {
+    return false;
+  }
+
+  const controller = navigator.serviceWorker.controller;
+  return new Promise((resolve) => {
+    const channel = new MessageChannel();
+    let settled = false;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const finish = (purged: boolean) => {
+      if (settled) return;
+      settled = true;
+      if (timeout !== undefined) clearTimeout(timeout);
+      channel.port1.close();
+      resolve(purged);
+    };
+
+    channel.port1.onmessage = (event) => finish(event.data?.ok === true);
+    timeout = setTimeout(() => finish(false), 1_200);
+
+    try {
+      controller.postMessage({ type: PRIVATE_CACHE_PURGE_MESSAGE }, [channel.port2]);
+    } catch {
+      finish(false);
+    }
+  });
+}
+
+export async function purgePrivateAppData(): Promise<void> {
+  purgeOfflineFieldPackStorage();
+  if (typeof window === 'undefined') return;
+
+  const workerPurged = await requestPrivateCachePurgeFromServiceWorker().catch(() => false);
+  if (!workerPurged) {
+    await purgePrivateRuntimeCachesDirectly().catch(() => undefined);
+  }
 }
 
 export function cacheWorkspaceSnapshot(workspace: OfflineWorkspaceSnapshot | null | undefined): OfflineFieldPack | null {

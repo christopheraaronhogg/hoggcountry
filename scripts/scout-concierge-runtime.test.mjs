@@ -10,6 +10,61 @@ import { loadScoutReferenceProgressData } from '../apps/openclaw-web/src/lib/ser
 const root = new URL('../', import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
 
+class MemoryStorage {
+  #values = new Map();
+
+  get length() {
+    return this.#values.size;
+  }
+
+  key(index) {
+    return [...this.#values.keys()][index] ?? null;
+  }
+
+  getItem(key) {
+    return this.#values.get(key) ?? null;
+  }
+
+  setItem(key, value) {
+    this.#values.set(String(key), String(value));
+  }
+
+  removeItem(key) {
+    this.#values.delete(key);
+  }
+
+  clear() {
+    this.#values.clear();
+  }
+}
+
+function offlinePackFixture({ workspaceId, email }) {
+  return {
+    version: 1,
+    cachedAt: '2026-07-11T12:00:00.000Z',
+    workspaceId,
+    workspace: {
+      workspaceId,
+      betaProfile: { name: 'Hiker', email, trailName: 'Hiker' },
+      profile: null,
+      sections: [],
+      documents: [],
+      resources: [],
+      tools: [],
+      providerConnections: [],
+      clawMessages: [],
+      factCandidates: [],
+      locationHistory: [],
+      skillSettings: {},
+      createdAt: '2026-07-11T12:00:00.000Z',
+      updatedAt: '2026-07-11T12:00:00.000Z'
+    },
+    claw: null,
+    dailyBrief: null,
+    atReference: null
+  };
+}
+
 test('Scout app and API aliases exist while legacy Claw routes remain compatible', () => {
   assert.equal(existsSync(new URL('apps/openclaw-web/src/routes/app/scout/+page.svelte', root)), true);
   assert.equal(existsSync(new URL('apps/openclaw-web/src/routes/app/claw/+page.svelte', root)), true);
@@ -100,6 +155,93 @@ test('Scout offline pack exposes compact AT reference context', async () => {
   assert.ok(summary.datasets.some((dataset) => dataset.id === 'water-candidates' && dataset.recordCount > 1000));
   assert.match(summary.policies.generatedMileDisclosure, /not official ATC miles|not an official ATC mile/u);
   assert.match(summary.policies.liveConditionsDisclosure, /live checks|Offline answers/u);
+});
+
+test('Scout browser privacy boundaries isolate offline packs and purge private caches on logout', async () => {
+  const serviceWorker = read('apps/openclaw-web/src/service-worker.ts');
+  const appLayoutServer = read('apps/openclaw-web/src/routes/app/+layout.server.ts');
+  const appLayout = read('apps/openclaw-web/src/routes/app/+layout.svelte');
+  const logout = read('apps/openclaw-web/src/routes/app/logout/+server.ts');
+  const login = read('apps/openclaw-web/src/routes/login/+page.svelte');
+
+  assert.match(serviceWorker, /isPrivateAppRequestPath/u);
+  assert.match(serviceWorker, /fetch\(request, \{ cache: 'no-store' \}\)/u);
+  assert.match(serviceWorker, /if \(isPrivateAppRequestPath\(url\.pathname\)\)[\s\S]*?respondWith\(networkOnly\(request\)\)/u);
+  assert.match(serviceWorker, /PURGE_PRIVATE_APP_DATA/u);
+  assert.match(serviceWorker, /purgePrivateRuntimeCacheEntries/u);
+  assert.match(serviceWorker, /request\.mode === 'navigate' \|\| isRuntimePath/u);
+
+  assert.match(appLayoutServer, /workspaceId: event\.locals\.workspaceId/u);
+  assert.match(appLayout, /configureOfflineFieldPackScope/u);
+  assert.match(appLayout, /purgePrivateAppData/u);
+  assert.match(appLayout, /handleLogout/u);
+  assert.match(logout, /\/login\?signed_out=1/u);
+  assert.match(login, /signed_out/u);
+  assert.match(login, /purgePrivateAppData/u);
+
+  const offlinePack = await import('../apps/openclaw-web/src/lib/offline-field-pack.ts');
+  assert.equal(typeof offlinePack.configureOfflineFieldPackScope, 'function');
+  assert.equal(typeof offlinePack.purgeOfflineFieldPackStorage, 'function');
+
+  const previousWindow = globalThis.window;
+  const localStorage = new MemoryStorage();
+  globalThis.window = { localStorage };
+
+  const alicePack = offlinePackFixture({ workspaceId: 'workspace-a', email: 'alice@example.com' });
+  const bobPack = offlinePackFixture({ workspaceId: 'workspace-b', email: 'bob@example.com' });
+
+  try {
+    localStorage.setItem('hoggcountry.scout.offlineFieldPack.v1', JSON.stringify(alicePack));
+    offlinePack.configureOfflineFieldPackScope(null);
+    assert.equal(offlinePack.readOfflineFieldPack(), null, 'an unscoped caller must not see a legacy pack');
+
+    offlinePack.configureOfflineFieldPackScope({
+      identityId: 'user-a',
+      identityEmail: 'Alice@Example.com',
+      workspaceId: 'workspace-a'
+    });
+    assert.equal(offlinePack.readOfflineFieldPack()?.workspaceId, 'workspace-a', 'matching legacy data migrates safely');
+    assert.equal(localStorage.getItem('hoggcountry.scout.offlineFieldPack.v1'), null);
+
+    offlinePack.configureOfflineFieldPackScope({
+      identityId: 'user-b',
+      identityEmail: 'bob@example.com',
+      workspaceId: 'workspace-a'
+    });
+    assert.equal(offlinePack.readOfflineFieldPack(), null, 'a second identity cannot read the first identity pack');
+
+    offlinePack.configureOfflineFieldPackScope({
+      identityId: 'user-a',
+      identityEmail: 'alice@example.com',
+      workspaceId: 'workspace-b'
+    });
+    assert.equal(offlinePack.readOfflineFieldPack(), null, 'a second workspace cannot read the first workspace pack');
+
+    offlinePack.configureOfflineFieldPackScope({
+      identityId: 'user-a',
+      identityEmail: 'alice@example.com',
+      workspaceId: 'workspace-a'
+    });
+    assert.equal(offlinePack.writeOfflineFieldPack(bobPack), null, 'workspace-mismatched writes fail closed');
+    assert.equal(offlinePack.readOfflineFieldPack()?.workspaceId, 'workspace-a');
+
+    offlinePack.configureOfflineFieldPackScope({
+      identityId: 'user-b',
+      identityEmail: 'bob@example.com',
+      workspaceId: 'workspace-b'
+    });
+    assert.equal(offlinePack.writeOfflineFieldPack(bobPack)?.workspaceId, 'workspace-b');
+    localStorage.setItem('hoggcountry.scout.offlineFieldPack.v1', JSON.stringify(alicePack));
+    localStorage.setItem('unrelated.public.preference', 'keep');
+    offlinePack.purgeOfflineFieldPackStorage();
+
+    const remainingKeys = Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index));
+    assert.deepEqual(remainingKeys, ['unrelated.public.preference'], 'logout purge leaves unrelated local storage intact');
+  } finally {
+    offlinePack.configureOfflineFieldPackScope(null);
+    if (previousWindow === undefined) delete globalThis.window;
+    else globalThis.window = previousWindow;
+  }
 });
 
 test('Scout admin resource explorer exposes agent-accessible tables and docs', () => {

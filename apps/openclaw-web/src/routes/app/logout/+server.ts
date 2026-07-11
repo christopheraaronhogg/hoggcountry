@@ -17,5 +17,5 @@ export const GET: RequestHandler = async ({ cookies, locals, url, fetch }) => {
   clearAuthCookie(cookies, url);
   cookies.delete(BETA_COOKIE, betaCookieDeleteOptions(url));
 
-  throw redirect(303, '/login');
+  throw redirect(303, '/login?signed_out=1');
 };
