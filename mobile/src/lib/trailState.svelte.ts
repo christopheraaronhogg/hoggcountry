@@ -116,7 +116,7 @@ import {
 	type TrailSnapGeometry
 } from './trail/trail-geometry';
 import { createBrowserGeolocation, TrailPositionService } from './trail-position-service';
-import { InMemoryContextPackStore } from './scout';
+import { contextPackStatusAt, InMemoryContextPackStore } from './scout';
 import type { ContextPack, ContextPackStatus, ScoutAnswer } from './scout';
 import type { LoadoutItem } from './scout/types';
 import {
@@ -778,7 +778,11 @@ class TrailAssistantStore {
 	}
 
 	get fieldPackStatus() {
-		return this.#fieldPackStatus;
+		return this.fieldPackStatusAt(Date.now());
+	}
+
+	fieldPackStatusAt(nowMs: number) {
+		return contextPackStatusAt(this.#fieldPackStatus, nowMs);
 	}
 
 	/** On-device Gemma model file state, or null off-native / before first probe. */

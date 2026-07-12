@@ -45,6 +45,16 @@ test('scoped freshness labels depend on the shared minute clock', () => {
 		assert.match(source, /minuteClock/, `${name} should subscribe to the minute clock`);
 		assert.match(source, /formatAge|formatTimeUntil/, `${name} should use a shared formatter`);
 	}
+
+	for (const name of ['TodayTab', 'OfflineStatus', 'AccountTab']) {
+		const source = componentSource(name);
+		assert.match(source, /minuteClock/, `${name} should subscribe to the shared clock`);
+		assert.match(
+			source,
+			/fieldPackStatusAt\(nowMs\)/,
+			`${name} should derive field-pack expiry from the shared clock`
+		);
+	}
 });
 
 test('every visible trail preference has an observable app effect', () => {

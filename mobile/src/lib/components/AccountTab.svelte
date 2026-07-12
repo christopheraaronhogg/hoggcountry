@@ -4,6 +4,7 @@
 	import { isSelfTracked, TOTAL_AT_MILES } from '$lib/scout/hike-profile';
 	import type { MileSource } from '$lib/scout/hike-profile';
 	import { onMount } from 'svelte';
+	import { minuteClock } from '$lib/minute-clock.svelte';
 	import PackStatus from './PackStatus.svelte';
 	import OfflineStatus from './OfflineStatus.svelte';
 	import SourceChip from './SourceChip.svelte';
@@ -79,11 +80,14 @@
 		}
 	}
 	onMount(() => {
+		const releaseMinuteClock = minuteClock.retain();
 		void cloudAuth.init();
 		// Reflect current notification permission/subscription (no prompt, no network
 		// on the critical path) so the toggle shows the right state when opened.
 		void pushManager.resync();
+		return releaseMinuteClock;
 	});
+	const nowMs = $derived(minuteClock.nowMs);
 
 	async function togglePush() {
 		if (pushManager.busy) return;
@@ -184,7 +188,7 @@
 							: 'unconfigured'
 	);
 	const fieldPack = $derived(trailAssistant.fieldPack);
-	const fieldPackStatus = $derived(trailAssistant.fieldPackStatus);
+	const fieldPackStatus = $derived(trailAssistant.fieldPackStatusAt(nowMs));
 	const fieldPackMiles = $derived(Math.max(0, fieldPack.frame.endMile - fieldPack.frame.startMile));
 	const fieldPackRegion = $derived(fieldPack.downloadedRegions[0] ?? trailAssistant.trailSettings.offlineRegion);
 	const fieldPackLoaded = $derived(

@@ -224,7 +224,7 @@ export interface ContextPack {
 export interface ContextPackStore {
 	load(): Promise<ContextPack>;
 	get(): ContextPack;
-	getStatus(): ContextPackStatus;
+	getStatus(nowMs?: number): ContextPackStatus;
 	refreshFromEndpoint(endpoint: string, fetcher?: typeof fetch): Promise<ContextPack>;
 	updateHiker(patch: Partial<HikerProfile>): Promise<void>;
 	updateWeather(weather: CachedWeather | null): Promise<void>;

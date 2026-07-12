@@ -8,7 +8,11 @@ import { defaultToolRegistry } from './tool-registry.ts';
 import type { ContextPack, ContextPackStore, ScoutDiagnosticsSink, ScoutRuntime, ToolRegistry } from './types.ts';
 
 export * from './types.ts';
-export { InMemoryContextPackStore, createCapacitorPreferencesAdapter } from './context-pack-store.ts';
+export {
+	InMemoryContextPackStore,
+	contextPackStatusAt,
+	createCapacitorPreferencesAdapter
+} from './context-pack-store.ts';
 export { InMemoryToolRegistry, defaultToolRegistry, runToolsFor } from './tool-registry.ts';
 export { OnDeviceGemmaProvider, OnDeviceModelUnavailableError } from './providers/on-device-gemma.ts';
 export type { OnDeviceGemmaBridge, GemmaTier, GemmaModelDescriptor } from './providers/on-device-gemma.ts';

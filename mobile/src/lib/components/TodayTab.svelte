@@ -42,7 +42,7 @@
 	// server can reach NWS it is an official point forecast; otherwise the UI stays
 	// honest about cache/missing state.
 	const wx = $derived(trailAssistant.fieldPack.weather);
-	const packStatus = $derived(trailAssistant.fieldPackStatus);
+	const packStatus = $derived(trailAssistant.fieldPackStatusAt(nowMs));
 	const packRefreshNeedsAttention = $derived(
 		packStatus.state === 'error' || packStatus.state === 'stale'
 	);

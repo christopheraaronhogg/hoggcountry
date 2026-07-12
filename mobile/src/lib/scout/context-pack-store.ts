@@ -86,8 +86,8 @@ export class InMemoryContextPackStore implements ContextPackStore {
 		return this.pack;
 	}
 
-	getStatus(): ContextPackStatus {
-		return this.status;
+	getStatus(nowMs = Date.now()): ContextPackStatus {
+		return contextPackStatusAt(this.status, nowMs);
 	}
 
 	getPersistenceResult(): ContextPackPersistenceResult {
@@ -378,20 +378,53 @@ function normalizeRemoteContextPack(payload: unknown): ContextPack | null {
 }
 
 function statusFromPack(pack: ContextPack, source: ContextPackStatus['source']): ContextPackStatus {
-	const validUntilMs = pack.validUntil ? Date.parse(pack.validUntil) : Number.NaN;
-	const stale = Number.isFinite(validUntilMs) && validUntilMs < Date.now();
 	const loadedAt = pack.generatedAt || null;
-	const label = stale ? 'Stale field pack' : source === 'remote' ? 'Field pack ready' : 'Saved field pack';
 	const regions = pack.downloadedRegions.length ? pack.downloadedRegions.join(' · ') : 'No named regions';
 
-	return {
-		state: stale ? 'stale' : source === 'remote' ? 'ready' : 'saved',
-		label,
+	return contextPackStatusAt({
+		state: source === 'remote' ? 'ready' : 'saved',
+		label: source === 'remote' ? 'Field pack ready' : 'Saved field pack',
 		detail: `${regions}. ${pack.pilotNotice ?? 'Use receipts and refresh before safety-critical decisions.'}`,
 		lastLoadedAt: loadedAt,
 		validUntil: pack.validUntil ?? null,
 		source
-	};
+	}, Date.now());
+}
+
+/**
+ * Re-evaluate the time-dependent truth of a cached field-pack status.
+ *
+ * Store events remain snapshots so no background timer or network work is needed;
+ * UI surfaces pass the shared minute clock when they render. Cached bytes remain
+ * usable after expiry, but ready/saved can never stay frozen as "current".
+ */
+export function contextPackStatusAt(
+	status: ContextPackStatus,
+	nowMs: number
+): ContextPackStatus {
+	if (status.state !== 'ready' && status.state !== 'saved') return status;
+
+	const validUntilMs = status.validUntil ? Date.parse(status.validUntil) : Number.NaN;
+	if (!Number.isFinite(validUntilMs)) {
+		return {
+			...status,
+			state: 'stale',
+			label: 'Pack freshness unknown',
+			detail: `This pack has no valid expiry time. Refresh before relying on volatile water, weather, closure, town, or service facts. ${status.detail}`
+		};
+	}
+
+	const effectiveNowMs = Number.isFinite(nowMs) ? nowMs : Date.now();
+	if (validUntilMs <= effectiveNowMs) {
+		return {
+			...status,
+			state: 'stale',
+			label: 'Stale field pack',
+			detail: `This field pack expired and remains cached planning context only. Refresh before relying on volatile water, weather, closure, town, or service facts. ${status.detail}`
+		};
+	}
+
+	return status;
 }
 
 export function createCapacitorPreferencesAdapter(preferences: {

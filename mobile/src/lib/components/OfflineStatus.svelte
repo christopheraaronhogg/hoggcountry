@@ -21,7 +21,7 @@
 		error: 'Cached pack'
 	} as const;
 
-	const status = $derived(trailAssistant.fieldPackStatus);
+	const status = $derived(trailAssistant.fieldPackStatusAt(nowMs));
 	const packRegions = $derived(trailAssistant.fieldPack.downloadedRegions);
 	const receiptCount = $derived(trailAssistant.fieldPack.sourceReceipts?.length ?? 0);
 </script>
@@ -34,7 +34,7 @@
 		</div>
 		<span class="status-pill" data-status={status.state}>
 			<span class="dot" aria-hidden="true"></span>
-			{statusLabel[status.state]}
+			{status.state === 'stale' ? status.label : statusLabel[status.state]}
 		</span>
 	</header>
 
