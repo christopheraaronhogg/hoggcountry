@@ -781,6 +781,13 @@ class TrailAssistantStore {
 		return this.fieldPackStatusAt(Date.now());
 	}
 
+	get fieldPackPersistence() {
+		// Persistence lives in the plain store; touch the reactive status that changes
+		// after every verified write/failure so Svelte consumers re-read this result.
+		void this.#fieldPackStatus;
+		return this.#fieldPackStore.getPersistenceResult();
+	}
+
 	fieldPackStatusAt(nowMs: number) {
 		return contextPackStatusAt(this.#fieldPackStatus, nowMs);
 	}

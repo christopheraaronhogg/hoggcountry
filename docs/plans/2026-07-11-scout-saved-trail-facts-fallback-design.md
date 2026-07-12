@@ -34,9 +34,11 @@ independent Cloud Scout lane, and it stays hidden when the local runtime is usab
 
 ## Facts and direction
 
-A pure function reads only the current in-memory `ContextPack` and its derived
-freshness status. It uses the shared `@hoggcountry/trail-data` direction contract
-and a 120-mile cap to select, in actual encounter order:
+A pure function reads the current in-memory `ContextPack`, the app's current saved
+mile/direction, and the pack's derived freshness status. Keeping live app position
+separate prevents an old pack center from overriding a mile the hiker just corrected.
+It uses the shared `@hoggcountry/trail-data` direction contract and a 120-mile cap to
+select, in actual encounter order:
 
 1. current saved AT mile and NOBO/SOBO direction;
 2. nearest loaded water;
@@ -58,16 +60,20 @@ An exact-current landmark remains eligible under the shared mile tolerance.
 - Town/access is a candidate; access and services require confirmation.
 - A stale, errored, fallback, or unknown-freshness pack gets a prominent cached-only
   warning. A ready/saved pack still says conditions can change and should be checked.
+- If persistence verification failed, the heading changes to **Loaded trail facts**
+  and says the data is available only for this session; it never calls those bytes
+  saved for offline restart.
 - An empty 120-mile slice says no matching fact is loaded; it does not imply that the
   landmark does not exist.
 
 ## UI behavior
 
-The card sits outside the conversation region and above the composer. It uses a
-compact disclosure so the label and pack warning remain visible without permanently
-crowding the phone screen. Expanding it shows the fact rows and a plain explanation
-of why Gemma is unavailable. The card updates from the existing shared minute clock,
-so a pack that expires while the app remains open changes to cached-only truth.
+The compact disclosure sits outside the conversation region and above the composer.
+It is collapsed by default so a missing model cannot squeeze the transcript or
+composer. When opened, its body has a bounded internal scroll area; the two-column
+fact grid collapses to one column on narrow phones. It includes a plain explanation
+of why Gemma is unavailable and updates from the existing shared minute clock, so a
+pack that expires while the app remains open changes to cached-only truth.
 
 There is no question parser and no canned prose response. The card is useful even
 before a prompt and cannot be mistaken for an answer to an arbitrary safety question.

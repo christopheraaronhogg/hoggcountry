@@ -14,6 +14,7 @@ export {
 	createCapacitorPreferencesAdapter
 } from './context-pack-store.ts';
 export { InMemoryToolRegistry, defaultToolRegistry, runToolsFor } from './tool-registry.ts';
+export * from './saved-trail-facts.ts';
 export { OnDeviceGemmaProvider, OnDeviceModelUnavailableError } from './providers/on-device-gemma.ts';
 export type { OnDeviceGemmaBridge, GemmaTier, GemmaModelDescriptor } from './providers/on-device-gemma.ts';
 export { CloudScoutProvider } from './providers/cloud-scout.ts';

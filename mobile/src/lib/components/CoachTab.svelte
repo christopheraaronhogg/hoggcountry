@@ -21,6 +21,7 @@
 	import ConfidenceBadge from './ConfidenceBadge.svelte';
 	import Icon from './Icon.svelte';
 	import ScoutModelStatusBubble from './ScoutModelStatusBubble.svelte';
+	import ScoutSavedFactsCard from './ScoutSavedFactsCard.svelte';
 	import ScoutMessageText from './ScoutMessageText.svelte';
 	import { isScoutAuthResumeMessage } from '$lib/scout/scout-auth-resume';
 	import { scoutMarkdownToPlainText } from '$lib/scout/scout-markdown';
@@ -747,6 +748,8 @@
 			<div class="live-edge" bind:this={liveEdgeRef} aria-hidden="true"></div>
 			<div class="turn-spacer" aria-hidden="true" style:height={`${turnSpacer}px`}></div>
 		</div>
+
+		<ScoutSavedFactsCard />
 
 		<p class="sr-status" aria-live="polite">{outOfViewStatus}</p>
 

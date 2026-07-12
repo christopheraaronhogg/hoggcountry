@@ -46,7 +46,7 @@ test('scoped freshness labels depend on the shared minute clock', () => {
 		assert.match(source, /formatAge|formatTimeUntil/, `${name} should use a shared formatter`);
 	}
 
-	for (const name of ['TodayTab', 'OfflineStatus', 'AccountTab']) {
+	for (const name of ['TodayTab', 'OfflineStatus', 'AccountTab', 'ScoutSavedFactsCard']) {
 		const source = componentSource(name);
 		assert.match(source, /minuteClock/, `${name} should subscribe to the shared clock`);
 		assert.match(
@@ -55,6 +55,39 @@ test('scoped freshness labels depend on the shared minute clock', () => {
 			`${name} should derive field-pack expiry from the shared clock`
 		);
 	}
+});
+
+test('saved trail facts stay deterministic and outside the Scout conversation', () => {
+	const coach = componentSource('CoachTab');
+	const card = componentSource('ScoutSavedFactsCard');
+	const selector = libSource('scout/saved-trail-facts.ts');
+	const store = libSource('trailState.svelte.ts');
+	const conversationLabel = coach.indexOf('aria-label="Scout conversation"');
+	const outsideCard = coach.indexOf('\n\t\t</div>\n\n\t\t<ScoutSavedFactsCard />');
+
+	assert.ok(conversationLabel >= 0, 'Scout conversation region should remain explicit');
+	assert.ok(outsideCard > conversationLabel, 'saved facts should render after the conversation closes');
+	assert.match(selector, /'Saved trail facts'/);
+	assert.match(card, /Not an AI answer/);
+	assert.match(card, /data-saved-trail-facts/);
+	assert.match(card, /deterministic facts from the field pack loaded in this app/);
+	assert.match(card, /No water entry is loaded within/);
+	assert.match(card, /confirm current flow and treat\/filter/);
+	assert.doesNotMatch(card, /class="message|ScoutAnswer|ChatMessage|SourceChip|ConfidenceBadge/);
+	assert.match(card, /<details class="saved-facts card"/);
+	assert.match(card, /max-height: min\(46dvh, 360px\)/);
+	assert.match(card, /overflow-y: auto/);
+	assert.match(card, /readiness\.detail/);
+	assert.match(card, /readiness\.stage !== 'needs_model' \|\| trailAssistant\.modelStatus !== null/);
+	assert.match(card, /font-size: var\(--text-sm\)/);
+	assert.match(card, /fieldPackPersistence/);
+	assert.doesNotMatch(card, /in the saved pack|Saved classification only/);
+	assert.match(store, /get fieldPackPersistence\(\)[\s\S]{0,240}#fieldPackStatus/);
+	assert.match(selector, /trailAhead\(/);
+	assert.match(selector, /directedMileDelta\(/);
+	assert.match(selector, /SAVED_TRAIL_FACTS_MAX_MILES = 120/);
+	assert.match(card, /currentMile: trailAssistant\.currentMile/);
+	assert.match(card, /direction: trailAssistant\.hikeProfile\.direction/);
 });
 
 test('every visible trail preference has an observable app effect', () => {
