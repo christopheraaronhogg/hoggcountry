@@ -212,7 +212,10 @@ function run(label, command, commandArgs, options = {}) {
 }
 
 function teamBuildSettings() {
-  return teamId ? [`DEVELOPMENT_TEAM=${teamId}`] : [];
+  const settings = [];
+  if (teamId) settings.push(`DEVELOPMENT_TEAM=${teamId}`);
+  if (provisioningProfile) settings.push(`PROVISIONING_PROFILE_SPECIFIER=${provisioningProfile}`);
+  return settings;
 }
 
 function appStoreConnectAuthArgs() {
