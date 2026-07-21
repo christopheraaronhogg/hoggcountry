@@ -2,9 +2,15 @@
 // mile-based landmark/milestone/dispatch placement, progress math, preview.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const mod = await import('../apps/openclaw-web/src/lib/server/journey.ts');
 const { buildJourney } = mod;
+const { nearestAtMilepost, nearestAtMilepostInGeometry } = await import('../apps/openclaw-web/src/lib/server/at-location.ts');
+const { isSvelteKitDataRequest } = await import('../apps/openclaw-web/src/lib/service-worker-policy.ts');
+const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 // loadProfileJourney/loadJourney aren't unit-tested here: they dynamically
 // import cross-tree (src/data) + $lib modules that only resolve under Vite,
 // not node:test. buildJourney carries their logic; the loaders are verified
@@ -147,4 +153,42 @@ test('personal journey: zero mile renders as preview with no current state', () 
   });
   assert.equal(j.summary.isPreview, true);
   assert.equal(j.summary.currentStateName, null);
+});
+
+test('Journey route data is dynamic even though SvelteKit names it .json', () => {
+  assert.equal(isSvelteKitDataRequest(new URL('https://hoggcountry.com/journey/__data.json')), true);
+  assert.equal(isSvelteKitDataRequest(new URL('https://hoggcountry.com/app/progress/__data.json?x-sveltekit-invalidated=1')), true);
+  assert.equal(isSvelteKitDataRequest(new URL('https://hoggcountry.com/at-mileposts.json')), false);
+
+  const worker = fs.readFileSync(path.join(ROOT, 'apps/openclaw-web/src/service-worker.ts'), 'utf8');
+  assert.ok(
+    worker.indexOf('if (isSvelteKitDataRequest(url))') < worker.indexOf('if (isStaticAsset(url))'),
+    'dynamic SvelteKit data must be routed before generic static JSON'
+  );
+  assert.match(worker, /networkFirst\(request, true\)/u);
+});
+
+test('Journey snapping interpolates on the same dense calibrated route as mobile', async () => {
+  const synthetic = {
+    spacingMeters: 20,
+    totalMiles: 20,
+    m: [10, 20],
+    lat: [0, 0],
+    lon: [0, 0.01]
+  };
+  const midpoint = nearestAtMilepostInGeometry(0, 0.005, synthetic);
+  assert.ok(Math.abs(midpoint.mile - 15) < 0.01, `expected interpolated mile 15, got ${midpoint.mile}`);
+  assert.ok(Math.abs(midpoint.longitude - 0.005) < 0.000001);
+
+  const dense = JSON.parse(
+    fs.readFileSync(path.join(ROOT, 'mobile/static/trail/route-snap-20m.json'), 'utf8')
+  );
+  assert.equal(dense.spacingMeters, 20);
+  assert.ok(dense.m.length > 160_000, 'expected the improved dense snap asset');
+
+  // Regression coordinate from the MA mismatch that prompted the accuracy
+  // work: the old generated frame said ~1541.6; the calibrated frame is ~1582.
+  const snapped = await nearestAtMilepost(42.5412, -73.14655);
+  assert.ok(snapped.mile > 1581 && snapped.mile < 1583, `expected about mile 1582, got ${snapped.mile}`);
+  assert.ok(Math.abs(snapped.mile - 1541.6) > 20, 'must not return the retired generated-route mile');
 });

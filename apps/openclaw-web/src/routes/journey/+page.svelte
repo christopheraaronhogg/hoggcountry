@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { invalidateAll } from '$app/navigation';
+  import { onMount } from 'svelte';
   import WaitlistSignup from '$lib/components/WaitlistSignup.svelte';
   import ElevationProfile from '$lib/components/ElevationProfile.svelte';
   import type { PageData } from './$types';
@@ -7,6 +9,29 @@
   const { data } = $props<{ data: PageData }>();
   const journey = $derived(data.journey);
   const s = $derived(journey.summary);
+  let lastRefreshAt = 0;
+
+  function refreshJourney(force = false): void {
+    if (document.visibilityState !== 'visible') return;
+    const now = Date.now();
+    if (!force && now - lastRefreshAt < 15_000) return;
+    lastRefreshAt = now;
+    void invalidateAll();
+  }
+
+  onMount(() => {
+    // Covers an installed PWA restored from memory instead of performing a new
+    // navigation. The worker revalidates the resulting __data.json request.
+    refreshJourney(true);
+    const onVisibilityChange = () => refreshJourney();
+    const onPageShow = (event: PageTransitionEvent) => refreshJourney(event.persisted);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('pageshow', onPageShow);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('pageshow', onPageShow);
+    };
+  });
 
   function fmtMile(m: number): string {
     return m.toLocaleString('en-US', { maximumFractionDigits: 1 });

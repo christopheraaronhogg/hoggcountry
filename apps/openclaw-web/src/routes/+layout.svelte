@@ -64,7 +64,18 @@
       return;
     }
 
-    void navigator.serviceWorker.register('/service-worker.js').catch((error) => {
+    // Existing installed PWAs can resume a still-open document after deploy.
+    // Reload once when the new worker takes control so the visible app and its
+    // route-data cache move to the same release immediately.
+    const hadController = navigator.serviceWorker.controller !== null;
+    let reloadingForUpdate = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController || reloadingForUpdate) return;
+      reloadingForUpdate = true;
+      window.location.reload();
+    }, { once: true });
+
+    void navigator.serviceWorker.register('/service-worker.js', { updateViaCache: 'none' }).catch((error) => {
       console.warn('Scout service worker registration failed:', error);
     });
   }

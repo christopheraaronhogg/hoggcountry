@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 
 import { build, files, version } from '$service-worker';
+import { isSvelteKitDataRequest } from '$lib/service-worker-policy';
 
 const worker = self as unknown as ServiceWorkerGlobalScope;
 const STATIC_CACHE = `scout-static-${version}`;
@@ -53,6 +54,7 @@ const APP_RUNTIME_PATHS = [
   '/app/docs',
   '/guide',
   '/guide/manual-builder',
+  '/journey',
   '/at-map',
   '/at-weather',
   '/trail',
@@ -108,11 +110,11 @@ async function cacheFirst(request: Request): Promise<Response> {
   return response;
 }
 
-async function networkFirst(request: Request): Promise<Response> {
+async function networkFirst(request: Request, bypassHttpCache = false): Promise<Response> {
   const cache = await caches.open(RUNTIME_CACHE);
 
   try {
-    const response = await fetch(request);
+    const response = await fetch(request, bypassHttpCache ? { cache: 'no-store' } : undefined);
     if (response.ok) await cache.put(request, response.clone());
     return response;
   } catch {
@@ -187,6 +189,14 @@ worker.addEventListener('fetch', (event) => {
   // routes are also network-only.
   if (isPrivateAppRequestPath(url.pathname)) {
     event.respondWith(networkOnly(request));
+    return;
+  }
+
+  // SvelteKit client navigation fetches /route/__data.json. Treating that as a
+  // static .json asset pinned Dad's first cached Journey mile forever in an
+  // installed PWA. Revalidate it every time, retaining only an offline fallback.
+  if (isSvelteKitDataRequest(url)) {
+    event.respondWith(networkFirst(request, true));
     return;
   }
 

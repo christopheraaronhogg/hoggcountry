@@ -22,7 +22,10 @@ const PREVIEW_JOURNEY = {
   elevation: { points: [], minFt: 0, maxFt: 0 }
 };
 
-export const load: PageServerLoad = async ({ fetch, url }) => {
+export const load: PageServerLoad = async ({ fetch, url, setHeaders }) => {
+  setHeaders({
+    'cache-control': 'no-store, max-age=0'
+  });
   try {
     const journey = await loadJourney({ fetch, requestOrigin: url.origin });
     return { journey };
