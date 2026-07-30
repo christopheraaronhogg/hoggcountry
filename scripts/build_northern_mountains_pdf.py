@@ -138,19 +138,20 @@ STYLE = {
         "cover_title",
         parent=styles["Title"],
         fontName=DISPLAY_FONT,
-        fontSize=55,
-        leading=47,
+        fontSize=52,
+        leading=44,
         textColor=colors.white,
-        spaceAfter=12,
+        alignment=TA_LEFT,
+        spaceAfter=0,
     ),
     "cover_lede": ParagraphStyle(
         "cover_lede",
         parent=styles["BodyText"],
         fontName=BODY_FONT,
-        fontSize=11,
-        leading=17,
+        fontSize=10.5,
+        leading=15,
         textColor=HexColor("#E9EEE9"),
-        spaceAfter=12,
+        spaceAfter=0,
     ),
     "section_kicker": ParagraphStyle(
         "section_kicker",
@@ -289,8 +290,20 @@ class CoverBackground(Flowable):
         canvas.roundRect(0, 0, self.width, self.height, 12, fill=1, stroke=0)
         canvas.setStrokeColor(HexColor("#5E7462"))
         canvas.setLineWidth(0.45)
-        for offset in range(12, int(self.height), 18):
-            canvas.arc(self.width * 0.38, -self.height * 0.9 + offset, self.width * 1.24, self.height * 1.45 + offset, 20, 144)
+        # Keep the contour texture in the quiet right edge so it supports the
+        # cover hierarchy instead of cutting through the title.
+        for offset in range(0, 100, 14):
+            y = self.height - 18 - offset
+            canvas.bezier(
+                self.width * 0.69,
+                y - 18,
+                self.width * 0.81,
+                y + 10,
+                self.width * 0.92,
+                y + 12,
+                self.width - 8,
+                y - 5,
+            )
         canvas.restoreState()
 
 
@@ -339,16 +352,18 @@ def score_bar(score: float, width: float = 128, height: float = 5) -> Drawing:
 
 
 def cover_profile(data: dict[str, Any]) -> Table:
-    drawing = elevation_drawing(data["summary"]["profile"], CONTENT_WIDTH - 28, 120, ORANGE)
+    block_width = CONTENT_WIDTH - 28
+    inner_width = block_width - 24
+    drawing = elevation_drawing(data["summary"]["profile"], inner_width, 120, ORANGE)
     labels = Table(
         [[
             paragraph(f"MILE {fmt(data['guideStartMile'])}", STYLE["metric_label"]),
             paragraph(f"KATAHDIN {fmt(data['terminusMile'], 1)}", ParagraphStyle("right_metric", parent=STYLE["metric_label"], alignment=TA_RIGHT)),
         ]],
-        colWidths=[(CONTENT_WIDTH - 28) / 2] * 2,
+        colWidths=[inner_width / 2] * 2,
     )
     labels.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
-    block = Table([[drawing], [labels]], colWidths=[CONTENT_WIDTH - 28])
+    block = Table([[drawing], [labels]], colWidths=[block_width])
     block.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), HexColor("#263A2D")),
         ("BOX", (0, 0), (-1, -1), 0.5, HexColor("#5D6F60")),
@@ -563,19 +578,21 @@ def cover_story(data: dict[str, Any]) -> list[Any]:
     title_content = Table([[
         Table([
             [paragraph("DAD'S NORTHERN FIELD REFERENCE | 2026 NOBO", STYLE["cover_kicker"])],
-            [paragraph("MOUNTAINS<br/>AHEAD.", STYLE["cover_title"])],
+            [Spacer(1, 12)],
+            [paragraph("MOUNTAINS<br/><font color='#E5D9B9'>AHEAD.</font>", STYLE["cover_title"])],
+            [Spacer(1, 14)],
             [paragraph(
                 f"Every named mountain in the final {fmt(data['summary']['distanceMiles'], 1)} miles, "
                 f"ordered northbound from mile {fmt(data['guideStartMile'])} to Baxter Peak.",
                 STYLE["cover_lede"],
             )],
-        ], colWidths=[CONTENT_WIDTH - 52]),
+        ], colWidths=[CONTENT_WIDTH - 56]),
     ]], colWidths=[CONTENT_WIDTH - 28])
     title_content.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), colors.transparent),
         ("LEFTPADDING", (0, 0), (-1, -1), 14),
         ("RIGHTPADDING", (0, 0), (-1, -1), 14),
-        ("TOPPADDING", (0, 0), (-1, -1), 18),
+        ("TOPPADDING", (0, 0), (-1, -1), 22),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
     ]))
     cover_stack = Table([[background]], colWidths=[CONTENT_WIDTH], rowHeights=[265])
