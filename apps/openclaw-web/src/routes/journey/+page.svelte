@@ -94,6 +94,7 @@
 
     <div class="hero-links">
       <a class="btn btn--primary" href="/at-map">Live map</a>
+      <a class="btn" href="/mountains-ahead">Mountains ahead</a>
       <a class="btn" href="/updates">Trail updates</a>
       <a class="btn" href="/guide">Field guide</a>
     </div>

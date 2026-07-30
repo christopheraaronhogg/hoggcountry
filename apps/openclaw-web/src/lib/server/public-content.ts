@@ -285,6 +285,7 @@ export async function loadPublicUrls(origin: string): Promise<string[]> {
     '/guide',
     '/tools',
     '/at-map',
+    '/mountains-ahead',
     '/track',
     '/about',
     '/login',

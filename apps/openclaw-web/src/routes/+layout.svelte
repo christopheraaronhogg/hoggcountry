@@ -16,6 +16,7 @@
 
   const publicToolsLinks = [
     { href: '/journey', label: 'The Journey', external: false },
+    { href: '/mountains-ahead', label: 'Mountains Ahead', external: false },
     { href: '/scout', label: 'Scout', external: false },
     { href: '/updates', label: 'Trail Updates', external: false },
     { href: '/guide', label: 'Field Guide', external: false },
@@ -240,7 +241,7 @@
     </div>
 
     <main id="main-content" class="site-main public-site-main" tabindex="-1">
-      {#if isGuidePage || page.url.pathname === '/' || page.url.pathname === '/at-map' || page.url.pathname === '/track'}
+      {#if isGuidePage || page.url.pathname === '/' || page.url.pathname === '/at-map' || page.url.pathname === '/track' || page.url.pathname === '/mountains-ahead'}
         {@render children()}
       {:else}
         <div class="container public-page-wrap">
