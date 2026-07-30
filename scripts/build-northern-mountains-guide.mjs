@@ -16,7 +16,8 @@ const PATHS = {
     'data/at-open-reference/full_trail_rc1/processed/tread_rockiness_v2_1/full_trail_rockiness_v2_1_by_1mi.json'
   ),
   calibration: path.join(ROOT, 'src/data/at-mile-calibration.json'),
-  output: path.join(ROOT, 'apps/openclaw-web/src/lib/data/northern-mountains-guide.json')
+  output: path.join(ROOT, 'apps/openclaw-web/src/lib/data/northern-mountains-guide.json'),
+  candidateOutput: path.join(ROOT, 'apps/openclaw-web/src/lib/data/northern-mountains-guide-b.json')
 };
 
 // Curated named peaks that the AT crosses or closely skirts from mile 1850
@@ -197,10 +198,18 @@ function valleyBefore(elevation, peakMile, previousPeakMile) {
   return points.reduce((lowest, point) => point.ft < lowest.ft ? point : lowest, points[0]);
 }
 
+function valleyAfter(elevation, peakMile, nextPeakMile) {
+  const searchEnd = Math.min(TERMINUS_MILE, nextPeakMile, peakMile + 8);
+  if (searchEnd - peakMile < 0.02) return null;
+  const points = elevationWindow(elevation, peakMile, searchEnd);
+  return points.reduce((lowest, point) => point.ft < lowest.ft ? point : lowest, points[0]);
+}
+
 function terrainMetrics(points) {
   let gainFt = 0;
   let lossFt = 0;
   let maxGradePercent = 0;
+  let maxDescentGradePercent = 0;
 
   for (let index = 1; index < points.length; index += 1) {
     const previous = points[index - 1];
@@ -216,9 +225,10 @@ function terrainMetrics(points) {
     if (distanceMiles < 0.02) continue;
     const grade = Math.abs(deltaFeet / (distanceMiles * 5280)) * 100;
     maxGradePercent = Math.max(maxGradePercent, grade);
+    if (deltaFeet < 0) maxDescentGradePercent = Math.max(maxDescentGradePercent, grade);
   }
 
-  return { gainFt, lossFt, maxGradePercent };
+  return { gainFt, lossFt, maxGradePercent, maxDescentGradePercent };
 }
 
 function rockinessMetrics(rockiness, startMile, endMile) {
@@ -273,6 +283,37 @@ function inclineLabel(maxGradePercent) {
   if (maxGradePercent >= 22) return 'Steep pitches';
   if (maxGradePercent >= 15) return 'Sustained incline';
   return 'Rolling incline';
+}
+
+function declineLabel(maxGradePercent) {
+  if (maxGradePercent >= 30) return 'Very steep downhill pitches';
+  if (maxGradePercent >= 22) return 'Steep downhill pitches';
+  if (maxGradePercent >= 15) return 'Sustained downhill';
+  return 'Rolling descent';
+}
+
+function kneeLoadScore({ distanceMiles, lossFt, maxDescentGradePercent, rockiness }) {
+  if (distanceMiles <= 0 || lossFt <= 0) return 0;
+  const distance = Math.max(0.25, distanceMiles);
+  const lossRateScore = clamp((lossFt / distance / 450) * 10, 0, 10);
+  const cumulativeLossScore = clamp((lossFt / 1800) * 10, 0, 10);
+  const gradeScore = clamp((maxDescentGradePercent / 24) * 10, 0, 10);
+  const treadScore = clamp(rockiness, 0, 10);
+  return clamp(
+    (lossRateScore * 0.3) +
+      (cumulativeLossScore * 0.25) +
+      (gradeScore * 0.25) +
+      (treadScore * 0.2),
+    0,
+    10
+  );
+}
+
+function kneeLoadLabel(score) {
+  if (score >= 8.5) return 'Severe knee load';
+  if (score >= 7) return 'High knee load';
+  if (score >= 5) return 'Moderate knee load';
+  return 'Lower knee load';
 }
 
 function regionForMile(mile) {
@@ -352,6 +393,83 @@ function buildMountain(peak, snap, index, snappedPeaks, elevation, rockiness) {
   };
 }
 
+function buildCandidateMountain(mountain, index, snappedPeaks, elevation, rockiness) {
+  const summitMile = snappedPeaks[index].snap.mile;
+  const nextPeakMile = index === snappedPeaks.length - 1
+    ? TERMINUS_MILE
+    : snappedPeaks[index + 1].snap.mile;
+  const valley = valleyAfter(elevation, summitMile, nextPeakMile);
+
+  if (!valley) {
+    return {
+      ...mountain,
+      upDifficultyScore: mountain.difficultyScore,
+      upDifficultyLabel: mountain.difficultyLabel,
+      descentEndMile: mountain.summitMile,
+      descentDistanceMiles: 0,
+      descentLossFt: 0,
+      descentGainFt: 0,
+      averageLossFtPerMile: 0,
+      maxDescentGradePercent: 0,
+      declineLabel: 'AT ends at the summit',
+      descentType: 'Finish summit',
+      descentRockinessScore: 0,
+      descentRockinessMax: 0,
+      descentRockinessLabel: 'Not screened beyond terminus',
+      kneeLoadScore: 0,
+      kneeLoadLabel: 'Plan the separate exit descent',
+      terrainDemandScore: mountain.difficultyScore,
+      terrainDemandLabel: mountain.difficultyLabel,
+      descentProfile: [],
+      terminusDescentNote: 'The official AT and this calibrated dataset end at Baxter Peak. The required trip back down Katahdin is real, but it is outside this guide and is not scored here.'
+    };
+  }
+
+  const descentPoints = elevationWindow(elevation, summitMile, valley.m);
+  const terrain = terrainMetrics(descentPoints);
+  const rocks = rockinessMetrics(rockiness, summitMile, valley.m);
+  const distanceMiles = Math.max(0, valley.m - summitMile);
+  const kneeLoad = round(kneeLoadScore({
+    distanceMiles,
+    lossFt: terrain.lossFt,
+    maxDescentGradePercent: terrain.maxDescentGradePercent,
+    rockiness: rocks.average
+  }), 1);
+  const terrainDemand = Math.max(mountain.difficultyScore, kneeLoad);
+  const descentType = terrain.lossFt >= 1800
+    ? 'Major NOBO descent'
+    : distanceMiles >= 4
+      ? 'Long NOBO descent'
+      : terrain.lossFt < 150
+        ? 'Ridge dip'
+        : 'NOBO descent';
+
+  return {
+    ...mountain,
+    upDifficultyScore: mountain.difficultyScore,
+    upDifficultyLabel: mountain.difficultyLabel,
+    descentEndMile: round(valley.m, 1),
+    descentDistanceMiles: round(distanceMiles, 1),
+    descentLossFt: Math.round(terrain.lossFt / 10) * 10,
+    descentGainFt: Math.round(terrain.gainFt / 10) * 10,
+    averageLossFtPerMile: distanceMiles > 0
+      ? Math.round(terrain.lossFt / distanceMiles / 10) * 10
+      : 0,
+    maxDescentGradePercent: round(terrain.maxDescentGradePercent, 1),
+    declineLabel: declineLabel(terrain.maxDescentGradePercent),
+    descentType,
+    descentRockinessScore: round(rocks.average, 1),
+    descentRockinessMax: round(rocks.max, 1),
+    descentRockinessLabel: rockinessLabel(rocks.average),
+    kneeLoadScore: kneeLoad,
+    kneeLoadLabel: kneeLoadLabel(kneeLoad),
+    terrainDemandScore: terrainDemand,
+    terrainDemandLabel: difficultyLabel(terrainDemand),
+    descentProfile: downsample(descentPoints),
+    terminusDescentNote: null
+  };
+}
+
 function fullRouteSummary(elevation) {
   const points = elevationWindow(elevation, GUIDE_START_MILE, TERMINUS_MILE);
   const terrain = terrainMetrics(points);
@@ -406,6 +524,32 @@ function main() {
     .sort((left, right) => right.rockinessScore - left.rockinessScore || left.summitMile - right.summitMile)
     .slice(0, 6)
     .map(({ id, name, summitMile, rockinessScore }) => ({ id, name, summitMile, rockinessScore }));
+  const candidateMountains = mountains.map((mountain, index) =>
+    buildCandidateMountain(mountain, index, snappedPeaks, elevation, rockiness)
+  );
+  const hardestBalanced = [...candidateMountains]
+    .sort((left, right) => right.terrainDemandScore - left.terrainDemandScore || left.summitMile - right.summitMile)
+    .slice(0, 6)
+    .map(({ id, name, summitMile, terrainDemandScore, upDifficultyScore, kneeLoadScore }) => ({
+      id,
+      name,
+      summitMile,
+      terrainDemandScore,
+      upDifficultyScore,
+      kneeLoadScore
+    }));
+  const highestKneeLoad = [...candidateMountains]
+    .filter((mountain) => mountain.descentDistanceMiles > 0)
+    .sort((left, right) => right.kneeLoadScore - left.kneeLoadScore || left.summitMile - right.summitMile)
+    .slice(0, 8)
+    .map(({ id, name, summitMile, descentEndMile, descentLossFt, kneeLoadScore }) => ({
+      id,
+      name,
+      summitMile,
+      descentEndMile,
+      descentLossFt,
+      kneeLoadScore
+    }));
 
   const output = {
     title: 'Mountains Ahead',
@@ -451,9 +595,31 @@ function main() {
     ]
   };
 
+  const candidateOutput = {
+    ...output,
+    title: 'Mountains Ahead - Version B',
+    subtitle: 'Knee-aware climb and descent candidate',
+    version: 'B',
+    methodology: {
+      climbDefinition: output.methodology.climbDefinition,
+      descentDefinition: 'NOBO descent from each listed summit to the lowest calibrated elevation point before the next listed mountain, capped at an 8-mile lookahead.',
+      kneeLoadDefinition: 'The 1-10 knee-load screen combines downhill feet per mile (30%), cumulative loss (25%), steepest descending grade (25%), and descent rockiness (20%).',
+      difficultyDefinition: 'Overall terrain demand is the higher of the existing climb difficulty and the knee-load screen, so a consequential descent is never averaged away.',
+      caution: 'Terrain planning screen only, not medical guidance. Weather, wet rock, fatigue, pack weight, poles, pace, daylight, closures, and current trail conditions can materially change downhill strain.'
+    },
+    summary: {
+      ...output.summary,
+      hardestBalanced,
+      highestKneeLoad
+    },
+    mountains: candidateMountains
+  };
+
   fs.mkdirSync(path.dirname(PATHS.output), { recursive: true });
   fs.writeFileSync(PATHS.output, `${JSON.stringify(output, null, 2)}\n`, 'utf8');
+  fs.writeFileSync(PATHS.candidateOutput, `${JSON.stringify(candidateOutput, null, 2)}\n`, 'utf8');
   console.log(`Wrote ${path.relative(ROOT, PATHS.output)} with ${mountains.length} mountains.`);
+  console.log(`Wrote ${path.relative(ROOT, PATHS.candidateOutput)} with knee-aware descents.`);
 }
 
 main();

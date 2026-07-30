@@ -241,7 +241,7 @@
     </div>
 
     <main id="main-content" class="site-main public-site-main" tabindex="-1">
-      {#if isGuidePage || page.url.pathname === '/' || page.url.pathname === '/at-map' || page.url.pathname === '/track' || page.url.pathname === '/mountains-ahead'}
+      {#if isGuidePage || page.url.pathname === '/' || page.url.pathname === '/at-map' || page.url.pathname === '/track' || page.url.pathname.startsWith('/mountains-ahead')}
         {@render children()}
       {:else}
         <div class="container public-page-wrap">
