@@ -178,7 +178,7 @@
     </label>
     <label class="search-field">
       <span>Find a mountain</span>
-      <input type="search" placeholder="Saddleback, Bigelow…" bind:value={search} />
+      <input type="search" placeholder="Mountain name…" bind:value={search} />
     </label>
     <div class="region-links">
       {#each guide.regions as region}
@@ -201,7 +201,10 @@
         <section class="region" id={region.id}>
           <header class="region-header">
             <div>
-              <p>{region.state} · Mile {fmt(region.startMile, 1)}-{fmt(region.endMile, 1)}</p>
+              <p>
+                <span>{region.state}</span>
+                <span>Mile {fmt(region.startMile, 1)}–{fmt(region.endMile, 1)}</span>
+              </p>
               <h2>{region.name}</h2>
             </div>
             <span>{regionMountains.length} {regionMountains.length === 1 ? 'mountain' : 'mountains'}</span>
@@ -320,6 +323,8 @@
     --guide-cream: #f5f2e8;
     --guide-paper: #fffdf7;
     --guide-orange: #c86322;
+    min-height: 100vh;
+    background: var(--guide-cream);
     color: var(--guide-ink);
   }
 
@@ -377,7 +382,7 @@
     max-width: 8ch;
     margin: 0.35rem 0 1rem;
     color: #fff;
-    font-size: clamp(4.5rem, 15vw, 9.5rem);
+    font-size: clamp(3.5rem, 18vw, 9.5rem);
     line-height: 0.78;
     letter-spacing: -0.045em;
     text-transform: uppercase;
@@ -459,6 +464,7 @@
     top: 0;
     z-index: 12;
     display: grid;
+    grid-template-columns: minmax(7.5rem, 0.7fr) minmax(0, 1.3fr);
     gap: 0.8rem;
     padding: 0.85rem max(1rem, calc((100vw - 70rem) / 2));
     border-block: 1px solid #dad4c3;
@@ -466,7 +472,7 @@
     box-shadow: 0 10px 30px rgba(33, 48, 38, 0.08);
     backdrop-filter: blur(12px);
   }
-  .guide-controls label { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 0.6rem; }
+  .guide-controls label { display: grid; min-width: 0; gap: 0.3rem; }
   .guide-controls label span { color: var(--muted); font-size: 0.68rem; font-weight: 900; letter-spacing: 0.09em; text-transform: uppercase; }
   .guide-controls input {
     width: 100%;
@@ -480,47 +486,75 @@
     font-weight: 800;
     padding: 0.5rem 0.65rem;
   }
-  .region-links { display: flex; gap: 0.85rem; overflow-x: auto; padding: 0.15rem 0 0.2rem; scrollbar-width: thin; }
-  .region-links a { flex: none; color: var(--guide-pine); font-size: 0.75rem; font-weight: 900; text-decoration: none; }
+  .region-links {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 0.25rem;
+    overflow-x: auto;
+    padding: 0.1rem 0 0.2rem;
+    scrollbar-width: thin;
+  }
+  .region-links a {
+    flex: none;
+    padding: 0.42rem 0.58rem;
+    border-radius: 0.35rem;
+    color: var(--guide-pine);
+    font-size: 0.73rem;
+    font-weight: 900;
+    line-height: 1;
+    text-decoration: none;
+  }
+  .region-links a:hover { background: rgba(51, 72, 58, 0.09); }
 
   .mountain-sequence { max-width: 70rem; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
-  .region { scroll-margin-top: 8rem; }
+  .region { scroll-margin-top: 9.5rem; }
   .region + .region { margin-top: clamp(4rem, 8vw, 7rem); }
   .region-header { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1.3rem; padding-bottom: 0.8rem; border-bottom: 3px solid var(--guide-pine); }
-  .region-header p { margin: 0; color: var(--guide-orange); font-size: 0.72rem; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; }
+  .region-header p { display: flex; flex-wrap: wrap; gap: 0.25rem 0.55rem; margin: 0; color: var(--guide-orange); font-size: 0.72rem; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; }
+  .region-header p span { white-space: nowrap; }
   .region-header h2 { margin: 0.2rem 0 0; font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1; }
   .region-header > span { color: var(--muted); font-size: 0.78rem; font-weight: 800; white-space: nowrap; }
 
-  .mountain-list { display: grid; }
+  .mountain-list {
+    display: grid;
+    margin-inline: -1rem;
+    border-block: 1px solid #d9d3c3;
+    background: rgba(255, 253, 247, 0.9);
+    box-shadow: 0 18px 46px rgba(47, 61, 48, 0.06);
+  }
   .mountain {
     --score-color: #4c8a63;
     display: grid;
-    grid-template-columns: 4.6rem minmax(0, 1fr);
-    gap: 1rem;
-    padding: 1.55rem 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.65rem;
+    padding: 1.45rem 1rem;
     border-bottom: 1px solid #d9d3c3;
     animation: settle 420ms both;
     animation-delay: var(--delay);
   }
+  .mountain:last-child { border-bottom: 0; }
   .mountain:target { background: rgba(239, 178, 115, 0.13); }
-  .mile-marker { display: grid; align-content: start; justify-items: start; padding-top: 0.15rem; }
+  .mile-marker { display: flex; align-items: baseline; gap: 0.4rem; }
   .mile-marker span { color: var(--guide-orange); font-size: 0.6rem; font-weight: 900; letter-spacing: 0.13em; }
   .mile-marker strong { font-family: Oswald, Impact, sans-serif; font-size: 1.35rem; line-height: 1; color: var(--guide-pine); }
 
   .mountain-main { min-width: 0; }
-  .mountain-header { display: flex; align-items: start; justify-content: space-between; gap: 0.8rem; }
+  .mountain-header { display: block; }
   .mountain-header h3 { margin: 0.2rem 0 0; font-size: clamp(1.45rem, 4vw, 2.15rem); line-height: 1.02; }
   .approach-type { color: var(--guide-orange); letter-spacing: 0.09em; }
   .mountain-meta { margin: 0.28rem 0 0; color: var(--muted); font-size: 0.8rem; font-weight: 800; }
 
   .difficulty {
-    flex: none;
-    display: grid;
-    min-width: 4.6rem;
-    padding: 0.55rem 0.65rem;
-    border-top: 4px solid var(--score-color);
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    width: fit-content;
+    min-width: 0;
+    margin-top: 0.75rem;
+    padding: 0.42rem 0.65rem;
+    border-left: 4px solid var(--score-color);
     background: rgba(255, 255, 255, 0.75);
-    text-align: right;
+    text-align: left;
   }
   .difficulty span { color: var(--muted); font-size: 0.56rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
   .difficulty strong { color: var(--score-color); font-family: Oswald, Impact, sans-serif; font-size: 1.65rem; line-height: 1; }
@@ -530,8 +564,16 @@
   .difficulty.severe { --score-color: #9f3535; }
 
   .crosses { margin: 0.8rem 0 0; color: var(--muted); font-size: 0.8rem; line-height: 1.5; }
-  .metric-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 1rem; border-block: 1px solid #ded8c9; }
-  .metric-row div { min-width: 0; padding: 0.75rem 0.45rem 0.75rem 0; }
+  .metric-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 1rem;
+    border: 1px solid #ded8c9;
+    background: rgba(245, 242, 232, 0.52);
+  }
+  .metric-row div { min-width: 0; padding: 0.75rem; border-bottom: 1px solid #ded8c9; }
+  .metric-row div:nth-child(odd) { border-right: 1px solid #ded8c9; }
+  .metric-row div:nth-last-child(-n + 2) { border-bottom: 0; }
   .metric-row span,
   .metric-row small { display: block; color: var(--muted); font-size: 0.62rem; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; }
   .metric-row strong { display: block; margin: 0.12rem 0; color: var(--guide-ink); font-family: Oswald, Impact, sans-serif; font-size: 1.25rem; }
@@ -539,8 +581,8 @@
   .terrain-read { display: grid; gap: 0.85rem; margin-top: 0.95rem; }
   .terrain-read > div { position: relative; min-width: 0; }
   .terrain-read svg { width: 100%; height: 4.8rem; overflow: visible; }
-  .terrain-read div > span { position: absolute; bottom: -0.05rem; color: var(--muted); font-size: 0.58rem; font-weight: 800; text-transform: uppercase; }
-  .terrain-read div > span:last-child { right: 0; }
+  .terrain-read div > span { position: absolute; bottom: -0.05rem; left: 0; color: var(--muted); font-size: 0.58rem; font-weight: 800; text-transform: uppercase; }
+  .terrain-read div > span:last-child { right: 0; left: auto; }
   .mini-fill { fill: rgba(77, 89, 74, 0.08); }
   .mini-line { fill: none; stroke: var(--guide-pine); stroke-width: 2.5; vector-effect: non-scaling-stroke; }
   .terrain-read p { margin: 0; color: var(--muted); font-size: 0.86rem; line-height: 1.55; }
@@ -573,17 +615,37 @@
     .score-key,
     .method-note { grid-template-columns: minmax(0, 0.9fr) minmax(26rem, 1.1fr); }
     .scale { grid-template-columns: repeat(4, 1fr); }
-    .guide-controls { grid-template-columns: 12rem minmax(15rem, 1fr); align-items: center; }
+    .guide-controls { grid-template-columns: 10rem minmax(17rem, 1fr); align-items: end; }
     .region-links { grid-column: 1 / -1; }
+    .mountain-list { margin-inline: 0; border: 1px solid #d9d3c3; }
     .mountain { grid-template-columns: 6.2rem minmax(0, 1fr); gap: 1.5rem; padding-block: 1.8rem; }
+    .mile-marker { display: grid; align-content: start; justify-items: start; gap: 0; padding-top: 0.15rem; }
     .mile-marker strong { font-size: 1.7rem; }
+    .mountain-header { display: flex; align-items: start; justify-content: space-between; gap: 0.8rem; }
+    .difficulty {
+      flex: none;
+      display: grid;
+      min-width: 4.6rem;
+      margin-top: 0;
+      padding: 0.55rem 0.65rem;
+      border-top: 4px solid var(--score-color);
+      border-left: 0;
+      text-align: right;
+    }
     .metric-row { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .metric-row div { border-right: 1px solid #ded8c9; border-bottom: 0; }
+    .metric-row div:last-child { border-right: 0; }
     .terrain-read { grid-template-columns: minmax(16rem, 0.95fr) minmax(14rem, 1.05fr); align-items: center; }
   }
 
   @media (min-width: 1040px) {
-    .guide-controls { grid-template-columns: 11rem 17rem minmax(0, 1fr); }
+    .guide-controls { grid-template-columns: 9rem 20rem minmax(0, 1fr); }
     .region-links { grid-column: auto; justify-content: flex-end; }
+  }
+
+  @media (max-width: 359px) {
+    .region-header { display: grid; align-items: start; }
+    .region-header > span { margin-top: 0.45rem; }
   }
 
   @media (prefers-reduced-motion: reduce) {
