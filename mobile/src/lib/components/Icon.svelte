@@ -15,6 +15,7 @@
 		| 'shelter'
 		| 'town'
 		| 'moon'
+		| 'campfire'
 		| 'arrowUp'
 		| 'search'
 		| 'book'
@@ -91,6 +92,11 @@
 	{:else if name === 'moon'}
 		<!-- crescent: evening -->
 		<path d="M20 14.5A8 8 0 1 1 9.5 4 6.5 6.5 0 0 0 20 14.5Z" />
+	{:else if name === 'campfire'}
+		<!-- flame over crossed trailwood -->
+		<path d="M12 3.5c1.2 2.3.2 3.6 1.8 5.1 1.2 1.1 2.2 2.2 2.2 4.2a4 4 0 0 1-8 0c0-2.2 1.4-3.7 3.1-5.4.2 1.4.9 2.1 1.7 2.7.4-2.3-.6-4.3-.8-6.6Z" />
+		<path d="m5.5 20 13-4" />
+		<path d="m5.5 16 13 4" />
 	{:else if name === 'arrowUp'}
 		<path d="M12 19V6" />
 		<path d="M6.5 11.5 12 6 17.5 11.5" />

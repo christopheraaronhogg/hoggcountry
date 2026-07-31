@@ -20,6 +20,7 @@
 	import Icon, { type IconName } from './Icon.svelte';
 	import PreparedHelpDraft from './PreparedHelpDraft.svelte';
 	import TrailPulsePanel from './TrailPulsePanel.svelte';
+	import CampfirePostcard from './CampfirePostcard.svelte';
 
 	// Today is a forward look from the hiker's current position. No readiness score —
 	// we have no vitals, so the HUD anchors only on REAL data: position, the day's
@@ -357,6 +358,8 @@
 			{/each}
 		</ol>
 	</section>
+
+	<CampfirePostcard />
 
 	<!-- Ask Scout — calm, opens the real chat -->
 	<section class="ask card">
