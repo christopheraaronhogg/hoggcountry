@@ -5,14 +5,16 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const DATA_PATH = path.join(ROOT, 'apps/openclaw-web/src/lib/data/northern-mountains-guide.json');
-const CANDIDATE_DATA_PATH = path.join(ROOT, 'apps/openclaw-web/src/lib/data/northern-mountains-guide-b.json');
+const BASE_DATA_PATH = path.join(ROOT, 'apps/openclaw-web/src/lib/data/northern-mountains-guide.json');
+const DATA_PATH = path.join(ROOT, 'apps/openclaw-web/src/lib/data/northern-mountains-guide-b.json');
 const GENERATOR_PATH = path.join(ROOT, 'scripts/build-northern-mountains-guide.mjs');
+const ROUTE_PATH = path.join(ROOT, 'apps/openclaw-web/src/routes/mountains-ahead/+page.svelte');
+const REDIRECT_PATH = path.join(ROOT, 'apps/openclaw-web/src/routes/mountains-ahead-b/+page.server.ts');
 const PDF_PATH = path.join(ROOT, 'apps/openclaw-web/static/guides/hogg-country-at-mountains-mile-1850-to-katahdin.pdf');
-const CANDIDATE_PDF_PATH = path.join(ROOT, 'apps/openclaw-web/static/guides/hogg-country-at-mountains-mile-1850-to-katahdin-version-b.pdf');
+const LEGACY_PDF_PATH = path.join(ROOT, 'apps/openclaw-web/static/guides/hogg-country-at-mountains-mile-1850-to-katahdin-version-b.pdf');
 
+const baseline = JSON.parse(fs.readFileSync(BASE_DATA_PATH, 'utf8'));
 const guide = JSON.parse(fs.readFileSync(DATA_PATH, 'utf8'));
-const candidate = JSON.parse(fs.readFileSync(CANDIDATE_DATA_PATH, 'utf8'));
 
 test('northern mountain guide covers the calibrated mile 1850 to Katahdin frame', () => {
   assert.equal(guide.guideStartMile, 1850);
@@ -54,21 +56,28 @@ test('curated peak source has no hand-entered trail miles', () => {
 });
 
 test('route and PDF share a committed generated artifact', () => {
+  const route = fs.readFileSync(ROUTE_PATH, 'utf8');
+  const redirectRoute = fs.readFileSync(REDIRECT_PATH, 'utf8');
+
   assert.ok(fs.statSync(PDF_PATH).size > 50_000);
   assert.equal(guide.summary.mountainCount, guide.mountains.length);
   assert.ok(guide.summary.gainFt > 50_000);
   assert.ok(guide.summary.lossFt > 50_000);
+  assert.match(route, /hogg-country-at-mountains-mile-1850-to-katahdin\.pdf/u);
+  assert.doesNotMatch(route, /Version B|candidate|noindex/iu);
+  assert.match(redirectRoute, /redirect\(308, `\/mountains-ahead\$\{url\.search\}`\)/u);
 });
 
-test('Version B gives every mountain a bounded post-summit descent screen', () => {
-  assert.equal(candidate.version, 'B');
-  assert.equal(candidate.mountains.length, guide.mountains.length);
-  assert.equal(candidate.summary.mountainCount, candidate.mountains.length);
-  assert.equal(candidate.mountains.at(-1).name, 'Baxter Peak - Katahdin');
+test('canonical guide gives every mountain a bounded post-summit descent screen', () => {
+  assert.equal(guide.version, 'up-down');
+  assert.equal(guide.title, 'Mountains Ahead');
+  assert.equal(guide.mountains.length, baseline.mountains.length);
+  assert.equal(guide.summary.mountainCount, guide.mountains.length);
+  assert.equal(guide.mountains.at(-1).name, 'Baxter Peak - Katahdin');
 
-  for (const mountain of candidate.mountains) {
+  for (const mountain of guide.mountains) {
     assert.ok(mountain.descentEndMile >= mountain.summitMile);
-    assert.ok(mountain.descentEndMile <= candidate.terminusMile);
+    assert.ok(mountain.descentEndMile <= guide.terminusMile);
     assert.ok(mountain.descentDistanceMiles >= 0 && mountain.descentDistanceMiles <= 8.1);
     assert.ok(mountain.descentLossFt >= 0);
     assert.ok(mountain.averageLossFtPerMile >= 0);
@@ -80,12 +89,13 @@ test('Version B gives every mountain a bounded post-summit descent screen', () =
     assert.ok(mountain.terrainDemandScore <= 10);
   }
 
-  assert.match(candidate.mountains.at(-1).terminusDescentNote, /dataset end|dataset ends|official AT/iu);
+  assert.match(guide.mountains.at(-1).terminusDescentNote, /dataset end|dataset ends|official AT/iu);
 });
 
-test('Version B surfaces a meaningful downhill watchlist and printable artifact', () => {
-  assert.ok(candidate.summary.highestKneeLoad.length >= 6);
-  assert.ok(candidate.summary.highestKneeLoad[0].kneeLoadScore >= 8.5);
-  assert.ok(candidate.summary.highestKneeLoad[0].descentLossFt > 1_000);
-  assert.ok(fs.statSync(CANDIDATE_PDF_PATH).size > 50_000);
+test('canonical guide surfaces a meaningful downhill watchlist and preserves the candidate PDF alias', () => {
+  assert.ok(guide.summary.highestKneeLoad.length >= 6);
+  assert.ok(guide.summary.highestKneeLoad[0].kneeLoadScore >= 8.5);
+  assert.ok(guide.summary.highestKneeLoad[0].descentLossFt > 1_000);
+  assert.ok(fs.statSync(LEGACY_PDF_PATH).size > 50_000);
+  assert.ok(fs.readFileSync(PDF_PATH).equals(fs.readFileSync(LEGACY_PDF_PATH)));
 });

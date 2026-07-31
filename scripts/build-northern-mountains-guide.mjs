@@ -597,9 +597,9 @@ function main() {
 
   const candidateOutput = {
     ...output,
-    title: 'Mountains Ahead - Version B',
-    subtitle: 'Knee-aware climb and descent candidate',
-    version: 'B',
+    title: 'Mountains Ahead',
+    subtitle: 'Knee-aware climb and descent field reference',
+    version: 'up-down',
     methodology: {
       climbDefinition: output.methodology.climbDefinition,
       descentDefinition: 'NOBO descent from each listed summit to the lowest calibrated elevation point before the next listed mountain, capped at an 8-mile lookahead.',

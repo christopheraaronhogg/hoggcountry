@@ -1,6 +1,6 @@
 {
-  "title": "Mountains Ahead - Version B",
-  "subtitle": "Knee-aware climb and descent candidate",
+  "title": "Mountains Ahead",
+  "subtitle": "Knee-aware climb and descent field reference",
   "direction": "NOBO",
   "guideStartMile": 1850,
   "terminusMile": 2197.4,
@@ -9656,5 +9656,5 @@
       "url": "https://www.openstreetmap.org/relation/156553"
     }
   ],
-  "version": "B"
+  "version": "up-down"
 }
