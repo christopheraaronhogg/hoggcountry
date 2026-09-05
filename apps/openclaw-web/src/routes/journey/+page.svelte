@@ -56,7 +56,7 @@
   <title>The Journey | Hogg Country</title>
   <meta
     name="description"
-    content="Dad completed the Appalachian Trail on September 4, 2026. Explore his 100% complete journey, states, landmarks, and trail dispatches."
+    content={`Dad completed the Appalachian Trail on ${DAD_HIKE_FINISH_LABEL}. Explore his 100% complete journey, states, landmarks, and trail dispatches.`}
   />
   <link rel="canonical" href="https://hoggcountry.com/journey" />
 </svelte:head>

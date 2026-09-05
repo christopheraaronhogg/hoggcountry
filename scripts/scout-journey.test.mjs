@@ -66,14 +66,14 @@ test('summary math: percent, remaining, pace, days', () => {
 test('confirmed finish overrides stale or missing GPS and freezes hike duration', () => {
   for (const currentMile of [0, 2170, 150]) {
     const j = base({
-      currentMile, isPreview: true, completedOn: '2026-09-04',
+      currentMile, isPreview: true, completedOn: '2026-09-07',
       nowMs: Date.parse('2026-12-01T12:00:00Z')
     });
-    assert.equal(j.summary.completedOn, '2026-09-04');
+    assert.equal(j.summary.completedOn, '2026-09-07');
     assert.equal(j.summary.currentMile, j.summary.totalMiles);
     assert.equal(j.summary.percentComplete, 100);
     assert.equal(j.summary.milesRemaining, 0);
-    assert.equal(j.summary.daysOnTrail, 188);
+    assert.equal(j.summary.daysOnTrail, 191);
     assert.equal(j.summary.isPreview, false);
     assert.ok(j.states.every((s) => s.status === 'done'));
     assert.ok(j.states.flatMap((s) => s.milestones).every((m) => m.reached));
