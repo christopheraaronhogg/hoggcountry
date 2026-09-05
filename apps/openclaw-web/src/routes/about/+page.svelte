@@ -1,3 +1,7 @@
+<script lang="ts">
+  import { DAD_HIKE_FINISH_LABEL, DAD_HIKE_COMPLETION_LABEL } from '$lib/dad-hike';
+</script>
+
 <svelte:head>
   <title>About | Hogg Country</title>
   <meta name="description" content="Jimmy Hogg — Triple O Crowner, Sassafras Award recipient, and 2026 AT NOBO thru-hiker." />
@@ -7,6 +11,7 @@
   <div class="container">
     <header class="about-header">
       <div class="badge-row">
+        <span class="badge accent">AT thru-hiker · {DAD_HIKE_COMPLETION_LABEL}</span>
         <span class="badge">Triple O Crowner</span>
         <span class="badge accent">Sassafras Award</span>
       </div>
@@ -19,10 +24,10 @@
         <h2>The Trail So Far</h2>
         <p>
           I'm an avid long-distance hiker from Arkansas with over 840 miles of thru-hiking experience across three major
-          trail systems. In 2026, I'm taking on the Appalachian Trail from Springer Mountain, Georgia to Mount Katahdin,
-          Maine.
+          trail systems. On {DAD_HIKE_FINISH_LABEL}, I completed my Appalachian Trail thru-hike from Springer Mountain, Georgia to Mount Katahdin,
+          Maine. 💯
         </p>
-        <p>This site documents my journey: past adventures, current preparation, and the field guide built for the AT.</p>
+        <p>This site documents my journey: past adventures, the completed thru-hike, and the field guide built for the AT.</p>
       </section>
 
       <section>
@@ -46,7 +51,7 @@
       <section>
         <h2>What's Next</h2>
         <p>
-          February 2026: Springer Mountain. Follow along through the <a href="/">trail log</a>, explore the
+          Springer to Katahdin — complete. Revisit the journey through the <a href="/">trail log</a>, explore the
           <a href="/guide">Field Guide</a>, or open <a href="/app">Scout</a>.
         </p>
       </section>

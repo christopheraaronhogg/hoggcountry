@@ -85,7 +85,7 @@
       {/each}
     </div>
     <p class="demo-foot">
-      Want to see the answer keyed to a real position? <a href="/journey">Open Dad's live journey →</a>
+      Want to see the answer keyed to a real position? <a href="/journey">See Dad's completed journey →</a>
     </p>
   </section>
 

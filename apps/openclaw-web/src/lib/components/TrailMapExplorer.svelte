@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { DAD_HIKE_COMPLETED_ON, DAD_HIKE_FINISH_LABEL, DAD_HIKE_COMPLETION_LABEL } from '../dad-hike';
   import { onDestroy, onMount } from 'svelte';
   import 'leaflet/dist/leaflet.css';
   // Relative import (not $lib) so the legacy Astro site can mount this
@@ -404,19 +405,22 @@
   });
   // Official display frame (2,197.4) — the same total /journey, /app/progress,
   // and the homepage teaser use, so every surface agrees on percent and total.
+  const dadCompleted = $derived(!appMode && endpoint === '/track/map-pack' && Boolean(DAD_HIKE_COMPLETED_ON));
   const totalMiles = $derived(pack?.route.displayMiles ?? null);
   const progressLine = $derived.by(() => {
+    if (dadCompleted) return DAD_HIKE_COMPLETION_LABEL;
     if (!currentPoint || !totalMiles) return '';
     const pct = clamp((currentPoint.mile / totalMiles) * 100, 0, 100);
     const remaining = Math.max(0, totalMiles - currentPoint.mile);
     return `${pct.toFixed(0)}% of ${Math.round(totalMiles).toLocaleString()} mi · ${Math.round(remaining).toLocaleString()} mi to Katahdin`;
   });
   const progressPct = $derived.by(() => {
+    if (dadCompleted) return 100;
     if (!currentPoint || !totalMiles) return 0;
     return clamp((currentPoint.mile / totalMiles) * 100, 0, 100);
   });
   const remainingMiles = $derived.by(() =>
-    currentPoint && totalMiles ? Math.max(0, totalMiles - currentPoint.mile) : 0
+    !dadCompleted && currentPoint && totalMiles ? Math.max(0, totalMiles - currentPoint.mile) : 0
   );
   const signalIsLive = $derived.by(() => {
     if (!currentPoint?.observedAt) return false;
@@ -1474,8 +1478,8 @@
         class:preview={signalState === 'preview'}
       ></span>
       <span class="status-text">
-        <strong>{currentPoint ? `Mile ${fmt(currentPoint.mile, 1)}` : loading ? 'Locating…' : 'No signal'}</strong>
-        <small>{pillSubtitle}</small>
+        <strong>{dadCompleted ? DAD_HIKE_COMPLETION_LABEL : currentPoint ? `Mile ${fmt(currentPoint.mile, 1)}` : loading ? 'Locating…' : 'No signal'}</strong>
+        <small>{dadCompleted ? `Finished ${DAD_HIKE_FINISH_LABEL}` : pillSubtitle}</small>
       </span>
       {#if currentPoint && totalMiles}
         <span class="status-progress" aria-hidden="true"><i style:width={`${progressPct}%`}></i></span>
@@ -1741,8 +1745,8 @@
         <div class="today-card">
           <div class="today-top">
             <div class="today-lead">
-              <span class="today-eyebrow">Today on trail</span>
-              <strong>Mile {currentPoint ? fmt(currentPoint.mile, 1) : '--'}{#if totalMiles}<small> of {Math.round(totalMiles).toLocaleString()}</small>{/if}</strong>
+              <span class="today-eyebrow">{dadCompleted ? `Completed ${DAD_HIKE_FINISH_LABEL}` : 'Today on trail'}</span>
+              <strong>{#if dadCompleted}{DAD_HIKE_COMPLETION_LABEL}{:else}Mile {currentPoint ? fmt(currentPoint.mile, 1) : '--'}{#if totalMiles}<small> of {Math.round(totalMiles).toLocaleString()}</small>{/if}{/if}</strong>
             </div>
             <span class={`fresh-chip fresh-chip--${signalState}`}>{freshChipLabel}</span>
           </div>
@@ -1753,7 +1757,7 @@
               <span>{Math.round(remainingMiles).toLocaleString()} mi to Katahdin</span>
             </div>
           {/if}
-          {#if currentState || justPassed}
+          {#if !dadCompleted && (currentState || justPassed)}
             <div class="today-context">
               {#if currentState}<span class="ctx-here">📍 {currentState}</span>{/if}
               {#if justPassed}<span class="ctx-passed">Just passed {justPassed.name}</span>{/if}

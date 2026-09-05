@@ -9,6 +9,7 @@
 
 // The one place to correct the start date. The app stores use 2026-03-01;
 // CLAUDE.md references "Feb 2026" — confirm against Dad's actual first fix.
+import { DAD_HIKE_COMPLETED_ON } from '../dad-hike.ts';
 export const HIKE_START_DATE = '2026-03-01';
 
 export interface JourneyLandmark {
@@ -59,6 +60,7 @@ export interface JourneyState {
 }
 
 export interface JourneySummary {
+  readonly completedOn: string | null;
   readonly currentMile: number;
   readonly totalMiles: number;
   readonly percentComplete: number;
@@ -103,6 +105,7 @@ interface RawLandmark {
 }
 
 export interface BuildJourneyInput {
+  readonly completedOn?: string | null;
   readonly currentMile: number;
   readonly totalMiles: number;
   readonly states: RawState[];
@@ -181,7 +184,9 @@ function stateIndexForMile(mile: number, states: RawState[]): number {
 export function buildJourney(input: BuildJourneyInput): JourneyData {
   const states = [...input.states].sort((a, b) => a.entry_mile - b.entry_mile);
   const total = input.totalMiles;
-  const current = clamp(input.currentMile, 0, total);
+  const completedOn = input.completedOn ?? null;
+  const current = completedOn ? total : clamp(input.currentMile, 0, total);
+  const isPreview = !completedOn && input.isPreview;
 
   const milesByState: JourneyLandmark[][] = states.map(() => []);
   for (const lm of input.landmarks) {
@@ -237,25 +242,26 @@ export function buildJourney(input: BuildJourneyInput): JourneyData {
   });
 
   const currentStateIdx = stateIndexForMile(current, states);
-  const daysOnTrail = daysBetween(input.startDateISO, input.nowMs);
+  const daysOnTrail = daysBetween(input.startDateISO, completedOn ? Date.parse(`${completedOn}T00:00:00Z`) : input.nowMs);
   const paceMilesPerDay = daysOnTrail > 0 && current > 0 ? roundTenth(current / daysOnTrail) : null;
 
   return {
     summary: {
+      completedOn,
       currentMile: roundTenth(current),
       totalMiles: total,
       percentComplete: roundTenth(clamp((current / total) * 100, 0, 100)),
       milesHiked: roundTenth(current),
       milesRemaining: roundTenth(Math.max(0, total - current)),
-      currentStateName: input.isPreview ? null : states[currentStateIdx]?.name ?? null,
+      currentStateName: isPreview ? null : states[currentStateIdx]?.name ?? null,
       // In preview there's no known position, so time-on-trail/pace are
       // meaningless and would contradict the "starts soon" / "mile 0" hero.
-      daysOnTrail: input.isPreview ? 0 : daysOnTrail,
-      paceMilesPerDay: input.isPreview ? null : paceMilesPerDay,
+      daysOnTrail: isPreview ? 0 : daysOnTrail,
+      paceMilesPerDay: isPreview ? null : paceMilesPerDay,
       startDate: input.startDateISO,
       latestFixLabel: input.latestFixLabel,
       latestFixAt: input.latestFixAt,
-      isPreview: input.isPreview
+      isPreview
     },
     states: journeyStates,
     elevation: buildElevation(input.elevationSamples, total)
@@ -267,6 +273,19 @@ export function buildJourney(input: BuildJourneyInput): JourneyData {
 // never parks the homepage behind a 30k-point geojson parse. Returns the
 // preview summary on any failure so the homepage always renders.
 export async function loadJourneySummary(): Promise<JourneySummary> {
+  // Completion no longer depends on Garmin availability or a post-hike fix.
+  const { facts } = await import('../../../../../src/data/trailFacts');
+  if (DAD_HIKE_COMPLETED_ON) {
+    return buildJourney({
+      completedOn: DAD_HIKE_COMPLETED_ON,
+      currentMile: facts.trail.total_miles.value,
+      totalMiles: facts.trail.total_miles.value,
+      states: facts.states as unknown as RawState[],
+      landmarks: [], milestones: [], dispatches: [],
+      startDateISO: HIKE_START_DATE, nowMs: Date.now(),
+      latestFixLabel: null, latestFixAt: null, isPreview: false
+    }).summary;
+  }
   try {
     const [{ loadDadTrack }, { facts }] = await Promise.all([
       import('$lib/server/dad'),
@@ -297,6 +316,7 @@ export async function loadJourneySummary(): Promise<JourneySummary> {
     }).summary;
   } catch {
     return {
+      completedOn: null,
       currentMile: 0,
       totalMiles: 2197.4,
       percentComplete: 0,
@@ -411,6 +431,7 @@ export async function loadJourney(options: LoadJourneyOptions): Promise<JourneyD
   const currentMile = typeof current?.mile === 'number' && Number.isFinite(current.mile) ? current.mile : 0;
 
   return buildJourney({
+    completedOn: DAD_HIKE_COMPLETED_ON,
     currentMile,
     totalMiles: pack.route.displayMiles,
     states: facts.states as unknown as RawState[],

@@ -3,6 +3,7 @@
   // WPA poster aesthetic inspired by 1930s-40s national park posters
   // OFFICIAL TRAIL GUIDE prepared by C. Hogg for J. "HoggCountry" Hogg
 
+  import { DAD_HIKE_FINISH_LABEL } from "../../../apps/openclaw-web/src/lib/dad-hike";
   import { onMount } from "svelte";
   import { resolve } from "../../lib/route-paths";
   import WaitlistSignup from "../../../apps/openclaw-web/src/lib/components/WaitlistSignup.svelte";
@@ -471,17 +472,20 @@
       </div>
 
       {#if journey}
-        <a class="hero-progress" href={resolve("/journey")} aria-label="Follow Dad's live trail progress">
+        <a class="hero-progress" href={resolve("/journey")} aria-label="See Dad's completed Appalachian Trail journey">
           <div class="hp-top">
-            <span class="hp-label">{journey.isPreview ? 'Expedition staging' : 'Live progress'}</span>
-            <span class="hp-pct">{journey.isPreview ? 'Mile 0' : `${journey.percentComplete}%`}</span>
+            <span class="hp-label">{journey.completedOn ? 'Thru-hike complete' : journey.isPreview ? 'Expedition staging' : 'Live progress'}</span>
+            <span class="hp-pct">{journey.completedOn ? '💯 100%' : journey.isPreview ? 'Mile 0' : `${journey.percentComplete}%`}</span>
           </div>
           <div class="hp-rail">
             <span class="hp-fill" style={`width:${journey.percentComplete}%`}></span>
             <span class="hp-marker" style={`left:${journey.percentComplete}%`}></span>
           </div>
           <div class="hp-foot">
-            {#if journey.isPreview}
+            {#if journey.completedOn}
+              <span class="hp-where"><strong>Springer to Katahdin — done!</strong></span>
+              <span class="hp-rem">Finished {DAD_HIKE_FINISH_LABEL} · {miFmt(journey.milesHiked)} miles</span>
+            {:else if journey.isPreview}
               <span class="hp-where">Staged at Springer — {miFmt(journey.totalMiles)} mi to Katahdin</span>
             {:else}
               <span class="hp-where"><strong>Mile {miFmt(journey.currentMile)}</strong>{#if journey.currentStateName}{` · ${journey.currentStateName}`}{/if}</span>
@@ -769,10 +773,10 @@
         <div class="mission-seal">
           <span class="seal-text">OFFICIAL TRAIL GUIDE</span>
         </div>
-        <h2 class="mission-heading">The Expedition Ahead</h2>
+        <h2 class="mission-heading">The Expedition Completed 💯</h2>
         <p class="mission-text">
-          In February 2026, Jimmy "HoggCountry" Hogg heads north from Springer Mountain.
-          After 840+ miles on Arkansas trails and the rare Sassafras Award, he's ready for the AT's 2,197.4 miles to Katahdin.
+          Jimmy "HoggCountry" Hogg completed his northbound Appalachian Trail thru-hike on {DAD_HIKE_FINISH_LABEL}.
+          From Springer Mountain to Katahdin, he finished the AT after 840+ miles on Arkansas trails and the rare Sassafras Award.
           This guide captures what he's learned along the way—and what he wishes he'd known sooner.
         </p>
 

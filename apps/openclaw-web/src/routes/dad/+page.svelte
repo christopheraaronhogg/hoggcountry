@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { DAD_HIKE_FINISH_LABEL, DAD_HIKE_COMPLETION_LABEL } from '$lib/dad-hike';
   import PublicMap from '$components/PublicMap.svelte';
   import type { PageData } from './$types';
 
@@ -12,7 +13,8 @@
 <section class="card hero-panel">
   <div>
     <p class="eyebrow">Dad updates</p>
-    <h1>Follow the hike without losing the field guide.</h1>
+    <h1>Dad finished the Appalachian Trail — {DAD_HIKE_COMPLETION_LABEL}.</h1>
+    <p>Springer to Katahdin · Completed {DAD_HIKE_FINISH_LABEL}.</p>
     <p class="lede">
       This public layer keeps the project human. The map, the videos, and the guide all stay visible so the gated
       product never floats away from the actual trail.

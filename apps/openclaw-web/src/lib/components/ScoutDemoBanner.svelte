@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { DAD_HIKE_FINISH_LABEL } from '../dad-hike';
   import { resolve } from '$app/paths';
   import type { JourneySummary } from '$lib/server/journey';
 
@@ -16,12 +17,14 @@
   const pct = $derived(Math.max(0, Math.min(100, journey?.percentComplete ?? 0)));
 </script>
 
-<aside class="scout-demo-banner" aria-label="Scout app, demoed by Dad's live thru-hike">
+<aside class="scout-demo-banner" aria-label="Scout app, demoed by Dad's completed thru-hike">
   <div class="sdb-inner">
     <div class="sdb-copy">
       <p class="sdb-kicker">Scout · The trail app</p>
       <h2 class="sdb-headline">
-        {#if isPreview}
+        {#if journey.completedOn}
+          💯 Dad finished the Appalachian Trail on {DAD_HIKE_FINISH_LABEL}. Springer to Katahdin — every mile complete.
+        {:else if isPreview}
           Dad steps onto the AT Feb&nbsp;2026. <span class="sdb-em">Scout</span> is being shaped around the planning, packing, and trail checks this hike actually needs.
         {:else}
           Dad is at <span class="sdb-em">mile&nbsp;{fmt(journey.currentMile)}</span>{#if journey.currentStateName}, {journey.currentStateName}{/if}. <span class="sdb-em">Scout</span> is the trail app we're building toward the kind of help he can actually use out there.
@@ -34,7 +37,7 @@
       <div class="sdb-stats" role="list" aria-label="Live trail status">
         <div class="sdb-stat" role="listitem">
           <span class="sdb-stat-label">Progress</span>
-          <span class="sdb-stat-value">{isPreview ? 'Mile 0' : `${pct}%`}</span>
+          <span class="sdb-stat-value">{journey.completedOn ? '💯 100%' : isPreview ? 'Mile 0' : `${pct}%`}</span>
         </div>
         <div class="sdb-stat" role="listitem">
           <span class="sdb-stat-label">{isPreview ? 'Trail to go' : 'To Katahdin'}</span>
@@ -42,8 +45,8 @@
         </div>
         {#if !isPreview && journey?.daysOnTrail}
           <div class="sdb-stat" role="listitem">
-            <span class="sdb-stat-label">On trail</span>
-            <span class="sdb-stat-value">Day {journey.daysOnTrail}</span>
+            <span class="sdb-stat-label">{journey.completedOn ? 'Days on trail' : 'On trail'}</span>
+            <span class="sdb-stat-value">{journey.completedOn ? '' : 'Day '}{journey.daysOnTrail}</span>
           </div>
         {/if}
         {#if !isPreview && journey?.paceMilesPerDay}
@@ -66,7 +69,7 @@
             <path d="M5 12h14M12 5l7 7-7 7" />
           </svg>
         </a>
-        <a class="sdb-btn" href={resolve('/journey')}>Follow the live hike</a>
+        <a class="sdb-btn" href={resolve('/journey')}>See the completed hike</a>
       </div>
       <p class="sdb-note">App Store and Google Play listings are not live yet — get on the waitlist below and we'll send the link the day it ships.</p>
     </div>

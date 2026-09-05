@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { DAD_HIKE_FINISH_LABEL, DAD_HIKE_COMPLETION_LABEL } from '$lib/dad-hike';
   import PublicMap from '$components/PublicMap.svelte';
   import type { PageData } from './$types';
 
@@ -7,7 +8,8 @@
 
 <section class="page-intro">
   <p class="eyebrow">Dad map</p>
-  <h1>Track the current Garmin feed on a real map.</h1>
+  <h1>Dad finished the Appalachian Trail — {DAD_HIKE_COMPLETION_LABEL}.</h1>
+    <p>Springer to Katahdin · Completed {DAD_HIKE_FINISH_LABEL}.</p>
   <p class="lede">
     Dad’s Garmin fix now snaps to the nearest Appalachian Trail mile marker so the map can say where he is in trail
     terms, not just raw coordinates.

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { DAD_HIKE_FINISH_LABEL } from '$lib/dad-hike';
   import { invalidateAll } from '$app/navigation';
   import { onMount } from 'svelte';
   import WaitlistSignup from '$lib/components/WaitlistSignup.svelte';
@@ -55,7 +56,7 @@
   <title>The Journey | Hogg Country</title>
   <meta
     name="description"
-    content="Follow Dad's 2026 Appalachian Trail thru-hike, mile by mile — live position, states behind and ahead, landmarks reached, and dispatches from the trail."
+    content="Dad completed the Appalachian Trail on September 4, 2026. Explore his 100% complete journey, states, landmarks, and trail dispatches."
   />
   <link rel="canonical" href="https://hoggcountry.com/journey" />
 </svelte:head>
@@ -64,7 +65,10 @@
   <!-- HERO -->
   <header class="hero">
     <p class="kicker">The Journey · 2026 NOBO</p>
-    {#if s.isPreview}
+    {#if s.completedOn}
+      <h1>💯 Dad finished the Appalachian Trail!</h1>
+      <p class="lede">Springer to Katahdin · {fmtMile(s.totalMiles)} miles · Completed {DAD_HIKE_FINISH_LABEL}.</p>
+    {:else if s.isPreview}
       <h1>The climb to Katahdin starts soon.</h1>
       <p class="lede">
         {fmtMile(s.totalMiles)} miles from Springer Mountain, Georgia to Katahdin, Maine — across 14 states.
@@ -85,7 +89,7 @@
     </div>
 
     <dl class="stats">
-      <div><dt>Complete</dt><dd>{s.percentComplete}%</dd></div>
+      <div><dt>Complete</dt><dd>{s.completedOn ? '💯 ' : ''}{s.percentComplete}%</dd></div>
       <div><dt>Miles hiked</dt><dd>{fmtMile(s.milesHiked)}</dd></div>
       <div><dt>To Katahdin</dt><dd>{fmtMile(s.milesRemaining)}</dd></div>
       {#if s.daysOnTrail > 0}<div><dt>Days on trail</dt><dd>{s.daysOnTrail}</dd></div>{/if}
@@ -93,7 +97,7 @@
     </dl>
 
     <div class="hero-links">
-      <a class="btn btn--primary" href="/at-map">Live map</a>
+      <a class="btn btn--primary" href="/at-map">Trail map</a>
       <a class="btn" href="/mountains-ahead">Mountains ahead</a>
       <a class="btn" href="/updates">Trail updates</a>
       <a class="btn" href="/guide">Field guide</a>

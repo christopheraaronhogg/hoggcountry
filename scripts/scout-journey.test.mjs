@@ -63,6 +63,27 @@ test('summary math: percent, remaining, pace, days', () => {
   assert.equal(j.summary.currentStateName, 'North Carolina');
 });
 
+test('confirmed finish overrides stale or missing GPS and freezes hike duration', () => {
+  for (const currentMile of [0, 2170, 150]) {
+    const j = base({
+      currentMile, isPreview: true, completedOn: '2026-09-04',
+      nowMs: Date.parse('2026-12-01T12:00:00Z')
+    });
+    assert.equal(j.summary.completedOn, '2026-09-04');
+    assert.equal(j.summary.currentMile, j.summary.totalMiles);
+    assert.equal(j.summary.percentComplete, 100);
+    assert.equal(j.summary.milesRemaining, 0);
+    assert.equal(j.summary.daysOnTrail, 188);
+    assert.equal(j.summary.isPreview, false);
+    assert.ok(j.states.every((s) => s.status === 'done'));
+    assert.ok(j.states.flatMap((s) => s.milestones).every((m) => m.reached));
+    assert.ok(j.states.flatMap((s) => s.landmarks).every((l) => l.reached));
+    assert.equal(j.summary.latestFixAt, '2026-03-11T00:00:00Z');
+  }
+  assert.equal(base().summary.completedOn, null);
+  assert.equal(base().summary.percentComplete, 5.5);
+});
+
 test('state status by current mile', () => {
   const j = base();
   const byId = Object.fromEntries(j.states.map((s) => [s.id, s]));

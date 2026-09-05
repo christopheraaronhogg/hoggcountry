@@ -11,7 +11,7 @@
   <title>Hogg Country — Scout, the Appalachian Trail app</title>
   <meta
     name="description"
-    content="Scout is a field-grade Appalachian Trail assistant on your phone. Dad's live 2026 NOBO thru-hike — pack, pace, weather, water, shelters — is the demo. Get on the waitlist for the iOS and Android launch."
+    content="Scout is a field-grade Appalachian Trail assistant on your phone. Dad's completed 2026 NOBO thru-hike — pack, pace, weather, water, shelters — is the demo. Get on the waitlist for the iOS and Android launch."
   />
   <meta property="og:title" content="Scout — the AT app, demoed by a real thru-hike" />
   <meta
