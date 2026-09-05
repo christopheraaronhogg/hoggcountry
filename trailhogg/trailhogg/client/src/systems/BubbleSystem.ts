@@ -90,7 +90,7 @@ export class BubbleSystem {
     // Distribute NPCs: some ahead, some behind, some at player's position
     // Range: -20 to +20 miles from player
     const mileOffset = (Math.random() - 0.5) * 40;
-    const mile = Math.max(0, Math.min(2197.4, playerMile + mileOffset));
+    const mile = Math.max(0, Math.min(2197.9, playerMile + mileOffset));
 
     // Days on trail correlates loosely with position
     const daysOffset = Math.floor(mileOffset / 2) + Math.floor(Math.random() * 10) - 5;
@@ -204,7 +204,7 @@ export class BubbleSystem {
         const milesPerTick = (speed * (5 / 60)) * energyMod;
 
         if (npc.direction === 'nobo') {
-          npc.mile = Math.min(2197.4, npc.mile + milesPerTick);
+          npc.mile = Math.min(2197.9, npc.mile + milesPerTick);
         } else {
           npc.mile = Math.max(0, npc.mile - milesPerTick);
         }

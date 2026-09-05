@@ -5,9 +5,9 @@ const DEFAULT_VALID_UNTIL = '2026-06-22T00:00:00.000Z';
 
 export const DEFAULT_CONTEXT_PACK: ContextPack = {
 	frame: {
-		totalMiles: 2197.4,
+		totalMiles: 2197.9,
 		startMile: 0,
-		endMile: 2197.4,
+		endMile: 2197.9,
 		source: 'AWOL 2026 reference length + neutral Scout starter pack'
 	},
 	hiker: {
@@ -172,7 +172,7 @@ export const DEFAULT_CONTEXT_PACK: ContextPack = {
 			title: 'AT reference length',
 			kind: 'derived',
 			citation: 'AWOL 2026 calibrated reference length',
-			miles: { from: 0, to: 2197.4 }
+			miles: { from: 0, to: 2197.9 }
 		},
 		{
 			id: 'derived:generated-mile-caveat',

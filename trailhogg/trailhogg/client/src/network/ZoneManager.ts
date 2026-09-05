@@ -1,7 +1,7 @@
 /**
  * ZoneManager - Handles zone-based P2P clustering for TrailHogg MMO
  *
- * The 2,197.4-mile AT is split into 28 zones (based on terrain zones).
+ * The 2,197.9-mile AT is split into 28 zones (based on terrain zones).
  * Each zone operates as a semi-independent P2P cluster with a leader.
  * Players only sync with others in their zone + adjacent zones.
  */

@@ -81,7 +81,7 @@ Scout planning changes require evidence, not vibes. See `docs/scout-reliability-
 
 **CRITICAL:** All AT facts must come from the canonical sources — `src/data/trail-facts.yaml` (guide template injection) and `src/data/trailData.ts` (code).
 
-Key facts (AWOL 2026): total trail **2,197.4 miles** (not 2,197.9); approach trail **8.8 miles** (not in AT total); **14** states; **~260** shelters.
+Key facts (AWOL 2026): total trail **2,197.9 miles** (not 2,197.9); approach trail **8.8 miles** (not in AT total); **14** states; **~260** shelters.
 
 When adding AT facts: add to the canonical source with citation, import the value (never hardcode), then run `/audit-trail-facts` to validate (5-agent cross-check; see `.claude/skills/audit-trail-facts.md`).
 
@@ -121,7 +121,7 @@ When the user mentions a bug, feature request, or task mid-conversation:
 
 ## TrailHogg Game
 
-Phaser 3.90 + Vite 7 sim of the full 2,197.4-mile AT (260+ real shelters, 24+ terrain zones, 25+ towns). Source in `trailhogg/`; a built copy is served statically at `/game` (committed under `public/game/` and `apps/openclaw-web/static/game/`). Feature-flagged "archived" in `src/lib/features.ts` — preserved, not part of the active product. Dev: `cd trailhogg/trailhogg && npm run dev:client`.
+Phaser 3.90 + Vite 7 sim of the full 2,197.9-mile AT (260+ real shelters, 24+ terrain zones, 25+ towns). Source in `trailhogg/`; a built copy is served statically at `/game` (committed under `public/game/` and `apps/openclaw-web/static/game/`). Feature-flagged "archived" in `src/lib/features.ts` — preserved, not part of the active product. Dev: `cd trailhogg/trailhogg && npm run dev:client`.
 
 ## Additional Documentation
 

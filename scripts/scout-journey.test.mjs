@@ -19,17 +19,17 @@ const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const STATES = [
   { id: 'GA', name: 'Georgia', entry_mile: 0, exit_mile: 78.3, miles: 78.3 },
   { id: 'NC', name: 'North Carolina', entry_mile: 78.3, exit_mile: 239.4, miles: 161.1 },
-  { id: 'ME', name: 'Maine', entry_mile: 1915.7, exit_mile: 2197.4, miles: 281.7 }
+  { id: 'ME', name: 'Maine', entry_mile: 1915.7, exit_mile: 2197.9, miles: 282.2 }
 ];
 const LANDMARKS = [
   { name: 'Springer Mountain', mile: 0, state: 'GA', type: 'summit', significance: 'Southern terminus', elevation: 3782 },
   { name: 'Neels Gap', mile: 31.3, state: 'GA', type: 'landmark' },
   { name: 'Max Patch', mile: 255.2, state: 'NC', type: 'summit' }, // mile lands in NC range here
-  { name: 'Katahdin', mile: 2197.4, state: 'ME', type: 'summit', significance: 'Northern terminus' }
+  { name: 'Katahdin', mile: 2197.9, state: 'ME', type: 'summit', significance: 'Northern terminus' }
 ];
 const MILESTONES = [
   { mile: 100, name: 'First Century', emoji: '💯' },
-  { mile: 2197.4, name: 'Summit!', emoji: '🎊' }
+  { mile: 2197.9, name: 'Summit!', emoji: '🎊' }
 ];
 const DISPATCHES = [
   { id: 'a', title: 'Cold start', body: 'Frosty', publishedAt: '2026-03-02', trailMile: 12 },
@@ -39,7 +39,7 @@ const DISPATCHES = [
 function base(overrides = {}) {
   return buildJourney({
     currentMile: 120,
-    totalMiles: 2197.4,
+    totalMiles: 2197.9,
     states: STATES,
     landmarks: LANDMARKS,
     milestones: MILESTONES,
@@ -56,8 +56,8 @@ function base(overrides = {}) {
 test('summary math: percent, remaining, pace, days', () => {
   const j = base();
   assert.equal(j.summary.currentMile, 120);
-  assert.equal(j.summary.percentComplete, 5.5); // 120/2197.4
-  assert.equal(j.summary.milesRemaining, 2077.4);
+  assert.equal(j.summary.percentComplete, 5.5); // 120/2197.9
+  assert.equal(j.summary.milesRemaining, 2077.9);
   assert.equal(j.summary.daysOnTrail, 11); // Mar 1..Mar 11 inclusive
   assert.equal(j.summary.paceMilesPerDay, 10.9); // 120/11
   assert.equal(j.summary.currentStateName, 'North Carolina');
@@ -113,7 +113,7 @@ test('milestones reached-flagged by mile', () => {
   const century = nc.milestones.find((m) => m.mile === 100); // mile 100 is in NC (78.3-239.4)
   assert.ok(century && century.reached); // 100 <= 120
   const me = j.states.find((s) => s.id === 'ME');
-  const summit = me.milestones.find((m) => m.mile === 2197.4);
+  const summit = me.milestones.find((m) => m.mile === 2197.9);
   assert.ok(summit && !summit.reached);
 });
 
@@ -141,7 +141,7 @@ test('pre-start date yields zero days and null pace', () => {
 // mile 500 → Virginia 'current', not preview; mile 0 → preview, no state.
 test('personal journey: mid-trail mile is current state, not preview', () => {
   const j = buildJourney({
-    currentMile: 500, totalMiles: 2197.4, states: STATES, landmarks: [], milestones: [],
+    currentMile: 500, totalMiles: 2197.9, states: STATES, landmarks: [], milestones: [],
     dispatches: [], startDateISO: '2026-03-01', nowMs: Date.parse('2026-05-01T00:00:00Z'),
     latestFixLabel: null, latestFixAt: null, isPreview: false
   });
@@ -168,7 +168,7 @@ test('elevation: peak-preserving downsample with sane scale, empty when no sampl
 
 test('personal journey: zero mile renders as preview with no current state', () => {
   const j = buildJourney({
-    currentMile: 0, totalMiles: 2197.4, states: STATES, landmarks: [], milestones: [],
+    currentMile: 0, totalMiles: 2197.9, states: STATES, landmarks: [], milestones: [],
     dispatches: [], startDateISO: '2026-03-01', nowMs: Date.parse('2026-05-01T00:00:00Z'),
     latestFixLabel: null, latestFixAt: null, isPreview: true
   });

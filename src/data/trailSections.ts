@@ -23,7 +23,7 @@ export const TRAIL_SECTIONS: TrailSection[] = [
   { name: 'Massachusetts', state: 'MA', startMile: 1538, endMile: 1623, emoji: '🦃' },
   { name: 'Vermont', state: 'VT', startMile: 1623, endMile: 1773, emoji: '🧀' },
   { name: 'New Hampshire', state: 'NH', startMile: 1773, endMile: 1912, emoji: '🏔️' },
-  { name: 'Maine', state: 'ME', startMile: 1912, endMile: 2197.4, emoji: '🦞' },
+  { name: 'Maine', state: 'ME', startMile: 1912, endMile: 2197.9, emoji: '🦞' },
 ];
 
 export function getSectionForMile(mile: number): TrailSection | undefined {

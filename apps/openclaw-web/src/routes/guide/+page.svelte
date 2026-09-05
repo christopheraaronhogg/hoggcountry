@@ -177,7 +177,7 @@
         Appalachian Trail<br />NOBO Field Guide
       </h1>
       <p class="masthead-subtitle">Northbound: Springer → Katahdin</p>
-      <p class="masthead-meta">2,197.4 Miles of Trail-Tested Knowledge</p>
+      <p class="masthead-meta">2,197.9 Miles of Trail-Tested Knowledge</p>
       <p class="masthead-hiker">
         <span class="hiker-label">Prepared for</span>
         <span class="hiker-name hand">HoggCountry</span>

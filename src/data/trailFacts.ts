@@ -8,13 +8,13 @@
  *   import { facts, getFact, formatFact } from '@/data/trailFacts';
  *
  *   // Direct access
- *   const miles = facts.trail.total_miles.value; // 2197.4
+ *   const miles = facts.trail.total_miles.value; // 2197.9
  *
  *   // Path-based access (for templates)
- *   const miles = getFact('trail.total_miles'); // 2197.4
+ *   const miles = getFact('trail.total_miles'); // 2197.9
  *
  *   // Formatted access
- *   const display = formatFact('trail.total_miles', 'commas'); // "2,197.4"
+ *   const display = formatFact('trail.total_miles', 'commas'); // "2,197.9"
  */
 
 import fs from 'node:fs';
@@ -177,7 +177,7 @@ export const facts = new Proxy({} as TrailFacts, {
  *
  * @example
  * getFact('trail.total_miles')           // returns the FactValue object
- * getFact('trail.total_miles.value')     // returns 2197.4
+ * getFact('trail.total_miles.value')     // returns 2197.9
  * getFact('landmarks.blood_mountain')    // returns full landmark object
  * getFact('landmarks.blood_mountain.elevation') // returns 4458
  */
@@ -212,10 +212,10 @@ export function getFact(path: string): unknown {
  * @param format - Format to apply: 'raw' | 'commas' | 'round' | 'display' | 'marketing'
  *
  * @example
- * formatFact('trail.total_miles', 'raw')       // "2197.4"
- * formatFact('trail.total_miles', 'commas')    // "2,197.4"
+ * formatFact('trail.total_miles', 'raw')       // "2197.9"
+ * formatFact('trail.total_miles', 'commas')    // "2,197.9"
  * formatFact('trail.total_miles', 'round')     // "2197"
- * formatFact('trail.total_miles', 'display')   // "2,197.4" (uses .display if available)
+ * formatFact('trail.total_miles', 'display')   // "2,197.9" (uses .display if available)
  * formatFact('trail.total_miles', 'marketing') // "2,190+" (uses .marketing if available)
  */
 export function formatFact(path: string, format: 'raw' | 'commas' | 'round' | 'display' | 'marketing' = 'raw'): string {
@@ -361,7 +361,7 @@ export function getStateAtMile(mile: number): State | undefined {
  *
  * @example
  * processTemplate("The trail is {{trail.total_miles|commas}} miles long.")
- * // "The trail is 2,197.4 miles long."
+ * // "The trail is 2,197.9 miles long."
  */
 export function processTemplate(template: string): string {
   return template.replace(/\{\{([^}]+)\}\}/g, (match, expr) => {
@@ -444,7 +444,7 @@ export function getMeta() {
 // =============================================================================
 
 // Common values for quick access
-export const TRAIL_TOTAL_MILES = 2197.4; // Cached for performance
+export const TRAIL_TOTAL_MILES = 2197.9; // Cached for performance
 export const APPROACH_TRAIL_MILES = 8.8;
 export const STATE_COUNT = 14;
 export const SHELTER_COUNT = 260;

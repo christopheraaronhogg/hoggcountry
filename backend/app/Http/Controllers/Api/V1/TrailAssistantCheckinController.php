@@ -15,7 +15,7 @@ class TrailAssistantCheckinController extends ApiController
 {
     private const SOURCES = ['mobile_app', 'web_app', 'manual'];
 
-    private const TRAIL_TOTAL_MILES = 2197.4;
+    private const TRAIL_TOTAL_MILES = 2197.9;
 
     public function store(Request $request)
     {

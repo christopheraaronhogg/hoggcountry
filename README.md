@@ -462,9 +462,9 @@ Currently deployed to Forge. On push to `main`:
 ### Completed
 - [x] **YAML Trail Facts System** - `src/data/trail-facts.yaml` as single source of truth with template injection (2026-01-14)
 - [x] **Parser Fact Injection** - `parse-master-guide.js` now injects facts from YAML into prose at build time (2026-01-14)
-- [x] **#1 Distance Consistency** - All guide chapters now use 2,197.4 miles (AWOL 2026) via template system (2026-01-14)
+- [x] **#1 Distance Consistency** - All guide chapters now use 2,197.9 miles (AWOL 2026) via template system (2026-01-14)
 - [x] **Multi-Agent Fact Checker** - `/audit-trail-facts` skill validates YAML against official sources (2026-01-14)
-- [x] **Full Trail Data in Game** - 2,197.4 miles mapped with 260+ shelters, 25+ towns, 20+ peaks (2025)
+- [x] **Full Trail Data in Game** - 2,197.9 miles mapped with 260+ shelters, 25+ towns, 20+ peaks (2025)
 - [x] **Field Guide Parser** - Auto-generates chapters from master document (2025)
 - [x] **Offline PWA Support** - Full offline capability via service worker (2025)
 - [x] **Code-Split Tools** - 14 tools lazy-loaded for performance (2025)
@@ -519,7 +519,7 @@ src/data/trail-facts.yaml       ← SINGLE SOURCE OF TRUTH (YAML, cited)
 **Template syntax in master guide:**
 ```markdown
 The trail is {{trail.total_miles|commas}} miles long.
-→ The trail is 2,197.4 miles long.
+→ The trail is 2,197.9 miles long.
 
 {{factbox:landmarks.blood_mountain}}
 → Generates cited fact card with mile, elevation, source

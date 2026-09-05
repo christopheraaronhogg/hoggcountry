@@ -1,10 +1,11 @@
 <script lang="ts">
   import { DAD_HIKE_FINISH_LABEL, DAD_HIKE_COMPLETION_LABEL } from '$lib/dad-hike';
+  import DadAchievements from '$lib/components/DadAchievements.svelte';
 </script>
 
 <svelte:head>
   <title>About | Hogg Country</title>
-  <meta name="description" content="Jimmy Hogg — Triple O Crowner, Sassafras Award recipient, and 2026 AT NOBO thru-hiker." />
+  <meta name="description" content="Jimmy Hogg — 2,000 Miler, Virginia Triple Crown, AT Thru-Hiker Class of 2026, Triple O Crowner, and Sassafras Award recipient." />
 </svelte:head>
 
 <section class="about-page">
@@ -23,8 +24,8 @@
       <section>
         <h2>The Trail So Far</h2>
         <p>
-          I'm an avid long-distance hiker from Arkansas with over 840 miles of thru-hiking experience across three major
-          trail systems. On {DAD_HIKE_FINISH_LABEL}, I completed my Appalachian Trail thru-hike from Springer Mountain, Georgia to Mount Katahdin,
+          I'm a long-distance hiker from Arkansas. After more than 840 miles on the Ouachita, Ozark Highlands, and Ozark trails,
+          I completed the 2,197.9-mile Appalachian Trail on {DAD_HIKE_FINISH_LABEL}, from Springer Mountain, Georgia to Mount Katahdin,
           Maine. 💯
         </p>
         <p>This site documents my journey: past adventures, the completed thru-hike, and the field guide built for the AT.</p>
@@ -33,11 +34,14 @@
       <section>
         <h2>Hiking Resume</h2>
         <div class="hike-cards">
+          <div class="hike-card"><span>Appalachian Trail</span><strong>2,197.9 mi · 💯 Complete</strong><small>Class of 2026 · Finished {DAD_HIKE_FINISH_LABEL}</small></div>
           <div class="hike-card"><span>Ouachita Trail</span><strong>~223 mi / ~45,000 ft</strong><small>Arkansas-Oklahoma</small></div>
           <div class="hike-card"><span>Ozark Highlands Trail</span><strong>~270 mi / ~35,000 ft</strong><small>Northern Arkansas</small></div>
           <div class="hike-card"><span>Ozark Trail</span><strong>~230 mi / ~40,000 ft</strong><small>Missouri</small></div>
         </div>
       </section>
+
+      <DadAchievements />
 
       <section>
         <h2>Recognition</h2>
@@ -73,6 +77,7 @@
 
   .badge-row {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     gap: 0.5rem;
     margin-bottom: 1rem;

@@ -48,7 +48,7 @@
     <div class="meter">
       <span class="meter-label">Current phase</span>
       <strong>{phaseLabel}</strong>
-      <span class="meter-subtle">Mile {profile.currentMile.toFixed(1)} / 2197.4</span>
+      <span class="meter-subtle">Mile {profile.currentMile.toFixed(1)} / 2197.9</span>
     </div>
   {/if}
 </section>

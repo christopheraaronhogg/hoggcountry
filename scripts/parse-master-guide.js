@@ -6,8 +6,8 @@
  * for the Astro content collection. Also injects facts from trail-facts.yaml.
  *
  * TEMPLATE SYNTAX (in master guide):
- * - {{trail.total_miles}}           → raw value (2197.4)
- * - {{trail.total_miles|commas}}    → with commas (2,197.4)
+ * - {{trail.total_miles}}           → raw value (2197.9)
+ * - {{trail.total_miles|commas}}    → with commas (2,197.9)
  * - {{trail.total_miles|round}}     → rounded (2197)
  * - {{trail.total_miles|display}}   → uses .display if available
  * - {{trail.total_miles|marketing}} → uses .marketing if available
@@ -514,8 +514,8 @@ export function parseMasterDocument(content) {
 function cleanIntroContent(content) {
   // Load facts for template replacement in intro
   const facts = loadFacts();
-  const totalMiles = facts?.trail?.total_miles?.display || '2,197.4';
-  const totalMilesRaw = facts?.trail?.total_miles?.value || 2197.4;
+  const totalMiles = facts?.trail?.total_miles?.display || '2,197.9';
+  const totalMilesRaw = facts?.trail?.total_miles?.value || 2197.9;
 
   // Remove the document header block
   let cleaned = content
@@ -577,8 +577,8 @@ function cleanPartContent(content, title) {
   // Load facts for template replacement
   const facts = loadFacts();
   if (facts) {
-    const totalMiles = facts.trail?.total_miles?.display || '2,197.4';
-    const totalMilesRaw = facts.trail?.total_miles?.value || 2197.4;
+    const totalMiles = facts.trail?.total_miles?.display || '2,197.9';
+    const totalMilesRaw = facts.trail?.total_miles?.value || 2197.9;
 
     // Replace hardcoded trail length with dynamic value
     cleaned = cleaned.replace(/2,?197\.9/g, totalMiles);

@@ -349,7 +349,7 @@ icon: "building"
 
 ---
 
-### MAINE (Mile 1,905-2197)
+### MAINE (Mile 1,905-2198)
 
 **Andover, ME (Mile ~1,975 via ME-5)**
 - **Distance from Trail:** ~0.8 miles

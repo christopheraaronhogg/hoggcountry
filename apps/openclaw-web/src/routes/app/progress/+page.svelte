@@ -68,8 +68,8 @@
   async function saveMile(event: SubmitEvent): Promise<void> {
     event.preventDefault();
     const mile = Number(mileDraft);
-    if (busy || !Number.isFinite(mile) || mile < 0 || mile > 2197.4) {
-      error = 'Enter a mile between 0 and 2,197.4.';
+    if (busy || !Number.isFinite(mile) || mile < 0 || mile > 2197.9) {
+      error = 'Enter a mile between 0 and 2,197.9.';
       return;
     }
     busy = true;
@@ -144,7 +144,7 @@
         <form class="log-form" onsubmit={saveMile}>
           <label>
             <span class="eyebrow">Your current mile</span>
-            <input type="number" inputmode="decimal" step="0.1" min="0" max="2197.4" bind:value={mileDraft} placeholder="e.g. 412.5" />
+            <input type="number" inputmode="decimal" step="0.1" min="0" max="2197.9" bind:value={mileDraft} placeholder="e.g. 412.5" />
           </label>
           <div class="log-actions">
             <button class="primary" type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save mile'}</button>

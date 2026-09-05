@@ -294,7 +294,7 @@ export const SHELTERS: Shelter[] = [
   { mile: 1897.0, name: 'Rattle River Shelter', elevation: 1260, state: 'NH', hasWater: true, hasPrivy: true, capacity: 8 },
   { mile: 1910.7, name: 'Gentian Pond Shelter', elevation: 2166, state: 'NH', hasWater: true, hasPrivy: true, capacity: 10 },
 
-  // MAINE (1916-2197.4)
+  // MAINE (1916-2197.9)
   { mile: 1916.0, name: 'Carlo Col Shelter', elevation: 2945, state: 'ME', hasWater: true, hasPrivy: true, capacity: 8 },
   { mile: 1920.5, name: 'Full Goose Shelter', elevation: 3030, state: 'ME', hasWater: true, hasPrivy: true, capacity: 8 },
   { mile: 1925.4, name: 'Speck Pond Shelter', elevation: 3500, state: 'ME', hasWater: true, hasPrivy: true, capacity: 8, notes: 'Highest pond in Maine!' },
@@ -466,7 +466,7 @@ export const TERRAIN_ZONES: TerrainZone[] = [
   { zoneId: 'zone_25_mahoosuc', startMile: 1912, endMile: 2000, type: 'me_mahoosuc', name: 'Mahoosuc Range', description: 'Mahoosuc Notch - THE hardest mile on the entire AT', difficulty: 5, treeType: 'spruce_fir', groundType: 'boulder_cave', avgElevation: 3000, adjacentZones: ['zone_24_whites', 'zone_26_me_lakes'], speedModifier: 0.5, energyModifier: 2.0, hazardNotes: 'Mahoosuc Notch: 1 mile takes 2-4 HOURS. Scrambling through boulder caves. Pack off required.', waterReliability: 'moderate', waterNotes: 'Streams in valleys only. Carry water for ridge sections.', cellService: 'none', cellNotes: 'Complete dead zone. No service until Andover.' },
   { zoneId: 'zone_26_me_lakes', startMile: 2000, endMile: 2093, type: 'me_lakes', name: 'Maine Lakes & Rivers', description: 'Lake country, river fords, remote wilderness', difficulty: 3, treeType: 'spruce_fir', groundType: 'roots_rocks', avgElevation: 2000, adjacentZones: ['zone_25_mahoosuc', 'zone_27_100mile'], speedModifier: 0.85, energyModifier: 1.2, hazardNotes: 'Ford crossings dangerous after rain. Consider wading sandals.', waterReliability: 'abundant', waterNotes: 'Lakes, rivers, streams everywhere. Pristine water but filter anyway.', cellService: 'spotty', cellNotes: 'Rangeley has service. Very limited on trail. Summits may work.' },
   { zoneId: 'zone_27_100mile', startMile: 2093, endMile: 2190, type: 'me_100mile', name: '100-Mile Wilderness', description: 'No resupply for 100 miles. True wilderness. Last big test.', difficulty: 4, treeType: 'spruce_fir', groundType: 'roots_rocks', avgElevation: 1500, adjacentZones: ['zone_26_me_lakes', 'zone_28_katahdin'], speedModifier: 0.8, energyModifier: 1.4, hazardNotes: 'Carry 7-10 days of food. Limited cell service. Self-rescue territory.', waterReliability: 'abundant', waterNotes: 'Streams and ponds constantly. White House Landing has resupply via boat.', cellService: 'none', cellNotes: 'ZERO service for 100 miles. Complete isolation. Plan your emergency contacts before entering.' },
-  { zoneId: 'zone_28_katahdin', startMile: 2190, endMile: 2197.4, type: 'katahdin', name: 'Katahdin', description: 'The final climb. 4,000 ft in 5 miles. The northern terminus!', difficulty: 5, treeType: 'alpine_bare', groundType: 'granite', avgElevation: 3500, adjacentZones: ['zone_27_100mile'], speedModifier: 0.5, energyModifier: 2.2, hazardNotes: 'Hunt Trail is brutal - iron rungs, exposed scrambles. Summit closes in bad weather. This is it!', waterReliability: 'carry_extra', waterNotes: 'Fill at Katahdin Stream Campground. NO water above treeline!', cellService: 'spotty', cellNotes: 'Baxter Peak summit usually has signal! Call home from the top!' },
+  { zoneId: 'zone_28_katahdin', startMile: 2190, endMile: 2197.9, type: 'katahdin', name: 'Katahdin', description: 'The final climb. 4,000 ft in 5 miles. The northern terminus!', difficulty: 5, treeType: 'alpine_bare', groundType: 'granite', avgElevation: 3500, adjacentZones: ['zone_27_100mile'], speedModifier: 0.5, energyModifier: 2.2, hazardNotes: 'Hunt Trail is brutal - iron rungs, exposed scrambles. Summit closes in bad weather. This is it!', waterReliability: 'carry_extra', waterNotes: 'Fill at Katahdin Stream Campground. NO water above treeline!', cellService: 'spotty', cellNotes: 'Baxter Peak summit usually has signal! Call home from the top!' },
 ];
 
 // ============================================================================
@@ -587,7 +587,7 @@ export const TOWNS: Town[] = [
   { mile: 1898, name: 'Gorham', state: 'NH', distance: '~1.5 mi', services: ['hostels', 'DG', 'grocery', 'restaurants', 'laundry', 'PO'], hasHostel: true, hasStore: true, hasRestaurant: true, hasOutfitter: false, hasLaundry: true, hasPO: true, notes: "Major resupply after Whites, Hiker's Paradise hostel" },
 
   // ============================================================================
-  // MAINE (Mile 1912-2197.4)
+  // MAINE (Mile 1912-2197.9)
   // ============================================================================
   { mile: 1975, name: 'Andover', state: 'ME', distance: '~0.8 mi', services: ['hostel', 'grocery', 'restaurants'], hasHostel: true, hasStore: true, hasRestaurant: true, hasOutfitter: false, hasLaundry: true, hasPO: true, notes: 'Pine Ellis Hostel, small grocery' },
   { mile: 2001, name: 'Rangeley', state: 'ME', distance: '~9 mi', services: ['full town'], hasHostel: true, hasStore: true, hasRestaurant: true, hasOutfitter: true, hasLaundry: true, hasPO: true, notes: 'Hitch required, major resupply' },
@@ -857,7 +857,7 @@ export const LANDMARKS: Landmark[] = [
   { mile: 1909.3, name: 'Carter Dome', type: 'viewpoint', state: 'NH', description: 'Last big peak in Whites', photoWorthy: true },
 
   // ============================================================================
-  // MAINE (1912-2197.4)
+  // MAINE (1912-2197.9)
   // ============================================================================
   { mile: 1925.4, name: 'Mahoosuc Notch', type: 'trail_feature', state: 'ME', description: 'THE hardest mile on AT - boulder cave scramble', photoWorthy: true, notes: '1 mile takes 2-4 hours. Ice in caves year-round.' },
   { mile: 1928.8, name: 'Mahoosuc Arm', type: 'trail_feature', state: 'ME', description: 'Steepest mile on AT', notes: '1,500ft in 0.8 miles. Hand-over-hand.' },

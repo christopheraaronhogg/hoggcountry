@@ -326,7 +326,7 @@ async function loadTodayTrailContextUnsafe(options: LoadTodayTrailContextOptions
   } else {
     const current = pack.tracker.current;
     // Tracker miles arrive on mixed scales (Garmin enrichment uses centerline
-    // scaledTrailMiles); re-derive a canonical 2197.4-scale mile from the fix
+    // scaledTrailMiles); re-derive a canonical 2197.9-scale mile from the fix
     // coordinates so every downstream number shares one frame.
     if (current && Number.isFinite(current.lat) && Number.isFinite(current.lon)) {
       try {
@@ -359,7 +359,7 @@ async function loadTodayTrailContextUnsafe(options: LoadTodayTrailContextOptions
   const milesRemaining = roundTenth(progress.remainingMiles);
 
   // Waypoints and terrain are measured on the OSM-derived route scale
-  // (~2106.2 mi) while the query mile is canonical (2197.4). Convert into the
+  // (~2106.2 mi) while the query mile is canonical (2197.9). Convert into the
   // measured frame for lookups, and convert results back for display.
   const measuredFactor = pack.route.measuredMiles > 0 && totalMiles > 0
     ? pack.route.measuredMiles / totalMiles

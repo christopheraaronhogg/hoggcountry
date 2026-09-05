@@ -28,7 +28,7 @@ export interface PlanLane {
 }
 
 export const TRAIL_FACTS = {
-  totalMiles: 2197.4,
+  totalMiles: 2197.9,
   shelterCount: 260,
   averageCompletionDays: 165,
   lastVerified: '2026-01-14',

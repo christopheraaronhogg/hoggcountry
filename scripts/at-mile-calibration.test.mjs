@@ -99,7 +99,7 @@ test('mileposts cover the official frame with monotonic miles', () => {
   const mileposts = milepostsPayload.mileposts;
   const total = anchorsDoc.frame.total_miles;
   assert.equal(mileposts[0].mile, 0);
-  // The final milepost must be the true terminus (2197.4), not the truncated
+  // The final milepost must be the true terminus (2197.9), not the truncated
   // integer — coordinate snaps at Katahdin must resolve to 100% complete.
   assert.equal(mileposts[mileposts.length - 1].mile, total, 'last milepost must be the official terminus');
   // Whole-mile spine increments by 1 up to floor(total); the appended fractional

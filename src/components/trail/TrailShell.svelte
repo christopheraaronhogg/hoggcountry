@@ -91,7 +91,7 @@
     const mile = Number(trailContext.currentMile || 0);
     return {
       mile,
-      remaining: Math.max(0, 2197.4 - mile),
+      remaining: Math.max(0, 2197.9 - mile),
     };
   });
 

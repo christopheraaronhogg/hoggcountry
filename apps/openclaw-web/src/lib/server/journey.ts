@@ -299,7 +299,7 @@ export async function loadJourneySummary(): Promise<JourneySummary> {
     };
     const isPreview = props.source === 'preview' || !props.latestPoint?.coords;
     const currentMile = typeof props.latestTrailLocation?.nearestMile === 'number' ? props.latestTrailLocation.nearestMile : 0;
-    const totalMiles = (facts.trail?.total_miles?.value as number) ?? 2197.4;
+    const totalMiles = (facts.trail?.total_miles?.value as number) ?? 2197.9;
 
     return buildJourney({
       currentMile,
@@ -318,10 +318,10 @@ export async function loadJourneySummary(): Promise<JourneySummary> {
     return {
       completedOn: null,
       currentMile: 0,
-      totalMiles: 2197.4,
+      totalMiles: 2197.9,
       percentComplete: 0,
       milesHiked: 0,
-      milesRemaining: 2197.4,
+      milesRemaining: 2197.9,
       currentStateName: null,
       daysOnTrail: 0,
       paceMilesPerDay: null,
@@ -380,7 +380,7 @@ export async function loadProfileJourney(
     profile && typeof profile.currentMile === 'number' && Number.isFinite(profile.currentMile)
       ? Math.max(0, profile.currentMile)
       : 0;
-  const totalMiles = (facts.trail?.total_miles?.value as number) ?? 2197.4;
+  const totalMiles = (facts.trail?.total_miles?.value as number) ?? 2197.9;
   const startDateISO =
     profile?.startDate && /^\d{4}-\d{2}-\d{2}/.test(profile.startDate) ? profile.startDate : HIKE_START_DATE;
   const isPreview = !hasProfile || currentMile <= 0;

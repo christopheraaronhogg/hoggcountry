@@ -23,7 +23,7 @@
   ];
 
   const principles = [
-    { k: 'Grounded', t: 'Real trail miles, not guesses', d: 'Every distance comes from the same calibrated AT data behind the live map — official 2,197.4-mile frame, anchored to the guidebook.' },
+    { k: 'Grounded', t: 'Real trail miles, not guesses', d: 'Every distance comes from the same calibrated AT data behind the live map — official 2,197.9-mile frame, anchored to the guidebook.' },
     { k: 'Source-first', t: 'Your docs + Dad’s guide', d: 'Scout starts from Dad’s field guide, then layers in the documents and preferences you bring, so its advice is yours — not a generic average.' },
     { k: 'Offline-aware', t: 'Works when signal doesn’t', d: 'On-device models keep Scout useful in the backcountry; it connects to a stronger model when you have bars.' },
     { k: 'Honest', t: 'Tells you what to verify', d: 'Scout flags what it can’t confirm — water, closures, current conditions — instead of inventing a confident answer that gets you hurt.' }

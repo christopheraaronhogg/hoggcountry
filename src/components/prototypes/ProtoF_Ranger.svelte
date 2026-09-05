@@ -3,7 +3,7 @@
   // WPA poster aesthetic inspired by 1930s-40s national park posters
   // OFFICIAL TRAIL GUIDE prepared by C. Hogg for J. "HoggCountry" Hogg
 
-  import { DAD_HIKE_FINISH_LABEL } from "../../../apps/openclaw-web/src/lib/dad-hike";
+  import { DAD_HIKE_FINISH_LABEL, DAD_HIKE_ACHIEVEMENTS } from "../../../apps/openclaw-web/src/lib/dad-hike";
   import { onMount } from "svelte";
   import { resolve } from "../../lib/route-paths";
   import WaitlistSignup from "../../../apps/openclaw-web/src/lib/components/WaitlistSignup.svelte";
@@ -446,7 +446,7 @@
       </h1>
 
       <p class="hero-subtitle">
-        An Official Trail Guide to 2,197.4 Miles of America's Footpath
+        An Official Trail Guide to 2,197.9 Miles of America's Footpath
       </p>
 
       <div class="hero-route">
@@ -787,17 +787,15 @@
           </div>
 
           <div class="mission-credentials">
-            <div class="credential credential-featured">
-              <span class="credential-badge">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                </svg>
-              </span>
-              <div class="credential-info">
-                <span class="credential-title">840+ Trail Miles Certified</span>
-                <span class="credential-subtitle">Verified Distance Record</span>
+            {#each DAD_HIKE_ACHIEVEMENTS as achievement}
+              <div class="credential credential-featured">
+                <span class="credential-badge" aria-hidden="true">{achievement.symbol}</span>
+                <div class="credential-info">
+                  <span class="credential-title">{achievement.title}</span>
+                  <span class="credential-subtitle">{achievement.detail}</span>
+                </div>
               </div>
-            </div>
+            {/each}
 
             <div class="credential credential-award">
               <span class="credential-badge">
@@ -823,18 +821,6 @@
               </div>
             </div>
 
-            <div class="credential credential-at">
-              <span class="credential-badge">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                  <polyline points="9 22 9 12 15 12 15 22" fill="none" stroke="currentColor" stroke-width="2" />
-                </svg>
-              </span>
-              <div class="credential-info">
-                <span class="credential-title">AT Experience: 49 Miles Logged</span>
-                <span class="credential-subtitle">Section Hike Experience</span>
-              </div>
-            </div>
 
             <div class="credential credential-summit">
               <span class="credential-badge">
@@ -880,7 +866,7 @@
 
         <div class="expedition-card">
           <div class="card-stamp">DISTANCE</div>
-          <div class="card-value">2,197.4</div>
+          <div class="card-value">2,197.9</div>
           <div class="card-label">Total Trail Miles</div>
         </div>
 
@@ -1233,7 +1219,7 @@
                 <path d="M4 44h40" />
               </svg>
             </div>
-            <div class="fact-number">2,197.4</div>
+            <div class="fact-number">2,197.9</div>
             <div class="fact-label">TRAIL MILES</div>
             <div class="fact-detail">Springer to Katahdin</div>
           </div>
@@ -1341,8 +1327,7 @@
             <span class="featured-tag">COMMENCE HERE</span>
             <h3 class="featured-title">Part I: Hiker Profile & Experience</h3>
             <p class="featured-desc">
-              Trail credentials, completed thru-hikes, and the 840+ miles of experience that prepare
-              a hiker for 2,197.4 miles of the Appalachian Trail.
+              Trail credentials, completed thru-hikes, and the story of a 2,197.9-mile Appalachian Trail finish.
             </p>
             <a href={resolve("/guide#01-hiker-profile-and-experience")} class="featured-link">
               Read Chapter

@@ -25,7 +25,7 @@ function sampleEnvelope() {
     data: {
       dad: {
         current_mile: 482.6,
-        total_miles: 2197.4,
+        total_miles: 2197.9,
         percent_complete: 21.96,
         miles_remaining: 1714.8,
         current_state: 'Virginia',

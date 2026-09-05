@@ -10,11 +10,10 @@
 #
 # Provenance: researched 2026-06-12 from the 2026 ATC Data Book mileages
 # (atdist.com), cross-checked against the 2023 Data Book (traildistance.com)
-# and The Trek's FarOut-aligned resupply list (2023, updated 2025). The 2026
-# ATC Data Book total is 2,197.9 vs AWOL 2026's 2,197.4 — a systematic
-# ~0.0-0.5 mi frame difference we accept (display rounds to 0.1 mi; Katahdin
-# stays pinned at 2,197.4). Verify entries marked medium/low against the
-# physical AWOL 2026 guide when available.
+# and The Trek's resupply list. On 2026-09-05 the total and northern terminus
+# were updated to ATC's official 2026 length, 2,197.9 miles. Existing interior
+# anchors retain their individual citations and uncertainty; this is not a
+# new survey of every waypoint. Regenerate web and mobile geometry together.
 #
 # confidence:
 #   definitional — terminus; true by definition of the frame
@@ -26,9 +25,9 @@
 # needs citations.
 
 frame:
-  total_miles: 2197.4
-  reference: AWOL 2026 (anchors mostly ATC Data Book 2026)
-  updated: '2026-06-12'
+  total_miles: 2197.9
+  reference: ATC 2026 official total (interior anchors individually cited)
+  updated: '2026-09-05'
 anchors:
   - name: Springer Mountain summit, GA
     lat: 34.6272
@@ -638,11 +637,8 @@ anchors:
   - name: Katahdin / Baxter Peak, ME
     lat: 45.9044
     lon: -68.9213
-    mile: 2197.4
+    mile: 2197.9
     confidence: definitional
     sources:
-      - https://www.atdist.com/ (ATC Data Book 2024/2025 total = 2197.4)
-      - >-
-        https://thetrek.co/appalachian-trail/the-appalachian-trail-state-by-state-overview-highlights-hiker-tips-maps-and-more/
-        (Trek/ATC 2024 figure 2197.4)
-    notes: Definitional northern terminus in the 2197.4 frame.
+      - https://appalachiantrail.org/news-stories/2026-official-mileage/
+    notes: Definitional northern terminus; official ATC 2026 total, verified 2026-09-05.

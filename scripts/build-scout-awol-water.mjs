@@ -21,7 +21,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const INPUT = path.join(repoRoot, 'src/data/at-water-sources.json');
 const OUTPUT = path.join(repoRoot, 'apps/openclaw-web/src/lib/server/generated/awol-water-reference.ts');
 
-const TOTAL_AT_MILES = 2197.4;
+const TOTAL_AT_MILES = 2197.9;
 
 // Same AT state frame Scout uses (scout-official-sources AT_STATE_MILE_RANGES).
 const AT_STATE_MILE_RANGES = [

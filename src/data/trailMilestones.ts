@@ -10,7 +10,7 @@ export const MILESTONES: TrailMilestone[] = [
     { mile: 1000, name: 'Thousand Miles', emoji: '🏆' },
     { mile: 1099, name: 'Halfway!', emoji: '⚡' },
     { mile: 2000, name: 'Almost Home', emoji: '🔥' },
-    { mile: 2197.4, name: 'Summit!', emoji: '🎊' },
+    { mile: 2197.9, name: 'Summit!', emoji: '🎊' },
 ];
 
 export function getNextMilestone(mile: number): TrailMilestone | undefined {

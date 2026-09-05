@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const GUIDE_START_MILE = 1850;
-const TERMINUS_MILE = 2197.4;
+const TERMINUS_MILE = 2197.9;
 const SOURCE_CHECKED_AT = '2026-07-30';
 
 const PATHS = {
@@ -218,7 +218,7 @@ function terrainMetrics(points) {
     if (deltaFeet > 0) gainFt += deltaFeet;
     else lossFt += Math.abs(deltaFeet);
 
-    // The calibrated mile frame clamps the final samples to 2197.4. Ignore
+    // The calibrated mile frame clamps the final samples to 2197.9. Ignore
     // those near-zero horizontal intervals for grade so the terminus clamp
     // cannot create a mathematically huge, physically false slope.
     const distanceMiles = current.m - previous.m;

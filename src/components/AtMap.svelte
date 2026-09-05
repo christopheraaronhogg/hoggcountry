@@ -94,7 +94,7 @@
   // Mile selection
   const PREVIEW_KEY = "hcAtMap.previewMile";
   const TRAIL_MAX_MILE = 2197;
-  const TRAIL_TOTAL_MILES = 2197.4;
+  const TRAIL_TOTAL_MILES = 2197.9;
   const API_BASE = (import.meta.env.PUBLIC_API_BASE_URL || "https://hoggcountry.on-forge.com/api/v1").replace(/\/+$/, "");
   const HOGG_LABEL = "hoggcountry";
   const HOGG_FIX_STALE_MS = 6 * 60 * 1000;

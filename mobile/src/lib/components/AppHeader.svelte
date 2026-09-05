@@ -6,7 +6,7 @@
 	import Icon from './Icon.svelte';
 
 	// Calibrated AT length per CLAUDE.md (AWOL 2026).
-	const trailMiles = 2197.4;
+	const trailMiles = 2197.9;
 	const progress = $derived(
 		trailProgress(trailAssistant.currentMile, trailMiles, trailAssistant.hikeProfile.direction)
 	);

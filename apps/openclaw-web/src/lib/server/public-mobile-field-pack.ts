@@ -30,7 +30,7 @@ import {
   type TrailDirection
 } from '@hoggcountry/trail-data/trail-direction';
 
-const TOTAL_AT_MILES = 2197.4;
+const TOTAL_AT_MILES = 2197.9;
 const PACK_VALID_MS = 6 * 60 * 60 * 1000;
 const PILOT_CURRENT_MILE = 582.4;
 const PILOT_GENERATED_AT = '2026-06-16T00:00:00.000Z';

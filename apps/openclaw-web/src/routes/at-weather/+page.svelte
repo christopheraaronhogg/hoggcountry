@@ -6,7 +6,7 @@
   <title>AT Weather · Mile by mile | Hogg Country</title>
   <meta
     name="description"
-    content="Drag any mile of the Appalachian Trail to see the model forecast — Open-Meteo data anchored to the calibrated 2,197.4-mile AT frame. Verify field conditions before you commit."
+    content="Drag any mile of the Appalachian Trail to see the model forecast — Open-Meteo data anchored to the calibrated 2,197.9-mile AT frame. Verify field conditions before you commit."
   />
 </svelte:head>
 
@@ -17,7 +17,7 @@
     <p class="lede">
       Drag the marker to any mile from Springer to Katahdin and Scout pulls a model forecast for that exact
       point on the trail — current conditions, the next 24 hours, the next seven days. Hand-anchored to the
-      same calibrated 2,197.4-mile AT frame we use everywhere else.
+      same calibrated 2,197.9-mile AT frame we use everywhere else.
     </p>
     <ul class="badges" aria-label="What you're looking at">
       <li class="badge"><span class="badge-dot dot-pine" aria-hidden="true"></span>Open-Meteo model</li>

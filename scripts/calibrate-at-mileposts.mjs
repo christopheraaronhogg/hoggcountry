@@ -224,7 +224,7 @@ for (let mile = 0; mile <= maxWholeMile; mile += 1) {
   mileposts.push({ mile, lat: Number(lat.toFixed(6)), lon: Number(lon.toFixed(6)) });
 }
 // The integer loop stops at floor(total); append the true fractional terminus
-// so coordinate/mile snaps at Katahdin resolve to the official 2197.4 (100%
+// so coordinate/mile snaps at Katahdin resolve to the official 2197.9 (100%
 // complete), not the truncated 2197.0. Use the highest-mile anchor's own
 // coordinates (definitionally Baxter Peak) when it sits at the terminus.
 if (officialTotal > maxWholeMile) {

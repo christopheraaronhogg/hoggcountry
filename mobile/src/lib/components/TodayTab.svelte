@@ -29,7 +29,7 @@
 	onMount(() => minuteClock.retain());
 	const nowMs = $derived(minuteClock.nowMs);
 
-	const TOTAL_MILES = 2197.4;
+	const TOTAL_MILES = 2197.9;
 	const from = $derived(trailAssistant.currentMile);
 	const direction = $derived(trailAssistant.hikeProfile.direction);
 	const dayNumber = $derived(trailAssistant.dayNumber);

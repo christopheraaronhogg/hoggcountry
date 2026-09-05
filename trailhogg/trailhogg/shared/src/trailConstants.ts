@@ -11,7 +11,7 @@
 // ============================================================================
 
 /** Total AT distance in miles (AWOL 2025) */
-export const TRAIL_TOTAL_MILES = 2197.4;
+export const TRAIL_TOTAL_MILES = 2197.9;
 
 /** Total number of states the AT passes through */
 export const TRAIL_TOTAL_STATES = 14;

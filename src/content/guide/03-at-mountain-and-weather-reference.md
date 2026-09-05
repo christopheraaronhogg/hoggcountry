@@ -53,7 +53,7 @@ Hardest terrain on AT. Alpine travel. **If you finish this, you WILL finish.**
 ### 14. Maine — Mile ~1,912 to ~2,198
 Roots, rocks, ladders. Katahdin is inevitable.
 
-> *"I'm not hiking 2,197.4 miles—I'm hiking 14 victories."*
+> *"I'm not hiking 2,197.9 miles—I'm hiking 14 victories."*
 
 ---
 

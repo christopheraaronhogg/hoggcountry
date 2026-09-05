@@ -2,7 +2,7 @@
 // Rebuild the compact mobile trail geometry in the same calibrated mile frame
 // as public/at-mileposts.json. Source elevation samples keep their open-route
 // measured miles (~2106 mi total); this output stores official NOBO miles
-// (2197.4 mi total) so GPS snaps, map markers, and shared live locations agree
+// (2197.9 mi total) so GPS snaps, map markers, and shared live locations agree
 // with the web app and hiker-facing guidebook markers.
 
 import fs from 'node:fs';

@@ -79,7 +79,7 @@
 	const trailLo = $derived(geo.length ? geo[0].m : 0);
 	const trailHi = $derived(geo.length ? geo[geo.length - 1].m : 0);
 	const fromClamped = $derived(Math.max(trailLo, Math.min(trailHi, from)));
-	const TOTAL_MILES = 2197.4; // canonical AT length — keeps % in step with Today/header
+	const TOTAL_MILES = 2197.9; // canonical AT length — keeps % in step with Today/header
 
 	function clamp(v: number, lo: number, hi: number): number {
 		return Math.min(hi, Math.max(lo, v));

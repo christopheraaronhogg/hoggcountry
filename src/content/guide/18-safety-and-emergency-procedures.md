@@ -347,14 +347,14 @@ Message a trusted person at home. They:
 | ~1,877.8 | Pinkham Notch (NH-16) |
 | ~1,898.9 | Gorham (US-2) |
 
-### MAINE (Mile ~1,916 – 2197)
+### MAINE (Mile ~1,916 – 2198)
 
 | Mile | Exit Point |
 |------|------------|
 | ~2,009.0 | ME-27 (Stratton) |
 | ~2,046.0 | Kennebec River (ME-201) |
 | ~2,140.6 | Jo-Mary Road |
-| ~2197.4 | Katahdin Stream Campground Road |
+| ~2197.9 | Katahdin Stream Campground Road |
 
 *Note: Some forest roads may be seasonally gated—verify with FarOut when conditions matter.*
 

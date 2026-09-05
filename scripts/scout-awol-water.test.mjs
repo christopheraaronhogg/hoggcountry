@@ -12,7 +12,7 @@ import {
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const scoutWebRoot = path.join(repoRoot, 'apps/openclaw-web');
-const TOTAL_AT_MILES = 2197.4;
+const TOTAL_AT_MILES = 2197.9;
 const fixedNow = new Date('2026-06-24T15:30:00.000Z');
 
 let viteServerPromise = null;

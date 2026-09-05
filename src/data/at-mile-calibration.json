@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-06-15T23:18:20.952Z",
+  "generatedAt": "2026-09-05T14:02:51.040Z",
   "source": "scripts/calibrate-at-mileposts.mjs",
   "frame": {
-    "totalMiles": 2197.4,
-    "reference": "AWOL 2026 (anchors mostly ATC Data Book 2026)"
+    "totalMiles": 2197.9,
+    "reference": "ATC 2026 official total (interior anchors individually cited)"
   },
   "measuredTotalMiles": 2106.1,
   "anchorsUsed": [
@@ -408,7 +408,7 @@
     },
     {
       "name": "Katahdin / Baxter Peak, ME",
-      "officialMile": 2197.4,
+      "officialMile": 2197.9,
       "measuredMile": 2106.1,
       "offTrailMiles": 0.091,
       "confidence": "definitional"
@@ -645,7 +645,7 @@
     ],
     [
       2106.1,
-      2197.4
+      2197.9
     ]
   ]
 }

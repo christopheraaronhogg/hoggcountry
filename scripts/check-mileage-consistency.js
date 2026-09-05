@@ -19,9 +19,9 @@ const WEB_MILEPOSTS_FILE = path.join(ROOT, 'public/at-mileposts.json');
 const MOBILE_ELEVATION_FILE = path.join(ROOT, 'mobile/static/trail/elevation-100m.json');
 const MOBILE_SNAP_FILE = path.join(ROOT, 'mobile/static/trail/route-snap-20m.json');
 const ALLOWED_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.astro', '.svelte', '.md', '.mdx']);
-const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.astro', 'public', 'coverage']);
+const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.astro', '.svelte-kit', 'public', 'coverage']);
 
-const LEGACY_TOTAL_PATTERN = /2,?197\.9|2197\.9/g;
+const LEGACY_TOTAL_PATTERN = /2,?197\.4|2197\.4/g;
 
 function loadFacts() {
   if (!fs.existsSync(FACTS_FILE)) {
@@ -245,6 +245,9 @@ function main() {
 
   const files = [
     ...walkFiles(path.join(ROOT, 'src')),
+    ...walkFiles(path.join(ROOT, 'apps')),
+    ...walkFiles(path.join(ROOT, 'packages')),
+    ...walkFiles(path.join(ROOT, 'mobile/src')),
     ...walkFiles(path.join(ROOT, 'trailhogg')),
     path.join(ROOT, 'MASTER_NOBO_FIELD_GUIDE.md'),
   ].filter((file) => fs.existsSync(file));
@@ -257,7 +260,7 @@ function main() {
     console.error('Mileage consistency check failed.');
 
     if (legacyIssues.length > 0) {
-      console.error('\nLegacy total references (2197.9) found:');
+      console.error('\nLegacy total references (2197.4) found:');
       for (const issue of legacyIssues) {
         console.error(`- ${issue.file}:${issue.line} (${issue.value})`);
       }

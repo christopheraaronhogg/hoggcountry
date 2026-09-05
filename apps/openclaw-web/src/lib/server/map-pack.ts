@@ -17,7 +17,7 @@ import {
 import { loadDadTrackHistory } from './dad';
 import { nearestAtMilepost } from './at-location';
 
-const OFFICIAL_DISPLAY_MILES = 2197.4;
+const OFFICIAL_DISPLAY_MILES = 2197.9;
 const HOGG_LABEL = 'hoggcountry';
 const DEFAULT_HISTORY_LIMIT = 1600;
 
@@ -433,7 +433,7 @@ async function loadWaypoints(): Promise<TrailMapPack['waypoints']> {
 // Piecewise-linear measured→official mile converter built from the anchor
 // calibration (scripts/calibrate-at-mileposts.mjs). The processed datasets
 // carry open-route geometric miles (~2106 total); the product frame is
-// official AWOL miles (2,197.4). Returns null when the calibration file is
+// official AWOL miles (2,197.9). Returns null when the calibration file is
 // absent so the pack falls back to shipping the measured frame untouched.
 async function loadMeasuredToOfficial(): Promise<((measured: number) => number) | null> {
   try {
@@ -461,7 +461,7 @@ async function loadMeasuredToOfficial(): Promise<((measured: number) => number) 
       const t = m1 > m0 ? (measured - m0) / (m1 - m0) : 0;
       const official = o0 + (o1 - o0) * t;
       // Clamp to the official frame; linear extrapolation past the terminus
-      // pair could otherwise yield a mile above 2197.4 for an out-of-range fix.
+      // pair could otherwise yield a mile above 2197.9 for an out-of-range fix.
       const clamped = Math.max(0, Math.min(OFFICIAL_DISPLAY_MILES, official));
       return Math.round(clamped * 1000) / 1000;
     };

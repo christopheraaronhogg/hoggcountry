@@ -1,5 +1,5 @@
 // SUPERSEDED for mile values: this script uniformly rescales geometric
-// centerline distance to 2,197.4, which drifts up to ~23 mi from official
+// centerline distance to 2,197.9, which drifts up to ~23 mi from official
 // guidebook miles mid-trail. public/at-mileposts.json is now produced by
 // scripts/calibrate-at-mileposts.mjs (anchor-calibrated against
 // src/data/at-mile-anchors.yaml). Keep this script only as a reference for
@@ -443,7 +443,7 @@ async function main() {
 
   // Generate mile markers against a canonical mileage (AWOL/ATC-style).
   // Since centerline geometry can be simplified, we scale distances along the centerline to match canonical miles.
-  const canonicalMiles = 2197.4;
+  const canonicalMiles = 2197.9;
   const maxMile = Math.floor(canonicalMiles);
   const { out: mileposts, total: centerlineMiles } = interpolateMilepostsScaled(polyline, cumMiles, canonicalMiles, maxMile);
 

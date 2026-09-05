@@ -26,6 +26,12 @@ This section documents verified long-distance completions, prior AT experience, 
 
 ### Recognition
 
+**2026 Appalachian Trail achievements**
+
+- **2,000 Miler** — Appalachian Trail.
+- **Virginia Triple Crown** — Dragon’s Tooth, McAfee Knob, and Tinker Cliffs.
+- **AT Thru-Hiker — Class of 2026** — 2,197.9 miles from Springer to Katahdin, completed September 4, 2026. 💯
+
 **Sassafras Award — Ozark Society**  
 Awarded for completion of the Ouachita Trail, Ozark Highlands Trail, and Ozark Trail. *6th person in history to receive this award.*
 
@@ -55,14 +61,18 @@ Awarded for completion of the Ouachita Trail, Ozark Highlands Trail, and Ozark T
 
 ## Mountain Climb Readiness & Assessment
 
-### AT Miles Completed to Date
+### AT Thru-Hike — Completed September 4, 2026
+
+**2,197.9 miles · 100% complete · Class of 2026.**
+
+### AT Training Before the Thru-Hike
 
 | Section | Distance | Conditions | Key Features |
 |---------|----------|------------|--------------|
 | Standing Bear Farm → Hot Springs, NC | ~33 miles | Winter, ~35 lb pack | Snowbird Mountain, High difficulty |
 | Newfound Gap ↔ Kuwohi | ~15.6 miles RT | ~17°F, winter Smokies | Entirely high-altitude AT miles |
 
-**TOTAL AT MILES HIKED: ~49 miles** ✅
+**AT TRAINING BEFORE 2026: ~49 miles** ✅
 
 *These are hard miles, not summer or low-grade terrain.*
 

@@ -9,7 +9,7 @@ quickRef: true
 
 # Resupply Locations
 
-Miles use Scout's calibrated 2,197.4-mile NOBO frame. Store access, hours, package policies, and side-trail distance can change; verify them before committing food or medicine to a stop.
+Miles use Scout's calibrated 2,197.9-mile NOBO frame. Store access, hours, package policies, and side-trail distance can change; verify them before committing food or medicine to a stop.
 
 ## Walkable Dollar General
 

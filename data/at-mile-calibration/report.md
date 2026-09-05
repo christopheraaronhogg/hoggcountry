@@ -1,7 +1,7 @@
 # AT Mile Calibration Report
 
-Generated: 2026-06-15T23:18:20.954Z
-Frame: official NOBO miles, AWOL 2026 (anchors mostly ATC Data Book 2026) (total 2197.4)
+Generated: 2026-09-05T14:02:51.041Z
+Frame: official NOBO miles, ATC 2026 official total (interior anchors individually cited) (total 2197.9)
 Backbone: 21062 milepoints, measured total 2106.1 mi
 Anchors used: 58 of 58
 
@@ -66,7 +66,7 @@ Anchors used: 58 of 58
 | Caratunk / Kennebec River ferry (US 201), ME | 2046 | 1966.4 | 1.23 | 1.034 | high |
 | Monson ME (ME 15 trailhead) | 2079.4 | 2000.1 | 0.11 | 0.991 | high |
 | Abol Bridge / Golden Road (W Branch Penobscot), ME | 2182.3 | 2092.1 | 0.07 | 1.118 | high |
-| Katahdin / Baxter Peak, ME | 2197.4 | 2106.1 | 0.09 | 1.079 | definitional |
+| Katahdin / Baxter Peak, ME | 2197.9 | 2106.1 | 0.09 | 1.114 | definitional |
 
 ## Leave-one-out cross-validation
 
@@ -130,9 +130,9 @@ calibration accuracy BETWEEN anchors — more/better anchors shrink it.
 | ME 27 / Stratton ME | 2009 | 2006.6 | -2.4 |
 | Caratunk / Kennebec River ferry (US 201), ME | 2046 | 2045.3 | -0.7 |
 | Monson ME (ME 15 trailhead) | 2079.4 | 2082.5 | +3.1 |
-| Abol Bridge / Golden Road (W Branch Penobscot), ME | 2182.3 | 2181.8 | -0.5 |
+| Abol Bridge / Golden Road (W Branch Penobscot), ME | 2182.3 | 2182.2 | -0.1 |
 
-Mean abs error: 0.63 mi · Max abs error: 3.14 mi
+Mean abs error: 0.62 mi · Max abs error: 3.14 mi
 
 ## Warnings
 

@@ -42,7 +42,7 @@ function fakeBridge(text = 'Model-authored answer from the local Gemma bridge.',
 }
 
 test('default pack has the calibrated AT total mile frame', () => {
-	assert.equal(DEFAULT_CONTEXT_PACK.frame.totalMiles, 2197.4);
+	assert.equal(DEFAULT_CONTEXT_PACK.frame.totalMiles, 2197.9);
 });
 
 test('default pack is a neutral starter, not Dad pilot data', () => {

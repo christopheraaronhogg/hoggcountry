@@ -227,7 +227,7 @@ class TrailAssistantOpsApiTest extends TestCase
         $createResponse
             ->assertCreated()
             ->assertJsonPath('data.checkin.mile_marker', 243.4)
-            ->assertJsonPath('data.progress.percent_complete', round((243.4 / 2197.4) * 100, 2));
+            ->assertJsonPath('data.progress.percent_complete', round((243.4 / 2197.9) * 100, 2));
 
         $latestResponse = $this->getJson('/api/v1/trail-assistant/checkins/latest');
 

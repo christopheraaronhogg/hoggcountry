@@ -1,6 +1,6 @@
 # MILEAGE PROVENANCE (2026-06-12): all mile values below were recalibrated
 # against citation-backed official anchors (src/data/at-mile-anchors.yaml,
-# ATC Data Book 2024/25 frame, total 2197.4) via the calibrated skeleton
+# ATC Data Book anchors; total updated to the ATC 2026 figure, 2197.9) via the calibrated skeleton
 # (scripts/calibrate-at-mileposts.mjs; report: data/at-mile-calibration/report.md).
 # Earlier values claimed AWOL 2026 citations but carried a stale ~1990s-era
 # frame that drifted up to ~35 mi mid-trail. Verify against the physical
@@ -35,8 +35,8 @@
 # Valid sources: ATC | AWOL | NPS | USFS | ALDHA | USGS | MEASURED
 #
 # TEMPLATE SYNTAX (in master guide):
-# - {{trail.total_miles}}              → 2197.4
-# - {{trail.total_miles|commas}}       → 2,197.4
+# - {{trail.total_miles}}              → 2197.9
+# - {{trail.total_miles|commas}}       → 2,197.9
 # - {{trail.total_miles|round}}        → 2197
 # - {{landmarks.springer.elevation}}   → 3782
 # - {{factbox:landmarks.blood_mountain}} → generates full fact card
@@ -62,18 +62,14 @@ _meta:
 
 trail:
   total_miles:
-    value: 2197.4
-    display: "2,197.4"
+    value: 2197.9
+    display: "2,197.9"
     marketing: "2,190+"
     citations:
-      - source: AWOL
-        year: 2026
-        page: 1
-        note: "NOBO distance, Springer to Katahdin"
       - source: ATC
         year: 2026
-        url: https://appalachiantrail.org/explore/hike-the-a-t/thru-hiking/
-        note: "Official ATC figure (may round differently)"
+        url: https://appalachiantrail.org/news-stories/2026-official-mileage/
+        note: "Official 2026 NOBO distance, Springer to Katahdin; verified 2026-09-05"
 
   approach_trail_miles:
     value: 8.8
@@ -226,8 +222,8 @@ states:
   - id: ME
     name: Maine
     entry_mile: 1915.7
-    exit_mile: 2197.4
-    miles: 281.7
+    exit_mile: 2197.9
+    miles: 282.2
     note: "Includes the 100-Mile Wilderness"
     citation: { source: anchor-calibration vs ATC Data Book 2024/25, year: 2026 }
 
@@ -532,12 +528,12 @@ landmarks:
 
   katahdin:
     name: Mount Katahdin (Baxter Peak)
-    mile: 2197.4
+    mile: 2197.9
     elevation: 5269
     state: ME
     type: summit
     significance: Northern terminus - THE END
-    citation: { source: anchor-calibration vs ATC Data Book 2024/25, year: 2026 }
+    citation: { source: ATC, year: 2026, url: "https://appalachiantrail.org/news-stories/2026-official-mileage/" }
 
 # ============================================================================
 # RESUPPLY TOWNS

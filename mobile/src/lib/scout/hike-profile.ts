@@ -17,7 +17,7 @@ import type { ContextPack, SourceReceipt } from './types.ts';
 import { directedMileDelta, trailAhead } from '@hoggcountry/trail-data/trail-direction';
 
 /** Calibrated AT length (AWOL 2026, per repo CLAUDE.md). */
-export const TOTAL_AT_MILES = 2197.4;
+export const TOTAL_AT_MILES = 2197.9;
 
 /**
  * `self` — the user is tracking their own hike; position is owned by this profile.

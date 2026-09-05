@@ -33,10 +33,10 @@ function metersBetween(a: { lat: number; lon: number }, b: { lat: number; lon: n
 	return 2 * earthRadiusMeters * Math.atan2(Math.sqrt(hav), Math.sqrt(1 - hav));
 }
 
-test('mobile trail geometry is in the calibrated 2197.4-mile frame', () => {
+test('mobile trail geometry is in the calibrated 2197.9-mile frame', () => {
 	assert.ok(geometry.length > 30_000, 'expected the dense 100m geometry');
 	assert.equal(geometry[0].m, 0);
-	assert.equal(geometry[geometry.length - 1].m, 2197.4);
+	assert.equal(geometry[geometry.length - 1].m, 2197.9);
 
 	for (let i = 1; i < geometry.length; i += 1) {
 		assert.ok(geometry[i].m >= geometry[i - 1].m, `mile went backwards at index ${i}`);
@@ -49,7 +49,7 @@ test('mobile GPS snap index keeps roughly 20m route spacing in the calibrated mi
 	assert.equal(snapGeometry.m.length, snapGeometry.lat.length);
 	assert.equal(snapGeometry.m.length, snapGeometry.lon.length);
 	assert.equal(snapGeometry.m[0], 0);
-	assert.equal(snapGeometry.m[snapGeometry.m.length - 1], 2197.4);
+	assert.equal(snapGeometry.m[snapGeometry.m.length - 1], 2197.9);
 
 	let maxMeters = 0;
 	for (let i = 1; i < snapGeometry.m.length; i += 1) {

@@ -636,7 +636,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.match(signInAnswer, /not an emergency safety system/);
 
 	const ownMileAnswer = polishOnDeviceAnswer(
-		'You tell Scout your current mile is 0.0 of 2197.4. I will use that as the starting point for our planning.\n\nTo make Scout follow your own trail mile, you just need to tell me where you are. When you ask a question, state your current mile marker clearly. That way, I can base my advice on your actual progress on the trail.',
+		'You tell Scout your current mile is 0.0 of 2197.9. I will use that as the starting point for our planning.\n\nTo make Scout follow your own trail mile, you just need to tell me where you are. When you ask a question, state your current mile marker clearly. That way, I can base my advice on your actual progress on the trail.',
 		"How do I make Scout follow my own trail mile instead of someone else's?"
 	);
 	assert.match(ownMileAnswer, /Own-mile setup/);
@@ -821,7 +821,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			{
 				toolId: 'current_mile',
 				args: {},
-				summary: 'Currently at mile 1530.0 of 2197.4 (69.6% complete, 667.4 mi remaining).',
+				summary: 'Currently at mile 1530.0 of 2197.9 (69.6% complete, 667.9 mi remaining).',
 				confidence: 'high',
 				receipts: []
 			},
@@ -840,13 +840,13 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 	assert.match(directTownAnswer, /Cached pack caveat: Services are unconfirmed; verify shuttle\/pickup and hours before counting on it/);
 
 	const directWhenTownAnswer = polishOnDeviceAnswer(
-		'Source basis: cached town guidance. Road/town navigation note: Currently at mile 1562.0 of 2197.4 (71.1% complete, 635.4 mi remaining); next loaded road/town access is Lenox at mile 1563.1 (1.1 mi ahead via Open-data settlement candidate (MA · 6.3 mi off trail)). Services are not confirmed from guidebook/current hiker reports in this pack; verify grocery, lodging, shuttle, and hours before planning around it. Treat this as approximate loaded context. Confirm shuttle or pickup and do not assume services at a road crossing unless current service data proves them.',
+		'Source basis: cached town guidance. Road/town navigation note: Currently at mile 1562.0 of 2197.9 (71.1% complete, 635.9 mi remaining); next loaded road/town access is Lenox at mile 1563.1 (1.1 mi ahead via Open-data settlement candidate (MA · 6.3 mi off trail)). Services are not confirmed from guidebook/current hiker reports in this pack; verify grocery, lodging, shuttle, and hours before planning around it. Treat this as approximate loaded context. Confirm shuttle or pickup and do not assume services at a road crossing unless current service data proves them.',
 		"when's my next town?",
 		[
 			{
 				toolId: 'current_mile',
 				args: {},
-				summary: 'Currently at mile 1562.0 of 2197.4 (71.1% complete, 635.4 mi remaining).',
+				summary: 'Currently at mile 1562.0 of 2197.9 (71.1% complete, 635.9 mi remaining).',
 				confidence: 'high',
 				receipts: []
 			},
@@ -1098,7 +1098,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			{
 				toolId: 'current_mile',
 				args: {},
-				summary: 'Currently at mile 198.4 of 2197.4 (9.0% complete, 1999.0 mi remaining).',
+				summary: 'Currently at mile 198.4 of 2197.9 (9.0% complete, 1999.5 mi remaining).',
 				confidence: 'high',
 				receipts: []
 			}
@@ -1197,7 +1197,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			{
 				toolId: 'current_mile',
 				args: {},
-				summary: 'Currently at mile 87.8 of 2197.4 (4.0% complete, 2109.6 mi remaining).',
+				summary: 'Currently at mile 87.8 of 2197.9 (4.0% complete, 2110.1 mi remaining).',
 				confidence: 'high',
 				receipts: []
 			}
@@ -1219,7 +1219,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			{
 				toolId: 'current_mile',
 				args: {},
-				summary: 'Currently at mile 44.7 of 2197.4 (2.0% complete, 2152.7 mi remaining).',
+				summary: 'Currently at mile 44.7 of 2197.9 (2.0% complete, 2153.2 mi remaining).',
 				confidence: 'high',
 				receipts: []
 			},
@@ -1271,7 +1271,7 @@ test('polishOnDeviceAnswer fixes known local-model grammar and safety omissions'
 			{
 				toolId: 'current_mile',
 				args: {},
-				summary: 'Currently at mile 158.2 of 2197.4 (7.2% complete, 2039.2 mi remaining).',
+				summary: 'Currently at mile 158.2 of 2197.9 (7.2% complete, 2039.7 mi remaining).',
 				confidence: 'high',
 				receipts: []
 			},

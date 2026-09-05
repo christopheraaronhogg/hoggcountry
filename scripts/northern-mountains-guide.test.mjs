@@ -18,12 +18,12 @@ const guide = JSON.parse(fs.readFileSync(DATA_PATH, 'utf8'));
 
 test('northern mountain guide covers the calibrated mile 1850 to Katahdin frame', () => {
   assert.equal(guide.guideStartMile, 1850);
-  assert.equal(guide.terminusMile, 2197.4);
-  assert.equal(guide.summary.distanceMiles, 347.4);
+  assert.equal(guide.terminusMile, 2197.9);
+  assert.equal(guide.summary.distanceMiles, 347.9);
   assert.equal(guide.mountains.length, 51);
   assert.equal(guide.mountains[0].name, 'Mount Webster');
   assert.equal(guide.mountains.at(-1).name, 'Baxter Peak - Katahdin');
-  assert.equal(guide.mountains.at(-1).summitMile, 2197.4);
+  assert.equal(guide.mountains.at(-1).summitMile, 2197.9);
 });
 
 test('mountains stay sorted and carry complete bounded terrain screens', () => {

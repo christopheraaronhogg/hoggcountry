@@ -1,5 +1,6 @@
 <script lang="ts">
   import { DAD_HIKE_FINISH_LABEL, DAD_HIKE_COMPLETION_LABEL } from '$lib/dad-hike';
+  import DadAchievements from '$lib/components/DadAchievements.svelte';
   import PublicMap from '$components/PublicMap.svelte';
   import type { PageData } from './$types';
 
@@ -35,6 +36,8 @@
     {/each}
   </div>
 </section>
+
+<DadAchievements />
 
 <section class="grid-two" style="margin-top:1rem;">
   <PublicMap featureCollection={data.track} title="Dad location preview" />

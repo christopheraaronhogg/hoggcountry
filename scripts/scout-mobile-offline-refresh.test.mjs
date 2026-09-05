@@ -68,9 +68,9 @@ function buildRemoteEnvelope({ currentMile = 600.4, generatedAt, validUntil } = 
 		data: {
 			context_pack: {
 				frame: {
-					totalMiles: 2197.4,
+					totalMiles: 2197.9,
 					startMile: 0,
-					endMile: 2197.4,
+					endMile: 2197.9,
 					source: 'AWOL 2026 reference length + Hogg Country Dad pilot pack + Scout AT open-reference slice'
 				},
 				hiker: {
@@ -180,7 +180,7 @@ test('live envelope normalizes into a ContextPack and persists through the adapt
 	const pack = await store.refreshFromEndpoint('https://example.test/field-pack', makeFetcher(jsonResponse(envelope)));
 
 	// Normalized into the mobile ContextPack contract.
-	assert.equal(pack.frame.totalMiles, 2197.4);
+	assert.equal(pack.frame.totalMiles, 2197.9);
 	assert.equal(pack.hiker.currentMile, 600.4);
 	assert.ok(Array.isArray(pack.water) && pack.water.length > 0);
 

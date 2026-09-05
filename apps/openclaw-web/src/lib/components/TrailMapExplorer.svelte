@@ -172,7 +172,7 @@
   });
   const selectedMile = $derived.by(() => inspectedMile ?? selectedPoint?.mile ?? currentPoint?.mile ?? 0);
   // Waypoints/terrain/elevation are on the OSM measured scale (~2106 mi);
-  // selection miles are canonical 2197.4. Convert at the lookup boundary.
+  // selection miles are canonical 2197.9. Convert at the lookup boundary.
   const measuredFactor = $derived.by(() => {
     const route = pack?.route;
     return route && route.measuredMiles > 0 && route.displayMiles > 0
@@ -403,7 +403,7 @@
       observedAt: selectedPoint.observedAt as string | null
     };
   });
-  // Official display frame (2,197.4) — the same total /journey, /app/progress,
+  // Official display frame (2,197.9) — the same total /journey, /app/progress,
   // and the homepage teaser use, so every surface agrees on percent and total.
   const dadCompleted = $derived(!appMode && endpoint === '/track/map-pack' && Boolean(DAD_HIKE_COMPLETED_ON));
   const totalMiles = $derived(pack?.route.displayMiles ?? null);

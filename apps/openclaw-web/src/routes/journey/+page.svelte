@@ -1,5 +1,6 @@
 <script lang="ts">
   import { DAD_HIKE_FINISH_LABEL } from '$lib/dad-hike';
+  import DadAchievements from '$lib/components/DadAchievements.svelte';
   import { invalidateAll } from '$app/navigation';
   import { onMount } from 'svelte';
   import WaitlistSignup from '$lib/components/WaitlistSignup.svelte';
@@ -106,6 +107,8 @@
       <p class="fix-note">Last Garmin fix {fmtDate(s.latestFixAt)} · {s.latestFixLabel}</p>
     {/if}
   </header>
+
+  {#if s.completedOn}<DadAchievements />{/if}
 
   <!-- ELEVATION PROFILE -->
   <ElevationProfile elevation={data.journey.elevation} currentMile={s.currentMile} totalMiles={s.totalMiles} isPreview={s.isPreview} />

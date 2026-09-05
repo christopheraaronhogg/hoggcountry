@@ -4,7 +4,7 @@ import type { TrailDirection } from '@hoggcountry/trail-data/trail-direction';
  * Real Appalachian Trail route geometry + elevation. The elevation/profile
  * asset stays at ~100-metre (~0.06-mile) resolution from USGS 3DEP (public
  * domain), while GPS snapping uses a separate ~20-metre route index. Both are
- * calibrated through src/data/at-mile-calibration.json into the same 2197.4-mile
+ * calibrated through src/data/at-mile-calibration.json into the same 2197.9-mile
  * official frame as public/at-mileposts.json.
  *
  * The coordinates stay on the open OSM-derived centerline. The 20-m index is

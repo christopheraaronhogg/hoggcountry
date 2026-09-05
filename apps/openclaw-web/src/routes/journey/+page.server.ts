@@ -6,10 +6,10 @@ import { loadJourney, HIKE_START_DATE } from '$lib/server/journey';
 const PREVIEW_JOURNEY = {
   summary: {
     currentMile: 0,
-    totalMiles: 2197.4,
+    totalMiles: 2197.9,
     percentComplete: 0,
     milesHiked: 0,
-    milesRemaining: 2197.4,
+    milesRemaining: 2197.9,
     currentStateName: null,
     daysOnTrail: 0,
     paceMilesPerDay: null,

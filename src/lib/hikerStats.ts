@@ -7,7 +7,7 @@
 
 // AT total miles (AWOL 2024 mileage)
 // Note: Can't import from trailFacts.ts here because it uses Node.js modules
-const TRAIL_TOTAL_MILES = 2197.4;
+const TRAIL_TOTAL_MILES = 2197.9;
 
 // ============================================================================
 // TYPES

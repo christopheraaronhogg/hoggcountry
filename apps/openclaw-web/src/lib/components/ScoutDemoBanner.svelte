@@ -41,7 +41,7 @@
         </div>
         <div class="sdb-stat" role="listitem">
           <span class="sdb-stat-label">{isPreview ? 'Trail to go' : 'To Katahdin'}</span>
-          <span class="sdb-stat-value">{fmt(journey?.milesRemaining ?? 2197.4)} <small>mi</small></span>
+          <span class="sdb-stat-value">{fmt(journey?.milesRemaining ?? 2197.9)} <small>mi</small></span>
         </div>
         {#if !isPreview && journey?.daysOnTrail}
           <div class="sdb-stat" role="listitem">

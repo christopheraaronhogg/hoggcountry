@@ -54,7 +54,7 @@ Content well: `max-width: 750px`, padding `2rem 1.5rem 6rem`. Reading rhythm is 
 - **Trail-practical first.** Numbers and decisions over adjectives. "11.2 mi to Neels Gap, 2 resupply options" beats "Adventure to your next stop." Use ISO-ish phrasing for distance (`mi`, never `miles` in chips; spell out only in paragraphs).
 - **Honest assumptions.** Every calculator readout names what it assumed (`Assumes 15 mi/day from current mile`). If the user hasn't set context yet, say so — never present a fabricated default as if it were their plan.
 - **No overclaiming Scout.** Scout is an assistant, not an oracle. Never write "Scout knows", "Scout will guide you", or "AI-powered". Prefer "Scout suggests", "based on AWOL 2026 / NOAA", or naming the actual source.
-- **Trail facts come from canonical sources only** (`src/data/trail-facts.yaml`, `src/data/trailData.ts`). Total trail = **2,197.4 mi**, approach trail **8.8 mi**, **14** states, **~260** shelters. Never round these in copy.
+- **Trail facts come from canonical sources only** (`src/data/trail-facts.yaml`, `src/data/trailData.ts`). Total trail = **2,197.9 mi**, approach trail **8.8 mi**, **14** states, **~260** shelters. Never round these in copy.
 - **Microcopy voice.** Short, sentence-case, no exclamation points. Buttons are verbs (`Plan resupply`, `Log mile`, `Open guide`). Empty states explain what shows up here once the user does X.
 
 ## 5. Agent handoff checklist

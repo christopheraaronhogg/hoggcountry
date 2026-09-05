@@ -186,7 +186,7 @@
         </h1>
         <p class="masthead-subtitle">Northbound: Springer -&gt; Katahdin</p>
         <p class="masthead-meta">
-          2,197.4 Miles of Trail-Tested Knowledge
+          2,197.9 Miles of Trail-Tested Knowledge
         </p>
         <p class="masthead-hiker">
           <span class="hiker-label">Prepared for</span>

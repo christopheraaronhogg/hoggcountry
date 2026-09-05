@@ -45,7 +45,7 @@ export const landmarks = [
 ];
 
 // Total trail miles (canonical value)
-export const TRAIL_TOTAL_MILES = 2197.4;
+export const TRAIL_TOTAL_MILES = 2197.9;
 
 // LocalStorage key (preserved for backward compatibility)
 const STORAGE_KEY = 'trailContext';
